@@ -27,7 +27,7 @@ type suite struct {
 }
 
 func newSuite() *suite {
-	topLevelContainer := newContainerNode("", containerTypeTopLevel, flagTypeNone)
+	topLevelContainer := newContainerNode("", containerTypeTopLevel, flagTypeNone, CodeLocation{})
 
 	return &suite{
 		topLevelContainer: topLevelContainer,
@@ -48,22 +48,22 @@ func (suite *suite) fail(message string, callerSkip int) {
 	//somehow without panicking?
 }
 
-func (suite *suite) pushContainerNode(text string, body func(), conType containerType, flag flagType) {
+func (suite *suite) pushContainerNode(text string, body func(), conType containerType, flag flagType, codeLocation CodeLocation) {
 
 }
 
-func (suite *suite) pushExampleNode(text string, body interface{}, flag flagType) {
+func (suite *suite) pushExampleNode(text string, body interface{}, flag flagType, codeLocation CodeLocation) {
 
 }
 
-func (suite *suite) pushBeforeEachNode(body interface{}) {
+func (suite *suite) pushBeforeEachNode(body interface{}, codeLocation CodeLocation) {
 
 }
 
-func (suite *suite) pushJustBeforeEachNode(body interface{}) {
+func (suite *suite) pushJustBeforeEachNode(body interface{}, codeLocation CodeLocation) {
 
 }
 
-func (suite *suite) pushAfterEachNode(body interface{}) {
+func (suite *suite) pushAfterEachNode(body interface{}, codeLocation CodeLocation) {
 
 }

@@ -27,7 +27,7 @@ func RunSpecsWithCustomReporter(t *testing.T, description string, reporter Repor
 	globalSuite.run(t, description, *suiteRandomSeed, *suiteRandomizeAllSpecs, reporter)
 }
 
-type Done chan<- bool //channel for async callbacks
+type Done chan<- interface{} //channel for async callbacks
 
 func Fail(message string, callerSkip ...int) {
 	skip := 0
@@ -40,49 +40,61 @@ func Fail(message string, callerSkip ...int) {
 //These all just call (private) methods on the global suite
 
 func Describe(text string, body func()) {
-	globalSuite.pushContainerNode(text, body, containerTypeDescribe, flagTypeNone)
+	codeLocation, _ := generateCodeLocation(1)
+	globalSuite.pushContainerNode(text, body, containerTypeDescribe, flagTypeNone, codeLocation)
 }
 
 func FDescribe(text string, body func()) {
-	globalSuite.pushContainerNode(text, body, containerTypeDescribe, flagTypeFocused)
+	codeLocation, _ := generateCodeLocation(1)
+	globalSuite.pushContainerNode(text, body, containerTypeDescribe, flagTypeFocused, codeLocation)
 }
 
 func PDescribe(text string, body func()) {
-	globalSuite.pushContainerNode(text, body, containerTypeDescribe, flagTypePending)
+	codeLocation, _ := generateCodeLocation(1)
+	globalSuite.pushContainerNode(text, body, containerTypeDescribe, flagTypePending, codeLocation)
 }
 
 func Context(text string, body func()) {
-	globalSuite.pushContainerNode(text, body, containerTypeContext, flagTypeNone)
+	codeLocation, _ := generateCodeLocation(1)
+	globalSuite.pushContainerNode(text, body, containerTypeContext, flagTypeNone, codeLocation)
 }
 
 func FContext(text string, body func()) {
-	globalSuite.pushContainerNode(text, body, containerTypeContext, flagTypeFocused)
+	codeLocation, _ := generateCodeLocation(1)
+	globalSuite.pushContainerNode(text, body, containerTypeContext, flagTypeFocused, codeLocation)
 }
 
 func PContext(text string, body func()) {
-	globalSuite.pushContainerNode(text, body, containerTypeContext, flagTypePending)
+	codeLocation, _ := generateCodeLocation(1)
+	globalSuite.pushContainerNode(text, body, containerTypeContext, flagTypePending, codeLocation)
 }
 
 func It(text string, body interface{}) {
-	globalSuite.pushExampleNode(text, body, flagTypeNone)
+	codeLocation, _ := generateCodeLocation(1)
+	globalSuite.pushExampleNode(text, body, flagTypeNone, codeLocation)
 }
 
 func FIt(text string, body interface{}) {
-	globalSuite.pushExampleNode(text, body, flagTypeFocused)
+	codeLocation, _ := generateCodeLocation(1)
+	globalSuite.pushExampleNode(text, body, flagTypeFocused, codeLocation)
 }
 
 func PIt(text string, body interface{}) {
-	globalSuite.pushExampleNode(text, body, flagTypePending)
+	codeLocation, _ := generateCodeLocation(1)
+	globalSuite.pushExampleNode(text, body, flagTypePending, codeLocation)
 }
 
 func BeforeEach(body interface{}) {
-	globalSuite.pushBeforeEachNode(body)
+	codeLocation, _ := generateCodeLocation(1)
+	globalSuite.pushBeforeEachNode(body, codeLocation)
 }
 
 func JustBeforeEach(body interface{}) {
-	globalSuite.pushJustBeforeEachNode(body)
+	codeLocation, _ := generateCodeLocation(1)
+	globalSuite.pushJustBeforeEachNode(body, codeLocation)
 }
 
 func AfterEach(body interface{}) {
-	globalSuite.pushAfterEachNode(body)
+	codeLocation, _ := generateCodeLocation(1)
+	globalSuite.pushAfterEachNode(body, codeLocation)
 }

@@ -13,7 +13,8 @@ type SuiteSummary struct {
 	NumberOfTotalExamples   int
 	NumberOfPendingExamples int
 	NumberOfSkippedExamples int
-	NumberOfRunExamples     int
+	NumberOfPassedExamples  int
+	NumberOfFailedExamples  int
 	RunTime                 float64
 
 	RandomSeed           int
@@ -28,12 +29,12 @@ type ExampleSummary struct {
 	Components           []*ExampleComponent
 	FailedComponentIndex uint
 	Runtime              float64
+	FailureMessage       string
 }
 
 type CodeLocation struct {
 	FileName   string
 	LineNumber int
-	Column     int
 }
 
 type ExampleState uint
