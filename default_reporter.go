@@ -48,6 +48,7 @@ func (reporter *defaultReporter) RandomizationStrategy(randomSeed int64, randomi
 }
 
 func (reporter *defaultReporter) SpecSuiteWillBegin(summary *SuiteSummary) {
+	fmt.Println("")
 	reporter.banner(fmt.Sprintf("Running Suite: %s", summary.SuiteDescription), "=")
 	fmt.Printf("Random Seed: %s", reporter.colorize(boldStyle, "%d", reporter.randomSeed))
 	if reporter.randomizeAllExamples {
@@ -136,5 +137,26 @@ func (reporter *defaultReporter) ExampleDidComplete(exampleSummary *ExampleSumma
 
 func (reporter *defaultReporter) SpecSuiteDidEnd(summary *SuiteSummary) {
 	fmt.Println("")
-	fmt.Println(reporter.colorize(boldStyle, "Finished in %.3f seconds", summary.RunTime.Seconds()))
+	color := greenColor
+	if summary.NumberOfFailedExamples > 0 {
+		color = redColor
+	}
+	fmt.Println(reporter.colorize(boldStyle+color, "Ran %d of %d Specs in %.3f seconds", summary.NumberOfExamplesThatWillBeRun, summary.NumberOfTotalExamples, summary.RunTime.Seconds()))
+
+	status := ""
+	if summary.NumberOfFailedExamples == 0 {
+		status = fmt.Sprintf(reporter.colorize(boldStyle+greenColor, "SUCCESS!"))
+	} else {
+		status = fmt.Sprintf(reporter.colorize(boldStyle+redColor, "FAIL!"))
+	}
+
+	fmt.Printf(
+		"%s -- %s | %s | %s | %s\n",
+		status,
+		reporter.colorize(greenColor+boldStyle, "%d Passed", summary.NumberOfPassedExamples),
+		reporter.colorize(redColor+boldStyle, "%d Failed", summary.NumberOfFailedExamples),
+		reporter.colorize(yellowColor+boldStyle, "%d Pending", summary.NumberOfPendingExamples),
+		reporter.colorize(cyanColor+boldStyle, "%d Skipped", summary.NumberOfSkippedExamples),
+	)
+	fmt.Println("")
 }
