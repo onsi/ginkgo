@@ -48,8 +48,16 @@ func (suite *suite) fail(message string, callerSkip int) {
 	//somehow without panicking?
 }
 
-func (suite *suite) pushContainerNode(text string, body func(), conType containerType, flag flagType, codeLocation CodeLocation) {
+func (suite *suite) pushContainerNode(text string, body func(), cType containerType, flag flagType, codeLocation CodeLocation) {
+	container := newContainerNode(text, cType, flag, codeLocation)
+	suite.currentContainer.pushContainerNode(container)
 
+	previousContainer := suite.currentContainer
+	suite.currentContainer = container
+
+	body()
+
+	suite.currentContainer = previousContainer
 }
 
 func (suite *suite) pushExampleNode(text string, body interface{}, flag flagType, codeLocation CodeLocation) {
@@ -57,13 +65,13 @@ func (suite *suite) pushExampleNode(text string, body interface{}, flag flagType
 }
 
 func (suite *suite) pushBeforeEachNode(body interface{}, codeLocation CodeLocation) {
-
+	suite.currentContainer.pushBeforeEachNode(newBeforeEachNode(body, codeLocation))
 }
 
 func (suite *suite) pushJustBeforeEachNode(body interface{}, codeLocation CodeLocation) {
-
+	suite.currentContainer.pushJustBeforeEachNode(newJustBeforeEachNode(body, codeLocation))
 }
 
 func (suite *suite) pushAfterEachNode(body interface{}, codeLocation CodeLocation) {
-
+	suite.currentContainer.pushAfterEachNode(newAfterEachNode(body, codeLocation))
 }

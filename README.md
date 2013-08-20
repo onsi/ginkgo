@@ -10,6 +10,7 @@ Todo
         - example node has extra information on it
 
     - convert node hierarchy into flat list of examples
+        - container node can generate an array of examples
         - call it "example" -- an array of container nodes, runnable nodes, and one it node in the correct order
         - example has an ExampleState
         - example can generate an ExampleSummary and populate it with ExampleComponents

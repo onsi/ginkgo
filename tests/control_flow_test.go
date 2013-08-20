@@ -10,7 +10,6 @@ func init() {
 		BeforeEach(func() {
 			fmt.Println("BEFORE")
 		})
-
 		It("should work!", func() {
 			fmt.Println("WORK!")
 		})

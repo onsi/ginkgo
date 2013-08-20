@@ -40,61 +40,61 @@ func Fail(message string, callerSkip ...int) {
 //These all just call (private) methods on the global suite
 
 func Describe(text string, body func()) {
-	codeLocation, _ := generateCodeLocation(1)
+	codeLocation, _ := generateCodeLocation(2)
 	globalSuite.pushContainerNode(text, body, containerTypeDescribe, flagTypeNone, codeLocation)
 }
 
 func FDescribe(text string, body func()) {
-	codeLocation, _ := generateCodeLocation(1)
+	codeLocation, _ := generateCodeLocation(2)
 	globalSuite.pushContainerNode(text, body, containerTypeDescribe, flagTypeFocused, codeLocation)
 }
 
 func PDescribe(text string, body func()) {
-	codeLocation, _ := generateCodeLocation(1)
+	codeLocation, _ := generateCodeLocation(2)
 	globalSuite.pushContainerNode(text, body, containerTypeDescribe, flagTypePending, codeLocation)
 }
 
 func Context(text string, body func()) {
-	codeLocation, _ := generateCodeLocation(1)
+	codeLocation, _ := generateCodeLocation(2)
 	globalSuite.pushContainerNode(text, body, containerTypeContext, flagTypeNone, codeLocation)
 }
 
 func FContext(text string, body func()) {
-	codeLocation, _ := generateCodeLocation(1)
+	codeLocation, _ := generateCodeLocation(2)
 	globalSuite.pushContainerNode(text, body, containerTypeContext, flagTypeFocused, codeLocation)
 }
 
 func PContext(text string, body func()) {
-	codeLocation, _ := generateCodeLocation(1)
+	codeLocation, _ := generateCodeLocation(2)
 	globalSuite.pushContainerNode(text, body, containerTypeContext, flagTypePending, codeLocation)
 }
 
 func It(text string, body interface{}) {
-	codeLocation, _ := generateCodeLocation(1)
+	codeLocation, _ := generateCodeLocation(2)
 	globalSuite.pushExampleNode(text, body, flagTypeNone, codeLocation)
 }
 
 func FIt(text string, body interface{}) {
-	codeLocation, _ := generateCodeLocation(1)
+	codeLocation, _ := generateCodeLocation(2)
 	globalSuite.pushExampleNode(text, body, flagTypeFocused, codeLocation)
 }
 
 func PIt(text string, body interface{}) {
-	codeLocation, _ := generateCodeLocation(1)
+	codeLocation, _ := generateCodeLocation(2)
 	globalSuite.pushExampleNode(text, body, flagTypePending, codeLocation)
 }
 
 func BeforeEach(body interface{}) {
-	codeLocation, _ := generateCodeLocation(1)
+	codeLocation, _ := generateCodeLocation(2)
 	globalSuite.pushBeforeEachNode(body, codeLocation)
 }
 
 func JustBeforeEach(body interface{}) {
-	codeLocation, _ := generateCodeLocation(1)
+	codeLocation, _ := generateCodeLocation(2)
 	globalSuite.pushJustBeforeEachNode(body, codeLocation)
 }
 
 func AfterEach(body interface{}) {
-	codeLocation, _ := generateCodeLocation(1)
+	codeLocation, _ := generateCodeLocation(2)
 	globalSuite.pushAfterEachNode(body, codeLocation)
 }

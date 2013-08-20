@@ -3,7 +3,7 @@ package godescribe
 type node interface {
 	//flesh me out!  both containerNodes and itNodes need to satisfy this (but not runnables)
 	isContainerNode() bool
-	isExampleNode() bool
+	isItNode() bool
 }
 
 type containerNode struct {
@@ -12,10 +12,10 @@ type containerNode struct {
 	text         string
 	codeLocation CodeLocation
 
-	beforeEachNodes     []*runnableNode
-	justBeforeEachNodes []*runnableNode
-	afterEachNodes      []*runnableNode
-	itAndContainerNodes []*node
+	beforeEachNodes     []*beforeEachNode
+	justBeforeEachNodes []*justBeforeEachNode
+	afterEachNodes      []*afterEachNode
+	itAndContainerNodes []node
 }
 
 func newContainerNode(text string, cType containerType, flag flagType, codeLocation CodeLocation) *containerNode {
@@ -25,4 +25,28 @@ func newContainerNode(text string, cType containerType, flag flagType, codeLocat
 		flag:         flag,
 		codeLocation: codeLocation,
 	}
+}
+
+func (node *containerNode) pushContainerNode(container *containerNode) {
+	node.itAndContainerNodes = append(node.itAndContainerNodes, container)
+}
+
+func (node *containerNode) pushBeforeEachNode(beforeEach *beforeEachNode) {
+	node.beforeEachNodes = append(node.beforeEachNodes, beforeEach)
+}
+
+func (node *containerNode) pushJustBeforeEachNode(justBeforeEach *justBeforeEachNode) {
+	node.justBeforeEachNodes = append(node.justBeforeEachNodes, justBeforeEach)
+}
+
+func (node *containerNode) pushAfterEachNode(afterEach *afterEachNode) {
+	node.afterEachNodes = append(node.afterEachNodes, afterEach)
+}
+
+func (node *containerNode) isContainerNode() bool {
+	return true
+}
+
+func (node *containerNode) isItNode() bool {
+	return false
 }
