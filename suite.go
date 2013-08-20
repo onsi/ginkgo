@@ -1,24 +1,16 @@
 package godescribe
 
 import (
+	"math/rand"
 	"testing"
-)
-
-type containerType uint
-
-const (
-	containerTypeInvalid containerType = iota
-	containerTypeTopLevel
-	containerTypeDescribe
-	containerTypeContext
 )
 
 type flagType uint
 
 const (
 	flagTypeNone flagType = iota
-	flagTypePending
 	flagTypeFocused
+	flagTypePending
 )
 
 type failureData struct {
@@ -30,10 +22,11 @@ type failureData struct {
 type suite struct {
 	topLevelContainer *containerNode
 	currentContainer  *containerNode
+	exampleCollection *exampleCollection
 }
 
 func newSuite() *suite {
-	topLevelContainer := newContainerNode("", containerTypeTopLevel, flagTypeNone, CodeLocation{})
+	topLevelContainer := newContainerNode("", flagTypeNone, CodeLocation{})
 
 	return &suite{
 		topLevelContainer: topLevelContainer,
@@ -42,24 +35,27 @@ func newSuite() *suite {
 }
 
 func (suite *suite) run(t *testing.T, description string, randomSeed int64, randomizeAllExamples bool, reporter Reporter) {
-	//randomize the suite
-	//process any focus (if any focused, mark all non-focussed as skipped)
+	reporter.RandomizationStrategy(randomSeed, randomizeAllExamples)
+	r := rand.New(rand.NewSource(randomSeed))
+	suite.topLevelContainer.shuffle(r)
+	suite.exampleCollection = newExampleCollection(t, description, suite.topLevelContainer.generateExamples(), reporter)
+	if randomizeAllExamples {
+		suite.exampleCollection.shuffle(r)
+	}
 
-	//generate summary report
-	//run each example (& send report)
-	//generate summary report
+	suite.exampleCollection.run()
 }
 
 func (suite *suite) fail(message string, callerSkip int) {
 	codeLocation, _ := generateCodeLocation(callerSkip + 2)
-	panic(failureData{
+	suite.exampleCollection.fail(failureData{
 		message:      message,
 		codeLocation: codeLocation,
 	})
 }
 
-func (suite *suite) pushContainerNode(text string, body func(), cType containerType, flag flagType, codeLocation CodeLocation) {
-	container := newContainerNode(text, cType, flag, codeLocation)
+func (suite *suite) pushContainerNode(text string, body func(), flag flagType, codeLocation CodeLocation) {
+	container := newContainerNode(text, flag, codeLocation)
 	suite.currentContainer.pushContainerNode(container)
 
 	previousContainer := suite.currentContainer
@@ -75,13 +71,13 @@ func (suite *suite) pushItNode(text string, body interface{}, flag flagType, cod
 }
 
 func (suite *suite) pushBeforeEachNode(body interface{}, codeLocation CodeLocation) {
-	suite.currentContainer.pushBeforeEachNode(newBeforeEachNode(body, codeLocation))
+	suite.currentContainer.pushBeforeEachNode(newRunnableNode(body, codeLocation))
 }
 
 func (suite *suite) pushJustBeforeEachNode(body interface{}, codeLocation CodeLocation) {
-	suite.currentContainer.pushJustBeforeEachNode(newJustBeforeEachNode(body, codeLocation))
+	suite.currentContainer.pushJustBeforeEachNode(newRunnableNode(body, codeLocation))
 }
 
 func (suite *suite) pushAfterEachNode(body interface{}, codeLocation CodeLocation) {
-	suite.currentContainer.pushAfterEachNode(newAfterEachNode(body, codeLocation))
+	suite.currentContainer.pushAfterEachNode(newRunnableNode(body, codeLocation))
 }

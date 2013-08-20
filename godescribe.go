@@ -41,32 +41,32 @@ func Fail(message string, callerSkip ...int) {
 
 func Describe(text string, body func()) {
 	codeLocation, _ := generateCodeLocation(2)
-	globalSuite.pushContainerNode(text, body, containerTypeDescribe, flagTypeNone, codeLocation)
+	globalSuite.pushContainerNode(text, body, flagTypeNone, codeLocation)
 }
 
 func FDescribe(text string, body func()) {
 	codeLocation, _ := generateCodeLocation(2)
-	globalSuite.pushContainerNode(text, body, containerTypeDescribe, flagTypeFocused, codeLocation)
+	globalSuite.pushContainerNode(text, body, flagTypeFocused, codeLocation)
 }
 
 func PDescribe(text string, body func()) {
 	codeLocation, _ := generateCodeLocation(2)
-	globalSuite.pushContainerNode(text, body, containerTypeDescribe, flagTypePending, codeLocation)
+	globalSuite.pushContainerNode(text, body, flagTypePending, codeLocation)
 }
 
 func Context(text string, body func()) {
 	codeLocation, _ := generateCodeLocation(2)
-	globalSuite.pushContainerNode(text, body, containerTypeContext, flagTypeNone, codeLocation)
+	globalSuite.pushContainerNode(text, body, flagTypeNone, codeLocation)
 }
 
 func FContext(text string, body func()) {
 	codeLocation, _ := generateCodeLocation(2)
-	globalSuite.pushContainerNode(text, body, containerTypeContext, flagTypeFocused, codeLocation)
+	globalSuite.pushContainerNode(text, body, flagTypeFocused, codeLocation)
 }
 
 func PContext(text string, body func()) {
 	codeLocation, _ := generateCodeLocation(2)
-	globalSuite.pushContainerNode(text, body, containerTypeContext, flagTypePending, codeLocation)
+	globalSuite.pushContainerNode(text, body, flagTypePending, codeLocation)
 }
 
 func It(text string, body interface{}) {

@@ -9,13 +9,15 @@ Todo
                 state, timing, failureMessage, failureCodeLocation
         X it node has extra information on it
 
-    - convert node hierarchy into flat list of examples
-        - example is inited with an it
-           - then add containers working outwards
-           - flag(): pending > focus > none
-           - can run() or skip()
-               - tells containers to run bef, then run jbef, then runs it, then run aft (backwards)
-               - each of these returns:
+        X add code to create examples in the containers
+
+    X convert node hierarchy into flat list of examples
+        X example is inited with an it
+           X then add containers working outwards
+           X flag: pending > focus > none
+           X can run() or skip()
+               X tells containers to run bef, then run jbef, then runs it, then run aft (backwards)
+               X each of these returns:
                    pass/fail/panic, err message, err codeLocation, failedComponent codeLocation
        - example report is (modify reporter_interface.go):
            - [d,d,c,d,c,d,i] (texts)
@@ -29,13 +31,15 @@ Todo
                - failureComponentType (bef/aft/jbef/it)
                - failureComponentCodeLocation
 
-
-    - randomize the examples
+    X randomize the examples
         - by top-level node
         - all
 
-    - report to the reporter
+    X report to the reporter
 
+    - clean up the way fail is propagated
+
+    - ranomization not working?
     - build out the reporter (fun!)
     - make timeout configurable
     - search for and do: //todo: can we get the code location that threw the panic from within the defer

@@ -1,35 +1,34 @@
 package godescribe
 
+import (
+	"time"
+)
+
 type Reporter interface {
+	RandomizationStrategy(randomSeed int64, randomizeAllExamples bool)
 	SpecSuiteWillBegin(summary *SuiteSummary)
-	ExampleDidComplete(exampleSummary *ExampleSummary, summary *SuiteSummary)
+	ExampleDidComplete(exampleSummary *ExampleSummary)
 	SpecSuiteDidEnd(summary *SuiteSummary)
 }
 
 type SuiteSummary struct {
 	SuiteDescription string
-	ExampleSummaries []*ExampleSummary
 
 	NumberOfTotalExamples   int
 	NumberOfPendingExamples int
 	NumberOfSkippedExamples int
 	NumberOfPassedExamples  int
 	NumberOfFailedExamples  int
-	RunTime                 float64
-
-	RandomSeed           int
-	RandomizeAllExamples bool
+	RunTime                 time.Duration
 }
 
 type ExampleSummary struct {
-	String   string
-	Location CodeLocation
+	ComponentTexts         []string
+	ComponentCodeLocations []CodeLocation
 
-	State                ExampleState
-	Components           []*ExampleComponent
-	FailedComponentIndex uint
-	Runtime              float64
-	FailureMessage       string
+	State   ExampleState
+	RunTime time.Duration
+	Failure ExampleFailure
 }
 
 type CodeLocation struct {
@@ -42,22 +41,22 @@ type ExampleState uint
 const (
 	ExampleStateInvalid ExampleState = iota
 
-	ExampleStatePending //Example has been marked as pending
-	ExampleStateSkip    //Example will be skipped because other examples are focused
-
-	ExampleStateWillRun //Example will be part of this spec suite
-
-	ExampleStatePassed   // Example passed
-	ExampleStateFailed   // Example failed
-	ExampleStatePanicked // Example panicked
-	ExampleStateTimedOut // Example timed out
+	ExampleStatePending
+	ExampleStateSkip
+	ExampleStatePassed
+	ExampleStateFailed
+	ExampleStatePanicked
+	ExampleStateTimedOut
 )
 
-type ExampleComponent struct {
-	Name          string
-	ComponentType ExampleComponentType
-	Location      CodeLocation
-	Runtime       float64
+type ExampleFailure struct {
+	Message        string
+	Location       CodeLocation
+	ForwardedPanic interface{}
+
+	ComponentIndex        int
+	ComponentType         ExampleComponentType
+	ComponentCodeLocation CodeLocation
 }
 
 type ExampleComponentType uint
@@ -65,8 +64,6 @@ type ExampleComponentType uint
 const (
 	ExampleComponentTypeInvalid ExampleComponentType = iota
 
-	ExampleComponentTypeDescribe
-	ExampleComponentTypeContext
 	ExampleComponentTypeBeforeEach
 	ExampleComponentTypeJustBeforeEach
 	ExampleComponentTypeAfterEach
