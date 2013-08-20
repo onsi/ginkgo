@@ -117,17 +117,17 @@ func (ex *example) summary() *ExampleSummary {
 	componentTexts := make([]string, len(ex.containers)+1)
 	componentCodeLocations := make([]CodeLocation, len(ex.containers)+1)
 
-	for _, container := range ex.containers {
-		componentTexts = append(componentTexts, container.text)
-		componentCodeLocations = append(componentCodeLocations, container.codeLocation)
+	for i, container := range ex.containers {
+		componentTexts[i] = container.text
+		componentCodeLocations[i] = container.codeLocation
 	}
 
-	componentTexts = append(componentTexts, ex.it.text)
-	componentCodeLocations = append(componentCodeLocations, ex.it.codeLocation)
+	componentTexts[len(ex.containers)] = ex.it.text
+	componentCodeLocations[len(ex.containers)] = ex.it.codeLocation
 
 	var state ExampleState
 	if ex.skipped {
-		state = ExampleStateSkip
+		state = ExampleStateSkipped
 	} else if ex.flag == flagTypePending {
 		state = ExampleStatePending
 	} else if ex.outcome == runOutcomeFailed {

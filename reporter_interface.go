@@ -14,12 +14,13 @@ type Reporter interface {
 type SuiteSummary struct {
 	SuiteDescription string
 
-	NumberOfTotalExamples   int
-	NumberOfPendingExamples int
-	NumberOfSkippedExamples int
-	NumberOfPassedExamples  int
-	NumberOfFailedExamples  int
-	RunTime                 time.Duration
+	NumberOfTotalExamples         int
+	NumberOfExamplesThatWillBeRun int
+	NumberOfPendingExamples       int
+	NumberOfSkippedExamples       int
+	NumberOfPassedExamples        int
+	NumberOfFailedExamples        int
+	RunTime                       time.Duration
 }
 
 type ExampleSummary struct {
@@ -42,7 +43,7 @@ const (
 	ExampleStateInvalid ExampleState = iota
 
 	ExampleStatePending
-	ExampleStateSkip
+	ExampleStateSkipped
 	ExampleStatePassed
 	ExampleStateFailed
 	ExampleStatePanicked

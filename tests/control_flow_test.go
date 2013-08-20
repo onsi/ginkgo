@@ -29,6 +29,12 @@ func init() {
 			}()
 		})
 
+		PIt("should be pending", func() {})
+
+		It("should panic", func() {
+			panic("AAAH!!")
+		})
+
 		Context("When stuff fails", func() {
 			BeforeEach(func(done Done) {
 				go func() {

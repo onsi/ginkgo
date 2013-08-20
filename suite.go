@@ -47,7 +47,7 @@ func (suite *suite) run(t *testing.T, description string, randomSeed int64, rand
 }
 
 func (suite *suite) fail(message string, callerSkip int) {
-	codeLocation, _ := generateCodeLocation(callerSkip + 2)
+	codeLocation, _ := generateCodeLocation(callerSkip + 3)
 	suite.exampleCollection.fail(failureData{
 		message:      message,
 		codeLocation: codeLocation,

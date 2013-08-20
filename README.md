@@ -39,8 +39,9 @@ Todo
 
     - clean up the way fail is propagated
 
+    - reporter should shout about slow tests 
     - ranomization not working?
-    - build out the reporter (fun!)
+    X build out the reporter (fun!)
     - make timeout configurable
     - search for and do: //todo: can we get the code location that threw the panic from within the defer
 

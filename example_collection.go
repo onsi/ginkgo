@@ -104,6 +104,20 @@ func (collection *exampleCollection) numberOfSkippedExamples() (count int) {
 	return
 }
 
+func (collection *exampleCollection) numberOfExamplesThatWillBeRun() (count int) {
+	for _, example := range collection.examples {
+		if collection.hasFocusedTests {
+			if example.flag == flagTypeFocused {
+				count++
+			}
+		} else if example.flag != flagTypePending {
+			count++
+		}
+	}
+
+	return
+}
+
 func (collection *exampleCollection) numberOfPassedExamples() (count int) {
 	for _, example := range collection.examples {
 		if example.outcome == runOutcomePassed {
@@ -130,12 +144,13 @@ func (collection *exampleCollection) reportBeginning() {
 	summary := &SuiteSummary{
 		SuiteDescription: collection.description,
 
-		NumberOfTotalExamples:   len(collection.examples),
-		NumberOfPendingExamples: collection.numberOfPendingExamples(),
-		NumberOfSkippedExamples: collection.numberOfSkippedExamples(),
-		NumberOfPassedExamples:  0,
-		NumberOfFailedExamples:  0,
-		RunTime:                 0,
+		NumberOfTotalExamples:         len(collection.examples),
+		NumberOfExamplesThatWillBeRun: collection.numberOfExamplesThatWillBeRun(),
+		NumberOfPendingExamples:       collection.numberOfPendingExamples(),
+		NumberOfSkippedExamples:       collection.numberOfSkippedExamples(),
+		NumberOfPassedExamples:        0,
+		NumberOfFailedExamples:        0,
+		RunTime:                       0,
 	}
 
 	collection.reporter.SpecSuiteWillBegin(summary)
@@ -147,12 +162,13 @@ func (collection *exampleCollection) reportEnding() {
 	summary := &SuiteSummary{
 		SuiteDescription: collection.description,
 
-		NumberOfTotalExamples:   len(collection.examples),
-		NumberOfPendingExamples: collection.numberOfPendingExamples(),
-		NumberOfSkippedExamples: collection.numberOfSkippedExamples(),
-		NumberOfPassedExamples:  collection.numberOfPassedExamples(),
-		NumberOfFailedExamples:  collection.numberOfFailedExamples(),
-		RunTime:                 runTime,
+		NumberOfTotalExamples:         len(collection.examples),
+		NumberOfExamplesThatWillBeRun: collection.numberOfExamplesThatWillBeRun(),
+		NumberOfPendingExamples:       collection.numberOfPendingExamples(),
+		NumberOfSkippedExamples:       collection.numberOfSkippedExamples(),
+		NumberOfPassedExamples:        collection.numberOfPassedExamples(),
+		NumberOfFailedExamples:        collection.numberOfFailedExamples(),
+		RunTime:                       runTime,
 	}
 
 	collection.reporter.SpecSuiteDidEnd(summary)
