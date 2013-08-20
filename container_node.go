@@ -31,6 +31,10 @@ func (node *containerNode) pushContainerNode(container *containerNode) {
 	node.itAndContainerNodes = append(node.itAndContainerNodes, container)
 }
 
+func (node *containerNode) pushItNode(it *itNode) {
+	node.itAndContainerNodes = append(node.itAndContainerNodes, it)
+}
+
 func (node *containerNode) pushBeforeEachNode(beforeEach *beforeEachNode) {
 	node.beforeEachNodes = append(node.beforeEachNodes, beforeEach)
 }

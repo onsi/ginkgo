@@ -21,6 +21,12 @@ const (
 	flagTypeFocused
 )
 
+type failureData struct {
+	message        string
+	codeLocation   CodeLocation
+	forwardedPanic interface{}
+}
+
 type suite struct {
 	topLevelContainer *containerNode
 	currentContainer  *containerNode
@@ -45,7 +51,11 @@ func (suite *suite) run(t *testing.T, description string, randomSeed int64, rand
 }
 
 func (suite *suite) fail(message string, callerSkip int) {
-	//somehow without panicking?
+	codeLocation, _ := generateCodeLocation(callerSkip + 2)
+	panic(failureData{
+		message:      message,
+		codeLocation: codeLocation,
+	})
 }
 
 func (suite *suite) pushContainerNode(text string, body func(), cType containerType, flag flagType, codeLocation CodeLocation) {
@@ -60,8 +70,8 @@ func (suite *suite) pushContainerNode(text string, body func(), cType containerT
 	suite.currentContainer = previousContainer
 }
 
-func (suite *suite) pushExampleNode(text string, body interface{}, flag flagType, codeLocation CodeLocation) {
-
+func (suite *suite) pushItNode(text string, body interface{}, flag flagType, codeLocation CodeLocation) {
+	suite.currentContainer.pushItNode(newItNode(text, body, flag, codeLocation))
 }
 
 func (suite *suite) pushBeforeEachNode(body interface{}, codeLocation CodeLocation) {

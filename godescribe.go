@@ -71,17 +71,17 @@ func PContext(text string, body func()) {
 
 func It(text string, body interface{}) {
 	codeLocation, _ := generateCodeLocation(2)
-	globalSuite.pushExampleNode(text, body, flagTypeNone, codeLocation)
+	globalSuite.pushItNode(text, body, flagTypeNone, codeLocation)
 }
 
 func FIt(text string, body interface{}) {
 	codeLocation, _ := generateCodeLocation(2)
-	globalSuite.pushExampleNode(text, body, flagTypeFocused, codeLocation)
+	globalSuite.pushItNode(text, body, flagTypeFocused, codeLocation)
 }
 
 func PIt(text string, body interface{}) {
 	codeLocation, _ := generateCodeLocation(2)
-	globalSuite.pushExampleNode(text, body, flagTypePending, codeLocation)
+	globalSuite.pushItNode(text, body, flagTypePending, codeLocation)
 }
 
 func BeforeEach(body interface{}) {

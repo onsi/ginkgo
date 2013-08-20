@@ -47,9 +47,10 @@ const (
 
 	ExampleStateWillRun //Example will be part of this spec suite
 
-	ExampleStatePass   // Example passed
-	ExampleStateFail   // Example failed
-	ExampleStatePanick // Example panicked
+	ExampleStatePassed   // Example passed
+	ExampleStateFailed   // Example failed
+	ExampleStatePanicked // Example panicked
+	ExampleStateTimedOut // Example timed out
 )
 
 type ExampleComponent struct {
