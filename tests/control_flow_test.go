@@ -29,6 +29,16 @@ func init() {
 			}()
 		})
 
+		It("should timeout", func(done Done) {
+			go func() {
+				time.Sleep(10 * time.Second)
+				if a != 5 {
+					Fail("Wanted 5!")
+				}
+				done <- true
+			}()
+		})
+
 		PIt("should be pending", func() {})
 
 		It("should panic", func() {

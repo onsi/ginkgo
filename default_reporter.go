@@ -25,6 +25,7 @@ const boldStyle = "\x1b[1m"
 const redColor = "\x1b[91m"
 const greenColor = "\x1b[32m"
 const yellowColor = "\x1b[33m"
+const blueColor = "\x1b[94m"
 const cyanColor = "\x1b[36m"
 const grayColor = "\x1b[90m"
 
@@ -114,6 +115,15 @@ func (reporter *defaultReporter) ExampleDidComplete(exampleSummary *ExampleSumma
 	} else if exampleSummary.State == ExampleStateSkipped {
 		fmt.Print(reporter.colorize(cyanColor, "S"))
 		reporter.lastExampleFailed = false
+	} else if exampleSummary.State == ExampleStateTimedOut {
+		if !reporter.lastExampleFailed {
+			fmt.Println("")
+			reporter.printErrorDelimiter()
+		}
+		fmt.Print(reporter.colorize(redColor+boldStyle, "•... Timeout [%.3f seconds]\n", exampleSummary.RunTime.Seconds()))
+		reporter.lastExampleFailed = true
+		reporter.printFailure(exampleSummary)
+		reporter.printErrorDelimiter()
 	} else if exampleSummary.State == ExampleStatePanicked {
 		if !reporter.lastExampleFailed {
 			fmt.Println("")

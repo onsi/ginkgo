@@ -130,7 +130,7 @@ func (collection *exampleCollection) numberOfPassedExamples() (count int) {
 
 func (collection *exampleCollection) numberOfFailedExamples() (count int) {
 	for _, example := range collection.examples {
-		if example.outcome != runOutcomePassed {
+		if example.outcome == runOutcomeFailed || example.outcome == runOutcomeTimedOut || example.outcome == runOutcomePanicked {
 			count++
 		}
 	}
