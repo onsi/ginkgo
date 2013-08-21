@@ -32,6 +32,10 @@ type ExampleSummary struct {
 	Failure ExampleFailure
 }
 
+func (summary ExampleSummary) didFail() bool {
+	return summary.State >= ExampleStateFailed
+}
+
 type CodeLocation struct {
 	FileName   string
 	LineNumber int

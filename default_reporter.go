@@ -65,7 +65,12 @@ func (reporter *defaultReporter) SpecSuiteWillBegin(summary *SuiteSummary) {
 	fmt.Println("")
 }
 
-func (reporter *defaultReporter) printFailure(exampleSummary *ExampleSummary) {
+func (reporter *defaultReporter) printFailure(message string, exampleSummary *ExampleSummary) {
+	if !reporter.lastExampleFailed {
+		fmt.Println("")
+		reporter.printErrorDelimiter()
+	}
+	fmt.Print(reporter.colorize(redColor+boldStyle, "%s [%.3f seconds]\n", message, exampleSummary.RunTime.Seconds()))
 	for i := 1; i < len(exampleSummary.ComponentTexts); i++ {
 		padding := strings.Repeat("  ", i-1)
 		if i == exampleSummary.Failure.ComponentIndex {
@@ -99,6 +104,7 @@ func (reporter *defaultReporter) printFailure(exampleSummary *ExampleSummary) {
 	}
 
 	fmt.Printf("%s%s\n", padding, exampleSummary.Failure.Location)
+	reporter.printErrorDelimiter()
 }
 
 func (reporter *defaultReporter) printErrorDelimiter() {
@@ -108,41 +114,18 @@ func (reporter *defaultReporter) printErrorDelimiter() {
 func (reporter *defaultReporter) ExampleDidComplete(exampleSummary *ExampleSummary) {
 	if exampleSummary.State == ExampleStatePassed {
 		fmt.Print(reporter.colorize(greenColor, "•"))
-		reporter.lastExampleFailed = false
 	} else if exampleSummary.State == ExampleStatePending {
 		fmt.Print(reporter.colorize(yellowColor, "P"))
-		reporter.lastExampleFailed = false
 	} else if exampleSummary.State == ExampleStateSkipped {
 		fmt.Print(reporter.colorize(cyanColor, "S"))
-		reporter.lastExampleFailed = false
 	} else if exampleSummary.State == ExampleStateTimedOut {
-		if !reporter.lastExampleFailed {
-			fmt.Println("")
-			reporter.printErrorDelimiter()
-		}
-		fmt.Print(reporter.colorize(redColor+boldStyle, "•... Timeout [%.3f seconds]\n", exampleSummary.RunTime.Seconds()))
-		reporter.lastExampleFailed = true
-		reporter.printFailure(exampleSummary)
-		reporter.printErrorDelimiter()
+		reporter.printFailure("•... Timeout", exampleSummary)
 	} else if exampleSummary.State == ExampleStatePanicked {
-		if !reporter.lastExampleFailed {
-			fmt.Println("")
-			reporter.printErrorDelimiter()
-		}
-		fmt.Print(reporter.colorize(redColor+boldStyle, "•! Panic [%.3f seconds]\n", exampleSummary.RunTime.Seconds()))
-		reporter.lastExampleFailed = true
-		reporter.printFailure(exampleSummary)
-		reporter.printErrorDelimiter()
+		reporter.printFailure("•! Panic", exampleSummary)
 	} else if exampleSummary.State == ExampleStateFailed {
-		if !reporter.lastExampleFailed {
-			fmt.Println("")
-			reporter.printErrorDelimiter()
-		}
-		fmt.Print(reporter.colorize(redColor+boldStyle, "• Failure [%.3f seconds]\n", exampleSummary.RunTime.Seconds()))
-		reporter.lastExampleFailed = true
-		reporter.printFailure(exampleSummary)
-		reporter.printErrorDelimiter()
+		reporter.printFailure("• Failure", exampleSummary)
 	}
+	reporter.lastExampleFailed = exampleSummary.didFail()
 }
 
 func (reporter *defaultReporter) SpecSuiteDidEnd(summary *SuiteSummary) {
