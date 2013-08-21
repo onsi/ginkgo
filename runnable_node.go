@@ -64,7 +64,7 @@ func (runnable *runnableNode) run() (outcome runOutcome, failure failureData) {
 			outcome = runOutcomePanicked
 			failure = failureData{
 				message:        "Test Panicked",
-				codeLocation:   runnable.codeLocation, //todo: can we get the code location that threw the panic from within the defer
+				codeLocation:   runnable.codeLocation,
 				forwardedPanic: e,
 			}
 		}

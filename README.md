@@ -19,33 +19,23 @@ Todo
                X tells containers to run bef, then run jbef, then runs it, then run aft (backwards)
                X each of these returns:
                    pass/fail/panic, err message, err codeLocation, failedComponent codeLocation
-       - example report is (modify reporter_interface.go):
-           - [d,d,c,d,c,d,i] (texts)
-           - [cL, cL, etc...]
-           - state is pass/fail/panic/pending/skip/willRun
-           - run time
-           - failure object:
-               - failure message ({}instance?)
-               - failureContainerIndex
-               - failureCodeLocation
-               - failureComponentType (bef/aft/jbef/it)
-               - failureComponentCodeLocation
 
     X randomize the examples
-        - by top-level node
-        - all
+        X by top-level node
+        X all
 
     X report to the reporter
-
-    - clean up the way fail is propagated
 
     X reporter should shout about slow tests 
     X randomization not working?
     X build out the reporter (fun!)
+
+    - should see top level group *if* there's a failure there.  Call it [toplevel].  If no failure there, don't show it.
+    - Pending and Focused should play nice.  in particular, we should know if a focused spec is pending or not.  that'll take some work.
+    - in reporter, pull out padding stuff into a helper method that takes an indentation level, a max-width, and a string.  all reporting should go through this method to make sure we have a nice constant width report.  similarly, the dots should wrap after that width
     - make timeout configurable
-    - search for and do: //todo: can we get the code location that threw the panic from within the defer
-
-
+    - clean up the way fail is propagated
+    - add beacoup tests!
 
 - Gomega:
     - Gomega bootstrap

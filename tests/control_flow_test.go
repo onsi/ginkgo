@@ -1,6 +1,7 @@
 package gospec_tests
 
 import (
+	"fmt"
 	. "github.com/onsi/godescribe"
 	"time"
 )
@@ -8,9 +9,14 @@ import (
 func init() {
 	Describe("A test", func() {
 		var a int
+		var b string
 
 		BeforeEach(func() {
 			a = 5
+		})
+
+		JustBeforeEach(func() {
+			b = fmt.Sprintf("%d", a)
 		})
 
 		It("should pass", func() {
@@ -20,6 +26,12 @@ func init() {
 		})
 
 		It("even if its empty", func() {})
+
+		It("should have just before eaches", func() {
+			if b != "5" {
+				Fail("Wanted 5!")
+			}
+		})
 
 		It("should pass (eventually)", func(done Done) {
 			go func() {
@@ -62,6 +74,12 @@ func init() {
 					a = 4
 					done <- true
 				}()
+			})
+
+			It("should have just before eaches", func() {
+				if b != "4" {
+					Fail("Wanted 5!")
+				}
 			})
 
 			It("should fail", func() {

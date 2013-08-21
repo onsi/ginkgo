@@ -19,7 +19,7 @@ func init() {
 }
 
 func RunSpecs(t *testing.T, description string) {
-	reporter := newDefaultReporter(*reporterNoColor, *reporterSlowSpecThreshold) //todo: color and slow threshold args
+	reporter := newDefaultReporter(*reporterNoColor, *reporterSlowSpecThreshold)
 	RunSpecsWithCustomReporter(t, description, reporter)
 }
 
