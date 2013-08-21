@@ -45,6 +45,14 @@ func init() {
 			panic("AAAH!!")
 		})
 
+		Context("Afters too, and they can fail", func() {
+			It("should be fine until its not", func() {})
+
+			AfterEach(func() {
+				Fail("Oops!")
+			})
+		})
+
 		Context("When stuff fails", func() {
 			BeforeEach(func(done Done) {
 				go func() {
