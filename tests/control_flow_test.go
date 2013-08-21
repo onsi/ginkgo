@@ -19,6 +19,8 @@ func init() {
 			}
 		})
 
+		It("even if its empty", func() {})
+
 		It("should pass (eventually)", func(done Done) {
 			go func() {
 				time.Sleep(1 * time.Second)
