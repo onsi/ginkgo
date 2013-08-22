@@ -30,6 +30,7 @@ Todo
     X randomization not working?
     X build out the reporter (fun!)
 
+    - really need the whole stack trace actually...
     - should see top level group *if* there's a failure there.  Call it [toplevel].  If no failure there, don't show it.
     - Pending and Focused should play nice.  in particular, we should know if a focused spec is pending or not.  that'll take some work.
     - in reporter, pull out padding stuff into a helper method that takes an indentation level, a max-width, and a string.  all reporting should go through this method to make sure we have a nice constant width report.  similarly, the dots should wrap after that width

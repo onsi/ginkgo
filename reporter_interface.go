@@ -32,11 +32,6 @@ type ExampleSummary struct {
 	Failure ExampleFailure
 }
 
-type CodeLocation struct {
-	FileName   string
-	LineNumber int
-}
-
 type ExampleState uint
 
 const (

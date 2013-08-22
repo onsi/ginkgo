@@ -39,62 +39,74 @@ func Fail(message string, callerSkip ...int) {
 
 //These all just call (private) methods on the global suite
 
-func Describe(text string, body func()) {
+func Describe(text string, body func()) bool {
 	codeLocation, _ := generateCodeLocation(2)
 	globalSuite.pushContainerNode(text, body, flagTypeNone, codeLocation)
+	return true
 }
 
-func FDescribe(text string, body func()) {
+func FDescribe(text string, body func()) bool {
 	codeLocation, _ := generateCodeLocation(2)
 	globalSuite.pushContainerNode(text, body, flagTypeFocused, codeLocation)
+	return true
 }
 
-func PDescribe(text string, body func()) {
+func PDescribe(text string, body func()) bool {
 	codeLocation, _ := generateCodeLocation(2)
 	globalSuite.pushContainerNode(text, body, flagTypePending, codeLocation)
+	return true
 }
 
-func Context(text string, body func()) {
+func Context(text string, body func()) bool {
 	codeLocation, _ := generateCodeLocation(2)
 	globalSuite.pushContainerNode(text, body, flagTypeNone, codeLocation)
+	return true
 }
 
-func FContext(text string, body func()) {
+func FContext(text string, body func()) bool {
 	codeLocation, _ := generateCodeLocation(2)
 	globalSuite.pushContainerNode(text, body, flagTypeFocused, codeLocation)
+	return true
 }
 
-func PContext(text string, body func()) {
+func PContext(text string, body func()) bool {
 	codeLocation, _ := generateCodeLocation(2)
 	globalSuite.pushContainerNode(text, body, flagTypePending, codeLocation)
+	return true
 }
 
-func It(text string, body interface{}) {
+func It(text string, body interface{}) bool {
 	codeLocation, _ := generateCodeLocation(2)
 	globalSuite.pushItNode(text, body, flagTypeNone, codeLocation)
+	return true
 }
 
-func FIt(text string, body interface{}) {
+func FIt(text string, body interface{}) bool {
 	codeLocation, _ := generateCodeLocation(2)
 	globalSuite.pushItNode(text, body, flagTypeFocused, codeLocation)
+	return true
 }
 
-func PIt(text string, body interface{}) {
+func PIt(text string, body interface{}) bool {
 	codeLocation, _ := generateCodeLocation(2)
 	globalSuite.pushItNode(text, body, flagTypePending, codeLocation)
+	return true
 }
 
-func BeforeEach(body interface{}) {
+func BeforeEach(body interface{}) bool {
 	codeLocation, _ := generateCodeLocation(2)
 	globalSuite.pushBeforeEachNode(body, codeLocation)
+	return true
 }
 
-func JustBeforeEach(body interface{}) {
+func JustBeforeEach(body interface{}) bool {
 	codeLocation, _ := generateCodeLocation(2)
 	globalSuite.pushJustBeforeEachNode(body, codeLocation)
+	return true
 }
 
-func AfterEach(body interface{}) {
+func AfterEach(body interface{}) bool {
 	codeLocation, _ := generateCodeLocation(2)
 	globalSuite.pushAfterEachNode(body, codeLocation)
+	return true
 }
