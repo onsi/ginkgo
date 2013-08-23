@@ -3,6 +3,7 @@ package ginkgo
 import (
 	"math/rand"
 	"testing"
+	"time"
 )
 
 type flagType uint
@@ -66,18 +67,18 @@ func (suite *suite) pushContainerNode(text string, body func(), flag flagType, c
 	suite.currentContainer = previousContainer
 }
 
-func (suite *suite) pushItNode(text string, body interface{}, flag flagType, codeLocation CodeLocation) {
-	suite.currentContainer.pushItNode(newItNode(text, body, flag, codeLocation))
+func (suite *suite) pushItNode(text string, body interface{}, flag flagType, codeLocation CodeLocation, timeout time.Duration) {
+	suite.currentContainer.pushItNode(newItNode(text, body, flag, codeLocation, timeout))
 }
 
-func (suite *suite) pushBeforeEachNode(body interface{}, codeLocation CodeLocation) {
-	suite.currentContainer.pushBeforeEachNode(newRunnableNode(body, codeLocation))
+func (suite *suite) pushBeforeEachNode(body interface{}, codeLocation CodeLocation, timeout time.Duration) {
+	suite.currentContainer.pushBeforeEachNode(newRunnableNode(body, codeLocation, timeout))
 }
 
-func (suite *suite) pushJustBeforeEachNode(body interface{}, codeLocation CodeLocation) {
-	suite.currentContainer.pushJustBeforeEachNode(newRunnableNode(body, codeLocation))
+func (suite *suite) pushJustBeforeEachNode(body interface{}, codeLocation CodeLocation, timeout time.Duration) {
+	suite.currentContainer.pushJustBeforeEachNode(newRunnableNode(body, codeLocation, timeout))
 }
 
-func (suite *suite) pushAfterEachNode(body interface{}, codeLocation CodeLocation) {
-	suite.currentContainer.pushAfterEachNode(newRunnableNode(body, codeLocation))
+func (suite *suite) pushAfterEachNode(body interface{}, codeLocation CodeLocation, timeout time.Duration) {
+	suite.currentContainer.pushAfterEachNode(newRunnableNode(body, codeLocation, timeout))
 }

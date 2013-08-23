@@ -84,44 +84,52 @@ func XContext(text string, body func()) bool {
 	return true
 }
 
-func It(text string, body interface{}) bool {
+func It(text string, body interface{}, timeout ...float64) bool {
 	codeLocation, _ := generateCodeLocation(2)
-	globalSuite.pushItNode(text, body, flagTypeNone, codeLocation)
+	globalSuite.pushItNode(text, body, flagTypeNone, codeLocation, parseTimeout(timeout...))
 	return true
 }
 
-func FIt(text string, body interface{}) bool {
+func FIt(text string, body interface{}, timeout ...float64) bool {
 	codeLocation, _ := generateCodeLocation(2)
-	globalSuite.pushItNode(text, body, flagTypeFocused, codeLocation)
+	globalSuite.pushItNode(text, body, flagTypeFocused, codeLocation, parseTimeout(timeout...))
 	return true
 }
 
-func PIt(text string, body interface{}) bool {
+func PIt(text string, body interface{}, timeout ...float64) bool {
 	codeLocation, _ := generateCodeLocation(2)
-	globalSuite.pushItNode(text, body, flagTypePending, codeLocation)
+	globalSuite.pushItNode(text, body, flagTypePending, codeLocation, parseTimeout(timeout...))
 	return true
 }
 
-func XIt(text string, body interface{}) bool {
+func XIt(text string, body interface{}, timeout ...float64) bool {
 	codeLocation, _ := generateCodeLocation(2)
-	globalSuite.pushItNode(text, body, flagTypePending, codeLocation)
+	globalSuite.pushItNode(text, body, flagTypePending, codeLocation, parseTimeout(timeout...))
 	return true
 }
 
-func BeforeEach(body interface{}) bool {
+func BeforeEach(body interface{}, timeout ...float64) bool {
 	codeLocation, _ := generateCodeLocation(2)
-	globalSuite.pushBeforeEachNode(body, codeLocation)
+	globalSuite.pushBeforeEachNode(body, codeLocation, parseTimeout(timeout...))
 	return true
 }
 
-func JustBeforeEach(body interface{}) bool {
+func JustBeforeEach(body interface{}, timeout ...float64) bool {
 	codeLocation, _ := generateCodeLocation(2)
-	globalSuite.pushJustBeforeEachNode(body, codeLocation)
+	globalSuite.pushJustBeforeEachNode(body, codeLocation, parseTimeout(timeout...))
 	return true
 }
 
-func AfterEach(body interface{}) bool {
+func AfterEach(body interface{}, timeout ...float64) bool {
 	codeLocation, _ := generateCodeLocation(2)
-	globalSuite.pushAfterEachNode(body, codeLocation)
+	globalSuite.pushAfterEachNode(body, codeLocation, parseTimeout(timeout...))
 	return true
+}
+
+func parseTimeout(timeout ...float64) time.Duration {
+	if len(timeout) == 0 {
+		return time.Duration(5 * time.Second)
+	} else {
+		return time.Duration(timeout[0] * float64(time.Second))
+	}
 }

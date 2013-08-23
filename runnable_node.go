@@ -24,7 +24,7 @@ type runnableNode struct {
 	timeoutThreshold time.Duration
 }
 
-func newRunnableNode(body interface{}, codeLocation CodeLocation) *runnableNode {
+func newRunnableNode(body interface{}, codeLocation CodeLocation, timeout time.Duration) *runnableNode {
 	bodyType := reflect.TypeOf(body)
 	if bodyType.Kind() != reflect.Func {
 		panic(fmt.Sprintf("Expected a function but got something else at %v", codeLocation))
@@ -37,7 +37,7 @@ func newRunnableNode(body interface{}, codeLocation CodeLocation) *runnableNode 
 			asyncFunc:        nil,
 			syncFunc:         body.(func()),
 			codeLocation:     codeLocation,
-			timeoutThreshold: 5.0 * time.Second,
+			timeoutThreshold: timeout,
 		}
 	case 1:
 		if bodyType.In(0) != reflect.TypeOf((*Done)(nil)).Elem() {
@@ -49,7 +49,7 @@ func newRunnableNode(body interface{}, codeLocation CodeLocation) *runnableNode 
 			asyncFunc:        body.(func(Done)),
 			syncFunc:         nil,
 			codeLocation:     codeLocation,
-			timeoutThreshold: 5.0 * time.Second,
+			timeoutThreshold: timeout,
 		}
 	}
 
@@ -99,9 +99,9 @@ type itNode struct {
 	text string
 }
 
-func newItNode(text string, body interface{}, flag flagType, codeLocation CodeLocation) *itNode {
+func newItNode(text string, body interface{}, flag flagType, codeLocation CodeLocation, timeout time.Duration) *itNode {
 	return &itNode{
-		runnableNode: newRunnableNode(body, codeLocation),
+		runnableNode: newRunnableNode(body, codeLocation, timeout),
 		flag:         flag,
 		text:         text,
 	}
