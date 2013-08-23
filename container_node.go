@@ -1,4 +1,4 @@
-package godescribe
+package ginkgo
 
 import (
 	"math/rand"

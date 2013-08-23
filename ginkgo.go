@@ -1,4 +1,4 @@
-package godescribe
+package ginkgo
 
 import (
 	"flag"
@@ -7,14 +7,13 @@ import (
 )
 
 var suiteRandomSeed = flag.Int64("seed", time.Now().Unix(), "The seed used to randomize the spec suite.")
-var suiteRandomizeAllSpecs = flag.Bool("randomizeAllSpecs", false, "If set, godescribe will randomize all specs together.  By default, godescribe only randomizes the top level Describe/Context groups.")
+var suiteRandomizeAllSpecs = flag.Bool("randomizeAllSpecs", false, "If set, ginkgo will randomize all specs together.  By default, ginkgo only randomizes the top level Describe/Context groups.")
 var reporterNoColor = flag.Bool("noColor", false, "If set, suppress color output in default reporter.")
 var reporterSlowSpecThreshold = flag.Float64("slowSpecThreshold", 5.0, "(in seconds) Specs that take longer to run than this threshold are flagged as slow by the default reporter (default: 5 seconds).")
 
 var globalSuite *suite
 
 func init() {
-	//set up the global suite
 	globalSuite = newSuite()
 }
 
@@ -27,7 +26,7 @@ func RunSpecsWithCustomReporter(t *testing.T, description string, reporter Repor
 	globalSuite.run(t, description, *suiteRandomSeed, *suiteRandomizeAllSpecs, reporter)
 }
 
-type Done chan<- interface{} //channel for async callbacks
+type Done chan<- interface{}
 
 func Fail(message string, callerSkip ...int) {
 	skip := 0
@@ -36,8 +35,6 @@ func Fail(message string, callerSkip ...int) {
 	}
 	globalSuite.fail(message, skip)
 }
-
-//These all just call (private) methods on the global suite
 
 func Describe(text string, body func()) bool {
 	codeLocation, _ := generateCodeLocation(2)
