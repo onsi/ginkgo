@@ -189,13 +189,14 @@ func (reporter *defaultReporter) printFailure(message string, exampleSummary *Ex
 	reporter.printNewLine()
 	if exampleSummary.State == ExampleStatePanicked {
 		reporter.println(indentation, reporter.colorize(redColor+boldStyle, exampleSummary.Failure.Message))
-		reporter.println(indentation, reporter.colorize(redColor, "> %s", exampleSummary.Failure.ForwardedPanic))
+		reporter.println(indentation, reporter.colorize(redColor, "%s", exampleSummary.Failure.ForwardedPanic))
 		reporter.println(indentation, exampleSummary.Failure.Location.String())
 		reporter.printNewLine()
 		reporter.println(indentation, reporter.colorize(redColor, "Full Stack Trace"))
 		reporter.println(indentation, exampleSummary.Failure.Location.FullStackTrace)
 	} else {
-		reporter.println(indentation, reporter.colorize(redColor, "> %s", exampleSummary.Failure.Message))
+		reporter.println(indentation, reporter.colorize(redColor, exampleSummary.Failure.Message))
+		reporter.printNewLine()
 		reporter.println(indentation, exampleSummary.Failure.Location.String())
 	}
 
