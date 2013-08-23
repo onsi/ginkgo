@@ -62,9 +62,10 @@ func (runnable *runnableNode) run() (outcome runOutcome, failure failureData) {
 	defer func() {
 		if e := recover(); e != nil {
 			outcome = runOutcomePanicked
+			codeLocation, _ := generateCodeLocation(3)
 			failure = failureData{
 				message:        "Test Panicked",
-				codeLocation:   runnable.codeLocation,
+				codeLocation:   codeLocation,
 				forwardedPanic: e,
 			}
 		}

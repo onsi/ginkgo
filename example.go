@@ -5,8 +5,9 @@ import (
 )
 
 type example struct {
-	it   *itNode
-	flag flagType
+	it             *itNode
+	hasPendingFlag bool
+	hasFocusFlag   bool
 
 	containers []*containerNode
 	skipped    bool
@@ -19,15 +20,18 @@ type example struct {
 
 func newExample(it *itNode) *example {
 	return &example{
-		it:   it,
-		flag: it.flag,
+		it:             it,
+		hasPendingFlag: it.flag == flagTypePending,
+		hasFocusFlag:   it.flag == flagTypeFocused,
 	}
 }
 
 func (ex *example) addContainerNode(container *containerNode) {
 	ex.containers = append([]*containerNode{container}, ex.containers...)
-	if container.flag > ex.flag {
-		ex.flag = container.flag
+	if container.flag == flagTypeFocused {
+		ex.hasFocusFlag = true
+	} else if container.flag == flagTypePending {
+		ex.hasPendingFlag = true
 	}
 }
 
@@ -128,7 +132,7 @@ func (ex *example) summary() *ExampleSummary {
 	var state ExampleState
 	if ex.skipped {
 		state = ExampleStateSkipped
-	} else if ex.flag == flagTypePending {
+	} else if ex.hasPendingFlag {
 		state = ExampleStatePending
 	} else if ex.outcome == runOutcomeFailed {
 		state = ExampleStateFailed

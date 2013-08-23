@@ -19,7 +19,7 @@ type exampleCollection struct {
 func newExampleCollection(t *testing.T, description string, examples []*example, reporter Reporter) *exampleCollection {
 	hasFocusedTests := false
 	for _, example := range examples {
-		if example.flag == flagTypeFocused {
+		if example.hasFocusFlag {
 			hasFocusedTests = true
 			break
 		}
@@ -50,14 +50,16 @@ func (collection *exampleCollection) run() {
 
 	for _, example := range collection.examples {
 		if collection.hasFocusedTests {
-			if example.flag == flagTypeFocused {
-				collection.runningExample = example
-				collection.runningExample.run()
+			if example.hasFocusFlag {
+				if !example.hasPendingFlag {
+					collection.runningExample = example
+					collection.runningExample.run()
+				}
 			} else {
 				example.skip()
 			}
 		} else {
-			if example.flag != flagTypePending {
+			if !example.hasPendingFlag {
 				collection.runningExample = example
 				collection.runningExample.run()
 			}
@@ -82,7 +84,11 @@ func (collection *exampleCollection) fail(failure failureData) {
 
 func (collection *exampleCollection) numberOfPendingExamples() (count int) {
 	for _, example := range collection.examples {
-		if example.flag == flagTypePending {
+		if collection.hasFocusedTests {
+			if example.hasPendingFlag && example.hasFocusFlag {
+				count++
+			}
+		} else if example.hasPendingFlag {
 			count++
 		}
 	}
@@ -96,7 +102,7 @@ func (collection *exampleCollection) numberOfSkippedExamples() (count int) {
 	}
 
 	for _, example := range collection.examples {
-		if example.flag != flagTypeFocused {
+		if !example.hasFocusFlag {
 			count++
 		}
 	}
@@ -107,10 +113,10 @@ func (collection *exampleCollection) numberOfSkippedExamples() (count int) {
 func (collection *exampleCollection) numberOfExamplesThatWillBeRun() (count int) {
 	for _, example := range collection.examples {
 		if collection.hasFocusedTests {
-			if example.flag == flagTypeFocused {
+			if example.hasFocusFlag && !example.hasPendingFlag {
 				count++
 			}
-		} else if example.flag != flagTypePending {
+		} else if !example.hasPendingFlag {
 			count++
 		}
 	}

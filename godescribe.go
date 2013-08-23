@@ -57,6 +57,12 @@ func PDescribe(text string, body func()) bool {
 	return true
 }
 
+func XDescribe(text string, body func()) bool {
+	codeLocation, _ := generateCodeLocation(2)
+	globalSuite.pushContainerNode(text, body, flagTypePending, codeLocation)
+	return true
+}
+
 func Context(text string, body func()) bool {
 	codeLocation, _ := generateCodeLocation(2)
 	globalSuite.pushContainerNode(text, body, flagTypeNone, codeLocation)
@@ -75,6 +81,12 @@ func PContext(text string, body func()) bool {
 	return true
 }
 
+func XContext(text string, body func()) bool {
+	codeLocation, _ := generateCodeLocation(2)
+	globalSuite.pushContainerNode(text, body, flagTypePending, codeLocation)
+	return true
+}
+
 func It(text string, body interface{}) bool {
 	codeLocation, _ := generateCodeLocation(2)
 	globalSuite.pushItNode(text, body, flagTypeNone, codeLocation)
@@ -88,6 +100,12 @@ func FIt(text string, body interface{}) bool {
 }
 
 func PIt(text string, body interface{}) bool {
+	codeLocation, _ := generateCodeLocation(2)
+	globalSuite.pushItNode(text, body, flagTypePending, codeLocation)
+	return true
+}
+
+func XIt(text string, body interface{}) bool {
 	codeLocation, _ := generateCodeLocation(2)
 	globalSuite.pushItNode(text, body, flagTypePending, codeLocation)
 	return true

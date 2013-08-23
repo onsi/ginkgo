@@ -76,7 +76,7 @@ func init() {
 				}()
 			})
 
-			It("should have just before eaches", func() {
+			PIt("should have just before eaches", func() {
 				if b != "4" {
 					Fail("Wanted 5!")
 				}

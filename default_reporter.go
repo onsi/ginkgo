@@ -163,11 +163,15 @@ func (reporter *defaultReporter) printFailure(message string, exampleSummary *Ex
 	if exampleSummary.State == ExampleStatePanicked {
 		fmt.Println(reporter.colorize(redColor+boldStyle, "%s%s", padding, exampleSummary.Failure.Message))
 		fmt.Println(reporter.colorize(redColor, "%s> %s", padding, exampleSummary.Failure.ForwardedPanic))
+		fmt.Printf("%s%s\n", padding, exampleSummary.Failure.Location)
+		fmt.Println("")
+		fmt.Println(reporter.colorize(redColor, "%sFull Stack Trace", padding))
+		fmt.Printf("%s> %s\n", padding, exampleSummary.Failure.Location.FullStackTrace)
 	} else {
 		fmt.Println(reporter.colorize(redColor, "%s> %s", padding, exampleSummary.Failure.Message))
+		fmt.Printf("%s%s\n", padding, exampleSummary.Failure.Location)
 	}
 
-	fmt.Printf("%s%s\n", padding, exampleSummary.Failure.Location)
 	reporter.printDelimiter()
 	reporter.lastExampleWasABlock = true
 }
