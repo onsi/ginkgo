@@ -38,9 +38,37 @@ func (reporter *defaultReporter) colorize(colorCode string, format string, args 
 	}
 }
 
-func (reporter *defaultReporter) banner(s string, bannerCharacter string) {
+func (reporter *defaultReporter) printBanner(s string, bannerCharacter string) {
 	fmt.Println(s)
 	fmt.Println(strings.Repeat(bannerCharacter, len(s)))
+}
+
+func (reporter *defaultReporter) printNewLine() {
+	fmt.Println("")
+}
+
+func (reporter *defaultReporter) printDelimiter() {
+	fmt.Println(reporter.colorize(grayColor, "%s", strings.Repeat("-", 30)))
+}
+
+func (reporter *defaultReporter) indent(indentation int, format string, args ...interface{}) string {
+	text := fmt.Sprintf(format, args...)
+
+	stringArray := strings.Split(text, "\n")
+	padding := strings.Repeat("  ", indentation)
+	for i, s := range stringArray {
+		stringArray[i] = fmt.Sprintf("%s%s", padding, s)
+	}
+
+	return strings.Join(stringArray, "\n")
+}
+
+func (reporter *defaultReporter) print(indentation int, format string, args ...interface{}) {
+	fmt.Print(reporter.indent(indentation, format, args...))
+}
+
+func (reporter *defaultReporter) println(indentation int, format string, args ...interface{}) {
+	fmt.Println(reporter.indent(indentation, format, args...))
 }
 
 func (reporter *defaultReporter) RandomizationStrategy(randomSeed int64, randomizeAllExamples bool) {
@@ -49,20 +77,21 @@ func (reporter *defaultReporter) RandomizationStrategy(randomSeed int64, randomi
 }
 
 func (reporter *defaultReporter) SpecSuiteWillBegin(summary *SuiteSummary) {
-	fmt.Println("")
-	reporter.banner(fmt.Sprintf("Running Suite: %s", summary.SuiteDescription), "=")
-	fmt.Printf("Random Seed: %s", reporter.colorize(boldStyle, "%d", reporter.randomSeed))
+	reporter.printNewLine()
+	reporter.printBanner(fmt.Sprintf("Running Suite: %s", summary.SuiteDescription), "=")
+	randomSeedReport := fmt.Sprintf("Random Seed: %s", reporter.colorize(boldStyle, "%d", reporter.randomSeed))
 	if reporter.randomizeAllExamples {
-		fmt.Print(" - Will randomize all examples")
+		randomSeedReport += " - Will randomize all examples"
 	}
-	fmt.Println("")
+	reporter.println(0, randomSeedReport)
+	reporter.printNewLine()
 
-	fmt.Printf(
-		"Will run %s of %s specs\n",
+	reporter.println(0,
+		"Will run %s of %s specs",
 		reporter.colorize(boldStyle, "%d", summary.NumberOfExamplesThatWillBeRun),
 		reporter.colorize(boldStyle, "%d", summary.NumberOfTotalExamples))
 
-	fmt.Println("")
+	reporter.printNewLine()
 }
 
 func (reporter *defaultReporter) ExampleDidComplete(exampleSummary *ExampleSummary) {
@@ -82,12 +111,12 @@ func (reporter *defaultReporter) ExampleDidComplete(exampleSummary *ExampleSumma
 }
 
 func (reporter *defaultReporter) SpecSuiteDidEnd(summary *SuiteSummary) {
-	fmt.Println("")
+	reporter.printNewLine()
 	color := greenColor
 	if summary.NumberOfFailedExamples > 0 {
 		color = redColor
 	}
-	fmt.Println(reporter.colorize(boldStyle+color, "Ran %d of %d Specs in %.3f seconds", summary.NumberOfExamplesThatWillBeRun, summary.NumberOfTotalExamples, summary.RunTime.Seconds()))
+	reporter.println(0, reporter.colorize(boldStyle+color, "Ran %d of %d Specs in %.3f seconds", summary.NumberOfExamplesThatWillBeRun, summary.NumberOfTotalExamples, summary.RunTime.Seconds()))
 
 	status := ""
 	if summary.NumberOfFailedExamples == 0 {
@@ -96,47 +125,45 @@ func (reporter *defaultReporter) SpecSuiteDidEnd(summary *SuiteSummary) {
 		status = fmt.Sprintf(reporter.colorize(boldStyle+redColor, "FAIL!"))
 	}
 
-	fmt.Printf(
-		"%s -- %s | %s | %s | %s\n",
+	reporter.println(0,
+		"%s -- %s | %s | %s | %s",
 		status,
 		reporter.colorize(greenColor+boldStyle, "%d Passed", summary.NumberOfPassedExamples),
 		reporter.colorize(redColor+boldStyle, "%d Failed", summary.NumberOfFailedExamples),
 		reporter.colorize(yellowColor+boldStyle, "%d Pending", summary.NumberOfPendingExamples),
 		reporter.colorize(cyanColor+boldStyle, "%d Skipped", summary.NumberOfSkippedExamples),
 	)
-	fmt.Println("")
+	reporter.printNewLine()
 }
 
 func (reporter *defaultReporter) printStatus(color string, message string, exampleSummary *ExampleSummary) {
 	if exampleSummary.RunTime.Seconds() >= reporter.slowSpecThreshold {
 		if !reporter.lastExampleWasABlock {
-			fmt.Println("")
+			reporter.printNewLine()
 			reporter.printDelimiter()
 		}
-		fmt.Print(reporter.colorize(color, "%s [SLOW TEST:%.3f seconds]\n", message, exampleSummary.RunTime.Seconds()))
+		reporter.println(0, reporter.colorize(color, "%s [SLOW TEST:%.3f seconds]", message, exampleSummary.RunTime.Seconds()))
 
 		for i := 1; i < len(exampleSummary.ComponentTexts); i++ {
-			padding := strings.Repeat("  ", i-1)
-			fmt.Printf("%s%s\n", padding, exampleSummary.ComponentTexts[i])
-			fmt.Println(reporter.colorize(grayColor, "%s(%s)", padding, exampleSummary.ComponentCodeLocations[i]))
+			reporter.println(i-1, "%s", exampleSummary.ComponentTexts[i])
+			reporter.println(i-1, reporter.colorize(grayColor, "(%s)", exampleSummary.ComponentCodeLocations[i]))
 		}
 
 		reporter.printDelimiter()
 		reporter.lastExampleWasABlock = true
 	} else {
-		fmt.Print(reporter.colorize(color, message))
+		reporter.print(0, reporter.colorize(color, message))
 		reporter.lastExampleWasABlock = false
 	}
 }
 
 func (reporter *defaultReporter) printFailure(message string, exampleSummary *ExampleSummary) {
 	if !reporter.lastExampleWasABlock {
-		fmt.Println("")
+		reporter.printNewLine()
 		reporter.printDelimiter()
 	}
-	fmt.Print(reporter.colorize(redColor+boldStyle, "%s [%.3f seconds]\n", message, exampleSummary.RunTime.Seconds()))
+	reporter.println(0, reporter.colorize(redColor+boldStyle, "%s [%.3f seconds]", message, exampleSummary.RunTime.Seconds()))
 	for i := 1; i < len(exampleSummary.ComponentTexts); i++ {
-		padding := strings.Repeat("  ", i-1)
 		if i == exampleSummary.Failure.ComponentIndex {
 			blockType := ""
 			switch exampleSummary.Failure.ComponentType {
@@ -149,33 +176,29 @@ func (reporter *defaultReporter) printFailure(message string, exampleSummary *Ex
 			case ExampleComponentTypeIt:
 				blockType = "It"
 			}
-			fmt.Println(reporter.colorize(redColor+boldStyle, "%s%s [%s]", padding, exampleSummary.ComponentTexts[i], blockType))
-			fmt.Println(reporter.colorize(grayColor, "%s(%s)", padding, exampleSummary.ComponentCodeLocations[i]))
+			reporter.println(i-1, reporter.colorize(redColor+boldStyle, "%s [%s]", exampleSummary.ComponentTexts[i], blockType))
+			reporter.println(i-1, reporter.colorize(grayColor, "(%s)", exampleSummary.ComponentCodeLocations[i]))
 		} else {
-			fmt.Printf("%s%s\n", padding, exampleSummary.ComponentTexts[i])
-			fmt.Println(reporter.colorize(grayColor, "%s(%s)", padding, exampleSummary.ComponentCodeLocations[i]))
+			reporter.println(i-1, exampleSummary.ComponentTexts[i])
+			reporter.println(i-1, reporter.colorize(grayColor, "(%s)", exampleSummary.ComponentCodeLocations[i]))
 		}
 	}
 
-	padding := strings.Repeat("  ", exampleSummary.Failure.ComponentIndex-1)
+	indentation := exampleSummary.Failure.ComponentIndex - 1
 
-	fmt.Println("")
+	reporter.printNewLine()
 	if exampleSummary.State == ExampleStatePanicked {
-		fmt.Println(reporter.colorize(redColor+boldStyle, "%s%s", padding, exampleSummary.Failure.Message))
-		fmt.Println(reporter.colorize(redColor, "%s> %s", padding, exampleSummary.Failure.ForwardedPanic))
-		fmt.Printf("%s%s\n", padding, exampleSummary.Failure.Location)
-		fmt.Println("")
-		fmt.Println(reporter.colorize(redColor, "%sFull Stack Trace", padding))
-		fmt.Printf("%s> %s\n", padding, exampleSummary.Failure.Location.FullStackTrace)
+		reporter.println(indentation, reporter.colorize(redColor+boldStyle, exampleSummary.Failure.Message))
+		reporter.println(indentation, reporter.colorize(redColor, "> %s", exampleSummary.Failure.ForwardedPanic))
+		reporter.println(indentation, exampleSummary.Failure.Location.String())
+		reporter.printNewLine()
+		reporter.println(indentation, reporter.colorize(redColor, "Full Stack Trace"))
+		reporter.println(indentation, exampleSummary.Failure.Location.FullStackTrace)
 	} else {
-		fmt.Println(reporter.colorize(redColor, "%s> %s", padding, exampleSummary.Failure.Message))
-		fmt.Printf("%s%s\n", padding, exampleSummary.Failure.Location)
+		reporter.println(indentation, reporter.colorize(redColor, "> %s", exampleSummary.Failure.Message))
+		reporter.println(indentation, exampleSummary.Failure.Location.String())
 	}
 
 	reporter.printDelimiter()
 	reporter.lastExampleWasABlock = true
-}
-
-func (reporter *defaultReporter) printDelimiter() {
-	fmt.Println(reporter.colorize(grayColor, "%s", strings.Repeat("-", 30)))
 }
