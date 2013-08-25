@@ -5,7 +5,6 @@ import (
 )
 
 type node interface {
-	//flesh me out!  both containerNodes and itNodes need to satisfy this (but not runnables)
 	isContainerNode() bool
 	isItNode() bool
 }
