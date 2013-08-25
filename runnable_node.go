@@ -6,16 +6,6 @@ import (
 	"time"
 )
 
-type runOutcome uint
-
-const (
-	runOutcomeInvalid runOutcome = iota
-	runOutcomePassed
-	runOutcomeFailed
-	runOutcomePanicked
-	runOutcomeTimedOut
-)
-
 type runnableNode struct {
 	isAsync          bool
 	asyncFunc        func(Done)
@@ -79,7 +69,7 @@ func (runnable *runnableNode) run() (outcome runOutcome, failure failureData) {
 
 	select {
 	case <-done:
-		outcome = runOutcomePassed
+		outcome = runOutcomeCompleted
 	case <-time.After(runnable.timeoutThreshold):
 		outcome = runOutcomeTimedOut
 		failure = failureData{

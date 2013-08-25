@@ -7,30 +7,36 @@ import (
 )
 
 type exampleCollection struct {
-	t               *testing.T
-	description     string
-	examples        []*example
-	reporter        Reporter
-	hasFocusedTests bool
-	startTime       time.Time
-	runningExample  *example
+	t              *testing.T
+	description    string
+	examples       []*example
+	reporter       Reporter
+	startTime      time.Time
+	runningExample *example
 }
 
 func newExampleCollection(t *testing.T, description string, examples []*example, reporter Reporter) *exampleCollection {
 	hasFocusedTests := false
 	for _, example := range examples {
-		if example.hasFocusFlag {
+		if example.focused {
 			hasFocusedTests = true
 			break
 		}
 	}
 
+	if hasFocusedTests {
+		for _, example := range examples {
+			if !example.focused {
+				example.skip()
+			}
+		}
+	}
+
 	return &exampleCollection{
-		t:               t,
-		description:     description,
-		examples:        examples,
-		reporter:        reporter,
-		hasFocusedTests: hasFocusedTests,
+		t:           t,
+		description: description,
+		examples:    examples,
+		reporter:    reporter,
 	}
 }
 
@@ -44,34 +50,23 @@ func (collection *exampleCollection) shuffle(r *rand.Rand) {
 }
 
 func (collection *exampleCollection) run() {
-	collection.reportBeginning()
+	collection.reportSuiteWillBegin()
 
 	suiteFailed := false
 
 	for _, example := range collection.examples {
-		if collection.hasFocusedTests {
-			if example.hasFocusFlag {
-				if !example.hasPendingFlag {
-					collection.runningExample = example
-					collection.runningExample.run()
-				}
-			} else {
-				example.skip()
+		if !example.skippedOrPending() {
+			collection.runningExample = example
+			example.run()
+			if example.failed() {
+				suiteFailed = true
 			}
-		} else {
-			if !example.hasPendingFlag {
-				collection.runningExample = example
-				collection.runningExample.run()
-			}
-		}
-		if example.failed() {
-			suiteFailed = true
 		}
 
 		collection.reportExample(example)
 	}
 
-	collection.reportEnding()
+	collection.reportSuiteDidEnd()
 
 	if suiteFailed {
 		collection.t.Fail()
@@ -79,107 +74,67 @@ func (collection *exampleCollection) run() {
 }
 
 func (collection *exampleCollection) fail(failure failureData) {
-	collection.runningExample.fail(failure)
+	if collection.runningExample != nil {
+		collection.runningExample.fail(failure)
+	}
 }
 
-func (collection *exampleCollection) numberOfPendingExamples() (count int) {
-	for _, example := range collection.examples {
-		if collection.hasFocusedTests {
-			if example.hasPendingFlag && example.hasFocusFlag {
-				count++
-			}
-		} else if example.hasPendingFlag {
-			count++
-		}
-	}
-
-	return
-}
-
-func (collection *exampleCollection) numberOfSkippedExamples() (count int) {
-	if !collection.hasFocusedTests {
-		return 0
-	}
-
-	for _, example := range collection.examples {
-		if !example.hasFocusFlag {
-			count++
-		}
-	}
-
-	return
-}
-
-func (collection *exampleCollection) numberOfExamplesThatWillBeRun() (count int) {
-	for _, example := range collection.examples {
-		if collection.hasFocusedTests {
-			if example.hasFocusFlag && !example.hasPendingFlag {
-				count++
-			}
-		} else if !example.hasPendingFlag {
-			count++
-		}
-	}
-
-	return
-}
-
-func (collection *exampleCollection) numberOfPassedExamples() (count int) {
-	for _, example := range collection.examples {
-		if example.outcome == runOutcomePassed {
-			count++
-		}
-	}
-
-	return count
-}
-
-func (collection *exampleCollection) numberOfFailedExamples() (count int) {
-	for _, example := range collection.examples {
-		if example.failed() {
-			count++
-		}
-	}
-
-	return count
-}
-
-func (collection *exampleCollection) reportBeginning() {
+func (collection *exampleCollection) reportSuiteWillBegin() {
 	collection.startTime = time.Now()
-
-	summary := &SuiteSummary{
-		SuiteDescription: collection.description,
-
-		NumberOfTotalExamples:         len(collection.examples),
-		NumberOfExamplesThatWillBeRun: collection.numberOfExamplesThatWillBeRun(),
-		NumberOfPendingExamples:       collection.numberOfPendingExamples(),
-		NumberOfSkippedExamples:       collection.numberOfSkippedExamples(),
-		NumberOfPassedExamples:        0,
-		NumberOfFailedExamples:        0,
-		RunTime:                       0,
-	}
-
-	collection.reporter.SpecSuiteWillBegin(summary)
-}
-
-func (collection *exampleCollection) reportEnding() {
-	runTime := time.Since(collection.startTime)
-
-	summary := &SuiteSummary{
-		SuiteDescription: collection.description,
-
-		NumberOfTotalExamples:         len(collection.examples),
-		NumberOfExamplesThatWillBeRun: collection.numberOfExamplesThatWillBeRun(),
-		NumberOfPendingExamples:       collection.numberOfPendingExamples(),
-		NumberOfSkippedExamples:       collection.numberOfSkippedExamples(),
-		NumberOfPassedExamples:        collection.numberOfPassedExamples(),
-		NumberOfFailedExamples:        collection.numberOfFailedExamples(),
-		RunTime:                       runTime,
-	}
-
-	collection.reporter.SpecSuiteDidEnd(summary)
+	collection.reporter.SpecSuiteWillBegin(collection.summary())
 }
 
 func (collection *exampleCollection) reportExample(example *example) {
 	collection.reporter.ExampleDidComplete(example.summary())
+}
+
+func (collection *exampleCollection) reportSuiteDidEnd() {
+	summary := collection.summary()
+	summary.RunTime = time.Since(collection.startTime)
+	collection.reporter.SpecSuiteDidEnd(summary)
+}
+
+func (collection *exampleCollection) countExamplesSatisfying(filter func(ex *example) bool) (count int) {
+	count = 0
+
+	for _, example := range collection.examples {
+		if filter(example) {
+			count++
+		}
+	}
+
+	return count
+}
+
+func (collection *exampleCollection) summary() *SuiteSummary {
+	numberOfExamplesThatWillBeRun := collection.countExamplesSatisfying(func(ex *example) bool {
+		return !ex.skippedOrPending()
+	})
+
+	numberOfPendingExamples := collection.countExamplesSatisfying(func(ex *example) bool {
+		return ex.state == ExampleStatePending
+	})
+
+	numberOfSkippedExamples := collection.countExamplesSatisfying(func(ex *example) bool {
+		return ex.state == ExampleStateSkipped
+	})
+
+	numberOfPassedExamples := collection.countExamplesSatisfying(func(ex *example) bool {
+		return ex.state == ExampleStatePassed
+	})
+
+	numberOfFailedExamples := collection.countExamplesSatisfying(func(ex *example) bool {
+		return ex.failed()
+	})
+
+	return &SuiteSummary{
+		SuiteDescription: collection.description,
+
+		NumberOfTotalExamples:         len(collection.examples),
+		NumberOfExamplesThatWillBeRun: numberOfExamplesThatWillBeRun,
+		NumberOfPendingExamples:       numberOfPendingExamples,
+		NumberOfSkippedExamples:       numberOfSkippedExamples,
+		NumberOfPassedExamples:        numberOfPassedExamples,
+		NumberOfFailedExamples:        numberOfFailedExamples,
+	}
 }

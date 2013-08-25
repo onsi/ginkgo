@@ -5,49 +5,49 @@ import (
 )
 
 type example struct {
-	it             *itNode
-	hasPendingFlag bool
-	hasFocusFlag   bool
+	it      *itNode
+	focused bool
 
 	containers []*containerNode
-	skipped    bool
 
-	outcome            runOutcome
-	runTime            time.Duration
-	failure            ExampleFailure
-	interceptedFailure failureData
+	state               ExampleState
+	runTime             time.Duration
+	failure             ExampleFailure
+	didInterceptFailure bool
+	interceptedFailure  failureData
 }
 
 func newExample(it *itNode) *example {
-	return &example{
-		it:             it,
-		hasPendingFlag: it.flag == flagTypePending,
-		hasFocusFlag:   it.flag == flagTypeFocused,
+	ex := &example{
+		it:      it,
+		focused: it.flag == flagTypeFocused,
 	}
+
+	if it.flag == flagTypePending {
+		ex.state = ExampleStatePending
+	}
+
+	return ex
 }
 
 func (ex *example) addContainerNode(container *containerNode) {
 	ex.containers = append([]*containerNode{container}, ex.containers...)
 	if container.flag == flagTypeFocused {
-		ex.hasFocusFlag = true
+		ex.focused = true
 	} else if container.flag == flagTypePending {
-		ex.hasPendingFlag = true
+		ex.state = ExampleStatePending
+	}
+}
+
+func (ex *example) fail(failure failureData) {
+	if !ex.didInterceptFailure {
+		ex.interceptedFailure = failure
+		ex.didInterceptFailure = true
 	}
 }
 
 func (ex *example) skip() {
-	ex.skipped = true
-}
-
-func (ex *example) fail(failure failureData) {
-	empty := failureData{}
-	if ex.interceptedFailure == empty {
-		ex.interceptedFailure = failure
-	}
-}
-
-func (ex *example) failed() bool {
-	return ex.outcome == runOutcomeFailed || ex.outcome == runOutcomePanicked || ex.outcome == runOutcomeTimedOut
+	ex.state = ExampleStateSkipped
 }
 
 func (ex *example) run() {
@@ -91,21 +91,31 @@ func (ex *example) run() {
 	}
 }
 
+func (ex *example) failed() bool {
+	return ex.state == ExampleStateFailed || ex.state == ExampleStatePanicked || ex.state == ExampleStateTimedOut
+}
+
+func (ex *example) skippedOrPending() bool {
+	return ex.state == ExampleStateSkipped || ex.state == ExampleStatePending
+}
+
 func (ex *example) handleOutcomeAndFailure(containerIndex int, componentType ExampleComponentType, codeLocation CodeLocation, outcome runOutcome, failure failureData) (didFail bool) {
-	empty := failureData{}
-	if ex.interceptedFailure != empty {
-		ex.outcome = runOutcomeFailed
-		ex.failure = ExampleFailure{
-			Message:               ex.interceptedFailure.message,
-			Location:              ex.interceptedFailure.codeLocation,
-			ForwardedPanic:        ex.interceptedFailure.forwardedPanic,
-			ComponentIndex:        containerIndex,
-			ComponentType:         componentType,
-			ComponentCodeLocation: codeLocation,
-		}
-		return true
-	} else if outcome != runOutcomePassed {
-		ex.outcome = outcome
+	if ex.didInterceptFailure {
+		ex.state = ExampleStateFailed
+		failure = ex.interceptedFailure
+		didFail = true
+	} else if outcome == runOutcomePanicked {
+		ex.state = ExampleStatePanicked
+		didFail = true
+	} else if outcome == runOutcomeTimedOut {
+		ex.state = ExampleStateTimedOut
+		didFail = true
+	} else {
+		ex.state = ExampleStatePassed
+		didFail = false
+	}
+
+	if didFail {
 		ex.failure = ExampleFailure{
 			Message:               failure.message,
 			Location:              failure.codeLocation,
@@ -114,11 +124,9 @@ func (ex *example) handleOutcomeAndFailure(containerIndex int, componentType Exa
 			ComponentType:         componentType,
 			ComponentCodeLocation: codeLocation,
 		}
-		return true
-	} else {
-		ex.outcome = runOutcomePassed
 	}
-	return false
+
+	return didFail
 }
 
 func (ex *example) summary() *ExampleSummary {
@@ -133,25 +141,10 @@ func (ex *example) summary() *ExampleSummary {
 	componentTexts[len(ex.containers)] = ex.it.text
 	componentCodeLocations[len(ex.containers)] = ex.it.codeLocation
 
-	var state ExampleState
-	if ex.skipped {
-		state = ExampleStateSkipped
-	} else if ex.hasPendingFlag {
-		state = ExampleStatePending
-	} else if ex.outcome == runOutcomeFailed {
-		state = ExampleStateFailed
-	} else if ex.outcome == runOutcomePassed {
-		state = ExampleStatePassed
-	} else if ex.outcome == runOutcomePanicked {
-		state = ExampleStatePanicked
-	} else if ex.outcome == runOutcomeTimedOut {
-		state = ExampleStateTimedOut
-	}
-
 	return &ExampleSummary{
 		ComponentTexts:         componentTexts,
 		ComponentCodeLocations: componentCodeLocations,
-		State:   state,
+		State:   ex.state,
 		RunTime: ex.runTime,
 		Failure: ex.failure,
 	}

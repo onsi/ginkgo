@@ -6,14 +6,6 @@ import (
 	"time"
 )
 
-type flagType uint
-
-const (
-	flagTypeNone flagType = iota
-	flagTypeFocused
-	flagTypePending
-)
-
 type failureData struct {
 	message        string
 	codeLocation   CodeLocation
@@ -48,10 +40,12 @@ func (suite *suite) run(t *testing.T, description string, randomSeed int64, rand
 }
 
 func (suite *suite) fail(message string, callerSkip int) {
-	suite.exampleCollection.fail(failureData{
-		message:      message,
-		codeLocation: generateCodeLocation(callerSkip + 2),
-	})
+	if suite.exampleCollection != nil {
+		suite.exampleCollection.fail(failureData{
+			message:      message,
+			codeLocation: generateCodeLocation(callerSkip + 2),
+		})
+	}
 }
 
 func (suite *suite) pushContainerNode(text string, body func(), flag flagType, codeLocation CodeLocation) {

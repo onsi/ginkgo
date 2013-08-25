@@ -32,19 +32,6 @@ type ExampleSummary struct {
 	Failure ExampleFailure
 }
 
-type ExampleState uint
-
-const (
-	ExampleStateInvalid ExampleState = iota
-
-	ExampleStatePending
-	ExampleStateSkipped
-	ExampleStatePassed
-	ExampleStateFailed
-	ExampleStatePanicked
-	ExampleStateTimedOut
-)
-
 type ExampleFailure struct {
 	Message        string
 	Location       CodeLocation
@@ -54,14 +41,3 @@ type ExampleFailure struct {
 	ComponentType         ExampleComponentType
 	ComponentCodeLocation CodeLocation
 }
-
-type ExampleComponentType uint
-
-const (
-	ExampleComponentTypeInvalid ExampleComponentType = iota
-
-	ExampleComponentTypeBeforeEach
-	ExampleComponentTypeJustBeforeEach
-	ExampleComponentTypeAfterEach
-	ExampleComponentTypeIt
-)
