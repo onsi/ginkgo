@@ -46,6 +46,10 @@ func (ex *example) fail(failure failureData) {
 	}
 }
 
+func (ex *example) failed() bool {
+	return ex.outcome == runOutcomeFailed || ex.outcome == runOutcomePanicked || ex.outcome == runOutcomeTimedOut
+}
+
 func (ex *example) run() {
 	startTime := time.Now()
 
