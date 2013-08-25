@@ -12,10 +12,10 @@ type CodeLocation struct {
 	FullStackTrace string
 }
 
-func generateCodeLocation(skip int) (CodeLocation, bool) {
-	_, file, line, ok := runtime.Caller(skip)
+func generateCodeLocation(skip int) CodeLocation {
+	_, file, line, _ := runtime.Caller(skip + 1)
 	fullStackTrace := string(debug.Stack())
-	return CodeLocation{FileName: file, LineNumber: line, FullStackTrace: fullStackTrace}, ok
+	return CodeLocation{FileName: file, LineNumber: line, FullStackTrace: fullStackTrace}
 }
 
 func (codeLocation CodeLocation) String() string {

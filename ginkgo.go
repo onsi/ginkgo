@@ -37,92 +37,77 @@ func Fail(message string, callerSkip ...int) {
 }
 
 func Describe(text string, body func()) bool {
-	codeLocation, _ := generateCodeLocation(2)
-	globalSuite.pushContainerNode(text, body, flagTypeNone, codeLocation)
+	globalSuite.pushContainerNode(text, body, flagTypeNone, generateCodeLocation(1))
 	return true
 }
 
 func FDescribe(text string, body func()) bool {
-	codeLocation, _ := generateCodeLocation(2)
-	globalSuite.pushContainerNode(text, body, flagTypeFocused, codeLocation)
+	globalSuite.pushContainerNode(text, body, flagTypeFocused, generateCodeLocation(1))
 	return true
 }
 
 func PDescribe(text string, body func()) bool {
-	codeLocation, _ := generateCodeLocation(2)
-	globalSuite.pushContainerNode(text, body, flagTypePending, codeLocation)
+	globalSuite.pushContainerNode(text, body, flagTypePending, generateCodeLocation(1))
 	return true
 }
 
 func XDescribe(text string, body func()) bool {
-	codeLocation, _ := generateCodeLocation(2)
-	globalSuite.pushContainerNode(text, body, flagTypePending, codeLocation)
+	globalSuite.pushContainerNode(text, body, flagTypePending, generateCodeLocation(1))
 	return true
 }
 
 func Context(text string, body func()) bool {
-	codeLocation, _ := generateCodeLocation(2)
-	globalSuite.pushContainerNode(text, body, flagTypeNone, codeLocation)
+	globalSuite.pushContainerNode(text, body, flagTypeNone, generateCodeLocation(1))
 	return true
 }
 
 func FContext(text string, body func()) bool {
-	codeLocation, _ := generateCodeLocation(2)
-	globalSuite.pushContainerNode(text, body, flagTypeFocused, codeLocation)
+	globalSuite.pushContainerNode(text, body, flagTypeFocused, generateCodeLocation(1))
 	return true
 }
 
 func PContext(text string, body func()) bool {
-	codeLocation, _ := generateCodeLocation(2)
-	globalSuite.pushContainerNode(text, body, flagTypePending, codeLocation)
+	globalSuite.pushContainerNode(text, body, flagTypePending, generateCodeLocation(1))
 	return true
 }
 
 func XContext(text string, body func()) bool {
-	codeLocation, _ := generateCodeLocation(2)
-	globalSuite.pushContainerNode(text, body, flagTypePending, codeLocation)
+	globalSuite.pushContainerNode(text, body, flagTypePending, generateCodeLocation(1))
 	return true
 }
 
 func It(text string, body interface{}, timeout ...float64) bool {
-	codeLocation, _ := generateCodeLocation(2)
-	globalSuite.pushItNode(text, body, flagTypeNone, codeLocation, parseTimeout(timeout...))
+	globalSuite.pushItNode(text, body, flagTypeNone, generateCodeLocation(1), parseTimeout(timeout...))
 	return true
 }
 
 func FIt(text string, body interface{}, timeout ...float64) bool {
-	codeLocation, _ := generateCodeLocation(2)
-	globalSuite.pushItNode(text, body, flagTypeFocused, codeLocation, parseTimeout(timeout...))
+	globalSuite.pushItNode(text, body, flagTypeFocused, generateCodeLocation(1), parseTimeout(timeout...))
 	return true
 }
 
 func PIt(text string, body interface{}, timeout ...float64) bool {
-	codeLocation, _ := generateCodeLocation(2)
-	globalSuite.pushItNode(text, body, flagTypePending, codeLocation, parseTimeout(timeout...))
+	globalSuite.pushItNode(text, body, flagTypePending, generateCodeLocation(1), parseTimeout(timeout...))
 	return true
 }
 
 func XIt(text string, body interface{}, timeout ...float64) bool {
-	codeLocation, _ := generateCodeLocation(2)
-	globalSuite.pushItNode(text, body, flagTypePending, codeLocation, parseTimeout(timeout...))
+	globalSuite.pushItNode(text, body, flagTypePending, generateCodeLocation(1), parseTimeout(timeout...))
 	return true
 }
 
 func BeforeEach(body interface{}, timeout ...float64) bool {
-	codeLocation, _ := generateCodeLocation(2)
-	globalSuite.pushBeforeEachNode(body, codeLocation, parseTimeout(timeout...))
+	globalSuite.pushBeforeEachNode(body, generateCodeLocation(1), parseTimeout(timeout...))
 	return true
 }
 
 func JustBeforeEach(body interface{}, timeout ...float64) bool {
-	codeLocation, _ := generateCodeLocation(2)
-	globalSuite.pushJustBeforeEachNode(body, codeLocation, parseTimeout(timeout...))
+	globalSuite.pushJustBeforeEachNode(body, generateCodeLocation(1), parseTimeout(timeout...))
 	return true
 }
 
 func AfterEach(body interface{}, timeout ...float64) bool {
-	codeLocation, _ := generateCodeLocation(2)
-	globalSuite.pushAfterEachNode(body, codeLocation, parseTimeout(timeout...))
+	globalSuite.pushAfterEachNode(body, generateCodeLocation(1), parseTimeout(timeout...))
 	return true
 }
 
