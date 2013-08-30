@@ -2,12 +2,15 @@ package ginkgo
 
 import (
 	"math/rand"
-	"testing"
 	"time"
 )
 
+type testingT interface {
+	Fail()
+}
+
 type exampleCollection struct {
-	t              *testing.T
+	t              testingT
 	description    string
 	examples       []*example
 	reporter       Reporter
@@ -15,7 +18,7 @@ type exampleCollection struct {
 	runningExample *example
 }
 
-func newExampleCollection(t *testing.T, description string, examples []*example, reporter Reporter) *exampleCollection {
+func newExampleCollection(t testingT, description string, examples []*example, reporter Reporter) *exampleCollection {
 	hasFocusedTests := false
 	for _, example := range examples {
 		if example.focused {
