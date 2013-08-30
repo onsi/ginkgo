@@ -2,7 +2,6 @@ package ginkgo
 
 import (
 	"math/rand"
-	"testing"
 	"time"
 )
 
@@ -27,7 +26,7 @@ func newSuite() *suite {
 	}
 }
 
-func (suite *suite) run(t *testing.T, description string, randomSeed int64, randomizeAllExamples bool, reporter Reporter) {
+func (suite *suite) run(t testingT, description string, randomSeed int64, randomizeAllExamples bool, reporter Reporter) {
 	reporter.RandomizationStrategy(randomSeed, randomizeAllExamples)
 	r := rand.New(rand.NewSource(randomSeed))
 	suite.topLevelContainer.shuffle(r)
