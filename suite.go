@@ -26,12 +26,12 @@ func newSuite() *suite {
 	}
 }
 
-func (suite *suite) run(t testingT, description string, randomSeed int64, randomizeAllExamples bool, reporter Reporter) {
-	reporter.RandomizationStrategy(randomSeed, randomizeAllExamples)
-	r := rand.New(rand.NewSource(randomSeed))
+func (suite *suite) run(t testingT, description string, reporter Reporter, config GinkoConfigType) {
+	reporter.RandomizationStrategy(config.RandomSeed, config.RandomizeAllSpecs)
+	r := rand.New(rand.NewSource(config.RandomSeed))
 	suite.topLevelContainer.shuffle(r)
 	suite.exampleCollection = newExampleCollection(t, description, suite.topLevelContainer.generateExamples(), reporter)
-	if randomizeAllExamples {
+	if config.RandomizeAllSpecs {
 		suite.exampleCollection.shuffle(r)
 	}
 

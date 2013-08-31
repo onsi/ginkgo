@@ -6,7 +6,6 @@ import (
 
 func init() {
 	Describe("Suite", func() {
-		//Note: the suite is mostly tested implicitly (the fact that these tests run at all!)
 		var (
 			specSuite *suite
 			fakeT     *fakeTestingT
@@ -21,8 +20,8 @@ func init() {
 
 		Describe("running a suite", func() {
 			var (
-				runOrder             []string
-				randomizeAllExamples bool
+				runOrder          []string
+				randomizeAllSpecs bool
 			)
 
 			var f = func(runText string) func() {
@@ -32,7 +31,7 @@ func init() {
 			}
 
 			BeforeEach(func() {
-				randomizeAllExamples = false
+				randomizeAllSpecs = false
 				runOrder = make([]string, 0)
 				specSuite.pushBeforeEachNode(f("top BE"), generateCodeLocation(0), 0)
 				specSuite.pushJustBeforeEachNode(f("top JBE"), generateCodeLocation(0), 0)
@@ -58,7 +57,10 @@ func init() {
 			})
 
 			JustBeforeEach(func() {
-				specSuite.run(fakeT, "suite description", 22, randomizeAllExamples, fakeR)
+				specSuite.run(fakeT, "suite description", fakeR, GinkoConfigType{
+					RandomSeed:        22,
+					RandomizeAllSpecs: randomizeAllSpecs,
+				})
 			})
 
 			It("reports the randomization strategy to the reporter", func() {
@@ -78,7 +80,7 @@ func init() {
 
 			Context("when told to randomize all examples", func() {
 				BeforeEach(func() {
-					randomizeAllExamples = true
+					randomizeAllSpecs = true
 				})
 
 				It("does", func() {
