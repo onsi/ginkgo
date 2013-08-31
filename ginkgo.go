@@ -6,11 +6,11 @@ import (
 	"time"
 )
 
-var suiteRandomSeed = flag.Int64("seed", time.Now().Unix(), "The seed used to randomize the spec suite.")
-var suiteRandomizeAllSpecs = flag.Bool("randomizeAllSpecs", false, "If set, ginkgo will randomize all specs together.  By default, ginkgo only randomizes the top level Describe/Context groups.")
-var reporterNoColor = flag.Bool("noColor", false, "If set, suppress color output in default reporter.")
-var reporterSlowSpecThreshold = flag.Float64("slowSpecThreshold", 5.0, "(in seconds) Specs that take longer to run than this threshold are flagged as slow by the default reporter (default: 5 seconds).")
-var reporterNoisyPendings = flag.Bool("noisyPendings", true, "If set, shout about pending tests.")
+var suiteRandomSeed = flag.Int64("ginkgo.seed", time.Now().Unix(), "The seed used to randomize the spec suite.")
+var suiteRandomizeAllSpecs = flag.Bool("ginkgo.randomizeAllSpecs", false, "If set, ginkgo will randomize all specs together.  By default, ginkgo only randomizes the top level Describe/Context groups.")
+var reporterNoColor = flag.Bool("ginkgo.noColor", false, "If set, suppress color output in default reporter.")
+var reporterSlowSpecThreshold = flag.Float64("ginkgo.slowSpecThreshold", 5.0, "(in seconds) Specs that take longer to run than this threshold are flagged as slow by the default reporter (default: 5 seconds).")
+var reporterNoisyPendings = flag.Bool("ginkgo.noisyPendings", true, "If set, default reporter will shout about pending tests.")
 
 var globalSuite *suite
 
