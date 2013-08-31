@@ -18,7 +18,7 @@ type suite struct {
 }
 
 func newSuite() *suite {
-	topLevelContainer := newContainerNode("", flagTypeNone, CodeLocation{})
+	topLevelContainer := newContainerNode("[Top Level]", flagTypeNone, CodeLocation{})
 
 	return &suite{
 		topLevelContainer: topLevelContainer,

@@ -55,7 +55,10 @@ func (reporter *defaultReporter) indent(indentation int, format string, args ...
 	text := fmt.Sprintf(format, args...)
 
 	stringArray := strings.Split(text, "\n")
-	padding := strings.Repeat("  ", indentation)
+	padding := ""
+	if indentation >= 0 {
+		padding = strings.Repeat("  ", indentation)
+	}
 	for i, s := range stringArray {
 		stringArray[i] = fmt.Sprintf("%s%s", padding, s)
 	}
@@ -144,9 +147,16 @@ func (reporter *defaultReporter) printStatus(color string, message string, examp
 		}
 		reporter.println(0, reporter.colorize(color, "%s [SLOW TEST:%.3f seconds]", message, exampleSummary.RunTime.Seconds()))
 
-		for i := 1; i < len(exampleSummary.ComponentTexts); i++ {
-			reporter.println(i-1, "%s", exampleSummary.ComponentTexts[i])
-			reporter.println(i-1, reporter.colorize(grayColor, "(%s)", exampleSummary.ComponentCodeLocations[i]))
+		startIndex := 1
+		offset := -1
+		if len(exampleSummary.ComponentTexts) == 1 {
+			startIndex = 0
+			offset = 0
+		}
+
+		for i := startIndex; i < len(exampleSummary.ComponentTexts); i++ {
+			reporter.println(i+offset, "%s", exampleSummary.ComponentTexts[i])
+			reporter.println(i+offset, reporter.colorize(grayColor, "(%s)", exampleSummary.ComponentCodeLocations[i]))
 		}
 
 		reporter.printDelimiter()
@@ -163,7 +173,14 @@ func (reporter *defaultReporter) printFailure(message string, exampleSummary *Ex
 		reporter.printDelimiter()
 	}
 	reporter.println(0, reporter.colorize(redColor+boldStyle, "%s [%.3f seconds]", message, exampleSummary.RunTime.Seconds()))
-	for i := 1; i < len(exampleSummary.ComponentTexts); i++ {
+	startIndex := 1
+	offset := -1
+	if exampleSummary.Failure.ComponentIndex == 0 {
+		startIndex = 0
+		offset = 0
+	}
+
+	for i := startIndex; i < len(exampleSummary.ComponentTexts); i++ {
 		if i == exampleSummary.Failure.ComponentIndex {
 			blockType := ""
 			switch exampleSummary.Failure.ComponentType {
@@ -176,15 +193,15 @@ func (reporter *defaultReporter) printFailure(message string, exampleSummary *Ex
 			case ExampleComponentTypeIt:
 				blockType = "It"
 			}
-			reporter.println(i-1, reporter.colorize(redColor+boldStyle, "%s [%s]", exampleSummary.ComponentTexts[i], blockType))
-			reporter.println(i-1, reporter.colorize(grayColor, "(%s)", exampleSummary.ComponentCodeLocations[i]))
+			reporter.println(i+offset, reporter.colorize(redColor+boldStyle, "%s [%s]", exampleSummary.ComponentTexts[i], blockType))
+			reporter.println(i+offset, reporter.colorize(grayColor, "(%s)", exampleSummary.ComponentCodeLocations[i]))
 		} else {
-			reporter.println(i-1, exampleSummary.ComponentTexts[i])
-			reporter.println(i-1, reporter.colorize(grayColor, "(%s)", exampleSummary.ComponentCodeLocations[i]))
+			reporter.println(i+offset, exampleSummary.ComponentTexts[i])
+			reporter.println(i+offset, reporter.colorize(grayColor, "(%s)", exampleSummary.ComponentCodeLocations[i]))
 		}
 	}
 
-	indentation := exampleSummary.Failure.ComponentIndex - 1
+	indentation := exampleSummary.Failure.ComponentIndex + offset
 
 	reporter.printNewLine()
 	if exampleSummary.State == ExampleStatePanicked {
