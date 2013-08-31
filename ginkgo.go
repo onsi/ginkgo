@@ -10,6 +10,7 @@ var suiteRandomSeed = flag.Int64("seed", time.Now().Unix(), "The seed used to ra
 var suiteRandomizeAllSpecs = flag.Bool("randomizeAllSpecs", false, "If set, ginkgo will randomize all specs together.  By default, ginkgo only randomizes the top level Describe/Context groups.")
 var reporterNoColor = flag.Bool("noColor", false, "If set, suppress color output in default reporter.")
 var reporterSlowSpecThreshold = flag.Float64("slowSpecThreshold", 5.0, "(in seconds) Specs that take longer to run than this threshold are flagged as slow by the default reporter (default: 5 seconds).")
+var reporterNoisyPendings = flag.Bool("noisyPendings", true, "If set, shout about pending tests.")
 
 var globalSuite *suite
 
@@ -18,7 +19,7 @@ func init() {
 }
 
 func RunSpecs(t *testing.T, description string) {
-	reporter := newDefaultReporter(*reporterNoColor, *reporterSlowSpecThreshold)
+	reporter := newDefaultReporter(*reporterNoColor, *reporterSlowSpecThreshold, *reporterNoisyPendings)
 	RunSpecsWithCustomReporter(t, description, reporter)
 }
 

@@ -8,15 +8,17 @@ import (
 type defaultReporter struct {
 	noColor              bool
 	slowSpecThreshold    float64
+	noisyPendings        bool
 	randomSeed           int64
 	randomizeAllExamples bool
 	lastExampleWasABlock bool
 }
 
-func newDefaultReporter(noColor bool, slowSpecThreshold float64) *defaultReporter {
+func newDefaultReporter(noColor bool, slowSpecThreshold float64, noisyPendings bool) *defaultReporter {
 	return &defaultReporter{
 		noColor:           noColor,
 		slowSpecThreshold: slowSpecThreshold,
+		noisyPendings:     noisyPendings,
 	}
 }
 
@@ -139,28 +141,34 @@ func (reporter *defaultReporter) SpecSuiteDidEnd(summary *SuiteSummary) {
 	reporter.printNewLine()
 }
 
+func (reporter *defaultReporter) printBlockWithMessage(message string, exampleSummary *ExampleSummary) {
+	if !reporter.lastExampleWasABlock {
+		reporter.printNewLine()
+		reporter.printDelimiter()
+	}
+	reporter.println(0, message)
+
+	startIndex := 1
+	offset := -1
+	if len(exampleSummary.ComponentTexts) == 1 {
+		startIndex = 0
+		offset = 0
+	}
+
+	for i := startIndex; i < len(exampleSummary.ComponentTexts); i++ {
+		reporter.println(i+offset, "%s", exampleSummary.ComponentTexts[i])
+		reporter.println(i+offset, reporter.colorize(grayColor, "(%s)", exampleSummary.ComponentCodeLocations[i]))
+	}
+
+	reporter.printDelimiter()
+	reporter.lastExampleWasABlock = true
+}
+
 func (reporter *defaultReporter) printStatus(color string, message string, exampleSummary *ExampleSummary) {
 	if exampleSummary.RunTime.Seconds() >= reporter.slowSpecThreshold {
-		if !reporter.lastExampleWasABlock {
-			reporter.printNewLine()
-			reporter.printDelimiter()
-		}
-		reporter.println(0, reporter.colorize(color, "%s [SLOW TEST:%.3f seconds]", message, exampleSummary.RunTime.Seconds()))
-
-		startIndex := 1
-		offset := -1
-		if len(exampleSummary.ComponentTexts) == 1 {
-			startIndex = 0
-			offset = 0
-		}
-
-		for i := startIndex; i < len(exampleSummary.ComponentTexts); i++ {
-			reporter.println(i+offset, "%s", exampleSummary.ComponentTexts[i])
-			reporter.println(i+offset, reporter.colorize(grayColor, "(%s)", exampleSummary.ComponentCodeLocations[i]))
-		}
-
-		reporter.printDelimiter()
-		reporter.lastExampleWasABlock = true
+		reporter.printBlockWithMessage(reporter.colorize(color, "%s [SLOW TEST:%.3f seconds]", message, exampleSummary.RunTime.Seconds()), exampleSummary)
+	} else if exampleSummary.State == ExampleStatePending && reporter.noisyPendings {
+		reporter.printBlockWithMessage(reporter.colorize(color, "%s [PENDING]", message), exampleSummary)
 	} else {
 		reporter.print(0, reporter.colorize(color, message))
 		reporter.lastExampleWasABlock = false
