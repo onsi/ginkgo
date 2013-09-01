@@ -27,11 +27,11 @@ func newSuite() *suite {
 }
 
 func (suite *suite) run(t testingT, description string, reporter Reporter, config GinkoConfigType) {
-	reporter.RandomizationStrategy(config.RandomSeed, config.RandomizeAllSpecs)
-	r := rand.New(rand.NewSource(config.RandomSeed))
+	reporter.RandomizationStrategy(*(config.RandomSeed), *(config.RandomizeAllSpecs))
+	r := rand.New(rand.NewSource(*(config.RandomSeed)))
 	suite.topLevelContainer.shuffle(r)
 	suite.exampleCollection = newExampleCollection(t, description, suite.topLevelContainer.generateExamples(), reporter)
-	if config.RandomizeAllSpecs {
+	if *(config.RandomizeAllSpecs) {
 		suite.exampleCollection.shuffle(r)
 	}
 

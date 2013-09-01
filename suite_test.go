@@ -22,6 +22,7 @@ func init() {
 			var (
 				runOrder          []string
 				randomizeAllSpecs bool
+				randomSeed        int64
 			)
 
 			var f = func(runText string) func() {
@@ -32,6 +33,8 @@ func init() {
 
 			BeforeEach(func() {
 				randomizeAllSpecs = false
+				randomSeed = 22
+
 				runOrder = make([]string, 0)
 				specSuite.pushBeforeEachNode(f("top BE"), generateCodeLocation(0), 0)
 				specSuite.pushJustBeforeEachNode(f("top JBE"), generateCodeLocation(0), 0)
@@ -58,8 +61,8 @@ func init() {
 
 			JustBeforeEach(func() {
 				specSuite.run(fakeT, "suite description", fakeR, GinkoConfigType{
-					RandomSeed:        22,
-					RandomizeAllSpecs: randomizeAllSpecs,
+					RandomSeed:        &randomSeed,
+					RandomizeAllSpecs: &randomizeAllSpecs,
 				})
 			})
 

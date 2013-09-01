@@ -5,21 +5,15 @@ import (
 	"strings"
 )
 
-type defaultReporterConfig struct {
-	noColor           bool
-	slowSpecThreshold float64
-	noisyPendings     bool
-}
-
 type defaultReporter struct {
-	config defaultReporterConfig
+	config defaultReporterConfigType
 
 	randomSeed           int64
 	randomizeAllExamples bool
 	lastExampleWasABlock bool
 }
 
-func newDefaultReporter(config defaultReporterConfig) *defaultReporter {
+func newDefaultReporter(config defaultReporterConfigType) *defaultReporter {
 	return &defaultReporter{
 		config: config,
 	}
@@ -36,7 +30,7 @@ const blueColor = "\x1b[94m"
 
 func (reporter *defaultReporter) colorize(colorCode string, format string, args ...interface{}) string {
 	s := fmt.Sprintf(format, args...)
-	if reporter.config.noColor {
+	if *(reporter.config.noColor) {
 		return s
 	} else {
 		return fmt.Sprintf("%s%s%s", colorCode, s, defaultStyle)
@@ -168,9 +162,9 @@ func (reporter *defaultReporter) printBlockWithMessage(message string, exampleSu
 }
 
 func (reporter *defaultReporter) printStatus(color string, message string, exampleSummary *ExampleSummary) {
-	if exampleSummary.RunTime.Seconds() >= reporter.config.slowSpecThreshold {
+	if exampleSummary.RunTime.Seconds() >= *(reporter.config.slowSpecThreshold) {
 		reporter.printBlockWithMessage(reporter.colorize(color, "%s [SLOW TEST:%.3f seconds]", message, exampleSummary.RunTime.Seconds()), exampleSummary)
-	} else if exampleSummary.State == ExampleStatePending && reporter.config.noisyPendings {
+	} else if exampleSummary.State == ExampleStatePending && *(reporter.config.noisyPendings) {
 		reporter.printBlockWithMessage(reporter.colorize(color, "%s [PENDING]", message), exampleSummary)
 	} else {
 		reporter.print(0, reporter.colorize(color, message))
