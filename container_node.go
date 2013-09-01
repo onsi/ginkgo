@@ -2,11 +2,13 @@ package ginkgo
 
 import (
 	"math/rand"
+	"sort"
 )
 
 type node interface {
 	isContainerNode() bool
 	isItNode() bool
+	getText() string
 }
 
 type containerNode struct {
@@ -29,6 +31,7 @@ func newContainerNode(text string, flag flagType, codeLocation CodeLocation) *co
 }
 
 func (container *containerNode) shuffle(r *rand.Rand) {
+	sort.Sort(container)
 	permutation := r.Perm(len(container.itAndContainerNodes))
 	shuffledNodes := make([]node, len(container.itAndContainerNodes))
 	for i, j := range permutation {
@@ -82,4 +85,22 @@ func (node *containerNode) isContainerNode() bool {
 
 func (node *containerNode) isItNode() bool {
 	return false
+}
+
+func (node *containerNode) getText() string {
+	return node.text
+}
+
+//sort.Interface
+
+func (node *containerNode) Len() int {
+	return len(node.itAndContainerNodes)
+}
+
+func (node *containerNode) Less(i, j int) bool {
+	return node.itAndContainerNodes[i].getText() < node.itAndContainerNodes[j].getText()
+}
+
+func (node *containerNode) Swap(i, j int) {
+	node.itAndContainerNodes[i], node.itAndContainerNodes[j] = node.itAndContainerNodes[j], node.itAndContainerNodes[i]
 }

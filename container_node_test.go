@@ -3,6 +3,7 @@ package ginkgo
 import (
 	. "github.com/onsi/gomega"
 	"math/rand"
+	"sort"
 )
 
 func init() {
@@ -133,24 +134,38 @@ func init() {
 			})
 		})
 
-		Describe("shuffling", func() {
-			It("shuffles the top level It and Container nodes using the passed in randomizer", func() {
-				r := rand.New(rand.NewSource(3))
-				itA := newItNode("itA", func() {}, flagTypeNone, generateCodeLocation(0), 0)
-				itB := newItNode("itB", func() {}, flagTypeNone, generateCodeLocation(0), 0)
-				subContainerA := newContainerNode("subcontainerA", flagTypeNone, generateCodeLocation(0))
-				subContainerB := newContainerNode("subcontainerB", flagTypeNone, generateCodeLocation(0))
-				itC := newItNode("itC", func() {}, flagTypeNone, generateCodeLocation(0), 0)
+		Describe("shuffling the container", func() {
+			texts := func(container *containerNode) []string {
+				texts := make([]string, 0)
+				for _, node := range container.itAndContainerNodes {
+					texts = append(texts, node.getText())
+				}
+				return texts
+			}
+
+			BeforeEach(func() {
+				itA := newItNode("Banana", func() {}, flagTypeNone, generateCodeLocation(0), 0)
+				itB := newItNode("Apple", func() {}, flagTypeNone, generateCodeLocation(0), 0)
+				itC := newItNode("Orange", func() {}, flagTypeNone, generateCodeLocation(0), 0)
+				containerA := newContainerNode("Cucumber", flagTypeNone, generateCodeLocation(0))
+				containerB := newContainerNode("Airplane", flagTypeNone, generateCodeLocation(0))
 
 				container.pushItNode(itA)
-				container.pushContainerNode(subContainerA)
+				container.pushContainerNode(containerA)
 				container.pushItNode(itB)
-				container.pushContainerNode(subContainerB)
+				container.pushContainerNode(containerB)
 				container.pushItNode(itC)
+			})
 
-				container.shuffle(r)
+			It("should be sortable", func() {
+				sort.Sort(container)
+				Ω(texts(container)).Should(Equal([]string{"Airplane", "Apple", "Banana", "Cucumber", "Orange"}))
+			})
 
-				Ω(container.itAndContainerNodes).Should(Equal([]node{itB, subContainerA, itC, itA, subContainerB}), "Since we start with an explicit random seed, the expected randomization should be fixed across test runs.")
+			It("shuffles all the examples after sorting them", func() {
+				container.shuffle(rand.New(rand.NewSource(17)))
+				expectedOrder := shuffleStrings([]string{"Airplane", "Apple", "Banana", "Cucumber", "Orange"}, 17)
+				Ω(texts(container)).Should(Equal(expectedOrder), "The permutation should be the same across test runs")
 			})
 		})
 	})

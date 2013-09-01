@@ -2,6 +2,7 @@ package ginkgo
 
 import (
 	"math/rand"
+	"sort"
 	"time"
 )
 
@@ -44,6 +45,7 @@ func newExampleCollection(t testingT, description string, examples []*example, r
 }
 
 func (collection *exampleCollection) shuffle(r *rand.Rand) {
+	sort.Sort(collection)
 	permutation := r.Perm(len(collection.examples))
 	shuffledExamples := make([]*example, len(collection.examples))
 	for i, j := range permutation {
@@ -140,4 +142,18 @@ func (collection *exampleCollection) summary() *SuiteSummary {
 		NumberOfPassedExamples:        numberOfPassedExamples,
 		NumberOfFailedExamples:        numberOfFailedExamples,
 	}
+}
+
+//sort.Interface
+
+func (collection *exampleCollection) Len() int {
+	return len(collection.examples)
+}
+
+func (collection *exampleCollection) Less(i, j int) bool {
+	return collection.examples[i].concatenatedString() < collection.examples[j].concatenatedString()
+}
+
+func (collection *exampleCollection) Swap(i, j int) {
+	collection.examples[i], collection.examples[j] = collection.examples[j], collection.examples[i]
 }

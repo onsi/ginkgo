@@ -89,10 +89,10 @@ func init() {
 				It("does", func() {
 					Ω(runOrder).Should(Equal([]string{
 						"top BE", "BE", "top JBE", "JBE", "inner IT", "AE", "top AE",
-						"top BE", "top JBE", "top IT", "top AE",
 						"top BE", "BE", "top JBE", "JBE", "IT", "AE", "top AE",
 						"top BE", "BE 2", "top JBE", "IT 2", "top AE",
-					}), "Note this was randomized at the example level: inner IT and IT are no longer next to each other")
+						"top BE", "top JBE", "top IT", "top AE",
+					}))
 				})
 			})
 

@@ -149,3 +149,12 @@ func (ex *example) summary() *ExampleSummary {
 		Failure: ex.failure,
 	}
 }
+
+func (ex *example) concatenatedString() string {
+	s := ""
+	for _, container := range ex.containers {
+		s += container.text + " "
+	}
+
+	return s + ex.it.text
+}

@@ -3,17 +3,15 @@ package ginkgo
 import (
 	. "github.com/onsi/gomega"
 	"math/rand"
+	"sort"
 	"time"
 )
 
 func init() {
 	Describe("Example Collection", func() {
 		var (
-			fakeT    *fakeTestingT
-			fakeR    *fakeReporter
-			example1 *example
-			example2 *example
-			example3 *example
+			fakeT *fakeTestingT
+			fakeR *fakeReporter
 
 			itsThatWereRun []string
 
@@ -36,22 +34,42 @@ func init() {
 			fakeT = &fakeTestingT{}
 			fakeR = &fakeReporter{}
 			itsThatWereRun = make([]string, 0)
-
-			example1 = exampleWithItFunc("it 1", flagTypeNone, false)
-			example2 = exampleWithItFunc("it 2", flagTypeNone, false)
-			example3 = exampleWithItFunc("it 3", flagTypeNone, false)
 		})
 
 		Describe("shuffling the collection", func() {
-			It("shuffles all the examples", func() {
-				collection = newExampleCollection(fakeT, "collection description", []*example{example1, example2, example3}, fakeR)
-				collection.shuffle(rand.New(rand.NewSource(10)))
+			BeforeEach(func() {
+				collection = newExampleCollection(fakeT, "collection description", []*example{
+					exampleWithItFunc("C", flagTypeNone, false),
+					exampleWithItFunc("A", flagTypeNone, false),
+					exampleWithItFunc("B", flagTypeNone, false),
+				}, fakeR)
+			})
+
+			It("should be sortable", func() {
+				sort.Sort(collection)
 				collection.run()
-				Ω(itsThatWereRun).Should(Equal([]string{"it 2", "it 3", "it 1"}), "The permutation should be the same across test runs")
+				Ω(itsThatWereRun).Should(Equal([]string{"A", "B", "C"}))
+			})
+
+			It("shuffles all the examples after sorting them", func() {
+				collection.shuffle(rand.New(rand.NewSource(17)))
+				collection.run()
+				Ω(itsThatWereRun).Should(Equal(shuffleStrings([]string{"A", "B", "C"}, 17)), "The permutation should be the same across test runs")
 			})
 		})
 
 		Describe("running an example collection", func() {
+			var (
+				example1 *example
+				example2 *example
+				example3 *example
+			)
+			BeforeEach(func() {
+				example1 = exampleWithItFunc("it 1", flagTypeNone, false)
+				example2 = exampleWithItFunc("it 2", flagTypeNone, false)
+				example3 = exampleWithItFunc("it 3", flagTypeNone, false)
+			})
+
 			JustBeforeEach(func() {
 				collection = newExampleCollection(fakeT, "collection description", []*example{example1, example2, example3}, fakeR)
 				collection.run()

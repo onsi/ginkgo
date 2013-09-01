@@ -103,3 +103,7 @@ func (node *itNode) isContainerNode() bool {
 func (node *itNode) isItNode() bool {
 	return true
 }
+
+func (node *itNode) getText() string {
+	return node.text
+}

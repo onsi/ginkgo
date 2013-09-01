@@ -40,6 +40,10 @@ func init() {
 				Ω(ex.containers).Should(Equal([]*containerNode{containerA, containerB}))
 			})
 
+			It("should provide the concatenated strings", func() {
+				Ω(ex.concatenatedString()).Should(Equal("A B It"))
+			})
+
 			Context("when neither the It node nor the containers is focused or pending", func() {
 				It("should not be focused or pending", func() {
 					Ω(ex.focused).Should(BeFalse())
