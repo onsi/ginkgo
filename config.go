@@ -8,6 +8,7 @@ import (
 type GinkoConfigType struct {
 	RandomSeed        *int64
 	RandomizeAllSpecs *bool
+	FocusString       *string
 }
 
 type defaultReporterConfigType struct {
@@ -19,6 +20,7 @@ type defaultReporterConfigType struct {
 var GinkgoConfig = GinkoConfigType{
 	RandomSeed:        flag.Int64("ginkgo.seed", time.Now().Unix(), "The seed used to randomize the spec suite."),
 	RandomizeAllSpecs: flag.Bool("ginkgo.randomizeAllSpecs", false, "If set, ginkgo will randomize all specs together.  By default, ginkgo only randomizes the top level Describe/Context groups."),
+	FocusString:       flag.String("ginkgo.focus", "", "If set, ginkgo will only run specs that match this regular expression."),
 }
 
 var defaultReporterConfig = defaultReporterConfigType{

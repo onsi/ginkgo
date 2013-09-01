@@ -2,6 +2,7 @@ package ginkgo
 
 import (
 	"math/rand"
+	"regexp"
 	"sort"
 	"time"
 )
@@ -19,9 +20,26 @@ type exampleCollection struct {
 	runningExample *example
 }
 
-func newExampleCollection(t testingT, description string, examples []*example, reporter Reporter) *exampleCollection {
+func newExampleCollection(t testingT, description string, examples []*example, focusFilter *regexp.Regexp, reporter Reporter) *exampleCollection {
+	collection := &exampleCollection{
+		t:           t,
+		description: description,
+		examples:    examples,
+		reporter:    reporter,
+	}
+
+	if focusFilter == nil {
+		collection.applyProgrammaticFocus()
+	} else {
+		collection.applyRegExpFocus(focusFilter)
+	}
+
+	return collection
+}
+
+func (collection *exampleCollection) applyProgrammaticFocus() {
 	hasFocusedTests := false
-	for _, example := range examples {
+	for _, example := range collection.examples {
 		if example.focused {
 			hasFocusedTests = true
 			break
@@ -29,18 +47,19 @@ func newExampleCollection(t testingT, description string, examples []*example, r
 	}
 
 	if hasFocusedTests {
-		for _, example := range examples {
+		for _, example := range collection.examples {
 			if !example.focused {
 				example.skip()
 			}
 		}
 	}
+}
 
-	return &exampleCollection{
-		t:           t,
-		description: description,
-		examples:    examples,
-		reporter:    reporter,
+func (collection *exampleCollection) applyRegExpFocus(focusFilter *regexp.Regexp) {
+	for _, example := range collection.examples {
+		if !focusFilter.Match([]byte(example.concatenatedString())) {
+			example.skip()
+		}
 	}
 }
 

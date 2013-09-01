@@ -23,6 +23,7 @@ func init() {
 				runOrder          []string
 				randomizeAllSpecs bool
 				randomSeed        int64
+				focusString       string
 			)
 
 			var f = func(runText string) func() {
@@ -34,6 +35,7 @@ func init() {
 			BeforeEach(func() {
 				randomizeAllSpecs = false
 				randomSeed = 22
+				focusString = ""
 
 				runOrder = make([]string, 0)
 				specSuite.pushBeforeEachNode(f("top BE"), generateCodeLocation(0), 0)
@@ -63,6 +65,7 @@ func init() {
 				specSuite.run(fakeT, "suite description", fakeR, GinkoConfigType{
 					RandomSeed:        &randomSeed,
 					RandomizeAllSpecs: &randomizeAllSpecs,
+					FocusString:       &focusString,
 				})
 			})
 
@@ -92,6 +95,19 @@ func init() {
 						"top BE", "BE", "top JBE", "JBE", "IT", "AE", "top AE",
 						"top BE", "BE 2", "top JBE", "IT 2", "top AE",
 						"top BE", "top JBE", "top IT", "top AE",
+					}))
+				})
+			})
+
+			Context("when provided with a filter", func() {
+				BeforeEach(func() {
+					focusString = `inner|\d`
+				})
+
+				It("converts the filter to a regular expression and uses it to filter the running examples", func() {
+					Ω(runOrder).Should(Equal([]string{
+						"top BE", "BE", "top JBE", "JBE", "inner IT", "AE", "top AE",
+						"top BE", "BE 2", "top JBE", "IT 2", "top AE",
 					}))
 				})
 			})

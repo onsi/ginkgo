@@ -3,6 +3,7 @@ package ginkgo
 import (
 	. "github.com/onsi/gomega"
 	"math/rand"
+	"regexp"
 	"sort"
 	"time"
 )
@@ -42,7 +43,7 @@ func init() {
 					exampleWithItFunc("C", flagTypeNone, false),
 					exampleWithItFunc("A", flagTypeNone, false),
 					exampleWithItFunc("B", flagTypeNone, false),
-				}, fakeR)
+				}, nil, fakeR)
 			})
 
 			It("should be sortable", func() {
@@ -63,15 +64,17 @@ func init() {
 				example1 *example
 				example2 *example
 				example3 *example
+				filter   *regexp.Regexp
 			)
 			BeforeEach(func() {
+				filter = nil
 				example1 = exampleWithItFunc("it 1", flagTypeNone, false)
 				example2 = exampleWithItFunc("it 2", flagTypeNone, false)
 				example3 = exampleWithItFunc("it 3", flagTypeNone, false)
 			})
 
 			JustBeforeEach(func() {
-				collection = newExampleCollection(fakeT, "collection description", []*example{example1, example2, example3}, fakeR)
+				collection = newExampleCollection(fakeT, "collection description", []*example{example1, example2, example3}, filter, fakeR)
 				collection.run()
 			})
 
@@ -219,6 +222,50 @@ func init() {
 
 				It("marks the suite as passed", func() {
 					Ω(fakeT.didFail).Should(BeFalse())
+				})
+
+				It("publishes the correct starting suite summary", func() {
+					summary := fakeR.beginSummary
+					Ω(summary.SuiteDescription).Should(Equal("collection description"))
+					Ω(summary.NumberOfTotalExamples).Should(Equal(3))
+					Ω(summary.NumberOfExamplesThatWillBeRun).Should(Equal(2))
+					Ω(summary.NumberOfPendingExamples).Should(Equal(0))
+					Ω(summary.NumberOfSkippedExamples).Should(Equal(1))
+					Ω(summary.NumberOfPassedExamples).Should(Equal(0))
+					Ω(summary.NumberOfFailedExamples).Should(Equal(0))
+					Ω(summary.RunTime).Should(Equal(time.Duration(0)))
+				})
+
+				It("publishes the correct example summaries", func() {
+					Ω(fakeR.exampleSummaries).Should(HaveLen(3))
+					Ω(fakeR.exampleSummaries[0]).Should(Equal(example1.summary()))
+					Ω(fakeR.exampleSummaries[1]).Should(Equal(example2.summary()))
+					Ω(fakeR.exampleSummaries[2]).Should(Equal(example3.summary()))
+				})
+
+				It("publishes the correct ending suite summary", func() {
+					summary := fakeR.endSummary
+					Ω(summary.SuiteDescription).Should(Equal("collection description"))
+					Ω(summary.NumberOfTotalExamples).Should(Equal(3))
+					Ω(summary.NumberOfExamplesThatWillBeRun).Should(Equal(2))
+					Ω(summary.NumberOfPendingExamples).Should(Equal(0))
+					Ω(summary.NumberOfSkippedExamples).Should(Equal(1))
+					Ω(summary.NumberOfPassedExamples).Should(Equal(2))
+					Ω(summary.NumberOfFailedExamples).Should(Equal(0))
+					Ω(summary.RunTime.Seconds()).Should(BeNumerically("~", 3*0.001, 0.01))
+				})
+			})
+
+			Context("when a regexp filter is provided", func() {
+				BeforeEach(func() {
+					filter = regexp.MustCompile(`pickles\d$`)
+					example1 = exampleWithItFunc("focused it 1", flagTypeFocused, false)
+					example2 = exampleWithItFunc("another it pickles2", flagTypeNone, false)
+					example3 = exampleWithItFunc("focused it pickles3", flagTypeFocused, false)
+				})
+
+				It("ignores the programmatic focus and applies the regexp filter", func() {
+					Ω(itsThatWereRun).Should(Equal([]string{"another it pickles2", "focused it pickles3"}))
 				})
 
 				It("publishes the correct starting suite summary", func() {

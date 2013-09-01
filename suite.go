@@ -2,6 +2,7 @@ package ginkgo
 
 import (
 	"math/rand"
+	"regexp"
 	"time"
 )
 
@@ -30,7 +31,13 @@ func (suite *suite) run(t testingT, description string, reporter Reporter, confi
 	reporter.RandomizationStrategy(*(config.RandomSeed), *(config.RandomizeAllSpecs))
 	r := rand.New(rand.NewSource(*(config.RandomSeed)))
 	suite.topLevelContainer.shuffle(r)
-	suite.exampleCollection = newExampleCollection(t, description, suite.topLevelContainer.generateExamples(), reporter)
+
+	var re *regexp.Regexp
+	if *(config.FocusString) != "" {
+		re = regexp.MustCompile(*config.FocusString)
+	}
+
+	suite.exampleCollection = newExampleCollection(t, description, suite.topLevelContainer.generateExamples(), re, reporter)
 	if *(config.RandomizeAllSpecs) {
 		suite.exampleCollection.shuffle(r)
 	}
