@@ -62,16 +62,16 @@ func init() {
 			})
 
 			JustBeforeEach(func() {
-				specSuite.run(fakeT, "suite description", fakeR, GinkoConfigType{
-					RandomSeed:        &randomSeed,
-					RandomizeAllSpecs: &randomizeAllSpecs,
-					FocusString:       &focusString,
+				specSuite.run(fakeT, "suite description", fakeR, GinkgoConfigType{
+					RandomSeed:        randomSeed,
+					RandomizeAllSpecs: randomizeAllSpecs,
+					FocusString:       focusString,
 				})
 			})
 
-			It("reports the randomization strategy to the reporter", func() {
-				Ω(fakeR.randomSeed).Should(Equal(int64(22)))
-				Ω(fakeR.randomizeAllExamples).Should(BeFalse())
+			It("provides the config and suite description to the reporter", func() {
+				Ω(fakeR.config.RandomSeed).Should(Equal(int64(randomSeed)))
+				Ω(fakeR.config.RandomizeAllSpecs).Should(Equal(randomizeAllSpecs))
 				Ω(fakeR.beginSummary.SuiteDescription).Should(Equal("suite description"))
 			})
 

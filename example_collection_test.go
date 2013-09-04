@@ -43,7 +43,7 @@ func init() {
 					exampleWithItFunc("C", flagTypeNone, false),
 					exampleWithItFunc("A", flagTypeNone, false),
 					exampleWithItFunc("B", flagTypeNone, false),
-				}, nil, fakeR)
+				}, nil, fakeR, GinkgoConfigType{})
 			})
 
 			It("should be sortable", func() {
@@ -74,7 +74,7 @@ func init() {
 			})
 
 			JustBeforeEach(func() {
-				collection = newExampleCollection(fakeT, "collection description", []*example{example1, example2, example3}, filter, fakeR)
+				collection = newExampleCollection(fakeT, "collection description", []*example{example1, example2, example3}, filter, fakeR, GinkgoConfigType{})
 				collection.run()
 			})
 

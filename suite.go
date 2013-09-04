@@ -27,18 +27,17 @@ func newSuite() *suite {
 	}
 }
 
-func (suite *suite) run(t testingT, description string, reporter Reporter, config GinkoConfigType) {
-	reporter.RandomizationStrategy(*(config.RandomSeed), *(config.RandomizeAllSpecs))
-	r := rand.New(rand.NewSource(*(config.RandomSeed)))
+func (suite *suite) run(t testingT, description string, reporter Reporter, config GinkgoConfigType) {
+	r := rand.New(rand.NewSource(config.RandomSeed))
 	suite.topLevelContainer.shuffle(r)
 
 	var re *regexp.Regexp
-	if *(config.FocusString) != "" {
-		re = regexp.MustCompile(*config.FocusString)
+	if config.FocusString != "" {
+		re = regexp.MustCompile(config.FocusString)
 	}
 
-	suite.exampleCollection = newExampleCollection(t, description, suite.topLevelContainer.generateExamples(), re, reporter)
-	if *(config.RandomizeAllSpecs) {
+	suite.exampleCollection = newExampleCollection(t, description, suite.topLevelContainer.generateExamples(), re, reporter, config)
+	if config.RandomizeAllSpecs {
 		suite.exampleCollection.shuffle(r)
 	}
 

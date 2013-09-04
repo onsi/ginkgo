@@ -18,14 +18,16 @@ type exampleCollection struct {
 	reporter       Reporter
 	startTime      time.Time
 	runningExample *example
+	config         GinkgoConfigType
 }
 
-func newExampleCollection(t testingT, description string, examples []*example, focusFilter *regexp.Regexp, reporter Reporter) *exampleCollection {
+func newExampleCollection(t testingT, description string, examples []*example, focusFilter *regexp.Regexp, reporter Reporter, config GinkgoConfigType) *exampleCollection {
 	collection := &exampleCollection{
 		t:           t,
 		description: description,
 		examples:    examples,
 		reporter:    reporter,
+		config:      config,
 	}
 
 	if focusFilter == nil {
@@ -105,7 +107,7 @@ func (collection *exampleCollection) fail(failure failureData) {
 
 func (collection *exampleCollection) reportSuiteWillBegin() {
 	collection.startTime = time.Now()
-	collection.reporter.SpecSuiteWillBegin(collection.summary())
+	collection.reporter.SpecSuiteWillBegin(collection.config, collection.summary())
 }
 
 func (collection *exampleCollection) reportExample(example *example) {

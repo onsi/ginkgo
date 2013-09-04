@@ -5,8 +5,7 @@ import (
 )
 
 type Reporter interface {
-	RandomizationStrategy(randomSeed int64, randomizeAllExamples bool)
-	SpecSuiteWillBegin(summary *SuiteSummary)
+	SpecSuiteWillBegin(config GinkgoConfigType, summary *SuiteSummary)
 	ExampleDidComplete(exampleSummary *ExampleSummary)
 	SpecSuiteDidEnd(summary *SuiteSummary)
 }

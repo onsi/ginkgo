@@ -35,20 +35,15 @@ func (fakeT *fakeTestingT) Fail() {
 }
 
 type fakeReporter struct {
-	randomSeed           int64
-	randomizeAllExamples bool
+	config GinkgoConfigType
 
 	beginSummary     *SuiteSummary
 	exampleSummaries []*ExampleSummary
 	endSummary       *SuiteSummary
 }
 
-func (fakeR *fakeReporter) RandomizationStrategy(randomSeed int64, randomizeAllExamples bool) {
-	fakeR.randomSeed = randomSeed
-	fakeR.randomizeAllExamples = randomizeAllExamples
-}
-
-func (fakeR *fakeReporter) SpecSuiteWillBegin(summary *SuiteSummary) {
+func (fakeR *fakeReporter) SpecSuiteWillBegin(config GinkgoConfigType, summary *SuiteSummary) {
+	fakeR.config = config
 	fakeR.beginSummary = summary
 }
 
