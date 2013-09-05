@@ -1,17 +1,19 @@
 package ginkgo
 
 import (
+	"github.com/onsi/ginkgo/config"
+
 	"fmt"
 	"strings"
 )
 
 type defaultReporter struct {
-	config defaultReporterConfigType
+	config config.DefaultReporterConfigType
 
 	lastExampleWasABlock bool
 }
 
-func newDefaultReporter(config defaultReporterConfigType) *defaultReporter {
+func newDefaultReporter(config config.DefaultReporterConfigType) *defaultReporter {
 	return &defaultReporter{
 		config: config,
 	}
@@ -28,7 +30,7 @@ const blueColor = "\x1b[94m"
 
 func (reporter *defaultReporter) colorize(colorCode string, format string, args ...interface{}) string {
 	s := fmt.Sprintf(format, args...)
-	if reporter.config.noColor {
+	if reporter.config.NoColor {
 		return s
 	} else {
 		return fmt.Sprintf("%s%s%s", colorCode, s, defaultStyle)
@@ -71,7 +73,7 @@ func (reporter *defaultReporter) println(indentation int, format string, args ..
 	fmt.Println(reporter.indent(indentation, format, args...))
 }
 
-func (reporter *defaultReporter) SpecSuiteWillBegin(config GinkgoConfigType, summary *SuiteSummary) {
+func (reporter *defaultReporter) SpecSuiteWillBegin(config config.GinkgoConfigType, summary *SuiteSummary) {
 	reporter.printNewLine()
 	reporter.printBanner(fmt.Sprintf("Running Suite: %s", summary.SuiteDescription), "=")
 
@@ -165,9 +167,9 @@ func (reporter *defaultReporter) printBlockWithMessage(message string, exampleSu
 }
 
 func (reporter *defaultReporter) printStatus(color string, message string, exampleSummary *ExampleSummary) {
-	if exampleSummary.RunTime.Seconds() >= reporter.config.slowSpecThreshold {
+	if exampleSummary.RunTime.Seconds() >= reporter.config.SlowSpecThreshold {
 		reporter.printBlockWithMessage(reporter.colorize(color, "%s [SLOW TEST:%.3f seconds]", message, exampleSummary.RunTime.Seconds()), exampleSummary)
-	} else if exampleSummary.State == ExampleStatePending && reporter.config.noisyPendings {
+	} else if exampleSummary.State == ExampleStatePending && reporter.config.NoisyPendings {
 		reporter.printBlockWithMessage(reporter.colorize(color, "%s [PENDING]", message), exampleSummary)
 	} else {
 		reporter.print(0, reporter.colorize(color, message))

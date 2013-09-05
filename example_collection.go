@@ -1,6 +1,8 @@
 package ginkgo
 
 import (
+	"github.com/onsi/ginkgo/config"
+
 	"math/rand"
 	"regexp"
 	"sort"
@@ -19,10 +21,10 @@ type exampleCollection struct {
 	reporter                          Reporter
 	startTime                         time.Time
 	runningExample                    *example
-	config                            GinkgoConfigType
+	config                            config.GinkgoConfigType
 }
 
-func newExampleCollection(t testingT, description string, examples []*example, reporter Reporter, config GinkgoConfigType) *exampleCollection {
+func newExampleCollection(t testingT, description string, examples []*example, reporter Reporter, config config.GinkgoConfigType) *exampleCollection {
 	collection := &exampleCollection{
 		t:           t,
 		description: description,

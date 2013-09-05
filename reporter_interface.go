@@ -1,11 +1,13 @@
 package ginkgo
 
 import (
+	"github.com/onsi/ginkgo/config"
+
 	"time"
 )
 
 type Reporter interface {
-	SpecSuiteWillBegin(config GinkgoConfigType, summary *SuiteSummary)
+	SpecSuiteWillBegin(config config.GinkgoConfigType, summary *SuiteSummary)
 	ExampleDidComplete(exampleSummary *ExampleSummary)
 	SpecSuiteDidEnd(summary *SuiteSummary)
 }

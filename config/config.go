@@ -1,4 +1,4 @@
-package ginkgo
+package config
 
 import (
 	"flag"
@@ -15,13 +15,13 @@ type GinkgoConfigType struct {
 
 var GinkgoConfig = GinkgoConfigType{}
 
-type defaultReporterConfigType struct {
-	noColor           bool
-	slowSpecThreshold float64
-	noisyPendings     bool
+type DefaultReporterConfigType struct {
+	NoColor           bool
+	SlowSpecThreshold float64
+	NoisyPendings     bool
 }
 
-var defaultReporterConfig = defaultReporterConfigType{}
+var DefaultReporterConfig = DefaultReporterConfigType{}
 
 func init() {
 	flag.Int64Var(&(GinkgoConfig.RandomSeed), "ginkgo.seed", time.Now().Unix(), "The seed used to randomize the spec suite.")
@@ -30,9 +30,9 @@ func init() {
 	flag.IntVar(&(GinkgoConfig.ParallelNode), "ginkgo.parallel.node", 1, "This worker node's (one-indexed) node number.  For running specs in parallel.")
 	flag.IntVar(&(GinkgoConfig.ParallelTotal), "ginkgo.parallel.total", 1, "The total number of worker nodes.  For running specs in parallel.")
 
-	flag.BoolVar(&(defaultReporterConfig.noColor), "ginkgo.noColor", false, "If set, suppress color output in default reporter.")
-	flag.Float64Var(&(defaultReporterConfig.slowSpecThreshold), "ginkgo.slowSpecThreshold", 5.0, "(in seconds) Specs that take longer to run than this threshold are flagged as slow by the default reporter (default: 5 seconds).")
-	flag.BoolVar(&(defaultReporterConfig.noisyPendings), "ginkgo.noisyPendings", true, "If set, default reporter will shout about pending tests.")
+	flag.BoolVar(&(DefaultReporterConfig.NoColor), "ginkgo.noColor", false, "If set, suppress color output in default reporter.")
+	flag.Float64Var(&(DefaultReporterConfig.SlowSpecThreshold), "ginkgo.slowSpecThreshold", 5.0, "(in seconds) Specs that take longer to run than this threshold are flagged as slow by the default reporter (default: 5 seconds).")
+	flag.BoolVar(&(DefaultReporterConfig.NoisyPendings), "ginkgo.noisyPendings", true, "If set, default reporter will shout about pending tests.")
 
 	flag.Parse()
 }

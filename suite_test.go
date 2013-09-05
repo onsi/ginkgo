@@ -1,6 +1,7 @@
 package ginkgo
 
 import (
+	"github.com/onsi/ginkgo/config"
 	. "github.com/onsi/gomega"
 )
 
@@ -66,7 +67,7 @@ func init() {
 			})
 
 			JustBeforeEach(func() {
-				specSuite.run(fakeT, "suite description", fakeR, GinkgoConfigType{
+				specSuite.run(fakeT, "suite description", fakeR, config.GinkgoConfigType{
 					RandomSeed:        randomSeed,
 					RandomizeAllSpecs: randomizeAllSpecs,
 					FocusString:       focusString,

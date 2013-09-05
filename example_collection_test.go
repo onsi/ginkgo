@@ -1,7 +1,9 @@
 package ginkgo
 
 import (
+	"github.com/onsi/ginkgo/config"
 	. "github.com/onsi/gomega"
+
 	"math/rand"
 	"sort"
 	"time"
@@ -42,7 +44,7 @@ func init() {
 					exampleWithItFunc("C", flagTypeNone, false),
 					exampleWithItFunc("A", flagTypeNone, false),
 					exampleWithItFunc("B", flagTypeNone, false),
-				}, fakeR, GinkgoConfigType{})
+				}, fakeR, config.GinkgoConfigType{})
 			})
 
 			It("should be sortable", func() {
@@ -78,8 +80,8 @@ func init() {
 			})
 
 			JustBeforeEach(func() {
-				config := GinkgoConfigType{FocusString: focusString, ParallelTotal: parallelTotal, ParallelNode: parallelNode}
-				collection = newExampleCollection(fakeT, "collection description", []*example{example1, example2, example3}, fakeR, config)
+				conf := config.GinkgoConfigType{FocusString: focusString, ParallelTotal: parallelTotal, ParallelNode: parallelNode}
+				collection = newExampleCollection(fakeT, "collection description", []*example{example1, example2, example3}, fakeR, conf)
 				collection.run()
 			})
 

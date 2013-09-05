@@ -1,6 +1,8 @@
 package ginkgo
 
 import (
+	"github.com/onsi/ginkgo/config"
+
 	"math/rand"
 	"time"
 )
@@ -26,7 +28,7 @@ func newSuite() *suite {
 	}
 }
 
-func (suite *suite) run(t testingT, description string, reporter Reporter, config GinkgoConfigType) {
+func (suite *suite) run(t testingT, description string, reporter Reporter, config config.GinkgoConfigType) {
 	r := rand.New(rand.NewSource(config.RandomSeed))
 	suite.topLevelContainer.shuffle(r)
 

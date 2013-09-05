@@ -1,6 +1,8 @@
 package ginkgo
 
 import (
+	"github.com/onsi/ginkgo/config"
+
 	"testing"
 	"time"
 )
@@ -12,11 +14,11 @@ func init() {
 }
 
 func RunSpecs(t *testing.T, description string) {
-	RunSpecsWithCustomReporter(t, description, newDefaultReporter(defaultReporterConfig))
+	RunSpecsWithCustomReporter(t, description, newDefaultReporter(config.DefaultReporterConfig))
 }
 
 func RunSpecsWithCustomReporter(t *testing.T, description string, reporter Reporter) {
-	globalSuite.run(t, description, reporter, GinkgoConfig)
+	globalSuite.run(t, description, reporter, config.GinkgoConfig)
 }
 
 type Done chan<- interface{}
