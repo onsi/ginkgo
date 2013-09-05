@@ -12,28 +12,39 @@ type testingT interface {
 }
 
 type exampleCollection struct {
-	t              testingT
-	description    string
-	examples       []*example
-	reporter       Reporter
-	startTime      time.Time
-	runningExample *example
-	config         GinkgoConfigType
+	t                                 testingT
+	description                       string
+	examples                          []*example
+	exampleCountBeforeParallelization int
+	reporter                          Reporter
+	startTime                         time.Time
+	runningExample                    *example
+	config                            GinkgoConfigType
 }
 
-func newExampleCollection(t testingT, description string, examples []*example, focusFilter *regexp.Regexp, reporter Reporter, config GinkgoConfigType) *exampleCollection {
+func newExampleCollection(t testingT, description string, examples []*example, reporter Reporter, config GinkgoConfigType) *exampleCollection {
 	collection := &exampleCollection{
 		t:           t,
 		description: description,
 		examples:    examples,
 		reporter:    reporter,
 		config:      config,
+		exampleCountBeforeParallelization: len(examples),
 	}
 
-	if focusFilter == nil {
-		collection.applyProgrammaticFocus()
+	r := rand.New(rand.NewSource(config.RandomSeed))
+	if config.RandomizeAllSpecs {
+		collection.shuffle(r)
+	}
+
+	if config.FocusString != "" {
+		collection.applyRegExpFocus(regexp.MustCompile(config.FocusString))
 	} else {
-		collection.applyRegExpFocus(focusFilter)
+		collection.applyProgrammaticFocus()
+	}
+
+	if config.ParallelTotal > 1 {
+		collection.trimForParallelization(config.ParallelTotal, config.ParallelNode)
 	}
 
 	return collection
@@ -62,6 +73,15 @@ func (collection *exampleCollection) applyRegExpFocus(focusFilter *regexp.Regexp
 		if !focusFilter.Match([]byte(example.concatenatedString())) {
 			example.skip()
 		}
+	}
+}
+
+func (collection *exampleCollection) trimForParallelization(parallelTotal int, parallelNode int) {
+	startIndex, count := parallelizedIndexRange(len(collection.examples), parallelTotal, parallelNode)
+	if count == 0 {
+		collection.examples = make([]*example, 0)
+	} else {
+		collection.examples = collection.examples[startIndex : startIndex+count]
 	}
 }
 
@@ -156,12 +176,13 @@ func (collection *exampleCollection) summary() *SuiteSummary {
 	return &SuiteSummary{
 		SuiteDescription: collection.description,
 
-		NumberOfTotalExamples:         len(collection.examples),
-		NumberOfExamplesThatWillBeRun: numberOfExamplesThatWillBeRun,
-		NumberOfPendingExamples:       numberOfPendingExamples,
-		NumberOfSkippedExamples:       numberOfSkippedExamples,
-		NumberOfPassedExamples:        numberOfPassedExamples,
-		NumberOfFailedExamples:        numberOfFailedExamples,
+		NumberOfExamplesBeforeParallelization: collection.exampleCountBeforeParallelization,
+		NumberOfTotalExamples:                 len(collection.examples),
+		NumberOfExamplesThatWillBeRun:         numberOfExamplesThatWillBeRun,
+		NumberOfPendingExamples:               numberOfPendingExamples,
+		NumberOfSkippedExamples:               numberOfSkippedExamples,
+		NumberOfPassedExamples:                numberOfPassedExamples,
+		NumberOfFailedExamples:                numberOfFailedExamples,
 	}
 }
 

@@ -24,6 +24,8 @@ func init() {
 				randomizeAllSpecs bool
 				randomSeed        int64
 				focusString       string
+				parallelNode      int
+				parallelTotal     int
 			)
 
 			var f = func(runText string) func() {
@@ -34,7 +36,9 @@ func init() {
 
 			BeforeEach(func() {
 				randomizeAllSpecs = false
-				randomSeed = 22
+				randomSeed = 11
+				parallelNode = 1
+				parallelTotal = 1
 				focusString = ""
 
 				runOrder = make([]string, 0)
@@ -66,6 +70,8 @@ func init() {
 					RandomSeed:        randomSeed,
 					RandomizeAllSpecs: randomizeAllSpecs,
 					FocusString:       focusString,
+					ParallelNode:      parallelNode,
+					ParallelTotal:     parallelTotal,
 				})
 			})
 
@@ -79,9 +85,9 @@ func init() {
 				Ω(runOrder).Should(Equal([]string{
 					"top BE", "BE", "top JBE", "JBE", "IT", "AE", "top AE",
 					"top BE", "BE", "top JBE", "JBE", "inner IT", "AE", "top AE",
-					"top BE", "top JBE", "top IT", "top AE",
 					"top BE", "BE 2", "top JBE", "IT 2", "top AE",
-				}), "Note this was randomized at the container level")
+					"top BE", "top JBE", "top IT", "top AE",
+				}))
 			})
 
 			Context("when told to randomize all examples", func() {
@@ -91,11 +97,44 @@ func init() {
 
 				It("does", func() {
 					Ω(runOrder).Should(Equal([]string{
+						"top BE", "top JBE", "top IT", "top AE",
 						"top BE", "BE", "top JBE", "JBE", "inner IT", "AE", "top AE",
 						"top BE", "BE", "top JBE", "JBE", "IT", "AE", "top AE",
 						"top BE", "BE 2", "top JBE", "IT 2", "top AE",
-						"top BE", "top JBE", "top IT", "top AE",
 					}))
+				})
+			})
+
+			Describe("with ginkgo.parallel.total > 1", func() {
+				BeforeEach(func() {
+					parallelTotal = 2
+					randomizeAllSpecs = true
+				})
+
+				Context("for one worker", func() {
+					BeforeEach(func() {
+						parallelNode = 1
+					})
+
+					It("should run a subset of tests", func() {
+						Ω(runOrder).Should(Equal([]string{
+							"top BE", "top JBE", "top IT", "top AE",
+							"top BE", "BE", "top JBE", "JBE", "inner IT", "AE", "top AE",
+						}))
+					})
+				})
+
+				Context("for another worker", func() {
+					BeforeEach(func() {
+						parallelNode = 2
+					})
+
+					It("should run a (different) subset of tests", func() {
+						Ω(runOrder).Should(Equal([]string{
+							"top BE", "BE", "top JBE", "JBE", "IT", "AE", "top AE",
+							"top BE", "BE 2", "top JBE", "IT 2", "top AE",
+						}))
+					})
 				})
 			})
 
@@ -132,9 +171,9 @@ func init() {
 				})
 
 				It("generates the correct failure data", func() {
-					Ω(fakeR.exampleSummaries[4].Failure.Message).Should(Equal("oops!"))
-					Ω(fakeR.exampleSummaries[4].Failure.Location.FileName).Should(Equal(location.FileName))
-					Ω(fakeR.exampleSummaries[4].Failure.Location.LineNumber).Should(Equal(location.LineNumber + 1))
+					Ω(fakeR.exampleSummaries[0].Failure.Message).Should(Equal("oops!"))
+					Ω(fakeR.exampleSummaries[0].Failure.Location.FileName).Should(Equal(location.FileName))
+					Ω(fakeR.exampleSummaries[0].Failure.Location.LineNumber).Should(Equal(location.LineNumber + 1))
 				})
 			})
 		})

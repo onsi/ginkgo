@@ -13,13 +13,14 @@ type Reporter interface {
 type SuiteSummary struct {
 	SuiteDescription string
 
-	NumberOfTotalExamples         int
-	NumberOfExamplesThatWillBeRun int
-	NumberOfPendingExamples       int
-	NumberOfSkippedExamples       int
-	NumberOfPassedExamples        int
-	NumberOfFailedExamples        int
-	RunTime                       time.Duration
+	NumberOfExamplesBeforeParallelization int
+	NumberOfTotalExamples                 int
+	NumberOfExamplesThatWillBeRun         int
+	NumberOfPendingExamples               int
+	NumberOfSkippedExamples               int
+	NumberOfPassedExamples                int
+	NumberOfFailedExamples                int
+	RunTime                               time.Duration
 }
 
 type ExampleSummary struct {

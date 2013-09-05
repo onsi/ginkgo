@@ -2,7 +2,6 @@ package ginkgo
 
 import (
 	"math/rand"
-	"regexp"
 	"time"
 )
 
@@ -31,15 +30,15 @@ func (suite *suite) run(t testingT, description string, reporter Reporter, confi
 	r := rand.New(rand.NewSource(config.RandomSeed))
 	suite.topLevelContainer.shuffle(r)
 
-	var re *regexp.Regexp
-	if config.FocusString != "" {
-		re = regexp.MustCompile(config.FocusString)
+	if config.ParallelTotal < 1 {
+		panic("ginkgo.parallel.total must be >= 1")
 	}
 
-	suite.exampleCollection = newExampleCollection(t, description, suite.topLevelContainer.generateExamples(), re, reporter, config)
-	if config.RandomizeAllSpecs {
-		suite.exampleCollection.shuffle(r)
+	if config.ParallelNode > config.ParallelTotal || config.ParallelNode < 1 {
+		panic("ginkgo.parallel.node is one-indexed and must be <= ginkgo.parallel.total")
 	}
+
+	suite.exampleCollection = newExampleCollection(t, description, suite.topLevelContainer.generateExamples(), reporter, config)
 
 	suite.exampleCollection.run()
 }

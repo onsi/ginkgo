@@ -74,6 +74,7 @@ func (reporter *defaultReporter) println(indentation int, format string, args ..
 func (reporter *defaultReporter) SpecSuiteWillBegin(config GinkgoConfigType, summary *SuiteSummary) {
 	reporter.printNewLine()
 	reporter.printBanner(fmt.Sprintf("Running Suite: %s", summary.SuiteDescription), "=")
+
 	randomSeedReport := fmt.Sprintf("Random Seed: %s", reporter.colorize(boldStyle, "%d", config.RandomSeed))
 	if config.RandomizeAllSpecs {
 		randomSeedReport += " - Will randomize all examples"
@@ -81,6 +82,15 @@ func (reporter *defaultReporter) SpecSuiteWillBegin(config GinkgoConfigType, sum
 	reporter.println(0, randomSeedReport)
 	reporter.printNewLine()
 
+	if config.ParallelTotal > 1 {
+		reporter.println(0,
+			"Parallel test node %s/%s. Assigned %s of %s specs.",
+			reporter.colorize(boldStyle, "%d", config.ParallelNode),
+			reporter.colorize(boldStyle, "%d", config.ParallelTotal),
+			reporter.colorize(boldStyle, "%d", summary.NumberOfTotalExamples),
+			reporter.colorize(boldStyle, "%d", summary.NumberOfExamplesBeforeParallelization))
+		reporter.printNewLine()
+	}
 	reporter.println(0,
 		"Will run %s of %s specs",
 		reporter.colorize(boldStyle, "%d", summary.NumberOfExamplesThatWillBeRun),
