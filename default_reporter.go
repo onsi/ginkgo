@@ -143,12 +143,12 @@ func (reporter *defaultReporter) SpecSuiteDidEnd(summary *SuiteSummary) {
 	reporter.printNewLine()
 }
 
-func (reporter *defaultReporter) printBlockWithMessage(message string, exampleSummary *ExampleSummary) {
+func (reporter *defaultReporter) printBlockWithMessage(header string, message string, exampleSummary *ExampleSummary) {
 	if !reporter.lastExampleWasABlock {
 		reporter.printNewLine()
 		reporter.printDelimiter()
 	}
-	reporter.println(0, message)
+	reporter.println(0, header)
 
 	startIndex := 1
 	offset := -1
@@ -162,19 +162,36 @@ func (reporter *defaultReporter) printBlockWithMessage(message string, exampleSu
 		reporter.println(i+offset, reporter.colorize(grayColor, "(%s)", exampleSummary.ComponentCodeLocations[i]))
 	}
 
+	if message != "" {
+		reporter.printNewLine()
+		reporter.println(len(exampleSummary.ComponentTexts)-1+offset, message)
+	}
+
 	reporter.printDelimiter()
 	reporter.lastExampleWasABlock = true
 }
 
 func (reporter *defaultReporter) printStatus(color string, message string, exampleSummary *ExampleSummary) {
-	if exampleSummary.RunTime.Seconds() >= reporter.config.SlowSpecThreshold {
-		reporter.printBlockWithMessage(reporter.colorize(color, "%s [SLOW TEST:%.3f seconds]", message, exampleSummary.RunTime.Seconds()), exampleSummary)
-	} else if exampleSummary.State == ExampleStatePending && reporter.config.NoisyPendings {
-		reporter.printBlockWithMessage(reporter.colorize(color, "%s [PENDING]", message), exampleSummary)
+	if exampleSummary.State == ExampleStatePending && reporter.config.NoisyPendings {
+		reporter.printBlockWithMessage(reporter.colorize(color, "%s [PENDING]", message), "", exampleSummary)
+	} else if exampleSummary.State == ExampleStatePassed && exampleSummary.Benchmark.IsBenchmark {
+		reporter.printBlockWithMessage(reporter.colorize(color, "%s [BENCHMARK]", message), reporter.benchmarkReport(exampleSummary.Benchmark), exampleSummary)
+	} else if exampleSummary.RunTime.Seconds() >= reporter.config.SlowSpecThreshold {
+		reporter.printBlockWithMessage(reporter.colorize(color, "%s [SLOW TEST:%.3f seconds]", message, exampleSummary.RunTime.Seconds()), "", exampleSummary)
 	} else {
 		reporter.print(0, reporter.colorize(color, message))
 		reporter.lastExampleWasABlock = false
 	}
+}
+
+func (reporter *defaultReporter) benchmarkReport(benchmark ExampleBenchmark) string {
+	return fmt.Sprintf("Ran %s samples:\n  Fastest Sample: %ss\n  Slowest Sample: %ss\n  Average Time:   %ss ± %ss",
+		reporter.colorize(boldStyle, "%d", benchmark.NumberOfSamples),
+		reporter.colorize(greenColor, "%.3f", benchmark.FastestTime.Seconds()),
+		reporter.colorize(redColor, "%.3f", benchmark.SlowestTime.Seconds()),
+		reporter.colorize(cyanColor, "%.3f", benchmark.AverageTime.Seconds()),
+		reporter.colorize(cyanColor, "%.3f", benchmark.StdDeviation.Seconds()),
+	)
 }
 
 func (reporter *defaultReporter) printFailure(message string, exampleSummary *ExampleSummary) {

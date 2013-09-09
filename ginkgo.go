@@ -7,6 +7,8 @@ import (
 	"time"
 )
 
+const defaultTimeout = 5
+
 var globalSuite *suite
 
 func init() {
@@ -31,6 +33,8 @@ func Fail(message string, callerSkip ...int) {
 	globalSuite.fail(message, skip)
 }
 
+//Describes
+
 func Describe(text string, body func()) bool {
 	globalSuite.pushContainerNode(text, body, flagTypeNone, generateCodeLocation(1))
 	return true
@@ -50,6 +54,8 @@ func XDescribe(text string, body func()) bool {
 	globalSuite.pushContainerNode(text, body, flagTypePending, generateCodeLocation(1))
 	return true
 }
+
+//Context
 
 func Context(text string, body func()) bool {
 	globalSuite.pushContainerNode(text, body, flagTypeNone, generateCodeLocation(1))
@@ -71,44 +77,70 @@ func XContext(text string, body func()) bool {
 	return true
 }
 
+//It
+
 func It(text string, body interface{}, timeout ...float64) bool {
-	globalSuite.pushItNode(text, body, flagTypeNone, generateCodeLocation(1), parseTimeout(timeout...))
+	globalSuite.pushItNode(text, body, flagTypeNone, generateCodeLocation(1), parseTimeout(defaultTimeout, timeout...))
 	return true
 }
 
 func FIt(text string, body interface{}, timeout ...float64) bool {
-	globalSuite.pushItNode(text, body, flagTypeFocused, generateCodeLocation(1), parseTimeout(timeout...))
+	globalSuite.pushItNode(text, body, flagTypeFocused, generateCodeLocation(1), parseTimeout(defaultTimeout, timeout...))
 	return true
 }
 
 func PIt(text string, body interface{}, timeout ...float64) bool {
-	globalSuite.pushItNode(text, body, flagTypePending, generateCodeLocation(1), parseTimeout(timeout...))
+	globalSuite.pushItNode(text, body, flagTypePending, generateCodeLocation(1), parseTimeout(defaultTimeout, timeout...))
 	return true
 }
 
 func XIt(text string, body interface{}, timeout ...float64) bool {
-	globalSuite.pushItNode(text, body, flagTypePending, generateCodeLocation(1), parseTimeout(timeout...))
+	globalSuite.pushItNode(text, body, flagTypePending, generateCodeLocation(1), parseTimeout(defaultTimeout, timeout...))
 	return true
 }
 
+//Benchmark
+
+func Benchmark(text string, body interface{}, samples int, timeout ...float64) bool {
+	globalSuite.pushBenchmarkNode(text, body, flagTypeNone, generateCodeLocation(1), parseTimeout(defaultTimeout*int64(samples), timeout...), samples)
+	return true
+}
+
+func FBenchmark(text string, body interface{}, samples int, timeout ...float64) bool {
+	globalSuite.pushBenchmarkNode(text, body, flagTypeFocused, generateCodeLocation(1), parseTimeout(defaultTimeout*int64(samples), timeout...), samples)
+	return true
+}
+
+func PBenchmark(text string, body interface{}, samples int, timeout ...float64) bool {
+	globalSuite.pushBenchmarkNode(text, body, flagTypePending, generateCodeLocation(1), parseTimeout(defaultTimeout*int64(samples), timeout...), samples)
+	return true
+}
+
+func XBenchmark(text string, body interface{}, samples int, timeout ...float64) bool {
+	globalSuite.pushBenchmarkNode(text, body, flagTypePending, generateCodeLocation(1), parseTimeout(defaultTimeout*int64(samples), timeout...), samples)
+	return true
+}
+
+//Before, JustBefore, and After
+
 func BeforeEach(body interface{}, timeout ...float64) bool {
-	globalSuite.pushBeforeEachNode(body, generateCodeLocation(1), parseTimeout(timeout...))
+	globalSuite.pushBeforeEachNode(body, generateCodeLocation(1), parseTimeout(defaultTimeout, timeout...))
 	return true
 }
 
 func JustBeforeEach(body interface{}, timeout ...float64) bool {
-	globalSuite.pushJustBeforeEachNode(body, generateCodeLocation(1), parseTimeout(timeout...))
+	globalSuite.pushJustBeforeEachNode(body, generateCodeLocation(1), parseTimeout(defaultTimeout, timeout...))
 	return true
 }
 
 func AfterEach(body interface{}, timeout ...float64) bool {
-	globalSuite.pushAfterEachNode(body, generateCodeLocation(1), parseTimeout(timeout...))
+	globalSuite.pushAfterEachNode(body, generateCodeLocation(1), parseTimeout(defaultTimeout, timeout...))
 	return true
 }
 
-func parseTimeout(timeout ...float64) time.Duration {
+func parseTimeout(defaultTimeout int64, timeout ...float64) time.Duration {
 	if len(timeout) == 0 {
-		return time.Duration(5 * time.Second)
+		return time.Duration(defaultTimeout * int64(time.Second))
 	} else {
 		return time.Duration(timeout[0] * float64(time.Second))
 	}

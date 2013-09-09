@@ -3,6 +3,8 @@ package ginkgo
 import (
 	"github.com/onsi/ginkgo/config"
 	. "github.com/onsi/gomega"
+	"math/rand"
+	"time"
 )
 
 func init() {
@@ -81,6 +83,12 @@ func init() {
 				Ω(fakeR.config.RandomizeAllSpecs).Should(Equal(randomizeAllSpecs))
 				Ω(fakeR.beginSummary.SuiteDescription).Should(Equal("suite description"))
 			})
+
+			Benchmark("should benchmark", func() {
+				r := rand.New(rand.NewSource(time.Now().UnixNano()))
+				sleepTime := time.Duration(r.Float64() * 0.01 * float64(time.Second))
+				time.Sleep(sleepTime)
+			}, 10)
 
 			It("creates a node hierarchy, converts it to an example collection, and runs it", func() {
 				Ω(runOrder).Should(Equal([]string{
