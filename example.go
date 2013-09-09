@@ -53,59 +53,6 @@ func (ex *example) skip() {
 	ex.state = ExampleStateSkipped
 }
 
-func (ex *example) run() {
-	startTime := time.Now()
-	defer func() {
-		ex.runTime = time.Since(startTime)
-	}()
-
-	desiredSamples := 1
-	if ex.subject.nodeType() == nodeTypeBenchmark {
-		desiredSamples = ex.subject.(*benchmarkNode).samples
-	}
-	ex.sampleRunTimes = make([]time.Duration, desiredSamples)
-
-	for sample := 0; sample < desiredSamples; sample++ {
-		for i, container := range ex.containers {
-			for _, beforeEach := range container.beforeEachNodes {
-				outcome, failure := beforeEach.run()
-				if ex.handleOutcomeAndFailure(i, ExampleComponentTypeBeforeEach, beforeEach.codeLocation, outcome, failure) {
-					return
-				}
-			}
-		}
-
-		for i, container := range ex.containers {
-			for _, justBeforeEach := range container.justBeforeEachNodes {
-				outcome, failure := justBeforeEach.run()
-				if ex.handleOutcomeAndFailure(i, ExampleComponentTypeJustBeforeEach, justBeforeEach.codeLocation, outcome, failure) {
-					return
-				}
-			}
-		}
-
-		sampleTime := time.Now()
-		outcome, failure := ex.subject.run()
-		ex.sampleRunTimes[sample] = time.Since(sampleTime)
-		if ex.handleOutcomeAndFailure(len(ex.containers), ex.subjectComponentType(), ex.subject.getCodeLocation(), outcome, failure) {
-			return
-		}
-		if ex.handleBenchmarkFailure(ex.sampleRunTimes[sample]) {
-			return
-		}
-
-		for i := len(ex.containers) - 1; i >= 0; i-- {
-			container := ex.containers[i]
-			for j := len(container.afterEachNodes) - 1; j >= 0; j-- {
-				outcome, failure := container.afterEachNodes[j].run()
-				if ex.handleOutcomeAndFailure(i, ExampleComponentTypeAfterEach, container.afterEachNodes[j].codeLocation, outcome, failure) {
-					return
-				}
-			}
-		}
-	}
-}
-
 func (ex *example) subjectComponentType() ExampleComponentType {
 	if ex.subject.nodeType() == nodeTypeBenchmark {
 		return ExampleComponentTypeBenchmark
@@ -114,12 +61,77 @@ func (ex *example) subjectComponentType() ExampleComponentType {
 	}
 }
 
+func (ex *example) desiredNumberOfSamples() int {
+	if ex.subject.nodeType() == nodeTypeBenchmark {
+		return ex.subject.(*benchmarkNode).samples
+	}
+
+	return 1
+}
+
 func (ex *example) failed() bool {
 	return ex.state == ExampleStateFailed || ex.state == ExampleStatePanicked || ex.state == ExampleStateTimedOut
 }
 
 func (ex *example) skippedOrPending() bool {
 	return ex.state == ExampleStateSkipped || ex.state == ExampleStatePending
+}
+
+func (ex *example) run() {
+	startTime := time.Now()
+	defer func() {
+		ex.runTime = time.Since(startTime)
+	}()
+
+	ex.sampleRunTimes = make([]time.Duration, ex.desiredNumberOfSamples())
+
+	for sample := 0; sample < ex.desiredNumberOfSamples(); sample++ {
+		if ex.runSample(sample) {
+			return
+		}
+	}
+}
+
+func (ex *example) runSample(sample int) (didFail bool) {
+	for i, container := range ex.containers {
+		for _, beforeEach := range container.beforeEachNodes {
+			outcome, failure := beforeEach.run()
+			if ex.handleOutcomeAndFailure(i, ExampleComponentTypeBeforeEach, beforeEach.codeLocation, outcome, failure) {
+				return true
+			}
+		}
+	}
+
+	for i, container := range ex.containers {
+		for _, justBeforeEach := range container.justBeforeEachNodes {
+			outcome, failure := justBeforeEach.run()
+			if ex.handleOutcomeAndFailure(i, ExampleComponentTypeJustBeforeEach, justBeforeEach.codeLocation, outcome, failure) {
+				return true
+			}
+		}
+	}
+
+	sampleTime := time.Now()
+	outcome, failure := ex.subject.run()
+	ex.sampleRunTimes[sample] = time.Since(sampleTime)
+	if ex.handleOutcomeAndFailure(len(ex.containers), ex.subjectComponentType(), ex.subject.getCodeLocation(), outcome, failure) {
+		return true
+	}
+	if ex.handleBenchmarkFailure(ex.sampleRunTimes[sample]) {
+		return true
+	}
+
+	for i := len(ex.containers) - 1; i >= 0; i-- {
+		container := ex.containers[i]
+		for j := len(container.afterEachNodes) - 1; j >= 0; j-- {
+			outcome, failure := container.afterEachNodes[j].run()
+			if ex.handleOutcomeAndFailure(i, ExampleComponentTypeAfterEach, container.afterEachNodes[j].codeLocation, outcome, failure) {
+				return true
+			}
+		}
+	}
+
+	return false
 }
 
 func (ex *example) handleOutcomeAndFailure(containerIndex int, componentType ExampleComponentType, codeLocation CodeLocation, outcome runOutcome, failure failureData) (didFail bool) {
