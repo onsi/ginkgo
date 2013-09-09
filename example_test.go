@@ -3,6 +3,7 @@ package ginkgo
 import (
 	"fmt"
 	. "github.com/onsi/gomega"
+	"math"
 	"time"
 )
 
@@ -33,7 +34,7 @@ func init() {
 			})
 
 			It("should store off the it node", func() {
-				Ω(ex.it).Should(Equal(it))
+				Ω(ex.subject).Should(Equal(it))
 			})
 
 			It("should store off the container nodes in reverse order", func() {
@@ -213,6 +214,7 @@ func init() {
 					summary := ex.summary()
 					Ω(summary.State).Should(Equal(ExampleStatePassed))
 					Ω(summary.RunTime.Seconds()).Should(BeNumerically(">", 0.01))
+					Ω(summary.Benchmark.IsBenchmark).Should(BeFalse())
 				})
 			})
 
@@ -332,7 +334,7 @@ func init() {
 							message:      "it failed",
 							codeLocation: generateCodeLocation(0),
 						}
-						ex.it = newItNode("it", func() {
+						ex.subject = newItNode("it", func() {
 							ex.fail(failure)
 							ex.fail(failureData{message: "IGNORE ME!"})
 						}, flagTypeNone, componentCodeLocation, 0)
@@ -358,7 +360,7 @@ func init() {
 					var panicCodeLocation CodeLocation
 
 					BeforeEach(func() {
-						ex.it = newItNode("it", func() {
+						ex.subject = newItNode("it", func() {
 							panicCodeLocation = generateCodeLocation(0)
 							panic("kaboom!")
 						}, flagTypeNone, componentCodeLocation, 0)
@@ -383,7 +385,7 @@ func init() {
 
 				Context("because the function timed out", func() {
 					BeforeEach(func() {
-						ex.it = newItNode("it", func(done Done) {
+						ex.subject = newItNode("it", func(done Done) {
 							time.Sleep(time.Duration(0.002 * float64(time.Second)))
 							done <- true
 						}, flagTypeNone, componentCodeLocation, time.Duration(0.001*float64(time.Second)))
@@ -403,6 +405,73 @@ func init() {
 
 						Ω(ex.failed()).Should(BeTrue())
 					})
+				})
+			})
+		})
+
+		Describe("running benchmark examples and getting summaries", func() {
+			var (
+				runs                  int
+				componentCodeLocation CodeLocation
+				ex                    *example
+			)
+
+			BeforeEach(func() {
+				runs = 0
+				componentCodeLocation = generateCodeLocation(0)
+
+			})
+
+			Context("when the benchmark does not fail", func() {
+				BeforeEach(func() {
+					ex = newExample(newBenchmarkNode("benchmark", func() {
+						runs++
+						time.Sleep(time.Duration(0.001 * float64(time.Second) * float64(runs)))
+					}, flagTypeNone, componentCodeLocation, time.Duration(0.01*float64(time.Second)), 5))
+				})
+
+				It("runs the benchmark samples number of times and returns timing statistics", func() {
+					ex.run()
+					summary := ex.summary()
+
+					Ω(runs).Should(Equal(5))
+
+					Ω(summary.State).Should(Equal(ExampleStatePassed))
+					Ω(summary.RunTime.Seconds()).Should(BeNumerically(">", 0.001+0.002+0.003+0.004+0.005))
+					Ω(summary.Benchmark.IsBenchmark).Should(BeTrue())
+					Ω(summary.Benchmark.NumberOfSamples).Should(Equal(5))
+					Ω(summary.Benchmark.FastestTime.Seconds()).Should(BeNumerically("~", 0.001, 0.0009))
+					Ω(summary.Benchmark.SlowestTime.Seconds()).Should(BeNumerically("~", 0.005, 0.0009))
+					Ω(summary.Benchmark.AverageTime.Seconds()).Should(BeNumerically("~", 0.003, 0.0009))
+					stdDev := math.Sqrt((0.001*0.001+0.002*0.002+0.003*0.003+0.004*0.004+0.005*0.005)/5 - 0.003*0.003)
+					Ω(summary.Benchmark.StdDeviation.Seconds()).Should(BeNumerically("~", stdDev, 0.0009))
+				})
+			})
+
+			Context("when one of the benchmark samples fails", func() {
+				BeforeEach(func() {
+					ex = newExample(newBenchmarkNode("benchmark", func() {
+						runs++
+						if runs == 3 {
+							ex.fail(failureData{})
+						}
+						time.Sleep(time.Duration(0.001 * float64(time.Second) * float64(runs)))
+					}, flagTypeNone, componentCodeLocation, time.Duration(0.01*float64(time.Second)), 5))
+				})
+
+				It("marks the benchmark as failed and doesn't run any more samples", func() {
+					ex.run()
+					summary := ex.summary()
+
+					Ω(runs).Should(Equal(3))
+
+					Ω(summary.State).Should(Equal(ExampleStateFailed))
+					Ω(summary.Benchmark.IsBenchmark).Should(BeTrue())
+					Ω(summary.Benchmark.NumberOfSamples).Should(Equal(5))
+					Ω(summary.Benchmark.FastestTime.Seconds()).Should(BeNumerically("==", 0))
+					Ω(summary.Benchmark.SlowestTime.Seconds()).Should(BeNumerically("==", 0))
+					Ω(summary.Benchmark.AverageTime.Seconds()).Should(BeNumerically("==", 0))
+					Ω(summary.Benchmark.StdDeviation.Seconds()).Should(BeNumerically("==", 0))
 				})
 			})
 		})

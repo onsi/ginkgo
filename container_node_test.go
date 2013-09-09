@@ -32,10 +32,10 @@ func init() {
 					itA := newItNode("itA", func() {}, flagTypeNone, generateCodeLocation(0), 0)
 					itB := newItNode("itB", func() {}, flagTypeNone, generateCodeLocation(0), 0)
 					subContainer := newContainerNode("subcontainer", flagTypeNone, generateCodeLocation(0))
-					container.pushItNode(itA)
+					container.pushSubjectNode(itA)
 					container.pushContainerNode(subContainer)
-					container.pushItNode(itB)
-					Ω(container.itAndContainerNodes).Should(Equal([]node{
+					container.pushSubjectNode(itB)
+					Ω(container.subjectAndContainerNodes).Should(Equal([]node{
 						itA,
 						subContainer,
 						itB,
@@ -99,28 +99,28 @@ func init() {
 				subItA = newItNode("subItA", func() {}, flagTypeNone, generateCodeLocation(0), 0)
 				subItB = newItNode("subItB", func() {}, flagTypeNone, generateCodeLocation(0), 0)
 
-				container.pushItNode(itA)
+				container.pushSubjectNode(itA)
 				container.pushContainerNode(subContainer)
-				container.pushItNode(itB)
+				container.pushSubjectNode(itB)
 
-				subContainer.pushItNode(subItA)
-				subContainer.pushItNode(subItB)
+				subContainer.pushSubjectNode(subItA)
+				subContainer.pushSubjectNode(subItB)
 			})
 
 			It("generates an example for each It in the hierarchy", func() {
 				examples := container.generateExamples()
 				Ω(examples).Should(HaveLen(4))
 
-				Ω(examples[0].it).Should(Equal(itA))
+				Ω(examples[0].subject).Should(Equal(itA))
 				Ω(examples[0].containers).Should(Equal([]*containerNode{container}))
 
-				Ω(examples[1].it).Should(Equal(subItA))
+				Ω(examples[1].subject).Should(Equal(subItA))
 				Ω(examples[1].containers).Should(Equal([]*containerNode{container, subContainer}))
 
-				Ω(examples[2].it).Should(Equal(subItB))
+				Ω(examples[2].subject).Should(Equal(subItB))
 				Ω(examples[2].containers).Should(Equal([]*containerNode{container, subContainer}))
 
-				Ω(examples[3].it).Should(Equal(itB))
+				Ω(examples[3].subject).Should(Equal(itB))
 				Ω(examples[3].containers).Should(Equal([]*containerNode{container}))
 			})
 
@@ -137,7 +137,7 @@ func init() {
 		Describe("shuffling the container", func() {
 			texts := func(container *containerNode) []string {
 				texts := make([]string, 0)
-				for _, node := range container.itAndContainerNodes {
+				for _, node := range container.subjectAndContainerNodes {
 					texts = append(texts, node.getText())
 				}
 				return texts
@@ -150,11 +150,11 @@ func init() {
 				containerA := newContainerNode("Cucumber", flagTypeNone, generateCodeLocation(0))
 				containerB := newContainerNode("Airplane", flagTypeNone, generateCodeLocation(0))
 
-				container.pushItNode(itA)
+				container.pushSubjectNode(itA)
 				container.pushContainerNode(containerA)
-				container.pushItNode(itB)
+				container.pushSubjectNode(itB)
 				container.pushContainerNode(containerB)
-				container.pushItNode(itC)
+				container.pushSubjectNode(itC)
 			})
 
 			It("should be sortable", func() {

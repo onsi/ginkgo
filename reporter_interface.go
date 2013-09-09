@@ -29,9 +29,10 @@ type ExampleSummary struct {
 	ComponentTexts         []string
 	ComponentCodeLocations []CodeLocation
 
-	State   ExampleState
-	RunTime time.Duration
-	Failure ExampleFailure
+	State     ExampleState
+	RunTime   time.Duration
+	Failure   ExampleFailure
+	Benchmark ExampleBenchmark
 }
 
 type ExampleFailure struct {
@@ -42,4 +43,13 @@ type ExampleFailure struct {
 	ComponentIndex        int
 	ComponentType         ExampleComponentType
 	ComponentCodeLocation CodeLocation
+}
+
+type ExampleBenchmark struct {
+	IsBenchmark     bool
+	NumberOfSamples int
+	FastestTime     time.Duration
+	SlowestTime     time.Duration
+	AverageTime     time.Duration
+	StdDeviation    time.Duration
 }

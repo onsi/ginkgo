@@ -1,5 +1,18 @@
 package ginkgo
 
+type node interface {
+	nodeType() nodeType
+	getText() string
+}
+
+type exampleSubject interface {
+	node
+
+	getFlag() flagType
+	run() (runOutcome, failureData)
+	getCodeLocation() CodeLocation
+}
+
 type flagType uint
 
 const (

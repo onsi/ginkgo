@@ -150,14 +150,23 @@ func init() {
 
 	Describe("ItNodes", func() {
 		It("should save off the text and flags", func() {
-			didRun := false
 			codeLocation := generateCodeLocation(0)
-			it := newItNode("my it node", func() {
-				didRun = true
-			}, flagTypeFocused, codeLocation, 0)
+			it := newItNode("my it node", func() {}, flagTypeFocused, codeLocation, 0)
 			Ω(it.flag).Should(Equal(flagTypeFocused))
 			Ω(it.text).Should(Equal("my it node"))
 			Ω(it.codeLocation).Should(Equal(codeLocation))
+		})
+	})
+
+	Describe("BenchmarkNodes", func() {
+		It("should save off the number of samples and maximum time", func() {
+			codeLocation := generateCodeLocation(0)
+			benchmark := newBenchmarkNode("my benchmark node", func() {}, flagTypeFocused, codeLocation, 2*time.Second, 3)
+			Ω(benchmark.flag).Should(Equal(flagTypeFocused))
+			Ω(benchmark.text).Should(Equal("my benchmark node"))
+			Ω(benchmark.codeLocation).Should(Equal(codeLocation))
+			Ω(benchmark.samples).Should(Equal(3))
+			Ω(benchmark.timeoutThreshold).Should(Equal(2 * time.Second))
 		})
 	})
 }

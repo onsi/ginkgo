@@ -5,20 +5,15 @@ import (
 	"sort"
 )
 
-type node interface {
-	nodeType() nodeType
-	getText() string
-}
-
 type containerNode struct {
 	flag         flagType
 	text         string
 	codeLocation CodeLocation
 
-	beforeEachNodes     []*runnableNode
-	justBeforeEachNodes []*runnableNode
-	afterEachNodes      []*runnableNode
-	itAndContainerNodes []node
+	beforeEachNodes          []*runnableNode
+	justBeforeEachNodes      []*runnableNode
+	afterEachNodes           []*runnableNode
+	subjectAndContainerNodes []node
 }
 
 func newContainerNode(text string, flag flagType, codeLocation CodeLocation) *containerNode {
@@ -31,23 +26,26 @@ func newContainerNode(text string, flag flagType, codeLocation CodeLocation) *co
 
 func (container *containerNode) shuffle(r *rand.Rand) {
 	sort.Sort(container)
-	permutation := r.Perm(len(container.itAndContainerNodes))
-	shuffledNodes := make([]node, len(container.itAndContainerNodes))
+	permutation := r.Perm(len(container.subjectAndContainerNodes))
+	shuffledNodes := make([]node, len(container.subjectAndContainerNodes))
 	for i, j := range permutation {
-		shuffledNodes[i] = container.itAndContainerNodes[j]
+		shuffledNodes[i] = container.subjectAndContainerNodes[j]
 	}
-	container.itAndContainerNodes = shuffledNodes
+	container.subjectAndContainerNodes = shuffledNodes
 }
 
 func (node *containerNode) generateExamples() []*example {
 	examples := make([]*example, 0)
 
-	for _, containerOrIt := range node.itAndContainerNodes {
-		if containerOrIt.nodeType() == nodeTypeContainer {
-			container := containerOrIt.(*containerNode)
+	for _, containerOrSubject := range node.subjectAndContainerNodes {
+		if containerOrSubject.nodeType() == nodeTypeContainer {
+			container := containerOrSubject.(*containerNode)
 			examples = append(examples, container.generateExamples()...)
 		} else {
-			examples = append(examples, newExample(containerOrIt.(*itNode)))
+			subject, ok := containerOrSubject.(exampleSubject)
+			if ok {
+				examples = append(examples, newExample(subject))
+			}
 		}
 	}
 
@@ -59,11 +57,11 @@ func (node *containerNode) generateExamples() []*example {
 }
 
 func (node *containerNode) pushContainerNode(container *containerNode) {
-	node.itAndContainerNodes = append(node.itAndContainerNodes, container)
+	node.subjectAndContainerNodes = append(node.subjectAndContainerNodes, container)
 }
 
-func (node *containerNode) pushItNode(it *itNode) {
-	node.itAndContainerNodes = append(node.itAndContainerNodes, it)
+func (node *containerNode) pushSubjectNode(subject exampleSubject) {
+	node.subjectAndContainerNodes = append(node.subjectAndContainerNodes, subject)
 }
 
 func (node *containerNode) pushBeforeEachNode(beforeEach *runnableNode) {
@@ -89,13 +87,13 @@ func (node *containerNode) getText() string {
 //sort.Interface
 
 func (node *containerNode) Len() int {
-	return len(node.itAndContainerNodes)
+	return len(node.subjectAndContainerNodes)
 }
 
 func (node *containerNode) Less(i, j int) bool {
-	return node.itAndContainerNodes[i].getText() < node.itAndContainerNodes[j].getText()
+	return node.subjectAndContainerNodes[i].getText() < node.subjectAndContainerNodes[j].getText()
 }
 
 func (node *containerNode) Swap(i, j int) {
-	node.itAndContainerNodes[i], node.itAndContainerNodes[j] = node.itAndContainerNodes[j], node.itAndContainerNodes[i]
+	node.subjectAndContainerNodes[i], node.subjectAndContainerNodes[j] = node.subjectAndContainerNodes[j], node.subjectAndContainerNodes[i]
 }

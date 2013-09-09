@@ -67,7 +67,7 @@ func (suite *suite) pushContainerNode(text string, body func(), flag flagType, c
 }
 
 func (suite *suite) pushItNode(text string, body interface{}, flag flagType, codeLocation CodeLocation, timeout time.Duration) {
-	suite.currentContainer.pushItNode(newItNode(text, body, flag, codeLocation, timeout))
+	suite.currentContainer.pushSubjectNode(newItNode(text, body, flag, codeLocation, timeout))
 }
 
 func (suite *suite) pushBeforeEachNode(body interface{}, codeLocation CodeLocation, timeout time.Duration) {

@@ -81,6 +81,8 @@ func (runnable *runnableNode) run() (outcome runOutcome, failure failureData) {
 	return
 }
 
+//It Node
+
 type itNode struct {
 	*runnableNode
 
@@ -101,5 +103,36 @@ func (node *itNode) nodeType() nodeType {
 }
 
 func (node *itNode) getText() string {
+	return node.text
+}
+
+func (node *itNode) getFlag() flagType {
+	return node.flag
+}
+
+func (node *itNode) getCodeLocation() CodeLocation {
+	return node.codeLocation
+}
+
+//Benchmark Node
+
+type benchmarkNode struct {
+	*itNode
+
+	samples int
+}
+
+func newBenchmarkNode(text string, body interface{}, flag flagType, codeLocation CodeLocation, timeout time.Duration, samples int) *benchmarkNode {
+	return &benchmarkNode{
+		itNode:  newItNode(text, body, flag, codeLocation, timeout),
+		samples: samples,
+	}
+}
+
+func (node *benchmarkNode) nodeType() nodeType {
+	return nodeTypeBenchmark
+}
+
+func (node *benchmarkNode) getText() string {
 	return node.text
 }
