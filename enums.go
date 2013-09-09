@@ -17,6 +17,15 @@ const (
 	runOutcomeCompleted
 )
 
+type nodeType uint
+
+const (
+	nodeTypeInvalid nodeType = iota
+	nodeTypeContainer
+	nodeTypeIt
+	nodeTypeBenchmark
+)
+
 type ExampleState uint
 
 const (

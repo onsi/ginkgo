@@ -96,12 +96,8 @@ func newItNode(text string, body interface{}, flag flagType, codeLocation CodeLo
 	}
 }
 
-func (node *itNode) isContainerNode() bool {
-	return false
-}
-
-func (node *itNode) isItNode() bool {
-	return true
+func (node *itNode) nodeType() nodeType {
+	return nodeTypeIt
 }
 
 func (node *itNode) getText() string {

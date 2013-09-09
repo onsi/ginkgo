@@ -6,8 +6,7 @@ import (
 )
 
 type node interface {
-	isContainerNode() bool
-	isItNode() bool
+	nodeType() nodeType
 	getText() string
 }
 
@@ -44,7 +43,7 @@ func (node *containerNode) generateExamples() []*example {
 	examples := make([]*example, 0)
 
 	for _, containerOrIt := range node.itAndContainerNodes {
-		if containerOrIt.isContainerNode() {
+		if containerOrIt.nodeType() == nodeTypeContainer {
 			container := containerOrIt.(*containerNode)
 			examples = append(examples, container.generateExamples()...)
 		} else {
@@ -79,12 +78,8 @@ func (node *containerNode) pushAfterEachNode(afterEach *runnableNode) {
 	node.afterEachNodes = append(node.afterEachNodes, afterEach)
 }
 
-func (node *containerNode) isContainerNode() bool {
-	return true
-}
-
-func (node *containerNode) isItNode() bool {
-	return false
+func (node *containerNode) nodeType() nodeType {
+	return nodeTypeContainer
 }
 
 func (node *containerNode) getText() string {
