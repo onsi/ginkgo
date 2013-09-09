@@ -45,6 +45,10 @@ func newExampleCollection(t testingT, description string, examples []*example, r
 		collection.applyProgrammaticFocus()
 	}
 
+	if config.SkipBenchmarks {
+		collection.skipBenchmarks()
+	}
+
 	if config.ParallelTotal > 1 {
 		collection.trimForParallelization(config.ParallelTotal, config.ParallelNode)
 	}
@@ -84,6 +88,14 @@ func (collection *exampleCollection) trimForParallelization(parallelTotal int, p
 		collection.examples = make([]*example, 0)
 	} else {
 		collection.examples = collection.examples[startIndex : startIndex+count]
+	}
+}
+
+func (collection *exampleCollection) skipBenchmarks() {
+	for _, example := range collection.examples {
+		if example.subjectComponentType() == ExampleComponentTypeBenchmark {
+			example.skip()
+		}
 	}
 }
 

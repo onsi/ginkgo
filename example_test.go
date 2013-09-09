@@ -176,6 +176,10 @@ func init() {
 				ex.addContainerNode(outerContainer)
 			})
 
+			It("should report that it has an it node", func() {
+				Ω(ex.subjectComponentType()).Should(Equal(ExampleComponentTypeIt))
+			})
+
 			It("runs the before/justBefore/after nodes in each of the containers, and the it node, in the correct order", func() {
 				ex.run()
 				Ω(orderedList).Should(Equal([]string{
@@ -419,7 +423,11 @@ func init() {
 			BeforeEach(func() {
 				runs = 0
 				componentCodeLocation = generateCodeLocation(0)
+			})
 
+			It("should report that it has a benchmark", func() {
+				ex = newExample(newBenchmarkNode("benchmark", func() {}, flagTypeNone, componentCodeLocation, 0, 5, time.Duration(1*float64(time.Second))))
+				Ω(ex.subjectComponentType()).Should(Equal(ExampleComponentTypeBenchmark))
 			})
 
 			Context("when the benchmark does not fail", func() {

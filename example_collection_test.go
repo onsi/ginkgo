@@ -15,14 +15,14 @@ func init() {
 			fakeT *fakeTestingT
 			fakeR *fakeReporter
 
-			itsThatWereRun []string
+			examplesThatWereRun []string
 
 			collection *exampleCollection
 		)
 
 		exampleWithItFunc := func(itText string, flag flagType, fail bool) *example {
 			return newExample(newItNode(itText, func() {
-				itsThatWereRun = append(itsThatWereRun, itText)
+				examplesThatWereRun = append(examplesThatWereRun, itText)
 				time.Sleep(time.Duration(0.001 * float64(time.Second)))
 				if fail {
 					collection.fail(failureData{
@@ -32,10 +32,16 @@ func init() {
 			}, flag, generateCodeLocation(0), 0))
 		}
 
+		exampleWithBenchmark := func(benchmarkText string) *example {
+			return newExample(newBenchmarkNode(benchmarkText, func() {
+				examplesThatWereRun = append(examplesThatWereRun, benchmarkText)
+			}, flagTypeNone, generateCodeLocation(0), 0, 5, time.Duration(0.001*float64(time.Second))))
+		}
+
 		BeforeEach(func() {
 			fakeT = &fakeTestingT{}
 			fakeR = &fakeReporter{}
-			itsThatWereRun = make([]string, 0)
+			examplesThatWereRun = make([]string, 0)
 		})
 
 		Describe("shuffling the collection", func() {
@@ -50,13 +56,13 @@ func init() {
 			It("should be sortable", func() {
 				sort.Sort(collection)
 				collection.run()
-				Ω(itsThatWereRun).Should(Equal([]string{"A", "B", "C"}))
+				Ω(examplesThatWereRun).Should(Equal([]string{"A", "B", "C"}))
 			})
 
 			It("shuffles all the examples after sorting them", func() {
 				collection.shuffle(rand.New(rand.NewSource(17)))
 				collection.run()
-				Ω(itsThatWereRun).Should(Equal(shuffleStrings([]string{"A", "B", "C"}, 17)), "The permutation should be the same across test runs")
+				Ω(examplesThatWereRun).Should(Equal(shuffleStrings([]string{"A", "B", "C"}, 17)), "The permutation should be the same across test runs")
 			})
 		})
 
@@ -87,7 +93,7 @@ func init() {
 
 			Context("when all the examples pass", func() {
 				It("runs all the tests", func() {
-					Ω(itsThatWereRun).Should(Equal([]string{"it 1", "it 2", "it 3"}))
+					Ω(examplesThatWereRun).Should(Equal([]string{"it 1", "it 2", "it 3"}))
 				})
 
 				It("marks the suite as passed", func() {
@@ -135,7 +141,7 @@ func init() {
 				})
 
 				It("runs all the tests", func() {
-					Ω(itsThatWereRun).Should(Equal([]string{"it 1", "failing it 2", "failing it 3"}))
+					Ω(examplesThatWereRun).Should(Equal([]string{"it 1", "failing it 2", "failing it 3"}))
 				})
 
 				It("marks the suite as failed", func() {
@@ -182,7 +188,7 @@ func init() {
 				})
 
 				It("skips the pending examples", func() {
-					Ω(itsThatWereRun).Should(Equal([]string{"it 2", "it 3"}))
+					Ω(examplesThatWereRun).Should(Equal([]string{"it 2", "it 3"}))
 				})
 
 				It("marks the suite as passed", func() {
@@ -230,7 +236,7 @@ func init() {
 				})
 
 				It("skips the non-focused examples", func() {
-					Ω(itsThatWereRun).Should(Equal([]string{"focused it 1", "focused it 3"}))
+					Ω(examplesThatWereRun).Should(Equal([]string{"focused it 1", "focused it 3"}))
 				})
 
 				It("marks the suite as passed", func() {
@@ -280,7 +286,7 @@ func init() {
 				})
 
 				It("ignores the programmatic focus and applies the regexp focusString", func() {
-					Ω(itsThatWereRun).Should(Equal([]string{"another it pickles2", "focused it pickles3"}))
+					Ω(examplesThatWereRun).Should(Equal([]string{"another it pickles2", "focused it pickles3"}))
 				})
 
 				It("publishes the correct starting suite summary", func() {
@@ -324,7 +330,7 @@ func init() {
 				})
 
 				It("trims the example set before running them", func() {
-					Ω(itsThatWereRun).Should(Equal([]string{"it 2", "it 3"}))
+					Ω(examplesThatWereRun).Should(Equal([]string{"it 2", "it 3"}))
 				})
 
 				It("publishes the correct starting suite summary", func() {
@@ -357,6 +363,43 @@ func init() {
 					Ω(summary.NumberOfPassedExamples).Should(Equal(2))
 					Ω(summary.NumberOfFailedExamples).Should(Equal(0))
 					Ω(summary.RunTime.Seconds()).Should(BeNumerically("~", 3*0.001, 0.01))
+				})
+			})
+		})
+
+		Describe("benchmarks", func() {
+			var conf config.GinkgoConfigType
+
+			BeforeEach(func() {
+				conf = config.GinkgoConfigType{}
+			})
+
+			JustBeforeEach(func() {
+				collection = newExampleCollection(fakeT, "collection description", []*example{
+					exampleWithItFunc("C", flagTypeNone, false),
+					exampleWithItFunc("A", flagTypeNone, false),
+					exampleWithItFunc("B", flagTypeNone, false),
+					exampleWithBenchmark("benchmark"),
+				}, fakeR, conf)
+
+				collection.run()
+			})
+
+			It("runs the benchmark", func() {
+				Ω(examplesThatWereRun).Should(ContainElement("A"))
+				Ω(examplesThatWereRun).Should(ContainElement("benchmark"))
+			})
+
+			Context("when instructed to skip benchmarks", func() {
+				BeforeEach(func() {
+					conf = config.GinkgoConfigType{
+						SkipBenchmarks: true,
+					}
+				})
+
+				It("skips the benchmarks", func() {
+					Ω(examplesThatWereRun).Should(ContainElement("A"))
+					Ω(examplesThatWereRun).ShouldNot(ContainElement("benchmark"))
 				})
 			})
 		})

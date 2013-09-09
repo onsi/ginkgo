@@ -11,6 +11,7 @@ type GinkgoConfigType struct {
 	FocusString       string
 	ParallelNode      int
 	ParallelTotal     int
+	SkipBenchmarks    bool
 }
 
 var GinkgoConfig = GinkgoConfigType{}
@@ -26,6 +27,7 @@ var DefaultReporterConfig = DefaultReporterConfigType{}
 func init() {
 	flag.Int64Var(&(GinkgoConfig.RandomSeed), "ginkgo.seed", time.Now().Unix(), "The seed used to randomize the spec suite.")
 	flag.BoolVar(&(GinkgoConfig.RandomizeAllSpecs), "ginkgo.randomizeAllSpecs", false, "If set, ginkgo will randomize all specs together.  By default, ginkgo only randomizes the top level Describe/Context groups.")
+	flag.BoolVar(&(GinkgoConfig.SkipBenchmarks), "ginkgo.skipBenchmarks", false, "If set, ginkgo will skip any benchmark specs.")
 	flag.StringVar(&(GinkgoConfig.FocusString), "ginkgo.focus", "", "If set, ginkgo will only run specs that match this regular expression.")
 	flag.IntVar(&(GinkgoConfig.ParallelNode), "ginkgo.parallel.node", 1, "This worker node's (one-indexed) node number.  For running specs in parallel.")
 	flag.IntVar(&(GinkgoConfig.ParallelTotal), "ginkgo.parallel.total", 1, "The total number of worker nodes.  For running specs in parallel.")
