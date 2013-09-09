@@ -161,12 +161,13 @@ func init() {
 	Describe("BenchmarkNodes", func() {
 		It("should save off the number of samples and maximum time", func() {
 			codeLocation := generateCodeLocation(0)
-			benchmark := newBenchmarkNode("my benchmark node", func() {}, flagTypeFocused, codeLocation, 2*time.Second, 3)
+			benchmark := newBenchmarkNode("my benchmark node", func() {}, flagTypeFocused, codeLocation, 2*time.Second, 3, 3*time.Second)
 			Ω(benchmark.flag).Should(Equal(flagTypeFocused))
 			Ω(benchmark.text).Should(Equal("my benchmark node"))
 			Ω(benchmark.codeLocation).Should(Equal(codeLocation))
 			Ω(benchmark.samples).Should(Equal(3))
 			Ω(benchmark.timeoutThreshold).Should(Equal(2 * time.Second))
+			Ω(benchmark.maximumTime).Should(Equal(3 * time.Second))
 		})
 	})
 }

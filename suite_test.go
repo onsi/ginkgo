@@ -88,7 +88,7 @@ func init() {
 				r := rand.New(rand.NewSource(time.Now().UnixNano()))
 				sleepTime := time.Duration(r.Float64() * 0.01 * float64(time.Second))
 				time.Sleep(sleepTime)
-			}, 10)
+			}, 10, 0.02)
 
 			It("creates a node hierarchy, converts it to an example collection, and runs it", func() {
 				Ω(runOrder).Should(Equal([]string{

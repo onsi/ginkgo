@@ -427,7 +427,7 @@ func init() {
 					ex = newExample(newBenchmarkNode("benchmark", func() {
 						runs++
 						time.Sleep(time.Duration(0.001 * float64(time.Second) * float64(runs)))
-					}, flagTypeNone, componentCodeLocation, time.Duration(0.01*float64(time.Second)), 5))
+					}, flagTypeNone, componentCodeLocation, 0, 5, time.Duration(1*float64(time.Second))))
 				})
 
 				It("runs the benchmark samples number of times and returns timing statistics", func() {
@@ -456,7 +456,7 @@ func init() {
 							ex.fail(failureData{})
 						}
 						time.Sleep(time.Duration(0.001 * float64(time.Second) * float64(runs)))
-					}, flagTypeNone, componentCodeLocation, time.Duration(0.01*float64(time.Second)), 5))
+					}, flagTypeNone, componentCodeLocation, 0, 5, time.Duration(1*float64(time.Second))))
 				})
 
 				It("marks the benchmark as failed and doesn't run any more samples", func() {
@@ -466,6 +466,36 @@ func init() {
 					Ω(runs).Should(Equal(3))
 
 					Ω(summary.State).Should(Equal(ExampleStateFailed))
+					Ω(summary.Benchmark.IsBenchmark).Should(BeTrue())
+					Ω(summary.Benchmark.NumberOfSamples).Should(Equal(5))
+					Ω(summary.Benchmark.FastestTime.Seconds()).Should(BeNumerically("==", 0))
+					Ω(summary.Benchmark.SlowestTime.Seconds()).Should(BeNumerically("==", 0))
+					Ω(summary.Benchmark.AverageTime.Seconds()).Should(BeNumerically("==", 0))
+					Ω(summary.Benchmark.StdDeviation.Seconds()).Should(BeNumerically("==", 0))
+				})
+			})
+
+			Context("when a benchmark sample fails", func() {
+				BeforeEach(func() {
+					ex = newExample(newBenchmarkNode("benchmark", func() {
+						runs++
+						time.Sleep(time.Duration(0.001 * float64(time.Second) * float64(runs)))
+					}, flagTypeNone, componentCodeLocation, 0, 5, time.Duration(0.0025*float64(time.Second))))
+				})
+
+				It("marks the benchmark as failed and doesn't run any more samples", func() {
+					ex.run()
+					summary := ex.summary()
+
+					Ω(runs).Should(Equal(3))
+
+					Ω(summary.State).Should(Equal(ExampleStateFailed))
+					Ω(summary.Failure.Message).Should(ContainSubstring("Benchmark sample took"))
+					Ω(summary.Failure.Location).Should(Equal(componentCodeLocation))
+					Ω(summary.Failure.ComponentIndex).Should(Equal(0))
+					Ω(summary.Failure.ComponentType).Should(Equal(ExampleComponentTypeBenchmark))
+					Ω(summary.Failure.ForwardedPanic).Should(BeNil())
+
 					Ω(summary.Benchmark.IsBenchmark).Should(BeTrue())
 					Ω(summary.Benchmark.NumberOfSamples).Should(Equal(5))
 					Ω(summary.Benchmark.FastestTime.Seconds()).Should(BeNumerically("==", 0))

@@ -119,13 +119,15 @@ func (node *itNode) getCodeLocation() CodeLocation {
 type benchmarkNode struct {
 	*itNode
 
-	samples int
+	samples     int
+	maximumTime time.Duration
 }
 
-func newBenchmarkNode(text string, body interface{}, flag flagType, codeLocation CodeLocation, timeout time.Duration, samples int) *benchmarkNode {
+func newBenchmarkNode(text string, body interface{}, flag flagType, codeLocation CodeLocation, timeout time.Duration, samples int, maximumTime time.Duration) *benchmarkNode {
 	return &benchmarkNode{
-		itNode:  newItNode(text, body, flag, codeLocation, timeout),
-		samples: samples,
+		itNode:      newItNode(text, body, flag, codeLocation, timeout),
+		samples:     samples,
+		maximumTime: maximumTime,
 	}
 }
 

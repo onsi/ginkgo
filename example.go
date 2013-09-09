@@ -1,6 +1,7 @@
 package ginkgo
 
 import (
+	"fmt"
 	"math"
 	"time"
 )
@@ -86,7 +87,10 @@ func (ex *example) run() {
 		sampleTime := time.Now()
 		outcome, failure := ex.subject.run()
 		ex.sampleRunTimes[sample] = time.Since(sampleTime)
-		if ex.handleOutcomeAndFailure(len(ex.containers), ExampleComponentTypeIt, ex.subject.getCodeLocation(), outcome, failure) {
+		if ex.handleOutcomeAndFailure(len(ex.containers), ex.subjectComponentType(), ex.subject.getCodeLocation(), outcome, failure) {
+			return
+		}
+		if ex.handleBenchmarkFailure(ex.sampleRunTimes[sample]) {
 			return
 		}
 
@@ -99,6 +103,14 @@ func (ex *example) run() {
 				}
 			}
 		}
+	}
+}
+
+func (ex *example) subjectComponentType() ExampleComponentType {
+	if ex.subject.nodeType() == nodeTypeBenchmark {
+		return ExampleComponentTypeBenchmark
+	} else {
+		return ExampleComponentTypeIt
 	}
 }
 
@@ -138,6 +150,30 @@ func (ex *example) handleOutcomeAndFailure(containerIndex int, componentType Exa
 	}
 
 	return didFail
+}
+
+func (ex *example) handleBenchmarkFailure(sampleTime time.Duration) (didFail bool) {
+	if ex.subject.nodeType() != nodeTypeBenchmark {
+		return false
+	}
+
+	node := ex.subject.(*benchmarkNode)
+	if sampleTime < node.maximumTime {
+		return false
+	}
+
+	ex.state = ExampleStateFailed
+	message := fmt.Sprintf("Benchmark sample took: %.4fs\nThis exceeds the allowed maximum: %.4fs", sampleTime.Seconds(), node.maximumTime.Seconds())
+
+	ex.failure = ExampleFailure{
+		Message:               message,
+		Location:              node.getCodeLocation(),
+		ComponentIndex:        len(ex.containers),
+		ComponentType:         ExampleComponentTypeBenchmark,
+		ComponentCodeLocation: node.getCodeLocation(),
+	}
+
+	return true
 }
 
 func (ex *example) summary() *ExampleSummary {

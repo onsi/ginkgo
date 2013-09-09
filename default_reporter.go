@@ -219,6 +219,8 @@ func (reporter *defaultReporter) printFailure(message string, exampleSummary *Ex
 				blockType = "AfterEach"
 			case ExampleComponentTypeIt:
 				blockType = "It"
+			case ExampleComponentTypeBenchmark:
+				blockType = "Benchmark"
 			}
 			reporter.println(i+offset, reporter.colorize(redColor+boldStyle, "%s [%s]", exampleSummary.ComponentTexts[i], blockType))
 			reporter.println(i+offset, reporter.colorize(grayColor, "(%s)", exampleSummary.ComponentCodeLocations[i]))

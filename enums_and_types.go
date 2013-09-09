@@ -61,4 +61,5 @@ const (
 	ExampleComponentTypeJustBeforeEach
 	ExampleComponentTypeAfterEach
 	ExampleComponentTypeIt
+	ExampleComponentTypeBenchmark
 )
