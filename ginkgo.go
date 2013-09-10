@@ -12,6 +12,7 @@ const defaultTimeout = 5
 var globalSuite *suite
 
 func init() {
+	config.Flags("ginkgo", true)
 	globalSuite = newSuite()
 }
 
