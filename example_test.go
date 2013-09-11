@@ -205,10 +205,10 @@ func init() {
 					"INNER_JUST_BEFORE_A",
 					"INNER_JUST_BEFORE_B",
 					"IT",
-					"INNER_AFTER_B",
 					"INNER_AFTER_A",
-					"OUTER_AFTER_B",
+					"INNER_AFTER_B",
 					"OUTER_AFTER_A",
+					"OUTER_AFTER_B",
 				}))
 			})
 

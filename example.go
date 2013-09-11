@@ -127,9 +127,9 @@ func (ex *example) runSample(sample int) (didFail bool) {
 
 	for i := len(ex.containers) - 1; i >= 0; i-- {
 		container := ex.containers[i]
-		for j := len(container.afterEachNodes) - 1; j >= 0; j-- {
-			outcome, failure := container.afterEachNodes[j].run()
-			if ex.handleOutcomeAndFailure(i, ExampleComponentTypeAfterEach, container.afterEachNodes[j].codeLocation, outcome, failure) {
+		for _, afterEach := range container.afterEachNodes {
+			outcome, failure := afterEach.run()
+			if ex.handleOutcomeAndFailure(i, ExampleComponentTypeAfterEach, afterEach.codeLocation, outcome, failure) {
 				return true
 			}
 		}
