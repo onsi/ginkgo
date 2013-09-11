@@ -25,11 +25,12 @@ func init() {
 
 	flag.Usage = func() {
 		fmt.Fprintf(os.Stderr, "Usage of ginkgo:\n\n")
-		fmt.Fprintf(os.Stderr, "ginkgo bootstrap\n  bootstrap a test suite for the current package.\n\n")
-		fmt.Fprintf(os.Stderr, "ginkgo generate <SUBJECT>\n  generate a test file for SUBJECT, the file will be named SUBJECT_test.go\n  If omitted, a file named after the package will be created.\n\n")
-		fmt.Fprintf(os.Stderr, "ginkgo:\n  run the tests in the current directory.\n  The following flags are available:\n")
+		fmt.Fprintf(os.Stderr, "ginkgo\n  Run the tests in the current directory.  The following flags are available:\n")
 		flag.PrintDefaults()
 		fmt.Fprintf(os.Stderr, "\n")
+		fmt.Fprintf(os.Stderr, "ginkgo bootstrap\n  Bootstrap a test suite for the current package.\n\n")
+		fmt.Fprintf(os.Stderr, "ginkgo generate <SUBJECT>\n  Generate a test file for SUBJECT, the file will be named SUBJECT_test.go\n  If omitted, a file named after the package will be created.\n\n")
+		fmt.Fprintf(os.Stderr, "ginkgo help\n  Print this usage information.\n")
 	}
 
 	flag.Parse()
@@ -74,8 +75,13 @@ func handleSubcommands(args []string) {
 		}
 		generateSpec(subject)
 		os.Exit(0)
+	} else if args[0] == "help" {
+		flag.Usage()
+		os.Exit(0)
 	} else {
-		fmt.Printf("Unkown command %s\n", args[0])
+		fmt.Printf("Unkown command %s\n\n", args[0])
+		flag.Usage()
+
 		os.Exit(1)
 	}
 }
