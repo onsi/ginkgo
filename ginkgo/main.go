@@ -23,10 +23,23 @@ func init() {
 	flag.IntVar(&(numCPU), "nodes", 1, "The number of parallel test nodes to run")
 	flag.BoolVar(&(recurse), "r", false, "Find test suites under the current directory recursively")
 
+	flag.Usage = func() {
+		fmt.Fprintf(os.Stderr, "Usage of ginkgo:\n\n")
+		fmt.Fprintf(os.Stderr, "ginkgo bootstrap\n  bootstrap a test suite for the current package.\n\n")
+		fmt.Fprintf(os.Stderr, "ginkgo generate <SUBJECT>\n  generate a test file for SUBJECT, the file will be named SUBJECT_test.go\n  If omitted, a file named after the package will be created.\n\n")
+		fmt.Fprintf(os.Stderr, "ginkgo:\n  run the tests in the current directory.\n  The following flags are available:\n")
+		flag.PrintDefaults()
+		fmt.Fprintf(os.Stderr, "\n")
+	}
+
 	flag.Parse()
 }
 
 func main() {
+	if flag.NArg() > 0 {
+		handleSubcommands(flag.Args())
+	}
+
 	reports = make([]*bytes.Buffer, 0)
 
 	passed := true
@@ -46,6 +59,23 @@ func main() {
 	if passed {
 		os.Exit(0)
 	} else {
+		os.Exit(1)
+	}
+}
+
+func handleSubcommands(args []string) {
+	if args[0] == "bootstrap" {
+		generateBootstrap()
+		os.Exit(0)
+	} else if args[0] == "generate" {
+		subject := ""
+		if len(args) > 1 {
+			subject = args[1]
+		}
+		generateSpec(subject)
+		os.Exit(0)
+	} else {
+		fmt.Printf("Unkown command %s\n", args[0])
 		os.Exit(1)
 	}
 }
