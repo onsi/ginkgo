@@ -1,0 +1,10 @@
+language: go
+go:
+  - 1.1
+  - tip
+
+install:
+  - go get -v ./...
+  - go install github.com/onsi/ginkgo/ginkgo
+
+script: ginkgo -r
