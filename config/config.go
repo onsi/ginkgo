@@ -14,6 +14,7 @@ type GinkgoConfigType struct {
 	ParallelNode      int
 	ParallelTotal     int
 	SkipBenchmarks    bool
+	FailOnPending     bool
 }
 
 var GinkgoConfig = GinkgoConfigType{}
@@ -38,6 +39,7 @@ func Flags(prefix string, includeParallelFlags bool) {
 	flag.Int64Var(&(GinkgoConfig.RandomSeed), prefix+"seed", time.Now().Unix(), "The seed used to randomize the spec suite.")
 	flag.BoolVar(&(GinkgoConfig.RandomizeAllSpecs), prefix+"randomizeAllSpecs", false, "If set, ginkgo will randomize all specs together.  By default, ginkgo only randomizes the top level Describe/Context groups.")
 	flag.BoolVar(&(GinkgoConfig.SkipBenchmarks), prefix+"skipBenchmarks", false, "If set, ginkgo will skip any benchmark specs.")
+	flag.BoolVar(&(GinkgoConfig.FailOnPending), prefix+"failOnPending", false, "If set, ginkgo will mark the test suite as failed if any specs are pending.")
 	flag.StringVar(&(GinkgoConfig.FocusString), prefix+"focus", "", "If set, ginkgo will only run specs that match this regular expression.")
 
 	if includeParallelFlags {
@@ -64,6 +66,10 @@ func BuildFlagArgs(prefix string, ginkgo GinkgoConfigType, reporter DefaultRepor
 
 	if ginkgo.SkipBenchmarks {
 		result = append(result, fmt.Sprintf("--%sskipBenchmarks", prefix))
+	}
+
+	if ginkgo.FailOnPending {
+		result = append(result, fmt.Sprintf("--%sfailOnPending", prefix))
 	}
 
 	if ginkgo.FocusString != "" {

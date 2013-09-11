@@ -121,6 +121,8 @@ func (collection *exampleCollection) run() {
 			if example.failed() {
 				suiteFailed = true
 			}
+		} else if example.pending() && collection.config.FailOnPending {
+			suiteFailed = true
 		}
 
 		collection.reportExample(example)
@@ -187,8 +189,17 @@ func (collection *exampleCollection) summary() *SuiteSummary {
 		return ex.failed()
 	})
 
+	success := true
+
+	if numberOfFailedExamples > 0 {
+		success = false
+	} else if numberOfPendingExamples > 0 && collection.config.FailOnPending {
+		success = false
+	}
+
 	return &SuiteSummary{
 		SuiteDescription: collection.description,
+		SuiteSucceeded:   success,
 
 		NumberOfExamplesBeforeParallelization: collection.exampleCountBeforeParallelization,
 		NumberOfTotalExamples:                 len(collection.examples),

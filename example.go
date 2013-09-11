@@ -77,6 +77,10 @@ func (ex *example) skippedOrPending() bool {
 	return ex.state == ExampleStateSkipped || ex.state == ExampleStatePending
 }
 
+func (ex *example) pending() bool {
+	return ex.state == ExampleStatePending
+}
+
 func (ex *example) run() {
 	startTime := time.Now()
 	defer func() {

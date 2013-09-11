@@ -14,6 +14,7 @@ type Reporter interface {
 
 type SuiteSummary struct {
 	SuiteDescription string
+	SuiteSucceeded   bool
 
 	NumberOfExamplesBeforeParallelization int
 	NumberOfTotalExamples                 int

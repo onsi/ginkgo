@@ -68,17 +68,13 @@ func init() {
 
 		Describe("running an example collection", func() {
 			var (
-				example1      *example
-				example2      *example
-				example3      *example
-				focusString   string
-				parallelTotal int
-				parallelNode  int
+				example1 *example
+				example2 *example
+				example3 *example
+				conf     config.GinkgoConfigType
 			)
 			BeforeEach(func() {
-				focusString = ""
-				parallelTotal = 1
-				parallelNode = 1
+				conf = config.GinkgoConfigType{FocusString: "", ParallelTotal: 1, ParallelNode: 1}
 
 				example1 = exampleWithItFunc("it 1", flagTypeNone, false)
 				example2 = exampleWithItFunc("it 2", flagTypeNone, false)
@@ -86,7 +82,6 @@ func init() {
 			})
 
 			JustBeforeEach(func() {
-				conf := config.GinkgoConfigType{FocusString: focusString, ParallelTotal: parallelTotal, ParallelNode: parallelNode}
 				collection = newExampleCollection(fakeT, "collection description", []*example{example1, example2, example3}, fakeR, conf)
 				collection.run()
 			})
@@ -103,6 +98,7 @@ func init() {
 				It("publishes the correct starting suite summary", func() {
 					summary := fakeR.beginSummary
 					Ω(summary.SuiteDescription).Should(Equal("collection description"))
+					Ω(summary.SuiteSucceeded).Should(BeTrue())
 					Ω(summary.NumberOfExamplesBeforeParallelization).Should(Equal(3))
 					Ω(summary.NumberOfTotalExamples).Should(Equal(3))
 					Ω(summary.NumberOfExamplesThatWillBeRun).Should(Equal(3))
@@ -123,6 +119,7 @@ func init() {
 				It("publishes the correct ending suite summary", func() {
 					summary := fakeR.endSummary
 					Ω(summary.SuiteDescription).Should(Equal("collection description"))
+					Ω(summary.SuiteSucceeded).Should(BeTrue())
 					Ω(summary.NumberOfExamplesBeforeParallelization).Should(Equal(3))
 					Ω(summary.NumberOfTotalExamples).Should(Equal(3))
 					Ω(summary.NumberOfExamplesThatWillBeRun).Should(Equal(3))
@@ -151,6 +148,7 @@ func init() {
 				It("publishes the correct starting suite summary", func() {
 					summary := fakeR.beginSummary
 					Ω(summary.SuiteDescription).Should(Equal("collection description"))
+					Ω(summary.SuiteSucceeded).Should(BeTrue())
 					Ω(summary.NumberOfExamplesBeforeParallelization).Should(Equal(3))
 					Ω(summary.NumberOfTotalExamples).Should(Equal(3))
 					Ω(summary.NumberOfExamplesThatWillBeRun).Should(Equal(3))
@@ -171,6 +169,7 @@ func init() {
 				It("publishes the correct ending suite summary", func() {
 					summary := fakeR.endSummary
 					Ω(summary.SuiteDescription).Should(Equal("collection description"))
+					Ω(summary.SuiteSucceeded).Should(BeFalse())
 					Ω(summary.NumberOfExamplesBeforeParallelization).Should(Equal(3))
 					Ω(summary.NumberOfTotalExamples).Should(Equal(3))
 					Ω(summary.NumberOfExamplesThatWillBeRun).Should(Equal(3))
@@ -198,6 +197,7 @@ func init() {
 				It("publishes the correct starting suite summary", func() {
 					summary := fakeR.beginSummary
 					Ω(summary.SuiteDescription).Should(Equal("collection description"))
+					Ω(summary.SuiteSucceeded).Should(BeTrue())
 					Ω(summary.NumberOfExamplesBeforeParallelization).Should(Equal(3))
 					Ω(summary.NumberOfTotalExamples).Should(Equal(3))
 					Ω(summary.NumberOfExamplesThatWillBeRun).Should(Equal(2))
@@ -218,6 +218,7 @@ func init() {
 				It("publishes the correct ending suite summary", func() {
 					summary := fakeR.endSummary
 					Ω(summary.SuiteDescription).Should(Equal("collection description"))
+					Ω(summary.SuiteSucceeded).Should(BeTrue())
 					Ω(summary.NumberOfExamplesBeforeParallelization).Should(Equal(3))
 					Ω(summary.NumberOfTotalExamples).Should(Equal(3))
 					Ω(summary.NumberOfExamplesThatWillBeRun).Should(Equal(2))
@@ -226,6 +227,18 @@ func init() {
 					Ω(summary.NumberOfPassedExamples).Should(Equal(2))
 					Ω(summary.NumberOfFailedExamples).Should(Equal(0))
 					Ω(summary.RunTime.Seconds()).Should(BeNumerically("~", 3*0.001, 0.01))
+				})
+
+				Context("and --failOnPending is set", func() {
+					BeforeEach(func() {
+						conf.FailOnPending = true
+					})
+
+					It("should mark the suite as failed", func() {
+						Ω(fakeT.didFail).Should(BeTrue())
+						summary := fakeR.endSummary
+						Ω(summary.SuiteSucceeded).Should(BeFalse())
+					})
 				})
 			})
 
@@ -246,6 +259,7 @@ func init() {
 				It("publishes the correct starting suite summary", func() {
 					summary := fakeR.beginSummary
 					Ω(summary.SuiteDescription).Should(Equal("collection description"))
+					Ω(summary.SuiteSucceeded).Should(BeTrue())
 					Ω(summary.NumberOfExamplesBeforeParallelization).Should(Equal(3))
 					Ω(summary.NumberOfTotalExamples).Should(Equal(3))
 					Ω(summary.NumberOfExamplesThatWillBeRun).Should(Equal(2))
@@ -266,6 +280,7 @@ func init() {
 				It("publishes the correct ending suite summary", func() {
 					summary := fakeR.endSummary
 					Ω(summary.SuiteDescription).Should(Equal("collection description"))
+					Ω(summary.SuiteSucceeded).Should(BeTrue())
 					Ω(summary.NumberOfExamplesBeforeParallelization).Should(Equal(3))
 					Ω(summary.NumberOfTotalExamples).Should(Equal(3))
 					Ω(summary.NumberOfExamplesThatWillBeRun).Should(Equal(2))
@@ -279,7 +294,7 @@ func init() {
 
 			Context("when a regexp focusString is provided", func() {
 				BeforeEach(func() {
-					focusString = `pickles\d$`
+					conf.FocusString = `pickles\d$`
 					example1 = exampleWithItFunc("focused it 1", flagTypeFocused, false)
 					example2 = exampleWithItFunc("another it pickles2", flagTypeNone, false)
 					example3 = exampleWithItFunc("focused it pickles3", flagTypeFocused, false)
@@ -292,6 +307,7 @@ func init() {
 				It("publishes the correct starting suite summary", func() {
 					summary := fakeR.beginSummary
 					Ω(summary.SuiteDescription).Should(Equal("collection description"))
+					Ω(summary.SuiteSucceeded).Should(BeTrue())
 					Ω(summary.NumberOfExamplesBeforeParallelization).Should(Equal(3))
 					Ω(summary.NumberOfTotalExamples).Should(Equal(3))
 					Ω(summary.NumberOfExamplesThatWillBeRun).Should(Equal(2))
@@ -312,6 +328,7 @@ func init() {
 				It("publishes the correct ending suite summary", func() {
 					summary := fakeR.endSummary
 					Ω(summary.SuiteDescription).Should(Equal("collection description"))
+					Ω(summary.SuiteSucceeded).Should(BeTrue())
 					Ω(summary.NumberOfExamplesBeforeParallelization).Should(Equal(3))
 					Ω(summary.NumberOfTotalExamples).Should(Equal(3))
 					Ω(summary.NumberOfExamplesThatWillBeRun).Should(Equal(2))
@@ -325,8 +342,8 @@ func init() {
 
 			Context("when a examples are run in parallel", func() {
 				BeforeEach(func() {
-					parallelTotal = 2
-					parallelNode = 2
+					conf.ParallelTotal = 2
+					conf.ParallelNode = 2
 				})
 
 				It("trims the example set before running them", func() {
@@ -336,6 +353,7 @@ func init() {
 				It("publishes the correct starting suite summary", func() {
 					summary := fakeR.beginSummary
 					Ω(summary.SuiteDescription).Should(Equal("collection description"))
+					Ω(summary.SuiteSucceeded).Should(BeTrue())
 					Ω(summary.NumberOfExamplesBeforeParallelization).Should(Equal(3))
 					Ω(summary.NumberOfTotalExamples).Should(Equal(2))
 					Ω(summary.NumberOfExamplesThatWillBeRun).Should(Equal(2))
@@ -355,6 +373,7 @@ func init() {
 				It("publishes the correct ending suite summary", func() {
 					summary := fakeR.endSummary
 					Ω(summary.SuiteDescription).Should(Equal("collection description"))
+					Ω(summary.SuiteSucceeded).Should(BeTrue())
 					Ω(summary.NumberOfExamplesBeforeParallelization).Should(Equal(3))
 					Ω(summary.NumberOfTotalExamples).Should(Equal(2))
 					Ω(summary.NumberOfExamplesThatWillBeRun).Should(Equal(2))

@@ -72,8 +72,6 @@ func findSuitesInDir(dir string) []string {
 }
 
 func runSuiteAtPath(path string) bool {
-	fmt.Printf("\nRunning suite at %s\n\n", path)
-
 	completions := make(chan bool)
 	for cpu := 0; cpu < numCPU; cpu++ {
 		config.GinkgoConfig.ParallelNode = cpu + 1

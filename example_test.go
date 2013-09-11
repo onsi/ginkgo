@@ -132,6 +132,19 @@ func init() {
 			})
 		})
 
+		Describe("pending", func() {
+			It("should be false if the example is not pending", func() {
+				ex := newExample(it)
+				Ω(ex.pending()).Should(BeFalse())
+			})
+
+			It("should be true if the example is pending", func() {
+				it.flag = flagTypePending
+				ex := newExample(it)
+				Ω(ex.pending()).Should(BeTrue())
+			})
+		})
+
 		Describe("running examples and getting summaries", func() {
 			var (
 				orderedList    []string

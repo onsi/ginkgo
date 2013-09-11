@@ -120,13 +120,13 @@ func (reporter *defaultReporter) ExampleDidComplete(exampleSummary *ExampleSumma
 func (reporter *defaultReporter) SpecSuiteDidEnd(summary *SuiteSummary) {
 	reporter.printNewLine()
 	color := greenColor
-	if summary.NumberOfFailedExamples > 0 {
+	if !summary.SuiteSucceeded {
 		color = redColor
 	}
 	reporter.println(0, reporter.colorize(boldStyle+color, "Ran %d of %d Specs in %.3f seconds", summary.NumberOfExamplesThatWillBeRun, summary.NumberOfTotalExamples, summary.RunTime.Seconds()))
 
 	status := ""
-	if summary.NumberOfFailedExamples == 0 {
+	if summary.SuiteSucceeded {
 		status = fmt.Sprintf(reporter.colorize(boldStyle+greenColor, "SUCCESS!"))
 	} else {
 		status = fmt.Sprintf(reporter.colorize(boldStyle+redColor, "FAIL!"))
