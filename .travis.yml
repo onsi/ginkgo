@@ -5,6 +5,7 @@ go:
 
 install:
   - go get -v ./...
+  - go get github.com/onsi/gomega
   - go install github.com/onsi/ginkgo/ginkgo
 
 script: $HOME/gopath/bin/ginkgo -r
