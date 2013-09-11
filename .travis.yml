@@ -7,4 +7,4 @@ install:
   - go get -v ./...
   - go install github.com/onsi/ginkgo/ginkgo
 
-script: ginkgo -r
+script: $GOPATH/bin/ginkgo -r
