@@ -7,7 +7,9 @@ import (
 	"time"
 )
 
-const defaultTimeout = 5
+const GINKGO_VERSION = config.VERSION
+
+const defaultTimeout = 1
 
 var globalSuite *suite
 
