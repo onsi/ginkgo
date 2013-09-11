@@ -7,6 +7,8 @@ import (
 	"fmt"
 )
 
+const VERSION = "1.0"
+
 type GinkgoConfigType struct {
 	RandomSeed        int64
 	RandomizeAllSpecs bool
