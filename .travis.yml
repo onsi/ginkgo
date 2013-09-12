@@ -8,4 +8,4 @@ install:
   - go get github.com/onsi/gomega
   - go install github.com/onsi/ginkgo/ginkgo
 
-script: $HOME/gopath/bin/ginkgo -r
+script: $HOME/gopath/bin/ginkgo -r --randomizeAllSpecs --failOnPending
