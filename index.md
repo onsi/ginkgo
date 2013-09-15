@@ -1,7 +1,6 @@
 ---
 layout: default
 title: Ginkgo
-sidebar: Ginkgo
 ---
 # Ginkgo: a BDD Testing Framework for Golang
 
