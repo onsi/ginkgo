@@ -35,7 +35,7 @@ Jump straight to the [docs](http://onsi.github.io/ginkgo/) to learn more.
 
 ## [Gomega](http://github.com/onsi/gomega): Ginkgo's Preferred Matcher Library
 
-Learn more about Gomega [here](http://onsi.github.io/ginkgo/gomega)
+Learn more about Gomega [here](http://onsi.github.io/gomega/)
 
 ## License
 
