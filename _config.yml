@@ -1,0 +1,4 @@
+baseurl: /ginkgo
+safe: true
+lsi: false
+pygments: true

@@ -1,0 +1,28 @@
+<!DOCTYPE html>
+<html>
+<head>
+    <meta http-equiv="Content-Type" content="text/html;charset=utf-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
+    <title>{{ page.title }}</title>
+    <link rel="stylesheet" type="text/css" href="{{ site.baseurl }}/css/bootstrap.css" media="screen">
+    <link rel="stylesheet" type="text/css" href="{{ site.baseurl }}/css/bootstrap-theme.css" media="screen">
+    <link rel="stylesheet" type="text/css" href="{{ site.baseurl }}/css/style.css" media="screen">
+    <link rel="stylesheet" type="text/css" href="{{ site.baseurl }}/css/syntax.css">
+    <script src="//code.jquery.com/jquery.js"></script>
+    <script src="{{ site.baseurl }}/js/bootstrap.min.js"></script>
+</head>
+<body data-spy="scroll" data-target="#sidebar" data-offset="40">
+    <div class="container">
+        <div class="row">
+            <div class="col-md-3">
+                <div id="sidebar">
+                    {% include ginkgo_sidebar.html %}
+                </div>
+            </div>
+            <div class="col-md-9 content">
+                {{ content }}
+            </div>
+        </div>
+    </div>
+</body>
+</html>
