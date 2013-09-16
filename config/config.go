@@ -95,7 +95,7 @@ func BuildFlagArgs(prefix string, ginkgo GinkgoConfigType, reporter DefaultRepor
 	}
 
 	if !reporter.NoisyPendings {
-		result = append(result, fmt.Sprintf("--%snoisyPendings=false"))
+		result = append(result, fmt.Sprintf("--%snoisyPendings=false", prefix))
 	}
 
 	return result
