@@ -15,13 +15,15 @@ import (
 
 var numCPU int
 var recurse bool
+var runMagicI bool
 var reports []*bytes.Buffer
 
 func init() {
 	config.Flags("", false)
 
 	flag.IntVar(&(numCPU), "nodes", 1, "The number of parallel test nodes to run")
-	flag.BoolVar(&(recurse), "r", false, "Find test suites under the current directory recursively")
+	flag.BoolVar(&(recurse), "r", false, "Find and run test suites under the current directory recursively")
+	flag.BoolVar(&(runMagicI), "i", false, "Run go test -i first, then run the test suite")
 
 	flag.Usage = func() {
 		fmt.Fprintf(os.Stderr, "Usage of ginkgo:\n\n")
@@ -51,10 +53,7 @@ func main() {
 		dirs = findSuitesInDir(".")
 	}
 
-	for i, dir := range dirs {
-		if i > 0 {
-			fmt.Print("\n~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~\n")
-		}
+	for _, dir := range dirs {
 		passed = passed && runSuiteAtPath(dir)
 	}
 
@@ -113,7 +112,10 @@ func findSuitesInDir(dir string) []string {
 
 func runSuiteAtPath(path string) bool {
 	completions := make(chan bool)
-	runGoI(path)
+
+	if runMagicI {
+		runGoI(path)
+	}
 
 	for cpu := 0; cpu < numCPU; cpu++ {
 		config.GinkgoConfig.ParallelNode = cpu + 1

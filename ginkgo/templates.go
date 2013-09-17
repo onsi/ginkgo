@@ -17,7 +17,7 @@ import (
     "testing"
 )
 
-func TestBootstrap(t *testing.T) {
+func Test{{.PackageTitleCase}}(t *testing.T) {
     RegisterFailHandler(Fail)
     RunSpecs(t, "{{.PackageTitleCase}} Suite")
 }
