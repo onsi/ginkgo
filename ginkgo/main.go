@@ -16,6 +16,7 @@ import (
 var numCPU int
 var recurse bool
 var runMagicI bool
+var race bool
 var reports []*bytes.Buffer
 
 func init() {
@@ -24,6 +25,7 @@ func init() {
 	flag.IntVar(&(numCPU), "nodes", 1, "The number of parallel test nodes to run")
 	flag.BoolVar(&(recurse), "r", false, "Find and run test suites under the current directory recursively")
 	flag.BoolVar(&(runMagicI), "i", false, "Run go test -i first, then run the test suite")
+	flag.BoolVar(&(race), "race", false, "Run tests with race detection enabled")
 
 	flag.Usage = func() {
 		fmt.Fprintf(os.Stderr, "Usage of ginkgo:\n\n")
@@ -114,7 +116,7 @@ func runSuiteAtPath(path string) bool {
 	completions := make(chan bool)
 
 	if runMagicI {
-		runGoI(path)
+		runGoI(path, race)
 	}
 
 	for cpu := 0; cpu < numCPU; cpu++ {
@@ -122,6 +124,9 @@ func runSuiteAtPath(path string) bool {
 		config.GinkgoConfig.ParallelTotal = numCPU
 
 		args := config.BuildFlagArgs("ginkgo", config.GinkgoConfig, config.DefaultReporterConfig)
+		if race {
+			args = append([]string{"--race"}, args...)
+		}
 
 		var writer io.Writer
 		if numCPU > 1 {
@@ -155,11 +160,16 @@ func printToScreen() {
 	os.Stdout.Sync()
 }
 
-func runGoI(path string) {
-	cmd := exec.Command("go", "test", "-i", path)
+func runGoI(path string, race bool) {
+	args := []string{"test", "-i"}
+	if race {
+		args = append(args, "-race")
+	}
+	args = append(args, path)
+	cmd := exec.Command("go", args...)
 	err := cmd.Run()
 	if err != nil {
-		fmt.Printf("go test -i %s failed", path)
+		fmt.Printf("go test -i %s failed\n", path)
 		os.Exit(1)
 	}
 }
