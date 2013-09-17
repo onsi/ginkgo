@@ -68,22 +68,18 @@ func init() {
 					sleepDuration      time.Duration
 					timeoutDuration    time.Duration
 					numberOfGoRoutines int
-					sendToChannel      bool
 				)
 
 				BeforeEach(func() {
 					sleepDuration = time.Duration(0.001 * float64(time.Second))
 					timeoutDuration = time.Duration(1 * float64(time.Second))
-					sendToChannel = true
 				})
 
 				JustBeforeEach(func() {
 					node = newRunnableNode(func(done Done) {
 						numberOfGoRoutines = runtime.NumGoroutine()
 						time.Sleep(sleepDuration)
-						if sendToChannel {
-							done <- true
-						}
+						done <- true
 					}, generateCodeLocation(0), timeoutDuration)
 				})
 
@@ -110,22 +106,6 @@ func init() {
 						Ω(failure.codeLocation).Should(Equal(node.codeLocation))
 					})
 				})
-
-				Context("when the function fails to send to the done channel", func() {
-					BeforeEach(func() {
-						sleepDuration = time.Duration(0.0005 * float64(time.Second))
-						timeoutDuration = time.Duration(0.001 * float64(time.Second))
-						sendToChannel = false
-					})
-
-					It("should timeout", func() {
-						outcome, failure := node.run()
-						Ω(outcome).Should(Equal(runOutcomeTimedOut))
-						Ω(failure.message).Should(Equal("Timed out"))
-						Ω(failure.codeLocation).Should(Equal(node.codeLocation))
-					})
-				})
-
 			})
 
 			Context("when the function takes the wrong kind of argument", func() {

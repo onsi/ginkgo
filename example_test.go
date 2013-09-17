@@ -501,7 +501,7 @@ func init() {
 					ex = newExample(newBenchmarkNode("benchmark", func() {
 						runs++
 						time.Sleep(time.Duration(0.001 * float64(time.Second) * float64(runs)))
-					}, flagTypeNone, componentCodeLocation, 0, 5, time.Duration(0.0025*float64(time.Second))))
+					}, flagTypeNone, componentCodeLocation, 0, 5, time.Duration(0.00299*float64(time.Second))))
 				})
 
 				It("marks the benchmark as failed and doesn't run any more samples", func() {
