@@ -47,7 +47,7 @@ This will generate a file named `books_suite_test.go` containing:
         "testing"
     )
 
-    func TestBootstrap(t *testing.T) {
+    func TestBooks(t *testing.T) {
         RegisterFailHandler(Fail)
         RunSpecs(t, "Books Suite")
     }
@@ -371,7 +371,7 @@ A convenient pattern for doing this is to use the bootstrap test file:
         "testing"
     )
 
-    func TestBootstrap(t *testing.T) {
+    func TestBooks(t *testing.T) {
         RegisterFailHandler(Fail)
 
         //Code to set up your infrastructure
@@ -449,7 +449,7 @@ If your tests spin up or connect to external processes you'll need to make sure 
         "testing"
     )
 
-    func TestBootstrap(t *testing.T) {
+    func TestBooks(t *testing.T) {
         RegisterFailHandler(Fail)
 
         port := 4000 + config.GinkgoConfig.ParallelNode
@@ -552,6 +552,10 @@ Additional flags supported by the `ginkgo` command:
 - `-r`
     
     Set `-r` to have the `ginkgo` CLI recursively run all test suites under the current directory.  Useful for running all the tests across all your packages.
+
+- `-i`
+    
+    Set `-i` to have the `ginkgo` CLI invoke the mysterious `go test -i` before running your tests.
 
 Flags for `go test` only:
 
