@@ -557,6 +557,11 @@ Additional flags supported by the `ginkgo` command:
     
     Set `-i` to have the `ginkgo` CLI invoke the mysterious `go test -i` before running your tests.
 
+- `-race`
+    
+    Set `-race` to have the `ginkgo` CLI run your tests with the race detector on.
+
+
 Flags for `go test` only:
 
 - `--ginkgo.parallel.node=NODE_INDEX`
