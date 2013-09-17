@@ -90,18 +90,42 @@ func (ex *example) run() {
 	ex.sampleRunTimes = make([]time.Duration, ex.desiredNumberOfSamples())
 
 	for sample := 0; sample < ex.desiredNumberOfSamples(); sample++ {
-		if ex.runSample(sample) {
+		ex.state, ex.failure = ex.runSample(sample)
+
+		if ex.state != ExampleStatePassed {
 			return
 		}
 	}
 }
 
-func (ex *example) runSample(sample int) (didFail bool) {
+func (ex *example) runSample(sample int) (exampleState ExampleState, exampleFailure ExampleFailure) {
+	exampleState = ExampleStatePassed
+	exampleFailure = ExampleFailure{}
+	innerMostContainerIndexToUnwind := 0
+
+	defer func() {
+		if len(ex.containers) > 0 {
+			for i := innerMostContainerIndexToUnwind; i >= 0; i-- {
+				container := ex.containers[i]
+				for _, afterEach := range container.afterEachNodes {
+					outcome, failure := afterEach.run()
+					afterEachState, afterEachFailure := ex.processOutcomeAndFailure(i, ExampleComponentTypeAfterEach, afterEach.codeLocation, outcome, failure)
+					if afterEachState != ExampleStatePassed && exampleState == ExampleStatePassed {
+						exampleState = afterEachState
+						exampleFailure = afterEachFailure
+					}
+				}
+			}
+		}
+	}()
+
 	for i, container := range ex.containers {
+		innerMostContainerIndexToUnwind = i
 		for _, beforeEach := range container.beforeEachNodes {
 			outcome, failure := beforeEach.run()
-			if ex.handleOutcomeAndFailure(i, ExampleComponentTypeBeforeEach, beforeEach.codeLocation, outcome, failure) {
-				return true
+			exampleState, exampleFailure = ex.processOutcomeAndFailure(i, ExampleComponentTypeBeforeEach, beforeEach.codeLocation, outcome, failure)
+			if exampleState != ExampleStatePassed {
+				return
 			}
 		}
 	}
@@ -109,8 +133,9 @@ func (ex *example) runSample(sample int) (didFail bool) {
 	for i, container := range ex.containers {
 		for _, justBeforeEach := range container.justBeforeEachNodes {
 			outcome, failure := justBeforeEach.run()
-			if ex.handleOutcomeAndFailure(i, ExampleComponentTypeJustBeforeEach, justBeforeEach.codeLocation, outcome, failure) {
-				return true
+			exampleState, exampleFailure = ex.processOutcomeAndFailure(i, ExampleComponentTypeJustBeforeEach, justBeforeEach.codeLocation, outcome, failure)
+			if exampleState != ExampleStatePassed {
+				return
 			}
 		}
 	}
@@ -118,70 +143,59 @@ func (ex *example) runSample(sample int) (didFail bool) {
 	sampleTime := time.Now()
 	outcome, failure := ex.subject.run()
 	ex.sampleRunTimes[sample] = time.Since(sampleTime)
-	if ex.handleOutcomeAndFailure(len(ex.containers), ex.subjectComponentType(), ex.subject.getCodeLocation(), outcome, failure) {
-		return true
-	}
-	if ex.handleBenchmarkFailure(ex.sampleRunTimes[sample]) {
-		return true
+
+	exampleState, exampleFailure = ex.processOutcomeAndFailure(len(ex.containers), ex.subjectComponentType(), ex.subject.getCodeLocation(), outcome, failure)
+	if exampleState != ExampleStatePassed {
+		return
 	}
 
-	for i := len(ex.containers) - 1; i >= 0; i-- {
-		container := ex.containers[i]
-		for _, afterEach := range container.afterEachNodes {
-			outcome, failure := afterEach.run()
-			if ex.handleOutcomeAndFailure(i, ExampleComponentTypeAfterEach, afterEach.codeLocation, outcome, failure) {
-				return true
-			}
-		}
+	if ex.subject.nodeType() == nodeTypeBenchmark {
+		exampleState, exampleFailure = ex.processBenchmark(ex.sampleRunTimes[sample])
 	}
 
-	return false
+	return
 }
 
-func (ex *example) handleOutcomeAndFailure(containerIndex int, componentType ExampleComponentType, codeLocation CodeLocation, outcome runOutcome, failure failureData) (didFail bool) {
+func (ex *example) processOutcomeAndFailure(containerIndex int, componentType ExampleComponentType, codeLocation CodeLocation, outcome runOutcome, failure failureData) (exampleState ExampleState, exampleFailure ExampleFailure) {
+	exampleFailure = ExampleFailure{}
+	exampleState = ExampleStatePassed
+
 	if ex.didInterceptFailure {
-		ex.state = ExampleStateFailed
+		exampleState = ExampleStateFailed
 		failure = ex.interceptedFailure
-		didFail = true
 	} else if outcome == runOutcomePanicked {
-		ex.state = ExampleStatePanicked
-		didFail = true
+		exampleState = ExampleStatePanicked
 	} else if outcome == runOutcomeTimedOut {
-		ex.state = ExampleStateTimedOut
-		didFail = true
+		exampleState = ExampleStateTimedOut
 	} else {
-		ex.state = ExampleStatePassed
-		didFail = false
+		return
 	}
 
-	if didFail {
-		ex.failure = ExampleFailure{
-			Message:               failure.message,
-			Location:              failure.codeLocation,
-			ForwardedPanic:        failure.forwardedPanic,
-			ComponentIndex:        containerIndex,
-			ComponentType:         componentType,
-			ComponentCodeLocation: codeLocation,
-		}
+	exampleFailure = ExampleFailure{
+		Message:               failure.message,
+		Location:              failure.codeLocation,
+		ForwardedPanic:        failure.forwardedPanic,
+		ComponentIndex:        containerIndex,
+		ComponentType:         componentType,
+		ComponentCodeLocation: codeLocation,
 	}
 
-	return didFail
+	return
 }
 
-func (ex *example) handleBenchmarkFailure(sampleTime time.Duration) (didFail bool) {
-	if ex.subject.nodeType() != nodeTypeBenchmark {
-		return false
-	}
+func (ex *example) processBenchmark(sampleTime time.Duration) (exampleState ExampleState, exampleFailure ExampleFailure) {
+	exampleFailure = ExampleFailure{}
+	exampleState = ExampleStatePassed
 
 	node := ex.subject.(*benchmarkNode)
 	if sampleTime < node.maximumTime {
-		return false
+		return
 	}
 
-	ex.state = ExampleStateFailed
+	exampleState = ExampleStateFailed
 	message := fmt.Sprintf("Benchmark sample took: %.4fs\nThis exceeds the allowed maximum: %.4fs", sampleTime.Seconds(), node.maximumTime.Seconds())
 
-	ex.failure = ExampleFailure{
+	exampleFailure = ExampleFailure{
 		Message:               message,
 		Location:              node.getCodeLocation(),
 		ComponentIndex:        len(ex.containers),
@@ -189,7 +203,7 @@ func (ex *example) handleBenchmarkFailure(sampleTime time.Duration) (didFail boo
 		ComponentCodeLocation: node.getCodeLocation(),
 	}
 
-	return true
+	return
 }
 
 func (ex *example) summary() *ExampleSummary {
@@ -210,11 +224,11 @@ func (ex *example) summary() *ExampleSummary {
 		State:     ex.state,
 		RunTime:   ex.runTime,
 		Failure:   ex.failure,
-		Benchmark: ex.benchmark(),
+		Benchmark: ex.benchmarkReport(),
 	}
 }
 
-func (ex *example) benchmark() ExampleBenchmark {
+func (ex *example) benchmarkReport() ExampleBenchmark {
 	if ex.subject.nodeType() != nodeTypeBenchmark {
 		return ExampleBenchmark{}
 	}

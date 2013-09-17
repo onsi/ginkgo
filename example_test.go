@@ -526,5 +526,215 @@ func init() {
 				})
 			})
 		})
+
+		Describe("running AfterEach nodes when other nodes fail", func() {
+			var (
+				orderedList []string
+				ex          *example
+			)
+
+			newNode := func(identifier string, fail bool) *runnableNode {
+				return newRunnableNode(func() {
+					orderedList = append(orderedList, identifier)
+					if fail {
+						ex.fail(failureData{
+							message: identifier + " failed",
+						})
+					}
+				}, generateCodeLocation(0), 0)
+			}
+
+			newIt := func(identifier string, fail bool) *itNode {
+				return newItNode(identifier, func() {
+					orderedList = append(orderedList, identifier)
+					if fail {
+						ex.fail(failureData{})
+					}
+				}, flagTypeNone, generateCodeLocation(0), 0)
+			}
+
+			BeforeEach(func() {
+				orderedList = make([]string, 0)
+			})
+
+			Context("when the it node fails", func() {
+				BeforeEach(func() {
+					ex = newExample(newIt("it", true))
+
+					innerContainer := newContainerNode("inner", flagTypeNone, generateCodeLocation(0))
+					innerContainer.pushBeforeEachNode(newNode("INNER_BEFORE_A", false))
+					innerContainer.pushBeforeEachNode(newNode("INNER_BEFORE_B", false))
+					innerContainer.pushJustBeforeEachNode(newNode("INNER_JUST_BEFORE_A", false))
+					innerContainer.pushJustBeforeEachNode(newNode("INNER_JUST_BEFORE_B", false))
+					innerContainer.pushAfterEachNode(newNode("INNER_AFTER_A", false))
+					innerContainer.pushAfterEachNode(newNode("INNER_AFTER_B", false))
+
+					ex.addContainerNode(innerContainer)
+
+					outerContainer := newContainerNode("outer", flagTypeNone, generateCodeLocation(0))
+					outerContainer.pushBeforeEachNode(newNode("OUTER_BEFORE_A", false))
+					outerContainer.pushBeforeEachNode(newNode("OUTER_BEFORE_B", false))
+					outerContainer.pushJustBeforeEachNode(newNode("OUTER_JUST_BEFORE_A", false))
+					outerContainer.pushJustBeforeEachNode(newNode("OUTER_JUST_BEFORE_B", false))
+					outerContainer.pushAfterEachNode(newNode("OUTER_AFTER_A", false))
+					outerContainer.pushAfterEachNode(newNode("OUTER_AFTER_B", false))
+
+					ex.addContainerNode(outerContainer)
+					ex.run()
+				})
+
+				It("should run all the AfterEach nodes", func() {
+					Ω(orderedList).Should(Equal([]string{
+						"OUTER_BEFORE_A", "OUTER_BEFORE_B", "INNER_BEFORE_A", "INNER_BEFORE_B",
+						"OUTER_JUST_BEFORE_A", "OUTER_JUST_BEFORE_B", "INNER_JUST_BEFORE_A", "INNER_JUST_BEFORE_B",
+						"it",
+						"INNER_AFTER_A", "INNER_AFTER_B", "OUTER_AFTER_A", "OUTER_AFTER_B",
+					}))
+
+				})
+			})
+
+			Context("when an inner BeforeEach node fails", func() {
+				BeforeEach(func() {
+					ex = newExample(newIt("it", true))
+
+					innerContainer := newContainerNode("inner", flagTypeNone, generateCodeLocation(0))
+					innerContainer.pushBeforeEachNode(newNode("INNER_BEFORE_A", true))
+					innerContainer.pushBeforeEachNode(newNode("INNER_BEFORE_B", false))
+					innerContainer.pushJustBeforeEachNode(newNode("INNER_JUST_BEFORE_A", false))
+					innerContainer.pushJustBeforeEachNode(newNode("INNER_JUST_BEFORE_B", false))
+					innerContainer.pushAfterEachNode(newNode("INNER_AFTER_A", false))
+					innerContainer.pushAfterEachNode(newNode("INNER_AFTER_B", false))
+
+					ex.addContainerNode(innerContainer)
+
+					outerContainer := newContainerNode("outer", flagTypeNone, generateCodeLocation(0))
+					outerContainer.pushBeforeEachNode(newNode("OUTER_BEFORE_A", false))
+					outerContainer.pushBeforeEachNode(newNode("OUTER_BEFORE_B", false))
+					outerContainer.pushJustBeforeEachNode(newNode("OUTER_JUST_BEFORE_A", false))
+					outerContainer.pushJustBeforeEachNode(newNode("OUTER_JUST_BEFORE_B", false))
+					outerContainer.pushAfterEachNode(newNode("OUTER_AFTER_A", false))
+					outerContainer.pushAfterEachNode(newNode("OUTER_AFTER_B", false))
+
+					ex.addContainerNode(outerContainer)
+					ex.run()
+				})
+
+				It("should run all the AfterEach nodes at nesting levels equal to or lower than the failed BeforeEach block", func() {
+					Ω(orderedList).Should(Equal([]string{
+						"OUTER_BEFORE_A", "OUTER_BEFORE_B", "INNER_BEFORE_A",
+						"INNER_AFTER_A", "INNER_AFTER_B", "OUTER_AFTER_A", "OUTER_AFTER_B",
+					}))
+				})
+			})
+
+			Context("when an outer BeforeEach node fails", func() {
+				BeforeEach(func() {
+					ex = newExample(newIt("it", true))
+
+					innerContainer := newContainerNode("inner", flagTypeNone, generateCodeLocation(0))
+					innerContainer.pushBeforeEachNode(newNode("INNER_BEFORE_A", false))
+					innerContainer.pushBeforeEachNode(newNode("INNER_BEFORE_B", false))
+					innerContainer.pushJustBeforeEachNode(newNode("INNER_JUST_BEFORE_A", false))
+					innerContainer.pushJustBeforeEachNode(newNode("INNER_JUST_BEFORE_B", false))
+					innerContainer.pushAfterEachNode(newNode("INNER_AFTER_A", false))
+					innerContainer.pushAfterEachNode(newNode("INNER_AFTER_B", false))
+
+					ex.addContainerNode(innerContainer)
+
+					outerContainer := newContainerNode("outer", flagTypeNone, generateCodeLocation(0))
+					outerContainer.pushBeforeEachNode(newNode("OUTER_BEFORE_A", false))
+					outerContainer.pushBeforeEachNode(newNode("OUTER_BEFORE_B", true))
+					outerContainer.pushJustBeforeEachNode(newNode("OUTER_JUST_BEFORE_A", false))
+					outerContainer.pushJustBeforeEachNode(newNode("OUTER_JUST_BEFORE_B", false))
+					outerContainer.pushAfterEachNode(newNode("OUTER_AFTER_A", false))
+					outerContainer.pushAfterEachNode(newNode("OUTER_AFTER_B", false))
+
+					ex.addContainerNode(outerContainer)
+					ex.run()
+				})
+
+				It("should run all the AfterEach nodes at nesting levels equal to or lower than the failed BeforeEach block", func() {
+					Ω(orderedList).Should(Equal([]string{
+						"OUTER_BEFORE_A", "OUTER_BEFORE_B",
+						"OUTER_AFTER_A", "OUTER_AFTER_B",
+					}))
+				})
+			})
+
+			Context("when a JustBeforeEach node fails", func() {
+				BeforeEach(func() {
+					ex = newExample(newIt("it", true))
+
+					innerContainer := newContainerNode("inner", flagTypeNone, generateCodeLocation(0))
+					innerContainer.pushBeforeEachNode(newNode("INNER_BEFORE_A", false))
+					innerContainer.pushBeforeEachNode(newNode("INNER_BEFORE_B", false))
+					innerContainer.pushJustBeforeEachNode(newNode("INNER_JUST_BEFORE_A", false))
+					innerContainer.pushJustBeforeEachNode(newNode("INNER_JUST_BEFORE_B", false))
+					innerContainer.pushAfterEachNode(newNode("INNER_AFTER_A", false))
+					innerContainer.pushAfterEachNode(newNode("INNER_AFTER_B", false))
+
+					ex.addContainerNode(innerContainer)
+
+					outerContainer := newContainerNode("outer", flagTypeNone, generateCodeLocation(0))
+					outerContainer.pushBeforeEachNode(newNode("OUTER_BEFORE_A", false))
+					outerContainer.pushBeforeEachNode(newNode("OUTER_BEFORE_B", false))
+					outerContainer.pushJustBeforeEachNode(newNode("OUTER_JUST_BEFORE_A", true))
+					outerContainer.pushJustBeforeEachNode(newNode("OUTER_JUST_BEFORE_B", false))
+					outerContainer.pushAfterEachNode(newNode("OUTER_AFTER_A", false))
+					outerContainer.pushAfterEachNode(newNode("OUTER_AFTER_B", false))
+
+					ex.addContainerNode(outerContainer)
+					ex.run()
+				})
+
+				It("should run all the AfterEach nodes", func() {
+					Ω(orderedList).Should(Equal([]string{
+						"OUTER_BEFORE_A", "OUTER_BEFORE_B", "INNER_BEFORE_A", "INNER_BEFORE_B",
+						"OUTER_JUST_BEFORE_A",
+						"INNER_AFTER_A", "INNER_AFTER_B", "OUTER_AFTER_A", "OUTER_AFTER_B",
+					}))
+				})
+			})
+
+			Context("when an AfterEach node fails", func() {
+				BeforeEach(func() {
+					ex = newExample(newIt("it", true))
+
+					innerContainer := newContainerNode("inner", flagTypeNone, generateCodeLocation(0))
+					innerContainer.pushBeforeEachNode(newNode("INNER_BEFORE_A", false))
+					innerContainer.pushBeforeEachNode(newNode("INNER_BEFORE_B", false))
+					innerContainer.pushJustBeforeEachNode(newNode("INNER_JUST_BEFORE_A", true))
+					innerContainer.pushJustBeforeEachNode(newNode("INNER_JUST_BEFORE_B", false))
+					innerContainer.pushAfterEachNode(newNode("INNER_AFTER_A", false))
+					innerContainer.pushAfterEachNode(newNode("INNER_AFTER_B", true))
+
+					ex.addContainerNode(innerContainer)
+
+					outerContainer := newContainerNode("outer", flagTypeNone, generateCodeLocation(0))
+					outerContainer.pushBeforeEachNode(newNode("OUTER_BEFORE_A", false))
+					outerContainer.pushBeforeEachNode(newNode("OUTER_BEFORE_B", false))
+					outerContainer.pushJustBeforeEachNode(newNode("OUTER_JUST_BEFORE_A", false))
+					outerContainer.pushJustBeforeEachNode(newNode("OUTER_JUST_BEFORE_B", false))
+					outerContainer.pushAfterEachNode(newNode("OUTER_AFTER_A", true))
+					outerContainer.pushAfterEachNode(newNode("OUTER_AFTER_B", false))
+
+					ex.addContainerNode(outerContainer)
+					ex.run()
+				})
+
+				It("should nonetheless continue to run subsequent after each nodes", func() {
+					Ω(orderedList).Should(Equal([]string{
+						"OUTER_BEFORE_A", "OUTER_BEFORE_B", "INNER_BEFORE_A", "INNER_BEFORE_B",
+						"OUTER_JUST_BEFORE_A", "OUTER_JUST_BEFORE_B", "INNER_JUST_BEFORE_A",
+						"INNER_AFTER_A", "INNER_AFTER_B", "OUTER_AFTER_A", "OUTER_AFTER_B",
+					}))
+				})
+
+				It("should not override the failure data of the earliest failure", func() {
+					Ω(ex.summary().Failure.Message).Should(Equal("INNER_JUST_BEFORE_A failed"))
+				})
+			})
+		})
 	})
 }
