@@ -113,6 +113,8 @@ func findSuitesInDir(dir string) []string {
 
 func runSuiteAtPath(path string) bool {
 	completions := make(chan bool)
+	runGoI(path)
+
 	for cpu := 0; cpu < numCPU; cpu++ {
 		config.GinkgoConfig.ParallelNode = cpu + 1
 		config.GinkgoConfig.ParallelTotal = numCPU
@@ -149,6 +151,15 @@ func printToScreen() {
 		fmt.Print(report.String())
 	}
 	os.Stdout.Sync()
+}
+
+func runGoI(path string) {
+	cmd := exec.Command("go", "test", "-i", path)
+	err := cmd.Run()
+	if err != nil {
+		fmt.Printf("go test -i %s failed", path)
+		os.Exit(1)
+	}
 }
 
 func runCommand(path string, args []string, stream io.Writer, completions chan bool) {
