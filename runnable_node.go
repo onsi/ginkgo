@@ -113,28 +113,3 @@ func (node *itNode) getFlag() flagType {
 func (node *itNode) getCodeLocation() CodeLocation {
 	return node.codeLocation
 }
-
-//Benchmark Node
-
-type benchmarkNode struct {
-	*itNode
-
-	samples     int
-	maximumTime time.Duration
-}
-
-func newBenchmarkNode(text string, body interface{}, flag flagType, codeLocation CodeLocation, timeout time.Duration, samples int, maximumTime time.Duration) *benchmarkNode {
-	return &benchmarkNode{
-		itNode:      newItNode(text, body, flag, codeLocation, timeout),
-		samples:     samples,
-		maximumTime: maximumTime,
-	}
-}
-
-func (node *benchmarkNode) nodeType() nodeType {
-	return nodeTypeBenchmark
-}
-
-func (node *benchmarkNode) getText() string {
-	return node.text
-}

@@ -174,8 +174,8 @@ func (reporter *defaultReporter) printBlockWithMessage(header string, message st
 func (reporter *defaultReporter) printStatus(color string, message string, exampleSummary *ExampleSummary) {
 	if exampleSummary.State == ExampleStatePending && reporter.config.NoisyPendings {
 		reporter.printBlockWithMessage(reporter.colorize(color, "%s [PENDING]", message), "", exampleSummary)
-	} else if exampleSummary.State == ExampleStatePassed && exampleSummary.Benchmark.IsBenchmark {
-		reporter.printBlockWithMessage(reporter.colorize(color, "%s [BENCHMARK]", message), reporter.benchmarkReport(exampleSummary.Benchmark), exampleSummary)
+	} else if exampleSummary.State == ExampleStatePassed && exampleSummary.IsMeasurement {
+		reporter.printBlockWithMessage(reporter.colorize(color, "%s [MEASUREMENT]", message), reporter.measurementReport(exampleSummary), exampleSummary)
 	} else if exampleSummary.RunTime.Seconds() >= reporter.config.SlowSpecThreshold {
 		reporter.printBlockWithMessage(reporter.colorize(color, "%s [SLOW TEST:%.3f seconds]", message, exampleSummary.RunTime.Seconds()), "", exampleSummary)
 	} else {
@@ -184,14 +184,41 @@ func (reporter *defaultReporter) printStatus(color string, message string, examp
 	}
 }
 
-func (reporter *defaultReporter) benchmarkReport(benchmark ExampleBenchmark) string {
-	return fmt.Sprintf("Ran %s samples:\n  Fastest Sample: %ss\n  Slowest Sample: %ss\n  Average Time:   %ss ± %ss",
-		reporter.colorize(boldStyle, "%d", benchmark.NumberOfSamples),
-		reporter.colorize(greenColor, "%.3f", benchmark.FastestTime.Seconds()),
-		reporter.colorize(redColor, "%.3f", benchmark.SlowestTime.Seconds()),
-		reporter.colorize(cyanColor, "%.3f", benchmark.AverageTime.Seconds()),
-		reporter.colorize(cyanColor, "%.3f", benchmark.StdDeviation.Seconds()),
-	)
+func (reporter *defaultReporter) measurementReport(exampleSummary *ExampleSummary) (message string) {
+	if len(exampleSummary.Measurements) == 0 {
+		return "Found no measurements"
+	}
+
+	message = fmt.Sprintf("Ran %s samples:\n", reporter.colorize(boldStyle, "%d", exampleSummary.NumberOfSamples))
+	i := 0
+	for _, measurement := range exampleSummary.Measurements {
+		if i > 0 {
+			message += "\n"
+		}
+		info := ""
+		if measurement.Info != nil {
+			info = fmt.Sprintf("%v\n", measurement.Info)
+		}
+
+		message += fmt.Sprintf("%s:\n%s  %s: %s%s\n  %s: %s%s\n  %s: %s%s ± %s%s\n",
+			reporter.colorize(boldStyle, "%s", measurement.Name),
+			info,
+			measurement.SmallestLabel,
+			reporter.colorize(greenColor, "%.3f", measurement.Smallest),
+			measurement.Units,
+			measurement.LargestLabel,
+			reporter.colorize(redColor, "%.3f", measurement.Largest),
+			measurement.Units,
+			measurement.AverageLabel,
+			reporter.colorize(cyanColor, "%.3f", measurement.Average),
+			measurement.Units,
+			reporter.colorize(cyanColor, "%.3f", measurement.StdDeviation),
+			measurement.Units,
+		)
+		i++
+	}
+
+	return
 }
 
 func (reporter *defaultReporter) printFailure(message string, exampleSummary *ExampleSummary) {
@@ -219,8 +246,8 @@ func (reporter *defaultReporter) printFailure(message string, exampleSummary *Ex
 				blockType = "AfterEach"
 			case ExampleComponentTypeIt:
 				blockType = "It"
-			case ExampleComponentTypeBenchmark:
-				blockType = "Benchmark"
+			case ExampleComponentTypeMeasure:
+				blockType = "Measurement"
 			}
 			reporter.println(i+offset, reporter.colorize(redColor+boldStyle, "%s [%s]", exampleSummary.ComponentTexts[i], blockType))
 			reporter.println(i+offset, reporter.colorize(grayColor, "(%s)", exampleSummary.ComponentCodeLocations[i]))

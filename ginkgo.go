@@ -104,23 +104,23 @@ func XIt(text string, body interface{}, timeout ...float64) bool {
 
 //Benchmark
 
-func Benchmark(text string, body interface{}, samples int, maximumAllowedTime float64, timeout ...float64) bool {
-	globalSuite.pushBenchmarkNode(text, body, flagTypeNone, generateCodeLocation(1), parseTimeout(timeout...), samples, time.Duration(maximumAllowedTime*float64(time.Second)))
+func Measure(text string, body func(Benchmarker), samples int) bool {
+	globalSuite.pushMeasureNode(text, body, flagTypeNone, generateCodeLocation(1), samples)
 	return true
 }
 
-func FBenchmark(text string, body interface{}, samples int, maximumAllowedTime float64, timeout ...float64) bool {
-	globalSuite.pushBenchmarkNode(text, body, flagTypeFocused, generateCodeLocation(1), parseTimeout(timeout...), samples, time.Duration(maximumAllowedTime*float64(time.Second)))
+func FMeasure(text string, body func(Benchmarker), samples int) bool {
+	globalSuite.pushMeasureNode(text, body, flagTypeFocused, generateCodeLocation(1), samples)
 	return true
 }
 
-func PBenchmark(text string, body interface{}, samples int, maximumAllowedTime float64, timeout ...float64) bool {
-	globalSuite.pushBenchmarkNode(text, body, flagTypePending, generateCodeLocation(1), parseTimeout(timeout...), samples, time.Duration(maximumAllowedTime*float64(time.Second)))
+func PMeasure(text string, body func(Benchmarker), samples int) bool {
+	globalSuite.pushMeasureNode(text, body, flagTypePending, generateCodeLocation(1), samples)
 	return true
 }
 
-func XBenchmark(text string, body interface{}, samples int, maximumAllowedTime float64, timeout ...float64) bool {
-	globalSuite.pushBenchmarkNode(text, body, flagTypePending, generateCodeLocation(1), parseTimeout(timeout...), samples, time.Duration(maximumAllowedTime*float64(time.Second)))
+func XMeasure(text string, body func(Benchmarker), samples int) bool {
+	globalSuite.pushMeasureNode(text, body, flagTypePending, generateCodeLocation(1), samples)
 	return true
 }
 

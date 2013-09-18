@@ -8,8 +8,8 @@ type node interface {
 type exampleSubject interface {
 	node
 
-	getFlag() flagType
 	run() (runOutcome, failureData)
+	getFlag() flagType
 	getCodeLocation() CodeLocation
 }
 
@@ -36,7 +36,7 @@ const (
 	nodeTypeInvalid nodeType = iota
 	nodeTypeContainer
 	nodeTypeIt
-	nodeTypeBenchmark
+	nodeTypeMeasure
 )
 
 type ExampleState uint
@@ -61,5 +61,5 @@ const (
 	ExampleComponentTypeJustBeforeEach
 	ExampleComponentTypeAfterEach
 	ExampleComponentTypeIt
-	ExampleComponentTypeBenchmark
+	ExampleComponentTypeMeasure
 )

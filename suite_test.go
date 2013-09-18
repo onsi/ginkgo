@@ -84,11 +84,21 @@ func init() {
 				Ω(fakeR.beginSummary.SuiteDescription).Should(Equal("suite description"))
 			})
 
-			Benchmark("should benchmark", func() {
+			Measure("should run measurements", func(b Benchmarker) {
 				r := rand.New(rand.NewSource(time.Now().UnixNano()))
-				sleepTime := time.Duration(r.Float64() * 0.01 * float64(time.Second))
-				time.Sleep(sleepTime)
-			}, 10, 0.02)
+
+				runtime := b.Time("sleeping", func() {
+					sleepTime := time.Duration(r.Float64() * 0.01 * float64(time.Second))
+					time.Sleep(sleepTime)
+				})
+				Ω(runtime.Seconds()).Should(BeNumerically("<=", 0.011))
+				Ω(runtime.Seconds()).Should(BeNumerically(">=", 0))
+
+				randomValue := r.Float64() * 10.0
+				b.RecordValue("random value", randomValue)
+				Ω(randomValue).Should(BeNumerically("<=", 10.0))
+				Ω(randomValue).Should(BeNumerically(">=", 0.0))
+			}, 10)
 
 			It("creates a node hierarchy, converts it to an example collection, and runs it", func() {
 				Ω(runOrder).Should(Equal([]string{

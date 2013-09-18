@@ -3,7 +3,6 @@ package ginkgo
 import (
 	"fmt"
 	. "github.com/onsi/gomega"
-	"math"
 	"time"
 )
 
@@ -231,7 +230,7 @@ func init() {
 					summary := ex.summary()
 					Ω(summary.State).Should(Equal(ExampleStatePassed))
 					Ω(summary.RunTime.Seconds()).Should(BeNumerically(">", 0.01))
-					Ω(summary.Benchmark.IsBenchmark).Should(BeFalse())
+					Ω(summary.IsMeasurement).Should(BeFalse())
 				})
 			})
 
@@ -426,7 +425,7 @@ func init() {
 			})
 		})
 
-		Describe("running benchmark examples and getting summaries", func() {
+		Describe("running measurement examples and getting summaries", func() {
 			var (
 				runs                  int
 				componentCodeLocation CodeLocation
@@ -438,91 +437,55 @@ func init() {
 				componentCodeLocation = generateCodeLocation(0)
 			})
 
-			It("should report that it has a benchmark", func() {
-				ex = newExample(newBenchmarkNode("benchmark", func() {}, flagTypeNone, componentCodeLocation, 0, 5, time.Duration(1*float64(time.Second))))
-				Ω(ex.subjectComponentType()).Should(Equal(ExampleComponentTypeBenchmark))
+			It("should report that it has a measurement", func() {
+				ex = newExample(newMeasureNode("measure", func(b Benchmarker) {}, flagTypeNone, componentCodeLocation, 1))
+				Ω(ex.subjectComponentType()).Should(Equal(ExampleComponentTypeMeasure))
 			})
 
-			Context("when the benchmark does not fail", func() {
+			Context("when the measurement does not fail", func() {
 				BeforeEach(func() {
-					ex = newExample(newBenchmarkNode("benchmark", func() {
+					ex = newExample(newMeasureNode("measure", func(b Benchmarker) {
+						b.RecordValue("foo", float64(runs))
 						runs++
-						time.Sleep(time.Duration(0.001 * float64(time.Second) * float64(runs)))
-					}, flagTypeNone, componentCodeLocation, 0, 5, time.Duration(1*float64(time.Second))))
+					}, flagTypeNone, componentCodeLocation, 5))
 				})
 
-				It("runs the benchmark samples number of times and returns timing statistics", func() {
+				It("runs the measurement samples number of times and returns statistics", func() {
 					ex.run()
 					summary := ex.summary()
 
 					Ω(runs).Should(Equal(5))
 
 					Ω(summary.State).Should(Equal(ExampleStatePassed))
-					Ω(summary.RunTime.Seconds()).Should(BeNumerically(">", 0.001+0.002+0.003+0.004+0.005))
-					Ω(summary.Benchmark.IsBenchmark).Should(BeTrue())
-					Ω(summary.Benchmark.NumberOfSamples).Should(Equal(5))
-					Ω(summary.Benchmark.FastestTime.Seconds()).Should(BeNumerically("~", 0.001, 0.0009))
-					Ω(summary.Benchmark.SlowestTime.Seconds()).Should(BeNumerically("~", 0.005, 0.0009))
-					Ω(summary.Benchmark.AverageTime.Seconds()).Should(BeNumerically("~", 0.003, 0.0009))
-					stdDev := math.Sqrt((0.001*0.001+0.002*0.002+0.003*0.003+0.004*0.004+0.005*0.005)/5 - 0.003*0.003)
-					Ω(summary.Benchmark.StdDeviation.Seconds()).Should(BeNumerically("~", stdDev, 0.0009))
+					Ω(summary.IsMeasurement).Should(BeTrue())
+					Ω(summary.NumberOfSamples).Should(Equal(5))
+					Ω(summary.Measurements).Should(HaveLen(1))
+					Ω(summary.Measurements["foo"].Name).Should(Equal("foo"))
+					Ω(summary.Measurements["foo"].Results).Should(Equal([]float64{0, 1, 2, 3, 4}))
 				})
 			})
 
-			Context("when one of the benchmark samples fails", func() {
+			Context("when one of the measurement samples fails", func() {
 				BeforeEach(func() {
-					ex = newExample(newBenchmarkNode("benchmark", func() {
+					ex = newExample(newMeasureNode("measure", func(b Benchmarker) {
+						b.RecordValue("foo", float64(runs))
 						runs++
 						if runs == 3 {
 							ex.fail(failureData{})
 						}
-						time.Sleep(time.Duration(0.001 * float64(time.Second) * float64(runs)))
-					}, flagTypeNone, componentCodeLocation, 0, 5, time.Duration(1*float64(time.Second))))
+					}, flagTypeNone, componentCodeLocation, 5))
 				})
 
-				It("marks the benchmark as failed and doesn't run any more samples", func() {
+				It("marks the measurement as failed and doesn't run any more samples", func() {
 					ex.run()
 					summary := ex.summary()
 
 					Ω(runs).Should(Equal(3))
 
 					Ω(summary.State).Should(Equal(ExampleStateFailed))
-					Ω(summary.Benchmark.IsBenchmark).Should(BeTrue())
-					Ω(summary.Benchmark.NumberOfSamples).Should(Equal(5))
-					Ω(summary.Benchmark.FastestTime.Seconds()).Should(BeNumerically("==", 0))
-					Ω(summary.Benchmark.SlowestTime.Seconds()).Should(BeNumerically("==", 0))
-					Ω(summary.Benchmark.AverageTime.Seconds()).Should(BeNumerically("==", 0))
-					Ω(summary.Benchmark.StdDeviation.Seconds()).Should(BeNumerically("==", 0))
-				})
-			})
-
-			Context("when a benchmark sample fails", func() {
-				BeforeEach(func() {
-					ex = newExample(newBenchmarkNode("benchmark", func() {
-						runs++
-						time.Sleep(time.Duration(0.001 * float64(time.Second) * float64(runs)))
-					}, flagTypeNone, componentCodeLocation, 0, 5, time.Duration(0.00299*float64(time.Second))))
-				})
-
-				It("marks the benchmark as failed and doesn't run any more samples", func() {
-					ex.run()
-					summary := ex.summary()
-
-					Ω(runs).Should(Equal(3))
-
-					Ω(summary.State).Should(Equal(ExampleStateFailed))
-					Ω(summary.Failure.Message).Should(ContainSubstring("Benchmark sample took"))
-					Ω(summary.Failure.Location).Should(Equal(componentCodeLocation))
-					Ω(summary.Failure.ComponentIndex).Should(Equal(0))
-					Ω(summary.Failure.ComponentType).Should(Equal(ExampleComponentTypeBenchmark))
-					Ω(summary.Failure.ForwardedPanic).Should(BeNil())
-
-					Ω(summary.Benchmark.IsBenchmark).Should(BeTrue())
-					Ω(summary.Benchmark.NumberOfSamples).Should(Equal(5))
-					Ω(summary.Benchmark.FastestTime.Seconds()).Should(BeNumerically("==", 0))
-					Ω(summary.Benchmark.SlowestTime.Seconds()).Should(BeNumerically("==", 0))
-					Ω(summary.Benchmark.AverageTime.Seconds()).Should(BeNumerically("==", 0))
-					Ω(summary.Benchmark.StdDeviation.Seconds()).Should(BeNumerically("==", 0))
+					Ω(summary.IsMeasurement).Should(BeTrue())
+					Ω(summary.NumberOfSamples).Should(Equal(5))
+					Ω(summary.Measurements).Should(BeEmpty())
 				})
 			})
 		})

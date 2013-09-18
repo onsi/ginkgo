@@ -70,8 +70,8 @@ func (suite *suite) pushItNode(text string, body interface{}, flag flagType, cod
 	suite.currentContainer.pushSubjectNode(newItNode(text, body, flag, codeLocation, timeout))
 }
 
-func (suite *suite) pushBenchmarkNode(text string, body interface{}, flag flagType, codeLocation CodeLocation, timeout time.Duration, samples int, maximumTime time.Duration) {
-	suite.currentContainer.pushSubjectNode(newBenchmarkNode(text, body, flag, codeLocation, timeout, samples, maximumTime))
+func (suite *suite) pushMeasureNode(text string, body func(Benchmarker), flag flagType, codeLocation CodeLocation, samples int) {
+	suite.currentContainer.pushSubjectNode(newMeasureNode(text, body, flag, codeLocation, samples))
 }
 
 func (suite *suite) pushBeforeEachNode(body interface{}, codeLocation CodeLocation, timeout time.Duration) {

@@ -45,8 +45,8 @@ func newExampleCollection(t testingT, description string, examples []*example, r
 		collection.applyProgrammaticFocus()
 	}
 
-	if config.SkipBenchmarks {
-		collection.skipBenchmarks()
+	if config.SkipMeasurements {
+		collection.skipMeasurements()
 	}
 
 	if config.ParallelTotal > 1 {
@@ -91,9 +91,9 @@ func (collection *exampleCollection) trimForParallelization(parallelTotal int, p
 	}
 }
 
-func (collection *exampleCollection) skipBenchmarks() {
+func (collection *exampleCollection) skipMeasurements() {
 	for _, example := range collection.examples {
-		if example.subjectComponentType() == ExampleComponentTypeBenchmark {
+		if example.subjectComponentType() == ExampleComponentTypeMeasure {
 			example.skip()
 		}
 	}

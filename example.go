@@ -1,8 +1,6 @@
 package ginkgo
 
 import (
-	"fmt"
-	"math"
 	"time"
 )
 
@@ -14,7 +12,6 @@ type example struct {
 
 	state               ExampleState
 	runTime             time.Duration
-	sampleRunTimes      []time.Duration
 	failure             ExampleFailure
 	didInterceptFailure bool
 	interceptedFailure  failureData
@@ -54,16 +51,16 @@ func (ex *example) skip() {
 }
 
 func (ex *example) subjectComponentType() ExampleComponentType {
-	if ex.subject.nodeType() == nodeTypeBenchmark {
-		return ExampleComponentTypeBenchmark
+	if ex.subject.nodeType() == nodeTypeMeasure {
+		return ExampleComponentTypeMeasure
 	} else {
 		return ExampleComponentTypeIt
 	}
 }
 
 func (ex *example) desiredNumberOfSamples() int {
-	if ex.subject.nodeType() == nodeTypeBenchmark {
-		return ex.subject.(*benchmarkNode).samples
+	if ex.subject.nodeType() == nodeTypeMeasure {
+		return ex.subject.(*measureNode).samples
 	}
 
 	return 1
@@ -86,8 +83,6 @@ func (ex *example) run() {
 	defer func() {
 		ex.runTime = time.Since(startTime)
 	}()
-
-	ex.sampleRunTimes = make([]time.Duration, ex.desiredNumberOfSamples())
 
 	for sample := 0; sample < ex.desiredNumberOfSamples(); sample++ {
 		ex.state, ex.failure = ex.runSample(sample)
@@ -140,17 +135,11 @@ func (ex *example) runSample(sample int) (exampleState ExampleState, exampleFail
 		}
 	}
 
-	sampleTime := time.Now()
 	outcome, failure := ex.subject.run()
-	ex.sampleRunTimes[sample] = time.Since(sampleTime)
-
 	exampleState, exampleFailure = ex.processOutcomeAndFailure(len(ex.containers), ex.subjectComponentType(), ex.subject.getCodeLocation(), outcome, failure)
+
 	if exampleState != ExampleStatePassed {
 		return
-	}
-
-	if ex.subject.nodeType() == nodeTypeBenchmark {
-		exampleState, exampleFailure = ex.processBenchmark(ex.sampleRunTimes[sample])
 	}
 
 	return
@@ -183,29 +172,6 @@ func (ex *example) processOutcomeAndFailure(containerIndex int, componentType Ex
 	return
 }
 
-func (ex *example) processBenchmark(sampleTime time.Duration) (exampleState ExampleState, exampleFailure ExampleFailure) {
-	exampleFailure = ExampleFailure{}
-	exampleState = ExampleStatePassed
-
-	node := ex.subject.(*benchmarkNode)
-	if sampleTime < node.maximumTime {
-		return
-	}
-
-	exampleState = ExampleStateFailed
-	message := fmt.Sprintf("Benchmark sample took: %.4fs\nThis exceeds the allowed maximum: %.4fs", sampleTime.Seconds(), node.maximumTime.Seconds())
-
-	exampleFailure = ExampleFailure{
-		Message:               message,
-		Location:              node.getCodeLocation(),
-		ComponentIndex:        len(ex.containers),
-		ComponentType:         ExampleComponentTypeBenchmark,
-		ComponentCodeLocation: node.getCodeLocation(),
-	}
-
-	return
-}
-
 func (ex *example) summary() *ExampleSummary {
 	componentTexts := make([]string, len(ex.containers)+1)
 	componentCodeLocations := make([]CodeLocation, len(ex.containers)+1)
@@ -219,55 +185,26 @@ func (ex *example) summary() *ExampleSummary {
 	componentCodeLocations[len(ex.containers)] = ex.subject.getCodeLocation()
 
 	return &ExampleSummary{
+		IsMeasurement:          ex.subjectComponentType() == ExampleComponentTypeMeasure,
+		NumberOfSamples:        ex.desiredNumberOfSamples(),
 		ComponentTexts:         componentTexts,
 		ComponentCodeLocations: componentCodeLocations,
-		State:     ex.state,
-		RunTime:   ex.runTime,
-		Failure:   ex.failure,
-		Benchmark: ex.benchmarkReport(),
+		State:        ex.state,
+		RunTime:      ex.runTime,
+		Failure:      ex.failure,
+		Measurements: ex.measurementsReport(),
 	}
 }
 
-func (ex *example) benchmarkReport() ExampleBenchmark {
-	if ex.subject.nodeType() != nodeTypeBenchmark {
-		return ExampleBenchmark{}
+func (ex *example) measurementsReport() (measurements map[string]*ExampleMeasurement) {
+	if ex.subjectComponentType() != ExampleComponentTypeMeasure {
+		return
 	}
-
 	if ex.failed() {
-		return ExampleBenchmark{
-			IsBenchmark:     true,
-			NumberOfSamples: len(ex.sampleRunTimes),
-		}
+		return
 	}
 
-	max := time.Duration(math.MinInt64)
-	min := time.Duration(math.MaxInt64)
-	sum := float64(0)
-	sumOfSquares := float64(0)
-
-	for _, sample := range ex.sampleRunTimes {
-		if sample > max {
-			max = sample
-		}
-		if sample < min {
-			min = sample
-		}
-		sum += sample.Seconds()
-		sumOfSquares += sample.Seconds() * sample.Seconds()
-	}
-
-	n := float64(len(ex.sampleRunTimes))
-	mean := time.Duration((sum / n) * float64(time.Second))
-	stdDev := time.Duration(math.Sqrt(sumOfSquares/n-float64(sum*sum/n/n)) * float64(time.Second))
-
-	return ExampleBenchmark{
-		IsBenchmark:     true,
-		NumberOfSamples: len(ex.sampleRunTimes),
-		FastestTime:     min,
-		SlowestTime:     max,
-		AverageTime:     mean,
-		StdDeviation:    stdDev,
-	}
+	return ex.subject.(*measureNode).measurementsReport()
 }
 
 func (ex *example) concatenatedString() string {

@@ -32,12 +32,6 @@ func init() {
 			}, flag, generateCodeLocation(0), 0))
 		}
 
-		exampleWithBenchmark := func(benchmarkText string) *example {
-			return newExample(newBenchmarkNode(benchmarkText, func() {
-				examplesThatWereRun = append(examplesThatWereRun, benchmarkText)
-			}, flagTypeNone, generateCodeLocation(0), 0, 5, time.Duration(0.001*float64(time.Second))))
-		}
-
 		BeforeEach(func() {
 			fakeT = &fakeTestingT{}
 			fakeR = &fakeReporter{}
@@ -386,7 +380,13 @@ func init() {
 			})
 		})
 
-		Describe("benchmarks", func() {
+		Describe("measurements", func() {
+			exampleWithMeasure := func(text string) *example {
+				return newExample(newMeasureNode(text, func(b Benchmarker) {
+					examplesThatWereRun = append(examplesThatWereRun, text)
+				}, flagTypeNone, generateCodeLocation(0), 1))
+			}
+
 			var conf config.GinkgoConfigType
 
 			BeforeEach(func() {
@@ -398,27 +398,27 @@ func init() {
 					exampleWithItFunc("C", flagTypeNone, false),
 					exampleWithItFunc("A", flagTypeNone, false),
 					exampleWithItFunc("B", flagTypeNone, false),
-					exampleWithBenchmark("benchmark"),
+					exampleWithMeasure("measure"),
 				}, fakeR, conf)
 
 				collection.run()
 			})
 
-			It("runs the benchmark", func() {
+			It("runs the measurement", func() {
 				Ω(examplesThatWereRun).Should(ContainElement("A"))
-				Ω(examplesThatWereRun).Should(ContainElement("benchmark"))
+				Ω(examplesThatWereRun).Should(ContainElement("measure"))
 			})
 
-			Context("when instructed to skip benchmarks", func() {
+			Context("when instructed to skip measurements", func() {
 				BeforeEach(func() {
 					conf = config.GinkgoConfigType{
-						SkipBenchmarks: true,
+						SkipMeasurements: true,
 					}
 				})
 
-				It("skips the benchmarks", func() {
+				It("skips the measurements", func() {
 					Ω(examplesThatWereRun).Should(ContainElement("A"))
-					Ω(examplesThatWereRun).ShouldNot(ContainElement("benchmark"))
+					Ω(examplesThatWereRun).ShouldNot(ContainElement("measure"))
 				})
 			})
 		})
