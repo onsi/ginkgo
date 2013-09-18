@@ -11,6 +11,7 @@ import (
 	"io/ioutil"
 	"os"
 	"os/exec"
+	"os/signal"
 )
 
 var numCPU int
@@ -18,6 +19,7 @@ var recurse bool
 var runMagicI bool
 var race bool
 var reports []*bytes.Buffer
+var executedCommands []*exec.Cmd
 
 func init() {
 	config.Flags("", false)
@@ -46,7 +48,9 @@ func main() {
 		handleSubcommands(flag.Args())
 	}
 
+	executedCommands = make([]*exec.Cmd, 0)
 	reports = make([]*bytes.Buffer, 0)
+	registerSignalHandler()
 
 	passed := true
 
@@ -178,6 +182,7 @@ func runCommand(path string, args []string, stream io.Writer, completions chan b
 	args = append([]string{"test", "-v", path}, args...)
 
 	cmd := exec.Command("go", args...)
+	executedCommands = append(executedCommands, cmd)
 
 	stdout, _ := cmd.StdoutPipe()
 	stderr, _ := cmd.StderrPipe()
@@ -192,4 +197,19 @@ func runCommand(path string, args []string, stream io.Writer, completions chan b
 
 	err = cmd.Wait()
 	completions <- (err == nil)
+}
+
+func registerSignalHandler() {
+	go func() {
+		c := make(chan os.Signal, 1)
+		signal.Notify(c, os.Interrupt, os.Kill)
+
+		select {
+		case sig := <-c:
+			for _, cmd := range executedCommands {
+				cmd.Process.Signal(sig)
+			}
+			os.Exit(1)
+		}
+	}()
 }
