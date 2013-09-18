@@ -242,8 +242,8 @@ func (ex *example) benchmarkReport() ExampleBenchmark {
 
 	max := time.Duration(math.MinInt64)
 	min := time.Duration(math.MaxInt64)
-	sum := time.Duration(0)
-	sumOfSquares := time.Duration(0)
+	sum := float64(0)
+	sumOfSquares := float64(0)
 
 	for _, sample := range ex.sampleRunTimes {
 		if sample > max {
@@ -252,13 +252,13 @@ func (ex *example) benchmarkReport() ExampleBenchmark {
 		if sample < min {
 			min = sample
 		}
-		sum += sample
-		sumOfSquares += sample * sample
+		sum += sample.Seconds()
+		sumOfSquares += sample.Seconds() * sample.Seconds()
 	}
 
 	n := float64(len(ex.sampleRunTimes))
-	mean := time.Duration(float64(sum) / n)
-	stdDev := time.Duration(math.Sqrt(float64(sumOfSquares)/n - float64(mean*mean)))
+	mean := time.Duration((sum / n) * float64(time.Second))
+	stdDev := time.Duration(math.Sqrt(sumOfSquares/n-float64(sum*sum/n/n)) * float64(time.Second))
 
 	return ExampleBenchmark{
 		IsBenchmark:     true,
