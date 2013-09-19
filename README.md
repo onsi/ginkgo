@@ -23,7 +23,7 @@ Jump straight to the [docs](http://onsi.github.io/ginkgo/) to learn more.
 
 - Built-in support for testing [asynchronicity](http://onsi.github.io/ginkgo/#asynchronous_tests)
 
-- Built-in support for [benchmarking](http://onsi.github.io/ginkgo/#benchmark_tests) your code.  Control the number of samples and fail the suite if a component takes too long to do its job. 
+- Built-in support for [benchmarking](http://onsi.github.io/ginkgo/#benchmark_tests) your code.  Control the number of benchmark samples as you gather runtimes and other, arbitrary, bits of numerical information about your code. 
 
 - `ginkgo`: a command line interface with plenty of handy command line arguments for [running your tests](http://onsi.github.io/ginkgo/#running_tests) and [generating](http://onsi.github.io/ginkgo/#generators) test files.
 
