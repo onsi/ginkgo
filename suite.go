@@ -28,7 +28,7 @@ func newSuite() *suite {
 	}
 }
 
-func (suite *suite) run(t testingT, description string, reporter Reporter, config config.GinkgoConfigType) {
+func (suite *suite) run(t testingT, description string, reporters []Reporter, config config.GinkgoConfigType) {
 	r := rand.New(rand.NewSource(config.RandomSeed))
 	suite.topLevelContainer.shuffle(r)
 
@@ -40,7 +40,7 @@ func (suite *suite) run(t testingT, description string, reporter Reporter, confi
 		panic("ginkgo.parallel.node is one-indexed and must be <= ginkgo.parallel.total")
 	}
 
-	suite.exampleCollection = newExampleCollection(t, description, suite.topLevelContainer.generateExamples(), reporter, config)
+	suite.exampleCollection = newExampleCollection(t, description, suite.topLevelContainer.generateExamples(), reporters, config)
 
 	suite.exampleCollection.run()
 }

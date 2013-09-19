@@ -18,18 +18,18 @@ type exampleCollection struct {
 	description                       string
 	examples                          []*example
 	exampleCountBeforeParallelization int
-	reporter                          Reporter
+	reporters                         []Reporter
 	startTime                         time.Time
 	runningExample                    *example
 	config                            config.GinkgoConfigType
 }
 
-func newExampleCollection(t testingT, description string, examples []*example, reporter Reporter, config config.GinkgoConfigType) *exampleCollection {
+func newExampleCollection(t testingT, description string, examples []*example, reporters []Reporter, config config.GinkgoConfigType) *exampleCollection {
 	collection := &exampleCollection{
 		t:           t,
 		description: description,
 		examples:    examples,
-		reporter:    reporter,
+		reporters:   reporters,
 		config:      config,
 		exampleCountBeforeParallelization: len(examples),
 	}
@@ -143,17 +143,25 @@ func (collection *exampleCollection) fail(failure failureData) {
 
 func (collection *exampleCollection) reportSuiteWillBegin() {
 	collection.startTime = time.Now()
-	collection.reporter.SpecSuiteWillBegin(collection.config, collection.summary())
+	summary := collection.summary()
+	for _, reporter := range collection.reporters {
+		reporter.SpecSuiteWillBegin(collection.config, summary)
+	}
 }
 
 func (collection *exampleCollection) reportExample(example *example) {
-	collection.reporter.ExampleDidComplete(example.summary())
+	summary := example.summary()
+	for _, reporter := range collection.reporters {
+		reporter.ExampleDidComplete(summary)
+	}
 }
 
 func (collection *exampleCollection) reportSuiteDidEnd() {
 	summary := collection.summary()
 	summary.RunTime = time.Since(collection.startTime)
-	collection.reporter.SpecSuiteDidEnd(summary)
+	for _, reporter := range collection.reporters {
+		reporter.SpecSuiteDidEnd(summary)
+	}
 }
 
 func (collection *exampleCollection) countExamplesSatisfying(filter func(ex *example) bool) (count int) {

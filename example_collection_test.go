@@ -44,7 +44,7 @@ func init() {
 					exampleWithItFunc("C", flagTypeNone, false),
 					exampleWithItFunc("A", flagTypeNone, false),
 					exampleWithItFunc("B", flagTypeNone, false),
-				}, fakeR, config.GinkgoConfigType{})
+				}, []Reporter{fakeR}, config.GinkgoConfigType{})
 			})
 
 			It("should be sortable", func() {
@@ -57,6 +57,26 @@ func init() {
 				collection.shuffle(rand.New(rand.NewSource(17)))
 				collection.run()
 				Ω(examplesThatWereRun).Should(Equal(shuffleStrings([]string{"A", "B", "C"}, 17)), "The permutation should be the same across test runs")
+			})
+		})
+
+		Describe("reporting to multiple reporter", func() {
+			var otherFakeR *fakeReporter
+			BeforeEach(func() {
+				otherFakeR = &fakeReporter{}
+
+				collection = newExampleCollection(fakeT, "collection description", []*example{
+					exampleWithItFunc("C", flagTypeNone, false),
+					exampleWithItFunc("A", flagTypeNone, false),
+					exampleWithItFunc("B", flagTypeNone, false),
+				}, []Reporter{fakeR, otherFakeR}, config.GinkgoConfigType{})
+				collection.run()
+			})
+
+			It("reports to both reporters", func() {
+				Ω(otherFakeR.beginSummary).Should(Equal(fakeR.beginSummary))
+				Ω(otherFakeR.endSummary).Should(Equal(fakeR.endSummary))
+				Ω(otherFakeR.exampleSummaries).Should(Equal(fakeR.exampleSummaries))
 			})
 		})
 
@@ -76,7 +96,7 @@ func init() {
 			})
 
 			JustBeforeEach(func() {
-				collection = newExampleCollection(fakeT, "collection description", []*example{example1, example2, example3}, fakeR, conf)
+				collection = newExampleCollection(fakeT, "collection description", []*example{example1, example2, example3}, []Reporter{fakeR}, conf)
 				collection.run()
 			})
 
@@ -399,7 +419,7 @@ func init() {
 					exampleWithItFunc("A", flagTypeNone, false),
 					exampleWithItFunc("B", flagTypeNone, false),
 					exampleWithMeasure("measure"),
-				}, fakeR, conf)
+				}, []Reporter{fakeR}, conf)
 
 				collection.run()
 			})

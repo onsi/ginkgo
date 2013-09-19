@@ -69,7 +69,7 @@ func init() {
 			})
 
 			JustBeforeEach(func() {
-				specSuite.run(fakeT, "suite description", fakeR, config.GinkgoConfigType{
+				specSuite.run(fakeT, "suite description", []Reporter{fakeR}, config.GinkgoConfigType{
 					RandomSeed:        randomSeed,
 					RandomizeAllSpecs: randomizeAllSpecs,
 					FocusString:       focusString,

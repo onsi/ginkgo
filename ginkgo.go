@@ -19,11 +19,11 @@ func init() {
 }
 
 func RunSpecs(t *testing.T, description string) {
-	RunSpecsWithCustomReporter(t, description, newDefaultReporter(config.DefaultReporterConfig))
+	RunSpecsWithCustomReporter(t, description, []Reporter{newDefaultReporter(config.DefaultReporterConfig)})
 }
 
-func RunSpecsWithCustomReporter(t *testing.T, description string, reporter Reporter) {
-	globalSuite.run(t, description, reporter, config.GinkgoConfig)
+func RunSpecsWithCustomReporter(t *testing.T, description string, reporters []Reporter) {
+	globalSuite.run(t, description, reporters, config.GinkgoConfig)
 }
 
 type Done chan<- interface{}
