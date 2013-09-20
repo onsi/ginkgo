@@ -8,7 +8,7 @@ import (
 	"text/template"
 )
 
-var bootstrapText = `package {{.Package}}
+var bootstrapText = `package {{.Package}}_test
 
 import (
     . "github.com/onsi/ginkgo"
@@ -23,9 +23,10 @@ func Test{{.PackageTitleCase}}(t *testing.T) {
 }
 `
 
-var specText = `package {{.Package}}
+var specText = `package {{.Package}}_test
 
 import (
+	. "{{.PackageImportPath}}"
     . "github.com/onsi/ginkgo"
     . "github.com/onsi/gomega"
 )
@@ -41,8 +42,9 @@ type bootstrapData struct {
 }
 
 type specData struct {
-	Package string
-	Subject string
+	Package           string
+	Subject           string
+	PackageImportPath string
 }
 
 func generateBootstrap() {
@@ -83,8 +85,9 @@ func generateSpec(subject string) {
 	formattedSubject := strings.Replace(strings.Title(strings.Replace(subject, "_", " ", -1)), " ", "", -1)
 
 	data := specData{
-		Package: packageName,
-		Subject: formattedSubject,
+		Package:           packageName,
+		Subject:           formattedSubject,
+		PackageImportPath: getPackageImportPath(),
 	}
 
 	targetFile := fmt.Sprintf("%s_test.go", subject)
@@ -115,6 +118,18 @@ func getPackage() string {
 		panic(err.Error())
 	}
 	return path.Base(workingDir)
+}
+
+func getPackageImportPath() string {
+	workingDir, err := os.Getwd()
+	if err != nil {
+		panic(err.Error())
+	}
+	paths := strings.Split(workingDir, "/src/")
+	if len(paths) != 2 {
+		panic("Couldn't identify package import path")
+	}
+	return paths[1]
 }
 
 func fileExists(path string) bool {
