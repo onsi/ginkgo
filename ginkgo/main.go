@@ -21,6 +21,11 @@ var race bool
 var reports []*bytes.Buffer
 var executedCommands []*exec.Cmd
 
+type suite struct {
+	path     string
+	isGinkgo bool
+}
+
 func init() {
 	config.Flags("", false)
 
@@ -54,13 +59,10 @@ func main() {
 
 	passed := true
 
-	dirs := []string{"."}
-	if recurse {
-		dirs = findSuitesInDir(".")
-	}
+	suites := findSuitesInDir(".", recurse)
 
-	for _, dir := range dirs {
-		passed = passed && runSuiteAtPath(dir)
+	for _, suite := range suites {
+		passed = passed && runSuite(suite)
 	}
 
 	if passed {
@@ -95,66 +97,92 @@ func handleSubcommands(args []string) {
 	}
 }
 
-func findSuitesInDir(dir string) []string {
-	dirs := []string{}
+func findSuitesInDir(dir string, recurse bool) []suite {
+	suites := []suite{}
 	files, _ := ioutil.ReadDir(dir)
 	re := regexp.MustCompile(`_test\.go$`)
 	for _, file := range files {
 		if !file.IsDir() && re.Match([]byte(file.Name())) {
-			dirs = append(dirs, dir)
+			suites = append(suites, suite{path: dir, isGinkgo: filesHaveGinkgoSuite(dir, files)})
 			break
 		}
 	}
 
-	re = regexp.MustCompile(`^\.`)
-	for _, file := range files {
-		if file.IsDir() && !re.Match([]byte(file.Name())) {
-			dirs = append(dirs, findSuitesInDir(dir+"/"+file.Name())...)
+	if recurse {
+		re = regexp.MustCompile(`^\.`)
+		for _, file := range files {
+			if file.IsDir() && !re.Match([]byte(file.Name())) {
+				suites = append(suites, findSuitesInDir(dir+"/"+file.Name(), recurse)...)
+			}
 		}
 	}
 
-	return dirs
+	return suites
 }
 
-func runSuiteAtPath(path string) bool {
+func filesHaveGinkgoSuite(dir string, files []os.FileInfo) bool {
+	reTestFile := regexp.MustCompile(`_test\.go$`)
+	reGinkgo := regexp.MustCompile(`package ginkgo|\/ginkgo"`)
+	for _, file := range files {
+		if !file.IsDir() && reTestFile.Match([]byte(file.Name())) {
+			contents, _ := ioutil.ReadFile(dir + "/" + file.Name())
+			if reGinkgo.Match(contents) {
+				return true
+			}
+		}
+	}
+
+	return false
+}
+
+func runSuite(suite suite) bool {
 	completions := make(chan bool)
 
 	if runMagicI {
-		runGoI(path, race)
+		runGoI(suite.path, race)
 	}
 
-	for cpu := 0; cpu < numCPU; cpu++ {
-		config.GinkgoConfig.ParallelNode = cpu + 1
-		config.GinkgoConfig.ParallelTotal = numCPU
+	if suite.isGinkgo {
+		for cpu := 0; cpu < numCPU; cpu++ {
+			config.GinkgoConfig.ParallelNode = cpu + 1
+			config.GinkgoConfig.ParallelTotal = numCPU
 
-		args := config.BuildFlagArgs("ginkgo", config.GinkgoConfig, config.DefaultReporterConfig)
-		if race {
-			args = append([]string{"--race"}, args...)
+			args := config.BuildFlagArgs("ginkgo", config.GinkgoConfig, config.DefaultReporterConfig)
+			if race {
+				args = append([]string{"--race"}, args...)
+			}
+
+			var writer io.Writer
+			if numCPU > 1 {
+				buffer := new(bytes.Buffer)
+				reports = append(reports, buffer)
+				writer = buffer
+			} else {
+				writer = os.Stdout
+			}
+
+			go runCommand(suite.path, args, writer, completions)
 		}
 
-		var writer io.Writer
+		passed := true
+
+		for cpu := 0; cpu < numCPU; cpu++ {
+			passed = passed && <-completions
+		}
+
 		if numCPU > 1 {
-			buffer := new(bytes.Buffer)
-			reports = append(reports, buffer)
-			writer = buffer
-		} else {
-			writer = os.Stdout
+			printToScreen()
 		}
 
-		go runCommand(path, args, writer, completions)
+		return passed
+	} else {
+		args := []string{}
+		if race {
+			args = append(args, "--race")
+		}
+		go runCommand(suite.path, args, os.Stdout, completions)
+		return <-completions
 	}
-
-	passed := true
-
-	for cpu := 0; cpu < numCPU; cpu++ {
-		passed = passed && <-completions
-	}
-
-	if numCPU > 1 {
-		printToScreen()
-	}
-
-	return passed
 }
 
 func printToScreen() {
@@ -171,9 +199,9 @@ func runGoI(path string, race bool) {
 	}
 	args = append(args, path)
 	cmd := exec.Command("go", args...)
-	err := cmd.Run()
+	output, err := cmd.CombinedOutput()
 	if err != nil {
-		fmt.Printf("go test -i %s failed\n", path)
+		fmt.Printf("go test -i %s failed with:\n%s", path, output)
 		os.Exit(1)
 	}
 }
