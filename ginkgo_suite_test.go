@@ -39,14 +39,19 @@ func (fakeT *fakeTestingT) Fail() {
 type fakeReporter struct {
 	config config.GinkgoConfigType
 
-	beginSummary     *SuiteSummary
-	exampleSummaries []*ExampleSummary
-	endSummary       *SuiteSummary
+	beginSummary            *SuiteSummary
+	exampleWillRunSummaries []*ExampleSummary
+	exampleSummaries        []*ExampleSummary
+	endSummary              *SuiteSummary
 }
 
 func (fakeR *fakeReporter) SpecSuiteWillBegin(config config.GinkgoConfigType, summary *SuiteSummary) {
 	fakeR.config = config
 	fakeR.beginSummary = summary
+}
+
+func (fakeR *fakeReporter) ExampleWillRun(exampleSummary *ExampleSummary) {
+	fakeR.exampleWillRunSummaries = append(fakeR.exampleWillRunSummaries, exampleSummary)
 }
 
 func (fakeR *fakeReporter) ExampleDidComplete(exampleSummary *ExampleSummary) {

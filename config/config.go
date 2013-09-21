@@ -25,6 +25,7 @@ type DefaultReporterConfigType struct {
 	NoColor           bool
 	SlowSpecThreshold float64
 	NoisyPendings     bool
+	Verbose           bool
 }
 
 var DefaultReporterConfig = DefaultReporterConfigType{}
@@ -52,6 +53,7 @@ func Flags(prefix string, includeParallelFlags bool) {
 	flag.BoolVar(&(DefaultReporterConfig.NoColor), prefix+"noColor", false, "If set, suppress color output in default reporter.")
 	flag.Float64Var(&(DefaultReporterConfig.SlowSpecThreshold), prefix+"slowSpecThreshold", 5.0, "(in seconds) Specs that take longer to run than this threshold are flagged as slow by the default reporter (default: 5 seconds).")
 	flag.BoolVar(&(DefaultReporterConfig.NoisyPendings), prefix+"noisyPendings", true, "If set, default reporter will shout about pending tests.")
+	flag.BoolVar(&(DefaultReporterConfig.Verbose), prefix+"v", false, "If set, default reporter print out all specs as they begin.")
 }
 
 func BuildFlagArgs(prefix string, ginkgo GinkgoConfigType, reporter DefaultReporterConfigType) []string {
@@ -96,6 +98,10 @@ func BuildFlagArgs(prefix string, ginkgo GinkgoConfigType, reporter DefaultRepor
 
 	if !reporter.NoisyPendings {
 		result = append(result, fmt.Sprintf("--%snoisyPendings=false", prefix))
+	}
+
+	if reporter.Verbose {
+		result = append(result, fmt.Sprintf("--%sv", prefix))
 	}
 
 	return result

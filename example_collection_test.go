@@ -124,6 +124,7 @@ func init() {
 				})
 
 				It("publishes the correct example summaries", func() {
+					Ω(fakeR.exampleWillRunSummaries).Should(HaveLen(3))
 					Ω(fakeR.exampleSummaries).Should(HaveLen(3))
 					Ω(fakeR.exampleSummaries[0]).Should(Equal(example1.summary()))
 					Ω(fakeR.exampleSummaries[1]).Should(Equal(example2.summary()))

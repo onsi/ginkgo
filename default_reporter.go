@@ -26,7 +26,7 @@ const greenColor = "\x1b[32m"
 const yellowColor = "\x1b[33m"
 const cyanColor = "\x1b[36m"
 const grayColor = "\x1b[90m"
-const blueColor = "\x1b[94m"
+const lightGrayColor = "\x1b[37m"
 
 func (reporter *defaultReporter) colorize(colorCode string, format string, args ...interface{}) string {
 	s := fmt.Sprintf(format, args...)
@@ -101,6 +101,22 @@ func (reporter *defaultReporter) SpecSuiteWillBegin(config config.GinkgoConfigTy
 	reporter.printNewLine()
 }
 
+func (reporter *defaultReporter) ExampleWillRun(exampleSummary *ExampleSummary) {
+	if reporter.config.Verbose {
+		if exampleSummary.State != ExampleStatePending && exampleSummary.State != ExampleStateSkipped {
+			colors := []string{defaultStyle, grayColor}
+			for i, text := range exampleSummary.ComponentTexts[1:len(exampleSummary.ComponentTexts)] {
+				reporter.print(0, reporter.colorize(colors[i%2], text)+" ")
+			}
+			reporter.printNewLine()
+			reporter.print(1, reporter.colorize(boldStyle, exampleSummary.ComponentTexts[len(exampleSummary.ComponentTexts)-1]))
+			reporter.printNewLine()
+			reporter.print(1, reporter.colorize(lightGrayColor, exampleSummary.ComponentCodeLocations[len(exampleSummary.ComponentCodeLocations)-1].String()))
+			reporter.printNewLine()
+		}
+	}
+}
+
 func (reporter *defaultReporter) ExampleDidComplete(exampleSummary *ExampleSummary) {
 	if exampleSummary.State == ExampleStatePassed {
 		reporter.printStatus(greenColor, "•", exampleSummary)
@@ -114,6 +130,9 @@ func (reporter *defaultReporter) ExampleDidComplete(exampleSummary *ExampleSumma
 		reporter.printFailure("•! Panic", exampleSummary)
 	} else if exampleSummary.State == ExampleStateFailed {
 		reporter.printFailure("• Failure", exampleSummary)
+	}
+	if reporter.config.Verbose && !reporter.lastExampleWasABlock {
+		reporter.printNewLine()
 	}
 }
 
@@ -145,10 +164,14 @@ func (reporter *defaultReporter) SpecSuiteDidEnd(summary *SuiteSummary) {
 
 func (reporter *defaultReporter) printBlockWithMessage(header string, message string, exampleSummary *ExampleSummary) {
 	if !reporter.lastExampleWasABlock {
-		reporter.printNewLine()
+		if !reporter.config.Verbose {
+			reporter.printNewLine()
+		}
 		reporter.printDelimiter()
 	}
-	reporter.println(0, header)
+	if header != "" {
+		reporter.println(0, header)
+	}
 
 	startIndex := 1
 	offset := -1
@@ -223,7 +246,9 @@ func (reporter *defaultReporter) measurementReport(exampleSummary *ExampleSummar
 
 func (reporter *defaultReporter) printFailure(message string, exampleSummary *ExampleSummary) {
 	if !reporter.lastExampleWasABlock {
-		reporter.printNewLine()
+		if !reporter.config.Verbose {
+			reporter.printNewLine()
+		}
 		reporter.printDelimiter()
 	}
 	reporter.println(0, reporter.colorize(redColor+boldStyle, "%s [%.3f seconds]", message, exampleSummary.RunTime.Seconds()))

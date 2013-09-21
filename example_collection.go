@@ -115,6 +115,8 @@ func (collection *exampleCollection) run() {
 	suiteFailed := false
 
 	for _, example := range collection.examples {
+		collection.reportExampleWillRun(example)
+
 		if !example.skippedOrPending() {
 			collection.runningExample = example
 			example.run()
@@ -125,7 +127,7 @@ func (collection *exampleCollection) run() {
 			suiteFailed = true
 		}
 
-		collection.reportExample(example)
+		collection.reportExampleDidComplete(example)
 	}
 
 	collection.reportSuiteDidEnd()
@@ -149,7 +151,14 @@ func (collection *exampleCollection) reportSuiteWillBegin() {
 	}
 }
 
-func (collection *exampleCollection) reportExample(example *example) {
+func (collection *exampleCollection) reportExampleWillRun(example *example) {
+	summary := example.summary()
+	for _, reporter := range collection.reporters {
+		reporter.ExampleWillRun(summary)
+	}
+}
+
+func (collection *exampleCollection) reportExampleDidComplete(example *example) {
 	summary := example.summary()
 	for _, reporter := range collection.reporters {
 		reporter.ExampleDidComplete(summary)
