@@ -519,9 +519,9 @@ There are a number of command line flags that can be passed to the `ginkgo` test
 
     If present, all specs will be permuted.  By default Ginkgo will only permute the order of the top level containers.
 
-- `--skipBenchmarks`
+- `--skipMeasurements`
 
-    If present, Ginkgo will skip any `Benchmark` specs you've defined.
+    If present, Ginkgo will skip any `Measure` specs you've defined.
 
 - `--failOnPending`
 
@@ -542,6 +542,10 @@ There are a number of command line flags that can be passed to the `ginkgo` test
 - `--noisyPendings=false`
 
     By default, Ginkgo's defautlt reporter will provide detailed output for pending specs.  You can set --noisyPendings=false to supress this behavior.
+
+- `--v`
+
+    If present, Ginkgo's default reporter will print out the text and location for each spec before running it.
 
 Additional flags supported by the `ginkgo` command:
 
@@ -602,30 +606,126 @@ Flags for `go test` only:
 
 ## Benchmark Tests
 
-Ginkgo allows you to measure the performance of your code using `Benchmark` blocks.   `Benchmark` blocks can go wherever an `It` block can go -- each `Benchmark` generates a new spec:
+Ginkgo allows you to measure the performance of your code using `Measure` blocks.   `Measure` blocks can go wherever an `It` block can go -- each `Measure` generates a new spec.  The closure function passed to `Measure` must take a `Benchmarker` argument.  The `Benchmarker is used to measure runtimes and record arbitrary numerical values.  You must also pass `Measure` an integer after your closure function, this represents the number of samples of your code `Measure` will perform.
 
-    Benchmark("it should do something hard efficiently", func() {
-        output := SomethingHard()
-        Expect(output).To(Equal(17))
-    }, 10, 0.1)
+For example:
 
-`Benchmark` takes two additional arguments after the `body` function.  The first is `N`, the number of samples to perform.  The second is the maximum time that a sample can take (in seconds).  Ginkgo will run the `body` function `N` times, timing each sample.  It will then present the fastest time, the slowest time, and the average time along with the standard deviation.  If any of the samples takes longer than the maximum time, Ginkgo will mark the spec as failed.  In addition, if any of the individual samples happens to fail then `Benchmark` will abort the sampling and fail the spec.
+    Measure("it should do something hard efficiently", func(b Benchmarker) {
+        runtime := b.Time("runtime", func() {
+            output := SomethingHard()
+            Expect(output).To(Equal(17))            
+        })
 
-In this way you can write expressive, exploratory, specs to measure the performance of various parts of your code (or external components, if you use Ginkgo to write integration tests).  As you collect your data, you can leave the `Benchmark` specs in place to monitor performance and fail the suite should components start getting slow and bloated.
+        Ω(runtime.Seconds()).Should(BeNumerically("<", 0.2), "SomethingHard() shouldn't take too long.")
 
-`Benchmark`s can live alongside `It`s within a test suite.  If you want to run just the `It`s you can pass the `--skipBenchmarks` flag to `ginkgo`.
+        b.RecordValue("disk usage (in MB)", HowMuchDiskSpaceDidYouUse())
+    }, 10)
 
-> `Benchmark`s also support the async testing mode that `It`s support.  Just pass a `done Done` argument to the `body` function.  You can specify the async timeout with an additional, third, numerical argument.
+will run the closure function 10 times, aggregating data for "runtime" and "disk usage".  Ginkgo's reporter will then print out a summary of each of these metrics containing some simple statistics:
 
-> You can also mark `Benchmark`s as pending with `PBenchmark` and `XBenchmark` or focus them with `FBenchmark`.
+    • [MEASUREMENT]
+    Suite
+        it should do something hard efficiently
 
-> The combination of `Benchmark` and asyncronous testing support makes Ginkgo an ideal testing framework for black-box integration testing components "from the outside".
+        Ran 10 samples:
+        runtime:
+          Fastest Time: 0.01s
+          Slowest Time: 0.08s
+          Average Time: 0.05s ± 0.02s
+        
+        disk usage (in MB):
+          Smallest: 3.0
+           Largest: 5.2
+           Average: 3.9 ± 0.4
+
+With `Measure` you can write expressive, exploratory, specs to measure the performance of various parts of your code (or external components, if you use Ginkgo to write integration tests).  As you collect your data, you can leave the `Measure` specs in place to monitor performance and fail the suite should components start growing slow and bloated.
+
+`Measure`s can live alongside `It`s within a test suite.  If you want to run just the `It`s you can pass the `--skipMeasurements` flag to `ginkgo`.
+
+> You can also mark `Measure`s as pending with `PMeasure` and `XMeasure` or focus them with `FMeasure`.
+
+### Measuring Time
+
+The `Benchmarker` passed into your closure function provides the
+
+    Time(name string, body func(), info ...Interface{}) time.Duration
+
+ method.  `Time` runs the passed in `body` function and records, and returns, its runtime.  The resulting measurements for each sample are aggregated and some simple statistics are computed.  These stats appear in the spec output under the `name` you pass in.  Note that `name` must be unique within the scope of the `Measure` node.
+
+ You can also pass arbitrary information via the optional `info` argument.  This will be passed along to the reporter along with the agreggated runtimes that `Time` measures.  The default reporter presents a string representation of `info`, but you can write a custom reporter to perform something more structured.  For example, you might run several measurements of the same code, but vary some parameter between runs.  You could encode the value of that parameter in `info`, and then have a custom reporter that uses `info` and the statistics provided by Ginkgo to generate a CSV file - or perhaps even a plot.
+
+ If you want to assert that `body` ran within some threshold, you can make an assertion against `Time`'s return value.
+
+### Recording Arbitrary Values
+
+The `Benchmarker` also provides the
+
+    RecordValue(name string, value float64, info ...Interface{})
+
+method.  `RecordValue` allows you to record arbitrary numerical data.  These results are aggregated and some simple statistics are computed.  These stats appear in the spec output under the `name` you pass in.  Note that `name` must be unique within the scope of the `Measure` node.
+
+The optional `info` parameter can be used to pass structured data to a custom reporter.  See (Measuring Time)[#measuring-time] above for more details.
 
 ---
 
 ## Shared Example Patterns
 
-Coming Soon!
+Ginkgo doesn't have any have any explicit support for Shared Examples (also known as Shared Behaviors) but there are a few patterns that you can use to reuse tests across your suite.
+
+### Local Shared Behaviors
+
+It is often the case that a number of `Context`s within a suite describe slightly different set ups that result in the roughly the same behavior.  Rather than repeat the `It`s for across these `Context`s you can pull out a function that lives within the same closure that `Context`s live in, that defines these shared `It`s.  For example:
+
+    Describe("my api client", func() {
+        var client APIClient
+        var fakeServer FakeServer
+        var response chan APIResponse
+
+        BeforeEach(func() {
+            response = make(chan APIResponse, 1)
+            fakeServer = NewFakeServer()
+            client = NewAPIClient(fakeServer)
+            client.Get("/some/endpoint", response)
+        })
+
+        Describe("failure modes", func() {
+            Context("when the server does not return a 200", func() {
+                BeforeEach(func() {
+                    fakeServer.Respond(404)
+                })
+
+                AssertFailedBehavior()
+            })
+
+            Context("when the server returns unparseable JSON", func() {
+                BeforeEach(func() {
+                    fakeServer.Succeed("{I'm not JSON!")
+                })
+
+                AssertFailedBehavior()                
+            })
+
+            Context("when the request errors", func() {
+                BeforeEach(func() {
+                    fakeServer.Error(errors.New("oops!"))
+                })
+
+                AssertFailedBehavior()
+            })
+
+            AssertFailedBehavior := func() {                
+                It("should not include JSON in the response", func() {
+                    Ω((<-response).JSON).Should(BeZero())
+                })
+
+                It("should not report success", func() {
+                    Ω((<-response).Success).Should(BeFalse())
+                })
+            }
+        })
+    })
+
+Note that the `AssertFailedBehavior` function is called within the body of the `Context` container block.  The `It`s defined by this function get added to the enclosing container.  Since the function shares the same closure scope we don't need to pass the `response` channel in.
 
 ---
 
