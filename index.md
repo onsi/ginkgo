@@ -38,7 +38,7 @@ To write Ginkgo tests for a package you must first bootstrap a Ginkgo test suite
 
 This will generate a file named `books_suite_test.go` containing:
 
-    package books
+    package books_test
 
     import (
         . "github.com/onsi/ginkgo"
@@ -54,7 +54,8 @@ This will generate a file named `books_suite_test.go` containing:
 
 Let's break this down:
 
-- `TestBootstrap` is a `testing` test.  The Go test runner will run this function when you run `go test`.
+- Go allows us to specify the `books_test` package alongside the `books` package.  Using `books_test` instead of `books` allows us to respect the encapsulation of the `books` package: your tests will need to import `books` and access it from the outside, like any other package.  This is preferred to reaching into the package and testing its internals and leads to more behavioral tests.  You can, of course, opt out of this -- just change `package books_test` to `package books`
+- `TestBooks` is a `testing` test.  The Go test runner will run this function when you run `go test`.
 - `RegisterFailHandler(Fail)`: A Ginkgo test signals failure by calling Ginkgo's `Fail(description string)` function.  We pass this function to Gomega using `RegisterFailHandler`.  This is the sole connection point between Ginkgo and Gomega.
 - `RunSpecs(t *testing.T, suiteDescription string)` tells Ginkgo to start the test suite.  Ginkgo will automatically fail the `testing.T` if any of your specs fail.
 
@@ -85,9 +86,10 @@ An empty test suite is not very interesting.  While you can start to add tests d
 
 This will generate a file named `book_test.go` containing:
 
-    package books
+    package books_test
 
     import (
+        . "/path/to/books"
         . "github.com/onsi/ginkgo"
         . "github.com/onsi/gomega"
     )
@@ -99,6 +101,7 @@ This will generate a file named `book_test.go` containing:
 Let's break this down:
 
 - We import the `ginkgo` and `gomega` packages into the global name space.  While incredibly convenient, this is not - strictly speaking - necessary.
+- Similarly, we import the `books` package since we are using the special `books_test` package to isolate our tests from our code.  For convenience we import the `books` package into the namespace.  You can opt out of either these decisions by editing the generated test file.
 - We add a *top-level* describe container using Ginkgo's `Describe(text string, body func()) bool` function.  The `var _ = ...` trick allows us to evaluate the Describe at the top level without having to wrap it in a `func init() {}`
 
 The function in the `Describe` will contain our specs.  Let's add a few now to test loading books from JSON:
@@ -362,7 +365,7 @@ Sometimes you want to run some set up code once before the entire test suite and
 
 A convenient pattern for doing this is to use the bootstrap test file:
 
-    package books
+    package books_test
 
     import (
         . "github.com/onsi/ginkgo"
@@ -439,7 +442,7 @@ When running in parallel mode the test runner will not present any output until 
 
 If your tests spin up or connect to external processes you'll need to make sure that those connections are safe in a parallel context.  One way to ensure this would be, for example, to spin up a separate instance of an eternal resource for each Ginkgo process.  For example, let's say your tests spin up and hit a local web server.  You could bring up a different server bound to a different port for each of your parallel processes:
 
-    package books
+    package books_test
 
     import (
         . "github.com/onsi/ginkgo"
@@ -564,6 +567,10 @@ Additional flags supported by the `ginkgo` command:
 - `-race`
     
     Set `-race` to have the `ginkgo` CLI run your tests with the race detector on.
+
+- `-cover`
+
+    Set `-cover` to have the `ginkgo` CLI run your tests with coverage analysis turned on (a Golang 1.2+ feature).  Ginkgo will generate coverage profiles under the current directory named `PACKAGE.coverprofile` for each set of package tests that is run.
 
 
 Flags for `go test` only:
