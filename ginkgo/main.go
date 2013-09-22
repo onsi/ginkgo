@@ -3,6 +3,7 @@ package main
 import (
 	"fmt"
 	"github.com/onsi/ginkgo/config"
+	"path/filepath"
 	"regexp"
 
 	"bytes"
@@ -18,12 +19,14 @@ var numCPU int
 var recurse bool
 var runMagicI bool
 var race bool
+var cover bool
 var reports []*bytes.Buffer
 var executedCommands []*exec.Cmd
 
 type suite struct {
-	path     string
-	isGinkgo bool
+	path        string
+	packageName string
+	isGinkgo    bool
 }
 
 func init() {
@@ -33,6 +36,7 @@ func init() {
 	flag.BoolVar(&(recurse), "r", false, "Find and run test suites under the current directory recursively")
 	flag.BoolVar(&(runMagicI), "i", false, "Run go test -i first, then run the test suite")
 	flag.BoolVar(&(race), "race", false, "Run tests with race detection enabled")
+	flag.BoolVar(&(cover), "cover", false, "Run tests with coverage analysis, will generate coverage profiles with the package name in the current directory")
 
 	flag.Usage = func() {
 		fmt.Fprintf(os.Stderr, "Usage of ginkgo:\n\n")
@@ -103,7 +107,7 @@ func findSuitesInDir(dir string, recurse bool) []suite {
 	re := regexp.MustCompile(`_test\.go$`)
 	for _, file := range files {
 		if !file.IsDir() && re.Match([]byte(file.Name())) {
-			suites = append(suites, suite{path: dir, isGinkgo: filesHaveGinkgoSuite(dir, files)})
+			suites = append(suites, suite{path: dir, packageName: packageNameForDir(dir), isGinkgo: filesHaveGinkgoSuite(dir, files)})
 			break
 		}
 	}
@@ -118,6 +122,11 @@ func findSuitesInDir(dir string, recurse bool) []suite {
 	}
 
 	return suites
+}
+
+func packageNameForDir(dir string) string {
+	path, _ := filepath.Abs(dir)
+	return filepath.Base(path)
 }
 
 func filesHaveGinkgoSuite(dir string, files []os.FileInfo) bool {
@@ -151,6 +160,9 @@ func runSuite(suite suite) bool {
 			if race {
 				args = append([]string{"--race"}, args...)
 			}
+			if cover {
+				args = append([]string{"--cover", "--coverprofile=" + suite.packageName + ".coverprofile"})
+			}
 
 			var writer io.Writer
 			if numCPU > 1 {
@@ -179,6 +191,9 @@ func runSuite(suite suite) bool {
 		args := []string{}
 		if race {
 			args = append(args, "--race")
+		}
+		if cover {
+			args = append([]string{"--cover", "--coverprofile=" + suite.packageName + ".out"})
 		}
 		go runCommand(suite.path, args, os.Stdout, completions)
 		return <-completions
