@@ -11,15 +11,15 @@ import (
 var bootstrapText = `package {{.Package}}_test
 
 import (
-    . "github.com/onsi/ginkgo"
-    . "github.com/onsi/gomega"
+	. "github.com/onsi/ginkgo"
+	. "github.com/onsi/gomega"
 
-    "testing"
+	"testing"
 )
 
 func Test{{.PackageTitleCase}}(t *testing.T) {
-    RegisterFailHandler(Fail)
-    RunSpecs(t, "{{.PackageTitleCase}} Suite")
+	RegisterFailHandler(Fail)
+	RunSpecs(t, "{{.PackageTitleCase}} Suite")
 }
 `
 
