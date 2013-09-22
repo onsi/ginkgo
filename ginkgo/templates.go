@@ -27,8 +27,8 @@ var specText = `package {{.Package}}_test
 
 import (
 	. "{{.PackageImportPath}}"
-    . "github.com/onsi/ginkgo"
-    . "github.com/onsi/gomega"
+	. "github.com/onsi/ginkgo"
+	. "github.com/onsi/gomega"
 )
 
 var _ = Describe("{{.Subject}}", func() {
