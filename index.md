@@ -606,7 +606,7 @@ Flags for `go test` only:
 
 ## Benchmark Tests
 
-Ginkgo allows you to measure the performance of your code using `Measure` blocks.   `Measure` blocks can go wherever an `It` block can go -- each `Measure` generates a new spec.  The closure function passed to `Measure` must take a `Benchmarker` argument.  The `Benchmarker is used to measure runtimes and record arbitrary numerical values.  You must also pass `Measure` an integer after your closure function, this represents the number of samples of your code `Measure` will perform.
+Ginkgo allows you to measure the performance of your code using `Measure` blocks.   `Measure` blocks can go wherever an `It` block can go -- each `Measure` generates a new spec.  The closure function passed to `Measure` must take a `Benchmarker` argument.  The `Benchmarker` is used to measure runtimes and record arbitrary numerical values.  You must also pass `Measure` an integer after your closure function, this represents the number of samples of your code `Measure` will perform.
 
 For example:
 
@@ -664,7 +664,7 @@ The `Benchmarker` also provides the
 
 method.  `RecordValue` allows you to record arbitrary numerical data.  These results are aggregated and some simple statistics are computed.  These stats appear in the spec output under the `name` you pass in.  Note that `name` must be unique within the scope of the `Measure` node.
 
-The optional `info` parameter can be used to pass structured data to a custom reporter.  See (Measuring Time)[#measuring-time] above for more details.
+The optional `info` parameter can be used to pass structured data to a custom reporter.  See [Measuring Time](#measuring_time) above for more details.
 
 ---
 
@@ -672,7 +672,7 @@ The optional `info` parameter can be used to pass structured data to a custom re
 
 Ginkgo doesn't have any have any explicit support for Shared Examples (also known as Shared Behaviors) but there are a few patterns that you can use to reuse tests across your suite.
 
-### Local Shared Behaviors
+### Locally-scoped Shared Behaviors
 
 It is often the case that a number of `Context`s within a suite describe slightly different set ups that result in the roughly the same behavior.  Rather than repeat the `It`s for across these `Context`s you can pull out a function that lives within the same closure that `Context`s live in, that defines these shared `It`s.  For example:
 
@@ -726,6 +726,10 @@ It is often the case that a number of `Context`s within a suite describe slightl
     })
 
 Note that the `AssertFailedBehavior` function is called within the body of the `Context` container block.  The `It`s defined by this function get added to the enclosing container.  Since the function shares the same closure scope we don't need to pass the `response` channel in.
+
+### Global Shared Behaviors
+
+Coming Soon!
 
 ---
 
