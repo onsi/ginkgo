@@ -19,10 +19,15 @@ func init() {
 }
 
 func RunSpecs(t *testing.T, description string) {
-	RunSpecsWithCustomReporter(t, description, []Reporter{newDefaultReporter(config.DefaultReporterConfig)})
+	globalSuite.run(t, description, []Reporter{newDefaultReporter(config.DefaultReporterConfig)}, config.GinkgoConfig)
 }
 
-func RunSpecsWithCustomReporter(t *testing.T, description string, reporters []Reporter) {
+func RunSpecsWithDefaultAndCustomReporters(t *testing.T, description string, reporters []Reporter) {
+	reporters = append([]Reporter{newDefaultReporter(config.DefaultReporterConfig)}, reporters...)
+	globalSuite.run(t, description, reporters, config.GinkgoConfig)
+}
+
+func RunSpecsWithCustomReporters(t *testing.T, description string, reporters []Reporter) {
 	globalSuite.run(t, description, reporters, config.GinkgoConfig)
 }
 
