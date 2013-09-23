@@ -105,7 +105,7 @@ func (reporter *defaultReporter) ExampleWillRun(exampleSummary *ExampleSummary) 
 	if reporter.config.Verbose {
 		if exampleSummary.State != ExampleStatePending && exampleSummary.State != ExampleStateSkipped {
 			colors := []string{defaultStyle, grayColor}
-			for i, text := range exampleSummary.ComponentTexts[1:len(exampleSummary.ComponentTexts)] {
+			for i, text := range exampleSummary.ComponentTexts[1 : len(exampleSummary.ComponentTexts)-1] {
 				reporter.print(0, reporter.colorize(colors[i%2], text)+" ")
 			}
 			reporter.printNewLine()
