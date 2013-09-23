@@ -222,7 +222,7 @@ func runGoI(path string, race bool) {
 }
 
 func runCommand(path string, args []string, stream io.Writer, completions chan bool) {
-	args = append([]string{"test", "-v", path}, args...)
+	args = append([]string{"test", "-v", "-timeout=24h", path}, args...)
 
 	cmd := exec.Command("go", args...)
 	executedCommands = append(executedCommands, cmd)
