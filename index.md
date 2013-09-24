@@ -169,6 +169,14 @@ Assuming a `Book` model with this behavior, running the tests will yield:
     ok      books   0.025s
 
 Success!
+
+###Marking Specs as Failed
+
+While you typically want to use a matcher library, like [Gomega](https://github.com/onsi/gomega), to make assertions in your specs, Ginkgo provides a simple, global, `Fail` function that allows you to mark a spec as failed.  Just call:
+
+    Fail("Failure reason")
+
+and Ginkgo will take the rest.  More details about `Fail` and about using matcher libraries other than Gomega can be found in the [Using Other Matcher Libraries](#using_other_matcher_libraries) section.
  
 ---
 
