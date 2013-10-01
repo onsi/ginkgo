@@ -1,17 +1,86 @@
 body {
     font-size:13px;
+    background-image: url("../images/background.png");
+    background-repeat:no-repeat;
+    background-attachment: fixed;
 }
 
 #sidebar {
     box-sizing: border-box;
     width:100%;
+    margin-top:20px;
 }
+
+.logo {
+    margin-top:10px;
+    margin-bottom:10px;
+}
+
+.header_logo {
+    max-width:90%;
+    margin: 0 auto;
+}
+
+#sidebar .nav > li > a > img {
+    max-width:90%;
+}
+
+.nav > li > a:hover {
+    background-color:rgba(230,245,230,0.8);   
+}
+
+a {
+    color:#2dad6c;   
+}
+
+code, pre {
+    font-family: "Courier New", monospace;
+    background-color: rgba(245,245,245,0.4)
+}
+
+pre code {
+    font-weight:300;
+}
+
+code {
+    color:#2dad6c;   
+    font-weight:700;
+}
+
+a:hover {
+    color:#1c7548;
+}
+
+pre {
+    margin:20px;
+    font-size:90%;
+}
+
+blockquote {
+    padding: 10px;
+    margin: 20px;
+    border-left:none;
+    background-color: rgba(245,245,245,0.7);
+    opacity:0.6;
+    border-radius:5px;
+    border: 1px solid #cccccc
+}
+
+blockquote:hover {
+    opacity:1.0;
+}
+
+blockquote p {
+    font-size:100%;
+}
+
 
 .sidebar-section {
     padding:10px;
-    background-color: #fafafa;
     border-radius: 10px;
     margin-bottom: 20px;
+    background-color: rgba(245,245,245,0.4);
+    border: 1px solid #ddd;
 }
 
 .sidebar-section h2 {
@@ -25,6 +94,21 @@ body {
 }
 
 .sidebar-section.footer h4 {
+    margin:0;
+}
+
+.sidebar-section.footer {
+    margin-bottom:16px;
+}
+
+.copy {
+    font-size:90%;
+    text-align: center;
+    color:#999;
+    font-weight: 100;
+}
+
+.copy p {
     margin:0;
 }
 
@@ -44,7 +128,7 @@ body {
 }
 
 .sidebar-section>ul>li.active>a {
-    background-color: #428bca;
+    background-color: #2dad6c;
     color:#fff;
 }
 
@@ -75,32 +159,6 @@ body {
     opacity:1.0;
 }
 
-code {
-    color: #428bca;
-}
-
-pre {
-    margin:20px;
-    font-size:90%;
-}
-
-blockquote {
-    padding: 10px;
-    margin: 20px;
-    border-left:none;
-    background-color: #eee;
-    opacity:0.6;
-    border-radius:5px;
-}
-
-blockquote:hover {
-    opacity:1.0;
-}
-
-blockquote p {
-    font-size:100%;
-}
-
 .content {
     margin-bottom:20px;
 }
@@ -123,15 +181,23 @@ h3 {
 @media screen and (min-width: 992px) {
     #sidebar {
         position:fixed;
-        top:20px;
+        top:0px;
         width:213px;
+    }
+
+    .header_logo {
+       margin:0;
     }
 }
 
 @media screen and (min-width: 1200px) {
     #sidebar {
         position:fixed;
-        top:20px;
+        top:0px;
         width:263px;
+    }
+
+    .header_logo {
+       margin:0;
     }
 }
