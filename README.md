@@ -1,4 +1,4 @@
-# Ginkgo: a BDD Testing Framework for Golang
+![Ginkgo: A Golang BDD Testing Framework](http://onsi.github.io/ginkgo/images/ginkgo.png)
 
 [![Build Status](https://travis-ci.org/onsi/ginkgo.png)](https://travis-ci.org/onsi/ginkgo)
 
