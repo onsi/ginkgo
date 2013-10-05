@@ -446,7 +446,7 @@ To run a Ginkgo suite in parallel you must use the `ginkgo` CLI.  To run N proce
 
 When running in parallel mode the test runner will not present any output until all the nodes have completed running.
 
-If your tests spin up or connect to external processes you'll need to make sure that those connections are safe in a parallel context.  One way to ensure this would be, for example, to spin up a separate instance of an eternal resource for each Ginkgo process.  For example, let's say your tests spin up and hit a local web server.  You could bring up a different server bound to a different port for each of your parallel processes:
+If your tests spin up or connect to external processes you'll need to make sure that those connections are safe in a parallel context.  One way to ensure this would be, for example, to spin up a separate instance of an external resource for each Ginkgo process.  For example, let's say your tests spin up and hit a local web server.  You could bring up a different server bound to a different port for each of your parallel processes:
 
     package books_test
 
