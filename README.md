@@ -17,7 +17,7 @@ Jump straight to the [docs](http://onsi.github.io/ginkgo/) to learn more.
 
 - A comprehensive test runner that lets you:
     - Mark specs as [pending](http://onsi.github.io/ginkgo/#pending_specs)
-    - [Focus](http://onsi.github.io/ginkgo/#focused_specs) individual specs, and grousp of specs, either programatically or on the command line
+    - [Focus](http://onsi.github.io/ginkgo/#focused_specs) individual specs, and groups of specs, either programmatically or on the command line
     - Run your tests in [random order](http://onsi.github.io/ginkgo/#spec_permutation), and then reuse random seeds to replicate the same order.
     - Break up your test suite into parallel processes for straightforward [test parallelization](http://onsi.github.io/ginkgo/#parallel_specs)
 
