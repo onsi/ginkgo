@@ -422,9 +422,11 @@ It is often convenient, when developing to be able to run a subset of specs.  Gi
 
     doing so instructs Ginkgo to only run those specs.  To run all specs, you'll need to go back and remove all the `F`s.
 
-2. You can pass in a regular expression with the `--focus=REGEXP` flag.  Ginkgo will only run specs that match this regular expression.
+2. You can pass in a regular expression with the `--focus=REGEXP` and/or `--skip=REGEXP` flags.  Ginkgo will only run specs that match the focus regular expression and don't match the skip regular expression.
 
-> The programatic approach and the `--focus=REGEXP` approach are mutually exclusive.  Using the command line flag will override the programmatic focus.
+> The programatic approach and the `--focus=REGEXP`/`--skip=REGEXP` approach are mutually exclusive.  Using the command line flags will override the programmatic focus.
+
+> When using the command line flags you can specify one or both of `--focus` and `--skip`.  If both are specified the constraints will be `AND`ed together.
 
 ### Spec Permutation
 
@@ -539,6 +541,10 @@ There are a number of command line flags that can be passed to the `ginkgo` test
 - `--focus=REGEXP`
     
     If provided, Ginkgo will only run specs with descriptions that match the regular expression REGEXP.
+
+- `--skip=REGEXP`
+
+    If provided, Ginkgo will only run specs with descriptions that do not match the regular expression REGEXP.
 
 - `--noColor`
     
