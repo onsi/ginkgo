@@ -39,10 +39,10 @@ func newExampleCollection(t testingT, description string, examples []*example, r
 		collection.shuffle(r)
 	}
 
-	if config.FocusString != "" {
-		collection.applyRegExpFocus(regexp.MustCompile(config.FocusString))
-	} else {
+	if config.FocusString == "" && config.SkipString == "" {
 		collection.applyProgrammaticFocus()
+	} else {
+		collection.applyRegExpFocus(config.FocusString, config.SkipString)
 	}
 
 	if config.SkipMeasurements {
@@ -74,9 +74,24 @@ func (collection *exampleCollection) applyProgrammaticFocus() {
 	}
 }
 
-func (collection *exampleCollection) applyRegExpFocus(focusFilter *regexp.Regexp) {
+func (collection *exampleCollection) applyRegExpFocus(focusString string, skipString string) {
 	for _, example := range collection.examples {
-		if !focusFilter.Match([]byte(example.concatenatedString())) {
+		matchesFocus := true
+		matchesSkip := false
+
+		stringToMatch := collection.description + " " + example.concatenatedString()
+
+		if focusString != "" {
+			focusFilter := regexp.MustCompile(focusString)
+			matchesFocus = focusFilter.Match([]byte(stringToMatch))
+		}
+
+		if skipString != "" {
+			skipFilter := regexp.MustCompile(skipString)
+			matchesSkip = skipFilter.Match([]byte(stringToMatch))
+		}
+
+		if !matchesFocus || matchesSkip {
 			example.skip()
 		}
 	}

@@ -309,7 +309,7 @@ func init() {
 
 			Context("when a regexp focusString is provided", func() {
 				BeforeEach(func() {
-					conf.FocusString = `pickles\d$`
+					conf.FocusString = `collection description.*pickles\d$`
 					example1 = exampleWithItFunc("focused it 1", flagTypeFocused, false)
 					example2 = exampleWithItFunc("another it pickles2", flagTypeNone, false)
 					example3 = exampleWithItFunc("focused it pickles3", flagTypeFocused, false)
@@ -350,6 +350,103 @@ func init() {
 					Ω(summary.NumberOfPendingExamples).Should(Equal(0))
 					Ω(summary.NumberOfSkippedExamples).Should(Equal(1))
 					Ω(summary.NumberOfPassedExamples).Should(Equal(2))
+					Ω(summary.NumberOfFailedExamples).Should(Equal(0))
+					Ω(summary.RunTime.Seconds()).Should(BeNumerically("~", 3*0.001, 0.01))
+				})
+			})
+
+			Context("when a regexp skipString is provided", func() {
+				BeforeEach(func() {
+					conf.SkipString = `collection description.*pickles\d$`
+					example1 = exampleWithItFunc("focused it 1", flagTypeFocused, false)
+					example2 = exampleWithItFunc("another it pickles2", flagTypeNone, false)
+					example3 = exampleWithItFunc("focused it pickles3", flagTypeFocused, false)
+				})
+
+				It("ignores the programmatic focus and applies the regexp skipString", func() {
+					Ω(examplesThatWereRun).Should(Equal([]string{"focused it 1"}))
+				})
+
+				It("publishes the correct starting suite summary", func() {
+					summary := fakeR.beginSummary
+					Ω(summary.SuiteDescription).Should(Equal("collection description"))
+					Ω(summary.SuiteSucceeded).Should(BeTrue())
+					Ω(summary.NumberOfExamplesBeforeParallelization).Should(Equal(3))
+					Ω(summary.NumberOfTotalExamples).Should(Equal(3))
+					Ω(summary.NumberOfExamplesThatWillBeRun).Should(Equal(1))
+					Ω(summary.NumberOfPendingExamples).Should(Equal(0))
+					Ω(summary.NumberOfSkippedExamples).Should(Equal(2))
+					Ω(summary.NumberOfPassedExamples).Should(Equal(0))
+					Ω(summary.NumberOfFailedExamples).Should(Equal(0))
+					Ω(summary.RunTime).Should(Equal(time.Duration(0)))
+				})
+
+				It("publishes the correct example summaries", func() {
+					Ω(fakeR.exampleSummaries).Should(HaveLen(3))
+					Ω(fakeR.exampleSummaries[0]).Should(Equal(example1.summary()))
+					Ω(fakeR.exampleSummaries[1]).Should(Equal(example2.summary()))
+					Ω(fakeR.exampleSummaries[2]).Should(Equal(example3.summary()))
+				})
+
+				It("publishes the correct ending suite summary", func() {
+					summary := fakeR.endSummary
+					Ω(summary.SuiteDescription).Should(Equal("collection description"))
+					Ω(summary.SuiteSucceeded).Should(BeTrue())
+					Ω(summary.NumberOfExamplesBeforeParallelization).Should(Equal(3))
+					Ω(summary.NumberOfTotalExamples).Should(Equal(3))
+					Ω(summary.NumberOfExamplesThatWillBeRun).Should(Equal(1))
+					Ω(summary.NumberOfPendingExamples).Should(Equal(0))
+					Ω(summary.NumberOfSkippedExamples).Should(Equal(2))
+					Ω(summary.NumberOfPassedExamples).Should(Equal(1))
+					Ω(summary.NumberOfFailedExamples).Should(Equal(0))
+					Ω(summary.RunTime.Seconds()).Should(BeNumerically("~", 3*0.001, 0.01))
+				})
+			})
+
+			Context("when both a regexp skipString and focusString are provided", func() {
+				BeforeEach(func() {
+					conf.SkipString = `collection description.*2`
+					conf.FocusString = `collection description.*A`
+					example1 = exampleWithItFunc("A1", flagTypeFocused, false)
+					example2 = exampleWithItFunc("A2", flagTypeNone, false)
+					example3 = exampleWithItFunc("B1", flagTypeFocused, false)
+				})
+
+				It("ignores the programmatic focus and ANDs the focusString and skipString", func() {
+					Ω(examplesThatWereRun).Should(Equal([]string{"A1"}))
+				})
+
+				It("publishes the correct starting suite summary", func() {
+					summary := fakeR.beginSummary
+					Ω(summary.SuiteDescription).Should(Equal("collection description"))
+					Ω(summary.SuiteSucceeded).Should(BeTrue())
+					Ω(summary.NumberOfExamplesBeforeParallelization).Should(Equal(3))
+					Ω(summary.NumberOfTotalExamples).Should(Equal(3))
+					Ω(summary.NumberOfExamplesThatWillBeRun).Should(Equal(1))
+					Ω(summary.NumberOfPendingExamples).Should(Equal(0))
+					Ω(summary.NumberOfSkippedExamples).Should(Equal(2))
+					Ω(summary.NumberOfPassedExamples).Should(Equal(0))
+					Ω(summary.NumberOfFailedExamples).Should(Equal(0))
+					Ω(summary.RunTime).Should(Equal(time.Duration(0)))
+				})
+
+				It("publishes the correct example summaries", func() {
+					Ω(fakeR.exampleSummaries).Should(HaveLen(3))
+					Ω(fakeR.exampleSummaries[0]).Should(Equal(example1.summary()))
+					Ω(fakeR.exampleSummaries[1]).Should(Equal(example2.summary()))
+					Ω(fakeR.exampleSummaries[2]).Should(Equal(example3.summary()))
+				})
+
+				It("publishes the correct ending suite summary", func() {
+					summary := fakeR.endSummary
+					Ω(summary.SuiteDescription).Should(Equal("collection description"))
+					Ω(summary.SuiteSucceeded).Should(BeTrue())
+					Ω(summary.NumberOfExamplesBeforeParallelization).Should(Equal(3))
+					Ω(summary.NumberOfTotalExamples).Should(Equal(3))
+					Ω(summary.NumberOfExamplesThatWillBeRun).Should(Equal(1))
+					Ω(summary.NumberOfPendingExamples).Should(Equal(0))
+					Ω(summary.NumberOfSkippedExamples).Should(Equal(2))
+					Ω(summary.NumberOfPassedExamples).Should(Equal(1))
 					Ω(summary.NumberOfFailedExamples).Should(Equal(0))
 					Ω(summary.RunTime.Seconds()).Should(BeNumerically("~", 3*0.001, 0.01))
 				})
