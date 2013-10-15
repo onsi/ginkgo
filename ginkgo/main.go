@@ -72,6 +72,7 @@ func main() {
 	if passed {
 		os.Exit(0)
 	} else {
+		fmt.Printf("\nTest Suite Failed\n")
 		os.Exit(1)
 	}
 }
@@ -179,7 +180,7 @@ func runSuite(suite suite) bool {
 		passed := true
 
 		for cpu := 0; cpu < numCPU; cpu++ {
-			passed = passed && <-completions
+			passed = <-completions && passed
 		}
 
 		if numCPU > 1 {
@@ -227,16 +228,24 @@ func runCommand(path string, args []string, stream io.Writer, completions chan b
 	cmd := exec.Command("go", args...)
 	executedCommands = append(executedCommands, cmd)
 
+	doneStreaming := make(chan bool, 2)
+	streamPipe := func(pipe io.ReadCloser) {
+		io.Copy(stream, pipe)
+		doneStreaming <- true
+	}
+
 	stdout, _ := cmd.StdoutPipe()
 	stderr, _ := cmd.StderrPipe()
-
-	go io.Copy(stream, stdout)
-	go io.Copy(stream, stderr)
+	go streamPipe(stdout)
+	go streamPipe(stderr)
 
 	err := cmd.Start()
 	if err != nil {
 		os.Exit(1)
 	}
+
+	<-doneStreaming
+	<-doneStreaming
 
 	err = cmd.Wait()
 	completions <- (err == nil)
