@@ -1,7 +1,10 @@
-package ginkgo
+package types_test
 
 import (
+	. "github.com/onsi/ginkgo"
+	. "github.com/onsi/ginkgo/types"
 	. "github.com/onsi/gomega"
+
 	"runtime"
 )
 
@@ -14,7 +17,7 @@ func init() {
 		)
 
 		caller0 := func() {
-			codeLocation = generateCodeLocation(1)
+			codeLocation = GenerateCodeLocation(1)
 		}
 
 		caller1 := func() {
@@ -40,7 +43,7 @@ func init() {
 
 		//There's no better way than to test this private method as it
 		//goes out of its way to prune out ginkgo related code in the stack trace
-		Describe("pruneStack", func() {
+		Describe("PruneStack", func() {
 			It("should remove any references to ginkgo and pkg/testing and pkg/runtime", func() {
 				input := `/Skip/me
 Skip: skip()
@@ -63,7 +66,7 @@ TestingT: Blah()
 /usr/goroot/pkg/runtime/runtime.go:12 (0x37f08)
 Something: Func()
 `
-				prunedStack := pruneStack(input, 1)
+				prunedStack := PruneStack(input, 1)
 				Ω(prunedStack).Should(Equal(`/usr/goroot/pkg/strings/oops.go:10 (0x12341)
 Oops: BlowUp()
 /Users/whoever/gospace/src/mycode/code.go:10 (0x12341)

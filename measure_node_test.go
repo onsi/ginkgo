@@ -1,6 +1,7 @@
 package ginkgo
 
 import (
+	"github.com/onsi/ginkgo/types"
 	. "github.com/onsi/gomega"
 )
 
@@ -8,11 +9,11 @@ func init() {
 	Describe("MeasureNode", func() {
 		var measure *measureNode
 		var i int
-		var codeLocation CodeLocation
+		var codeLocation types.CodeLocation
 
 		BeforeEach(func() {
 			i = 0
-			codeLocation = generateCodeLocation(0)
+			codeLocation = types.GenerateCodeLocation(0)
 			measure = newMeasureNode("foo", func(b Benchmarker) {
 				b.RecordValue("bar", float64(i))
 				i += 1

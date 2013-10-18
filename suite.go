@@ -2,6 +2,7 @@ package ginkgo
 
 import (
 	"github.com/onsi/ginkgo/config"
+	"github.com/onsi/ginkgo/types"
 
 	"math/rand"
 	"time"
@@ -9,7 +10,7 @@ import (
 
 type failureData struct {
 	message        string
-	codeLocation   CodeLocation
+	codeLocation   types.CodeLocation
 	forwardedPanic interface{}
 }
 
@@ -20,7 +21,7 @@ type suite struct {
 }
 
 func newSuite() *suite {
-	topLevelContainer := newContainerNode("[Top Level]", flagTypeNone, CodeLocation{})
+	topLevelContainer := newContainerNode("[Top Level]", flagTypeNone, types.CodeLocation{})
 
 	return &suite{
 		topLevelContainer: topLevelContainer,
@@ -49,12 +50,12 @@ func (suite *suite) fail(message string, callerSkip int) {
 	if suite.exampleCollection != nil {
 		suite.exampleCollection.fail(failureData{
 			message:      message,
-			codeLocation: generateCodeLocation(callerSkip + 2),
+			codeLocation: types.GenerateCodeLocation(callerSkip + 2),
 		})
 	}
 }
 
-func (suite *suite) pushContainerNode(text string, body func(), flag flagType, codeLocation CodeLocation) {
+func (suite *suite) pushContainerNode(text string, body func(), flag flagType, codeLocation types.CodeLocation) {
 	container := newContainerNode(text, flag, codeLocation)
 	suite.currentContainer.pushContainerNode(container)
 
@@ -66,22 +67,22 @@ func (suite *suite) pushContainerNode(text string, body func(), flag flagType, c
 	suite.currentContainer = previousContainer
 }
 
-func (suite *suite) pushItNode(text string, body interface{}, flag flagType, codeLocation CodeLocation, timeout time.Duration) {
+func (suite *suite) pushItNode(text string, body interface{}, flag flagType, codeLocation types.CodeLocation, timeout time.Duration) {
 	suite.currentContainer.pushSubjectNode(newItNode(text, body, flag, codeLocation, timeout))
 }
 
-func (suite *suite) pushMeasureNode(text string, body func(Benchmarker), flag flagType, codeLocation CodeLocation, samples int) {
+func (suite *suite) pushMeasureNode(text string, body func(Benchmarker), flag flagType, codeLocation types.CodeLocation, samples int) {
 	suite.currentContainer.pushSubjectNode(newMeasureNode(text, body, flag, codeLocation, samples))
 }
 
-func (suite *suite) pushBeforeEachNode(body interface{}, codeLocation CodeLocation, timeout time.Duration) {
+func (suite *suite) pushBeforeEachNode(body interface{}, codeLocation types.CodeLocation, timeout time.Duration) {
 	suite.currentContainer.pushBeforeEachNode(newRunnableNode(body, codeLocation, timeout))
 }
 
-func (suite *suite) pushJustBeforeEachNode(body interface{}, codeLocation CodeLocation, timeout time.Duration) {
+func (suite *suite) pushJustBeforeEachNode(body interface{}, codeLocation types.CodeLocation, timeout time.Duration) {
 	suite.currentContainer.pushJustBeforeEachNode(newRunnableNode(body, codeLocation, timeout))
 }
 
-func (suite *suite) pushAfterEachNode(body interface{}, codeLocation CodeLocation, timeout time.Duration) {
+func (suite *suite) pushAfterEachNode(body interface{}, codeLocation types.CodeLocation, timeout time.Duration) {
 	suite.currentContainer.pushAfterEachNode(newRunnableNode(body, codeLocation, timeout))
 }

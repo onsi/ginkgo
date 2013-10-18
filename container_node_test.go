@@ -1,6 +1,7 @@
 package ginkgo
 
 import (
+	"github.com/onsi/ginkgo/types"
 	. "github.com/onsi/gomega"
 	"math/rand"
 	"sort"
@@ -9,12 +10,12 @@ import (
 func init() {
 	Describe("Container Node", func() {
 		var (
-			codeLocation CodeLocation
+			codeLocation types.CodeLocation
 			container    *containerNode
 		)
 
 		BeforeEach(func() {
-			codeLocation = generateCodeLocation(0)
+			codeLocation = types.GenerateCodeLocation(0)
 			container = newContainerNode("description text", flagTypeFocused, codeLocation)
 		})
 
@@ -29,9 +30,9 @@ func init() {
 		Describe("appending", func() {
 			Describe("it nodes", func() {
 				It("can append container nodes and it nodes", func() {
-					itA := newItNode("itA", func() {}, flagTypeNone, generateCodeLocation(0), 0)
-					itB := newItNode("itB", func() {}, flagTypeNone, generateCodeLocation(0), 0)
-					subContainer := newContainerNode("subcontainer", flagTypeNone, generateCodeLocation(0))
+					itA := newItNode("itA", func() {}, flagTypeNone, types.GenerateCodeLocation(0), 0)
+					itB := newItNode("itB", func() {}, flagTypeNone, types.GenerateCodeLocation(0), 0)
+					subContainer := newContainerNode("subcontainer", flagTypeNone, types.GenerateCodeLocation(0))
 					container.pushSubjectNode(itA)
 					container.pushContainerNode(subContainer)
 					container.pushSubjectNode(itB)
@@ -50,8 +51,8 @@ func init() {
 				)
 
 				BeforeEach(func() {
-					runnableA = newRunnableNode(func() {}, generateCodeLocation(0), 0)
-					runnableB = newRunnableNode(func() {}, generateCodeLocation(0), 0)
+					runnableA = newRunnableNode(func() {}, types.GenerateCodeLocation(0), 0)
+					runnableB = newRunnableNode(func() {}, types.GenerateCodeLocation(0), 0)
 				})
 
 				It("can append multiple beforeEach nodes", func() {
@@ -93,11 +94,11 @@ func init() {
 			)
 
 			BeforeEach(func() {
-				itA = newItNode("itA", func() {}, flagTypeNone, generateCodeLocation(0), 0)
-				itB = newItNode("itB", func() {}, flagTypeNone, generateCodeLocation(0), 0)
-				subContainer = newContainerNode("subcontainer", flagTypeNone, generateCodeLocation(0))
-				subItA = newItNode("subItA", func() {}, flagTypeNone, generateCodeLocation(0), 0)
-				subItB = newItNode("subItB", func() {}, flagTypeNone, generateCodeLocation(0), 0)
+				itA = newItNode("itA", func() {}, flagTypeNone, types.GenerateCodeLocation(0), 0)
+				itB = newItNode("itB", func() {}, flagTypeNone, types.GenerateCodeLocation(0), 0)
+				subContainer = newContainerNode("subcontainer", flagTypeNone, types.GenerateCodeLocation(0))
+				subItA = newItNode("subItA", func() {}, flagTypeNone, types.GenerateCodeLocation(0), 0)
+				subItB = newItNode("subItB", func() {}, flagTypeNone, types.GenerateCodeLocation(0), 0)
 
 				container.pushSubjectNode(itA)
 				container.pushContainerNode(subContainer)
@@ -125,8 +126,8 @@ func init() {
 			})
 
 			It("ignores containers in the hierarchy that are empty", func() {
-				emptyContainer := newContainerNode("empty container", flagTypeNone, generateCodeLocation(0))
-				emptyContainer.pushBeforeEachNode(newRunnableNode(func() {}, generateCodeLocation(0), 0))
+				emptyContainer := newContainerNode("empty container", flagTypeNone, types.GenerateCodeLocation(0))
+				emptyContainer.pushBeforeEachNode(newRunnableNode(func() {}, types.GenerateCodeLocation(0), 0))
 
 				container.pushContainerNode(emptyContainer)
 				examples := container.generateExamples()
@@ -144,11 +145,11 @@ func init() {
 			}
 
 			BeforeEach(func() {
-				itA := newItNode("Banana", func() {}, flagTypeNone, generateCodeLocation(0), 0)
-				itB := newItNode("Apple", func() {}, flagTypeNone, generateCodeLocation(0), 0)
-				itC := newItNode("Orange", func() {}, flagTypeNone, generateCodeLocation(0), 0)
-				containerA := newContainerNode("Cucumber", flagTypeNone, generateCodeLocation(0))
-				containerB := newContainerNode("Airplane", flagTypeNone, generateCodeLocation(0))
+				itA := newItNode("Banana", func() {}, flagTypeNone, types.GenerateCodeLocation(0), 0)
+				itB := newItNode("Apple", func() {}, flagTypeNone, types.GenerateCodeLocation(0), 0)
+				itC := newItNode("Orange", func() {}, flagTypeNone, types.GenerateCodeLocation(0), 0)
+				containerA := newContainerNode("Cucumber", flagTypeNone, types.GenerateCodeLocation(0))
+				containerB := newContainerNode("Airplane", flagTypeNone, types.GenerateCodeLocation(0))
 
 				container.pushSubjectNode(itA)
 				container.pushContainerNode(containerA)

@@ -1,5 +1,9 @@
 package ginkgo
 
+import (
+	"github.com/onsi/ginkgo/types"
+)
+
 type node interface {
 	nodeType() nodeType
 	getText() string
@@ -10,7 +14,7 @@ type exampleSubject interface {
 
 	run() (runOutcome, failureData)
 	getFlag() flagType
-	getCodeLocation() CodeLocation
+	getCodeLocation() types.CodeLocation
 }
 
 type flagType uint

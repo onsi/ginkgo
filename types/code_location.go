@@ -1,4 +1,4 @@
-package ginkgo
+package types
 
 import (
 	"fmt"
@@ -14,9 +14,9 @@ type CodeLocation struct {
 	FullStackTrace string
 }
 
-func generateCodeLocation(skip int) CodeLocation {
+func GenerateCodeLocation(skip int) CodeLocation {
 	_, file, line, _ := runtime.Caller(skip + 1)
-	stackTrace := pruneStack(string(debug.Stack()), skip)
+	stackTrace := PruneStack(string(debug.Stack()), skip)
 	return CodeLocation{FileName: file, LineNumber: line, FullStackTrace: stackTrace}
 }
 
@@ -24,7 +24,7 @@ func (codeLocation CodeLocation) String() string {
 	return fmt.Sprintf("%s:%d", codeLocation.FileName, codeLocation.LineNumber)
 }
 
-func pruneStack(fullStackTrace string, skip int) string {
+func PruneStack(fullStackTrace string, skip int) string {
 	stack := strings.Split(fullStackTrace, "\n")
 	if len(stack) > 2*(skip+1) {
 		stack = stack[2*(skip+1):]

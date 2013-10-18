@@ -2,6 +2,7 @@ package ginkgo
 
 import (
 	"fmt"
+	"github.com/onsi/ginkgo/types"
 	"reflect"
 	"time"
 )
@@ -10,11 +11,11 @@ type runnableNode struct {
 	isAsync          bool
 	asyncFunc        func(Done)
 	syncFunc         func()
-	codeLocation     CodeLocation
+	codeLocation     types.CodeLocation
 	timeoutThreshold time.Duration
 }
 
-func newRunnableNode(body interface{}, codeLocation CodeLocation, timeout time.Duration) *runnableNode {
+func newRunnableNode(body interface{}, codeLocation types.CodeLocation, timeout time.Duration) *runnableNode {
 	bodyType := reflect.TypeOf(body)
 	if bodyType.Kind() != reflect.Func {
 		panic(fmt.Sprintf("Expected a function but got something else at %v", codeLocation))
@@ -54,7 +55,7 @@ func (runnable *runnableNode) run() (outcome runOutcome, failure failureData) {
 			outcome = runOutcomePanicked
 			failure = failureData{
 				message:        "Test Panicked",
-				codeLocation:   generateCodeLocation(2),
+				codeLocation:   types.GenerateCodeLocation(2),
 				forwardedPanic: e,
 			}
 		}
@@ -90,7 +91,7 @@ type itNode struct {
 	text string
 }
 
-func newItNode(text string, body interface{}, flag flagType, codeLocation CodeLocation, timeout time.Duration) *itNode {
+func newItNode(text string, body interface{}, flag flagType, codeLocation types.CodeLocation, timeout time.Duration) *itNode {
 	return &itNode{
 		runnableNode: newRunnableNode(body, codeLocation, timeout),
 		flag:         flag,
@@ -110,6 +111,6 @@ func (node *itNode) getFlag() flagType {
 	return node.flag
 }
 
-func (node *itNode) getCodeLocation() CodeLocation {
+func (node *itNode) getCodeLocation() types.CodeLocation {
 	return node.codeLocation
 }

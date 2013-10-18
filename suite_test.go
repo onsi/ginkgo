@@ -2,6 +2,7 @@ package ginkgo
 
 import (
 	"github.com/onsi/ginkgo/config"
+	"github.com/onsi/ginkgo/types"
 	. "github.com/onsi/gomega"
 	"math/rand"
 	"time"
@@ -45,27 +46,27 @@ func init() {
 				focusString = ""
 
 				runOrder = make([]string, 0)
-				specSuite.pushBeforeEachNode(f("top BE"), generateCodeLocation(0), 0)
-				specSuite.pushJustBeforeEachNode(f("top JBE"), generateCodeLocation(0), 0)
-				specSuite.pushAfterEachNode(f("top AE"), generateCodeLocation(0), 0)
+				specSuite.pushBeforeEachNode(f("top BE"), types.GenerateCodeLocation(0), 0)
+				specSuite.pushJustBeforeEachNode(f("top JBE"), types.GenerateCodeLocation(0), 0)
+				specSuite.pushAfterEachNode(f("top AE"), types.GenerateCodeLocation(0), 0)
 
 				specSuite.pushContainerNode("container", func() {
-					specSuite.pushBeforeEachNode(f("BE"), generateCodeLocation(0), 0)
-					specSuite.pushJustBeforeEachNode(f("JBE"), generateCodeLocation(0), 0)
-					specSuite.pushAfterEachNode(f("AE"), generateCodeLocation(0), 0)
-					specSuite.pushItNode("it", f("IT"), flagTypeNone, generateCodeLocation(0), 0)
+					specSuite.pushBeforeEachNode(f("BE"), types.GenerateCodeLocation(0), 0)
+					specSuite.pushJustBeforeEachNode(f("JBE"), types.GenerateCodeLocation(0), 0)
+					specSuite.pushAfterEachNode(f("AE"), types.GenerateCodeLocation(0), 0)
+					specSuite.pushItNode("it", f("IT"), flagTypeNone, types.GenerateCodeLocation(0), 0)
 
 					specSuite.pushContainerNode("inner container", func() {
-						specSuite.pushItNode("inner it", f("inner IT"), flagTypeNone, generateCodeLocation(0), 0)
-					}, flagTypeNone, generateCodeLocation(0))
-				}, flagTypeNone, generateCodeLocation(0))
+						specSuite.pushItNode("inner it", f("inner IT"), flagTypeNone, types.GenerateCodeLocation(0), 0)
+					}, flagTypeNone, types.GenerateCodeLocation(0))
+				}, flagTypeNone, types.GenerateCodeLocation(0))
 
 				specSuite.pushContainerNode("container 2", func() {
-					specSuite.pushBeforeEachNode(f("BE 2"), generateCodeLocation(0), 0)
-					specSuite.pushItNode("it 2", f("IT 2"), flagTypeNone, generateCodeLocation(0), 0)
-				}, flagTypeNone, generateCodeLocation(0))
+					specSuite.pushBeforeEachNode(f("BE 2"), types.GenerateCodeLocation(0), 0)
+					specSuite.pushItNode("it 2", f("IT 2"), flagTypeNone, types.GenerateCodeLocation(0), 0)
+				}, flagTypeNone, types.GenerateCodeLocation(0))
 
-				specSuite.pushItNode("top level it", f("top IT"), flagTypeNone, generateCodeLocation(0), 0)
+				specSuite.pushItNode("top level it", f("top IT"), flagTypeNone, types.GenerateCodeLocation(0), 0)
 			})
 
 			JustBeforeEach(func() {
@@ -177,12 +178,12 @@ func init() {
 			})
 
 			Context("when a spec fails", func() {
-				var location CodeLocation
+				var location types.CodeLocation
 				BeforeEach(func() {
 					specSuite.pushItNode("top level it", func() {
-						location = generateCodeLocation(0)
+						location = types.GenerateCodeLocation(0)
 						func() { specSuite.fail("oops!", 0) }()
-					}, flagTypeNone, generateCodeLocation(0), 0)
+					}, flagTypeNone, types.GenerateCodeLocation(0), 0)
 				})
 
 				It("reports a failure", func() {

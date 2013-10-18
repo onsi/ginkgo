@@ -2,6 +2,7 @@ package ginkgo
 
 import (
 	"github.com/onsi/ginkgo/config"
+	"github.com/onsi/ginkgo/types"
 	. "github.com/onsi/gomega"
 
 	"math/rand"
@@ -29,7 +30,7 @@ func init() {
 						message: itText + " Failed",
 					})
 				}
-			}, flag, generateCodeLocation(0), 0))
+			}, flag, types.GenerateCodeLocation(0), 0))
 		}
 
 		BeforeEach(func() {
@@ -502,7 +503,7 @@ func init() {
 			exampleWithMeasure := func(text string) *example {
 				return newExample(newMeasureNode(text, func(b Benchmarker) {
 					examplesThatWereRun = append(examplesThatWereRun, text)
-				}, flagTypeNone, generateCodeLocation(0), 1))
+				}, flagTypeNone, types.GenerateCodeLocation(0), 1))
 			}
 
 			var conf config.GinkgoConfigType

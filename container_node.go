@@ -1,6 +1,7 @@
 package ginkgo
 
 import (
+	"github.com/onsi/ginkgo/types"
 	"math/rand"
 	"sort"
 )
@@ -8,7 +9,7 @@ import (
 type containerNode struct {
 	flag         flagType
 	text         string
-	codeLocation CodeLocation
+	codeLocation types.CodeLocation
 
 	beforeEachNodes          []*runnableNode
 	justBeforeEachNodes      []*runnableNode
@@ -16,7 +17,7 @@ type containerNode struct {
 	subjectAndContainerNodes []node
 }
 
-func newContainerNode(text string, flag flagType, codeLocation CodeLocation) *containerNode {
+func newContainerNode(text string, flag flagType, codeLocation types.CodeLocation) *containerNode {
 	return &containerNode{
 		text:         text,
 		flag:         flag,

@@ -2,6 +2,7 @@ package ginkgo
 
 import (
 	"github.com/onsi/ginkgo/config"
+	"github.com/onsi/ginkgo/types"
 
 	"time"
 )
@@ -29,7 +30,7 @@ type SuiteSummary struct {
 
 type ExampleSummary struct {
 	ComponentTexts         []string
-	ComponentCodeLocations []CodeLocation
+	ComponentCodeLocations []types.CodeLocation
 
 	State           ExampleState
 	RunTime         time.Duration
@@ -41,12 +42,12 @@ type ExampleSummary struct {
 
 type ExampleFailure struct {
 	Message        string
-	Location       CodeLocation
+	Location       types.CodeLocation
 	ForwardedPanic interface{}
 
 	ComponentIndex        int
 	ComponentType         ExampleComponentType
-	ComponentCodeLocation CodeLocation
+	ComponentCodeLocation types.CodeLocation
 }
 
 type ExampleMeasurement struct {

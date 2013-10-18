@@ -1,6 +1,7 @@
 package ginkgo
 
 import (
+	"github.com/onsi/ginkgo/types"
 	"time"
 )
 
@@ -145,7 +146,7 @@ func (ex *example) runSample(sample int) (exampleState ExampleState, exampleFail
 	return
 }
 
-func (ex *example) processOutcomeAndFailure(containerIndex int, componentType ExampleComponentType, codeLocation CodeLocation, outcome runOutcome, failure failureData) (exampleState ExampleState, exampleFailure ExampleFailure) {
+func (ex *example) processOutcomeAndFailure(containerIndex int, componentType ExampleComponentType, codeLocation types.CodeLocation, outcome runOutcome, failure failureData) (exampleState ExampleState, exampleFailure ExampleFailure) {
 	exampleFailure = ExampleFailure{}
 	exampleState = ExampleStatePassed
 
@@ -174,7 +175,7 @@ func (ex *example) processOutcomeAndFailure(containerIndex int, componentType Ex
 
 func (ex *example) summary() *ExampleSummary {
 	componentTexts := make([]string, len(ex.containers)+1)
-	componentCodeLocations := make([]CodeLocation, len(ex.containers)+1)
+	componentCodeLocations := make([]types.CodeLocation, len(ex.containers)+1)
 
 	for i, container := range ex.containers {
 		componentTexts[i] = container.text
