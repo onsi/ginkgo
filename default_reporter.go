@@ -2,6 +2,7 @@ package ginkgo
 
 import (
 	"github.com/onsi/ginkgo/config"
+	"github.com/onsi/ginkgo/types"
 
 	"fmt"
 	"strings"
@@ -73,7 +74,7 @@ func (reporter *defaultReporter) println(indentation int, format string, args ..
 	fmt.Println(reporter.indent(indentation, format, args...))
 }
 
-func (reporter *defaultReporter) SpecSuiteWillBegin(config config.GinkgoConfigType, summary *SuiteSummary) {
+func (reporter *defaultReporter) SpecSuiteWillBegin(config config.GinkgoConfigType, summary *types.SuiteSummary) {
 	reporter.printNewLine()
 	reporter.printBanner(fmt.Sprintf("Running Suite: %s", summary.SuiteDescription), "=")
 
@@ -101,9 +102,9 @@ func (reporter *defaultReporter) SpecSuiteWillBegin(config config.GinkgoConfigTy
 	reporter.printNewLine()
 }
 
-func (reporter *defaultReporter) ExampleWillRun(exampleSummary *ExampleSummary) {
+func (reporter *defaultReporter) ExampleWillRun(exampleSummary *types.ExampleSummary) {
 	if reporter.config.Verbose {
-		if exampleSummary.State != ExampleStatePending && exampleSummary.State != ExampleStateSkipped {
+		if exampleSummary.State != types.ExampleStatePending && exampleSummary.State != types.ExampleStateSkipped {
 			colors := []string{defaultStyle, grayColor}
 			for i, text := range exampleSummary.ComponentTexts[1 : len(exampleSummary.ComponentTexts)-1] {
 				reporter.print(0, reporter.colorize(colors[i%2], text)+" ")
@@ -117,18 +118,18 @@ func (reporter *defaultReporter) ExampleWillRun(exampleSummary *ExampleSummary) 
 	}
 }
 
-func (reporter *defaultReporter) ExampleDidComplete(exampleSummary *ExampleSummary) {
-	if exampleSummary.State == ExampleStatePassed {
+func (reporter *defaultReporter) ExampleDidComplete(exampleSummary *types.ExampleSummary) {
+	if exampleSummary.State == types.ExampleStatePassed {
 		reporter.printStatus(greenColor, "•", exampleSummary)
-	} else if exampleSummary.State == ExampleStatePending {
+	} else if exampleSummary.State == types.ExampleStatePending {
 		reporter.printStatus(yellowColor, "P", exampleSummary)
-	} else if exampleSummary.State == ExampleStateSkipped {
+	} else if exampleSummary.State == types.ExampleStateSkipped {
 		reporter.printStatus(cyanColor, "S", exampleSummary)
-	} else if exampleSummary.State == ExampleStateTimedOut {
+	} else if exampleSummary.State == types.ExampleStateTimedOut {
 		reporter.printFailure("•... Timeout", exampleSummary)
-	} else if exampleSummary.State == ExampleStatePanicked {
+	} else if exampleSummary.State == types.ExampleStatePanicked {
 		reporter.printFailure("•! Panic", exampleSummary)
-	} else if exampleSummary.State == ExampleStateFailed {
+	} else if exampleSummary.State == types.ExampleStateFailed {
 		reporter.printFailure("• Failure", exampleSummary)
 	}
 	if reporter.config.Verbose && !reporter.lastExampleWasABlock {
@@ -136,7 +137,7 @@ func (reporter *defaultReporter) ExampleDidComplete(exampleSummary *ExampleSumma
 	}
 }
 
-func (reporter *defaultReporter) SpecSuiteDidEnd(summary *SuiteSummary) {
+func (reporter *defaultReporter) SpecSuiteDidEnd(summary *types.SuiteSummary) {
 	reporter.printNewLine()
 	color := greenColor
 	if !summary.SuiteSucceeded {
@@ -162,7 +163,7 @@ func (reporter *defaultReporter) SpecSuiteDidEnd(summary *SuiteSummary) {
 	reporter.printNewLine()
 }
 
-func (reporter *defaultReporter) printBlockWithMessage(header string, message string, exampleSummary *ExampleSummary) {
+func (reporter *defaultReporter) printBlockWithMessage(header string, message string, exampleSummary *types.ExampleSummary) {
 	if !reporter.lastExampleWasABlock {
 		if !reporter.config.Verbose {
 			reporter.printNewLine()
@@ -194,10 +195,10 @@ func (reporter *defaultReporter) printBlockWithMessage(header string, message st
 	reporter.lastExampleWasABlock = true
 }
 
-func (reporter *defaultReporter) printStatus(color string, message string, exampleSummary *ExampleSummary) {
-	if exampleSummary.State == ExampleStatePending && reporter.config.NoisyPendings {
+func (reporter *defaultReporter) printStatus(color string, message string, exampleSummary *types.ExampleSummary) {
+	if exampleSummary.State == types.ExampleStatePending && reporter.config.NoisyPendings {
 		reporter.printBlockWithMessage(reporter.colorize(color, "%s [PENDING]", message), "", exampleSummary)
-	} else if exampleSummary.State == ExampleStatePassed && exampleSummary.IsMeasurement {
+	} else if exampleSummary.State == types.ExampleStatePassed && exampleSummary.IsMeasurement {
 		reporter.printBlockWithMessage(reporter.colorize(color, "%s [MEASUREMENT]", message), reporter.measurementReport(exampleSummary), exampleSummary)
 	} else if exampleSummary.RunTime.Seconds() >= reporter.config.SlowSpecThreshold {
 		reporter.printBlockWithMessage(reporter.colorize(color, "%s [SLOW TEST:%.3f seconds]", message, exampleSummary.RunTime.Seconds()), "", exampleSummary)
@@ -207,7 +208,7 @@ func (reporter *defaultReporter) printStatus(color string, message string, examp
 	}
 }
 
-func (reporter *defaultReporter) measurementReport(exampleSummary *ExampleSummary) (message string) {
+func (reporter *defaultReporter) measurementReport(exampleSummary *types.ExampleSummary) (message string) {
 	if len(exampleSummary.Measurements) == 0 {
 		return "Found no measurements"
 	}
@@ -244,7 +245,7 @@ func (reporter *defaultReporter) measurementReport(exampleSummary *ExampleSummar
 	return
 }
 
-func (reporter *defaultReporter) printFailure(message string, exampleSummary *ExampleSummary) {
+func (reporter *defaultReporter) printFailure(message string, exampleSummary *types.ExampleSummary) {
 	if !reporter.lastExampleWasABlock {
 		if !reporter.config.Verbose {
 			reporter.printNewLine()
@@ -263,15 +264,15 @@ func (reporter *defaultReporter) printFailure(message string, exampleSummary *Ex
 		if i == exampleSummary.Failure.ComponentIndex {
 			blockType := ""
 			switch exampleSummary.Failure.ComponentType {
-			case ExampleComponentTypeBeforeEach:
+			case types.ExampleComponentTypeBeforeEach:
 				blockType = "BeforeEach"
-			case ExampleComponentTypeJustBeforeEach:
+			case types.ExampleComponentTypeJustBeforeEach:
 				blockType = "JustBeforeEach"
-			case ExampleComponentTypeAfterEach:
+			case types.ExampleComponentTypeAfterEach:
 				blockType = "AfterEach"
-			case ExampleComponentTypeIt:
+			case types.ExampleComponentTypeIt:
 				blockType = "It"
-			case ExampleComponentTypeMeasure:
+			case types.ExampleComponentTypeMeasure:
 				blockType = "Measurement"
 			}
 			reporter.println(i+offset, reporter.colorize(redColor+boldStyle, "%s [%s]", exampleSummary.ComponentTexts[i], blockType))
@@ -285,7 +286,7 @@ func (reporter *defaultReporter) printFailure(message string, exampleSummary *Ex
 	indentation := exampleSummary.Failure.ComponentIndex + offset
 
 	reporter.printNewLine()
-	if exampleSummary.State == ExampleStatePanicked {
+	if exampleSummary.State == types.ExampleStatePanicked {
 		reporter.println(indentation, reporter.colorize(redColor+boldStyle, exampleSummary.Failure.Message))
 		reporter.println(indentation, reporter.colorize(redColor, "%v", exampleSummary.Failure.ForwardedPanic))
 		reporter.println(indentation, exampleSummary.Failure.Location.String())

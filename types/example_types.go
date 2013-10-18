@@ -1,18 +1,8 @@
-package ginkgo
+package types
 
 import (
-	"github.com/onsi/ginkgo/config"
-	"github.com/onsi/ginkgo/types"
-
 	"time"
 )
-
-type Reporter interface {
-	SpecSuiteWillBegin(config config.GinkgoConfigType, summary *SuiteSummary)
-	ExampleWillRun(exampleSummary *ExampleSummary)
-	ExampleDidComplete(exampleSummary *ExampleSummary)
-	SpecSuiteDidEnd(summary *SuiteSummary)
-}
 
 type SuiteSummary struct {
 	SuiteDescription string
@@ -30,7 +20,7 @@ type SuiteSummary struct {
 
 type ExampleSummary struct {
 	ComponentTexts         []string
-	ComponentCodeLocations []types.CodeLocation
+	ComponentCodeLocations []CodeLocation
 
 	State           ExampleState
 	RunTime         time.Duration
@@ -42,12 +32,12 @@ type ExampleSummary struct {
 
 type ExampleFailure struct {
 	Message        string
-	Location       types.CodeLocation
+	Location       CodeLocation
 	ForwardedPanic interface{}
 
 	ComponentIndex        int
 	ComponentType         ExampleComponentType
-	ComponentCodeLocation types.CodeLocation
+	ComponentCodeLocation CodeLocation
 }
 
 type ExampleMeasurement struct {
@@ -66,3 +56,28 @@ type ExampleMeasurement struct {
 	AverageLabel  string
 	Units         string
 }
+
+type ExampleState uint
+
+const (
+	ExampleStateInvalid ExampleState = iota
+
+	ExampleStatePending
+	ExampleStateSkipped
+	ExampleStatePassed
+	ExampleStateFailed
+	ExampleStatePanicked
+	ExampleStateTimedOut
+)
+
+type ExampleComponentType uint
+
+const (
+	ExampleComponentTypeInvalid ExampleComponentType = iota
+
+	ExampleComponentTypeBeforeEach
+	ExampleComponentTypeJustBeforeEach
+	ExampleComponentTypeAfterEach
+	ExampleComponentTypeIt
+	ExampleComponentTypeMeasure
+)

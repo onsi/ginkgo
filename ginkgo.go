@@ -19,6 +19,20 @@ func init() {
 	globalSuite = newSuite()
 }
 
+type Reporter interface {
+	SpecSuiteWillBegin(config config.GinkgoConfigType, summary *types.SuiteSummary)
+	ExampleWillRun(exampleSummary *types.ExampleSummary)
+	ExampleDidComplete(exampleSummary *types.ExampleSummary)
+	SpecSuiteDidEnd(summary *types.SuiteSummary)
+}
+
+type Done chan<- interface{}
+
+type Benchmarker interface {
+	Time(name string, body func(), info ...interface{}) (elapsedTime time.Duration)
+	RecordValue(name string, value float64, info ...interface{})
+}
+
 func RunSpecs(t *testing.T, description string) {
 	globalSuite.run(t, description, []Reporter{newDefaultReporter(config.DefaultReporterConfig)}, config.GinkgoConfig)
 }
@@ -31,8 +45,6 @@ func RunSpecsWithDefaultAndCustomReporters(t *testing.T, description string, rep
 func RunSpecsWithCustomReporters(t *testing.T, description string, reporters []Reporter) {
 	globalSuite.run(t, description, reporters, config.GinkgoConfig)
 }
-
-type Done chan<- interface{}
 
 func Fail(message string, callerSkip ...int) {
 	skip := 0

@@ -78,7 +78,7 @@ func init() {
 				})
 
 				It("should be in the pending state", func() {
-					Ω(ex.state).Should(Equal(ExampleStatePending))
+					Ω(ex.state).Should(Equal(types.ExampleStatePending))
 				})
 			})
 
@@ -88,7 +88,7 @@ func init() {
 				})
 
 				It("should be in the pending state", func() {
-					Ω(ex.state).Should(Equal(ExampleStatePending))
+					Ω(ex.state).Should(Equal(types.ExampleStatePending))
 				})
 			})
 
@@ -100,7 +100,7 @@ func init() {
 
 				It("should be focused and have the pending state", func() {
 					Ω(ex.focused).Should(BeTrue())
-					Ω(ex.state).Should(Equal(ExampleStatePending))
+					Ω(ex.state).Should(Equal(types.ExampleStatePending))
 				})
 			})
 		})
@@ -109,7 +109,7 @@ func init() {
 			It("should mark the example as skipped", func() {
 				ex := newExample(it)
 				ex.skip()
-				Ω(ex.state).Should(Equal(ExampleStateSkipped))
+				Ω(ex.state).Should(Equal(types.ExampleStateSkipped))
 			})
 		})
 
@@ -190,7 +190,7 @@ func init() {
 			})
 
 			It("should report that it has an it node", func() {
-				Ω(ex.subjectComponentType()).Should(Equal(ExampleComponentTypeIt))
+				Ω(ex.subjectComponentType()).Should(Equal(types.ExampleComponentTypeIt))
 			})
 
 			It("runs the before/justBefore/after nodes in each of the containers, and the it node, in the correct order", func() {
@@ -229,14 +229,14 @@ func init() {
 				It("has a summary reporting no failure", func() {
 					ex.run()
 					summary := ex.summary()
-					Ω(summary.State).Should(Equal(ExampleStatePassed))
+					Ω(summary.State).Should(Equal(types.ExampleStatePassed))
 					Ω(summary.RunTime.Seconds()).Should(BeNumerically(">", 0.01))
 					Ω(summary.IsMeasurement).Should(BeFalse())
 				})
 			})
 
 			componentTypes := []string{"BeforeEach", "JustBeforeEach", "AfterEach"}
-			expectedComponentTypes := []ExampleComponentType{ExampleComponentTypeBeforeEach, ExampleComponentTypeJustBeforeEach, ExampleComponentTypeAfterEach}
+			expectedComponentTypes := []types.ExampleComponentType{types.ExampleComponentTypeBeforeEach, types.ExampleComponentTypeJustBeforeEach, types.ExampleComponentTypeAfterEach}
 			pushFuncs := []func(container *containerNode, node *runnableNode){(*containerNode).pushBeforeEachNode, (*containerNode).pushJustBeforeEachNode, (*containerNode).pushAfterEachNode}
 
 			for i := range componentTypes {
@@ -267,7 +267,7 @@ func init() {
 							ex.run()
 							summary := ex.summary()
 
-							Ω(summary.State).Should(Equal(ExampleStateFailed))
+							Ω(summary.State).Should(Equal(types.ExampleStateFailed))
 							Ω(summary.Failure.Message).Should(Equal(failure.message))
 							Ω(summary.Failure.Location).Should(Equal(failure.codeLocation))
 							Ω(summary.Failure.ForwardedPanic).Should(BeNil())
@@ -295,7 +295,7 @@ func init() {
 							ex.run()
 							summary := ex.summary()
 
-							Ω(summary.State).Should(Equal(ExampleStatePanicked))
+							Ω(summary.State).Should(Equal(types.ExampleStatePanicked))
 							Ω(summary.Failure.Message).Should(Equal("Test Panicked"))
 							Ω(summary.Failure.Location.FileName).Should(Equal(panicCodeLocation.FileName))
 							Ω(summary.Failure.Location.LineNumber).Should(Equal(panicCodeLocation.LineNumber+1), "Expect panic code location to be correct")
@@ -322,7 +322,7 @@ func init() {
 							ex.run()
 							summary := ex.summary()
 
-							Ω(summary.State).Should(Equal(ExampleStateTimedOut))
+							Ω(summary.State).Should(Equal(types.ExampleStateTimedOut))
 							Ω(summary.Failure.Message).Should(Equal("Timed out"))
 							Ω(summary.Failure.Location).Should(Equal(componentCodeLocation))
 							Ω(summary.Failure.ForwardedPanic).Should(BeNil())
@@ -361,12 +361,12 @@ func init() {
 						ex.run()
 						summary := ex.summary()
 
-						Ω(summary.State).Should(Equal(ExampleStateFailed))
+						Ω(summary.State).Should(Equal(types.ExampleStateFailed))
 						Ω(summary.Failure.Message).Should(Equal(failure.message))
 						Ω(summary.Failure.Location).Should(Equal(failure.codeLocation))
 						Ω(summary.Failure.ForwardedPanic).Should(BeNil())
 						Ω(summary.Failure.ComponentIndex).Should(Equal(2), "Should be the it node that failed")
-						Ω(summary.Failure.ComponentType).Should(Equal(ExampleComponentTypeIt))
+						Ω(summary.Failure.ComponentType).Should(Equal(types.ExampleComponentTypeIt))
 						Ω(summary.Failure.ComponentCodeLocation).Should(Equal(componentCodeLocation))
 
 						Ω(ex.failed()).Should(BeTrue())
@@ -387,13 +387,13 @@ func init() {
 						ex.run()
 						summary := ex.summary()
 
-						Ω(summary.State).Should(Equal(ExampleStatePanicked))
+						Ω(summary.State).Should(Equal(types.ExampleStatePanicked))
 						Ω(summary.Failure.Message).Should(Equal("Test Panicked"))
 						Ω(summary.Failure.Location.FileName).Should(Equal(panicCodeLocation.FileName))
 						Ω(summary.Failure.Location.LineNumber).Should(Equal(panicCodeLocation.LineNumber+1), "Expect panic code location to be correct")
 						Ω(summary.Failure.ForwardedPanic).Should(Equal("kaboom!"))
 						Ω(summary.Failure.ComponentIndex).Should(Equal(2), "Should be the it node that failed")
-						Ω(summary.Failure.ComponentType).Should(Equal(ExampleComponentTypeIt))
+						Ω(summary.Failure.ComponentType).Should(Equal(types.ExampleComponentTypeIt))
 						Ω(summary.Failure.ComponentCodeLocation).Should(Equal(componentCodeLocation))
 
 						Ω(ex.failed()).Should(BeTrue())
@@ -412,12 +412,12 @@ func init() {
 						ex.run()
 						summary := ex.summary()
 
-						Ω(summary.State).Should(Equal(ExampleStateTimedOut))
+						Ω(summary.State).Should(Equal(types.ExampleStateTimedOut))
 						Ω(summary.Failure.Message).Should(Equal("Timed out"))
 						Ω(summary.Failure.Location).Should(Equal(componentCodeLocation))
 						Ω(summary.Failure.ForwardedPanic).Should(BeNil())
 						Ω(summary.Failure.ComponentIndex).Should(Equal(2), "Should be the it node that failed")
-						Ω(summary.Failure.ComponentType).Should(Equal(ExampleComponentTypeIt))
+						Ω(summary.Failure.ComponentType).Should(Equal(types.ExampleComponentTypeIt))
 						Ω(summary.Failure.ComponentCodeLocation).Should(Equal(componentCodeLocation))
 
 						Ω(ex.failed()).Should(BeTrue())
@@ -440,7 +440,7 @@ func init() {
 
 			It("should report that it has a measurement", func() {
 				ex = newExample(newMeasureNode("measure", func(b Benchmarker) {}, flagTypeNone, componentCodeLocation, 1))
-				Ω(ex.subjectComponentType()).Should(Equal(ExampleComponentTypeMeasure))
+				Ω(ex.subjectComponentType()).Should(Equal(types.ExampleComponentTypeMeasure))
 			})
 
 			Context("when the measurement does not fail", func() {
@@ -457,7 +457,7 @@ func init() {
 
 					Ω(runs).Should(Equal(5))
 
-					Ω(summary.State).Should(Equal(ExampleStatePassed))
+					Ω(summary.State).Should(Equal(types.ExampleStatePassed))
 					Ω(summary.IsMeasurement).Should(BeTrue())
 					Ω(summary.NumberOfSamples).Should(Equal(5))
 					Ω(summary.Measurements).Should(HaveLen(1))
@@ -483,7 +483,7 @@ func init() {
 
 					Ω(runs).Should(Equal(3))
 
-					Ω(summary.State).Should(Equal(ExampleStateFailed))
+					Ω(summary.State).Should(Equal(types.ExampleStateFailed))
 					Ω(summary.IsMeasurement).Should(BeTrue())
 					Ω(summary.NumberOfSamples).Should(Equal(5))
 					Ω(summary.Measurements).Should(BeEmpty())

@@ -2,6 +2,7 @@ package ginkgo
 
 import (
 	"github.com/onsi/ginkgo/config"
+	"github.com/onsi/ginkgo/types"
 	. "github.com/onsi/gomega"
 
 	"math/rand"
@@ -39,25 +40,25 @@ func (fakeT *fakeTestingT) Fail() {
 type fakeReporter struct {
 	config config.GinkgoConfigType
 
-	beginSummary            *SuiteSummary
-	exampleWillRunSummaries []*ExampleSummary
-	exampleSummaries        []*ExampleSummary
-	endSummary              *SuiteSummary
+	beginSummary            *types.SuiteSummary
+	exampleWillRunSummaries []*types.ExampleSummary
+	exampleSummaries        []*types.ExampleSummary
+	endSummary              *types.SuiteSummary
 }
 
-func (fakeR *fakeReporter) SpecSuiteWillBegin(config config.GinkgoConfigType, summary *SuiteSummary) {
+func (fakeR *fakeReporter) SpecSuiteWillBegin(config config.GinkgoConfigType, summary *types.SuiteSummary) {
 	fakeR.config = config
 	fakeR.beginSummary = summary
 }
 
-func (fakeR *fakeReporter) ExampleWillRun(exampleSummary *ExampleSummary) {
+func (fakeR *fakeReporter) ExampleWillRun(exampleSummary *types.ExampleSummary) {
 	fakeR.exampleWillRunSummaries = append(fakeR.exampleWillRunSummaries, exampleSummary)
 }
 
-func (fakeR *fakeReporter) ExampleDidComplete(exampleSummary *ExampleSummary) {
+func (fakeR *fakeReporter) ExampleDidComplete(exampleSummary *types.ExampleSummary) {
 	fakeR.exampleSummaries = append(fakeR.exampleSummaries, exampleSummary)
 }
 
-func (fakeR *fakeReporter) SpecSuiteDidEnd(summary *SuiteSummary) {
+func (fakeR *fakeReporter) SpecSuiteDidEnd(summary *types.SuiteSummary) {
 	fakeR.endSummary = summary
 }

@@ -2,6 +2,7 @@ package ginkgo
 
 import (
 	"github.com/onsi/ginkgo/config"
+	"github.com/onsi/ginkgo/types"
 
 	"math/rand"
 	"regexp"
@@ -108,7 +109,7 @@ func (collection *exampleCollection) trimForParallelization(parallelTotal int, p
 
 func (collection *exampleCollection) skipMeasurements() {
 	for _, example := range collection.examples {
-		if example.subjectComponentType() == ExampleComponentTypeMeasure {
+		if example.subjectComponentType() == types.ExampleComponentTypeMeasure {
 			example.skip()
 		}
 	}
@@ -200,21 +201,21 @@ func (collection *exampleCollection) countExamplesSatisfying(filter func(ex *exa
 	return count
 }
 
-func (collection *exampleCollection) summary() *SuiteSummary {
+func (collection *exampleCollection) summary() *types.SuiteSummary {
 	numberOfExamplesThatWillBeRun := collection.countExamplesSatisfying(func(ex *example) bool {
 		return !ex.skippedOrPending()
 	})
 
 	numberOfPendingExamples := collection.countExamplesSatisfying(func(ex *example) bool {
-		return ex.state == ExampleStatePending
+		return ex.state == types.ExampleStatePending
 	})
 
 	numberOfSkippedExamples := collection.countExamplesSatisfying(func(ex *example) bool {
-		return ex.state == ExampleStateSkipped
+		return ex.state == types.ExampleStateSkipped
 	})
 
 	numberOfPassedExamples := collection.countExamplesSatisfying(func(ex *example) bool {
-		return ex.state == ExampleStatePassed
+		return ex.state == types.ExampleStatePassed
 	})
 
 	numberOfFailedExamples := collection.countExamplesSatisfying(func(ex *example) bool {
@@ -229,7 +230,7 @@ func (collection *exampleCollection) summary() *SuiteSummary {
 		success = false
 	}
 
-	return &SuiteSummary{
+	return &types.SuiteSummary{
 		SuiteDescription: collection.description,
 		SuiteSucceeded:   success,
 

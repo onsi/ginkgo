@@ -11,9 +11,9 @@ type example struct {
 
 	containers []*containerNode
 
-	state               ExampleState
+	state               types.ExampleState
 	runTime             time.Duration
-	failure             ExampleFailure
+	failure             types.ExampleFailure
 	didInterceptFailure bool
 	interceptedFailure  failureData
 }
@@ -25,7 +25,7 @@ func newExample(subject exampleSubject) *example {
 	}
 
 	if subject.getFlag() == flagTypePending {
-		ex.state = ExampleStatePending
+		ex.state = types.ExampleStatePending
 	}
 
 	return ex
@@ -36,7 +36,7 @@ func (ex *example) addContainerNode(container *containerNode) {
 	if container.flag == flagTypeFocused {
 		ex.focused = true
 	} else if container.flag == flagTypePending {
-		ex.state = ExampleStatePending
+		ex.state = types.ExampleStatePending
 	}
 }
 
@@ -48,14 +48,14 @@ func (ex *example) fail(failure failureData) {
 }
 
 func (ex *example) skip() {
-	ex.state = ExampleStateSkipped
+	ex.state = types.ExampleStateSkipped
 }
 
-func (ex *example) subjectComponentType() ExampleComponentType {
+func (ex *example) subjectComponentType() types.ExampleComponentType {
 	if ex.subject.nodeType() == nodeTypeMeasure {
-		return ExampleComponentTypeMeasure
+		return types.ExampleComponentTypeMeasure
 	} else {
-		return ExampleComponentTypeIt
+		return types.ExampleComponentTypeIt
 	}
 }
 
@@ -68,15 +68,15 @@ func (ex *example) desiredNumberOfSamples() int {
 }
 
 func (ex *example) failed() bool {
-	return ex.state == ExampleStateFailed || ex.state == ExampleStatePanicked || ex.state == ExampleStateTimedOut
+	return ex.state == types.ExampleStateFailed || ex.state == types.ExampleStatePanicked || ex.state == types.ExampleStateTimedOut
 }
 
 func (ex *example) skippedOrPending() bool {
-	return ex.state == ExampleStateSkipped || ex.state == ExampleStatePending
+	return ex.state == types.ExampleStateSkipped || ex.state == types.ExampleStatePending
 }
 
 func (ex *example) pending() bool {
-	return ex.state == ExampleStatePending
+	return ex.state == types.ExampleStatePending
 }
 
 func (ex *example) run() {
@@ -88,15 +88,15 @@ func (ex *example) run() {
 	for sample := 0; sample < ex.desiredNumberOfSamples(); sample++ {
 		ex.state, ex.failure = ex.runSample(sample)
 
-		if ex.state != ExampleStatePassed {
+		if ex.state != types.ExampleStatePassed {
 			return
 		}
 	}
 }
 
-func (ex *example) runSample(sample int) (exampleState ExampleState, exampleFailure ExampleFailure) {
-	exampleState = ExampleStatePassed
-	exampleFailure = ExampleFailure{}
+func (ex *example) runSample(sample int) (exampleState types.ExampleState, exampleFailure types.ExampleFailure) {
+	exampleState = types.ExampleStatePassed
+	exampleFailure = types.ExampleFailure{}
 	innerMostContainerIndexToUnwind := 0
 
 	defer func() {
@@ -105,8 +105,8 @@ func (ex *example) runSample(sample int) (exampleState ExampleState, exampleFail
 				container := ex.containers[i]
 				for _, afterEach := range container.afterEachNodes {
 					outcome, failure := afterEach.run()
-					afterEachState, afterEachFailure := ex.processOutcomeAndFailure(i, ExampleComponentTypeAfterEach, afterEach.codeLocation, outcome, failure)
-					if afterEachState != ExampleStatePassed && exampleState == ExampleStatePassed {
+					afterEachState, afterEachFailure := ex.processOutcomeAndFailure(i, types.ExampleComponentTypeAfterEach, afterEach.codeLocation, outcome, failure)
+					if afterEachState != types.ExampleStatePassed && exampleState == types.ExampleStatePassed {
 						exampleState = afterEachState
 						exampleFailure = afterEachFailure
 					}
@@ -119,8 +119,8 @@ func (ex *example) runSample(sample int) (exampleState ExampleState, exampleFail
 		innerMostContainerIndexToUnwind = i
 		for _, beforeEach := range container.beforeEachNodes {
 			outcome, failure := beforeEach.run()
-			exampleState, exampleFailure = ex.processOutcomeAndFailure(i, ExampleComponentTypeBeforeEach, beforeEach.codeLocation, outcome, failure)
-			if exampleState != ExampleStatePassed {
+			exampleState, exampleFailure = ex.processOutcomeAndFailure(i, types.ExampleComponentTypeBeforeEach, beforeEach.codeLocation, outcome, failure)
+			if exampleState != types.ExampleStatePassed {
 				return
 			}
 		}
@@ -129,8 +129,8 @@ func (ex *example) runSample(sample int) (exampleState ExampleState, exampleFail
 	for i, container := range ex.containers {
 		for _, justBeforeEach := range container.justBeforeEachNodes {
 			outcome, failure := justBeforeEach.run()
-			exampleState, exampleFailure = ex.processOutcomeAndFailure(i, ExampleComponentTypeJustBeforeEach, justBeforeEach.codeLocation, outcome, failure)
-			if exampleState != ExampleStatePassed {
+			exampleState, exampleFailure = ex.processOutcomeAndFailure(i, types.ExampleComponentTypeJustBeforeEach, justBeforeEach.codeLocation, outcome, failure)
+			if exampleState != types.ExampleStatePassed {
 				return
 			}
 		}
@@ -139,29 +139,29 @@ func (ex *example) runSample(sample int) (exampleState ExampleState, exampleFail
 	outcome, failure := ex.subject.run()
 	exampleState, exampleFailure = ex.processOutcomeAndFailure(len(ex.containers), ex.subjectComponentType(), ex.subject.getCodeLocation(), outcome, failure)
 
-	if exampleState != ExampleStatePassed {
+	if exampleState != types.ExampleStatePassed {
 		return
 	}
 
 	return
 }
 
-func (ex *example) processOutcomeAndFailure(containerIndex int, componentType ExampleComponentType, codeLocation types.CodeLocation, outcome runOutcome, failure failureData) (exampleState ExampleState, exampleFailure ExampleFailure) {
-	exampleFailure = ExampleFailure{}
-	exampleState = ExampleStatePassed
+func (ex *example) processOutcomeAndFailure(containerIndex int, componentType types.ExampleComponentType, codeLocation types.CodeLocation, outcome runOutcome, failure failureData) (exampleState types.ExampleState, exampleFailure types.ExampleFailure) {
+	exampleFailure = types.ExampleFailure{}
+	exampleState = types.ExampleStatePassed
 
 	if ex.didInterceptFailure {
-		exampleState = ExampleStateFailed
+		exampleState = types.ExampleStateFailed
 		failure = ex.interceptedFailure
 	} else if outcome == runOutcomePanicked {
-		exampleState = ExampleStatePanicked
+		exampleState = types.ExampleStatePanicked
 	} else if outcome == runOutcomeTimedOut {
-		exampleState = ExampleStateTimedOut
+		exampleState = types.ExampleStateTimedOut
 	} else {
 		return
 	}
 
-	exampleFailure = ExampleFailure{
+	exampleFailure = types.ExampleFailure{
 		Message:               failure.message,
 		Location:              failure.codeLocation,
 		ForwardedPanic:        failure.forwardedPanic,
@@ -173,7 +173,7 @@ func (ex *example) processOutcomeAndFailure(containerIndex int, componentType Ex
 	return
 }
 
-func (ex *example) summary() *ExampleSummary {
+func (ex *example) summary() *types.ExampleSummary {
 	componentTexts := make([]string, len(ex.containers)+1)
 	componentCodeLocations := make([]types.CodeLocation, len(ex.containers)+1)
 
@@ -185,8 +185,8 @@ func (ex *example) summary() *ExampleSummary {
 	componentTexts[len(ex.containers)] = ex.subject.getText()
 	componentCodeLocations[len(ex.containers)] = ex.subject.getCodeLocation()
 
-	return &ExampleSummary{
-		IsMeasurement:          ex.subjectComponentType() == ExampleComponentTypeMeasure,
+	return &types.ExampleSummary{
+		IsMeasurement:          ex.subjectComponentType() == types.ExampleComponentTypeMeasure,
 		NumberOfSamples:        ex.desiredNumberOfSamples(),
 		ComponentTexts:         componentTexts,
 		ComponentCodeLocations: componentCodeLocations,
@@ -197,8 +197,8 @@ func (ex *example) summary() *ExampleSummary {
 	}
 }
 
-func (ex *example) measurementsReport() (measurements map[string]*ExampleMeasurement) {
-	if ex.subjectComponentType() != ExampleComponentTypeMeasure {
+func (ex *example) measurementsReport() (measurements map[string]*types.ExampleMeasurement) {
+	if ex.subjectComponentType() != types.ExampleComponentTypeMeasure {
 		return
 	}
 	if ex.failed() {

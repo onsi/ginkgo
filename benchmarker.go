@@ -1,22 +1,18 @@
 package ginkgo
 
 import (
+	"github.com/onsi/ginkgo/types"
 	"math"
 	"time"
 )
 
-type Benchmarker interface {
-	Time(name string, body func(), info ...interface{}) (elapsedTime time.Duration)
-	RecordValue(name string, value float64, info ...interface{})
-}
-
 type benchmarker struct {
-	measurements map[string]*ExampleMeasurement
+	measurements map[string]*types.ExampleMeasurement
 }
 
 func newBenchmarker() *benchmarker {
 	return &benchmarker{
-		measurements: make(map[string]*ExampleMeasurement, 0),
+		measurements: make(map[string]*types.ExampleMeasurement, 0),
 	}
 }
 
@@ -36,7 +32,7 @@ func (b *benchmarker) RecordValue(name string, value float64, info ...interface{
 	measurement.Results = append(measurement.Results, value)
 }
 
-func (b *benchmarker) getMeasurement(name string, smallestLabel string, largestLabel string, averageLabel string, units string, info ...interface{}) *ExampleMeasurement {
+func (b *benchmarker) getMeasurement(name string, smallestLabel string, largestLabel string, averageLabel string, units string, info ...interface{}) *types.ExampleMeasurement {
 	measurement, ok := b.measurements[name]
 	if !ok {
 		var computedInfo interface{}
@@ -44,7 +40,7 @@ func (b *benchmarker) getMeasurement(name string, smallestLabel string, largestL
 		if len(info) > 0 {
 			computedInfo = info[0]
 		}
-		measurement = &ExampleMeasurement{
+		measurement = &types.ExampleMeasurement{
 			Name:          name,
 			Info:          computedInfo,
 			SmallestLabel: smallestLabel,
@@ -59,7 +55,7 @@ func (b *benchmarker) getMeasurement(name string, smallestLabel string, largestL
 	return measurement
 }
 
-func (b *benchmarker) measurementsReport() map[string]*ExampleMeasurement {
+func (b *benchmarker) measurementsReport() map[string]*types.ExampleMeasurement {
 	for _, measurement := range b.measurements {
 		measurement.Smallest = math.MaxFloat64
 		measurement.Largest = -math.MaxFloat64
