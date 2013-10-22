@@ -30,7 +30,14 @@ const grayColor = "\x1b[90m"
 const lightGrayColor = "\x1b[37m"
 
 func (reporter *defaultReporter) colorize(colorCode string, format string, args ...interface{}) string {
-	s := fmt.Sprintf(format, args...)
+	var s string
+
+	if len(args) > 0 {
+		s = fmt.Sprintf(format, args...)
+	} else {
+		s = format
+	}
+
 	if reporter.config.NoColor {
 		return s
 	} else {
@@ -52,7 +59,13 @@ func (reporter *defaultReporter) printDelimiter() {
 }
 
 func (reporter *defaultReporter) indent(indentation int, format string, args ...interface{}) string {
-	text := fmt.Sprintf(format, args...)
+	var text string
+
+	if len(args) > 0 {
+		text = fmt.Sprintf(format, args...)
+	} else {
+		text = format
+	}
 
 	stringArray := strings.Split(text, "\n")
 	padding := ""
@@ -147,9 +160,9 @@ func (reporter *defaultReporter) SpecSuiteDidEnd(summary *types.SuiteSummary) {
 
 	status := ""
 	if summary.SuiteSucceeded {
-		status = fmt.Sprintf(reporter.colorize(boldStyle+greenColor, "SUCCESS!"))
+		status = reporter.colorize(boldStyle+greenColor, "SUCCESS!")
 	} else {
-		status = fmt.Sprintf(reporter.colorize(boldStyle+redColor, "FAIL!"))
+		status = reporter.colorize(boldStyle+redColor, "FAIL!")
 	}
 
 	reporter.println(0,
