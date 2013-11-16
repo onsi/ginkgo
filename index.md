@@ -428,6 +428,8 @@ It is often convenient, when developing to be able to run a subset of specs.  Gi
 
 > When using the command line flags you can specify one or both of `--focus` and `--skip`.  If both are specified the constraints will be `AND`ed together.
 
+> You can unfocus programatically focused tests by running `ginkgo unfocus`.  This will strip the `F`s off of any `FDescribe`, `FContext`, and `FIt`s that your tests in the current directory may have.
+
 ### Spec Permutation
 
 By default, Ginkgo will randomize the order in which your specs are run.  This can help suss out test pollution early on in a suite's development.
@@ -612,6 +614,10 @@ Flags for `go test` only:
 > Note that you don't have to use either of these generators.  They're just convenient helpers to get you up and running quickly.
 
 ### Other Subcommands
+
+- To unfocus any programmatically focused tests in the current directory (and subdirectories):
+
+        $ ginkgo unfocus
 
 - For help:
 
