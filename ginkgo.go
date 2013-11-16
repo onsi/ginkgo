@@ -2,6 +2,7 @@ package ginkgo
 
 import (
 	"github.com/onsi/ginkgo/config"
+	"github.com/onsi/ginkgo/reporters"
 	"github.com/onsi/ginkgo/types"
 
 	"testing"
@@ -34,16 +35,16 @@ type Benchmarker interface {
 }
 
 func RunSpecs(t *testing.T, description string) {
-	globalSuite.run(t, description, []Reporter{newDefaultReporter(config.DefaultReporterConfig)}, config.GinkgoConfig)
+	globalSuite.run(t, description, []Reporter{reporters.NewDefaultReporter(config.DefaultReporterConfig)}, config.GinkgoConfig)
 }
 
-func RunSpecsWithDefaultAndCustomReporters(t *testing.T, description string, reporters []Reporter) {
-	reporters = append([]Reporter{newDefaultReporter(config.DefaultReporterConfig)}, reporters...)
-	globalSuite.run(t, description, reporters, config.GinkgoConfig)
+func RunSpecsWithDefaultAndCustomReporters(t *testing.T, description string, specReporters []Reporter) {
+	specReporters = append([]Reporter{reporters.NewDefaultReporter(config.DefaultReporterConfig)}, specReporters...)
+	globalSuite.run(t, description, specReporters, config.GinkgoConfig)
 }
 
-func RunSpecsWithCustomReporters(t *testing.T, description string, reporters []Reporter) {
-	globalSuite.run(t, description, reporters, config.GinkgoConfig)
+func RunSpecsWithCustomReporters(t *testing.T, description string, specReporters []Reporter) {
+	globalSuite.run(t, description, specReporters, config.GinkgoConfig)
 }
 
 func Fail(message string, callerSkip ...int) {
