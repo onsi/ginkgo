@@ -45,6 +45,7 @@ func init() {
 		fmt.Fprintf(os.Stderr, "\n")
 		fmt.Fprintf(os.Stderr, "ginkgo bootstrap\n  Bootstrap a test suite for the current package.\n\n")
 		fmt.Fprintf(os.Stderr, "ginkgo generate <SUBJECT>\n  Generate a test file for SUBJECT, the file will be named SUBJECT_test.go\n  If omitted, a file named after the package will be created.\n\n")
+		fmt.Fprintf(os.Stderr, "ginkgo unfocus\n  Unfocuses any focused tests.\n\n")
 		fmt.Fprintf(os.Stderr, "ginkgo version\n  Print ginkgo's version.\n\n")
 		fmt.Fprintf(os.Stderr, "ginkgo help\n  Print this usage information.\n")
 	}
@@ -87,6 +88,9 @@ func handleSubcommands(args []string) {
 			subject = args[1]
 		}
 		generateSpec(subject)
+		os.Exit(0)
+	} else if args[0] == "unfocus" {
+		unfocusSpecs()
 		os.Exit(0)
 	} else if args[0] == "help" {
 		flag.Usage()
