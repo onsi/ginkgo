@@ -887,7 +887,44 @@ or
 
 ---
 
-## Using Other Matcher Libraries
+## Third Party Integrations
+
+### Integrating with Gomock
+
+Ginkgo does not provide a mocking/stubbing framework.  It's the author's opinion that mocks and stubs can be avoided completely by embracing dependency injection and always injecting Go interfaces.  Real dependencies are then injected in production code, and fake dependencies are injected under test.  Building and maintaining such fakes tends to be straightforward and can allow for clearer and more expressive tests than mocks.
+
+With that said, it is relatively straightforward to use a mocking framework such as [Gomock](https://code.google.com/p/gomock/).  Ginkgo provides a Ginkgo-friendly implementation of Gomock's `TestReporter` interface under `github.com/onsi/ginkgo/thirdparty/gomocktestreporter`.  Here's how you use it (for example):
+
+    import (
+      "code.google.com/p/gomock/gomock"
+      "github.com/onsi/ginkgo/thirdparty/gomocktestreporter"
+    )
+
+    var _ = Describe("Consumer", func() {
+        var (
+            mockCtrl *gomock.Controller
+            mockThing *mockthing.MockThing
+            consumer *Consumer
+        )
+
+        BeforeEach(func() {
+            mockCtrl = gomock.NewController(gomocktestreporter.New())
+            mockThing = mockthing.NewMockThing(mockCtrl)
+            consumer = NewConsumer(mockThing)
+        })
+
+        AfterEach(func() {
+            mockCtrl.Finish()
+        })
+
+        It("should consume things", func() {
+            mockThing.EXPECT().OmNom()
+            consumer.Consume()
+        })
+    })
+
+
+### Using Other Matcher Libraries
 
 Ginkgo provides a single (global) function to signify spec failure:
 
@@ -896,4 +933,5 @@ Ginkgo provides a single (global) function to signify spec failure:
 `Fail` takes a failure message to present to the user.  In order to determine the best line of code to report to the user alongsid the failure, `Fail` takes an optional `callerSkip` integer that is used to index into the call stack.  If set to `0`, the file and line number of the *caller* of `Fail` will be presented to the user, if set to `1` the file and line number of the *caller of the caller* of `Fail` will be presented to the user, etc.
 
 Gomega uses `Fail` to communicate failures to Ginkgo.  If you want to use a different matcher library you'll need to figure out how to get it to communicate failures to Ginkgo using the `Fail` function.
+
 
