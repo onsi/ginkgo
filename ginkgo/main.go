@@ -1,3 +1,40 @@
+/*
+The Ginkgo CLI
+
+The Ginkgo CLI is fully documented [here](http://onsi.github.io/ginkgo/#the_ginkgo_cli)
+
+To install:
+
+	go install github.com/onsi/ginkgo/ginkgo
+
+To run tests:
+
+	ginkgo
+
+To run tests in all subdirectories:
+
+	ginkgo -r
+
+To bootstrap a test suite:
+
+	ginkgo bootstrap
+
+To generate a test file:
+
+	ginkgo generate <test_file_name>
+
+To unfocus tests:
+
+	ginkgo unfocs
+
+To print out Ginkgo's version:
+
+	ginkgo version
+
+To get more help:
+
+	ginkgo help
+*/
 package main
 
 import (

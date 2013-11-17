@@ -1,3 +1,16 @@
+/*
+Ginkgo accepts a number of configuration options.
+
+These are documented [here](http://onsi.github.io/ginkgo/#the_ginkgo_cli)
+
+You can also learn more via
+
+	ginkgo help
+
+or (I kid you not):
+
+	go test -asdf
+*/
 package config
 
 import (

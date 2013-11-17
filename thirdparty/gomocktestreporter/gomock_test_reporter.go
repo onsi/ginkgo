@@ -1,3 +1,8 @@
+/*
+The gomocktestreporter package provides a Ginkgo friendly implementation of [Gomock's](https://code.google.com/p/gomock/) `TestReporter` interface.
+
+More details and a code example are [here](http://onsi.github.io/ginkgo/#integrating_with_gomock).
+*/
 package gomocktestreporter
 
 import (

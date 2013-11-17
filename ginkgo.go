@@ -1,3 +1,14 @@
+/*
+Ginkgo is a BDD-style testing framework for Golang
+
+The godoc documentation describes Ginkgo's API.  More comprehensive documentation (with examples!) is available at http://onsi.github.io/ginkgo/
+
+Ginkgo's preferred matcher library is [Gomega](http://github.com/onsi/gomega)
+
+Ginkgo on Github: http://github.com/onsi/ginkgo
+
+Ginkgo is MIT-Licensed
+*/
 package ginkgo
 
 import (
@@ -20,6 +31,11 @@ func init() {
 	globalSuite = newSuite()
 }
 
+//Custom Ginkgo test reporters must implement the Reporter interface.
+//
+//The custom reporter is passed in a SuiteSummary when the suite begins and ends,
+//and an ExmapleSummary just before an example (spec) begins
+//and just after an example (spec) ends
 type Reporter interface {
 	SpecSuiteWillBegin(config config.GinkgoConfigType, summary *types.SuiteSummary)
 	ExampleWillRun(exampleSummary *types.ExampleSummary)
@@ -27,26 +43,47 @@ type Reporter interface {
 	SpecSuiteDidEnd(summary *types.SuiteSummary)
 }
 
+//Asynchronous specs given a channel of the Done type.  You must close (or send to) the channel
+//to tell Ginkgo that your async test is done.
 type Done chan<- interface{}
 
+//Measurement tests receive a Benchmarker.
+//
+//You use the Time() function to time how long the passed in body function takes to run
+//You use the RecordValue() function to track arbitrary numerical measurements.
+//The optional info argument is passed to the test reporter and can be used, alongside a custom
+//reporter, to provide the measurement data with context.
+//
+//See http://onsi.github.io/ginkgo/#benchmark_tests for more details
 type Benchmarker interface {
 	Time(name string, body func(), info ...interface{}) (elapsedTime time.Duration)
 	RecordValue(name string, value float64, info ...interface{})
 }
 
+//RunSpecs is the entry point for the Ginkgo test runner.
+//You must call this within a Go Test... function.
+//
+//To bootstrap a test suite you can use the Ginkgo CLI:
+//
+//	ginkgo bootstrap
 func RunSpecs(t *testing.T, description string) {
 	globalSuite.run(t, description, []Reporter{reporters.NewDefaultReporter(config.DefaultReporterConfig)}, config.GinkgoConfig)
 }
 
+//To run your tests with Ginkgo's default reporter and your custom reporter(s), replace
+//RunSpecs() with this method.
 func RunSpecsWithDefaultAndCustomReporters(t *testing.T, description string, specReporters []Reporter) {
 	specReporters = append([]Reporter{reporters.NewDefaultReporter(config.DefaultReporterConfig)}, specReporters...)
 	globalSuite.run(t, description, specReporters, config.GinkgoConfig)
 }
 
+//To run your tests with your custom reporter(s) (and *not* Ginkgo's default reporter), replace
+//RunSpecs() with this method.
 func RunSpecsWithCustomReporters(t *testing.T, description string, specReporters []Reporter) {
 	globalSuite.run(t, description, specReporters, config.GinkgoConfig)
 }
 
+//Fail notifies Ginkgo that the current spec has failed. (Gomega will call Fail for you automatically when an assertion fails.)
 func Fail(message string, callerSkip ...int) {
 	skip := 0
 	if len(callerSkip) > 0 {
@@ -55,106 +92,142 @@ func Fail(message string, callerSkip ...int) {
 	globalSuite.fail(message, skip)
 }
 
-//Describes
-
+//Describe blocks allow you to organize your specs.  A Describe block can contain any number of
+//BeforeEach, AfterEach, JustBeforeEach, It, and Measurement blocks.
+//
+//In addition you can nest Describe and Context blocks.  Describe and Context blocks are functionally
+//equivalent.  The difference is purely semantic -- you typical Describe the behavior of an object
+//or method and, within that Describe, outline a number of Contexts.
 func Describe(text string, body func()) bool {
 	globalSuite.pushContainerNode(text, body, flagTypeNone, types.GenerateCodeLocation(1))
 	return true
 }
 
+//You can focus the tests within a describe block using FDescribe
 func FDescribe(text string, body func()) bool {
 	globalSuite.pushContainerNode(text, body, flagTypeFocused, types.GenerateCodeLocation(1))
 	return true
 }
 
+//You can mark the tests within a describe block as pending using PDescribe
 func PDescribe(text string, body func()) bool {
 	globalSuite.pushContainerNode(text, body, flagTypePending, types.GenerateCodeLocation(1))
 	return true
 }
 
+//You can mark the tests within a describe block as pending using XDescribe
 func XDescribe(text string, body func()) bool {
 	globalSuite.pushContainerNode(text, body, flagTypePending, types.GenerateCodeLocation(1))
 	return true
 }
 
-//Context
-
+//Context blocks allow you to organize your specs.  A Context block can contain any number of
+//BeforeEach, AfterEach, JustBeforeEach, It, and Measurement blocks.
+//
+//In addition you can nest Describe and Context blocks.  Describe and Context blocks are functionally
+//equivalent.  The difference is purely semantic -- you typical Describe the behavior of an object
+//or method and, within that Describe, outline a number of Contexts.
 func Context(text string, body func()) bool {
 	globalSuite.pushContainerNode(text, body, flagTypeNone, types.GenerateCodeLocation(1))
 	return true
 }
 
+//You can focus the tests within a describe block using FContext
 func FContext(text string, body func()) bool {
 	globalSuite.pushContainerNode(text, body, flagTypeFocused, types.GenerateCodeLocation(1))
 	return true
 }
 
+//You can mark the tests within a describe block as pending using PContext
 func PContext(text string, body func()) bool {
 	globalSuite.pushContainerNode(text, body, flagTypePending, types.GenerateCodeLocation(1))
 	return true
 }
 
+//You can mark the tests within a describe block as pending using XContext
 func XContext(text string, body func()) bool {
 	globalSuite.pushContainerNode(text, body, flagTypePending, types.GenerateCodeLocation(1))
 	return true
 }
 
-//It
-
+//It blocks contain your test code and assertions.  You cannot nest any other Ginkgo blocks
+//within an It block.
+//
+//Ginkgo will normally run It blocks synchronously.  To perform asynchronous tests, pass a
+//function that accepts a Done channel.  When you do this, you can alos provide an optional timeout.
 func It(text string, body interface{}, timeout ...float64) bool {
 	globalSuite.pushItNode(text, body, flagTypeNone, types.GenerateCodeLocation(1), parseTimeout(timeout...))
 	return true
 }
 
+//You can focus individual Its using FIt
 func FIt(text string, body interface{}, timeout ...float64) bool {
 	globalSuite.pushItNode(text, body, flagTypeFocused, types.GenerateCodeLocation(1), parseTimeout(timeout...))
 	return true
 }
 
+//You can mark Its as pending using PIt
 func PIt(text string, body interface{}, timeout ...float64) bool {
 	globalSuite.pushItNode(text, body, flagTypePending, types.GenerateCodeLocation(1), parseTimeout(timeout...))
 	return true
 }
 
+//You can mark Its as pending using XIt
 func XIt(text string, body interface{}, timeout ...float64) bool {
 	globalSuite.pushItNode(text, body, flagTypePending, types.GenerateCodeLocation(1), parseTimeout(timeout...))
 	return true
 }
 
-//Benchmark
-
+//Measure blocks run the passed in body function repeatedly (determined by the samples argument)
+//and accumulate metrics provided to the Benchmarker by the body function.
 func Measure(text string, body func(Benchmarker), samples int) bool {
 	globalSuite.pushMeasureNode(text, body, flagTypeNone, types.GenerateCodeLocation(1), samples)
 	return true
 }
 
+//You can focus individual Measures using FMeasure
 func FMeasure(text string, body func(Benchmarker), samples int) bool {
 	globalSuite.pushMeasureNode(text, body, flagTypeFocused, types.GenerateCodeLocation(1), samples)
 	return true
 }
 
+//You can mark Maeasurements as pending using PMeasure
 func PMeasure(text string, body func(Benchmarker), samples int) bool {
 	globalSuite.pushMeasureNode(text, body, flagTypePending, types.GenerateCodeLocation(1), samples)
 	return true
 }
 
+//You can mark Maeasurements as pending using XMeasure
 func XMeasure(text string, body func(Benchmarker), samples int) bool {
 	globalSuite.pushMeasureNode(text, body, flagTypePending, types.GenerateCodeLocation(1), samples)
 	return true
 }
 
-//Before, JustBefore, and After
-
+//BeforeEach blocks are run before It blocks.  When multiple BeforeEach blocks are defined in nested
+//Describe and Context blocks the outermost BeforeEach blocks are run first.
+//
+//Like It blocks, BeforeEach blocks can be made asynchronous by providing a body function that accepts
+//a Done channel
 func BeforeEach(body interface{}, timeout ...float64) bool {
 	globalSuite.pushBeforeEachNode(body, types.GenerateCodeLocation(1), parseTimeout(timeout...))
 	return true
 }
 
+//JustBeforeEach blocks are run before It blocks but *after* all BeforeEach blocks.  For more details,
+//read the [documentation](http://onsi.github.io/ginkgo/#separating_creation_and_configuration_)
+//
+//Like It blocks, BeforeEach blocks can be made asynchronous by providing a body function that accepts
+//a Done channel
 func JustBeforeEach(body interface{}, timeout ...float64) bool {
 	globalSuite.pushJustBeforeEachNode(body, types.GenerateCodeLocation(1), parseTimeout(timeout...))
 	return true
 }
 
+//AfterEach blocks are run after It blocks.   When multiple AfterEach blocks are defined in nested
+//Describe and Context blocks the innermost AfterEach blocks are run first.
+//
+//Like It blocks, BeforeEach blocks can be made asynchronous by providing a body function that accepts
+//a Done channel
 func AfterEach(body interface{}, timeout ...float64) bool {
 	globalSuite.pushAfterEachNode(body, types.GenerateCodeLocation(1), parseTimeout(timeout...))
 	return true

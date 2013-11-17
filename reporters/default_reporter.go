@@ -1,3 +1,10 @@
+/*
+Ginkgo's Default Reporter
+
+A number of command line flags are available to tweak Ginkgo's default output.
+
+These are documented [here](http://onsi.github.io/ginkgo/#running_tests)
+*/
 package reporters
 
 import (
