@@ -9,6 +9,7 @@ func unfocusSpecs() {
 	unfocus("Describe")
 	unfocus("Context")
 	unfocus("It")
+	unfocus("Measure")
 }
 
 func unfocus(component string) {
