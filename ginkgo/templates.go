@@ -126,10 +126,11 @@ func getPackageImportPath() string {
 		panic(err.Error())
 	}
 	paths := strings.Split(workingDir, "/src/")
-	if len(paths) != 2 {
-		panic("Couldn't identify package import path")
+	if len(paths) == 1 {
+		fmt.Printf("\nCouldn't identify package import path.\n\n\tginkgo generate\n\nMust be run within a package directory under $GOPATH/src/...\nYou're going to had to change UNKOWN_PACKAGE_PATH in the generated file...\n\n")
+		return "UNKOWN_PACKAGE_PATH"
 	}
-	return paths[1]
+	return paths[len(paths)-1]
 }
 
 func fileExists(path string) bool {
