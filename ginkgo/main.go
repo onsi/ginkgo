@@ -42,6 +42,7 @@ import (
 	"fmt"
 	"github.com/onsi/ginkgo/config"
 	"os"
+	"time"
 )
 
 var numCPU int
@@ -84,13 +85,16 @@ func main() {
 		os.Exit(1)
 	}
 
+	t := time.Now()
 	runner := newTestRunner(numCPU, recurse, runMagicI, race, cover)
 	passed := runner.run()
+	fmt.Printf("\nGinkgo ran in %s\n", time.Since(t))
 
 	if passed {
+		fmt.Printf("Test Suite Passed\n")
 		os.Exit(0)
 	} else {
-		fmt.Printf("\nTest Suite Failed\n")
+		fmt.Printf("Test Suite Failed\n")
 		os.Exit(1)
 	}
 }
