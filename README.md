@@ -30,7 +30,7 @@ Jump straight to the [docs](http://onsi.github.io/ginkgo/) to learn more.
     The `ginkgo` CLI is convenient, but purely optional -- Ginkgo works just fine with `go test`
 
 - A modular architecture that lets you easily:
-    - Write [custom reporters](http://onsi.github.io/ginkgo/#writing_custom_reporters)
+    - Write [custom reporters](http://onsi.github.io/ginkgo/#writing_custom_reporters) (for example, Ginkgo comes with a [JUnit XML reporter](http://onsi.github.io/ginkgo/#generating_junit_xml_output))
     - [Adapt an existing matcher library (or write your own!)](http://onsi.github.io/ginkgo/#using_other_matcher_libraries) to work with Ginkgo
 
 ## [Gomega](http://github.com/onsi/gomega): Ginkgo's Preferred Matcher Library

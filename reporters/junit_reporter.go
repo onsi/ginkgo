@@ -1,3 +1,11 @@
+/*
+
+JUnit XML Reporter for Ginkgo
+
+For usage instructions: http://onsi.github.io/ginkgo/#generating_junit_xml_output
+
+*/
+
 package reporters
 
 import (
@@ -40,6 +48,7 @@ type JUnitReporter struct {
 	testSuiteName string
 }
 
+//NewJUnitReporter creates a new JUnit XML reporter.  The XML will be stored in the passed in filename.
 func NewJUnitReporter(filename string) *JUnitReporter {
 	return &JUnitReporter{
 		filename: filename,
