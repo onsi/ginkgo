@@ -182,7 +182,7 @@ func (t *testRunner) commonArgs(suite suite) []string {
 		args = append(args, "--race")
 	}
 	if t.cover {
-		args = append([]string{"--cover", "--coverprofile=" + suite.packageName + ".out"})
+		args = append([]string{"--cover", "--coverprofile=" + suite.packageName + ".coverprofile"})
 	}
 	return args
 }
