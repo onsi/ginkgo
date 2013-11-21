@@ -923,6 +923,33 @@ With that said, it is relatively straightforward to use a mocking framework such
         })
     })
 
+### Generating JUnit XML Output
+
+Ginkgo provides a [custom reporter](#writing_custom_reporters) for generating JUnit compatible XML output.  Here's a sample bootstrap file that instantiates a JUnit reporter and passes it to the test runner:
+
+    package foo_test
+
+    import (
+        . "github.com/onsi/ginkgo"
+        . "github.com/onsi/gomega"
+
+        "github.com/onsi/ginkgo/reporters"
+        "testing"
+    )
+
+    func TestFoo(t *testing.T) {
+        RegisterFailHandler(Fail)
+        junitReporter := reporters.NewJUnitReporter("junit.xml")
+        RunSpecsWithDefaultAndCustomReporters(t, "Foo Suite", []Reporter{junitReporter})
+    }    
+
+This will generate a file name "junit.xml" in the directory containing your test.  This xml file is compatible with the latest version of the Jenkins JUnit plugin.
+
+If you want to run your tests in parallel you'll need to make your JUnit xml filename a function of the parallel node number.  You can do this like so:
+
+    junitReporter := reporters.NewJUnitReporter(fmt.Sprintf("junit_%d.xml", config.GinkgoConfig.ParallelNode))
+
+Note that you'll need to import `fmt` and `github.com/onsi/ginkgo/config` to get this to work.  This will generate an xml file for each parallel node.  The Jenkins JUnit plugin (for example) automatically aggregates data from across all these files.
 
 ### Using Other Matcher Libraries
 
