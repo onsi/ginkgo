@@ -21,9 +21,8 @@ func (s *Stenographer) colorize(colorCode string, format string, args ...interfa
 
 	if s.color {
 		return fmt.Sprintf("%s%s%s", colorCode, out, defaultStyle)
-	} else {
-		return out
 	}
+	return out
 }
 
 func (s *Stenographer) printBanner(text string, bannerCharacter string) {
