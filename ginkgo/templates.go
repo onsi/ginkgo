@@ -3,7 +3,7 @@ package main
 import (
 	"fmt"
 	"os"
-	"path"
+	"path/filepath"
 	"strings"
 	"text/template"
 )
@@ -117,7 +117,7 @@ func getPackage() string {
 	if err != nil {
 		panic(err.Error())
 	}
-	return path.Base(workingDir)
+	return filepath.Base(workingDir)
 }
 
 func getPackageImportPath() string {
