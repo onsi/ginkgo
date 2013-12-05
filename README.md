@@ -2,8 +2,7 @@
 
 [![Build Status](https://travis-ci.org/onsi/ginkgo.png)](https://travis-ci.org/onsi/ginkgo)
 
-
-Jump straight to the [docs](http://onsi.github.io/ginkgo/) to learn more.
+Jump to the [docs](http://onsi.github.io/ginkgo/) to learn more.  To start rolling your Ginkgo tests *now* [keep reading](#set_me_up)!
 
 ## Feature List
 
@@ -36,6 +35,26 @@ Jump straight to the [docs](http://onsi.github.io/ginkgo/) to learn more.
 ## [Gomega](http://github.com/onsi/gomega): Ginkgo's Preferred Matcher Library
 
 Learn more about Gomega [here](http://onsi.github.io/gomega/)
+
+## Set Me Up!
+
+You'll need Golang v1.1+ (Ubuntu users: you probably have Golang v1.0 -- you'll need to upgrade!)
+
+```bash
+
+go get github.com/onsi/ginkgo/ginkgo  # installs the ginkgo CLI
+go get github.com/onsi/gomega         # fetches the matcher library
+
+cd path/to/package/you/want/to/test
+
+ginkgo bootstrap # set up a new ginkgo suite
+ginkgo generate  # will create a sample test file.  edit this file and add your tests then...
+
+go test # to run your tests
+
+ginkgo  # also runs your tests
+
+```
 
 ## License
 
