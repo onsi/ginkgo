@@ -10,12 +10,8 @@ import (
 	"time"
 )
 
-type testingT interface {
-	Fail()
-}
-
 type exampleCollection struct {
-	t                                 testingT
+	t                                 GinkgoTestingT
 	description                       string
 	examples                          []*example
 	exampleCountBeforeParallelization int
@@ -25,7 +21,7 @@ type exampleCollection struct {
 	config                            config.GinkgoConfigType
 }
 
-func newExampleCollection(t testingT, description string, examples []*example, reporters []Reporter, config config.GinkgoConfigType) *exampleCollection {
+func newExampleCollection(t GinkgoTestingT, description string, examples []*example, reporters []Reporter, config config.GinkgoConfigType) *exampleCollection {
 	collection := &exampleCollection{
 		t:           t,
 		description: description,

@@ -15,10 +15,12 @@ import (
 	"github.com/onsi/ginkgo/config"
 	"github.com/onsi/ginkgo/reporters"
 	"github.com/onsi/ginkgo/types"
-
-	"testing"
 	"time"
 )
+
+type GinkgoTestingT interface {
+	Fail()
+}
 
 const GINKGO_VERSION = config.VERSION
 
@@ -66,20 +68,20 @@ type Benchmarker interface {
 //To bootstrap a test suite you can use the Ginkgo CLI:
 //
 //	ginkgo bootstrap
-func RunSpecs(t *testing.T, description string) {
+func RunSpecs(t GinkgoTestingT, description string) {
 	globalSuite.run(t, description, []Reporter{reporters.NewDefaultReporter(config.DefaultReporterConfig)}, config.GinkgoConfig)
 }
 
 //To run your tests with Ginkgo's default reporter and your custom reporter(s), replace
 //RunSpecs() with this method.
-func RunSpecsWithDefaultAndCustomReporters(t *testing.T, description string, specReporters []Reporter) {
+func RunSpecsWithDefaultAndCustomReporters(t GinkgoTestingT, description string, specReporters []Reporter) {
 	specReporters = append([]Reporter{reporters.NewDefaultReporter(config.DefaultReporterConfig)}, specReporters...)
 	globalSuite.run(t, description, specReporters, config.GinkgoConfig)
 }
 
 //To run your tests with your custom reporter(s) (and *not* Ginkgo's default reporter), replace
 //RunSpecs() with this method.
-func RunSpecsWithCustomReporters(t *testing.T, description string, specReporters []Reporter) {
+func RunSpecsWithCustomReporters(t GinkgoTestingT, description string, specReporters []Reporter) {
 	globalSuite.run(t, description, specReporters, config.GinkgoConfig)
 }
 

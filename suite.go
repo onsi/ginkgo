@@ -29,7 +29,7 @@ func newSuite() *suite {
 	}
 }
 
-func (suite *suite) run(t testingT, description string, reporters []Reporter, config config.GinkgoConfigType) {
+func (suite *suite) run(t GinkgoTestingT, description string, reporters []Reporter, config config.GinkgoConfigType) {
 	r := rand.New(rand.NewSource(config.RandomSeed))
 	suite.topLevelContainer.shuffle(r)
 
