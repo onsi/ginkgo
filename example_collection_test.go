@@ -83,11 +83,13 @@ func init() {
 
 		Describe("running an example collection", func() {
 			var (
-				example1 *example
-				example2 *example
-				example3 *example
-				conf     config.GinkgoConfigType
+				example1  *example
+				example2  *example
+				example3  *example
+				conf      config.GinkgoConfigType
+				runResult bool
 			)
+
 			BeforeEach(func() {
 				conf = config.GinkgoConfigType{FocusString: "", ParallelTotal: 1, ParallelNode: 1}
 
@@ -98,10 +100,14 @@ func init() {
 
 			JustBeforeEach(func() {
 				collection = newExampleCollection(fakeT, "collection description", []*example{example1, example2, example3}, []Reporter{fakeR}, conf)
-				collection.run()
+				runResult = collection.run()
 			})
 
 			Context("when all the examples pass", func() {
+				It("should return true", func() {
+					Ω(runResult).Should(BeTrue())
+				})
+
 				It("runs all the tests", func() {
 					Ω(examplesThatWereRun).Should(Equal([]string{"it 1", "it 2", "it 3"}))
 				})
@@ -151,6 +157,10 @@ func init() {
 				BeforeEach(func() {
 					example2 = exampleWithItFunc("failing it 2", flagTypeNone, true)
 					example3 = exampleWithItFunc("failing it 3", flagTypeNone, true)
+				})
+
+				It("should return false", func() {
+					Ω(runResult).Should(BeFalse())
 				})
 
 				It("runs all the tests", func() {

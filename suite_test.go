@@ -30,6 +30,7 @@ func init() {
 				focusString       string
 				parallelNode      int
 				parallelTotal     int
+				runResult         bool
 			)
 
 			var f = func(runText string) func() {
@@ -70,7 +71,7 @@ func init() {
 			})
 
 			JustBeforeEach(func() {
-				specSuite.run(fakeT, "suite description", []Reporter{fakeR}, config.GinkgoConfigType{
+				runResult = specSuite.run(fakeT, "suite description", []Reporter{fakeR}, config.GinkgoConfigType{
 					RandomSeed:        randomSeed,
 					RandomizeAllSpecs: randomizeAllSpecs,
 					FocusString:       focusString,
@@ -175,6 +176,10 @@ func init() {
 				It("doesn't report a failure", func() {
 					Ω(fakeT.didFail).Should(BeFalse())
 				})
+
+				It("should return true", func() {
+					Ω(runResult).Should(BeTrue())
+				})
 			})
 
 			Context("when a spec fails", func() {
@@ -184,6 +189,10 @@ func init() {
 						location = types.GenerateCodeLocation(0)
 						func() { specSuite.fail("oops!", 0) }()
 					}, flagTypeNone, types.GenerateCodeLocation(0), 0)
+				})
+
+				It("should return false", func() {
+					Ω(runResult).Should(BeFalse())
 				})
 
 				It("reports a failure", func() {

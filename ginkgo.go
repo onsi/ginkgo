@@ -68,21 +68,21 @@ type Benchmarker interface {
 //To bootstrap a test suite you can use the Ginkgo CLI:
 //
 //	ginkgo bootstrap
-func RunSpecs(t GinkgoTestingT, description string) {
-	globalSuite.run(t, description, []Reporter{reporters.NewDefaultReporter(config.DefaultReporterConfig)}, config.GinkgoConfig)
+func RunSpecs(t GinkgoTestingT, description string) bool {
+	return globalSuite.run(t, description, []Reporter{reporters.NewDefaultReporter(config.DefaultReporterConfig)}, config.GinkgoConfig)
 }
 
 //To run your tests with Ginkgo's default reporter and your custom reporter(s), replace
 //RunSpecs() with this method.
-func RunSpecsWithDefaultAndCustomReporters(t GinkgoTestingT, description string, specReporters []Reporter) {
+func RunSpecsWithDefaultAndCustomReporters(t GinkgoTestingT, description string, specReporters []Reporter) bool {
 	specReporters = append([]Reporter{reporters.NewDefaultReporter(config.DefaultReporterConfig)}, specReporters...)
-	globalSuite.run(t, description, specReporters, config.GinkgoConfig)
+	return globalSuite.run(t, description, specReporters, config.GinkgoConfig)
 }
 
 //To run your tests with your custom reporter(s) (and *not* Ginkgo's default reporter), replace
 //RunSpecs() with this method.
-func RunSpecsWithCustomReporters(t GinkgoTestingT, description string, specReporters []Reporter) {
-	globalSuite.run(t, description, specReporters, config.GinkgoConfig)
+func RunSpecsWithCustomReporters(t GinkgoTestingT, description string, specReporters []Reporter) bool {
+	return globalSuite.run(t, description, specReporters, config.GinkgoConfig)
 }
 
 //Fail notifies Ginkgo that the current spec has failed. (Gomega will call Fail for you automatically when an assertion fails.)

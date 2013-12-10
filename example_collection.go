@@ -121,7 +121,7 @@ func (collection *exampleCollection) shuffle(r *rand.Rand) {
 	collection.examples = shuffledExamples
 }
 
-func (collection *exampleCollection) run() {
+func (collection *exampleCollection) run() bool {
 	collection.reportSuiteWillBegin()
 
 	suiteFailed := false
@@ -147,6 +147,8 @@ func (collection *exampleCollection) run() {
 	if suiteFailed {
 		collection.t.Fail()
 	}
+
+	return !suiteFailed
 }
 
 func (collection *exampleCollection) fail(failure failureData) {

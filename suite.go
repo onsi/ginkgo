@@ -29,7 +29,7 @@ func newSuite() *suite {
 	}
 }
 
-func (suite *suite) run(t GinkgoTestingT, description string, reporters []Reporter, config config.GinkgoConfigType) {
+func (suite *suite) run(t GinkgoTestingT, description string, reporters []Reporter, config config.GinkgoConfigType) bool {
 	r := rand.New(rand.NewSource(config.RandomSeed))
 	suite.topLevelContainer.shuffle(r)
 
@@ -43,7 +43,7 @@ func (suite *suite) run(t GinkgoTestingT, description string, reporters []Report
 
 	suite.exampleCollection = newExampleCollection(t, description, suite.topLevelContainer.generateExamples(), reporters, config)
 
-	suite.exampleCollection.run()
+	return suite.exampleCollection.run()
 }
 
 func (suite *suite) fail(message string, callerSkip int) {

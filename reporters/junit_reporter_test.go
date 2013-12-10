@@ -19,10 +19,10 @@ var _ = Describe("JUnit Reporter", func() {
 
 	readOutputFile := func() JUnitTestSuite {
 		bytes, err := ioutil.ReadFile(outputFile)
-		Ω(err).ShouldNot(HaveOccured())
+		Ω(err).ShouldNot(HaveOccurred())
 		var suite JUnitTestSuite
 		err = xml.Unmarshal(bytes, &suite)
-		Ω(err).ShouldNot(HaveOccured())
+		Ω(err).ShouldNot(HaveOccurred())
 		return suite
 	}
 
