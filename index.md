@@ -259,7 +259,7 @@ Ginkgo allows you to expressively organize the specs in your suite using `Descri
                 })
 
                 It("should not error", func() {
-                    Expect(err).NotTo(HaveOccured())
+                    Expect(err).NotTo(HaveOccurred())
                 })
             })
 
@@ -277,7 +277,7 @@ Ginkgo allows you to expressively organize the specs in your suite using `Descri
                 })
 
                 It("should error", func() {
-                    Expect(err).To(HaveOccured())
+                    Expect(err).To(HaveOccurred())
                 })
             })
         })
@@ -331,7 +331,7 @@ The above example illustrates a common antipattern in BDD-style testing.  Our to
                 })
 
                 It("should not error", func() {
-                    Expect(err).NotTo(HaveOccured())
+                    Expect(err).NotTo(HaveOccurred())
                 })
             })
 
@@ -349,7 +349,7 @@ The above example illustrates a common antipattern in BDD-style testing.  Our to
                 })
 
                 It("should error", func() {
-                    Expect(err).To(HaveOccured())
+                    Expect(err).To(HaveOccurred())
                 })
             })
         })
@@ -526,6 +526,10 @@ To run the suite in the current directory, simply run:
 
     $ ginkgo #or go test
 
+To run the suites in other directories, simply run:
+
+    $ ginkgo /path/to/package /path/to/other/package ...
+
 There are a number of command line flags that can be passed to the `ginkgo` test runner.  Additionally, most of these can also be passed to `go test`, though you will need to prepend `ginkgo.` to each flag when using `go test`:
 
 - `--seed=SEED`
@@ -576,7 +580,7 @@ Additional flags supported by the `ginkgo` command:
 
 - `-r`
     
-    Set `-r` to have the `ginkgo` CLI recursively run all test suites under the current directory.  Useful for running all the tests across all your packages.
+    Set `-r` to have the `ginkgo` CLI recursively run all test suites under the target directories.  Useful for running all the tests across all your packages.
 
 - `-i`
     
