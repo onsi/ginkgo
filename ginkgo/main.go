@@ -15,6 +15,10 @@ To run tests in all subdirectories:
 
 	ginkgo -r
 
+To run tests in particular packages:
+
+	ginkgo <flags> /path/to/package /path/to/another/package
+
 To bootstrap a test suite:
 
 	ginkgo bootstrap
@@ -25,7 +29,7 @@ To generate a test file:
 
 To unfocus tests:
 
-	ginkgo unfocs
+	ginkgo unfocus
 
 To print out Ginkgo's version:
 
@@ -62,7 +66,7 @@ func init() {
 
 	flag.Usage = func() {
 		fmt.Fprintf(os.Stderr, "Usage of ginkgo:\n\n")
-		fmt.Fprintf(os.Stderr, "ginkgo\n  Run the tests in the current directory.  The following flags are available:\n")
+		fmt.Fprintf(os.Stderr, "ginkgo <FLAGS> <DIRECTORY> ...\n  Run the tests in the passed in <DIRECTORY> (or the current directory if left blank).\n  ginkgo accepts the following flags:\n")
 		flag.PrintDefaults()
 		fmt.Fprintf(os.Stderr, "\n")
 		fmt.Fprintf(os.Stderr, "ginkgo bootstrap\n  Bootstrap a test suite for the current package.\n\n")
@@ -78,16 +82,58 @@ func init() {
 func main() {
 	if flag.NArg() > 0 {
 		args := flag.Args()
-		handleSubcommands(args)
-		fmt.Printf("Unkown command %s\n\n", args[0])
-		flag.Usage()
+		handled := handleSubcommands(args)
+		if handled {
+			os.Exit(0)
+		}
+	}
 
+	runTests()
+}
+
+func handleSubcommands(args []string) bool {
+	switch args[0] {
+	case "bootstrap":
+		generateBootstrap()
+	case "generate":
+		subject := ""
+		if len(args) > 1 {
+			subject = args[1]
+		}
+		generateSpec(subject)
+	case "unfocus":
+		unfocusSpecs()
+	case "help":
+		flag.Usage()
+	case "version":
+		fmt.Printf("Ginkgo V%s\n", config.VERSION)
+	default:
+		return false
+	}
+
+	return true
+}
+
+func runTests() {
+	t := time.Now()
+
+	suites := []testSuite{}
+
+	if flag.NArg() > 0 {
+		for _, dir := range flag.Args() {
+			suites = append(suites, suitesInDir(dir, recurse)...)
+		}
+	} else {
+		suites = suitesInDir(".", recurse)
+	}
+
+	if len(suites) == 0 {
+		fmt.Printf("Found no test suites.\nFor usage instructions:\n\tginkgo help\n")
 		os.Exit(1)
 	}
 
-	t := time.Now()
-	runner := newTestRunner(numCPU, recurse, runMagicI, race, cover)
-	passed := runner.run()
+	runner := newTestRunner(numCPU, runMagicI, race, cover)
+	passed := runner.run(suites)
 	fmt.Printf("\nGinkgo ran in %s\n", time.Since(t))
 
 	if passed {
@@ -96,28 +142,5 @@ func main() {
 	} else {
 		fmt.Printf("Test Suite Failed\n")
 		os.Exit(1)
-	}
-}
-
-func handleSubcommands(args []string) {
-	if args[0] == "bootstrap" {
-		generateBootstrap()
-		os.Exit(0)
-	} else if args[0] == "generate" {
-		subject := ""
-		if len(args) > 1 {
-			subject = args[1]
-		}
-		generateSpec(subject)
-		os.Exit(0)
-	} else if args[0] == "unfocus" {
-		unfocusSpecs()
-		os.Exit(0)
-	} else if args[0] == "help" {
-		flag.Usage()
-		os.Exit(0)
-	} else if args[0] == "version" {
-		fmt.Printf("Ginkgo V%s\n", config.VERSION)
-		os.Exit(0)
 	}
 }

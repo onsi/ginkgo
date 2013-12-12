@@ -5,51 +5,13 @@ import (
 	"fmt"
 	"github.com/onsi/ginkgo/config"
 	"io"
-	"io/ioutil"
 	"os"
 	"os/exec"
 	"os/signal"
-	"path/filepath"
-	"regexp"
 )
-
-type suite struct {
-	path        string
-	packageName string
-	isGinkgo    bool
-}
-
-func newSuite(dir string, files []os.FileInfo) suite {
-	return suite{
-		path:        dir,
-		packageName: packageNameForSuite(dir),
-		isGinkgo:    filesHaveGinkgoSuite(dir, files),
-	}
-}
-
-func packageNameForSuite(dir string) string {
-	path, _ := filepath.Abs(dir)
-	return filepath.Base(path)
-}
-
-func filesHaveGinkgoSuite(dir string, files []os.FileInfo) bool {
-	reTestFile := regexp.MustCompile(`_test\.go$`)
-	reGinkgo := regexp.MustCompile(`package ginkgo|\/ginkgo"`)
-	for _, file := range files {
-		if !file.IsDir() && reTestFile.Match([]byte(file.Name())) {
-			contents, _ := ioutil.ReadFile(dir + "/" + file.Name())
-			if reGinkgo.Match(contents) {
-				return true
-			}
-		}
-	}
-
-	return false
-}
 
 type testRunner struct {
 	numCPU           int
-	recurse          bool
 	runMagicI        bool
 	race             bool
 	cover            bool
@@ -57,10 +19,9 @@ type testRunner struct {
 	reports          []*bytes.Buffer
 }
 
-func newTestRunner(numCPU int, recurse bool, runMagicI bool, race bool, cover bool) *testRunner {
+func newTestRunner(numCPU int, runMagicI bool, race bool, cover bool) *testRunner {
 	return &testRunner{
 		numCPU:           numCPU,
-		recurse:          recurse,
 		runMagicI:        runMagicI,
 		race:             race,
 		cover:            cover,
@@ -69,10 +30,8 @@ func newTestRunner(numCPU int, recurse bool, runMagicI bool, race bool, cover bo
 	}
 }
 
-func (t *testRunner) run() bool {
+func (t *testRunner) run(suites []testSuite) bool {
 	t.registerSignalHandler()
-
-	suites := t.findSuitesInDir(".", t.recurse)
 
 	for _, suite := range suites {
 		if !t.runSuite(suite) {
@@ -83,30 +42,7 @@ func (t *testRunner) run() bool {
 	return true
 }
 
-func (t *testRunner) findSuitesInDir(dir string, recurse bool) []suite {
-	suites := []suite{}
-	files, _ := ioutil.ReadDir(dir)
-	re := regexp.MustCompile(`_test\.go$`)
-	for _, file := range files {
-		if !file.IsDir() && re.Match([]byte(file.Name())) {
-			suites = append(suites, newSuite(dir, files))
-			break
-		}
-	}
-
-	if recurse {
-		re = regexp.MustCompile(`^\.`)
-		for _, file := range files {
-			if file.IsDir() && !re.Match([]byte(file.Name())) {
-				suites = append(suites, t.findSuitesInDir(dir+"/"+file.Name(), recurse)...)
-			}
-		}
-	}
-
-	return suites
-}
-
-func (t *testRunner) runSuite(suite suite) bool {
+func (t *testRunner) runSuite(suite testSuite) bool {
 	if t.runMagicI {
 		t.runGoI(suite)
 	}
@@ -122,7 +58,7 @@ func (t *testRunner) runSuite(suite suite) bool {
 	}
 }
 
-func (t *testRunner) runGoI(suite suite) {
+func (t *testRunner) runGoI(suite testSuite) {
 	args := []string{"test", "-i"}
 	if t.race {
 		args = append(args, "-race")
@@ -136,7 +72,7 @@ func (t *testRunner) runGoI(suite suite) {
 	}
 }
 
-func (t *testRunner) runParallelGinkgoSuite(suite suite) bool {
+func (t *testRunner) runParallelGinkgoSuite(suite testSuite) bool {
 	completions := make(chan bool)
 	for cpu := 0; cpu < t.numCPU; cpu++ {
 		config.GinkgoConfig.ParallelNode = cpu + 1
@@ -165,18 +101,18 @@ func (t *testRunner) runParallelGinkgoSuite(suite suite) bool {
 	return passed
 }
 
-func (t *testRunner) runSerialGinkgoSuite(suite suite) bool {
+func (t *testRunner) runSerialGinkgoSuite(suite testSuite) bool {
 	args := config.BuildFlagArgs("ginkgo", config.GinkgoConfig, config.DefaultReporterConfig)
 	args = append(args, t.commonArgs(suite)...)
 	return t.runCommand(suite.path, args, os.Stdout, nil)
 }
 
-func (t *testRunner) runGoTestSuite(suite suite) bool {
+func (t *testRunner) runGoTestSuite(suite testSuite) bool {
 	args := t.commonArgs(suite)
 	return t.runCommand(suite.path, args, os.Stdout, nil)
 }
 
-func (t *testRunner) commonArgs(suite suite) []string {
+func (t *testRunner) commonArgs(suite testSuite) []string {
 	args := []string{}
 	if t.race {
 		args = append(args, "--race")
