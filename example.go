@@ -198,6 +198,7 @@ func (ex *example) summary() *types.ExampleSummary {
 }
 
 func (ex *example) measurementsReport() (measurements map[string]*types.ExampleMeasurement) {
+	measurements = map[string]*types.ExampleMeasurement{}
 	if ex.subjectComponentType() != types.ExampleComponentTypeMeasure {
 		return
 	}
