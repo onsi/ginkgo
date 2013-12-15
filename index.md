@@ -568,6 +568,10 @@ There are a number of command line flags that can be passed to the `ginkgo` test
 
     By default, Ginkgo's defautlt reporter will provide detailed output for pending specs.  You can set --noisyPendings=false to supress this behavior.
 
+- `--succinct`
+    
+    By default, Ginkgo's default reporter prints out a verbose breakdown of where a slow/failing spec is located.  The `--succinct` flag makes the default reporter print out shorter code location information.
+
 - `--v`
 
     If present, Ginkgo's default reporter will print out the text and location for each spec before running it.
