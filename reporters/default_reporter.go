@@ -43,22 +43,22 @@ func (reporter *DefaultReporter) ExampleDidComplete(exampleSummary *types.Exampl
 	switch exampleSummary.State {
 	case types.ExampleStatePassed:
 		if exampleSummary.IsMeasurement {
-			reporter.stenographer.AnnounceSuccesfulMeasurement(exampleSummary)
+			reporter.stenographer.AnnounceSuccesfulMeasurement(exampleSummary, reporter.config.Succinct)
 		} else if exampleSummary.RunTime.Seconds() >= reporter.config.SlowSpecThreshold {
-			reporter.stenographer.AnnounceSuccesfulSlowExample(exampleSummary)
+			reporter.stenographer.AnnounceSuccesfulSlowExample(exampleSummary, reporter.config.Succinct)
 		} else {
 			reporter.stenographer.AnnounceSuccesfulExample(exampleSummary)
 		}
 	case types.ExampleStatePending:
-		reporter.stenographer.AnnouncePendingExample(exampleSummary, reporter.config.NoisyPendings)
+		reporter.stenographer.AnnouncePendingExample(exampleSummary, reporter.config.NoisyPendings, reporter.config.Succinct)
 	case types.ExampleStateSkipped:
 		reporter.stenographer.AnnounceSkippedExample(exampleSummary)
 	case types.ExampleStateTimedOut:
-		reporter.stenographer.AnnounceExampleTimedOut(exampleSummary)
+		reporter.stenographer.AnnounceExampleTimedOut(exampleSummary, reporter.config.Succinct)
 	case types.ExampleStatePanicked:
-		reporter.stenographer.AnnounceExamplePanicked(exampleSummary)
+		reporter.stenographer.AnnounceExamplePanicked(exampleSummary, reporter.config.Succinct)
 	case types.ExampleStateFailed:
-		reporter.stenographer.AnnounceExampleFailed(exampleSummary)
+		reporter.stenographer.AnnounceExampleFailed(exampleSummary, reporter.config.Succinct)
 	}
 }
 

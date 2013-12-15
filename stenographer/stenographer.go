@@ -36,6 +36,8 @@ func New(color bool) *Stenographer {
 	}
 }
 
+var alternatingColors = []string{defaultStyle, grayColor}
+
 func (s *Stenographer) AnnounceSuite(description string, randomSeed int64, randomizingAll bool) {
 	s.printNewLine()
 	s.printBanner(fmt.Sprintf("Running Suite: %s", description), "=")
@@ -98,9 +100,8 @@ func (s *Stenographer) AnnounceExampleWillRun(example *types.ExampleSummary) {
 		s.printNewLine()
 		s.printDelimiter()
 	}
-	colors := []string{defaultStyle, grayColor}
 	for i, text := range example.ComponentTexts[1 : len(example.ComponentTexts)-1] {
-		s.print(0, s.colorize(colors[i%2], text)+" ")
+		s.print(0, s.colorize(alternatingColors[i%2], text)+" ")
 	}
 
 	indentation := 0
@@ -121,28 +122,31 @@ func (s *Stenographer) AnnounceSuccesfulExample(example *types.ExampleSummary) {
 	s.cursorState = cursorStateStreaming
 }
 
-func (s *Stenographer) AnnounceSuccesfulSlowExample(example *types.ExampleSummary) {
+func (s *Stenographer) AnnounceSuccesfulSlowExample(example *types.ExampleSummary, succinct bool) {
 	s.printBlockWithMessage(
 		s.colorize(greenColor, "• [SLOW TEST:%.3f seconds]", example.RunTime.Seconds()),
 		"",
 		example,
+		succinct,
 	)
 }
 
-func (s *Stenographer) AnnounceSuccesfulMeasurement(example *types.ExampleSummary) {
+func (s *Stenographer) AnnounceSuccesfulMeasurement(example *types.ExampleSummary, succinct bool) {
 	s.printBlockWithMessage(
 		s.colorize(greenColor, "• [MEASUREMENT]"),
 		s.measurementReport(example),
 		example,
+		succinct,
 	)
 }
 
-func (s *Stenographer) AnnouncePendingExample(example *types.ExampleSummary, noisy bool) {
+func (s *Stenographer) AnnouncePendingExample(example *types.ExampleSummary, noisy bool, succinct bool) {
 	if noisy {
 		s.printBlockWithMessage(
 			s.colorize(yellowColor, "P [PENDING]"),
 			"",
 			example,
+			succinct,
 		)
 	} else {
 		s.print(0, s.colorize(greenColor, "P"))
@@ -155,19 +159,19 @@ func (s *Stenographer) AnnounceSkippedExample(example *types.ExampleSummary) {
 	s.cursorState = cursorStateStreaming
 }
 
-func (s *Stenographer) AnnounceExampleTimedOut(example *types.ExampleSummary) {
-	s.printFailure("•... Timeout", example)
+func (s *Stenographer) AnnounceExampleTimedOut(example *types.ExampleSummary, succinct bool) {
+	s.printFailure("•... Timeout", example, succinct)
 }
 
-func (s *Stenographer) AnnounceExamplePanicked(example *types.ExampleSummary) {
-	s.printFailure("•! Panic", example)
+func (s *Stenographer) AnnounceExamplePanicked(example *types.ExampleSummary, succinct bool) {
+	s.printFailure("•! Panic", example, succinct)
 }
 
-func (s *Stenographer) AnnounceExampleFailed(example *types.ExampleSummary) {
-	s.printFailure("• Failure", example)
+func (s *Stenographer) AnnounceExampleFailed(example *types.ExampleSummary, succinct bool) {
+	s.printFailure("• Failure", example, succinct)
 }
 
-func (s *Stenographer) printBlockWithMessage(header string, message string, example *types.ExampleSummary) {
+func (s *Stenographer) printBlockWithMessage(header string, message string, example *types.ExampleSummary, succinct bool) {
 	if s.cursorState == cursorStateStreaming {
 		s.printNewLine()
 		s.printDelimiter()
@@ -177,28 +181,18 @@ func (s *Stenographer) printBlockWithMessage(header string, message string, exam
 
 	s.println(0, header)
 
-	startIndex := 1
-	if len(example.ComponentTexts) == 1 {
-		startIndex = 0
-	}
-
-	indentation := 0
-	for i := startIndex; i < len(example.ComponentTexts); i++ {
-		s.println(indentation, "%s", example.ComponentTexts[i])
-		s.println(indentation, s.colorize(grayColor, "(%s)", example.ComponentCodeLocations[i]))
-		indentation++
-	}
+	indentation := s.printCodeLocationBlock(example, false, succinct)
 
 	if message != "" {
 		s.printNewLine()
-		s.println(indentation-1, message)
+		s.println(indentation, message)
 	}
 
 	s.printDelimiter()
 	s.cursorState = cursorStateEndBlock
 }
 
-func (s *Stenographer) printFailure(message string, example *types.ExampleSummary) {
+func (s *Stenographer) printFailure(message string, example *types.ExampleSummary, succinct bool) {
 	if s.cursorState == cursorStateStreaming {
 		s.printNewLine()
 		s.printDelimiter()
@@ -208,38 +202,8 @@ func (s *Stenographer) printFailure(message string, example *types.ExampleSummar
 
 	s.println(0, s.colorize(redColor+boldStyle, "%s [%.3f seconds]", message, example.RunTime.Seconds()))
 
-	startIndex := 1
-	if example.Failure.ComponentIndex == 0 {
-		startIndex = 0
-	}
+	indentation := s.printCodeLocationBlock(example, true, succinct)
 
-	indentation := 0
-	for i := startIndex; i < len(example.ComponentTexts); i++ {
-		if i == example.Failure.ComponentIndex {
-			blockType := ""
-			switch example.Failure.ComponentType {
-			case types.ExampleComponentTypeBeforeEach:
-				blockType = "BeforeEach"
-			case types.ExampleComponentTypeJustBeforeEach:
-				blockType = "JustBeforeEach"
-			case types.ExampleComponentTypeAfterEach:
-				blockType = "AfterEach"
-			case types.ExampleComponentTypeIt:
-				blockType = "It"
-			case types.ExampleComponentTypeMeasure:
-				blockType = "Measurement"
-			}
-			s.println(indentation, s.colorize(redColor+boldStyle, "%s [%s]", example.ComponentTexts[i], blockType))
-			s.println(indentation, s.colorize(grayColor, "(%s)", example.ComponentCodeLocations[i]))
-		} else {
-			s.println(indentation, example.ComponentTexts[i])
-			s.println(indentation, s.colorize(grayColor, "(%s)", example.ComponentCodeLocations[i]))
-		}
-
-		indentation++
-	}
-
-	indentation--
 	s.printNewLine()
 	if example.State == types.ExampleStatePanicked {
 		s.println(indentation, s.colorize(redColor+boldStyle, example.Failure.Message))
@@ -256,6 +220,61 @@ func (s *Stenographer) printFailure(message string, example *types.ExampleSummar
 
 	s.printDelimiter()
 	s.cursorState = cursorStateEndBlock
+}
+
+func (s *Stenographer) printCodeLocationBlock(example *types.ExampleSummary, failure bool, succinct bool) int {
+	indentation := 0
+	startIndex := 1
+
+	if len(example.ComponentTexts) == 1 {
+		startIndex = 0
+	}
+
+	for i := startIndex; i < len(example.ComponentTexts); i++ {
+		if failure && i == example.Failure.ComponentIndex {
+			blockType := ""
+			switch example.Failure.ComponentType {
+			case types.ExampleComponentTypeBeforeEach:
+				blockType = "BeforeEach"
+			case types.ExampleComponentTypeJustBeforeEach:
+				blockType = "JustBeforeEach"
+			case types.ExampleComponentTypeAfterEach:
+				blockType = "AfterEach"
+			case types.ExampleComponentTypeIt:
+				blockType = "It"
+			case types.ExampleComponentTypeMeasure:
+				blockType = "Measurement"
+			}
+			if succinct {
+				s.print(0, s.colorize(redColor+boldStyle, "[%s] %s ", blockType, example.ComponentTexts[i]))
+			} else {
+				s.println(indentation, s.colorize(redColor+boldStyle, "%s [%s]", example.ComponentTexts[i], blockType))
+				s.println(indentation, s.colorize(grayColor, "(%s)", example.ComponentCodeLocations[i]))
+			}
+		} else {
+			if succinct {
+				s.print(0, s.colorize(alternatingColors[i%2], "%s ", example.ComponentTexts[i]))
+			} else {
+				s.println(indentation, example.ComponentTexts[i])
+				s.println(indentation, s.colorize(grayColor, "(%s)", example.ComponentCodeLocations[i]))
+			}
+		}
+
+		indentation++
+	}
+
+	if succinct {
+		if len(example.ComponentTexts) > 0 {
+			s.printNewLine()
+			s.print(0, s.colorize(lightGrayColor, "(%s)", example.ComponentCodeLocations[len(example.ComponentCodeLocations)-1]))
+		}
+		s.printNewLine()
+		indentation = 1
+	} else {
+		indentation--
+	}
+
+	return indentation
 }
 
 func (s *Stenographer) measurementReport(example *types.ExampleSummary) string {
