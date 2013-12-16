@@ -101,7 +101,7 @@ func handleSubcommands(args []string) bool {
 			subject = args[1]
 		}
 		generateSpec(subject)
-	case "unfocus":
+	case "unfocus", "blur":
 		unfocusSpecs()
 	case "help":
 		flag.Usage()
