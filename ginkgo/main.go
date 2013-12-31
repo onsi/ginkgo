@@ -19,6 +19,16 @@ To run tests in particular packages:
 
 	ginkgo <flags> /path/to/package /path/to/another/package
 
+To run tests in parallel
+
+	ginkgo -nodes=N
+
+where N is the number of nodes.  By default the Ginkgo CLI will spin up a server that the individual
+test processes stream test output to.  The CLI then aggregates these streams into one coherent stream of output.
+An alternative is to have the parallel nodes run and then present the resulting, final, output in one monolithic chunk - you can opt into this if streaming is giving you trouble:
+
+	ginkgo -nodes=N -stream=false
+
 To bootstrap a test suite:
 
 	ginkgo bootstrap
@@ -50,6 +60,7 @@ import (
 )
 
 var numCPU int
+var parallelStream bool
 var recurse bool
 var runMagicI bool
 var race bool
@@ -59,6 +70,7 @@ func init() {
 	config.Flags("", false)
 
 	flag.IntVar(&(numCPU), "nodes", 1, "The number of parallel test nodes to run")
+	flag.BoolVar(&(parallelStream), "stream", true, "Aggregate parallel test output into one coherent stream (default: true)")
 	flag.BoolVar(&(recurse), "r", false, "Find and run test suites under the current directory recursively")
 	flag.BoolVar(&(runMagicI), "i", false, "Run go test -i first, then run the test suite")
 	flag.BoolVar(&(race), "race", false, "Run tests with race detection enabled")
@@ -132,7 +144,7 @@ func runTests() {
 		os.Exit(1)
 	}
 
-	runner := newTestRunner(numCPU, runMagicI, race, cover)
+	runner := newTestRunner(numCPU, parallelStream, runMagicI, race, cover)
 	passed := runner.run(suites)
 	fmt.Printf("\nGinkgo ran in %s\n", time.Since(t))
 

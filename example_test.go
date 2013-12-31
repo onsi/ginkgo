@@ -215,7 +215,7 @@ func init() {
 			Describe("the summary", func() {
 				It("has the texts and code locations for the container nodes and the it node", func() {
 					ex.run()
-					summary := ex.summary()
+					summary := ex.summary("suite-id")
 					Ω(summary.ComponentTexts).Should(Equal([]string{
 						"outer", "inner", "it",
 					}))
@@ -223,12 +223,25 @@ func init() {
 						outerContainer.codeLocation, innerContainer.codeLocation, it.codeLocation,
 					}))
 				})
+
+				It("should have the passed in SuiteID", func() {
+					ex.run()
+					summary := ex.summary("suite-id")
+					Ω(summary.SuiteID).Should(Equal("suite-id"))
+				})
+
+				It("should include the example's index", func() {
+					ex.exampleIndex = 17
+					ex.run()
+					summary := ex.summary("suite-id")
+					Ω(summary.ExampleIndex).Should(Equal(17))
+				})
 			})
 
 			Context("when none of the runnable nodes fail", func() {
 				It("has a summary reporting no failure", func() {
 					ex.run()
-					summary := ex.summary()
+					summary := ex.summary("suite-id")
 					Ω(summary.State).Should(Equal(types.ExampleStatePassed))
 					Ω(summary.RunTime.Seconds()).Should(BeNumerically(">", 0.01))
 					Ω(summary.IsMeasurement).Should(BeFalse())
@@ -265,7 +278,7 @@ func init() {
 
 						It("has a summary with the correct failure report", func() {
 							ex.run()
-							summary := ex.summary()
+							summary := ex.summary("suite-id")
 
 							Ω(summary.State).Should(Equal(types.ExampleStateFailed))
 							Ω(summary.Failure.Message).Should(Equal(failure.message))
@@ -293,7 +306,7 @@ func init() {
 
 						It("has a summary with the correct failure report", func() {
 							ex.run()
-							summary := ex.summary()
+							summary := ex.summary("suite-id")
 
 							Ω(summary.State).Should(Equal(types.ExampleStatePanicked))
 							Ω(summary.Failure.Message).Should(Equal("Test Panicked"))
@@ -320,7 +333,7 @@ func init() {
 
 						It("has a summary with the correct failure report", func() {
 							ex.run()
-							summary := ex.summary()
+							summary := ex.summary("suite-id")
 
 							Ω(summary.State).Should(Equal(types.ExampleStateTimedOut))
 							Ω(summary.Failure.Message).Should(Equal("Timed out"))
@@ -359,7 +372,7 @@ func init() {
 
 					It("has a summary with the correct failure report", func() {
 						ex.run()
-						summary := ex.summary()
+						summary := ex.summary("suite-id")
 
 						Ω(summary.State).Should(Equal(types.ExampleStateFailed))
 						Ω(summary.Failure.Message).Should(Equal(failure.message))
@@ -385,7 +398,7 @@ func init() {
 
 					It("has a summary with the correct failure report", func() {
 						ex.run()
-						summary := ex.summary()
+						summary := ex.summary("suite-id")
 
 						Ω(summary.State).Should(Equal(types.ExampleStatePanicked))
 						Ω(summary.Failure.Message).Should(Equal("Test Panicked"))
@@ -410,7 +423,7 @@ func init() {
 
 					It("has a summary with the correct failure report", func() {
 						ex.run()
-						summary := ex.summary()
+						summary := ex.summary("suite-id")
 
 						Ω(summary.State).Should(Equal(types.ExampleStateTimedOut))
 						Ω(summary.Failure.Message).Should(Equal("Timed out"))
@@ -453,7 +466,7 @@ func init() {
 
 				It("runs the measurement samples number of times and returns statistics", func() {
 					ex.run()
-					summary := ex.summary()
+					summary := ex.summary("suite-id")
 
 					Ω(runs).Should(Equal(5))
 
@@ -479,7 +492,7 @@ func init() {
 
 				It("marks the measurement as failed and doesn't run any more samples", func() {
 					ex.run()
-					summary := ex.summary()
+					summary := ex.summary("suite-id")
 
 					Ω(runs).Should(Equal(3))
 
@@ -696,7 +709,7 @@ func init() {
 				})
 
 				It("should not override the failure data of the earliest failure", func() {
-					Ω(ex.summary().Failure.Message).Should(Equal("INNER_JUST_BEFORE_A failed"))
+					Ω(ex.summary("suite-id").Failure.Message).Should(Equal("INNER_JUST_BEFORE_A failed"))
 				})
 			})
 		})

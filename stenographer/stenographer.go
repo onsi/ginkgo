@@ -1,3 +1,9 @@
+/*
+The stenographer is used by Ginkgo's reporters to generate output.
+
+Move along, nothing to see here.
+*/
+
 package stenographer
 
 import (
@@ -24,21 +30,44 @@ const (
 	cursorStateEndBlock
 )
 
-type Stenographer struct {
-	color       bool
-	cursorState cursorStateType
+type Stenographer interface {
+	AnnounceSuite(description string, randomSeed int64, randomizingAll bool)
+	AnnounceAggregatedParallelRun(nodes int)
+	AnnounceParallelRun(node int, nodes int, specsToRun int, totalSpecs int)
+	AnnounceNumberOfSpecs(specsToRun int, total int)
+	AnnounceSpecRunCompletion(summary *types.SuiteSummary)
+
+	AnnounceExampleWillRun(example *types.ExampleSummary)
+
+	AnnounceCapturedOutput(example *types.ExampleSummary)
+
+	AnnounceSuccesfulExample(example *types.ExampleSummary)
+	AnnounceSuccesfulSlowExample(example *types.ExampleSummary, succinct bool)
+	AnnounceSuccesfulMeasurement(example *types.ExampleSummary, succinct bool)
+
+	AnnouncePendingExample(example *types.ExampleSummary, noisy bool, succinct bool)
+	AnnounceSkippedExample(example *types.ExampleSummary)
+
+	AnnounceExampleTimedOut(example *types.ExampleSummary, succinct bool)
+	AnnounceExamplePanicked(example *types.ExampleSummary, succinct bool)
+	AnnounceExampleFailed(example *types.ExampleSummary, succinct bool)
 }
 
-func New(color bool) *Stenographer {
-	return &Stenographer{
+func New(color bool) Stenographer {
+	return &consoleStenographer{
 		color:       color,
 		cursorState: cursorStateTop,
 	}
 }
 
+type consoleStenographer struct {
+	color       bool
+	cursorState cursorStateType
+}
+
 var alternatingColors = []string{defaultStyle, grayColor}
 
-func (s *Stenographer) AnnounceSuite(description string, randomSeed int64, randomizingAll bool) {
+func (s *consoleStenographer) AnnounceSuite(description string, randomSeed int64, randomizingAll bool) {
 	s.printNewLine()
 	s.printBanner(fmt.Sprintf("Running Suite: %s", description), "=")
 	s.print(0, "Random Seed: %s", s.colorize(boldStyle, "%d", randomSeed))
@@ -48,7 +77,7 @@ func (s *Stenographer) AnnounceSuite(description string, randomSeed int64, rando
 	s.printNewLine()
 }
 
-func (s *Stenographer) AnnounceParallelRun(node int, nodes int, specsToRun int, totalSpecs int) {
+func (s *consoleStenographer) AnnounceParallelRun(node int, nodes int, specsToRun int, totalSpecs int) {
 	s.println(0,
 		"Parallel test node %s/%s. Assigned %s of %s specs.",
 		s.colorize(boldStyle, "%d", node),
@@ -59,7 +88,15 @@ func (s *Stenographer) AnnounceParallelRun(node int, nodes int, specsToRun int, 
 	s.printNewLine()
 }
 
-func (s *Stenographer) AnnounceNumberOfSpecs(specsToRun int, total int) {
+func (s *consoleStenographer) AnnounceAggregatedParallelRun(nodes int) {
+	s.println(0,
+		"Running in parallel across %s nodes",
+		s.colorize(boldStyle, "%d", nodes),
+	)
+	s.printNewLine()
+}
+
+func (s *consoleStenographer) AnnounceNumberOfSpecs(specsToRun int, total int) {
 	s.println(0,
 		"Will run %s of %s specs",
 		s.colorize(boldStyle, "%d", specsToRun),
@@ -69,7 +106,7 @@ func (s *Stenographer) AnnounceNumberOfSpecs(specsToRun int, total int) {
 	s.printNewLine()
 }
 
-func (s *Stenographer) AnnounceSpecRunCompletion(summary *types.SuiteSummary) {
+func (s *consoleStenographer) AnnounceSpecRunCompletion(summary *types.SuiteSummary) {
 	s.printNewLine()
 	color := greenColor
 	if !summary.SuiteSucceeded {
@@ -95,7 +132,7 @@ func (s *Stenographer) AnnounceSpecRunCompletion(summary *types.SuiteSummary) {
 	s.printNewLine()
 }
 
-func (s *Stenographer) AnnounceExampleWillRun(example *types.ExampleSummary) {
+func (s *consoleStenographer) AnnounceExampleWillRun(example *types.ExampleSummary) {
 	if s.cursorState == cursorStateStreaming {
 		s.printNewLine()
 		s.printDelimiter()
@@ -117,12 +154,27 @@ func (s *Stenographer) AnnounceExampleWillRun(example *types.ExampleSummary) {
 	s.cursorState = cursorStateMidBlock
 }
 
-func (s *Stenographer) AnnounceSuccesfulExample(example *types.ExampleSummary) {
+func (s *consoleStenographer) AnnounceCapturedOutput(example *types.ExampleSummary) {
+	if example.CapturedOutput == "" {
+		return
+	}
+
+	if s.cursorState == cursorStateStreaming {
+		s.printNewLine()
+		s.printDelimiter()
+	} else if s.cursorState == cursorStateMidBlock {
+		s.printNewLine()
+	}
+	s.println(0, example.CapturedOutput)
+	s.cursorState = cursorStateMidBlock
+}
+
+func (s *consoleStenographer) AnnounceSuccesfulExample(example *types.ExampleSummary) {
 	s.print(0, s.colorize(greenColor, "•"))
 	s.cursorState = cursorStateStreaming
 }
 
-func (s *Stenographer) AnnounceSuccesfulSlowExample(example *types.ExampleSummary, succinct bool) {
+func (s *consoleStenographer) AnnounceSuccesfulSlowExample(example *types.ExampleSummary, succinct bool) {
 	s.printBlockWithMessage(
 		s.colorize(greenColor, "• [SLOW TEST:%.3f seconds]", example.RunTime.Seconds()),
 		"",
@@ -131,7 +183,7 @@ func (s *Stenographer) AnnounceSuccesfulSlowExample(example *types.ExampleSummar
 	)
 }
 
-func (s *Stenographer) AnnounceSuccesfulMeasurement(example *types.ExampleSummary, succinct bool) {
+func (s *consoleStenographer) AnnounceSuccesfulMeasurement(example *types.ExampleSummary, succinct bool) {
 	s.printBlockWithMessage(
 		s.colorize(greenColor, "• [MEASUREMENT]"),
 		s.measurementReport(example),
@@ -140,7 +192,7 @@ func (s *Stenographer) AnnounceSuccesfulMeasurement(example *types.ExampleSummar
 	)
 }
 
-func (s *Stenographer) AnnouncePendingExample(example *types.ExampleSummary, noisy bool, succinct bool) {
+func (s *consoleStenographer) AnnouncePendingExample(example *types.ExampleSummary, noisy bool, succinct bool) {
 	if noisy {
 		s.printBlockWithMessage(
 			s.colorize(yellowColor, "P [PENDING]"),
@@ -154,24 +206,24 @@ func (s *Stenographer) AnnouncePendingExample(example *types.ExampleSummary, noi
 	}
 }
 
-func (s *Stenographer) AnnounceSkippedExample(example *types.ExampleSummary) {
+func (s *consoleStenographer) AnnounceSkippedExample(example *types.ExampleSummary) {
 	s.print(0, s.colorize(cyanColor, "S"))
 	s.cursorState = cursorStateStreaming
 }
 
-func (s *Stenographer) AnnounceExampleTimedOut(example *types.ExampleSummary, succinct bool) {
+func (s *consoleStenographer) AnnounceExampleTimedOut(example *types.ExampleSummary, succinct bool) {
 	s.printFailure("•... Timeout", example, succinct)
 }
 
-func (s *Stenographer) AnnounceExamplePanicked(example *types.ExampleSummary, succinct bool) {
+func (s *consoleStenographer) AnnounceExamplePanicked(example *types.ExampleSummary, succinct bool) {
 	s.printFailure("•! Panic", example, succinct)
 }
 
-func (s *Stenographer) AnnounceExampleFailed(example *types.ExampleSummary, succinct bool) {
+func (s *consoleStenographer) AnnounceExampleFailed(example *types.ExampleSummary, succinct bool) {
 	s.printFailure("• Failure", example, succinct)
 }
 
-func (s *Stenographer) printBlockWithMessage(header string, message string, example *types.ExampleSummary, succinct bool) {
+func (s *consoleStenographer) printBlockWithMessage(header string, message string, example *types.ExampleSummary, succinct bool) {
 	if s.cursorState == cursorStateStreaming {
 		s.printNewLine()
 		s.printDelimiter()
@@ -192,7 +244,7 @@ func (s *Stenographer) printBlockWithMessage(header string, message string, exam
 	s.cursorState = cursorStateEndBlock
 }
 
-func (s *Stenographer) printFailure(message string, example *types.ExampleSummary, succinct bool) {
+func (s *consoleStenographer) printFailure(message string, example *types.ExampleSummary, succinct bool) {
 	if s.cursorState == cursorStateStreaming {
 		s.printNewLine()
 		s.printDelimiter()
@@ -222,7 +274,7 @@ func (s *Stenographer) printFailure(message string, example *types.ExampleSummar
 	s.cursorState = cursorStateEndBlock
 }
 
-func (s *Stenographer) printCodeLocationBlock(example *types.ExampleSummary, failure bool, succinct bool) int {
+func (s *consoleStenographer) printCodeLocationBlock(example *types.ExampleSummary, failure bool, succinct bool) int {
 	indentation := 0
 	startIndex := 1
 
@@ -277,7 +329,7 @@ func (s *Stenographer) printCodeLocationBlock(example *types.ExampleSummary, fai
 	return indentation
 }
 
-func (s *Stenographer) measurementReport(example *types.ExampleSummary) string {
+func (s *consoleStenographer) measurementReport(example *types.ExampleSummary) string {
 	if len(example.Measurements) == 0 {
 		return "Found no measurements"
 	}

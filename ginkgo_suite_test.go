@@ -1,8 +1,6 @@
 package ginkgo
 
 import (
-	"github.com/onsi/ginkgo/config"
-	"github.com/onsi/ginkgo/types"
 	. "github.com/onsi/gomega"
 
 	"math/rand"
@@ -35,30 +33,4 @@ type fakeTestingT struct {
 
 func (fakeT *fakeTestingT) Fail() {
 	fakeT.didFail = true
-}
-
-type fakeReporter struct {
-	config config.GinkgoConfigType
-
-	beginSummary            *types.SuiteSummary
-	exampleWillRunSummaries []*types.ExampleSummary
-	exampleSummaries        []*types.ExampleSummary
-	endSummary              *types.SuiteSummary
-}
-
-func (fakeR *fakeReporter) SpecSuiteWillBegin(config config.GinkgoConfigType, summary *types.SuiteSummary) {
-	fakeR.config = config
-	fakeR.beginSummary = summary
-}
-
-func (fakeR *fakeReporter) ExampleWillRun(exampleSummary *types.ExampleSummary) {
-	fakeR.exampleWillRunSummaries = append(fakeR.exampleWillRunSummaries, exampleSummary)
-}
-
-func (fakeR *fakeReporter) ExampleDidComplete(exampleSummary *types.ExampleSummary) {
-	fakeR.exampleSummaries = append(fakeR.exampleSummaries, exampleSummary)
-}
-
-func (fakeR *fakeReporter) SpecSuiteDidEnd(summary *types.SuiteSummary) {
-	fakeR.endSummary = summary
 }

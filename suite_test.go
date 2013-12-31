@@ -2,6 +2,7 @@ package ginkgo
 
 import (
 	"github.com/onsi/ginkgo/config"
+	"github.com/onsi/ginkgo/reporters"
 	"github.com/onsi/ginkgo/types"
 	. "github.com/onsi/gomega"
 	"math/rand"
@@ -13,12 +14,12 @@ func init() {
 		var (
 			specSuite *suite
 			fakeT     *fakeTestingT
-			fakeR     *fakeReporter
+			fakeR     *reporters.FakeReporter
 		)
 
 		BeforeEach(func() {
 			fakeT = &fakeTestingT{}
-			fakeR = &fakeReporter{}
+			fakeR = reporters.NewFakeReporter()
 			specSuite = newSuite()
 		})
 
@@ -81,9 +82,9 @@ func init() {
 			})
 
 			It("provides the config and suite description to the reporter", func() {
-				Ω(fakeR.config.RandomSeed).Should(Equal(int64(randomSeed)))
-				Ω(fakeR.config.RandomizeAllSpecs).Should(Equal(randomizeAllSpecs))
-				Ω(fakeR.beginSummary.SuiteDescription).Should(Equal("suite description"))
+				Ω(fakeR.Config.RandomSeed).Should(Equal(int64(randomSeed)))
+				Ω(fakeR.Config.RandomizeAllSpecs).Should(Equal(randomizeAllSpecs))
+				Ω(fakeR.BeginSummary.SuiteDescription).Should(Equal("suite description"))
 			})
 
 			Measure("should run measurements", func(b Benchmarker) {
@@ -93,7 +94,7 @@ func init() {
 					sleepTime := time.Duration(r.Float64() * 0.01 * float64(time.Second))
 					time.Sleep(sleepTime)
 				})
-				Ω(runtime.Seconds()).Should(BeNumerically("<=", 0.011))
+				Ω(runtime.Seconds()).Should(BeNumerically("<=", 0.012))
 				Ω(runtime.Seconds()).Should(BeNumerically(">=", 0))
 
 				randomValue := r.Float64() * 10.0
@@ -200,9 +201,9 @@ func init() {
 				})
 
 				It("generates the correct failure data", func() {
-					Ω(fakeR.exampleSummaries[0].Failure.Message).Should(Equal("oops!"))
-					Ω(fakeR.exampleSummaries[0].Failure.Location.FileName).Should(Equal(location.FileName))
-					Ω(fakeR.exampleSummaries[0].Failure.Location.LineNumber).Should(Equal(location.LineNumber + 1))
+					Ω(fakeR.ExampleSummaries[0].Failure.Message).Should(Equal("oops!"))
+					Ω(fakeR.ExampleSummaries[0].Failure.Location.FileName).Should(Equal(location.FileName))
+					Ω(fakeR.ExampleSummaries[0].Failure.Location.LineNumber).Should(Equal(location.LineNumber + 1))
 				})
 			})
 		})

@@ -16,6 +16,7 @@ type example struct {
 	failure             types.ExampleFailure
 	didInterceptFailure bool
 	interceptedFailure  failureData
+	exampleIndex        int
 }
 
 func newExample(subject exampleSubject) *example {
@@ -173,7 +174,7 @@ func (ex *example) processOutcomeAndFailure(containerIndex int, componentType ty
 	return
 }
 
-func (ex *example) summary() *types.ExampleSummary {
+func (ex *example) summary(suiteID string) *types.ExampleSummary {
 	componentTexts := make([]string, len(ex.containers)+1)
 	componentCodeLocations := make([]types.CodeLocation, len(ex.containers)+1)
 
@@ -194,6 +195,8 @@ func (ex *example) summary() *types.ExampleSummary {
 		RunTime:      ex.runTime,
 		Failure:      ex.failure,
 		Measurements: ex.measurementsReport(),
+		SuiteID:      suiteID,
+		ExampleIndex: ex.exampleIndex,
 	}
 }
 

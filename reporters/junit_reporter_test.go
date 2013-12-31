@@ -4,7 +4,7 @@ import (
 	"encoding/xml"
 	. "github.com/onsi/ginkgo"
 	"github.com/onsi/ginkgo/config"
-	. "github.com/onsi/ginkgo/reporters"
+	"github.com/onsi/ginkgo/reporters"
 	"github.com/onsi/ginkgo/types"
 	. "github.com/onsi/gomega"
 	"io/ioutil"
@@ -17,10 +17,10 @@ var _ = Describe("JUnit Reporter", func() {
 		reporter   Reporter
 	)
 
-	readOutputFile := func() JUnitTestSuite {
+	readOutputFile := func() reporters.JUnitTestSuite {
 		bytes, err := ioutil.ReadFile(outputFile)
 		Ω(err).ShouldNot(HaveOccurred())
-		var suite JUnitTestSuite
+		var suite reporters.JUnitTestSuite
 		err = xml.Unmarshal(bytes, &suite)
 		Ω(err).ShouldNot(HaveOccurred())
 		return suite
@@ -28,7 +28,7 @@ var _ = Describe("JUnit Reporter", func() {
 
 	BeforeEach(func() {
 		outputFile = "/tmp/test.xml"
-		reporter = NewJUnitReporter(outputFile)
+		reporter = reporters.NewJUnitReporter(outputFile)
 
 		reporter.SpecSuiteWillBegin(config.GinkgoConfigType{}, &types.SuiteSummary{
 			SuiteDescription:              "My test suite",

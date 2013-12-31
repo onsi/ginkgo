@@ -1,8 +1,3 @@
-/*
-The stenographer is used by Ginkgo's default reporter to generate output.
-
-Move along, nothing to see here.
-*/
 package stenographer
 
 import (
@@ -10,7 +5,7 @@ import (
 	"strings"
 )
 
-func (s *Stenographer) colorize(colorCode string, format string, args ...interface{}) string {
+func (s *consoleStenographer) colorize(colorCode string, format string, args ...interface{}) string {
 	var out string
 
 	if len(args) > 0 {
@@ -26,28 +21,28 @@ func (s *Stenographer) colorize(colorCode string, format string, args ...interfa
 	}
 }
 
-func (s *Stenographer) printBanner(text string, bannerCharacter string) {
+func (s *consoleStenographer) printBanner(text string, bannerCharacter string) {
 	fmt.Println(text)
 	fmt.Println(strings.Repeat(bannerCharacter, len(text)))
 }
 
-func (s *Stenographer) printNewLine() {
+func (s *consoleStenographer) printNewLine() {
 	fmt.Println("")
 }
 
-func (s *Stenographer) printDelimiter() {
+func (s *consoleStenographer) printDelimiter() {
 	fmt.Println(s.colorize(grayColor, "%s", strings.Repeat("-", 30)))
 }
 
-func (s *Stenographer) print(indentation int, format string, args ...interface{}) {
+func (s *consoleStenographer) print(indentation int, format string, args ...interface{}) {
 	fmt.Print(s.indent(indentation, format, args...))
 }
 
-func (s *Stenographer) println(indentation int, format string, args ...interface{}) {
+func (s *consoleStenographer) println(indentation int, format string, args ...interface{}) {
 	fmt.Println(s.indent(indentation, format, args...))
 }
 
-func (s *Stenographer) indent(indentation int, format string, args ...interface{}) string {
+func (s *consoleStenographer) indent(indentation int, format string, args ...interface{}) string {
 	var text string
 
 	if len(args) > 0 {

@@ -13,8 +13,12 @@ package ginkgo
 
 import (
 	"github.com/onsi/ginkgo/config"
+	"github.com/onsi/ginkgo/remote"
 	"github.com/onsi/ginkgo/reporters"
+	"github.com/onsi/ginkgo/stenographer"
 	"github.com/onsi/ginkgo/types"
+	"net/http"
+	"os"
 	"time"
 )
 
@@ -38,12 +42,7 @@ func init() {
 //The custom reporter is passed in a SuiteSummary when the suite begins and ends,
 //and an ExmapleSummary just before an example (spec) begins
 //and just after an example (spec) ends
-type Reporter interface {
-	SpecSuiteWillBegin(config config.GinkgoConfigType, summary *types.SuiteSummary)
-	ExampleWillRun(exampleSummary *types.ExampleSummary)
-	ExampleDidComplete(exampleSummary *types.ExampleSummary)
-	SpecSuiteDidEnd(summary *types.SuiteSummary)
-}
+type Reporter reporters.Reporter
 
 //Asynchronous specs given a channel of the Done type.  You must close (or send to) the channel
 //to tell Ginkgo that your async test is done.
@@ -69,13 +68,14 @@ type Benchmarker interface {
 //
 //	ginkgo bootstrap
 func RunSpecs(t GinkgoTestingT, description string) bool {
-	return globalSuite.run(t, description, []Reporter{reporters.NewDefaultReporter(config.DefaultReporterConfig)}, config.GinkgoConfig)
+	specReporters := []Reporter{buildDefaultReporter()}
+	return globalSuite.run(t, description, specReporters, config.GinkgoConfig)
 }
 
 //To run your tests with Ginkgo's default reporter and your custom reporter(s), replace
 //RunSpecs() with this method.
 func RunSpecsWithDefaultAndCustomReporters(t GinkgoTestingT, description string, specReporters []Reporter) bool {
-	specReporters = append([]Reporter{reporters.NewDefaultReporter(config.DefaultReporterConfig)}, specReporters...)
+	specReporters = append([]Reporter{buildDefaultReporter()}, specReporters...)
 	return globalSuite.run(t, description, specReporters, config.GinkgoConfig)
 }
 
@@ -83,6 +83,16 @@ func RunSpecsWithDefaultAndCustomReporters(t GinkgoTestingT, description string,
 //RunSpecs() with this method.
 func RunSpecsWithCustomReporters(t GinkgoTestingT, description string, specReporters []Reporter) bool {
 	return globalSuite.run(t, description, specReporters, config.GinkgoConfig)
+}
+
+func buildDefaultReporter() Reporter {
+	remoteReportingServer := os.Getenv("GINKGO_REMOTE_REPORTING_SERVER")
+	if remoteReportingServer == "" {
+		stenographer := stenographer.New(!config.DefaultReporterConfig.NoColor)
+		return reporters.NewDefaultReporter(config.DefaultReporterConfig, stenographer)
+	} else {
+		return remote.NewForwardingReporter(remoteReportingServer, &http.Client{}, remote.NewOutputInterceptor())
+	}
 }
 
 //Fail notifies Ginkgo that the current spec has failed. (Gomega will call Fail for you automatically when an assertion fails.)

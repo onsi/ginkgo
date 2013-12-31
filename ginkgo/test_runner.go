@@ -4,14 +4,19 @@ import (
 	"bytes"
 	"fmt"
 	"github.com/onsi/ginkgo/config"
+	"github.com/onsi/ginkgo/ginkgo/aggregator"
+	"github.com/onsi/ginkgo/remote"
+	"github.com/onsi/ginkgo/stenographer"
 	"io"
 	"os"
 	"os/exec"
 	"os/signal"
+	"time"
 )
 
 type testRunner struct {
 	numCPU           int
+	parallelStream   bool
 	runMagicI        bool
 	race             bool
 	cover            bool
@@ -19,9 +24,10 @@ type testRunner struct {
 	reports          []*bytes.Buffer
 }
 
-func newTestRunner(numCPU int, runMagicI bool, race bool, cover bool) *testRunner {
+func newTestRunner(numCPU int, parallelStream bool, runMagicI bool, race bool, cover bool) *testRunner {
 	return &testRunner{
 		numCPU:           numCPU,
+		parallelStream:   parallelStream,
 		runMagicI:        runMagicI,
 		race:             race,
 		cover:            cover,
@@ -49,7 +55,11 @@ func (t *testRunner) runSuite(suite testSuite) bool {
 
 	if suite.isGinkgo {
 		if t.numCPU > 1 {
-			return t.runParallelGinkgoSuite(suite)
+			if t.parallelStream {
+				return t.runAndStreamParallelGinkgoSuite(suite)
+			} else {
+				return t.runParallelGinkgoSuite(suite)
+			}
 		} else {
 			return t.runSerialGinkgoSuite(suite)
 		}
@@ -84,7 +94,7 @@ func (t *testRunner) runParallelGinkgoSuite(suite testSuite) bool {
 		buffer := new(bytes.Buffer)
 		t.reports = append(t.reports, buffer)
 
-		go t.runCommand(suite.path, args, buffer, completions)
+		go t.runCommand(suite.path, args, nil, buffer, completions)
 	}
 
 	passed := true
@@ -101,15 +111,88 @@ func (t *testRunner) runParallelGinkgoSuite(suite testSuite) bool {
 	return passed
 }
 
+func (t *testRunner) runAndStreamParallelGinkgoSuite(suite testSuite) bool {
+	result := make(chan bool, 0)
+	stenographer := stenographer.New(!config.DefaultReporterConfig.NoColor)
+	aggregator := aggregator.NewAggregator(t.numCPU, result, config.DefaultReporterConfig, stenographer)
+
+	server, err := remote.NewServer()
+	if err != nil {
+		panic("Failed to start parallel spec server")
+	}
+
+	server.RegisterReporters(aggregator)
+	server.Start()
+
+	serverAddress := server.Address()
+
+	completions := make(chan bool)
+
+	for cpu := 0; cpu < t.numCPU; cpu++ {
+		config.GinkgoConfig.ParallelNode = cpu + 1
+		config.GinkgoConfig.ParallelTotal = t.numCPU
+
+		args := config.BuildFlagArgs("ginkgo", config.GinkgoConfig, config.DefaultReporterConfig)
+		args = append(args, t.commonArgs(suite)...)
+
+		env := os.Environ()
+		env = append(env, fmt.Sprintf("GINKGO_REMOTE_REPORTING_SERVER=%s", serverAddress))
+
+		buffer := new(bytes.Buffer)
+		t.reports = append(t.reports, buffer)
+
+		go t.runCommand(suite.path, args, env, buffer, completions)
+	}
+
+	for cpu := 0; cpu < t.numCPU; cpu++ {
+		<-completions
+	}
+
+	//all test processes are done, at this point
+	//we should be able to wait for the aggregator to tell us that it's done
+
+	var passed = false
+	select {
+	case passed = <-result:
+		//the aggregator is done and can tell us whether or not the suite passed
+	case <-time.After(time.Second):
+		//the aggregator never got back to us!  something must have gone wrong
+		fmt.Println("")
+		fmt.Println("")
+		fmt.Println("   ----------------------------------------------------------  ")
+		fmt.Println("  |                                                           |")
+		fmt.Println("  |  Ginkgo timed out waiting for all parallel nodes to end!  |")
+		fmt.Println("  |  Here is some salvaged output:                            |")
+		fmt.Println("  |                                                           |")
+		fmt.Println("   ----------------------------------------------------------  ")
+		fmt.Println("")
+		fmt.Println("")
+
+		os.Stdout.Sync()
+
+		time.Sleep(time.Second)
+
+		for _, report := range t.reports {
+			fmt.Print(report.String())
+		}
+
+		os.Stdout.Sync()
+	}
+
+	server.Stop()
+
+	return passed
+}
+
 func (t *testRunner) runSerialGinkgoSuite(suite testSuite) bool {
 	args := config.BuildFlagArgs("ginkgo", config.GinkgoConfig, config.DefaultReporterConfig)
 	args = append(args, t.commonArgs(suite)...)
-	return t.runCommand(suite.path, args, os.Stdout, nil)
+	return t.runCommand(suite.path, args, nil, os.Stdout, nil)
 }
 
 func (t *testRunner) runGoTestSuite(suite testSuite) bool {
 	args := t.commonArgs(suite)
-	return t.runCommand(suite.path, args, os.Stdout, nil)
+	return t.runCommand(suite.path, args, nil, os.Stdout, nil)
 }
 
 func (t *testRunner) commonArgs(suite testSuite) []string {
@@ -123,10 +206,11 @@ func (t *testRunner) commonArgs(suite testSuite) []string {
 	return args
 }
 
-func (t *testRunner) runCommand(path string, args []string, stream io.Writer, completions chan bool) bool {
+func (t *testRunner) runCommand(path string, args []string, env []string, stream io.Writer, completions chan bool) bool {
 	args = append([]string{"test", "-v", "-timeout=24h", path}, args...)
 
 	cmd := exec.Command("go", args...)
+	cmd.Env = env
 	t.executedCommands = append(t.executedCommands, cmd)
 
 	doneStreaming := make(chan bool, 2)

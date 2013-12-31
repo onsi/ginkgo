@@ -15,13 +15,13 @@ import (
 
 type DefaultReporter struct {
 	config       config.DefaultReporterConfigType
-	stenographer *stenographer.Stenographer
+	stenographer stenographer.Stenographer
 }
 
-func NewDefaultReporter(config config.DefaultReporterConfigType) *DefaultReporter {
+func NewDefaultReporter(config config.DefaultReporterConfigType, stenographer stenographer.Stenographer) *DefaultReporter {
 	return &DefaultReporter{
 		config:       config,
-		stenographer: stenographer.New(!config.NoColor),
+		stenographer: stenographer,
 	}
 }
 

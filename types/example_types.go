@@ -7,6 +7,7 @@ import (
 type SuiteSummary struct {
 	SuiteDescription string
 	SuiteSucceeded   bool
+	SuiteID          string
 
 	NumberOfExamplesBeforeParallelization int
 	NumberOfTotalExamples                 int
@@ -28,6 +29,10 @@ type ExampleSummary struct {
 	IsMeasurement   bool
 	NumberOfSamples int
 	Measurements    map[string]*ExampleMeasurement
+
+	CapturedOutput string
+	SuiteID        string
+	ExampleIndex   int
 }
 
 type ExampleFailure struct {
