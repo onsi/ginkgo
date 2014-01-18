@@ -56,6 +56,39 @@ ginkgo  # also runs your tests
 
 ```
 
+## I'm new to Go: Tell me more about my testing options
+
+Of course, I heartily recommend [Ginkgo](https://github.com/onsi/ginkgo) and [Gomega](https://github.com/onsi/gomega).  Both packages are seeing heavy, daily, production use on a number of projects and boast a mature and comprehensive feature-set.
+
+With that said, it's great to know what your options are :)
+
+### What Golang gives you out of the box
+
+Testing is a first class citizen in Golang, however Go's built-in testing primitives are somewhat limited: The [testing](http://golang.org/pkg/testing) package provides basic XUnit style tests and no assertion library.
+
+### Matcher libraries for use with Golang's XUnit style tests
+
+There are a number of matcher libraries that have been written to augment Go's built-in XUnit style tests.  Here are two that seem to have gained traction:
+
+- [testify](https://github.com/stretchr/testify)
+- [gocheck](http://labix.org/gocheck)
+
+You can also use Ginkgo's matcher library [Gomega](https://github.com/onsi/gomega) in [XUnit style tests](http://onsi.github.io/gomega/#using_gomega_with_golangs_xunitstyle_tests)
+
+### BDD style testing frameworks
+
+There are a handful of BDD-style testing frameworks written for Golang.  Here are a few:
+
+- [Ginkgo](https://github.com/onsi/ginkgo) ;)
+- [GoConvey](https://github.com/smartystreets/goconvey) 
+- [Goblin](https://github.com/franela/goblin)
+- [Mao](https://github.com/azer/mao)
+- [Zen](https://github.com/pranavraja/zen)
+
+Finally, @shageman has [put together](https://github.com/shageman/gotestit) a comprehensive comparison of golang testing libraries.
+
+Go explore!
+
 ## License
 
 Ginkgo is MIT-Licensed
