@@ -606,6 +606,10 @@ Additional flags supported by the `ginkgo` command:
 
     Set `-cover` to have the `ginkgo` CLI run your tests with coverage analysis turned on (a Golang 1.2+ feature).  Ginkgo will generate coverage profiles under the current directory named `PACKAGE.coverprofile` for each set of package tests that is run.
 
+- `-watch`
+
+    Set `-watch` to monitor the target packages for changes.  Any detected changes will trigger a test run.  `-watch` is best used in concert with `-r` to monitor an entire directory of packages for changes.  Note that *new* test packages are not automatically detected by `-watch` -- you'll need to rerun the `ginkgo -watch` command to pick them up.  Also, if changes are made to package `X` only the tests for package `X` will be rerun -- the tests for packages that depend on `X` are *not* rerun.
+
 
 Flags for `go test` only:
 
