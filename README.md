@@ -56,7 +56,7 @@ ginkgo  # also runs your tests
 
 ```
 
-## I'm new to Go: Tell me more about my testing options
+## I'm new to Go: What are my testing options?
 
 Of course, I heartily recommend [Ginkgo](https://github.com/onsi/ginkgo) and [Gomega](https://github.com/onsi/gomega).  Both packages are seeing heavy, daily, production use on a number of projects and boast a mature and comprehensive feature-set.
 
@@ -66,9 +66,9 @@ With that said, it's great to know what your options are :)
 
 Testing is a first class citizen in Golang, however Go's built-in testing primitives are somewhat limited: The [testing](http://golang.org/pkg/testing) package provides basic XUnit style tests and no assertion library.
 
-### Matcher libraries for use with Golang's XUnit style tests
+### Matcher libraries for Golang's XUnit style tests
 
-There are a number of matcher libraries that have been written to augment Go's built-in XUnit style tests.  Here are two that seem to have gained traction:
+A number of matcher libraries have been written to augment Go's built-in XUnit style tests.  Here are two that have gained traction:
 
 - [testify](https://github.com/stretchr/testify)
 - [gocheck](http://labix.org/gocheck)
