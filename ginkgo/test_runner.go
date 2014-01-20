@@ -159,12 +159,12 @@ func (t *testRunner) runAndStreamParallelGinkgoSuite(suite testSuite) bool {
 		//the aggregator never got back to us!  something must have gone wrong
 		fmt.Println("")
 		fmt.Println("")
-		fmt.Println("   ----------------------------------------------------------  ")
+		fmt.Println("   ----------------------------------------------------------- ")
 		fmt.Println("  |                                                           |")
 		fmt.Println("  |  Ginkgo timed out waiting for all parallel nodes to end!  |")
 		fmt.Println("  |  Here is some salvaged output:                            |")
 		fmt.Println("  |                                                           |")
-		fmt.Println("   ----------------------------------------------------------  ")
+		fmt.Println("   ----------------------------------------------------------- ")
 		fmt.Println("")
 		fmt.Println("")
 
