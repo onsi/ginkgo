@@ -5,6 +5,7 @@ import (
 	"fmt"
 	"github.com/onsi/ginkgo/config"
 	"github.com/onsi/ginkgo/ginkgo/aggregator"
+	"github.com/onsi/ginkgo/ginkgo/testsuite"
 	"github.com/onsi/ginkgo/remote"
 	"github.com/onsi/ginkgo/stenographer"
 	"io"
@@ -36,7 +37,7 @@ func newTestRunner(numCPU int, parallelStream bool, runMagicI bool, race bool, c
 	}
 }
 
-func (t *testRunner) run(suites []testSuite) bool {
+func (t *testRunner) run(suites []*testsuite.TestSuite) bool {
 	t.registerSignalHandler()
 
 	for _, suite := range suites {
@@ -48,12 +49,15 @@ func (t *testRunner) run(suites []testSuite) bool {
 	return true
 }
 
-func (t *testRunner) runSuite(suite testSuite) bool {
+func (t *testRunner) runSuite(suite *testsuite.TestSuite) bool {
 	if t.runMagicI {
-		t.runGoI(suite)
+		err := t.runGoI(suite)
+		if err != nil {
+			return false
+		}
 	}
 
-	if suite.isGinkgo {
+	if suite.IsGinkgo {
 		if t.numCPU > 1 {
 			if t.parallelStream {
 				return t.runAndStreamParallelGinkgoSuite(suite)
@@ -68,21 +72,22 @@ func (t *testRunner) runSuite(suite testSuite) bool {
 	}
 }
 
-func (t *testRunner) runGoI(suite testSuite) {
+func (t *testRunner) runGoI(suite *testsuite.TestSuite) error {
 	args := []string{"test", "-i"}
 	if t.race {
 		args = append(args, "-race")
 	}
-	args = append(args, suite.path)
+	args = append(args, suite.Path)
 	cmd := exec.Command("go", args...)
 	output, err := cmd.CombinedOutput()
 	if err != nil {
-		fmt.Printf("go test -i %s failed with:\n\n%s", suite.path, output)
-		os.Exit(1)
+		fmt.Printf("go test -i %s failed with:\n\n%s", suite.Path, output)
 	}
+
+	return err
 }
 
-func (t *testRunner) runParallelGinkgoSuite(suite testSuite) bool {
+func (t *testRunner) runParallelGinkgoSuite(suite *testsuite.TestSuite) bool {
 	completions := make(chan bool)
 	for cpu := 0; cpu < t.numCPU; cpu++ {
 		config.GinkgoConfig.ParallelNode = cpu + 1
@@ -94,7 +99,7 @@ func (t *testRunner) runParallelGinkgoSuite(suite testSuite) bool {
 		buffer := new(bytes.Buffer)
 		t.reports = append(t.reports, buffer)
 
-		go t.runCommand(suite.path, args, nil, buffer, completions)
+		go t.runCommand(suite.Path, args, nil, buffer, completions)
 	}
 
 	passed := true
@@ -111,7 +116,7 @@ func (t *testRunner) runParallelGinkgoSuite(suite testSuite) bool {
 	return passed
 }
 
-func (t *testRunner) runAndStreamParallelGinkgoSuite(suite testSuite) bool {
+func (t *testRunner) runAndStreamParallelGinkgoSuite(suite *testsuite.TestSuite) bool {
 	result := make(chan bool, 0)
 	stenographer := stenographer.New(!config.DefaultReporterConfig.NoColor)
 	aggregator := aggregator.NewAggregator(t.numCPU, result, config.DefaultReporterConfig, stenographer)
@@ -141,7 +146,7 @@ func (t *testRunner) runAndStreamParallelGinkgoSuite(suite testSuite) bool {
 		buffer := new(bytes.Buffer)
 		t.reports = append(t.reports, buffer)
 
-		go t.runCommand(suite.path, args, env, buffer, completions)
+		go t.runCommand(suite.Path, args, env, buffer, completions)
 	}
 
 	for cpu := 0; cpu < t.numCPU; cpu++ {
@@ -184,24 +189,24 @@ func (t *testRunner) runAndStreamParallelGinkgoSuite(suite testSuite) bool {
 	return passed
 }
 
-func (t *testRunner) runSerialGinkgoSuite(suite testSuite) bool {
+func (t *testRunner) runSerialGinkgoSuite(suite *testsuite.TestSuite) bool {
 	args := config.BuildFlagArgs("ginkgo", config.GinkgoConfig, config.DefaultReporterConfig)
 	args = append(args, t.commonArgs(suite)...)
-	return t.runCommand(suite.path, args, nil, os.Stdout, nil)
+	return t.runCommand(suite.Path, args, nil, os.Stdout, nil)
 }
 
-func (t *testRunner) runGoTestSuite(suite testSuite) bool {
+func (t *testRunner) runGoTestSuite(suite *testsuite.TestSuite) bool {
 	args := t.commonArgs(suite)
-	return t.runCommand(suite.path, args, nil, os.Stdout, nil)
+	return t.runCommand(suite.Path, args, nil, os.Stdout, nil)
 }
 
-func (t *testRunner) commonArgs(suite testSuite) []string {
+func (t *testRunner) commonArgs(suite *testsuite.TestSuite) []string {
 	args := []string{}
 	if t.race {
 		args = append(args, "--race")
 	}
 	if t.cover {
-		args = append([]string{"--cover", "--coverprofile=" + suite.packageName + ".coverprofile"})
+		args = append([]string{"--cover", "--coverprofile=" + suite.PackageName + ".coverprofile"})
 	}
 	return args
 }
@@ -211,6 +216,9 @@ func (t *testRunner) runCommand(path string, args []string, env []string, stream
 
 	cmd := exec.Command("go", args...)
 	cmd.Env = env
+
+	//THIS NEEDS TO BE REMOVED AFTER THE COMAND EXITS
+	//ALSO: NOT THREAD SAFE!
 	t.executedCommands = append(t.executedCommands, cmd)
 
 	doneStreaming := make(chan bool, 2)
@@ -247,7 +255,9 @@ func (t *testRunner) registerSignalHandler() {
 		select {
 		case sig := <-c:
 			for _, cmd := range t.executedCommands {
-				cmd.Process.Signal(sig)
+				if cmd.Process != nil {
+					cmd.Process.Signal(sig)
+				}
 			}
 			os.Exit(1)
 		}

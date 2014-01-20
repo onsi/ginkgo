@@ -19,6 +19,14 @@ To run tests in particular packages:
 
 	ginkgo <flags> /path/to/package /path/to/another/package
 
+To monitor packages and rerun tests when changes occur:
+
+	ginkgo -watch <-r> </path/to/package>
+
+passing `ginkgo -watch` the `-r` flag will recursively detect all test suites under the current directory and monitor them.
+`-watch` does not detect *new* packages. Moreover, changes in package X only rerun the tests for package X, tests for packages
+that depend on X are not rerun.
+
 To run tests in parallel
 
 	ginkgo -nodes=N
@@ -55,6 +63,7 @@ import (
 	"flag"
 	"fmt"
 	"github.com/onsi/ginkgo/config"
+	"github.com/onsi/ginkgo/ginkgo/testsuite"
 	"os"
 	"time"
 )
@@ -65,6 +74,7 @@ var recurse bool
 var runMagicI bool
 var race bool
 var cover bool
+var watch bool
 
 func init() {
 	config.Flags("", false)
@@ -75,6 +85,7 @@ func init() {
 	flag.BoolVar(&(runMagicI), "i", false, "Run go test -i first, then run the test suite")
 	flag.BoolVar(&(race), "race", false, "Run tests with race detection enabled")
 	flag.BoolVar(&(cover), "cover", false, "Run tests with coverage analysis, will generate coverage profiles with the package name in the current directory")
+	flag.BoolVar(&(watch), "watch", false, "Monitor the target packages for changes, then run tests when changes are detected")
 
 	flag.Usage = func() {
 		fmt.Fprintf(os.Stderr, "Usage of ginkgo:\n\n")
@@ -100,7 +111,11 @@ func main() {
 		}
 	}
 
-	runTests()
+	if watch {
+		watchTests()
+	} else {
+		runTests()
+	}
 }
 
 func handleSubcommands(args []string) bool {
@@ -126,23 +141,29 @@ func handleSubcommands(args []string) bool {
 	return true
 }
 
-func runTests() {
-	t := time.Now()
-
-	suites := []testSuite{}
+func findSuites() []*testsuite.TestSuite {
+	suites := []*testsuite.TestSuite{}
 
 	if flag.NArg() > 0 {
 		for _, dir := range flag.Args() {
-			suites = append(suites, suitesInDir(dir, recurse)...)
+			suites = append(suites, testsuite.SuitesInDir(dir, recurse)...)
 		}
 	} else {
-		suites = suitesInDir(".", recurse)
+		suites = testsuite.SuitesInDir(".", recurse)
 	}
 
 	if len(suites) == 0 {
 		fmt.Printf("Found no test suites.\nFor usage instructions:\n\tginkgo help\n")
 		os.Exit(1)
 	}
+
+	return suites
+}
+
+func runTests() {
+	t := time.Now()
+
+	suites := findSuites()
 
 	runner := newTestRunner(numCPU, parallelStream, runMagicI, race, cover)
 	passed := runner.run(suites)
@@ -154,5 +175,21 @@ func runTests() {
 	} else {
 		fmt.Printf("Test Suite Failed\n")
 		os.Exit(1)
+	}
+}
+
+func watchTests() {
+	suites := findSuites()
+
+	runner := newTestRunner(numCPU, parallelStream, runMagicI, race, cover)
+	modifiedSuite := make(chan *testsuite.TestSuite)
+	for _, suite := range suites {
+		go suite.Watch(modifiedSuite)
+	}
+
+	for {
+		suite := <-modifiedSuite
+		fmt.Printf("\n\nDetected change in %s\n\n", suite.PackageName)
+		runner.runSuite(suite)
 	}
 }
