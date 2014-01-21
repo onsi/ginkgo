@@ -44,7 +44,7 @@ Learn more about Gomega [here](http://onsi.github.io/gomega/)
 
 ## Set Me Up!
 
-You'll need Golang v1.1+ (Ubuntu users: you probably have Golang v1.0 -- you'll need to upgrade!)
+You'll need Golang v1.2+ (Ubuntu users: you probably have Golang v1.0 -- you'll need to upgrade!)
 
 ```bash
 
