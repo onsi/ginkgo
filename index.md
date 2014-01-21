@@ -23,7 +23,7 @@ this installs the `ginkgo` executable under `$GOPATH/bin` -- you'll want that on
 
 > Alternatively, you can `go get github.com/onsi/ginkgo/ginkgo` to fetch the testing framework and install the CLI in one go.
 
-**Ginkgo is compatible with Golang v1.1+  Ubuntu users: apt-get currently installs v1.0 -- you'll need to upgrade!**
+**Ginkgo is compatible with Golang v1.2+  Ubuntu users: apt-get currently installs v1.0 -- you'll need to upgrade!**
 
 ---
 
