@@ -456,7 +456,7 @@ The test runner collates output from the running processes into one coherent rea
 
     ginkgo -nodes=N -stream=false  
 
-When run with the `-stream=false` flag the test runner simply collates the output from each individual node as it runs and then performs one output dump once all nodes have completed - thus you will *not get any output until all the nodes have completed*.
+When run with the `-stream=false` flag the test runner simply collates the output from each individual node as it runs and then performs one output dump once all nodes have completed - thus you will *not get any output until all the nodes have completed*.  On windows, parallel tests default to `-stream=false`, you can change this but Ginkgo is currently unable to capture any logging to stdout/stderr done by the parallel tests in windows.
 
 If your tests spin up or connect to external processes you'll need to make sure that those connections are safe in a parallel context.  One way to ensure this would be, for example, to spin up a separate instance of an external resource for each Ginkgo process.  For example, let's say your tests spin up and hit a local web server.  You could bring up a different server bound to a different port for each of your parallel processes:
 
