@@ -187,6 +187,10 @@ func watchTests() {
 		go suite.Watch(modifiedSuite)
 	}
 
+	if !recurse {
+		runner.runSuite(suites[0])
+	}
+
 	for {
 		suite := <-modifiedSuite
 		fmt.Printf("\n\nDetected change in %s\n\n", suite.PackageName)
