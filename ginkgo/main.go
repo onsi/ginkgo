@@ -37,6 +37,8 @@ An alternative is to have the parallel nodes run and then present the resulting,
 
 	ginkgo -nodes=N -stream=false
 
+On windows, the default value for stream is false.
+
 To bootstrap a test suite:
 
 	ginkgo bootstrap
@@ -65,6 +67,7 @@ import (
 	"github.com/onsi/ginkgo/config"
 	"github.com/onsi/ginkgo/ginkgo/testsuite"
 	"os"
+	"runtime"
 	"time"
 )
 
@@ -77,10 +80,12 @@ var cover bool
 var watch bool
 
 func init() {
+	onWindows := (runtime.GOOS == "windows")
+
 	config.Flags("", false)
 
 	flag.IntVar(&(numCPU), "nodes", 1, "The number of parallel test nodes to run")
-	flag.BoolVar(&(parallelStream), "stream", true, "Aggregate parallel test output into one coherent stream (default: true)")
+	flag.BoolVar(&(parallelStream), "stream", !onWindows, "Aggregate parallel test output into one coherent stream (default: true)")
 	flag.BoolVar(&(recurse), "r", false, "Find and run test suites under the current directory recursively")
 	flag.BoolVar(&(runMagicI), "i", false, "Run go test -i first, then run the test suite")
 	flag.BoolVar(&(race), "race", false, "Run tests with race detection enabled")
