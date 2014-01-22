@@ -86,3 +86,23 @@ func (suite *suite) pushJustBeforeEachNode(body interface{}, codeLocation types.
 func (suite *suite) pushAfterEachNode(body interface{}, codeLocation types.CodeLocation, timeout time.Duration) {
 	suite.currentContainer.pushAfterEachNode(newRunnableNode(body, codeLocation, timeout))
 }
+
+func (suite *suite) getTestContext() []string {
+	var result []string
+
+	collection := suite.exampleCollection
+	if collection == nil {
+		return result
+	}
+	example := collection.runningExample
+	if example == nil {
+		return result
+	}
+
+	for _, container := range example.containers[1:] {
+		result = append(result, container.getText())
+	}
+	result = append(result, example.subject.getText())
+
+	return result
+}
