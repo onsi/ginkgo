@@ -55,6 +55,10 @@ func (suite *suite) fail(message string, callerSkip int) {
 	}
 }
 
+func (suite *suite) currentGinkgoTestDescription() GinkgoTestDescription {
+	return suite.exampleCollection.currentGinkgoTestDescription()
+}
+
 func (suite *suite) pushContainerNode(text string, body func(), flag flagType, codeLocation types.CodeLocation) {
 	container := newContainerNode(text, flag, codeLocation)
 	suite.currentContainer.pushContainerNode(container)

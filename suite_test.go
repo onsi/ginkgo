@@ -87,6 +87,17 @@ func init() {
 				Ω(fakeR.BeginSummary.SuiteDescription).Should(Equal("suite description"))
 			})
 
+			It("provides information about the current test", func() {
+				description := CurrentGinkgoTestDescription()
+				Ω(description.ComponentTexts).Should(Equal([]string{"Suite", "running a suite", "provides information about the current test"}))
+				Ω(description.FullTestText).Should(Equal("Suite running a suite provides information about the current test"))
+				Ω(description.TestText).Should(Equal("provides information about the current test"))
+				Ω(description.IsMeasurement).Should(BeFalse())
+				Ω(description.FileName).Should(ContainSubstring("suite_test.go"))
+				Ω(description.LineNumber).Should(BeNumerically(">", 50))
+				Ω(description.LineNumber).Should(BeNumerically("<", 150))
+			})
+
 			Measure("should run measurements", func(b Benchmarker) {
 				r := rand.New(rand.NewSource(time.Now().UnixNano()))
 

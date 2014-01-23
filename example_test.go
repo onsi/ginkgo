@@ -238,6 +238,21 @@ func init() {
 				})
 			})
 
+			Describe("the GinkgoTestDescription", func() {
+				It("should have the GinkgoTestDescription", func() {
+					ginkgoTestDescription := ex.ginkgoTestDescription()
+					Ω(ginkgoTestDescription.ComponentTexts).Should(Equal([]string{
+						"inner", "it",
+					}))
+
+					Ω(ginkgoTestDescription.FullTestText).Should(Equal("inner it"))
+					Ω(ginkgoTestDescription.TestText).Should(Equal("it"))
+					Ω(ginkgoTestDescription.IsMeasurement).Should(BeFalse())
+					Ω(ginkgoTestDescription.FileName).Should(Equal(it.codeLocation.FileName))
+					Ω(ginkgoTestDescription.LineNumber).Should(Equal(it.codeLocation.LineNumber))
+				})
+			})
+
 			Context("when none of the runnable nodes fail", func() {
 				It("has a summary reporting no failure", func() {
 					ex.run()

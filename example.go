@@ -2,6 +2,7 @@ package ginkgo
 
 import (
 	"github.com/onsi/ginkgo/types"
+	"strings"
 	"time"
 )
 
@@ -197,6 +198,21 @@ func (ex *example) summary(suiteID string) *types.ExampleSummary {
 		Measurements: ex.measurementsReport(),
 		SuiteID:      suiteID,
 		ExampleIndex: ex.exampleIndex,
+	}
+}
+
+func (ex *example) ginkgoTestDescription() GinkgoTestDescription {
+	summary := ex.summary("")
+
+	leafCodeLocation := summary.ComponentCodeLocations[len(summary.ComponentCodeLocations)-1]
+
+	return GinkgoTestDescription{
+		ComponentTexts: summary.ComponentTexts[1:],
+		FullTestText:   strings.Join(summary.ComponentTexts[1:], " "),
+		TestText:       summary.ComponentTexts[len(summary.ComponentTexts)-1],
+		IsMeasurement:  summary.IsMeasurement,
+		FileName:       leafCodeLocation.FileName,
+		LineNumber:     leafCodeLocation.LineNumber,
 	}
 }
 

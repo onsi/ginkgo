@@ -48,6 +48,29 @@ type Reporter reporters.Reporter
 //to tell Ginkgo that your async test is done.
 type Done chan<- interface{}
 
+//GinkgoTestDescription represents the information about the current running test returned by CurrentGinkgoTest
+//	ComponentTexts: a list of all the texts for the containers (Describes and Contexts) leading up to the current test.
+//	FullTestText: a concatenation of ComponentTexts
+//  TestText: the text in the actual It or Measure node
+//  IsMeasurement: true if the current test is a measurement
+//  FileName: the name of the file containing the current test
+//  LineNumber: the line number for the current test
+type GinkgoTestDescription struct {
+	ComponentTexts []string
+	FullTestText   string
+	TestText       string
+
+	IsMeasurement bool
+
+	FileName   string
+	LineNumber int
+}
+
+//CurrentGinkgoTestDescripton returns information about the current running test.
+func CurrentGinkgoTestDescription() GinkgoTestDescription {
+	return globalSuite.currentGinkgoTestDescription()
+}
+
 //Measurement tests receive a Benchmarker.
 //
 //You use the Time() function to time how long the passed in body function takes to run

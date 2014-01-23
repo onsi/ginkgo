@@ -167,6 +167,15 @@ func (collection *exampleCollection) fail(failure failureData) {
 	}
 }
 
+func (collection *exampleCollection) currentGinkgoTestDescription() GinkgoTestDescription {
+	currentExample := collection.runningExample
+	if currentExample == nil {
+		return GinkgoTestDescription{}
+	}
+
+	return currentExample.ginkgoTestDescription()
+}
+
 func (collection *exampleCollection) reportSuiteWillBegin() {
 	collection.startTime = time.Now()
 	summary := collection.summary()
