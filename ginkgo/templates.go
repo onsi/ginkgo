@@ -80,6 +80,9 @@ func generateSpec(subject string) {
 	packageName := getPackage()
 	if subject == "" {
 		subject = packageName
+	} else {
+		subject = strings.Split(subject, ".go")[0]
+		subject = strings.Split(subject, "_test")[0]
 	}
 
 	formattedSubject := strings.Replace(strings.Title(strings.Replace(subject, "_", " ", -1)), " ", "", -1)
