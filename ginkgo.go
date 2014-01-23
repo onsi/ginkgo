@@ -275,3 +275,7 @@ func parseTimeout(timeout ...float64) time.Duration {
 		return time.Duration(timeout[0] * float64(time.Second))
 	}
 }
+
+func GetTestContext() []string {
+	return globalSuite.getTestContext()
+}
