@@ -49,8 +49,8 @@ type Reporter reporters.Reporter
 type Done chan<- interface{}
 
 //GinkgoTestDescription represents the information about the current running test returned by CurrentGinkgoTest
-//	ComponentTexts: a list of all the texts for the containers (Describes and Contexts) leading up to the current test.
-//	FullTestText: a concatenation of ComponentTexts
+//  ComponentTexts: a list of all texts for the Describes & Contexts leading up to the current test
+//  FullTestText: a concatenation of ComponentTexts
 //  TestText: the text in the actual It or Measure node
 //  IsMeasurement: true if the current test is a measurement
 //  FileName: the name of the file containing the current test
