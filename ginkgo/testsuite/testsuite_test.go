@@ -121,14 +121,11 @@ var _ = Describe("TestSuite", func() {
 		})
 
 		ensureNoNotificationsAreReceived := func() {
-			called := false
-			go func() {
-				<-channel
-				called = true
-			}()
-
-			time.Sleep(100 * time.Millisecond)
-			Ω(called).Should(BeFalse())
+			select {
+			case <-channel:
+				Fail("did not expect to get any notifications")
+			case <-time.After(100 * time.Millisecond):
+			}
 		}
 
 		Context("when a non-go file is created/modified", func() {
