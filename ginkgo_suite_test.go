@@ -13,7 +13,6 @@ func Test(t *testing.T) {
 }
 
 //Helpers
-
 func shuffleStrings(arr []string, seed int64) []string {
 	r := rand.New(rand.NewSource(seed))
 	permutation := r.Perm(len(arr))

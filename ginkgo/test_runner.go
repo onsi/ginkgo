@@ -11,7 +11,6 @@ import (
 	"io"
 	"os"
 	"os/exec"
-	"os/signal"
 	"time"
 )
 
@@ -37,18 +36,6 @@ func newTestRunner(numCPU int, parallelStream bool, runMagicI bool, race bool, c
 	}
 }
 
-func (t *testRunner) run(suites []*testsuite.TestSuite) bool {
-	t.registerSignalHandler()
-
-	for _, suite := range suites {
-		if !t.runSuite(suite) {
-			return false
-		}
-	}
-
-	return true
-}
-
 func (t *testRunner) runSuite(suite *testsuite.TestSuite) bool {
 	if t.runMagicI {
 		err := t.runGoI(suite)
@@ -57,19 +44,22 @@ func (t *testRunner) runSuite(suite *testsuite.TestSuite) bool {
 		}
 	}
 
+	var success bool
 	if suite.IsGinkgo {
 		if t.numCPU > 1 {
 			if t.parallelStream {
-				return t.runAndStreamParallelGinkgoSuite(suite)
+				success = t.runAndStreamParallelGinkgoSuite(suite)
 			} else {
-				return t.runParallelGinkgoSuite(suite)
+				success = t.runParallelGinkgoSuite(suite)
 			}
 		} else {
-			return t.runSerialGinkgoSuite(suite)
+			success = t.runSerialGinkgoSuite(suite)
 		}
 	} else {
-		return t.runGoTestSuite(suite)
+		success = t.runGoTestSuite(suite)
 	}
+
+	return success
 }
 
 func (t *testRunner) runGoI(suite *testsuite.TestSuite) error {
@@ -217,8 +207,6 @@ func (t *testRunner) runCommand(path string, args []string, env []string, stream
 	cmd := exec.Command("go", args...)
 	cmd.Env = env
 
-	//THIS NEEDS TO BE REMOVED AFTER THE COMAND EXITS
-	//ALSO: NOT THREAD SAFE!
 	t.executedCommands = append(t.executedCommands, cmd)
 
 	doneStreaming := make(chan bool, 2)
@@ -247,19 +235,11 @@ func (t *testRunner) runCommand(path string, args []string, env []string, stream
 	return err == nil
 }
 
-func (t *testRunner) registerSignalHandler() {
-	go func() {
-		c := make(chan os.Signal, 1)
-		signal.Notify(c, os.Interrupt, os.Kill)
-
-		select {
-		case sig := <-c:
-			for _, cmd := range t.executedCommands {
-				if cmd.Process != nil {
-					cmd.Process.Signal(sig)
-				}
-			}
-			os.Exit(1)
+func (t *testRunner) abort(sig os.Signal) {
+	for _, cmd := range t.executedCommands {
+		if cmd.Process != nil {
+			cmd.Process.Signal(sig)
+			cmd.Wait()
 		}
-	}()
+	}
 }

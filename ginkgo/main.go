@@ -27,6 +27,12 @@ passing `ginkgo -watch` the `-r` flag will recursively detect all test suites un
 `-watch` does not detect *new* packages. Moreover, changes in package X only rerun the tests for package X, tests for packages
 that depend on X are not rerun.
 
+[OSX only] To receive (desktop) notifications when a test run completes:
+
+	ginkgo -notify
+
+this is particularly useful with `ginkgo -watch`.  Notifications are currently only supported on OS X and require that you `brew install terminal-notifier`
+
 To run tests in parallel
 
 	ginkgo -nodes=N
@@ -67,6 +73,7 @@ import (
 	"github.com/onsi/ginkgo/config"
 	"github.com/onsi/ginkgo/ginkgo/testsuite"
 	"os"
+	"os/signal"
 	"runtime"
 	"time"
 )
@@ -78,9 +85,11 @@ var runMagicI bool
 var race bool
 var cover bool
 var watch bool
+var notify bool
 
 func init() {
 	onWindows := (runtime.GOOS == "windows")
+	onOSX := (runtime.GOOS == "darwin")
 
 	config.Flags("", false)
 
@@ -91,6 +100,9 @@ func init() {
 	flag.BoolVar(&(race), "race", false, "Run tests with race detection enabled")
 	flag.BoolVar(&(cover), "cover", false, "Run tests with coverage analysis, will generate coverage profiles with the package name in the current directory")
 	flag.BoolVar(&(watch), "watch", false, "Monitor the target packages for changes, then run tests when changes are detected")
+	if onOSX {
+		flag.BoolVar(&(notify), "notify", false, "Send desktop notifications when a test run completes")
+	}
 
 	flag.Usage = func() {
 		fmt.Fprintf(os.Stderr, "Usage of ginkgo:\n\n")
@@ -116,10 +128,18 @@ func main() {
 		}
 	}
 
+	if notify {
+		verifyNotificationsAreAvailable()
+	}
+
+	runner := newTestRunner(numCPU, parallelStream, runMagicI, race, cover)
+
+	registerSignalHandler(runner)
+
 	if watch {
-		watchTests()
+		watchTests(runner)
 	} else {
-		runTests()
+		runTests(runner)
 	}
 }
 
@@ -165,13 +185,22 @@ func findSuites() []*testsuite.TestSuite {
 	return suites
 }
 
-func runTests() {
+func runTests(runner *testRunner) {
 	t := time.Now()
 
 	suites := findSuites()
 
-	runner := newTestRunner(numCPU, parallelStream, runMagicI, race, cover)
-	passed := runner.run(suites)
+	passed := true
+	for _, suite := range suites {
+		suitePassed := runner.runSuite(suite)
+		sendSuiteCompletionNotification(suite, suitePassed)
+
+		if !suitePassed {
+			passed = false
+			break
+		}
+	}
+
 	fmt.Printf("\nGinkgo ran in %s\n", time.Since(t))
 
 	if passed {
@@ -183,22 +212,39 @@ func runTests() {
 	}
 }
 
-func watchTests() {
+func watchTests(runner *testRunner) {
 	suites := findSuites()
 
-	runner := newTestRunner(numCPU, parallelStream, runMagicI, race, cover)
 	modifiedSuite := make(chan *testsuite.TestSuite)
 	for _, suite := range suites {
 		go suite.Watch(modifiedSuite)
 	}
 
 	if !recurse {
-		runner.runSuite(suites[0])
+		suitePassed := runner.runSuite(suites[0])
+		sendSuiteCompletionNotification(suites[0], suitePassed)
 	}
 
 	for {
 		suite := <-modifiedSuite
+		sendNotification("Ginkgo", fmt.Sprintf(`Detected change in "%s"...`, suite.PackageName))
+
 		fmt.Printf("\n\nDetected change in %s\n\n", suite.PackageName)
-		runner.runSuite(suite)
+		suitePassed := runner.runSuite(suite)
+
+		sendSuiteCompletionNotification(suite, suitePassed)
 	}
+}
+
+func registerSignalHandler(runner *testRunner) {
+	go func() {
+		c := make(chan os.Signal, 1)
+		signal.Notify(c, os.Interrupt, os.Kill)
+
+		select {
+		case sig := <-c:
+			runner.abort(sig)
+			os.Exit(1)
+		}
+	}()
 }
