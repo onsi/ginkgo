@@ -612,9 +612,9 @@ Additional flags supported by the `ginkgo` command:
 
     Set `-watch` to monitor the target packages for changes.  Any detected changes will trigger a test run.  `-watch` is best used in concert with `-r` to monitor an entire directory of packages for changes.  Note that *new* test packages are not automatically detected by `-watch` -- you'll need to rerun the `ginkgo -watch` command to pick them up.  Also, if changes are made to package `X` only the tests for package `X` will be rerun -- the tests for packages that depend on `X` are *not* rerun.
 
-- `-keep-going`
+- `-keepGoing`
 
-    By default, when running multiple tests (with -r or a list of packages) Ginkgo will abort when a test fails.  To have Ginkgo run subsequent test suites after a failure you can set -keep-going.
+    By default, when running multiple tests (with -r or a list of packages) Ginkgo will abort when a test fails.  To have Ginkgo run subsequent test suites after a failure you can set -keepGoing.
 
 - `-notify`
 
