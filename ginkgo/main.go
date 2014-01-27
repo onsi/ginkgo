@@ -19,6 +19,10 @@ To run tests in particular packages:
 
 	ginkgo <flags> /path/to/package /path/to/another/package
 
+By default, when running multiple tests (with -r or a list of packages) Ginkgo will abort when a test fails.  To have Ginkgo run subsequent test suites instead you can:
+
+	ginkgo -keep-going
+
 To monitor packages and rerun tests when changes occur:
 
 	ginkgo -watch <-r> </path/to/package>
@@ -86,6 +90,7 @@ var race bool
 var cover bool
 var watch bool
 var notify bool
+var keepGoing bool
 
 func init() {
 	onWindows := (runtime.GOOS == "windows")
@@ -100,6 +105,7 @@ func init() {
 	flag.BoolVar(&(race), "race", false, "Run tests with race detection enabled")
 	flag.BoolVar(&(cover), "cover", false, "Run tests with coverage analysis, will generate coverage profiles with the package name in the current directory")
 	flag.BoolVar(&(watch), "watch", false, "Monitor the target packages for changes, then run tests when changes are detected")
+	flag.BoolVar(&(keepGoing), "keep-going", false, "When turned on failures from earlier test suites do not prevent later test suites from running")
 	if onOSX {
 		flag.BoolVar(&(notify), "notify", false, "Send desktop notifications when a test run completes")
 	}
@@ -189,6 +195,7 @@ func runTests(runner *testRunner) {
 	t := time.Now()
 
 	suites := findSuites()
+	suitesThatFailed := []*testsuite.TestSuite{}
 
 	passed := true
 	for _, suite := range suites {
@@ -197,7 +204,17 @@ func runTests(runner *testRunner) {
 
 		if !suitePassed {
 			passed = false
-			break
+			suitesThatFailed = append(suitesThatFailed, suite)
+			if !keepGoing {
+				break
+			}
+		}
+	}
+
+	if keepGoing && !passed {
+		fmt.Println("\nThere were failures detected in the following suites:")
+		for _, suite := range suitesThatFailed {
+			fmt.Printf("\t%s\n", suite.PackageName)
 		}
 	}
 
