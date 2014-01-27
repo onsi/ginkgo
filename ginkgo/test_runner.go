@@ -11,6 +11,7 @@ import (
 	"io"
 	"os"
 	"os/exec"
+	"sync"
 	"time"
 )
 
@@ -22,6 +23,8 @@ type testRunner struct {
 	cover            bool
 	executedCommands []*exec.Cmd
 	reports          []*bytes.Buffer
+
+	lock *sync.Mutex
 }
 
 func newTestRunner(numCPU int, parallelStream bool, runMagicI bool, race bool, cover bool) *testRunner {
@@ -33,6 +36,7 @@ func newTestRunner(numCPU int, parallelStream bool, runMagicI bool, race bool, c
 		cover:            cover,
 		executedCommands: []*exec.Cmd{},
 		reports:          []*bytes.Buffer{},
+		lock:             &sync.Mutex{},
 	}
 }
 
@@ -202,12 +206,15 @@ func (t *testRunner) commonArgs(suite *testsuite.TestSuite) []string {
 }
 
 func (t *testRunner) runCommand(path string, args []string, env []string, stream io.Writer, completions chan bool) bool {
+
 	args = append([]string{"test", "-v", "-timeout=24h", path}, args...)
 
 	cmd := exec.Command("go", args...)
 	cmd.Env = env
 
+	t.lock.Lock()
 	t.executedCommands = append(t.executedCommands, cmd)
+	t.lock.Unlock()
 
 	doneStreaming := make(chan bool, 2)
 	streamPipe := func(pipe io.ReadCloser) {
@@ -229,6 +236,18 @@ func (t *testRunner) runCommand(path string, args []string, env []string, stream
 	<-doneStreaming
 
 	err = cmd.Wait()
+
+	t.lock.Lock()
+	//delete the command that just finished executing
+	for commandIndex, executedCommand := range t.executedCommands {
+		if executedCommand == cmd {
+			t.executedCommands[commandIndex] = t.executedCommands[len(t.executedCommands)-1]
+			t.executedCommands = t.executedCommands[0 : len(t.executedCommands)-1]
+			break
+		}
+	}
+	t.lock.Unlock()
+
 	if completions != nil {
 		completions <- (err == nil)
 	}
@@ -236,10 +255,12 @@ func (t *testRunner) runCommand(path string, args []string, env []string, stream
 }
 
 func (t *testRunner) abort(sig os.Signal) {
+	t.lock.Lock()
 	for _, cmd := range t.executedCommands {
 		if cmd.Process != nil {
 			cmd.Process.Signal(sig)
 			cmd.Wait()
 		}
 	}
+	t.lock.Unlock()
 }
