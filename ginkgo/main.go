@@ -21,7 +21,7 @@ To run tests in particular packages:
 
 By default, when running multiple tests (with -r or a list of packages) Ginkgo will abort when a test fails.  To have Ginkgo run subsequent test suites instead you can:
 
-	ginkgo -keep-going
+	ginkgo -keepGoing
 
 To monitor packages and rerun tests when changes occur:
 
@@ -105,7 +105,7 @@ func init() {
 	flag.BoolVar(&(race), "race", false, "Run tests with race detection enabled")
 	flag.BoolVar(&(cover), "cover", false, "Run tests with coverage analysis, will generate coverage profiles with the package name in the current directory")
 	flag.BoolVar(&(watch), "watch", false, "Monitor the target packages for changes, then run tests when changes are detected")
-	flag.BoolVar(&(keepGoing), "keep-going", false, "When true, failures from earlier test suites do not prevent later test suites from running")
+	flag.BoolVar(&(keepGoing), "keepGoing", false, "When true, failures from earlier test suites do not prevent later test suites from running")
 	if onOSX {
 		flag.BoolVar(&(notify), "notify", false, "Send desktop notifications when a test run completes")
 	}
