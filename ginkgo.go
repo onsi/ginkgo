@@ -22,10 +22,6 @@ import (
 	"time"
 )
 
-type GinkgoTestingT interface {
-	Fail()
-}
-
 const GINKGO_VERSION = config.VERSION
 
 const defaultTimeout = 1
@@ -35,6 +31,21 @@ var globalSuite *suite
 func init() {
 	config.Flags("ginkgo", true)
 	globalSuite = newSuite()
+}
+
+//The interface by which Ginkgo receives *testing.T
+type GinkgoTestingT interface {
+	Fail()
+}
+
+//Some matcher libraries or legacy codebases require a *testing.T
+//GinkgoT implements an interface analogous to *testing.T and can be used if
+//the library in question accepts *testing.T through an interface
+//
+// For example, with testify:
+// assert.Equal(GinkgoT(), 123, 123, "they should be equal")
+func GinkgoT() *ginkgoTestingTProxy {
+	return newGinkgoTestingTProxy(Fail)
 }
 
 //Custom Ginkgo test reporters must implement the Reporter interface.
