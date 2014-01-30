@@ -213,14 +213,14 @@ func FIt(text string, body interface{}, timeout ...float64) bool {
 }
 
 //You can mark Its as pending using PIt
-func PIt(text string, body interface{}, timeout ...float64) bool {
-	globalSuite.pushItNode(text, body, flagTypePending, types.GenerateCodeLocation(1), parseTimeout(timeout...))
+func PIt(text string, _ ...interface{}) bool {
+	globalSuite.pushItNode(text, func() {}, flagTypePending, types.GenerateCodeLocation(1), 0)
 	return true
 }
 
 //You can mark Its as pending using XIt
-func XIt(text string, body interface{}, timeout ...float64) bool {
-	globalSuite.pushItNode(text, body, flagTypePending, types.GenerateCodeLocation(1), parseTimeout(timeout...))
+func XIt(text string, _ ...interface{}) bool {
+	globalSuite.pushItNode(text, func() {}, flagTypePending, types.GenerateCodeLocation(1), 0)
 	return true
 }
 
@@ -238,14 +238,14 @@ func FMeasure(text string, body func(Benchmarker), samples int) bool {
 }
 
 //You can mark Maeasurements as pending using PMeasure
-func PMeasure(text string, body func(Benchmarker), samples int) bool {
-	globalSuite.pushMeasureNode(text, body, flagTypePending, types.GenerateCodeLocation(1), samples)
+func PMeasure(text string, _ ...interface{}) bool {
+	globalSuite.pushMeasureNode(text, func(b Benchmarker) {}, flagTypePending, types.GenerateCodeLocation(1), 0)
 	return true
 }
 
 //You can mark Maeasurements as pending using XMeasure
-func XMeasure(text string, body func(Benchmarker), samples int) bool {
-	globalSuite.pushMeasureNode(text, body, flagTypePending, types.GenerateCodeLocation(1), samples)
+func XMeasure(text string, _ ...interface{}) bool {
+	globalSuite.pushMeasureNode(text, func(b Benchmarker) {}, flagTypePending, types.GenerateCodeLocation(1), 0)
 	return true
 }
 
