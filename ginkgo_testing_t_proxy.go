@@ -6,10 +6,10 @@ import (
 
 type failFunc func(message string, callerSkip ...int)
 
-func newGinkgoTestingTProxy(fail failFunc) *ginkgoTestingTProxy {
+func newGinkgoTestingTProxy(fail failFunc, offset int) *ginkgoTestingTProxy {
 	return &ginkgoTestingTProxy{
 		fail:   fail,
-		offset: 3,
+		offset: offset,
 	}
 }
 
@@ -27,11 +27,11 @@ func (t *ginkgoTestingTProxy) Errorf(format string, args ...interface{}) {
 }
 
 func (t *ginkgoTestingTProxy) Fail() {
-	t.fail("", t.offset)
+	t.fail("failed", t.offset)
 }
 
 func (t *ginkgoTestingTProxy) FailNow() {
-	t.fail("", t.offset)
+	t.fail("failed", t.offset)
 }
 
 func (t *ginkgoTestingTProxy) Fatal(args ...interface{}) {
@@ -48,4 +48,27 @@ func (t *ginkgoTestingTProxy) Log(args ...interface{}) {
 
 func (t *ginkgoTestingTProxy) Logf(format string, args ...interface{}) {
 	fmt.Printf(format, args...)
+}
+
+func (t *ginkgoTestingTProxy) Failed() bool {
+	return false
+}
+
+func (t *ginkgoTestingTProxy) Parallel() {
+}
+
+func (t *ginkgoTestingTProxy) Skip(args ...interface{}) {
+	fmt.Println(args...)
+}
+
+func (t *ginkgoTestingTProxy) Skipf(format string, args ...interface{}) {
+	fmt.Printf(format, args...)
+}
+
+func (t *ginkgoTestingTProxy) SkipNow(args ...interface{}) {
+	fmt.Println(args...)
+}
+
+func (t *ginkgoTestingTProxy) Skipped() bool {
+	return false
 }

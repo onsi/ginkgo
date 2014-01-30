@@ -44,8 +44,15 @@ type GinkgoTestingT interface {
 //
 // For example, with testify:
 // assert.Equal(GinkgoT(), 123, 123, "they should be equal")
-func GinkgoT() *ginkgoTestingTProxy {
-	return newGinkgoTestingTProxy(Fail)
+//
+// GinkgoT() takes an optional offset argument that can be used to get the
+// correct line number associated with the failure.
+func GinkgoT(optionalOffset ...int) *ginkgoTestingTProxy {
+	offset := 3
+	if len(optionalOffset) > 0 {
+		offset = optionalOffset[0]
+	}
+	return newGinkgoTestingTProxy(Fail, offset)
 }
 
 //Custom Ginkgo test reporters must implement the Reporter interface.
