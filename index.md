@@ -994,9 +994,9 @@ Note that you'll need to import `fmt` and `github.com/onsi/ginkgo/config` to get
 
 ### Using Other Matcher Libraries
 
-Most matcher library accept the *testing.T object.  Unfortunately, since this is a concrete type is can be tricky to pass in an equivalent that will work with Ginkgo.
+Most matcher library accept the `*testing.T` object.  Unfortunately, since this is a concrete type is can be tricky to pass in an equivalent that will work with Ginkgo.
 
-It is, typically, not difficult to replace *testing.T in such libraries with an interface that *testing.T satisfies.  For example [testify](https://github.com/stretchr/testify) accepts `t` via an interface.  In such cases you can pass `GinkgoT()`.  This generates an object that mimics `*testing.T` and communicates to Ginkgo directly.
+It is, typically, not difficult to replace `*testing.T` in such libraries with an interface that `*testing.T` satisfies.  For example [testify](https://github.com/stretchr/testify) accepts `t` via an interface.  In such cases you can pass `GinkgoT()`.  This generates an object that mimics `*testing.T` and communicates to Ginkgo directly.
 
 For example, to get testify working:
 
@@ -1014,4 +1014,4 @@ For example, to get testify working:
         })
     })
 
-> Note that passing the *testing.T from Ginkgo's bootstrap `Test...()` function will cause the suite to abort as soon as the first failure is encountered.  Don't do this.  You need to communicate failure to Ginkgo's single (global) `Fail` function
+> Note that passing the `*testing.T` from Ginkgo's bootstrap `Test...()` function will cause the suite to abort as soon as the first failure is encountered.  Don't do this.  You need to communicate failure to Ginkgo's single (global) `Fail` function
