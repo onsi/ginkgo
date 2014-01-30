@@ -19,6 +19,18 @@ To run tests in particular packages:
 
 	ginkgo <flags> /path/to/package /path/to/another/package
 
+To run tests in parallel
+
+	ginkgo -nodes=N
+
+where N is the number of nodes.  By default the Ginkgo CLI will spin up a server that the individual
+test processes stream test output to.  The CLI then aggregates these streams into one coherent stream of output.
+An alternative is to have the parallel nodes run and then present the resulting, final, output in one monolithic chunk - you can opt into this if streaming is giving you trouble:
+
+	ginkgo -nodes=N -stream=false
+
+On windows, the default value for stream is false.
+
 By default, when running multiple tests (with -r or a list of packages) Ginkgo will abort when a test fails.  To have Ginkgo run subsequent test suites instead you can:
 
 	ginkgo -keepGoing
@@ -37,17 +49,9 @@ that depend on X are not rerun.
 
 this is particularly useful with `ginkgo -watch`.  Notifications are currently only supported on OS X and require that you `brew install terminal-notifier`
 
-To run tests in parallel
+Sometimes (to suss out race conditions/flakey tests, for example) you want to keep running a test suite until it fails.  You can do this with:
 
-	ginkgo -nodes=N
-
-where N is the number of nodes.  By default the Ginkgo CLI will spin up a server that the individual
-test processes stream test output to.  The CLI then aggregates these streams into one coherent stream of output.
-An alternative is to have the parallel nodes run and then present the resulting, final, output in one monolithic chunk - you can opt into this if streaming is giving you trouble:
-
-	ginkgo -nodes=N -stream=false
-
-On windows, the default value for stream is false.
+	ginkgo -untilItFails
 
 To bootstrap a test suite:
 
@@ -91,6 +95,7 @@ var cover bool
 var watch bool
 var notify bool
 var keepGoing bool
+var untilItFails bool
 
 func init() {
 	onWindows := (runtime.GOOS == "windows")
@@ -105,15 +110,18 @@ func init() {
 	flag.BoolVar(&(race), "race", false, "Run tests with race detection enabled")
 	flag.BoolVar(&(cover), "cover", false, "Run tests with coverage analysis, will generate coverage profiles with the package name in the current directory")
 	flag.BoolVar(&(watch), "watch", false, "Monitor the target packages for changes, then run tests when changes are detected")
-	flag.BoolVar(&(keepGoing), "keepGoing", false, "When true, failures from earlier test suites do not prevent later test suites from running")
 	if onOSX {
 		flag.BoolVar(&(notify), "notify", false, "Send desktop notifications when a test run completes")
 	}
+	flag.BoolVar(&(keepGoing), "keepGoing", false, "When true, failures from earlier test suites do not prevent later test suites from running")
+	flag.BoolVar(&(untilItFails), "untilItFails", false, "When true, Ginkgo will keep rerunning tests until a failure occurs")
 
 	flag.Usage = func() {
 		fmt.Fprintf(os.Stderr, "Usage of ginkgo:\n\n")
 		fmt.Fprintf(os.Stderr, "ginkgo <FLAGS> <DIRECTORY> ...\n  Run the tests in the passed in <DIRECTORY> (or the current directory if left blank).\n  ginkgo accepts the following flags:\n")
+		fmt.Fprintf(os.Stderr, "\n")
 		flag.PrintDefaults()
+		fmt.Fprintf(os.Stderr, "\n")
 		fmt.Fprintf(os.Stderr, "\n")
 		fmt.Fprintf(os.Stderr, "ginkgo bootstrap\n  Bootstrap a test suite for the current package.\n\n")
 		fmt.Fprintf(os.Stderr, "ginkgo generate <SUBJECT>\n  Generate a test file for SUBJECT, the file will be named SUBJECT_test.go\n  If omitted, a file named after the package will be created.\n\n")
@@ -194,10 +202,41 @@ func findSuites() []*testsuite.TestSuite {
 func runTests(runner *testRunner) {
 	t := time.Now()
 
+	passed := true
+	if untilItFails {
+		iteration := 0
+		for {
+			passed = runTestSuites(runner)
+			iteration++
+
+			if passed {
+				fmt.Printf("\nAll tests passed...\nWill keep running them until they fail.\nThis was attempt #%d\n\n", iteration)
+			} else {
+				fmt.Printf("\nTests failed on attempt #%d\n\n", iteration)
+				break
+			}
+		}
+	} else {
+		passed = runTestSuites(runner)
+	}
+
+	fmt.Printf("\nGinkgo ran in %s\n", time.Since(t))
+
+	if passed {
+		fmt.Printf("Test Suite Passed\n")
+		os.Exit(0)
+	} else {
+		fmt.Printf("Test Suite Failed\n")
+		os.Exit(1)
+	}
+}
+
+func runTestSuites(runner *testRunner) bool {
+	passed := true
+
 	suites := findSuites()
 	suitesThatFailed := []*testsuite.TestSuite{}
 
-	passed := true
 	for _, suite := range suites {
 		suitePassed := runner.runSuite(suite)
 		sendSuiteCompletionNotification(suite, suitePassed)
@@ -218,15 +257,7 @@ func runTests(runner *testRunner) {
 		}
 	}
 
-	fmt.Printf("\nGinkgo ran in %s\n", time.Since(t))
-
-	if passed {
-		fmt.Printf("Test Suite Passed\n")
-		os.Exit(0)
-	} else {
-		fmt.Printf("Test Suite Failed\n")
-		os.Exit(1)
-	}
+	return passed
 }
 
 func watchTests(runner *testRunner) {
