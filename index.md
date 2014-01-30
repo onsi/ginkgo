@@ -402,15 +402,19 @@ This section will discuss some of the properties Ginkgo's spec runner.
 
 ### Pending Specs
 
-You can mark an individual spec or container as Pending.  This will prevent the spec (or specs within the container) from running.  You do this by adding a `P` or an `X` in front of your `Describe`, `Context` and `It`:
+You can mark an individual spec or container as Pending.  This will prevent the spec (or specs within the container) from running.  You do this by adding a `P` or an `X` in front of your `Describe`, `Context`, `It`, and `Measure`:
 
     PDescribe("some behavior", func() { ... })
     PContext("some scenario", func() { ... })
-    PIt("some assertion", func() { ... })
+    PIt("some assertion")
+    PMeasure("some measurement")
 
     XDescribe("some behavior", func() { ... })
     XContext("some scenario", func() { ... })
-    XIt("some assertion", func() { ... })
+    XIt("some assertion")
+    XMeasure("some measurement")
+
+> You don't need to remove the `func() { ... }` when you mark an `It` or `Measure` as pending.  Ginkgo will happily ignore any arguments after the string.
 
 > By default, Ginkgo will print out a description for each pending spec.  You can suppress this by setting the `--noisyPendings=false` flag.
 
