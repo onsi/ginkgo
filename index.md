@@ -986,12 +986,24 @@ Note that you'll need to import `fmt` and `github.com/onsi/ginkgo/config` to get
 
 ### Using Other Matcher Libraries
 
-Ginkgo provides a single (global) function to signify spec failure:
+Most matcher library accept the *testing.T object.  Unfortunately, since this is a concrete type is can be tricky to pass in an equivalent that will work with Ginkgo.
 
-    Fail(message string, callerSkip ...int)
+It is, typically, not difficult to replace *testing.T in such libraries with an interface that *testing.T satisfies.  For example [testify](https://github.com/stretchr/testify) accepts `t` via an interface.  In such cases you can pass `GinkgoT()`.  This generates an object that mimics `*testing.T` and communicates to Ginkgo directly.
 
-`Fail` takes a failure message to present to the user.  In order to determine the best line of code to report to the user alongsid the failure, `Fail` takes an optional `callerSkip` integer that is used to index into the call stack.  If set to `0`, the file and line number of the *caller* of `Fail` will be presented to the user, if set to `1` the file and line number of the *caller of the caller* of `Fail` will be presented to the user, etc.
+For example, to get testify working:
 
-Gomega uses `Fail` to communicate failures to Ginkgo.  If you want to use a different matcher library you'll need to figure out how to get it to communicate failures to Ginkgo using the `Fail` function.
+    package foo_test
 
+    import (
+        . "github.com/onsi/ginkgo"
 
+        "github.com/stretchr/testify/assert"
+    )
+
+    var _ = Describe(func("foo") {
+        It("should testify to its correctness", func)({
+            assert.Equal(GinkgoT(), foo{}.Name(), "foo")
+        })
+    })
+
+> Note that passing the *testing.T from Ginkgo's bootstrap `Test...()` function will cause the suite to abort as soon as the first failure is encountered.  Don't do this.  You need to communicate failure to Ginkgo's single (global) `Fail` function
