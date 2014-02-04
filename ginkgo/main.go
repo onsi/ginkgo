@@ -161,6 +161,8 @@ func handleSubcommands(args []string) bool {
 	switch args[0] {
 	case "bootstrap":
 		generateBootstrap()
+	case "convert":
+		convertPackage()
 	case "generate":
 		subject := ""
 		if len(args) > 1 {
