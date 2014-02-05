@@ -15,9 +15,9 @@ import (
  * also be added for this package, and all of its child packages.
  */
 func RewritePackage(packageName string) {
-	pkg, err := build.Default.Import(packageName, ".", build.ImportMode(0))
+	pkg, err := packageWithName(packageName)
 	if err != nil {
-		panic(fmt.Sprintf("unexpected error reading package: '%s'\n%s\n", os.Args[1], err.Error()))
+		panic(fmt.Sprintf("unexpected error reading package: '%s'\n%s\n", packageName, err.Error()))
 	}
 
 	for _, filename := range findTestsInPackage(pkg) {
@@ -47,7 +47,7 @@ func findTestsInPackage(pkg *build.Package) (testfiles []string) {
 		}
 
 		packageName := filepath.Join(pkg.ImportPath, file.Name())
-		subPackage, err := build.Default.Import(packageName, ".", build.ImportMode(0))
+		subPackage, err := packageWithName(packageName)
 		if err != nil {
 			panic(fmt.Sprintf("unexpected error reading package: '%s'\n%s\n", packageName, err.Error()))
 		}
@@ -70,6 +70,7 @@ func addGinkgoSuiteForPackage(pkg *build.Package) {
 	}
 
 	suite_test_file := filepath.Join(pkg.Dir, pkg.Name+"_suite_test.go")
+
 	_, err = os.Stat(suite_test_file)
 	if err == nil {
 		return // test file already exists, this should be a no-op
@@ -92,7 +93,6 @@ func addGinkgoSuiteForPackage(pkg *build.Package) {
 	}
 }
 
-
 /*
  * Shells out to `go fmt` to format the package
  */
@@ -100,6 +100,21 @@ func goFmtPackage(pkg *build.Package) {
 	output, err := exec.Command("go", "fmt", pkg.ImportPath).Output()
 
 	if err != nil {
-		panic(fmt.Sprintf("Error running 'go fmt %s'.\nstdout: %s\n%s\n", pkg.ImportPath, output, err.Error()))
+		fmt.Printf("Warning: Error running 'go fmt %s'.\nstdout: %s\n%s\n", pkg.ImportPath, output, err.Error())
 	}
+}
+
+/*
+ * Attempts to return a package with its test files already read.
+ * The ImportMode arg to build.Import lets you specify if you want go to read the
+ * buildable go files inside the package, but it fails if the package has no go files
+ */
+func packageWithName(name string) (pkg *build.Package, err error) {
+	pkg, err = build.Default.Import(name, ".", build.ImportMode(0))
+	if err == nil {
+		return
+	}
+
+	pkg, err = build.Default.Import(name, ".", build.ImportMode(1))
+	return
 }

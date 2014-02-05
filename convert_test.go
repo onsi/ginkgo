@@ -10,7 +10,7 @@ import (
 
 func init() {
 	Describe("using ginkgo convert", func() {
-		BeforeEach(deleteFilesInTmp)
+		BeforeEach(deleteTmpFiles)
 		BeforeEach(buildGinkgo)
 
 		It("rewrites xunit tests as ginkgo tests", func() {
@@ -60,6 +60,16 @@ func init() {
 
 					testsuite := readConvertedFileNamed(dir, "tmp_suite_test.go")
 					goldmaster := readGoldMasterNamed("suite_test.go")
+					Expect(testsuite).To(Equal(goldmaster))
+				})
+			})
+
+			It("converts go tests in deeply nested packages (some may not contain go files)", func() {
+				withTempDir(func(dir string) {
+					runGinkgoConvert()
+
+					testsuite := readConvertedFileNamed(dir, "nested_without_gofiles", "subpackage", "nested_subpackage_test.go")
+					goldmaster := readGoldMasterNamed("nested_subpackage_test.go")
 					Expect(testsuite).To(Equal(goldmaster))
 				})
 			})
@@ -160,7 +170,7 @@ func readConvertedFileNamed(pathComponents ...string) string {
 	return string(bytes)
 }
 
-func deleteFilesInTmp() {
+func deleteTmpFiles() {
 	cwd, err := os.Getwd()
 	Expect(err).NotTo(HaveOccurred())
 	tempDir := filepath.Join(cwd, "tmp")
