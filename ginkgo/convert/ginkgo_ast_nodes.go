@@ -26,7 +26,7 @@ func createDescribeBlock() *ast.ExprStmt {
 	fieldList := &ast.FieldList{}
 	funcType := &ast.FuncType{Params: fieldList}
 	funcLit := &ast.FuncLit{Type: funcType, Body: blockStatement}
-	basicLit := &ast.BasicLit{Kind: 9, Value: "\"Testing with ginkgo\""}
+	basicLit := &ast.BasicLit{Kind: 9, Value: "\"Testing with Ginkgo\""}
 	describeIdent := &ast.Ident{Name: "Describe"}
 	callExpr := &ast.CallExpr{Fun: describeIdent, Args: []ast.Expr{basicLit, funcLit}}
 

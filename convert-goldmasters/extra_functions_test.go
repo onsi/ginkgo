@@ -8,7 +8,7 @@ func somethingImportant(t GinkgoTestingT, message *string) {
 	t.Log("Something important happened in a test: " + *message)
 }
 func init() {
-	Describe("Testing with ginkgo", func() {
+	Describe("Testing with Ginkgo", func() {
 		It("TestSomethingLessImportant", func() {
 			somethingImportant(GinkgoT(), &"hello!")
 		})

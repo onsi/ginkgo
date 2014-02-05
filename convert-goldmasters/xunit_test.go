@@ -12,7 +12,7 @@ type UselessStruct struct {
 var testFunc = func(t GinkgoTestingT, arg *string) {}
 
 func init() {
-	Describe("Testing with ginkgo", func() {
+	Describe("Testing with Ginkgo", func() {
 		It("TestSomethingImportant", func() {
 
 			whatever := &UselessStruct{
