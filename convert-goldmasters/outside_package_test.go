@@ -9,7 +9,7 @@ type UselessStruct struct {
 }
 
 func init() {
-	Describe("Testing with ginkgo", func() {
+	Describe("Testing with Ginkgo", func() {
 		It("TestSomethingImportant", func() {
 
 			whatever := &UselessStruct{}

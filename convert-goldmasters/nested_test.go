@@ -5,7 +5,7 @@ import (
 )
 
 func init() {
-	Describe("Testing with ginkgo", func() {
+	Describe("Testing with Ginkgo", func() {
 		It("TestSomethingLessImportant", func() {
 
 			whatever := &UselessStruct{}
