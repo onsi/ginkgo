@@ -88,7 +88,7 @@ func init() {
 		It("gracefully handles existing test suite files", func() {
 			withTempDir(func(dir string) {
 				cwd, err := os.Getwd()
-				bytes, err := ioutil.ReadFile(filepath.Join(cwd, "convert-goldmasters", "fixtures_suite_test.go"))
+				bytes, err := ioutil.ReadFile(filepath.Join(cwd, "convert_goldmasters", "fixtures_suite_test.go"))
 				Expect(err).NotTo(HaveOccurred())
 				err = ioutil.WriteFile(filepath.Join(cwd, "tmp", "tmp_suite_test.go"), bytes, 0600)
 				Expect(err).NotTo(HaveOccurred())
@@ -107,7 +107,7 @@ func withTempDir(cb func(tempDir string)) {
 	err = os.MkdirAll(tempDir, os.ModeDir|os.ModeTemporary|os.ModePerm)
 	Expect(err).NotTo(HaveOccurred())
 
-	copyFixturesIntoTempDir("convert-fixtures", tempDir)
+	copyFixturesIntoTempDir("convert_fixtures", tempDir)
 
 	cb(tempDir)
 }
@@ -156,7 +156,7 @@ func readGoldMasterNamed(filename string) string {
 	cwd, err := os.Getwd()
 	Expect(err).NotTo(HaveOccurred())
 
-	bytes, err := ioutil.ReadFile(filepath.Join(cwd, "convert-goldmasters", filename))
+	bytes, err := ioutil.ReadFile(filepath.Join(cwd, "convert_goldmasters", filename))
 	Expect(err).NotTo(HaveOccurred())
 
 	return string(bytes)

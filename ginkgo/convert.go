@@ -3,7 +3,7 @@ package main
 import (
 	"fmt"
 	"github.com/onsi/ginkgo/ginkgo/convert"
-  "os"
+	"os"
 )
 
 func convertPackage() {

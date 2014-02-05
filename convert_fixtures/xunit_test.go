@@ -9,11 +9,11 @@ type UselessStruct struct {
 	T              *testing.T
 }
 
-var testFunc = func(t *testing.T, arg *string) { }
+var testFunc = func(t *testing.T, arg *string) {}
 
 func TestSomethingImportant(t *testing.T) {
 	whatever := &UselessStruct{
-		T:            t,
+		T:              t,
 		ImportantField: "twisty maze of passages",
 	}
 	app := "string value"
