@@ -14,7 +14,7 @@ func verifyNotificationsAreAvailable() {
 
 To remedy this:
 
-    brew install terminal-notifer
+    brew install terminal-notifier
 
 To learn more about terminal-notifier:
 
