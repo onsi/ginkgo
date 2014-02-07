@@ -17,9 +17,9 @@ func New() GomockTestReporter {
 }
 
 func (g GomockTestReporter) Errorf(format string, args ...interface{}) {
-	ginkgo.Fail(fmt.Sprintf(format, args), 3)
+	ginkgo.Fail(fmt.Sprintf(format, args...), 3)
 }
 
 func (g GomockTestReporter) Fatalf(format string, args ...interface{}) {
-	ginkgo.Fail(fmt.Sprintf(format, args), 3)
+	ginkgo.Fail(fmt.Sprintf(format, args...), 3)
 }
