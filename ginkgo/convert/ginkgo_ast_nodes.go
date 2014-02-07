@@ -3,6 +3,8 @@ package convert
 import (
 	"fmt"
 	"go/ast"
+	"strings"
+	"unicode"
 )
 
 /*
@@ -75,8 +77,38 @@ func createItStatementForTestFunc(testFunc *ast.FuncDecl) *ast.ExprStmt {
 	fieldList := &ast.FieldList{}
 	funcType := &ast.FuncType{Params: fieldList}
 	funcLit := &ast.FuncLit{Type: funcType, Body: blockStatement}
-	basicLit := &ast.BasicLit{Kind: 9, Value: fmt.Sprintf("\"%s\"", testFunc.Name.Name)}
+
+	testName := rewriteTestName(testFunc.Name.Name)
+	basicLit := &ast.BasicLit{Kind: 9, Value: fmt.Sprintf("\"%s\"", testName)}
 	itBlockIdent := &ast.Ident{Name: "It"}
 	callExpr := &ast.CallExpr{Fun: itBlockIdent, Args: []ast.Expr{basicLit, funcLit}}
 	return &ast.ExprStmt{X: callExpr}
+}
+
+/*
+* rewrite test names to be human readable
+* eg: rewrites "TestSomethingAmazing" as "something amazing"
+*/
+func rewriteTestName(testName string) string {
+	nameComponents := []string{}
+	currentString := ""
+	indexOfTest := strings.Index(testName, "Test")
+	if indexOfTest != 0 {
+		return testName
+	}
+
+	testName = strings.Replace(testName, "Test", "", 1)
+	first, rest := testName[0], testName[1:]
+	testName = string(unicode.ToLower(rune(first))) + rest
+
+	for _, rune := range testName {
+		if unicode.IsUpper(rune) {
+  		nameComponents = append(nameComponents, currentString)
+			currentString = string(unicode.ToLower(rune))
+		} else {
+			currentString += string(rune)
+		}
+	}
+
+	return strings.Join(append(nameComponents, currentString), " ")
 }

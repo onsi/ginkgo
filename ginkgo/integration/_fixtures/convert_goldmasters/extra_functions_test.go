@@ -9,7 +9,7 @@ func somethingImportant(t GinkgoTestingT, message *string) {
 }
 func init() {
 	Describe("Testing with Ginkgo", func() {
-		It("TestSomethingLessImportant", func() {
+		It("something less important", func() {
 			somethingImportant(GinkgoT(), &"hello!")
 		})
 	})
