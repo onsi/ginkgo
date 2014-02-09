@@ -11,6 +11,7 @@ import (
 	"io"
 	"os"
 	"os/exec"
+	"path/filepath"
 	"sync"
 	"time"
 )
@@ -18,10 +19,10 @@ import (
 type testRunner struct {
 	numCPU           int
 	parallelStream   bool
-	runMagicI        bool
 	race             bool
 	cover            bool
 	executedCommands []*exec.Cmd
+	compiledArtifact string
 	reports          []*bytes.Buffer
 
 	lock *sync.Mutex
@@ -31,7 +32,6 @@ func newTestRunner(numCPU int, parallelStream bool, runMagicI bool, race bool, c
 	return &testRunner{
 		numCPU:           numCPU,
 		parallelStream:   parallelStream,
-		runMagicI:        runMagicI,
 		race:             race,
 		cover:            cover,
 		executedCommands: []*exec.Cmd{},
@@ -41,14 +41,12 @@ func newTestRunner(numCPU int, parallelStream bool, runMagicI bool, race bool, c
 }
 
 func (t *testRunner) runSuite(suite *testsuite.TestSuite) bool {
-	if t.runMagicI {
-		err := t.runGoI(suite)
-		if err != nil {
-			return false
-		}
+	var success bool
+	success = t.compileSuite(suite)
+	if !success {
+		return success
 	}
 
-	var success bool
 	if suite.IsGinkgo {
 		if t.numCPU > 1 {
 			if t.parallelStream {
@@ -63,22 +61,41 @@ func (t *testRunner) runSuite(suite *testsuite.TestSuite) bool {
 		success = t.runGoTestSuite(suite)
 	}
 
+	t.cleanUpCompiledSuite()
 	return success
 }
 
-func (t *testRunner) runGoI(suite *testsuite.TestSuite) error {
-	args := []string{"test", "-i"}
+func (t *testRunner) compileSuite(suite *testsuite.TestSuite) bool {
+	args := []string{"test", "-c", "-i"}
 	if t.race {
 		args = append(args, "-race")
 	}
-	args = append(args, suite.Path)
+	if t.cover {
+		args = append(args, "-cover", "-covermode=atomic")
+	}
 	cmd := exec.Command("go", args...)
+	cmd.Dir = suite.Path
 	output, err := cmd.CombinedOutput()
 	if err != nil {
-		fmt.Printf("go test -i %s failed with:\n\n%s", suite.Path, output)
+		fmt.Printf("Failed to compile %s:\n\n%s\n", suite.Path, output)
+		t.compiledArtifact = ""
+		return false
 	}
+	t.compiledArtifact, _ = filepath.Abs(filepath.Join(suite.Path, fmt.Sprintf("%s.test", suite.PackageName)))
+	return true
+}
 
-	return err
+func (t *testRunner) cleanUpCompiledSuite() {
+	os.Remove(t.compiledArtifact)
+}
+
+func (t *testRunner) runSerialGinkgoSuite(suite *testsuite.TestSuite) bool {
+	ginkgoArgs := config.BuildFlagArgs("ginkgo", config.GinkgoConfig, config.DefaultReporterConfig)
+	return t.runCompiledSuite(suite, ginkgoArgs, nil, os.Stdout, nil)
+}
+
+func (t *testRunner) runGoTestSuite(suite *testsuite.TestSuite) bool {
+	return t.runCompiledSuite(suite, []string{}, nil, os.Stdout, nil)
 }
 
 func (t *testRunner) runParallelGinkgoSuite(suite *testsuite.TestSuite) bool {
@@ -87,13 +104,12 @@ func (t *testRunner) runParallelGinkgoSuite(suite *testsuite.TestSuite) bool {
 		config.GinkgoConfig.ParallelNode = cpu + 1
 		config.GinkgoConfig.ParallelTotal = t.numCPU
 
-		args := config.BuildFlagArgs("ginkgo", config.GinkgoConfig, config.DefaultReporterConfig)
-		args = append(args, t.commonArgs(suite)...)
+		ginkgoArgs := config.BuildFlagArgs("ginkgo", config.GinkgoConfig, config.DefaultReporterConfig)
 
 		buffer := new(bytes.Buffer)
 		t.reports = append(t.reports, buffer)
 
-		go t.runCommand(suite.Path, args, nil, buffer, completions)
+		go t.runCompiledSuite(suite, ginkgoArgs, nil, buffer, completions)
 	}
 
 	passed := true
@@ -122,17 +138,15 @@ func (t *testRunner) runAndStreamParallelGinkgoSuite(suite *testsuite.TestSuite)
 
 	server.RegisterReporters(aggregator)
 	server.Start()
-
+	defer server.Stop()
 	serverAddress := server.Address()
 
 	completions := make(chan bool)
-
 	for cpu := 0; cpu < t.numCPU; cpu++ {
 		config.GinkgoConfig.ParallelNode = cpu + 1
 		config.GinkgoConfig.ParallelTotal = t.numCPU
 
-		args := config.BuildFlagArgs("ginkgo", config.GinkgoConfig, config.DefaultReporterConfig)
-		args = append(args, t.commonArgs(suite)...)
+		ginkgoArgs := config.BuildFlagArgs("ginkgo", config.GinkgoConfig, config.DefaultReporterConfig)
 
 		env := os.Environ()
 		env = append(env, fmt.Sprintf("GINKGO_REMOTE_REPORTING_SERVER=%s", serverAddress))
@@ -140,7 +154,7 @@ func (t *testRunner) runAndStreamParallelGinkgoSuite(suite *testsuite.TestSuite)
 		buffer := new(bytes.Buffer)
 		t.reports = append(t.reports, buffer)
 
-		go t.runCommand(suite.Path, args, env, buffer, completions)
+		go t.runCompiledSuite(suite, ginkgoArgs, env, buffer, completions)
 	}
 
 	for cpu := 0; cpu < t.numCPU; cpu++ {
@@ -178,39 +192,20 @@ func (t *testRunner) runAndStreamParallelGinkgoSuite(suite *testsuite.TestSuite)
 		os.Stdout.Sync()
 	}
 
-	server.Stop()
-
 	return passed
 }
 
-func (t *testRunner) runSerialGinkgoSuite(suite *testsuite.TestSuite) bool {
-	args := config.BuildFlagArgs("ginkgo", config.GinkgoConfig, config.DefaultReporterConfig)
-	args = append(args, t.commonArgs(suite)...)
-	return t.runCommand(suite.Path, args, nil, os.Stdout, nil)
-}
-
-func (t *testRunner) runGoTestSuite(suite *testsuite.TestSuite) bool {
-	args := t.commonArgs(suite)
-	return t.runCommand(suite.Path, args, nil, os.Stdout, nil)
-}
-
-func (t *testRunner) commonArgs(suite *testsuite.TestSuite) []string {
-	args := []string{}
-	if t.race {
-		args = append(args, "--race")
-	}
+func (t *testRunner) runCompiledSuite(suite *testsuite.TestSuite, ginkgoArgs []string, env []string, stream io.Writer, completions chan bool) bool {
+	args := []string{"-test.v", "-test.timeout=24h"}
 	if t.cover {
-		args = append([]string{"--cover", "--coverprofile=" + suite.PackageName + ".coverprofile"})
+		args = append(args, "--test.coverprofile="+suite.PackageName+".coverprofile")
 	}
-	return args
-}
 
-func (t *testRunner) runCommand(path string, args []string, env []string, stream io.Writer, completions chan bool) bool {
+	args = append(args, ginkgoArgs...)
 
-	args = append([]string{"test", "-v", "-timeout=24h", path}, args...)
-
-	cmd := exec.Command("go", args...)
+	cmd := exec.Command(t.compiledArtifact, args...)
 	cmd.Env = env
+	cmd.Dir = suite.Path
 
 	t.lock.Lock()
 	t.executedCommands = append(t.executedCommands, cmd)
@@ -229,7 +224,11 @@ func (t *testRunner) runCommand(path string, args []string, env []string, stream
 
 	err := cmd.Start()
 	if err != nil {
-		os.Exit(1)
+		fmt.Printf("Failed to run test suite!\n\t%s", err.Error())
+		if completions != nil {
+			completions <- false
+		}
+		return false
 	}
 
 	<-doneStreaming
@@ -251,6 +250,7 @@ func (t *testRunner) runCommand(path string, args []string, env []string, stream
 	if completions != nil {
 		completions <- (err == nil)
 	}
+
 	return err == nil
 }
 
@@ -263,4 +263,5 @@ func (t *testRunner) abort(sig os.Signal) {
 		}
 	}
 	t.lock.Unlock()
+	t.cleanUpCompiledSuite()
 }

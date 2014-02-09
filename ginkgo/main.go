@@ -106,7 +106,7 @@ func init() {
 	flag.IntVar(&(numCPU), "nodes", 1, "The number of parallel test nodes to run")
 	flag.BoolVar(&(parallelStream), "stream", !onWindows, "Aggregate parallel test output into one coherent stream (default: true)")
 	flag.BoolVar(&(recurse), "r", false, "Find and run test suites under the current directory recursively")
-	flag.BoolVar(&(runMagicI), "i", false, "Run go test -i first, then run the test suite")
+	flag.BoolVar(&(runMagicI), "i", false, "[DEPRECATED] Run go test -i first, then run the test suite")
 	flag.BoolVar(&(race), "race", false, "Run tests with race detection enabled")
 	flag.BoolVar(&(cover), "cover", false, "Run tests with coverage analysis, will generate coverage profiles with the package name in the current directory")
 	flag.BoolVar(&(watch), "watch", false, "Monitor the target packages for changes, then run tests when changes are detected")
@@ -134,6 +134,10 @@ func init() {
 }
 
 func main() {
+	if runMagicI {
+		fmt.Printf("[DEPRECATION]\n  -i is deprecated.\n  Ginkgo now always runs with -i -- the -i flag will go away soon, so stop using it!\n")
+	}
+
 	if flag.NArg() > 0 {
 		args := flag.Args()
 		handled := handleSubcommands(args)
