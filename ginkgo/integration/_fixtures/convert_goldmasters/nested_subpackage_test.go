@@ -6,7 +6,7 @@ import (
 
 func init() {
 	Describe("Testing with Ginkgo", func() {
-		It("TestNestedSubPackages", func() {
+		It("nested sub packages", func() {
 			GinkgoT().Fail(true)
 		})
 	})

@@ -13,7 +13,7 @@ var testFunc = func(t GinkgoTestingT, arg *string) {}
 
 func init() {
 	Describe("Testing with Ginkgo", func() {
-		It("TestSomethingImportant", func() {
+		It("something important", func() {
 
 			whatever := &UselessStruct{
 				T:              GinkgoT(),
