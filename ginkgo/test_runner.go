@@ -77,7 +77,7 @@ func (t *testRunner) compileSuite(suite *testsuite.TestSuite) bool {
 	cmd.Dir = suite.Path
 	output, err := cmd.CombinedOutput()
 	if err != nil {
-		fmt.Printf("Failed to compile %s:\n\n%s\n", suite.Path, output)
+		fmt.Printf("Failed to compile %s:\n\n%s", suite.PackageName, output)
 		t.compiledArtifact = ""
 		return false
 	}
