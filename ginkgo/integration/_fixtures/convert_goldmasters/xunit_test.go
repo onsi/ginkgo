@@ -4,18 +4,6 @@ import (
 	. "github.com/onsi/ginkgo"
 )
 
-type UselessStruct struct {
-	ImportantField string
-	T              GinkgoTestingT
-}
-
-var testFunc = func(t GinkgoTestingT, arg *string) {}
-
-func assertEqual(t GinkgoTestingT, arg1, arg2 interface{}) {
-	if arg1 != arg2 {
-		t.Fail()
-	}
-}
 func init() {
 	Describe("Testing with Ginkgo", func() {
 		It("something important", func() {
@@ -36,4 +24,17 @@ func init() {
 			GinkgoT().Fail()
 		})
 	})
+}
+
+type UselessStruct struct {
+	ImportantField string
+	T              GinkgoTestingT
+}
+
+var testFunc = func(t GinkgoTestingT, arg *string) {}
+
+func assertEqual(t GinkgoTestingT, arg1, arg2 interface{}) {
+	if arg1 != arg2 {
+		t.Fail()
+	}
 }

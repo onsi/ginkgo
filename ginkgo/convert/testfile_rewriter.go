@@ -38,7 +38,7 @@ func rewriteTestsInFile(pathToFile string) {
 		rewriteTestFuncAsItStatement(testFunc, rootNode, describeBlock)
 	}
 
-	rootNode.Decls = append(rootNode.Decls, topLevelInitFunc)
+	rootNode.Decls = append(rootNode.Decls[:1], append([]ast.Decl{topLevelInitFunc}, rootNode.Decls[1:]...)...)
 	rewriteOtherFuncsToUseGinkgoT(rootNode.Decls)
 	walkNodesInRootNodeReplacingTestingT(rootNode)
 

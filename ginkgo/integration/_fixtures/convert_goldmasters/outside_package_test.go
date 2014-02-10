@@ -4,10 +4,6 @@ import (
 	. "github.com/onsi/ginkgo"
 )
 
-type UselessStruct struct {
-	ImportantField string
-}
-
 func init() {
 	Describe("Testing with Ginkgo", func() {
 		It("something important", func() {
@@ -18,4 +14,8 @@ func init() {
 			}
 		})
 	})
+}
+
+type UselessStruct struct {
+	ImportantField string
 }
