@@ -11,21 +11,29 @@ type UselessStruct struct {
 
 var testFunc = func(t GinkgoTestingT, arg *string) {}
 
+func assertEqual(t GinkgoTestingT, arg1, arg2 interface{}) {
+	if arg1 != arg2 {
+		t.Fail()
+	}
+}
 func init() {
 	Describe("Testing with Ginkgo", func() {
 		It("something important", func() {
 
 			whatever := &UselessStruct{
 				T:              GinkgoT(),
-				ImportantField: "twisty maze of passages",
+				ImportantField: "SECRET_PASSWORD",
 			}
-			app := "string value"
-			something := &UselessStruct{ImportantField: app}
-			GinkgoT().Fail(whatever.ImportantField != "SECRET_PASSWORD")
-			assert.Equal(GinkgoT(), whatever.ImportantField, "SECRET_PASSWORD")
+			something := &UselessStruct{ImportantField: "string value"}
+			assertEqual(GinkgoT(), whatever.ImportantField, "SECRET_PASSWORD")
+			assertEqual(GinkgoT(), something.ImportantField, "string value")
+
 			var foo = func(t GinkgoTestingT) {}
-			foo()
-			testFunc(GinkgoT(), "something")
+			foo(GinkgoT())
+
+			strp := "something"
+			testFunc(GinkgoT(), &strp)
+			GinkgoT().Fail()
 		})
 	})
 }

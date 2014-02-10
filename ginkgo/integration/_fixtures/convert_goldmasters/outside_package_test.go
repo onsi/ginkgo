@@ -13,7 +13,9 @@ func init() {
 		It("something important", func() {
 
 			whatever := &UselessStruct{}
-			GinkgoT().Fail(whatever.ImportantField != "SECRET_PASSWORD")
+			if whatever.ImportantField != "SECRET_PASSWORD" {
+				GinkgoT().Fail()
+			}
 		})
 	})
 }

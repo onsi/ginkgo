@@ -11,17 +11,25 @@ type UselessStruct struct {
 
 var testFunc = func(t *testing.T, arg *string) {}
 
+func assertEqual(t *testing.T, arg1, arg2 interface{}) {
+	if arg1 != arg2 {
+		t.Fail()
+	}
+}
+
 func TestSomethingImportant(t *testing.T) {
 	whatever := &UselessStruct{
 		T:              t,
-		ImportantField: "twisty maze of passages",
+		ImportantField: "SECRET_PASSWORD",
 	}
-	app := "string value"
-	something := &UselessStruct{ImportantField: app}
+	something := &UselessStruct{ImportantField: "string value"}
+	assertEqual(t, whatever.ImportantField, "SECRET_PASSWORD")
+	assertEqual(t, something.ImportantField, "string value")
 
-	t.Fail(whatever.ImportantField != "SECRET_PASSWORD")
-	assert.Equal(t, whatever.ImportantField, "SECRET_PASSWORD")
 	var foo = func(t *testing.T) {}
-	foo()
-	testFunc(t, "something")
+	foo(t)
+
+	strp := "something"
+	testFunc(t, &strp)
+	t.Fail()
 }

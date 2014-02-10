@@ -10,5 +10,7 @@ type UselessStruct struct {
 
 func TestSomethingImportant(t *testing.T) {
 	whatever := &UselessStruct{}
-	t.Fail(whatever.ImportantField != "SECRET_PASSWORD")
+	if whatever.ImportantField != "SECRET_PASSWORD" {
+		t.Fail()
+	}
 }
