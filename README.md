@@ -25,11 +25,12 @@ Jump to the [docs](http://onsi.github.io/ginkgo/) to learn more.  To start rolli
 - Built-in support for [benchmarking](http://onsi.github.io/ginkgo/#benchmark_tests) your code.  Control the number of benchmark samples as you gather runtimes and other, arbitrary, bits of numerical information about your code. 
 
 - `ginkgo`: a command line interface with plenty of handy command line arguments for [running your tests](http://onsi.github.io/ginkgo/#running_tests) and [generating](http://onsi.github.io/ginkgo/#generators) test files.  Here are a few choice examples:
-    - `ginkgo -cover` will run your tests using Golang's code coverage tool
-    - `ginkgo -focus="REGEXP"` and `ginkgo -skip="REGEXP"` allow you to specify a subset of tests to run via regular expression
     - `ginkgo -nodes=N` runs your tests in `N` parallel processes
+    - `ginkgo -cover` will run your tests using Golang's code coverage tool
+    - `ginkgo convert` converts an XUnit-style `testing` package to a Ginkgo-style package
+    - `ginkgo -focus="REGEXP"` and `ginkgo -skip="REGEXP"` allow you to specify a subset of tests to run via regular expression
     - `ginkgo -r` runs all tests suites under the current directory
-    - `ginkgo -v` prints ou identifying information for each tests just before it runs
+    - `ginkgo -v` prints out identifying information for each tests just before it runs
     - `ginkgo -watch` watches packages for changes, then reruns tests
 
     The `ginkgo` CLI is convenient, but purely optional -- Ginkgo works just fine with `go test`
