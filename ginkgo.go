@@ -47,12 +47,30 @@ type GinkgoTestingT interface {
 //
 // GinkgoT() takes an optional offset argument that can be used to get the
 // correct line number associated with the failure.
-func GinkgoT(optionalOffset ...int) *ginkgoTestingTProxy {
+func GinkgoT(optionalOffset ...int) GinkgoTInterface {
 	offset := 3
 	if len(optionalOffset) > 0 {
 		offset = optionalOffset[0]
 	}
 	return newGinkgoTestingTProxy(Fail, offset)
+}
+
+//The interface returned by GinkgoT()
+type GinkgoTInterface interface {
+	Fail()
+	Error(args ...interface{})
+	Errorf(format string, args ...interface{})
+	FailNow()
+	Fatal(args ...interface{})
+	Fatalf(format string, args ...interface{})
+	Log(args ...interface{})
+	Logf(format string, args ...interface{})
+	Failed() bool
+	Parallel()
+	Skip(args ...interface{})
+	Skipf(format string, args ...interface{})
+	SkipNow()
+	Skipped() bool
 }
 
 //Custom Ginkgo test reporters must implement the Reporter interface.

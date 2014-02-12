@@ -34,7 +34,7 @@ func rewriteOtherFuncsToUseGinkgoT(declarations []ast.Decl) {
 				continue
 			}
 
-			param.Type = newGinkgoTestingT()
+			param.Type = newGinkgoTInterface()
 		}
 	}
 }
@@ -97,7 +97,7 @@ func replaceTypeDeclTestingTsInFuncLiteral(functionLiteral *ast.FuncLit) {
 		}
 
 		if target.Name == "testing" && selectorExpr.Sel.Name == "T" {
-			arg.Type = newGinkgoTestingT()
+			arg.Type = newGinkgoTInterface()
 		}
 	}
 }
@@ -124,7 +124,7 @@ func replaceTestingTsInStructType(structType *ast.StructType) {
 		}
 
 		if xIdent.Name == "testing" && selectorExpr.Sel.Name == "T" {
-			field.Type = newGinkgoTestingT()
+			field.Type = newGinkgoTInterface()
 		}
 	}
 }

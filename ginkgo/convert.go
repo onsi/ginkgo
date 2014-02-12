@@ -8,7 +8,7 @@ import (
 
 func convertPackage() {
 	if len(os.Args) != 3 {
-		println(fmt.Sprintf("usage: %s convert /path/to/your/package", os.Args[2]))
+		println(fmt.Sprintf("usage: %s convert /path/to/your/package", os.Args[0]))
 		os.Exit(1)
 	}
 

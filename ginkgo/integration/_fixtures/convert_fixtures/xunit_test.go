@@ -33,3 +33,9 @@ func TestSomethingImportant(t *testing.T) {
 	testFunc(t, &strp)
 	t.Fail()
 }
+
+func Test3Things(t *testing.T) {
+	if 3 != 3 {
+		t.Fail()
+	}
+}

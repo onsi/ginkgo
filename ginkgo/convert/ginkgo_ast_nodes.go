@@ -10,9 +10,9 @@ import (
 /*
  * Creates a func init() node
  */
-	func createVarUnderscoreBlock() *ast.ValueSpec {
+func createVarUnderscoreBlock() *ast.ValueSpec {
 	valueSpec := &ast.ValueSpec{}
-	object := &ast.Object{Kind: 4, Name: "_", Decl:valueSpec, Data: 0}
+	object := &ast.Object{Kind: 4, Name: "_", Decl: valueSpec, Data: 0}
 	ident := &ast.Ident{Name: "_", Obj: object}
 	valueSpec.Names = append(valueSpec.Names, ident)
 	return valueSpec
@@ -85,7 +85,7 @@ func createItStatementForTestFunc(testFunc *ast.FuncDecl) *ast.ExprStmt {
 /*
 * rewrite test names to be human readable
 * eg: rewrites "TestSomethingAmazing" as "something amazing"
-*/
+ */
 func rewriteTestName(testName string) string {
 	nameComponents := []string{}
 	currentString := ""
@@ -100,7 +100,7 @@ func rewriteTestName(testName string) string {
 
 	for _, rune := range testName {
 		if unicode.IsUpper(rune) {
-  		nameComponents = append(nameComponents, currentString)
+			nameComponents = append(nameComponents, currentString)
 			currentString = string(unicode.ToLower(rune))
 		} else {
 			currentString += string(rune)
@@ -118,6 +118,6 @@ func newGinkgoTFromIdent(ident *ast.Ident) *ast.CallExpr {
 	}
 }
 
-func newGinkgoTestingT() *ast.Ident {
-	return &ast.Ident{Name: "GinkgoTestingT"}
+func newGinkgoTInterface() *ast.Ident {
+	return &ast.Ident{Name: "GinkgoTInterface"}
 }

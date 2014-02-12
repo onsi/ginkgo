@@ -12,6 +12,6 @@ var _ = Describe("Testing with Ginkgo", func() {
 	})
 })
 
-func somethingImportant(t GinkgoTestingT, message *string) {
+func somethingImportant(t GinkgoTInterface, message *string) {
 	t.Log("Something important happened in a test: " + *message)
 }

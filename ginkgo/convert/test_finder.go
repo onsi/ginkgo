@@ -12,7 +12,7 @@ import (
  * TestWithCamelCasedName and receive a single *testing.T argument.
  */
 func findTestFuncs(rootNode *ast.File) (testsToRewrite []*ast.FuncDecl) {
-	testNameRegexp := regexp.MustCompile("^Test[A-Z].+")
+	testNameRegexp := regexp.MustCompile("^Test[0-9A-Z].+")
 
 	ast.Inspect(rootNode, func(node ast.Node) bool {
 		if node == nil {

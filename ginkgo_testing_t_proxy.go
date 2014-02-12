@@ -65,8 +65,7 @@ func (t *ginkgoTestingTProxy) Skipf(format string, args ...interface{}) {
 	fmt.Printf(format, args...)
 }
 
-func (t *ginkgoTestingTProxy) SkipNow(args ...interface{}) {
-	fmt.Println(args...)
+func (t *ginkgoTestingTProxy) SkipNow() {
 }
 
 func (t *ginkgoTestingTProxy) Skipped() bool {

@@ -7,6 +7,7 @@ import (
 	"os"
 	"os/exec"
 	"path/filepath"
+	"regexp"
 )
 
 /*
@@ -41,8 +42,14 @@ func findTestsInPackage(pkg *build.Package) (testfiles []string) {
 		panic(fmt.Sprintf("unexpected error reading dir: '%s'\n%s\n", pkg.Dir, err.Error()))
 	}
 
+	re := regexp.MustCompile(`^[._]`)
+
 	for _, file := range dirFiles {
 		if !file.IsDir() {
+			continue
+		}
+
+		if re.Match([]byte(file.Name())) {
 			continue
 		}
 
