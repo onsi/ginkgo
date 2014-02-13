@@ -4,27 +4,25 @@ import (
 	. "github.com/onsi/ginkgo"
 )
 
-func init() {
-	Describe("Testing with Ginkgo", func() {
-		It("something important", func() {
+var _ = Describe("Testing with Ginkgo", func() {
+	It("something important", func() {
 
-			whatever := &UselessStruct{
-				T:              GinkgoT(),
-				ImportantField: "SECRET_PASSWORD",
-			}
-			something := &UselessStruct{ImportantField: "string value"}
-			assertEqual(GinkgoT(), whatever.ImportantField, "SECRET_PASSWORD")
-			assertEqual(GinkgoT(), something.ImportantField, "string value")
+		whatever := &UselessStruct{
+			T:              GinkgoT(),
+			ImportantField: "SECRET_PASSWORD",
+		}
+		something := &UselessStruct{ImportantField: "string value"}
+		assertEqual(GinkgoT(), whatever.ImportantField, "SECRET_PASSWORD")
+		assertEqual(GinkgoT(), something.ImportantField, "string value")
 
-			var foo = func(t GinkgoTestingT) {}
-			foo(GinkgoT())
+		var foo = func(t GinkgoTestingT) {}
+		foo(GinkgoT())
 
-			strp := "something"
-			testFunc(GinkgoT(), &strp)
-			GinkgoT().Fail()
-		})
+		strp := "something"
+		testFunc(GinkgoT(), &strp)
+		GinkgoT().Fail()
 	})
-}
+})
 
 type UselessStruct struct {
 	ImportantField string
