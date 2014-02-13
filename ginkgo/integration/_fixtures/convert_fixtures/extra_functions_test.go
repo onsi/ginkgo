@@ -5,7 +5,8 @@ import (
 )
 
 func TestSomethingLessImportant(t *testing.T) {
-	somethingImportant(t, &"hello!")
+	strp := "hello!"
+	somethingImportant(t, &strp)
 }
 
 func somethingImportant(t *testing.T, message *string) {

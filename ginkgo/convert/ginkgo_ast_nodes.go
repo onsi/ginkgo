@@ -10,19 +10,18 @@ import (
 /*
  * Creates a func init() node
  */
-func createInitBlock() *ast.FuncDecl {
-	blockStatement := &ast.BlockStmt{List: []ast.Stmt{}}
-	fieldList := &ast.FieldList{}
-	funcType := &ast.FuncType{Params: fieldList}
-	ident := &ast.Ident{Name: "init"}
-
-	return &ast.FuncDecl{Name: ident, Type: funcType, Body: blockStatement}
+	func createVarUnderscoreBlock() *ast.ValueSpec {
+	valueSpec := &ast.ValueSpec{}
+	object := &ast.Object{Kind: 4, Name: "_", Decl:valueSpec, Data: 0}
+	ident := &ast.Ident{Name: "_", Obj: object}
+	valueSpec.Names = append(valueSpec.Names, ident)
+	return valueSpec
 }
 
 /*
  * Creates a Describe("Testing with ginkgo", func() { }) node
  */
-func createDescribeBlock() *ast.ExprStmt {
+func createDescribeBlock() *ast.CallExpr {
 	blockStatement := &ast.BlockStmt{List: []ast.Stmt{}}
 
 	fieldList := &ast.FieldList{}
@@ -30,9 +29,7 @@ func createDescribeBlock() *ast.ExprStmt {
 	funcLit := &ast.FuncLit{Type: funcType, Body: blockStatement}
 	basicLit := &ast.BasicLit{Kind: 9, Value: "\"Testing with Ginkgo\""}
 	describeIdent := &ast.Ident{Name: "Describe"}
-	callExpr := &ast.CallExpr{Fun: describeIdent, Args: []ast.Expr{basicLit, funcLit}}
-
-	return &ast.ExprStmt{X: callExpr}
+	return &ast.CallExpr{Fun: describeIdent, Args: []ast.Expr{basicLit, funcLit}}
 }
 
 /*
@@ -48,11 +45,11 @@ func namedTestingTArg(node *ast.FuncDecl) string {
 /*
  * Convenience function to return the block statement node for a Describe statement
  */
-func blockStatementFromDescribe(desc *ast.ExprStmt) *ast.BlockStmt {
+func blockStatementFromDescribe(desc *ast.CallExpr) *ast.BlockStmt {
 	var funcLit *ast.FuncLit
 	var found = false
 
-	for _, node := range desc.X.(*ast.CallExpr).Args {
+	for _, node := range desc.Args {
 		switch node := node.(type) {
 		case *ast.FuncLit:
 			found = true
@@ -111,4 +108,16 @@ func rewriteTestName(testName string) string {
 	}
 
 	return strings.Join(append(nameComponents, currentString), " ")
+}
+
+func newGinkgoTFromIdent(ident *ast.Ident) *ast.CallExpr {
+	return &ast.CallExpr{
+		Lparen: ident.NamePos + 1,
+		Rparen: ident.NamePos + 2,
+		Fun:    &ast.Ident{Name: "GinkgoT"},
+	}
+}
+
+func newGinkgoTestingT() *ast.Ident {
+	return &ast.Ident{Name: "GinkgoTestingT"}
 }

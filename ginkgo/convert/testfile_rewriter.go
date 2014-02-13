@@ -30,15 +30,23 @@ func rewriteTestsInFile(pathToFile string) {
 	addGinkgoImports(rootNode)
 	removeTestingImport(rootNode)
 
-	topLevelInitFunc := createInitBlock()
+	varUnderscoreBlock := createVarUnderscoreBlock()
 	describeBlock := createDescribeBlock()
-	topLevelInitFunc.Body.List = append(topLevelInitFunc.Body.List, describeBlock)
+	varUnderscoreBlock.Values = []ast.Expr{describeBlock}
 
 	for _, testFunc := range findTestFuncs(rootNode) {
 		rewriteTestFuncAsItStatement(testFunc, rootNode, describeBlock)
 	}
 
-	rootNode.Decls = append(rootNode.Decls, topLevelInitFunc)
+	underscoreDecl := &ast.GenDecl{
+		Tok: 85,    // gah, magick numbers are needed to make this work
+	  TokPos: 14, // this tricks Go into writing "var _ = Describe"
+  	Specs: []ast.Spec{varUnderscoreBlock},
+	}
+
+	imports := rootNode.Decls[0]
+	tail := rootNode.Decls[1:]
+	rootNode.Decls = append(append([]ast.Decl{imports}, underscoreDecl), tail...)
 	rewriteOtherFuncsToUseGinkgoT(rootNode.Decls)
 	walkNodesInRootNodeReplacingTestingT(rootNode)
 
@@ -61,7 +69,7 @@ func rewriteTestsInFile(pathToFile string) {
  * It("does something neat", func() { __test_body_here__ }) and adds it
  * to the Describe's list of statements
  */
-func rewriteTestFuncAsItStatement(testFunc *ast.FuncDecl, rootNode *ast.File, describe *ast.ExprStmt) {
+func rewriteTestFuncAsItStatement(testFunc *ast.FuncDecl, rootNode *ast.File, describe *ast.CallExpr) {
 	var funcIndex int = -1
 	for index, child := range rootNode.Decls {
 		if child == testFunc {
