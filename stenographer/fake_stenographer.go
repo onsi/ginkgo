@@ -45,24 +45,24 @@ func (stenographer *FakeStenographer) registerCall(method string, args ...interf
 	stenographer.Calls = append(stenographer.Calls, NewFakeStenographerCall(method, args...))
 }
 
-func (stenographer *FakeStenographer) AnnounceSuite(description string, randomSeed int64, randomizingAll bool) {
-	stenographer.registerCall("AnnounceSuite", description, randomSeed, randomizingAll)
+func (stenographer *FakeStenographer) AnnounceSuite(description string, randomSeed int64, randomizingAll bool, succinct bool) {
+	stenographer.registerCall("AnnounceSuite", description, randomSeed, randomizingAll, succinct)
 }
 
-func (stenographer *FakeStenographer) AnnounceAggregatedParallelRun(nodes int) {
-	stenographer.registerCall("AnnounceAggregatedParallelRun", nodes)
+func (stenographer *FakeStenographer) AnnounceAggregatedParallelRun(nodes int, succinct bool) {
+	stenographer.registerCall("AnnounceAggregatedParallelRun", nodes, succinct)
 }
 
-func (stenographer *FakeStenographer) AnnounceParallelRun(node int, nodes int, specsToRun int, totalSpecs int) {
-	stenographer.registerCall("AnnounceParallelRun", node, nodes, specsToRun, totalSpecs)
+func (stenographer *FakeStenographer) AnnounceParallelRun(node int, nodes int, specsToRun int, totalSpecs int, succinct bool) {
+	stenographer.registerCall("AnnounceParallelRun", node, nodes, specsToRun, totalSpecs, succinct)
 }
 
-func (stenographer *FakeStenographer) AnnounceNumberOfSpecs(specsToRun int, total int) {
-	stenographer.registerCall("AnnounceNumberOfSpecs", specsToRun, total)
+func (stenographer *FakeStenographer) AnnounceNumberOfSpecs(specsToRun int, total int, succinct bool) {
+	stenographer.registerCall("AnnounceNumberOfSpecs", specsToRun, total, succinct)
 }
 
-func (stenographer *FakeStenographer) AnnounceSpecRunCompletion(summary *types.SuiteSummary) {
-	stenographer.registerCall("AnnounceSpecRunCompletion", summary)
+func (stenographer *FakeStenographer) AnnounceSpecRunCompletion(summary *types.SuiteSummary, succinct bool) {
+	stenographer.registerCall("AnnounceSpecRunCompletion", summary, succinct)
 }
 
 func (stenographer *FakeStenographer) AnnounceExampleWillRun(example *types.ExampleSummary) {

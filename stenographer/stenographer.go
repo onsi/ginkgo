@@ -31,11 +31,11 @@ const (
 )
 
 type Stenographer interface {
-	AnnounceSuite(description string, randomSeed int64, randomizingAll bool)
-	AnnounceAggregatedParallelRun(nodes int)
-	AnnounceParallelRun(node int, nodes int, specsToRun int, totalSpecs int)
-	AnnounceNumberOfSpecs(specsToRun int, total int)
-	AnnounceSpecRunCompletion(summary *types.SuiteSummary)
+	AnnounceSuite(description string, randomSeed int64, randomizingAll bool, succinct bool)
+	AnnounceAggregatedParallelRun(nodes int, succinct bool)
+	AnnounceParallelRun(node int, nodes int, specsToRun int, totalSpecs int, succinct bool)
+	AnnounceNumberOfSpecs(specsToRun int, total int, succinct bool)
+	AnnounceSpecRunCompletion(summary *types.SuiteSummary, succinct bool)
 
 	AnnounceExampleWillRun(example *types.ExampleSummary)
 
@@ -67,8 +67,11 @@ type consoleStenographer struct {
 
 var alternatingColors = []string{defaultStyle, grayColor}
 
-func (s *consoleStenographer) AnnounceSuite(description string, randomSeed int64, randomizingAll bool) {
-	s.printNewLine()
+func (s *consoleStenographer) AnnounceSuite(description string, randomSeed int64, randomizingAll bool, succinct bool) {
+	if succinct {
+		s.print(0, "[%d] %s ", randomSeed, s.colorize(boldStyle, description))
+		return
+	}
 	s.printBanner(fmt.Sprintf("Running Suite: %s", description), "=")
 	s.print(0, "Random Seed: %s", s.colorize(boldStyle, "%d", randomSeed))
 	if randomizingAll {
@@ -77,7 +80,11 @@ func (s *consoleStenographer) AnnounceSuite(description string, randomSeed int64
 	s.printNewLine()
 }
 
-func (s *consoleStenographer) AnnounceParallelRun(node int, nodes int, specsToRun int, totalSpecs int) {
+func (s *consoleStenographer) AnnounceParallelRun(node int, nodes int, specsToRun int, totalSpecs int, succinct bool) {
+	if succinct {
+		s.print(0, "- node #%d ", node)
+		return
+	}
 	s.println(0,
 		"Parallel test node %s/%s. Assigned %s of %s specs.",
 		s.colorize(boldStyle, "%d", node),
@@ -88,7 +95,11 @@ func (s *consoleStenographer) AnnounceParallelRun(node int, nodes int, specsToRu
 	s.printNewLine()
 }
 
-func (s *consoleStenographer) AnnounceAggregatedParallelRun(nodes int) {
+func (s *consoleStenographer) AnnounceAggregatedParallelRun(nodes int, succinct bool) {
+	if succinct {
+		s.print(0, "- %d nodes ", nodes)
+		return
+	}
 	s.println(0,
 		"Running in parallel across %s nodes",
 		s.colorize(boldStyle, "%d", nodes),
@@ -96,7 +107,12 @@ func (s *consoleStenographer) AnnounceAggregatedParallelRun(nodes int) {
 	s.printNewLine()
 }
 
-func (s *consoleStenographer) AnnounceNumberOfSpecs(specsToRun int, total int) {
+func (s *consoleStenographer) AnnounceNumberOfSpecs(specsToRun int, total int, succinct bool) {
+	if succinct {
+		s.print(0, "- %d/%d specs ", specsToRun, total)
+		s.cursorState = cursorStateStreaming
+		return
+	}
 	s.println(0,
 		"Will run %s of %s specs",
 		s.colorize(boldStyle, "%d", specsToRun),
@@ -106,7 +122,11 @@ func (s *consoleStenographer) AnnounceNumberOfSpecs(specsToRun int, total int) {
 	s.printNewLine()
 }
 
-func (s *consoleStenographer) AnnounceSpecRunCompletion(summary *types.SuiteSummary) {
+func (s *consoleStenographer) AnnounceSpecRunCompletion(summary *types.SuiteSummary, succinct bool) {
+	if succinct && summary.SuiteSucceeded {
+		s.print(0, "%s %s ", s.colorize(greenColor, "SUCCESS!"), summary.RunTime)
+		return
+	}
 	s.printNewLine()
 	color := greenColor
 	if !summary.SuiteSucceeded {
@@ -121,15 +141,14 @@ func (s *consoleStenographer) AnnounceSpecRunCompletion(summary *types.SuiteSumm
 		status = s.colorize(boldStyle+redColor, "FAIL!")
 	}
 
-	s.println(0,
-		"%s -- %s | %s | %s | %s",
+	s.print(0,
+		"%s -- %s | %s | %s | %s ",
 		status,
 		s.colorize(greenColor+boldStyle, "%d Passed", summary.NumberOfPassedExamples),
 		s.colorize(redColor+boldStyle, "%d Failed", summary.NumberOfFailedExamples),
 		s.colorize(yellowColor+boldStyle, "%d Pending", summary.NumberOfPendingExamples),
 		s.colorize(cyanColor+boldStyle, "%d Skipped", summary.NumberOfSkippedExamples),
 	)
-	s.printNewLine()
 }
 
 func (s *consoleStenographer) AnnounceExampleWillRun(example *types.ExampleSummary) {

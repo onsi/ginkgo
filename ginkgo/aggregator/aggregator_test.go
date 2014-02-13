@@ -123,9 +123,9 @@ var _ = Describe("Aggregator", func() {
 
 			It("should announce the beginning of the suite", func() {
 				Ω(stenographer.Calls).Should(HaveLen(3))
-				Ω(stenographer.Calls[0]).Should(Equal(call("AnnounceSuite", suiteDescription, ginkgoConfig1.RandomSeed, true)))
-				Ω(stenographer.Calls[1]).Should(Equal(call("AnnounceNumberOfSpecs", 23, 30)))
-				Ω(stenographer.Calls[2]).Should(Equal(call("AnnounceAggregatedParallelRun", 2)))
+				Ω(stenographer.Calls[0]).Should(Equal(call("AnnounceSuite", suiteDescription, ginkgoConfig1.RandomSeed, true, false)))
+				Ω(stenographer.Calls[1]).Should(Equal(call("AnnounceNumberOfSpecs", 23, 30, false)))
+				Ω(stenographer.Calls[2]).Should(Equal(call("AnnounceAggregatedParallelRun", 2, false)))
 			})
 		})
 	})

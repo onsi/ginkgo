@@ -111,7 +111,7 @@ func (aggregator *Aggregator) registerSuiteBeginning(configAndSuite configAndSui
 		return
 	}
 
-	aggregator.stenographer.AnnounceSuite(configAndSuite.summary.SuiteDescription, configAndSuite.config.RandomSeed, configAndSuite.config.RandomizeAllSpecs)
+	aggregator.stenographer.AnnounceSuite(configAndSuite.summary.SuiteDescription, configAndSuite.config.RandomSeed, configAndSuite.config.RandomizeAllSpecs, aggregator.config.Succinct)
 
 	numberOfSpecsToRun := 0
 	totalNumberOfSpecs := 0
@@ -120,8 +120,8 @@ func (aggregator *Aggregator) registerSuiteBeginning(configAndSuite configAndSui
 		totalNumberOfSpecs += configAndSuite.summary.NumberOfTotalExamples
 	}
 
-	aggregator.stenographer.AnnounceNumberOfSpecs(numberOfSpecsToRun, totalNumberOfSpecs)
-	aggregator.stenographer.AnnounceAggregatedParallelRun(aggregator.nodeCount)
+	aggregator.stenographer.AnnounceNumberOfSpecs(numberOfSpecsToRun, totalNumberOfSpecs, aggregator.config.Succinct)
+	aggregator.stenographer.AnnounceAggregatedParallelRun(aggregator.nodeCount, aggregator.config.Succinct)
 	aggregator.flushCompletedExamples()
 }
 
@@ -151,17 +151,23 @@ func (aggregator *Aggregator) announceExample(exampleSummary *types.ExampleSumma
 
 	switch exampleSummary.State {
 	case types.ExampleStatePassed:
-		if exampleSummary.IsMeasurement {
-			aggregator.stenographer.AnnounceSuccesfulMeasurement(exampleSummary, aggregator.config.Succinct)
-		} else if exampleSummary.RunTime.Seconds() >= aggregator.config.SlowSpecThreshold {
-			aggregator.stenographer.AnnounceSuccesfulSlowExample(exampleSummary, aggregator.config.Succinct)
-		} else {
-			aggregator.stenographer.AnnounceSuccesfulExample(exampleSummary)
+		if !aggregator.config.Succinct {
+			if exampleSummary.IsMeasurement {
+				aggregator.stenographer.AnnounceSuccesfulMeasurement(exampleSummary, aggregator.config.Succinct)
+			} else if exampleSummary.RunTime.Seconds() >= aggregator.config.SlowSpecThreshold {
+				aggregator.stenographer.AnnounceSuccesfulSlowExample(exampleSummary, aggregator.config.Succinct)
+			} else {
+				aggregator.stenographer.AnnounceSuccesfulExample(exampleSummary)
+			}
 		}
 	case types.ExampleStatePending:
-		aggregator.stenographer.AnnouncePendingExample(exampleSummary, aggregator.config.NoisyPendings, aggregator.config.Succinct)
+		if !aggregator.config.Succinct {
+			aggregator.stenographer.AnnouncePendingExample(exampleSummary, aggregator.config.NoisyPendings, aggregator.config.Succinct)
+		}
 	case types.ExampleStateSkipped:
-		aggregator.stenographer.AnnounceSkippedExample(exampleSummary)
+		if !aggregator.config.Succinct {
+			aggregator.stenographer.AnnounceSkippedExample(exampleSummary)
+		}
 	case types.ExampleStateTimedOut:
 		aggregator.stenographer.AnnounceExampleTimedOut(exampleSummary, aggregator.config.Succinct)
 	case types.ExampleStatePanicked:
@@ -194,7 +200,7 @@ func (aggregator *Aggregator) registerSuiteEnding(suite *types.SuiteSummary) (fi
 	}
 
 	aggregatedSuiteSummary.RunTime = time.Since(aggregator.startTime)
-	aggregator.stenographer.AnnounceSpecRunCompletion(aggregatedSuiteSummary)
+	aggregator.stenographer.AnnounceSpecRunCompletion(aggregatedSuiteSummary, aggregator.config.Succinct)
 
 	return true, aggregatedSuiteSummary.SuiteSucceeded
 }

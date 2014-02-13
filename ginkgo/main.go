@@ -243,7 +243,7 @@ func runTestSuites(runner *testRunner) bool {
 	suites := findSuites()
 	suitesThatFailed := []*testsuite.TestSuite{}
 
-	for _, suite := range suites {
+	for i, suite := range suites {
 		suitePassed := runner.runSuite(suite)
 		sendSuiteCompletionNotification(suite, suitePassed)
 
@@ -254,10 +254,13 @@ func runTestSuites(runner *testRunner) bool {
 				break
 			}
 		}
+		if i < len(suites)-1 && !config.DefaultReporterConfig.Succinct {
+			fmt.Println("")
+		}
 	}
 
 	if keepGoing && !passed {
-		fmt.Println("\nThere were failures detected in the following suites:")
+		fmt.Println("There were failures detected in the following suites:")
 		for _, suite := range suitesThatFailed {
 			fmt.Printf("\t%s\n", suite.PackageName)
 		}

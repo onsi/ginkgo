@@ -26,15 +26,15 @@ func NewDefaultReporter(config config.DefaultReporterConfigType, stenographer st
 }
 
 func (reporter *DefaultReporter) SpecSuiteWillBegin(config config.GinkgoConfigType, summary *types.SuiteSummary) {
-	reporter.stenographer.AnnounceSuite(summary.SuiteDescription, config.RandomSeed, config.RandomizeAllSpecs)
+	reporter.stenographer.AnnounceSuite(summary.SuiteDescription, config.RandomSeed, config.RandomizeAllSpecs, reporter.config.Succinct)
 	if config.ParallelTotal > 1 {
-		reporter.stenographer.AnnounceParallelRun(config.ParallelNode, config.ParallelTotal, summary.NumberOfTotalExamples, summary.NumberOfExamplesBeforeParallelization)
+		reporter.stenographer.AnnounceParallelRun(config.ParallelNode, config.ParallelTotal, summary.NumberOfTotalExamples, summary.NumberOfExamplesBeforeParallelization, reporter.config.Succinct)
 	}
-	reporter.stenographer.AnnounceNumberOfSpecs(summary.NumberOfExamplesThatWillBeRun, summary.NumberOfTotalExamples)
+	reporter.stenographer.AnnounceNumberOfSpecs(summary.NumberOfExamplesThatWillBeRun, summary.NumberOfTotalExamples, reporter.config.Succinct)
 }
 
 func (reporter *DefaultReporter) ExampleWillRun(exampleSummary *types.ExampleSummary) {
-	if reporter.config.Verbose && exampleSummary.State != types.ExampleStatePending && exampleSummary.State != types.ExampleStateSkipped {
+	if reporter.config.Verbose && !reporter.config.Succinct && exampleSummary.State != types.ExampleStatePending && exampleSummary.State != types.ExampleStateSkipped {
 		reporter.stenographer.AnnounceExampleWillRun(exampleSummary)
 	}
 }
@@ -42,17 +42,23 @@ func (reporter *DefaultReporter) ExampleWillRun(exampleSummary *types.ExampleSum
 func (reporter *DefaultReporter) ExampleDidComplete(exampleSummary *types.ExampleSummary) {
 	switch exampleSummary.State {
 	case types.ExampleStatePassed:
-		if exampleSummary.IsMeasurement {
-			reporter.stenographer.AnnounceSuccesfulMeasurement(exampleSummary, reporter.config.Succinct)
-		} else if exampleSummary.RunTime.Seconds() >= reporter.config.SlowSpecThreshold {
-			reporter.stenographer.AnnounceSuccesfulSlowExample(exampleSummary, reporter.config.Succinct)
-		} else {
-			reporter.stenographer.AnnounceSuccesfulExample(exampleSummary)
+		if !reporter.config.Succinct {
+			if exampleSummary.IsMeasurement {
+				reporter.stenographer.AnnounceSuccesfulMeasurement(exampleSummary, reporter.config.Succinct)
+			} else if exampleSummary.RunTime.Seconds() >= reporter.config.SlowSpecThreshold {
+				reporter.stenographer.AnnounceSuccesfulSlowExample(exampleSummary, reporter.config.Succinct)
+			} else {
+				reporter.stenographer.AnnounceSuccesfulExample(exampleSummary)
+			}
 		}
 	case types.ExampleStatePending:
-		reporter.stenographer.AnnouncePendingExample(exampleSummary, reporter.config.NoisyPendings, reporter.config.Succinct)
+		if !reporter.config.Succinct {
+			reporter.stenographer.AnnouncePendingExample(exampleSummary, reporter.config.NoisyPendings, reporter.config.Succinct)
+		}
 	case types.ExampleStateSkipped:
-		reporter.stenographer.AnnounceSkippedExample(exampleSummary)
+		if !reporter.config.Succinct {
+			reporter.stenographer.AnnounceSkippedExample(exampleSummary)
+		}
 	case types.ExampleStateTimedOut:
 		reporter.stenographer.AnnounceExampleTimedOut(exampleSummary, reporter.config.Succinct)
 	case types.ExampleStatePanicked:
@@ -63,5 +69,5 @@ func (reporter *DefaultReporter) ExampleDidComplete(exampleSummary *types.Exampl
 }
 
 func (reporter *DefaultReporter) SpecSuiteDidEnd(summary *types.SuiteSummary) {
-	reporter.stenographer.AnnounceSpecRunCompletion(summary)
+	reporter.stenographer.AnnounceSpecRunCompletion(summary, reporter.config.Succinct)
 }

@@ -167,6 +167,7 @@ func (t *testRunner) runAndStreamParallelGinkgoSuite(suite *testsuite.TestSuite)
 	var passed = false
 	select {
 	case passed = <-result:
+		fmt.Println("")
 		//the aggregator is done and can tell us whether or not the suite passed
 	case <-time.After(time.Second):
 		//the aggregator never got back to us!  something must have gone wrong
@@ -196,7 +197,7 @@ func (t *testRunner) runAndStreamParallelGinkgoSuite(suite *testsuite.TestSuite)
 }
 
 func (t *testRunner) runCompiledSuite(suite *testsuite.TestSuite, ginkgoArgs []string, env []string, stream io.Writer, completions chan bool) bool {
-	args := []string{"-test.v", "-test.timeout=24h"}
+	args := []string{"-test.timeout=24h"}
 	if t.cover {
 		args = append(args, "--test.coverprofile="+suite.PackageName+".coverprofile")
 	}
