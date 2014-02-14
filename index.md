@@ -12,16 +12,10 @@ These docs are written assuming you'll be using Gomega with Ginkgo.  They also a
 
 Just `go get` it:
 
-    $ go get github.com/onsi/ginkgo
+    $ go get github.com/onsi/ginkgo/ginkgo
     $ go get github.com/onsi/gomega
 
-To install the Ginkgo CLI (*recommended, but optional*):
-
-    $ go install github.com/onsi/ginkgo/ginkgo
-
-this installs the `ginkgo` executable under `$GOPATH/bin` -- you'll want that on your `$PATH`.
-
-> Alternatively, you can `go get github.com/onsi/ginkgo/ginkgo` to fetch the testing framework and install the CLI in one go.
+this fetches ginkgo and installs the `ginkgo` executable under `$GOPATH/bin` -- you'll want that on your `$PATH`.
 
 **Ginkgo is compatible with Golang v1.2+  Ubuntu users: apt-get currently installs v1.0 -- you'll need to upgrade!**
 
@@ -179,6 +173,18 @@ While you typically want to use a matcher library, like [Gomega](https://github.
     Fail("Failure reason")
 
 and Ginkgo will take the rest.  More details about `Fail` and about using matcher libraries other than Gomega can be found in the [Using Other Matcher Libraries](#using_other_matcher_libraries) section.
+
+###Converting Existing Tests
+
+If you have an existing XUnit test suite that you'd like to convert to a Ginkgo suite, you can use the `ginkgo convert` command:
+
+    ginkgo convert github.com/your/package
+
+This will generate a Ginkgo bootstrap file and convert any `TestX...(t *testing.T)` XUnit style tsts into simply (flat) Ginkgo tests.  It also substitutes `GinkgoT()` for any references to `*testing.T` in your code.  `ginkgo convert` usually gets things right the first time round, but you may need to go in and tweak your tests after the fact.
+
+Also: `ginkgo convert` will **overwrite** your existing test files, so make sure you don't have any uncommitted changes before trying `ginkgo convert`!
+
+`ginkgo convert` is the brainchild of [Tim Jarratt](http://github.com/tjarratt)
  
 ---
 
@@ -580,7 +586,7 @@ There are a number of command line flags that can be passed to the `ginkgo` test
 
 - `--succinct`
     
-    By default, Ginkgo's default reporter prints out a verbose breakdown of where a slow/failing spec is located.  The `--succinct` flag makes the default reporter print out shorter code location information.
+    Succinct silences much of Ginkgo's more verbose output.  Test suites that succeed basically get printed out on just one line!
 
 - `--v`
 
