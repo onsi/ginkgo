@@ -85,8 +85,8 @@ func (stenographer *FakeStenographer) AnnounceSuccesfulMeasurement(example *type
 	stenographer.registerCall("AnnounceSuccesfulMeasurement", example, succinct)
 }
 
-func (stenographer *FakeStenographer) AnnouncePendingExample(example *types.ExampleSummary, noisy bool, succinct bool) {
-	stenographer.registerCall("AnnouncePendingExample", example, noisy, succinct)
+func (stenographer *FakeStenographer) AnnouncePendingExample(example *types.ExampleSummary, noisy bool) {
+	stenographer.registerCall("AnnouncePendingExample", example, noisy)
 }
 
 func (stenographer *FakeStenographer) AnnounceSkippedExample(example *types.ExampleSummary) {

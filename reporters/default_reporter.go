@@ -50,15 +50,13 @@ func (reporter *DefaultReporter) ExampleDidComplete(exampleSummary *types.Exampl
 			} else {
 				reporter.stenographer.AnnounceSuccesfulExample(exampleSummary)
 			}
+		} else {
+			reporter.stenographer.AnnounceSuccesfulExample(exampleSummary)
 		}
 	case types.ExampleStatePending:
-		if !reporter.config.Succinct {
-			reporter.stenographer.AnnouncePendingExample(exampleSummary, reporter.config.NoisyPendings, reporter.config.Succinct)
-		}
+		reporter.stenographer.AnnouncePendingExample(exampleSummary, reporter.config.NoisyPendings && !reporter.config.Succinct)
 	case types.ExampleStateSkipped:
-		if !reporter.config.Succinct {
-			reporter.stenographer.AnnounceSkippedExample(exampleSummary)
-		}
+		reporter.stenographer.AnnounceSkippedExample(exampleSummary)
 	case types.ExampleStateTimedOut:
 		reporter.stenographer.AnnounceExampleTimedOut(exampleSummary, reporter.config.Succinct)
 	case types.ExampleStatePanicked:

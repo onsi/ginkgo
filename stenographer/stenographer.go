@@ -45,7 +45,7 @@ type Stenographer interface {
 	AnnounceSuccesfulSlowExample(example *types.ExampleSummary, succinct bool)
 	AnnounceSuccesfulMeasurement(example *types.ExampleSummary, succinct bool)
 
-	AnnouncePendingExample(example *types.ExampleSummary, noisy bool, succinct bool)
+	AnnouncePendingExample(example *types.ExampleSummary, noisy bool)
 	AnnounceSkippedExample(example *types.ExampleSummary)
 
 	AnnounceExampleTimedOut(example *types.ExampleSummary, succinct bool)
@@ -124,7 +124,7 @@ func (s *consoleStenographer) AnnounceNumberOfSpecs(specsToRun int, total int, s
 
 func (s *consoleStenographer) AnnounceSpecRunCompletion(summary *types.SuiteSummary, succinct bool) {
 	if succinct && summary.SuiteSucceeded {
-		s.print(0, "%s %s ", s.colorize(greenColor, "SUCCESS!"), summary.RunTime)
+		s.print(0, " %s %s ", s.colorize(greenColor, "SUCCESS!"), summary.RunTime)
 		return
 	}
 	s.printNewLine()
@@ -211,13 +211,13 @@ func (s *consoleStenographer) AnnounceSuccesfulMeasurement(example *types.Exampl
 	)
 }
 
-func (s *consoleStenographer) AnnouncePendingExample(example *types.ExampleSummary, noisy bool, succinct bool) {
+func (s *consoleStenographer) AnnouncePendingExample(example *types.ExampleSummary, noisy bool) {
 	if noisy {
 		s.printBlockWithMessage(
 			s.colorize(yellowColor, "P [PENDING]"),
 			"",
 			example,
-			succinct,
+			false,
 		)
 	} else {
 		s.print(0, s.colorize(greenColor, "P"))
