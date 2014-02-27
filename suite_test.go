@@ -20,7 +20,7 @@ func init() {
 		BeforeEach(func() {
 			fakeT = &fakeTestingT{}
 			fakeR = reporters.NewFakeReporter()
-			specSuite = newSuite()
+			specSuite = newSuite(nil)
 		})
 
 		Describe("running a suite", func() {

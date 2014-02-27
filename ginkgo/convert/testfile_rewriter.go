@@ -39,9 +39,9 @@ func rewriteTestsInFile(pathToFile string) {
 	}
 
 	underscoreDecl := &ast.GenDecl{
-		Tok: 85,    // gah, magick numbers are needed to make this work
-	  TokPos: 14, // this tricks Go into writing "var _ = Describe"
-  	Specs: []ast.Spec{varUnderscoreBlock},
+		Tok:    85, // gah, magick numbers are needed to make this work
+		TokPos: 14, // this tricks Go into writing "var _ = Describe"
+		Specs:  []ast.Spec{varUnderscoreBlock},
 	}
 
 	imports := rootNode.Decls[0]

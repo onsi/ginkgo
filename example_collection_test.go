@@ -7,6 +7,7 @@ import (
 	. "github.com/onsi/gomega"
 
 	"math/rand"
+	"os"
 	"sort"
 	"time"
 )
@@ -48,7 +49,7 @@ func init() {
 					exampleWithItFunc("A", flagTypeNone, false),
 					exampleWithItFunc("B", flagTypeNone, false),
 				}
-				collection = newExampleCollection(fakeT, "collection description", examples, []Reporter{fakeR}, config.GinkgoConfigType{})
+				collection = newExampleCollection(fakeT, "collection description", examples, []Reporter{fakeR}, nil, config.GinkgoConfigType{})
 			})
 
 			It("should enumerate and assign example indices", func() {
@@ -64,7 +65,7 @@ func init() {
 					exampleWithItFunc("C", flagTypeNone, false),
 					exampleWithItFunc("A", flagTypeNone, false),
 					exampleWithItFunc("B", flagTypeNone, false),
-				}, []Reporter{fakeR}, config.GinkgoConfigType{})
+				}, []Reporter{fakeR}, nil, config.GinkgoConfigType{})
 			})
 
 			It("should be sortable", func() {
@@ -89,7 +90,7 @@ func init() {
 					exampleWithItFunc("C", flagTypeNone, false),
 					exampleWithItFunc("A", flagTypeNone, false),
 					exampleWithItFunc("B", flagTypeNone, false),
-				}, []Reporter{fakeR, otherFakeR}, config.GinkgoConfigType{})
+				}, []Reporter{fakeR, otherFakeR}, nil, config.GinkgoConfigType{})
 				collection.run()
 			})
 
@@ -97,6 +98,56 @@ func init() {
 				Ω(otherFakeR.BeginSummary).Should(Equal(fakeR.BeginSummary))
 				Ω(otherFakeR.EndSummary).Should(Equal(fakeR.EndSummary))
 				Ω(otherFakeR.ExampleSummaries).Should(Equal(fakeR.ExampleSummaries))
+			})
+		})
+
+		Describe("logging GinkgoWriter output", func() {
+			Context("when instantiated with no GinkgoWriter", func() {
+				It("should not panic when a test fails", func() {
+					collection = newExampleCollection(fakeT, "collection description", []*example{
+						exampleWithItFunc("C", flagTypeNone, true),
+					}, []Reporter{fakeR}, nil, config.GinkgoConfigType{})
+
+					Ω(func() {
+						collection.run()
+					}).ShouldNot(Panic())
+				})
+			})
+
+			Context("when instantiated with a GinkgoWriter", func() {
+				var writer *fakeGinkgoWriter
+
+				BeforeEach(func() {
+					writer = &fakeGinkgoWriter{}
+				})
+
+				Context("when a test fails", func() {
+					BeforeEach(func() {
+						collection = newExampleCollection(fakeT, "collection description", []*example{
+							exampleWithItFunc("C", flagTypeNone, true),
+						}, []Reporter{fakeR}, writer, config.GinkgoConfigType{})
+						collection.run()
+					})
+
+					It("should truncate and write to stdout", func() {
+						Ω(writer.didTruncate).Should(BeTrue())
+						Ω(writer.wroteTo).Should(Equal(os.Stdout))
+					})
+				})
+
+				Context("when a test passes", func() {
+					BeforeEach(func() {
+						collection = newExampleCollection(fakeT, "collection description", []*example{
+							exampleWithItFunc("C", flagTypeNone, false),
+						}, []Reporter{fakeR}, writer, config.GinkgoConfigType{})
+						collection.run()
+					})
+
+					It("should truncate but not write to stdout", func() {
+						Ω(writer.didTruncate).Should(BeTrue())
+						Ω(writer.wroteTo).Should(BeNil())
+					})
+				})
 			})
 		})
 
@@ -118,7 +169,7 @@ func init() {
 			})
 
 			JustBeforeEach(func() {
-				collection = newExampleCollection(fakeT, "collection description", []*example{example1, example2, example3}, []Reporter{fakeR}, conf)
+				collection = newExampleCollection(fakeT, "collection description", []*example{example1, example2, example3}, []Reporter{fakeR}, nil, conf)
 				runResult = collection.run()
 			})
 
@@ -556,7 +607,7 @@ func init() {
 					exampleWithItFunc("A", flagTypeNone, false),
 					exampleWithItFunc("B", flagTypeNone, false),
 					exampleWithMeasure("measure"),
-				}, []Reporter{fakeR}, conf)
+				}, []Reporter{fakeR}, nil, conf)
 
 				collection.run()
 			})

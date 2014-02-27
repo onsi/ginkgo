@@ -4,6 +4,7 @@ import (
 	"github.com/onsi/ginkgo/config"
 	"github.com/onsi/ginkgo/types"
 
+	"io"
 	"math/rand"
 	"time"
 )
@@ -18,14 +19,21 @@ type suite struct {
 	topLevelContainer *containerNode
 	currentContainer  *containerNode
 	exampleCollection *exampleCollection
+	writer            ginkgoWriter
 }
 
-func newSuite() *suite {
+type ginkgoWriter interface {
+	Truncate(n int)
+	WriteTo(w io.Writer) (n int64, err error)
+}
+
+func newSuite(writer ginkgoWriter) *suite {
 	topLevelContainer := newContainerNode("[Top Level]", flagTypeNone, types.CodeLocation{})
 
 	return &suite{
 		topLevelContainer: topLevelContainer,
 		currentContainer:  topLevelContainer,
+		writer:            writer,
 	}
 }
 
@@ -41,7 +49,7 @@ func (suite *suite) run(t GinkgoTestingT, description string, reporters []Report
 		panic("ginkgo.parallel.node is one-indexed and must be <= ginkgo.parallel.total")
 	}
 
-	suite.exampleCollection = newExampleCollection(t, description, suite.topLevelContainer.generateExamples(), reporters, config)
+	suite.exampleCollection = newExampleCollection(t, description, suite.topLevelContainer.generateExamples(), reporters, suite.writer, config)
 
 	return suite.exampleCollection.run()
 }

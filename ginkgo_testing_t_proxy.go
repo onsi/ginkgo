@@ -43,11 +43,11 @@ func (t *ginkgoTestingTProxy) Fatalf(format string, args ...interface{}) {
 }
 
 func (t *ginkgoTestingTProxy) Log(args ...interface{}) {
-	fmt.Println(args...)
+	fmt.Fprintln(GinkgoWriter, args...)
 }
 
 func (t *ginkgoTestingTProxy) Logf(format string, args ...interface{}) {
-	fmt.Printf(format, args...)
+	fmt.Fprintf(GinkgoWriter, format, args...)
 }
 
 func (t *ginkgoTestingTProxy) Failed() bool {

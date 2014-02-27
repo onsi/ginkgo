@@ -12,11 +12,14 @@ Ginkgo is MIT-Licensed
 package ginkgo
 
 import (
+	"bytes"
+	"flag"
 	"github.com/onsi/ginkgo/config"
 	"github.com/onsi/ginkgo/remote"
 	"github.com/onsi/ginkgo/reporters"
 	"github.com/onsi/ginkgo/stenographer"
 	"github.com/onsi/ginkgo/types"
+	"io"
 	"net/http"
 	"os"
 	"time"
@@ -30,8 +33,25 @@ var globalSuite *suite
 
 func init() {
 	config.Flags("ginkgo", true)
-	globalSuite = newSuite()
+	flag.Parse()
+
+	if config.DefaultReporterConfig.Verbose {
+		GinkgoWriter = os.Stdout
+		globalSuite = newSuite(nil)
+	} else {
+		buffer := &bytes.Buffer{}
+		GinkgoWriter = buffer
+		globalSuite = newSuite(buffer)
+	}
 }
+
+//GinkgoWriter implements an io.Writer
+//When running in verbose mode any writes to GinkgoWriter will be immediately printed
+//to stdout
+//
+//When not in verbose mode, GinkgoWriter will buffer any writes and flush them to screen
+//only if the current test fails.  In this mode, GinkgoWriter is truncated between tests.
+var GinkgoWriter io.Writer
 
 //The interface by which Ginkgo receives *testing.T
 type GinkgoTestingT interface {
