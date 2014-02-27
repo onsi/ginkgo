@@ -13,7 +13,6 @@ package ginkgo
 
 import (
 	"bytes"
-	"flag"
 	"github.com/onsi/ginkgo/config"
 	"github.com/onsi/ginkgo/remote"
 	"github.com/onsi/ginkgo/reporters"
@@ -33,16 +32,7 @@ var globalSuite *suite
 
 func init() {
 	config.Flags("ginkgo", true)
-	flag.Parse()
-
-	if config.DefaultReporterConfig.Verbose {
-		GinkgoWriter = os.Stdout
-		globalSuite = newSuite(nil)
-	} else {
-		buffer := &bytes.Buffer{}
-		GinkgoWriter = buffer
-		globalSuite = newSuite(buffer)
-	}
+	globalSuite = newSuite()
 }
 
 //GinkgoWriter implements an io.Writer
@@ -148,20 +138,27 @@ type Benchmarker interface {
 //	ginkgo bootstrap
 func RunSpecs(t GinkgoTestingT, description string) bool {
 	specReporters := []Reporter{buildDefaultReporter()}
-	return globalSuite.run(t, description, specReporters, config.GinkgoConfig)
+	return RunSpecsWithCustomReporters(t, description, specReporters)
 }
 
 //To run your tests with Ginkgo's default reporter and your custom reporter(s), replace
 //RunSpecs() with this method.
 func RunSpecsWithDefaultAndCustomReporters(t GinkgoTestingT, description string, specReporters []Reporter) bool {
 	specReporters = append([]Reporter{buildDefaultReporter()}, specReporters...)
-	return globalSuite.run(t, description, specReporters, config.GinkgoConfig)
+	return RunSpecsWithCustomReporters(t, description, specReporters)
 }
 
 //To run your tests with your custom reporter(s) (and *not* Ginkgo's default reporter), replace
 //RunSpecs() with this method.
 func RunSpecsWithCustomReporters(t GinkgoTestingT, description string, specReporters []Reporter) bool {
-	return globalSuite.run(t, description, specReporters, config.GinkgoConfig)
+	if config.DefaultReporterConfig.Verbose {
+		GinkgoWriter = os.Stdout
+		return globalSuite.run(t, description, specReporters, nil, config.GinkgoConfig)
+	} else {
+		buffer := &bytes.Buffer{}
+		GinkgoWriter = buffer
+		return globalSuite.run(t, description, specReporters, buffer, config.GinkgoConfig)
+	}
 }
 
 func buildDefaultReporter() Reporter {

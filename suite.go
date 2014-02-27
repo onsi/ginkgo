@@ -19,7 +19,6 @@ type suite struct {
 	topLevelContainer *containerNode
 	currentContainer  *containerNode
 	exampleCollection *exampleCollection
-	writer            ginkgoWriter
 }
 
 type ginkgoWriter interface {
@@ -27,17 +26,16 @@ type ginkgoWriter interface {
 	WriteTo(w io.Writer) (n int64, err error)
 }
 
-func newSuite(writer ginkgoWriter) *suite {
+func newSuite() *suite {
 	topLevelContainer := newContainerNode("[Top Level]", flagTypeNone, types.CodeLocation{})
 
 	return &suite{
 		topLevelContainer: topLevelContainer,
 		currentContainer:  topLevelContainer,
-		writer:            writer,
 	}
 }
 
-func (suite *suite) run(t GinkgoTestingT, description string, reporters []Reporter, config config.GinkgoConfigType) bool {
+func (suite *suite) run(t GinkgoTestingT, description string, reporters []Reporter, writer ginkgoWriter, config config.GinkgoConfigType) bool {
 	r := rand.New(rand.NewSource(config.RandomSeed))
 	suite.topLevelContainer.shuffle(r)
 
@@ -49,7 +47,7 @@ func (suite *suite) run(t GinkgoTestingT, description string, reporters []Report
 		panic("ginkgo.parallel.node is one-indexed and must be <= ginkgo.parallel.total")
 	}
 
-	suite.exampleCollection = newExampleCollection(t, description, suite.topLevelContainer.generateExamples(), reporters, suite.writer, config)
+	suite.exampleCollection = newExampleCollection(t, description, suite.topLevelContainer.generateExamples(), reporters, writer, config)
 
 	return suite.exampleCollection.run()
 }
