@@ -174,6 +174,10 @@ While you typically want to use a matcher library, like [Gomega](https://github.
 
 and Ginkgo will take the rest.  More details about `Fail` and about using matcher libraries other than Gomega can be found in the [Using Other Matcher Libraries](#using_other_matcher_libraries) section.
 
+###Logging Output
+
+Ginkgo provides a globally available `io.Writer` called `GinkgoWriter` that you can write to.  `GinkgoWriter` aggregates input while a test is running and only dumps it to stdout if the test fails.  When running in verbose mode (`ginkgo -v` or `go test -ginkgo.v`) `GinkgoWriter` always immediately redirects its input to stdout.
+
 ###Converting Existing Tests
 
 If you have an existing XUnit test suite that you'd like to convert to a Ginkgo suite, you can use the `ginkgo convert` command:
@@ -403,8 +407,6 @@ A convenient pattern for doing this is to use the bootstrap test file:
 ---
 
 ## The Spec Runner
-
-This section will discuss some of the properties Ginkgo's spec runner.
 
 ### Pending Specs
 
