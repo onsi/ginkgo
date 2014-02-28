@@ -12,7 +12,6 @@ Ginkgo is MIT-Licensed
 package ginkgo
 
 import (
-	"bytes"
 	"github.com/onsi/ginkgo/config"
 	"github.com/onsi/ginkgo/remote"
 	"github.com/onsi/ginkgo/reporters"
@@ -32,6 +31,7 @@ var globalSuite *suite
 
 func init() {
 	config.Flags("ginkgo", true)
+	GinkgoWriter = newGinkgoWriter(os.Stdout)
 	globalSuite = newSuite()
 }
 
@@ -151,14 +151,9 @@ func RunSpecsWithDefaultAndCustomReporters(t GinkgoTestingT, description string,
 //To run your tests with your custom reporter(s) (and *not* Ginkgo's default reporter), replace
 //RunSpecs() with this method.
 func RunSpecsWithCustomReporters(t GinkgoTestingT, description string, specReporters []Reporter) bool {
-	if config.DefaultReporterConfig.Verbose {
-		GinkgoWriter = os.Stdout
-		return globalSuite.run(t, description, specReporters, nil, config.GinkgoConfig)
-	} else {
-		buffer := &bytes.Buffer{}
-		GinkgoWriter = buffer
-		return globalSuite.run(t, description, specReporters, buffer, config.GinkgoConfig)
-	}
+	writer := GinkgoWriter.(*ginkgoWriter)
+	writer.setDirectToStdout(config.DefaultReporterConfig.Verbose)
+	return globalSuite.run(t, description, specReporters, writer, config.GinkgoConfig)
 }
 
 func buildDefaultReporter() Reporter {

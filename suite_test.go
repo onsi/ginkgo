@@ -15,9 +15,11 @@ func init() {
 			specSuite *suite
 			fakeT     *fakeTestingT
 			fakeR     *reporters.FakeReporter
+			writer    *fakeGinkgoWriter
 		)
 
 		BeforeEach(func() {
+			writer = &fakeGinkgoWriter{}
 			fakeT = &fakeTestingT{}
 			fakeR = reporters.NewFakeReporter()
 			specSuite = newSuite()
@@ -72,7 +74,7 @@ func init() {
 			})
 
 			JustBeforeEach(func() {
-				runResult = specSuite.run(fakeT, "suite description", []Reporter{fakeR}, nil, config.GinkgoConfigType{
+				runResult = specSuite.run(fakeT, "suite description", []Reporter{fakeR}, writer, config.GinkgoConfigType{
 					RandomSeed:        randomSeed,
 					RandomizeAllSpecs: randomizeAllSpecs,
 					FocusString:       focusString,

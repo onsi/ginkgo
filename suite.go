@@ -4,7 +4,6 @@ import (
 	"github.com/onsi/ginkgo/config"
 	"github.com/onsi/ginkgo/types"
 
-	"io"
 	"math/rand"
 	"time"
 )
@@ -21,11 +20,6 @@ type suite struct {
 	exampleCollection *exampleCollection
 }
 
-type ginkgoWriter interface {
-	Truncate(n int)
-	WriteTo(w io.Writer) (n int64, err error)
-}
-
 func newSuite() *suite {
 	topLevelContainer := newContainerNode("[Top Level]", flagTypeNone, types.CodeLocation{})
 
@@ -35,7 +29,7 @@ func newSuite() *suite {
 	}
 }
 
-func (suite *suite) run(t GinkgoTestingT, description string, reporters []Reporter, writer ginkgoWriter, config config.GinkgoConfigType) bool {
+func (suite *suite) run(t GinkgoTestingT, description string, reporters []Reporter, writer ginkgoWriterInterface, config config.GinkgoConfigType) bool {
 	r := rand.New(rand.NewSource(config.RandomSeed))
 	suite.topLevelContainer.shuffle(r)
 

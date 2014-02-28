@@ -3,7 +3,6 @@ package ginkgo
 import (
 	. "github.com/onsi/gomega"
 
-	"io"
 	"math/rand"
 	"testing"
 )
@@ -37,14 +36,13 @@ func (fakeT *fakeTestingT) Fail() {
 
 type fakeGinkgoWriter struct {
 	didTruncate bool
-	wroteTo     io.Writer
+	didDump     bool
 }
 
-func (writer *fakeGinkgoWriter) Truncate(n int) {
+func (writer *fakeGinkgoWriter) Truncate() {
 	writer.didTruncate = true
 }
 
-func (writer *fakeGinkgoWriter) WriteTo(w io.Writer) (n int64, err error) {
-	writer.wroteTo = w
-	return 0, nil
+func (writer *fakeGinkgoWriter) DumpOut() {
+	writer.didDump = true
 }

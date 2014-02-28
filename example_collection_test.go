@@ -7,7 +7,6 @@ import (
 	. "github.com/onsi/gomega"
 
 	"math/rand"
-	"os"
 	"sort"
 	"time"
 )
@@ -21,6 +20,7 @@ func init() {
 			examplesThatWereRun []string
 
 			collection *exampleCollection
+			writer     *fakeGinkgoWriter
 		)
 
 		exampleWithItFunc := func(itText string, flag flagType, fail bool) *example {
@@ -36,6 +36,7 @@ func init() {
 		}
 
 		BeforeEach(func() {
+			writer = &fakeGinkgoWriter{}
 			fakeT = &fakeTestingT{}
 			fakeR = reporters.NewFakeReporter()
 			examplesThatWereRun = make([]string, 0)
@@ -49,7 +50,7 @@ func init() {
 					exampleWithItFunc("A", flagTypeNone, false),
 					exampleWithItFunc("B", flagTypeNone, false),
 				}
-				collection = newExampleCollection(fakeT, "collection description", examples, []Reporter{fakeR}, nil, config.GinkgoConfigType{})
+				collection = newExampleCollection(fakeT, "collection description", examples, []Reporter{fakeR}, writer, config.GinkgoConfigType{})
 			})
 
 			It("should enumerate and assign example indices", func() {
@@ -65,7 +66,7 @@ func init() {
 					exampleWithItFunc("C", flagTypeNone, false),
 					exampleWithItFunc("A", flagTypeNone, false),
 					exampleWithItFunc("B", flagTypeNone, false),
-				}, []Reporter{fakeR}, nil, config.GinkgoConfigType{})
+				}, []Reporter{fakeR}, writer, config.GinkgoConfigType{})
 			})
 
 			It("should be sortable", func() {
@@ -90,7 +91,7 @@ func init() {
 					exampleWithItFunc("C", flagTypeNone, false),
 					exampleWithItFunc("A", flagTypeNone, false),
 					exampleWithItFunc("B", flagTypeNone, false),
-				}, []Reporter{fakeR, otherFakeR}, nil, config.GinkgoConfigType{})
+				}, []Reporter{fakeR, otherFakeR}, writer, config.GinkgoConfigType{})
 				collection.run()
 			})
 
@@ -102,51 +103,31 @@ func init() {
 		})
 
 		Describe("logging GinkgoWriter output", func() {
-			Context("when instantiated with no GinkgoWriter", func() {
-				It("should not panic when a test fails", func() {
+			Context("when a test fails", func() {
+				BeforeEach(func() {
 					collection = newExampleCollection(fakeT, "collection description", []*example{
 						exampleWithItFunc("C", flagTypeNone, true),
-					}, []Reporter{fakeR}, nil, config.GinkgoConfigType{})
+					}, []Reporter{fakeR}, writer, config.GinkgoConfigType{})
+					collection.run()
+				})
 
-					Ω(func() {
-						collection.run()
-					}).ShouldNot(Panic())
+				It("should truncate and write to stdout", func() {
+					Ω(writer.didTruncate).Should(BeTrue())
+					Ω(writer.didDump).Should(BeTrue())
 				})
 			})
 
-			Context("when instantiated with a GinkgoWriter", func() {
-				var writer *fakeGinkgoWriter
-
+			Context("when a test passes", func() {
 				BeforeEach(func() {
-					writer = &fakeGinkgoWriter{}
+					collection = newExampleCollection(fakeT, "collection description", []*example{
+						exampleWithItFunc("C", flagTypeNone, false),
+					}, []Reporter{fakeR}, writer, config.GinkgoConfigType{})
+					collection.run()
 				})
 
-				Context("when a test fails", func() {
-					BeforeEach(func() {
-						collection = newExampleCollection(fakeT, "collection description", []*example{
-							exampleWithItFunc("C", flagTypeNone, true),
-						}, []Reporter{fakeR}, writer, config.GinkgoConfigType{})
-						collection.run()
-					})
-
-					It("should truncate and write to stdout", func() {
-						Ω(writer.didTruncate).Should(BeTrue())
-						Ω(writer.wroteTo).Should(Equal(os.Stdout))
-					})
-				})
-
-				Context("when a test passes", func() {
-					BeforeEach(func() {
-						collection = newExampleCollection(fakeT, "collection description", []*example{
-							exampleWithItFunc("C", flagTypeNone, false),
-						}, []Reporter{fakeR}, writer, config.GinkgoConfigType{})
-						collection.run()
-					})
-
-					It("should truncate but not write to stdout", func() {
-						Ω(writer.didTruncate).Should(BeTrue())
-						Ω(writer.wroteTo).Should(BeNil())
-					})
+				It("should truncate but not write to stdout", func() {
+					Ω(writer.didTruncate).Should(BeTrue())
+					Ω(writer.didDump).Should(BeFalse())
 				})
 			})
 		})
@@ -169,7 +150,7 @@ func init() {
 			})
 
 			JustBeforeEach(func() {
-				collection = newExampleCollection(fakeT, "collection description", []*example{example1, example2, example3}, []Reporter{fakeR}, nil, conf)
+				collection = newExampleCollection(fakeT, "collection description", []*example{example1, example2, example3}, []Reporter{fakeR}, writer, conf)
 				runResult = collection.run()
 			})
 
@@ -607,7 +588,7 @@ func init() {
 					exampleWithItFunc("A", flagTypeNone, false),
 					exampleWithItFunc("B", flagTypeNone, false),
 					exampleWithMeasure("measure"),
-				}, []Reporter{fakeR}, nil, conf)
+				}, []Reporter{fakeR}, writer, conf)
 
 				collection.run()
 			})

@@ -5,7 +5,6 @@ import (
 	"github.com/onsi/ginkgo/types"
 
 	"math/rand"
-	"os"
 	"regexp"
 	"sort"
 	"time"
@@ -20,11 +19,11 @@ type exampleCollection struct {
 	startTime                         time.Time
 	suiteID                           string
 	runningExample                    *example
-	writer                            ginkgoWriter
+	writer                            ginkgoWriterInterface
 	config                            config.GinkgoConfigType
 }
 
-func newExampleCollection(t GinkgoTestingT, description string, examples []*example, reporters []Reporter, writer ginkgoWriter, config config.GinkgoConfigType) *exampleCollection {
+func newExampleCollection(t GinkgoTestingT, description string, examples []*example, reporters []Reporter, writer ginkgoWriterInterface, config config.GinkgoConfigType) *exampleCollection {
 	collection := &exampleCollection{
 		t:           t,
 		description: description,
@@ -139,7 +138,7 @@ func (collection *exampleCollection) run() bool {
 	suiteFailed := false
 
 	for _, example := range collection.examples {
-		collection.clearWriterBuffer()
+		collection.writer.Truncate()
 
 		collection.reportExampleWillRun(example)
 
@@ -148,7 +147,7 @@ func (collection *exampleCollection) run() bool {
 			example.run()
 			if example.failed() {
 				suiteFailed = true
-				collection.printWriterToStdout()
+				collection.writer.DumpOut()
 			}
 		} else if example.pending() && collection.config.FailOnPending {
 			suiteFailed = true
@@ -169,18 +168,6 @@ func (collection *exampleCollection) run() bool {
 func (collection *exampleCollection) fail(failure failureData) {
 	if collection.runningExample != nil {
 		collection.runningExample.fail(failure)
-	}
-}
-
-func (collection *exampleCollection) clearWriterBuffer() {
-	if collection.writer != nil {
-		collection.writer.Truncate(0)
-	}
-}
-
-func (collection *exampleCollection) printWriterToStdout() {
-	if collection.writer != nil {
-		collection.writer.WriteTo(os.Stdout)
 	}
 }
 
