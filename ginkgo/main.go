@@ -83,6 +83,7 @@ import (
 	"os"
 	"os/signal"
 	"runtime"
+	"syscall"
 	"time"
 )
 
@@ -296,7 +297,7 @@ func watchTests(runner *testRunner) {
 func registerSignalHandler(runner *testRunner) {
 	go func() {
 		c := make(chan os.Signal, 1)
-		signal.Notify(c, os.Interrupt, os.Kill)
+		signal.Notify(c, syscall.SIGINT, syscall.SIGKILL, syscall.SIGTERM)
 
 		select {
 		case sig := <-c:
