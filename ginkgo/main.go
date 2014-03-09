@@ -151,7 +151,7 @@ func main() {
 		verifyNotificationsAreAvailable()
 	}
 
-	runner := newTestRunner(numCPU, parallelStream, runMagicI, race, cover)
+	runner := newTestRunner(numCPU, parallelStream, race, cover)
 
 	registerSignalHandler(runner)
 

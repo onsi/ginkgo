@@ -28,7 +28,7 @@ type testRunner struct {
 	lock *sync.Mutex
 }
 
-func newTestRunner(numCPU int, parallelStream bool, runMagicI bool, race bool, cover bool) *testRunner {
+func newTestRunner(numCPU int, parallelStream bool, race bool, cover bool) *testRunner {
 	return &testRunner{
 		numCPU:           numCPU,
 		parallelStream:   parallelStream,
