@@ -99,6 +99,7 @@ var watch bool
 var notify bool
 var keepGoing bool
 var untilItFails bool
+var serialCompilation bool
 
 var activeRunners []*testrunner.TestRunner
 var runnerLock *sync.Mutex
@@ -116,6 +117,7 @@ func init() {
 	flag.BoolVar(&(race), "race", false, "Run tests with race detection enabled")
 	flag.BoolVar(&(cover), "cover", false, "Run tests with coverage analysis, will generate coverage profiles with the package name in the current directory")
 	flag.BoolVar(&(watch), "watch", false, "Monitor the target packages for changes, then run tests when changes are detected")
+	flag.BoolVar(&(serialCompilation), "serialCompilation", false, "Compile test suites in series, not in parallel.")
 	if onOSX {
 		flag.BoolVar(&(notify), "notify", false, "Send desktop notifications when a test run completes")
 	}
@@ -267,7 +269,11 @@ func runTestSuites() bool {
 	}
 
 	compilerChannel := make(chan *compiler)
-	for i := 0; i < runtime.NumCPU(); i++ {
+	numCompilers := runtime.NumCPU()
+	if serialCompilation {
+		numCompilers = 1
+	}
+	for i := 0; i < numCompilers; i++ {
 		go func() {
 			for compiler := range compilerChannel {
 				compiler.compile()
