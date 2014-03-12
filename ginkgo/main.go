@@ -252,7 +252,7 @@ func (c *compiler) compile() {
 	retries := 0
 
 	err := c.runner.Compile()
-	for err != nil && retries < 5 {
+	for err != nil && retries < 5 { //We retry because Go sometimes steps on itself when multiple compiles happen in parallel.  This is ugly, but should help resolve flakiness...
 		err = c.runner.Compile()
 		retries++
 	}
