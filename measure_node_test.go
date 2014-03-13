@@ -41,5 +41,35 @@ func init() {
 				Ω(report["bar"].Results).Should(Equal([]float64{0, 1, 2, 3}))
 			})
 		})
+
+		Context("when run, and the function panics", func() {
+			var (
+				codeLocation types.CodeLocation
+				outcome      runOutcome
+				failure      failureData
+			)
+
+			BeforeEach(func() {
+				measure = newMeasureNode("foo", func(Benchmarker) {
+					codeLocation = types.GenerateCodeLocation(0)
+					panic("kaboom")
+				}, flagTypeFocused, codeLocation, 10)
+				outcome, failure = measure.run()
+			})
+
+			It("should run the function and report a runOutcomePanicked", func() {
+				Ω(outcome).Should(Equal(runOutcomePanicked))
+				Ω(failure.message).Should(Equal("Test Panicked"))
+			})
+
+			It("should include the code location of the panic itself", func() {
+				Ω(failure.codeLocation.FileName).Should(Equal(codeLocation.FileName))
+				Ω(failure.codeLocation.LineNumber).Should(Equal(codeLocation.LineNumber + 1))
+			})
+
+			It("should include the panic data", func() {
+				Ω(failure.forwardedPanic).Should(Equal("kaboom"))
+			})
+		})
 	})
 }

@@ -4,6 +4,7 @@ import (
 	"fmt"
 	"github.com/onsi/ginkgo/types"
 	"reflect"
+	"sync"
 	"time"
 )
 
@@ -49,34 +50,56 @@ func newRunnableNode(body interface{}, codeLocation types.CodeLocation, timeout 
 
 func (runnable *runnableNode) run() (outcome runOutcome, failure failureData) {
 	done := make(chan interface{}, 1)
+	lock := &sync.Mutex{}
 
-	defer func() {
+	panicRecovery := func() {
 		if e := recover(); e != nil {
+			lock.Lock()
 			outcome = runOutcomePanicked
 			failure = failureData{
 				message:        "Test Panicked",
 				codeLocation:   types.GenerateCodeLocation(2),
 				forwardedPanic: e,
 			}
+			lock.Unlock()
+			select {
+			case <-done:
+				break
+			default:
+				close(done)
+			}
 		}
-	}()
+	}
+
+	defer panicRecovery()
 
 	if runnable.isAsync {
-		go runnable.asyncFunc(done)
+		go func() {
+			defer panicRecovery()
+			runnable.asyncFunc(done)
+		}()
 	} else {
 		runnable.syncFunc()
-		done <- true
+		close(done)
 	}
 
 	select {
 	case <-done:
-		outcome = runOutcomeCompleted
-	case <-time.After(runnable.timeoutThreshold):
-		outcome = runOutcomeTimedOut
-		failure = failureData{
-			message:      "Timed out",
-			codeLocation: runnable.codeLocation,
+		lock.Lock()
+		if outcome != runOutcomePanicked {
+			outcome = runOutcomeCompleted
 		}
+		lock.Unlock()
+	case <-time.After(runnable.timeoutThreshold):
+		lock.Lock()
+		if outcome != runOutcomePanicked {
+			outcome = runOutcomeTimedOut
+			failure = failureData{
+				message:      "Timed out",
+				codeLocation: runnable.codeLocation,
+			}
+		}
+		lock.Unlock()
 	}
 
 	return

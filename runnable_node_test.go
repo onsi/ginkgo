@@ -109,6 +109,37 @@ func init() {
 				})
 			})
 
+			Context("when the function is asynchronous and panics", func() {
+				var (
+					codeLocation types.CodeLocation
+					outcome      runOutcome
+					failure      failureData
+				)
+
+				BeforeEach(func() {
+					node := newRunnableNode(func(done Done) {
+						codeLocation = types.GenerateCodeLocation(0)
+						panic("ack!")
+					}, types.GenerateCodeLocation(0), time.Duration(0.01*float64(time.Second)))
+
+					outcome, failure = node.run()
+				})
+
+				It("should run the function and report a runOutcomePanicked", func() {
+					Ω(outcome).Should(Equal(runOutcomePanicked))
+					Ω(failure.message).Should(Equal("Test Panicked"))
+				})
+
+				It("should include the code location of the panic itself", func() {
+					Ω(failure.codeLocation.FileName).Should(Equal(codeLocation.FileName))
+					Ω(failure.codeLocation.LineNumber).Should(Equal(codeLocation.LineNumber + 1))
+				})
+
+				It("should include the panic data", func() {
+					Ω(failure.forwardedPanic).Should(Equal("ack!"))
+				})
+			})
+
 			Context("when the function takes the wrong kind of argument", func() {
 				It("should panic", func() {
 					Ω(func() {

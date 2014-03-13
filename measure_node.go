@@ -25,9 +25,21 @@ func newMeasureNode(text string, body func(Benchmarker), flag flagType, codeLoca
 }
 
 func (node *measureNode) run() (outcome runOutcome, failure failureData) {
-	node.body(node.benchmarker)
+	defer func() {
+		if e := recover(); e != nil {
+			outcome = runOutcomePanicked
+			failure = failureData{
+				message:        "Test Panicked",
+				codeLocation:   types.GenerateCodeLocation(2),
+				forwardedPanic: e,
+			}
+		}
+	}()
 
-	return runOutcomeCompleted, failureData{}
+	node.body(node.benchmarker)
+	outcome = runOutcomeCompleted
+
+	return
 }
 
 func (node *measureNode) measurementsReport() map[string]*types.ExampleMeasurement {

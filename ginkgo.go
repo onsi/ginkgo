@@ -12,6 +12,7 @@ Ginkgo is MIT-Licensed
 package ginkgo
 
 import (
+	"fmt"
 	"github.com/onsi/ginkgo/config"
 	"github.com/onsi/ginkgo/remote"
 	"github.com/onsi/ginkgo/reporters"
@@ -24,6 +25,18 @@ import (
 )
 
 const GINKGO_VERSION = config.VERSION
+const GINKGO_PANIC = `
+Your test failed.
+Ginkgo panics to prevent subsequent assertions from running.
+Normally Ginkgo rescues this panic so you shouldn't see it.
+
+But, if you make an assertion in a goroutine, Ginkgo can't capture the panic.
+To circumvent this, you should call
+
+	defer GinkgoRecover()
+
+at the top of the goroutine that caused this panic.
+`
 
 const defaultTimeout = 1
 
@@ -173,6 +186,24 @@ func Fail(message string, callerSkip ...int) {
 		skip = callerSkip[0]
 	}
 	globalSuite.fail(message, skip)
+	panic(GINKGO_PANIC)
+}
+
+//GinkgoRecover should be deferred at the top of any spawned goroutine that (may) call `Fail`
+//Since Gomega assertions call fail, you should throw a `defer GinkgoRecover()` at the top of any goroutine that
+//calls out to Gomega
+//
+//Here's why: Ginkgo's `Fail` method records the failure and then panics to prevent
+//further assertions from running.  This panic must be recovered.  Ginkgo does this for you
+//if the panic originates in a Ginkgo node (an It, BeforeEach, etc...)
+//
+//Unfortunately, if a panic originates on a goroutine *launched* from one of these nodes there's no
+//way for Ginkgo to rescue the panic.  To do this, you must remember to `defer GinkgoRecover()` at the top of such a goroutine.
+func GinkgoRecover() {
+	e := recover()
+	if e != nil {
+		globalSuite.fail(fmt.Sprintf("Goroutine Panicked\n%#v", e), 1)
+	}
 }
 
 //Describe blocks allow you to organize your specs.  A Describe block can contain any number of
