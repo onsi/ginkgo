@@ -4,6 +4,7 @@ import (
 	"fmt"
 	. "github.com/onsi/ginkgo"
 	. "github.com/onsi/gomega"
+	"io"
 	"io/ioutil"
 	"os"
 	"os/exec"
@@ -46,10 +47,22 @@ func copyIn(fixture string, destination string) {
 	err := os.MkdirAll(destination, 0777)
 	Ω(err).ShouldNot(HaveOccurred())
 
-	output, err := exec.Command("cp", "-r", filepath.Join("_fixtures", fixture)+"/", destination).CombinedOutput()
-	if !Ω(err).ShouldNot(HaveOccurred()) {
-		fmt.Println(output)
-	}
+	filepath.Walk(filepath.Join("_fixtures", fixture), func(path string, info os.FileInfo, err error) error {
+		base := filepath.Base(path)
+		if base == fixture {
+			return nil
+		}
+
+		src, err := os.Open(path)
+		Ω(err).ShouldNot(HaveOccurred())
+
+		dst, err := os.Create(filepath.Join(destination, base))
+		Ω(err).ShouldNot(HaveOccurred())
+
+		_, err = io.Copy(dst, src)
+		Ω(err).ShouldNot(HaveOccurred())
+		return nil
+	})
 }
 
 func runGinkgo(dir string, args ...string) (string, error) {
