@@ -110,11 +110,29 @@ var _ = Describe("Running Specs", func() {
 			copyIn("passing_ginkgo_tests", pathToTest)
 		})
 
-		It("should stream output", func() {
+		It("should aggregate output", func() {
 			output, err := runGinkgo(pathToTest, "--noColor", "-succinct", "-nodes=2")
 
 			Ω(err).ShouldNot(HaveOccurred())
 			Ω(output).Should(MatchRegexp(`\[\d+\] Passing_ginkgo_tests Suite - 3/3 specs - 2 nodes ••• SUCCESS! [\d.mus]+`))
+			Ω(output).Should(ContainSubstring("Test Suite Passed"))
+		})
+	})
+
+	Context("when streaming in parallel", func() {
+		BeforeEach(func() {
+			pathToTest = tmpPath("ginkgo")
+			copyIn("passing_ginkgo_tests", pathToTest)
+		})
+
+		It("should print output in realtime", func() {
+			output, err := runGinkgo(pathToTest, "--noColor", "-stream", "-nodes=2")
+
+			Ω(err).ShouldNot(HaveOccurred())
+			Ω(output).Should(ContainSubstring(`[1] Parallel test node 1/2.`))
+			Ω(output).Should(ContainSubstring(`[2] Parallel test node 2/2.`))
+			Ω(output).Should(ContainSubstring(`[1] SUCCESS!`))
+			Ω(output).Should(ContainSubstring(`[2] SUCCESS!`))
 			Ω(output).Should(ContainSubstring("Test Suite Passed"))
 		})
 	})

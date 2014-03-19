@@ -24,12 +24,12 @@ To run tests in parallel
 	ginkgo -nodes=N
 
 where N is the number of nodes.  By default the Ginkgo CLI will spin up a server that the individual
-test processes stream test output to.  The CLI then aggregates these streams into one coherent stream of output.
-An alternative is to have the parallel nodes run and then present the resulting, final, output in one monolithic chunk - you can opt into this if streaming is giving you trouble:
+test processes send test output to.  The CLI aggregates this output and then presents coherent test output, one test at a time, as each test completes.
+An alternative is to have the parallel nodes run and stream interleaved output back.  This useful for debugging, particularly in contexts where tests hang/fail to start.  To get this interleaved output:
 
-	ginkgo -nodes=N -stream=false
+	ginkgo -nodes=N -stream=true
 
-On windows, the default value for stream is false.
+On windows, the default value for stream is true.
 
 By default, when running multiple tests (with -r or a list of packages) Ginkgo will abort when a test fails.  To have Ginkgo run subsequent test suites instead you can:
 
@@ -110,7 +110,7 @@ func init() {
 	config.Flags("", false)
 
 	flag.IntVar(&(numCPU), "nodes", 1, "The number of parallel test nodes to run")
-	flag.BoolVar(&(parallelStream), "stream", !onWindows, "Aggregate parallel test output into one coherent stream (default: true)")
+	flag.BoolVar(&(parallelStream), "stream", onWindows, "stream parallel test output in real time: less coherent, but useful for debugging")
 	flag.BoolVar(&(recurse), "r", false, "Find and run test suites under the current directory recursively")
 	flag.BoolVar(&(runMagicI), "i", false, "[DEPRECATED] Run go test -i first, then run the test suite")
 	flag.BoolVar(&(race), "race", false, "Run tests with race detection enabled")

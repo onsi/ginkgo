@@ -121,18 +121,19 @@ func (t *TestRunner) runGoTestSuite() bool {
 	return t.run([]string{"-test.v"}, nil, os.Stdout, nil)
 }
 
-func (t *TestRunner) runParallelGinkgoSuite() bool {
+func (t *TestRunner) runAndStreamParallelGinkgoSuite() bool {
 	completions := make(chan bool)
-	reports := make([]*bytes.Buffer, t.numCPU)
+	writers := make([]*logWriter, t.numCPU)
 
 	for cpu := 0; cpu < t.numCPU; cpu++ {
 		config.GinkgoConfig.ParallelNode = cpu + 1
 		config.GinkgoConfig.ParallelTotal = t.numCPU
 
 		ginkgoArgs := config.BuildFlagArgs("ginkgo", config.GinkgoConfig, config.DefaultReporterConfig)
-		reports[cpu] = new(bytes.Buffer)
 
-		go t.run(ginkgoArgs, nil, reports[cpu], completions)
+		writers[cpu] = newLogWriter(fmt.Sprintf("[%d]", cpu+1))
+
+		go t.run(ginkgoArgs, nil, writers[cpu], completions)
 	}
 
 	passed := true
@@ -141,15 +142,16 @@ func (t *TestRunner) runParallelGinkgoSuite() bool {
 		passed = <-completions && passed
 	}
 
-	for _, report := range reports {
-		fmt.Print(report.String())
+	for _, writer := range writers {
+		writer.Close()
 	}
+
 	os.Stdout.Sync()
 
 	return passed
 }
 
-func (t *TestRunner) runAndStreamParallelGinkgoSuite() bool {
+func (t *TestRunner) runParallelGinkgoSuite() bool {
 	result := make(chan bool)
 	completions := make(chan bool)
 	reports := make([]*bytes.Buffer, t.numCPU)
