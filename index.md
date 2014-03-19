@@ -484,11 +484,15 @@ To run a Ginkgo suite in parallel you must use the `ginkgo` CLI.  To run N proce
 
     ginkgo -nodes=N
 
-The test runner collates output from the running processes into one coherent real-time stream of information.  This is done, under the hood, via a client-server model.  If you encounter issues running tests in parallel this way, you can try:
+The test runner collates output from the running processes into one coherent output.  This is done, under the hood, via a client-server model: as each client suite completes a test, the test output and status is sent to the server which then prints to screen.  This collates the output of simultaneous test runners to one coherent (i.e. non-interleaved), aggregated, output.
 
-    ginkgo -nodes=N -stream=false  
+It is sometimes necessary/preferable to view the output of the individual parallel test suites in real-time.  To do this you can set `-stream`:
 
-When run with the `-stream=false` flag the test runner simply collates the output from each individual node as it runs and then performs one output dump once all nodes have completed - thus you will *not get any output until all the nodes have completed*.  On windows, parallel tests default to `-stream=false`, you can change this but Ginkgo is currently unable to capture any logging to stdout/stderr done by the parallel tests in windows.
+    ginkgo -nodes=N -stream
+
+When run with the `-stream` flag the test runner simply pipes the output from each individual node as it runs (it prepends each line of output with the node # that the output came from).  This results in less coherent output (lines from different nodes will be interleaved) but can be valuable when debugging flakey/hanging test suites.
+
+On windows, parallel tests default to `-stream` because Ginkgo can't capture logging to stdout/stderr (necessary for aggregation) on windows.
 
 If your tests spin up or connect to external processes you'll need to make sure that those connections are safe in a parallel context.  One way to ensure this would be, for example, to spin up a separate instance of an external resource for each Ginkgo process.  For example, let's say your tests spin up and hit a local web server.  You could bring up a different server bound to a different port for each of your parallel processes:
 
@@ -618,9 +622,9 @@ Additional flags supported by the `ginkgo` command:
 
     Use this to parallelize the suite across NODE_TOTAL processes.
 
-- `-stream=true`
+- `-stream`
 
-    By default, when parallelizing a suite, the test runner aggregates data from each parallel node and produces a coherent real-time stream of output.  Setting `stream` to `false` will, instead, wait for all parallel processes to exit and then dump the stdout/stderr output of each process.  Set this to `false` if you're having trouble with the default streaming behavior.
+    By default, when parallelizing a suite, the test runner aggregates data from each parallel node and produces coherent output as the tests run.  Setting `stream` to `true` will, instead, stream output from all parallel nodes in real-time, prepending each log line with the node # that emitted it.  This leads to incoherent (interleaved) output, but is useful when debugging flakey/hanging test suites.
 
 - `-r`
     
