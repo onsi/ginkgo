@@ -176,7 +176,7 @@ and Ginkgo will take care of the rest.
 
 `Fail` (and therefore Gomega, since it uses fail) will record a failure for the current space *and* panic.  This allows Ginkgo to stop the current spec in its tracks - no subsequent assertions (or any code for that matter) will be called.  Ordinarily Ginkgo will rescue this panic itself and move on to the next test.
 
-However, if your test launches a *goroutine* that calls `Fail` (or, equivalently, invokes a failing Gomega assertion), there's no way for Ginkgo to rescue the panic that `Fail` invokes.  This will cause the test suite to panic and no subsequent tests will run.  To get around this you must rescue the panic using `GinkgoRescue`.  Here's an example:
+However, if your test launches a *goroutine* that calls `Fail` (or, equivalently, invokes a failing Gomega assertion), there's no way for Ginkgo to rescue the panic that `Fail` invokes.  This will cause the test suite to panic and no subsequent tests will run.  To get around this you must rescue the panic using `GinkgoRecover`.  Here's an example:
 
     It("panics in a goroutine", func(done Done) {
         go func() {
