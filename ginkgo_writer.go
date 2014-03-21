@@ -45,10 +45,14 @@ func (w *ginkgoWriter) Write(b []byte) (n int, err error) {
 }
 
 func (w *ginkgoWriter) Truncate() {
+	w.lock.Lock()
+	defer w.lock.Unlock()
 	w.buffer.Truncate(0)
 }
 
 func (w *ginkgoWriter) DumpOut() {
+	w.lock.Lock()
+	defer w.lock.Unlock()
 	if !w.directToStdout {
 		w.buffer.WriteTo(w.outWriter)
 	}
