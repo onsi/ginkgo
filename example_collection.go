@@ -2,6 +2,7 @@ package ginkgo
 
 import (
 	"github.com/onsi/ginkgo/config"
+	"github.com/onsi/ginkgo/internal/randomid"
 	"github.com/onsi/ginkgo/types"
 
 	"math/rand"
@@ -31,7 +32,7 @@ func newExampleCollection(t GinkgoTestingT, description string, examples []*exam
 		reporters:   reporters,
 		writer:      writer,
 		config:      config,
-		suiteID:     types.GenerateRandomID(),
+		suiteID:     randomid.New(),
 		exampleCountBeforeParallelization: len(examples),
 	}
 

@@ -1,15 +1,15 @@
-package types_test
+package randomid_test
 
 import (
 	. "github.com/onsi/ginkgo"
-	. "github.com/onsi/ginkgo/types"
+	"github.com/onsi/ginkgo/internal/randomid"
 	. "github.com/onsi/gomega"
 )
 
-var _ = Describe("GuidGenerator", func() {
+var _ = Describe("New", func() {
 	It("should generate a random guid", func() {
-		a := GenerateRandomID()
-		b := GenerateRandomID()
+		a := randomid.New()
+		b := randomid.New()
 		Ω(a).ShouldNot(BeEmpty())
 		Ω(b).ShouldNot(BeEmpty())
 		Ω(a).ShouldNot(Equal(b))

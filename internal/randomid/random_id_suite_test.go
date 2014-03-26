@@ -1,4 +1,4 @@
-package types_test
+package randomid_test
 
 import (
 	. "github.com/onsi/ginkgo"
@@ -7,7 +7,7 @@ import (
 	"testing"
 )
 
-func TestTypes(t *testing.T) {
+func TestRandomid(t *testing.T) {
 	RegisterFailHandler(Fail)
-	RunSpecs(t, "Ginkgo Types Suite")
+	RunSpecs(t, "Randomid Suite")
 }

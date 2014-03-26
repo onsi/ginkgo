@@ -1,11 +1,11 @@
-package types
+package randomid
 
 import (
 	"crypto/rand"
 	"fmt"
 )
 
-func GenerateRandomID() string {
+func New() string {
 	b := make([]byte, 8)
 	_, err := rand.Read(b)
 	if err != nil {
