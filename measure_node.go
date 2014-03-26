@@ -1,6 +1,7 @@
 package ginkgo
 
 import (
+	"github.com/onsi/ginkgo/internal/codelocation"
 	"github.com/onsi/ginkgo/types"
 )
 
@@ -30,7 +31,7 @@ func (node *measureNode) run() (outcome runOutcome, failure failureData) {
 			outcome = runOutcomePanicked
 			failure = failureData{
 				message:        "Test Panicked",
-				codeLocation:   types.GenerateCodeLocation(2),
+				codeLocation:   codelocation.New(2),
 				forwardedPanic: e,
 			}
 		}

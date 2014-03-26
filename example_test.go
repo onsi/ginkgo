@@ -2,6 +2,7 @@ package ginkgo
 
 import (
 	"fmt"
+	"github.com/onsi/ginkgo/internal/codelocation"
 	"github.com/onsi/ginkgo/types"
 	. "github.com/onsi/gomega"
 	"time"
@@ -12,7 +13,7 @@ func init() {
 		var it *itNode
 
 		BeforeEach(func() {
-			it = newItNode("It", func() {}, flagTypeNone, types.GenerateCodeLocation(0), 0)
+			it = newItNode("It", func() {}, flagTypeNone, codelocation.New(0), 0)
 		})
 
 		Describe("creating examples and adding container nodes", func() {
@@ -23,8 +24,8 @@ func init() {
 			)
 
 			BeforeEach(func() {
-				containerA = newContainerNode("A", flagTypeNone, types.GenerateCodeLocation(0))
-				containerB = newContainerNode("B", flagTypeNone, types.GenerateCodeLocation(0))
+				containerA = newContainerNode("A", flagTypeNone, codelocation.New(0))
+				containerB = newContainerNode("B", flagTypeNone, codelocation.New(0))
 			})
 
 			JustBeforeEach(func() {
@@ -157,7 +158,7 @@ func init() {
 			newNode := func(identifier string) *runnableNode {
 				return newRunnableNode(func() {
 					orderedList = append(orderedList, identifier)
-				}, types.GenerateCodeLocation(0), 0)
+				}, codelocation.New(0), 0)
 			}
 
 			BeforeEach(func() {
@@ -165,10 +166,10 @@ func init() {
 				it = newItNode("it", func() {
 					orderedList = append(orderedList, "IT")
 					time.Sleep(time.Duration(0.01 * float64(time.Second)))
-				}, flagTypeNone, types.GenerateCodeLocation(0), 0)
+				}, flagTypeNone, codelocation.New(0), 0)
 				ex = newExample(it)
 
-				innerContainer = newContainerNode("inner", flagTypeNone, types.GenerateCodeLocation(0))
+				innerContainer = newContainerNode("inner", flagTypeNone, codelocation.New(0))
 				innerContainer.pushBeforeEachNode(newNode("INNER_BEFORE_A"))
 				innerContainer.pushBeforeEachNode(newNode("INNER_BEFORE_B"))
 				innerContainer.pushJustBeforeEachNode(newNode("INNER_JUST_BEFORE_A"))
@@ -178,7 +179,7 @@ func init() {
 
 				ex.addContainerNode(innerContainer)
 
-				outerContainer = newContainerNode("outer", flagTypeNone, types.GenerateCodeLocation(0))
+				outerContainer = newContainerNode("outer", flagTypeNone, codelocation.New(0))
 				outerContainer.pushBeforeEachNode(newNode("OUTER_BEFORE_A"))
 				outerContainer.pushBeforeEachNode(newNode("OUTER_BEFORE_B"))
 				outerContainer.pushJustBeforeEachNode(newNode("OUTER_JUST_BEFORE_A"))
@@ -272,7 +273,7 @@ func init() {
 					var componentCodeLocation types.CodeLocation
 
 					BeforeEach(func() {
-						componentCodeLocation = types.GenerateCodeLocation(0)
+						componentCodeLocation = codelocation.New(0)
 					})
 
 					Context("because an expectation failed", func() {
@@ -281,7 +282,7 @@ func init() {
 						BeforeEach(func() {
 							failure = failureData{
 								message:      fmt.Sprintf("%s failed", componentTypes[i]),
-								codeLocation: types.GenerateCodeLocation(0),
+								codeLocation: codelocation.New(0),
 							}
 							node := newRunnableNode(func() {
 								ex.fail(failure)
@@ -312,7 +313,7 @@ func init() {
 
 						BeforeEach(func() {
 							node := newRunnableNode(func() {
-								panicCodeLocation = types.GenerateCodeLocation(0)
+								panicCodeLocation = codelocation.New(0)
 								panic("kaboom!")
 							}, componentCodeLocation, 0)
 
@@ -368,7 +369,7 @@ func init() {
 				var componentCodeLocation types.CodeLocation
 
 				BeforeEach(func() {
-					componentCodeLocation = types.GenerateCodeLocation(0)
+					componentCodeLocation = codelocation.New(0)
 				})
 
 				Context("because an expectation failed", func() {
@@ -377,7 +378,7 @@ func init() {
 					BeforeEach(func() {
 						failure = failureData{
 							message:      "it failed",
-							codeLocation: types.GenerateCodeLocation(0),
+							codeLocation: codelocation.New(0),
 						}
 						ex.subject = newItNode("it", func() {
 							ex.fail(failure)
@@ -406,7 +407,7 @@ func init() {
 
 					BeforeEach(func() {
 						ex.subject = newItNode("it", func() {
-							panicCodeLocation = types.GenerateCodeLocation(0)
+							panicCodeLocation = codelocation.New(0)
 							panic("kaboom!")
 						}, flagTypeNone, componentCodeLocation, 0)
 					})
@@ -463,7 +464,7 @@ func init() {
 
 			BeforeEach(func() {
 				runs = 0
-				componentCodeLocation = types.GenerateCodeLocation(0)
+				componentCodeLocation = codelocation.New(0)
 			})
 
 			It("should report that it has a measurement", func() {
@@ -533,7 +534,7 @@ func init() {
 							message: identifier + " failed",
 						})
 					}
-				}, types.GenerateCodeLocation(0), 0)
+				}, codelocation.New(0), 0)
 			}
 
 			newIt := func(identifier string, fail bool) *itNode {
@@ -542,7 +543,7 @@ func init() {
 					if fail {
 						ex.fail(failureData{})
 					}
-				}, flagTypeNone, types.GenerateCodeLocation(0), 0)
+				}, flagTypeNone, codelocation.New(0), 0)
 			}
 
 			BeforeEach(func() {
@@ -553,7 +554,7 @@ func init() {
 				BeforeEach(func() {
 					ex = newExample(newIt("it", true))
 
-					innerContainer := newContainerNode("inner", flagTypeNone, types.GenerateCodeLocation(0))
+					innerContainer := newContainerNode("inner", flagTypeNone, codelocation.New(0))
 					innerContainer.pushBeforeEachNode(newNode("INNER_BEFORE_A", false))
 					innerContainer.pushBeforeEachNode(newNode("INNER_BEFORE_B", false))
 					innerContainer.pushJustBeforeEachNode(newNode("INNER_JUST_BEFORE_A", false))
@@ -563,7 +564,7 @@ func init() {
 
 					ex.addContainerNode(innerContainer)
 
-					outerContainer := newContainerNode("outer", flagTypeNone, types.GenerateCodeLocation(0))
+					outerContainer := newContainerNode("outer", flagTypeNone, codelocation.New(0))
 					outerContainer.pushBeforeEachNode(newNode("OUTER_BEFORE_A", false))
 					outerContainer.pushBeforeEachNode(newNode("OUTER_BEFORE_B", false))
 					outerContainer.pushJustBeforeEachNode(newNode("OUTER_JUST_BEFORE_A", false))
@@ -590,7 +591,7 @@ func init() {
 				BeforeEach(func() {
 					ex = newExample(newIt("it", true))
 
-					innerContainer := newContainerNode("inner", flagTypeNone, types.GenerateCodeLocation(0))
+					innerContainer := newContainerNode("inner", flagTypeNone, codelocation.New(0))
 					innerContainer.pushBeforeEachNode(newNode("INNER_BEFORE_A", true))
 					innerContainer.pushBeforeEachNode(newNode("INNER_BEFORE_B", false))
 					innerContainer.pushJustBeforeEachNode(newNode("INNER_JUST_BEFORE_A", false))
@@ -600,7 +601,7 @@ func init() {
 
 					ex.addContainerNode(innerContainer)
 
-					outerContainer := newContainerNode("outer", flagTypeNone, types.GenerateCodeLocation(0))
+					outerContainer := newContainerNode("outer", flagTypeNone, codelocation.New(0))
 					outerContainer.pushBeforeEachNode(newNode("OUTER_BEFORE_A", false))
 					outerContainer.pushBeforeEachNode(newNode("OUTER_BEFORE_B", false))
 					outerContainer.pushJustBeforeEachNode(newNode("OUTER_JUST_BEFORE_A", false))
@@ -624,7 +625,7 @@ func init() {
 				BeforeEach(func() {
 					ex = newExample(newIt("it", true))
 
-					innerContainer := newContainerNode("inner", flagTypeNone, types.GenerateCodeLocation(0))
+					innerContainer := newContainerNode("inner", flagTypeNone, codelocation.New(0))
 					innerContainer.pushBeforeEachNode(newNode("INNER_BEFORE_A", false))
 					innerContainer.pushBeforeEachNode(newNode("INNER_BEFORE_B", false))
 					innerContainer.pushJustBeforeEachNode(newNode("INNER_JUST_BEFORE_A", false))
@@ -634,7 +635,7 @@ func init() {
 
 					ex.addContainerNode(innerContainer)
 
-					outerContainer := newContainerNode("outer", flagTypeNone, types.GenerateCodeLocation(0))
+					outerContainer := newContainerNode("outer", flagTypeNone, codelocation.New(0))
 					outerContainer.pushBeforeEachNode(newNode("OUTER_BEFORE_A", false))
 					outerContainer.pushBeforeEachNode(newNode("OUTER_BEFORE_B", true))
 					outerContainer.pushJustBeforeEachNode(newNode("OUTER_JUST_BEFORE_A", false))
@@ -658,7 +659,7 @@ func init() {
 				BeforeEach(func() {
 					ex = newExample(newIt("it", true))
 
-					innerContainer := newContainerNode("inner", flagTypeNone, types.GenerateCodeLocation(0))
+					innerContainer := newContainerNode("inner", flagTypeNone, codelocation.New(0))
 					innerContainer.pushBeforeEachNode(newNode("INNER_BEFORE_A", false))
 					innerContainer.pushBeforeEachNode(newNode("INNER_BEFORE_B", false))
 					innerContainer.pushJustBeforeEachNode(newNode("INNER_JUST_BEFORE_A", false))
@@ -668,7 +669,7 @@ func init() {
 
 					ex.addContainerNode(innerContainer)
 
-					outerContainer := newContainerNode("outer", flagTypeNone, types.GenerateCodeLocation(0))
+					outerContainer := newContainerNode("outer", flagTypeNone, codelocation.New(0))
 					outerContainer.pushBeforeEachNode(newNode("OUTER_BEFORE_A", false))
 					outerContainer.pushBeforeEachNode(newNode("OUTER_BEFORE_B", false))
 					outerContainer.pushJustBeforeEachNode(newNode("OUTER_JUST_BEFORE_A", true))
@@ -693,7 +694,7 @@ func init() {
 				BeforeEach(func() {
 					ex = newExample(newIt("it", true))
 
-					innerContainer := newContainerNode("inner", flagTypeNone, types.GenerateCodeLocation(0))
+					innerContainer := newContainerNode("inner", flagTypeNone, codelocation.New(0))
 					innerContainer.pushBeforeEachNode(newNode("INNER_BEFORE_A", false))
 					innerContainer.pushBeforeEachNode(newNode("INNER_BEFORE_B", false))
 					innerContainer.pushJustBeforeEachNode(newNode("INNER_JUST_BEFORE_A", true))
@@ -703,7 +704,7 @@ func init() {
 
 					ex.addContainerNode(innerContainer)
 
-					outerContainer := newContainerNode("outer", flagTypeNone, types.GenerateCodeLocation(0))
+					outerContainer := newContainerNode("outer", flagTypeNone, codelocation.New(0))
 					outerContainer.pushBeforeEachNode(newNode("OUTER_BEFORE_A", false))
 					outerContainer.pushBeforeEachNode(newNode("OUTER_BEFORE_B", false))
 					outerContainer.pushJustBeforeEachNode(newNode("OUTER_JUST_BEFORE_A", false))

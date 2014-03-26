@@ -2,6 +2,7 @@ package ginkgo
 
 import (
 	"github.com/onsi/ginkgo/config"
+	"github.com/onsi/ginkgo/internal/codelocation"
 	"github.com/onsi/ginkgo/reporters"
 	"github.com/onsi/ginkgo/types"
 	. "github.com/onsi/gomega"
@@ -50,27 +51,27 @@ func init() {
 				focusString = ""
 
 				runOrder = make([]string, 0)
-				specSuite.pushBeforeEachNode(f("top BE"), types.GenerateCodeLocation(0), 0)
-				specSuite.pushJustBeforeEachNode(f("top JBE"), types.GenerateCodeLocation(0), 0)
-				specSuite.pushAfterEachNode(f("top AE"), types.GenerateCodeLocation(0), 0)
+				specSuite.pushBeforeEachNode(f("top BE"), codelocation.New(0), 0)
+				specSuite.pushJustBeforeEachNode(f("top JBE"), codelocation.New(0), 0)
+				specSuite.pushAfterEachNode(f("top AE"), codelocation.New(0), 0)
 
 				specSuite.pushContainerNode("container", func() {
-					specSuite.pushBeforeEachNode(f("BE"), types.GenerateCodeLocation(0), 0)
-					specSuite.pushJustBeforeEachNode(f("JBE"), types.GenerateCodeLocation(0), 0)
-					specSuite.pushAfterEachNode(f("AE"), types.GenerateCodeLocation(0), 0)
-					specSuite.pushItNode("it", f("IT"), flagTypeNone, types.GenerateCodeLocation(0), 0)
+					specSuite.pushBeforeEachNode(f("BE"), codelocation.New(0), 0)
+					specSuite.pushJustBeforeEachNode(f("JBE"), codelocation.New(0), 0)
+					specSuite.pushAfterEachNode(f("AE"), codelocation.New(0), 0)
+					specSuite.pushItNode("it", f("IT"), flagTypeNone, codelocation.New(0), 0)
 
 					specSuite.pushContainerNode("inner container", func() {
-						specSuite.pushItNode("inner it", f("inner IT"), flagTypeNone, types.GenerateCodeLocation(0), 0)
-					}, flagTypeNone, types.GenerateCodeLocation(0))
-				}, flagTypeNone, types.GenerateCodeLocation(0))
+						specSuite.pushItNode("inner it", f("inner IT"), flagTypeNone, codelocation.New(0), 0)
+					}, flagTypeNone, codelocation.New(0))
+				}, flagTypeNone, codelocation.New(0))
 
 				specSuite.pushContainerNode("container 2", func() {
-					specSuite.pushBeforeEachNode(f("BE 2"), types.GenerateCodeLocation(0), 0)
-					specSuite.pushItNode("it 2", f("IT 2"), flagTypeNone, types.GenerateCodeLocation(0), 0)
-				}, flagTypeNone, types.GenerateCodeLocation(0))
+					specSuite.pushBeforeEachNode(f("BE 2"), codelocation.New(0), 0)
+					specSuite.pushItNode("it 2", f("IT 2"), flagTypeNone, codelocation.New(0), 0)
+				}, flagTypeNone, codelocation.New(0))
 
-				specSuite.pushItNode("top level it", f("top IT"), flagTypeNone, types.GenerateCodeLocation(0), 0)
+				specSuite.pushItNode("top level it", f("top IT"), flagTypeNone, codelocation.New(0), 0)
 			})
 
 			JustBeforeEach(func() {
@@ -200,9 +201,9 @@ func init() {
 				var location types.CodeLocation
 				BeforeEach(func() {
 					specSuite.pushItNode("top level it", func() {
-						location = types.GenerateCodeLocation(0)
+						location = codelocation.New(0)
 						func() { specSuite.fail("oops!", 0) }()
-					}, flagTypeNone, types.GenerateCodeLocation(0), 0)
+					}, flagTypeNone, codelocation.New(0), 0)
 				})
 
 				It("should return false", func() {

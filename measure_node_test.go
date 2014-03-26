@@ -1,6 +1,7 @@
 package ginkgo
 
 import (
+	"github.com/onsi/ginkgo/internal/codelocation"
 	"github.com/onsi/ginkgo/types"
 	. "github.com/onsi/gomega"
 )
@@ -13,7 +14,7 @@ func init() {
 
 		BeforeEach(func() {
 			i = 0
-			codeLocation = types.GenerateCodeLocation(0)
+			codeLocation = codelocation.New(0)
 			measure = newMeasureNode("foo", func(b Benchmarker) {
 				b.RecordValue("bar", float64(i))
 				i += 1
@@ -51,7 +52,7 @@ func init() {
 
 			BeforeEach(func() {
 				measure = newMeasureNode("foo", func(Benchmarker) {
-					codeLocation = types.GenerateCodeLocation(0)
+					codeLocation = codelocation.New(0)
 					panic("kaboom")
 				}, flagTypeFocused, codeLocation, 10)
 				outcome, failure = measure.run()

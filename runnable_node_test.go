@@ -1,6 +1,7 @@
 package ginkgo
 
 import (
+	"github.com/onsi/ginkgo/internal/codelocation"
 	"github.com/onsi/ginkgo/types"
 	. "github.com/onsi/gomega"
 	"runtime"
@@ -11,7 +12,7 @@ func init() {
 	Describe("RunnableNode", func() {
 		Describe("basic construction parameters", func() {
 			It("should store off the passed in code location", func() {
-				codeLocation := types.GenerateCodeLocation(0)
+				codeLocation := codelocation.New(0)
 				Ω(newRunnableNode(func() {}, codeLocation, 0).codeLocation).Should(Equal(codeLocation))
 			})
 		})
@@ -22,7 +23,7 @@ func init() {
 					didRun := false
 					runnableNode := newRunnableNode(func() {
 						didRun = true
-					}, types.GenerateCodeLocation(0), 0)
+					}, codelocation.New(0), 0)
 
 					outcome, failure := runnableNode.run()
 
@@ -41,9 +42,9 @@ func init() {
 
 				BeforeEach(func() {
 					node := newRunnableNode(func() {
-						codeLocation = types.GenerateCodeLocation(0)
+						codeLocation = codelocation.New(0)
 						panic("ack!")
-					}, types.GenerateCodeLocation(0), 0)
+					}, codelocation.New(0), 0)
 
 					outcome, failure = node.run()
 				})
@@ -81,7 +82,7 @@ func init() {
 						numberOfGoRoutines = runtime.NumGoroutine()
 						time.Sleep(sleepDuration)
 						done <- true
-					}, types.GenerateCodeLocation(0), timeoutDuration)
+					}, codelocation.New(0), timeoutDuration)
 				})
 
 				It("should run the function as a goroutine", func() {
@@ -118,9 +119,9 @@ func init() {
 
 				BeforeEach(func() {
 					node := newRunnableNode(func(done Done) {
-						codeLocation = types.GenerateCodeLocation(0)
+						codeLocation = codelocation.New(0)
 						panic("ack!")
-					}, types.GenerateCodeLocation(0), time.Duration(0.01*float64(time.Second)))
+					}, codelocation.New(0), time.Duration(0.01*float64(time.Second)))
 
 					outcome, failure = node.run()
 				})
@@ -144,7 +145,7 @@ func init() {
 				It("should panic", func() {
 					Ω(func() {
 						newRunnableNode(func(oops string) {
-						}, types.GenerateCodeLocation(0), 0)
+						}, codelocation.New(0), 0)
 					}).Should(Panic())
 				})
 			})
@@ -153,7 +154,7 @@ func init() {
 				It("should panic", func() {
 					Ω(func() {
 						newRunnableNode(func(done Done, oops string) {
-						}, types.GenerateCodeLocation(0), 0)
+						}, codelocation.New(0), 0)
 					}).Should(Panic())
 				})
 			})
@@ -162,7 +163,7 @@ func init() {
 
 	Describe("ItNodes", func() {
 		It("should save off the text and flags", func() {
-			codeLocation := types.GenerateCodeLocation(0)
+			codeLocation := codelocation.New(0)
 			it := newItNode("my it node", func() {}, flagTypeFocused, codeLocation, 0)
 			Ω(it.flag).Should(Equal(flagTypeFocused))
 			Ω(it.text).Should(Equal("my it node"))

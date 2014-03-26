@@ -2,6 +2,7 @@ package ginkgo
 
 import (
 	"github.com/onsi/ginkgo/config"
+	"github.com/onsi/ginkgo/internal/codelocation"
 	"github.com/onsi/ginkgo/types"
 
 	"math/rand"
@@ -50,7 +51,7 @@ func (suite *suite) fail(message string, callerSkip int) {
 	if suite.exampleCollection != nil {
 		suite.exampleCollection.fail(failureData{
 			message:      message,
-			codeLocation: types.GenerateCodeLocation(callerSkip + 2),
+			codeLocation: codelocation.New(callerSkip + 2),
 		})
 	}
 }

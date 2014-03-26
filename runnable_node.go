@@ -2,6 +2,7 @@ package ginkgo
 
 import (
 	"fmt"
+	"github.com/onsi/ginkgo/internal/codelocation"
 	"github.com/onsi/ginkgo/types"
 	"reflect"
 	"sync"
@@ -58,7 +59,7 @@ func (runnable *runnableNode) run() (outcome runOutcome, failure failureData) {
 			outcome = runOutcomePanicked
 			failure = failureData{
 				message:        "Test Panicked",
-				codeLocation:   types.GenerateCodeLocation(2),
+				codeLocation:   codelocation.New(2),
 				forwardedPanic: e,
 			}
 			lock.Unlock()

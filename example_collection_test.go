@@ -2,8 +2,8 @@ package ginkgo
 
 import (
 	"github.com/onsi/ginkgo/config"
+	"github.com/onsi/ginkgo/internal/codelocation"
 	"github.com/onsi/ginkgo/reporters"
-	"github.com/onsi/ginkgo/types"
 	. "github.com/onsi/gomega"
 
 	"math/rand"
@@ -32,7 +32,7 @@ func init() {
 						message: itText + " Failed",
 					})
 				}
-			}, flag, types.GenerateCodeLocation(0), 0))
+			}, flag, codelocation.New(0), 0))
 		}
 
 		BeforeEach(func() {
@@ -573,7 +573,7 @@ func init() {
 			exampleWithMeasure := func(text string) *example {
 				return newExample(newMeasureNode(text, func(b Benchmarker) {
 					examplesThatWereRun = append(examplesThatWereRun, text)
-				}, flagTypeNone, types.GenerateCodeLocation(0), 1))
+				}, flagTypeNone, codelocation.New(0), 1))
 			}
 
 			var conf config.GinkgoConfigType

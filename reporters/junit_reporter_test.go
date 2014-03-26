@@ -4,6 +4,7 @@ import (
 	"encoding/xml"
 	. "github.com/onsi/ginkgo"
 	"github.com/onsi/ginkgo/config"
+	"github.com/onsi/ginkgo/internal/codelocation"
 	"github.com/onsi/ginkgo/reporters"
 	"github.com/onsi/ginkgo/types"
 	. "github.com/onsi/gomega"
@@ -86,7 +87,7 @@ var _ = Describe("JUnit Reporter", func() {
 					State:          exampleStateCase.state,
 					RunTime:        5 * time.Second,
 					Failure: types.ExampleFailure{
-						ComponentCodeLocation: types.GenerateCodeLocation(0),
+						ComponentCodeLocation: codelocation.New(0),
 						Message:               "I failed",
 					},
 				}
