@@ -7,7 +7,7 @@ import (
 	"github.com/onsi/ginkgo/ginkgo/aggregator"
 	"github.com/onsi/ginkgo/ginkgo/testsuite"
 	"github.com/onsi/ginkgo/remote"
-	"github.com/onsi/ginkgo/stenographer"
+	"github.com/onsi/ginkgo/reporters/stenographer"
 	"io"
 	"os"
 	"os/exec"

@@ -16,7 +16,7 @@ package aggregator
 
 import (
 	"github.com/onsi/ginkgo/config"
-	"github.com/onsi/ginkgo/stenographer"
+	"github.com/onsi/ginkgo/reporters/stenographer"
 	"github.com/onsi/ginkgo/types"
 	"time"
 )

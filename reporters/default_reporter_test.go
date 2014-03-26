@@ -4,7 +4,7 @@ import (
 	. "github.com/onsi/ginkgo"
 	"github.com/onsi/ginkgo/config"
 	"github.com/onsi/ginkgo/reporters"
-	st "github.com/onsi/ginkgo/stenographer"
+	st "github.com/onsi/ginkgo/reporters/stenographer"
 	"github.com/onsi/ginkgo/types"
 	. "github.com/onsi/gomega"
 	"time"

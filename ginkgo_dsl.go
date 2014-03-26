@@ -16,7 +16,7 @@ import (
 	"github.com/onsi/ginkgo/config"
 	"github.com/onsi/ginkgo/remote"
 	"github.com/onsi/ginkgo/reporters"
-	"github.com/onsi/ginkgo/stenographer"
+	"github.com/onsi/ginkgo/reporters/stenographer"
 	"github.com/onsi/ginkgo/types"
 	"io"
 	"net/http"
