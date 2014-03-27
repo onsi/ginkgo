@@ -1,13 +1,8 @@
-package types
+package internaltypes
 
 import (
-	"time"
+	"github.com/onsi/ginkgo/types"
 )
-
-type Benchmarker interface {
-	Time(name string, body func(), info ...interface{}) (elapsedTime time.Duration)
-	RecordValue(name string, value float64, info ...interface{})
-}
 
 type GinkgoTestDescription struct {
 	ComponentTexts []string
@@ -22,4 +17,36 @@ type GinkgoTestDescription struct {
 
 type GinkgoTestingT interface {
 	Fail()
+}
+
+type NodeType uint
+
+const (
+	NodeTypeInvalid NodeType = iota
+	NodeTypeContainer
+	NodeTypeIt
+	NodeTypeMeasure
+)
+
+type FlagType uint
+
+const (
+	FlagTypeNone FlagType = iota
+	FlagTypeFocused
+	FlagTypePending
+)
+
+type Outcome uint
+
+const (
+	OutcomeInvalid Outcome = iota
+	OutcomePanicked
+	OutcomeTimedOut
+	OutcomeCompleted
+)
+
+type FailureData struct {
+	Message        string
+	CodeLocation   types.CodeLocation
+	ForwardedPanic interface{}
 }

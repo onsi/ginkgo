@@ -1,4 +1,4 @@
-package internal
+package measurenode
 
 import (
 	"github.com/onsi/ginkgo/types"

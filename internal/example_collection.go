@@ -3,7 +3,7 @@ package internal
 import (
 	"github.com/onsi/ginkgo/config"
 	"github.com/onsi/ginkgo/internal/randomid"
-	internaltypes "github.com/onsi/ginkgo/internal/types"
+	"github.com/onsi/ginkgo/internal/types"
 	"github.com/onsi/ginkgo/reporters"
 	"github.com/onsi/ginkgo/types"
 
@@ -168,7 +168,7 @@ func (collection *exampleCollection) run() bool {
 	return !suiteFailed
 }
 
-func (collection *exampleCollection) fail(failure failureData) {
+func (collection *exampleCollection) fail(failure internaltypes.FailureData) {
 	if collection.runningExample != nil {
 		collection.runningExample.fail(failure)
 	}

@@ -1,13 +1,14 @@
 package internal
 
 import (
+	"github.com/onsi/ginkgo/internal/types"
 	"github.com/onsi/ginkgo/types"
 	"math/rand"
 	"sort"
 )
 
 type containerNode struct {
-	flag         FlagType
+	flag         internaltypes.FlagType
 	text         string
 	codeLocation types.CodeLocation
 
@@ -17,7 +18,7 @@ type containerNode struct {
 	subjectAndContainerNodes []node
 }
 
-func newContainerNode(text string, flag FlagType, codeLocation types.CodeLocation) *containerNode {
+func newContainerNode(text string, flag internaltypes.FlagType, codeLocation types.CodeLocation) *containerNode {
 	return &containerNode{
 		text:         text,
 		flag:         flag,
@@ -39,7 +40,7 @@ func (node *containerNode) generateExamples() []*example {
 	examples := make([]*example, 0)
 
 	for _, containerOrSubject := range node.subjectAndContainerNodes {
-		if containerOrSubject.nodeType() == nodeTypeContainer {
+		if containerOrSubject.Type() == internaltypes.NodeTypeContainer {
 			container := containerOrSubject.(*containerNode)
 			examples = append(examples, container.generateExamples()...)
 		} else {
@@ -77,11 +78,11 @@ func (node *containerNode) pushAfterEachNode(afterEach *runnableNode) {
 	node.afterEachNodes = append(node.afterEachNodes, afterEach)
 }
 
-func (node *containerNode) nodeType() nodeType {
-	return nodeTypeContainer
+func (node *containerNode) Type() internaltypes.NodeType {
+	return internaltypes.NodeTypeContainer
 }
 
-func (node *containerNode) getText() string {
+func (node *containerNode) Text() string {
 	return node.text
 }
 
@@ -92,7 +93,7 @@ func (node *containerNode) Len() int {
 }
 
 func (node *containerNode) Less(i, j int) bool {
-	return node.subjectAndContainerNodes[i].getText() < node.subjectAndContainerNodes[j].getText()
+	return node.subjectAndContainerNodes[i].Text() < node.subjectAndContainerNodes[j].Text()
 }
 
 func (node *containerNode) Swap(i, j int) {

@@ -1,44 +1,19 @@
 package internal
 
 import (
+	"github.com/onsi/ginkgo/internal/types"
 	"github.com/onsi/ginkgo/types"
 )
 
 type node interface {
-	nodeType() nodeType
-	getText() string
+	Type() internaltypes.NodeType
+	Text() string
 }
 
 type exampleSubject interface {
 	node
 
-	run() (runOutcome, failureData)
-	getFlag() FlagType
-	getCodeLocation() types.CodeLocation
+	Run() (internaltypes.Outcome, internaltypes.FailureData)
+	Flag() internaltypes.FlagType
+	CodeLocation() types.CodeLocation
 }
-
-type FlagType uint
-
-const (
-	FlagTypeNone FlagType = iota
-	FlagTypeFocused
-	FlagTypePending
-)
-
-type runOutcome uint
-
-const (
-	runOutcomeInvalid runOutcome = iota
-	runOutcomePanicked
-	runOutcomeTimedOut
-	runOutcomeCompleted
-)
-
-type nodeType uint
-
-const (
-	nodeTypeInvalid nodeType = iota
-	nodeTypeContainer
-	nodeTypeIt
-	nodeTypeMeasure
-)

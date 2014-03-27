@@ -16,6 +16,7 @@ import (
 	"github.com/onsi/ginkgo/config"
 	"github.com/onsi/ginkgo/internal"
 	"github.com/onsi/ginkgo/internal/codelocation"
+	"github.com/onsi/ginkgo/internal/types"
 	"github.com/onsi/ginkgo/remote"
 	"github.com/onsi/ginkgo/reporters"
 	"github.com/onsi/ginkgo/reporters/stenographer"
@@ -218,25 +219,25 @@ func GinkgoRecover() {
 //equivalent.  The difference is purely semantic -- you typical Describe the behavior of an object
 //or method and, within that Describe, outline a number of Contexts.
 func Describe(text string, body func()) bool {
-	globalSuite.PushContainerNode(text, body, internal.FlagTypeNone, codelocation.New(1))
+	globalSuite.PushContainerNode(text, body, internaltypes.FlagTypeNone, codelocation.New(1))
 	return true
 }
 
 //You can focus the tests within a describe block using FDescribe
 func FDescribe(text string, body func()) bool {
-	globalSuite.PushContainerNode(text, body, internal.FlagTypeFocused, codelocation.New(1))
+	globalSuite.PushContainerNode(text, body, internaltypes.FlagTypeFocused, codelocation.New(1))
 	return true
 }
 
 //You can mark the tests within a describe block as pending using PDescribe
 func PDescribe(text string, body func()) bool {
-	globalSuite.PushContainerNode(text, body, internal.FlagTypePending, codelocation.New(1))
+	globalSuite.PushContainerNode(text, body, internaltypes.FlagTypePending, codelocation.New(1))
 	return true
 }
 
 //You can mark the tests within a describe block as pending using XDescribe
 func XDescribe(text string, body func()) bool {
-	globalSuite.PushContainerNode(text, body, internal.FlagTypePending, codelocation.New(1))
+	globalSuite.PushContainerNode(text, body, internaltypes.FlagTypePending, codelocation.New(1))
 	return true
 }
 
@@ -247,25 +248,25 @@ func XDescribe(text string, body func()) bool {
 //equivalent.  The difference is purely semantic -- you typical Describe the behavior of an object
 //or method and, within that Describe, outline a number of Contexts.
 func Context(text string, body func()) bool {
-	globalSuite.PushContainerNode(text, body, internal.FlagTypeNone, codelocation.New(1))
+	globalSuite.PushContainerNode(text, body, internaltypes.FlagTypeNone, codelocation.New(1))
 	return true
 }
 
 //You can focus the tests within a describe block using FContext
 func FContext(text string, body func()) bool {
-	globalSuite.PushContainerNode(text, body, internal.FlagTypeFocused, codelocation.New(1))
+	globalSuite.PushContainerNode(text, body, internaltypes.FlagTypeFocused, codelocation.New(1))
 	return true
 }
 
 //You can mark the tests within a describe block as pending using PContext
 func PContext(text string, body func()) bool {
-	globalSuite.PushContainerNode(text, body, internal.FlagTypePending, codelocation.New(1))
+	globalSuite.PushContainerNode(text, body, internaltypes.FlagTypePending, codelocation.New(1))
 	return true
 }
 
 //You can mark the tests within a describe block as pending using XContext
 func XContext(text string, body func()) bool {
-	globalSuite.PushContainerNode(text, body, internal.FlagTypePending, codelocation.New(1))
+	globalSuite.PushContainerNode(text, body, internaltypes.FlagTypePending, codelocation.New(1))
 	return true
 }
 
@@ -275,50 +276,50 @@ func XContext(text string, body func()) bool {
 //Ginkgo will normally run It blocks synchronously.  To perform asynchronous tests, pass a
 //function that accepts a Done channel.  When you do this, you can alos provide an optional timeout.
 func It(text string, body interface{}, timeout ...float64) bool {
-	globalSuite.PushItNode(text, body, internal.FlagTypeNone, codelocation.New(1), parseTimeout(timeout...))
+	globalSuite.PushItNode(text, body, internaltypes.FlagTypeNone, codelocation.New(1), parseTimeout(timeout...))
 	return true
 }
 
 //You can focus individual Its using FIt
 func FIt(text string, body interface{}, timeout ...float64) bool {
-	globalSuite.PushItNode(text, body, internal.FlagTypeFocused, codelocation.New(1), parseTimeout(timeout...))
+	globalSuite.PushItNode(text, body, internaltypes.FlagTypeFocused, codelocation.New(1), parseTimeout(timeout...))
 	return true
 }
 
 //You can mark Its as pending using PIt
 func PIt(text string, _ ...interface{}) bool {
-	globalSuite.PushItNode(text, func() {}, internal.FlagTypePending, codelocation.New(1), 0)
+	globalSuite.PushItNode(text, func() {}, internaltypes.FlagTypePending, codelocation.New(1), 0)
 	return true
 }
 
 //You can mark Its as pending using XIt
 func XIt(text string, _ ...interface{}) bool {
-	globalSuite.PushItNode(text, func() {}, internal.FlagTypePending, codelocation.New(1), 0)
+	globalSuite.PushItNode(text, func() {}, internaltypes.FlagTypePending, codelocation.New(1), 0)
 	return true
 }
 
 //Measure blocks run the passed in body function repeatedly (determined by the samples argument)
 //and accumulate metrics provided to the Benchmarker by the body function.
 func Measure(text string, body func(Benchmarker), samples int) bool {
-	globalSuite.PushMeasureNode(text, body, internal.FlagTypeNone, codelocation.New(1), samples)
+	globalSuite.PushMeasureNode(text, body, internaltypes.FlagTypeNone, codelocation.New(1), samples)
 	return true
 }
 
 //You can focus individual Measures using FMeasure
 func FMeasure(text string, body func(Benchmarker), samples int) bool {
-	globalSuite.PushMeasureNode(text, body, internal.FlagTypeFocused, codelocation.New(1), samples)
+	globalSuite.PushMeasureNode(text, body, internaltypes.FlagTypeFocused, codelocation.New(1), samples)
 	return true
 }
 
 //You can mark Maeasurements as pending using PMeasure
 func PMeasure(text string, _ ...interface{}) bool {
-	globalSuite.PushMeasureNode(text, func(b Benchmarker) {}, internal.FlagTypePending, codelocation.New(1), 0)
+	globalSuite.PushMeasureNode(text, func(b Benchmarker) {}, internaltypes.FlagTypePending, codelocation.New(1), 0)
 	return true
 }
 
 //You can mark Maeasurements as pending using XMeasure
 func XMeasure(text string, _ ...interface{}) bool {
-	globalSuite.PushMeasureNode(text, func(b Benchmarker) {}, internal.FlagTypePending, codelocation.New(1), 0)
+	globalSuite.PushMeasureNode(text, func(b Benchmarker) {}, internaltypes.FlagTypePending, codelocation.New(1), 0)
 	return true
 }
 

@@ -1,7 +1,8 @@
 package internal
 
 import (
-	internaltypes "github.com/onsi/ginkgo/internal/types"
+	"github.com/onsi/ginkgo/internal/measurenode"
+	"github.com/onsi/ginkgo/internal/types"
 	"github.com/onsi/ginkgo/types"
 	"strings"
 	"time"
@@ -17,17 +18,17 @@ type example struct {
 	runTime             time.Duration
 	failure             types.ExampleFailure
 	didInterceptFailure bool
-	interceptedFailure  failureData
+	interceptedFailure  internaltypes.FailureData
 	exampleIndex        int
 }
 
 func newExample(subject exampleSubject) *example {
 	ex := &example{
 		subject: subject,
-		focused: subject.getFlag() == FlagTypeFocused,
+		focused: subject.Flag() == internaltypes.FlagTypeFocused,
 	}
 
-	if subject.getFlag() == FlagTypePending {
+	if subject.Flag() == internaltypes.FlagTypePending {
 		ex.state = types.ExampleStatePending
 	}
 
@@ -36,14 +37,14 @@ func newExample(subject exampleSubject) *example {
 
 func (ex *example) addContainerNode(container *containerNode) {
 	ex.containers = append([]*containerNode{container}, ex.containers...)
-	if container.flag == FlagTypeFocused {
+	if container.flag == internaltypes.FlagTypeFocused {
 		ex.focused = true
-	} else if container.flag == FlagTypePending {
+	} else if container.flag == internaltypes.FlagTypePending {
 		ex.state = types.ExampleStatePending
 	}
 }
 
-func (ex *example) fail(failure failureData) {
+func (ex *example) fail(failure internaltypes.FailureData) {
 	if !ex.didInterceptFailure {
 		ex.interceptedFailure = failure
 		ex.didInterceptFailure = true
@@ -55,7 +56,7 @@ func (ex *example) skip() {
 }
 
 func (ex *example) subjectComponentType() types.ExampleComponentType {
-	if ex.subject.nodeType() == nodeTypeMeasure {
+	if ex.subject.Type() == internaltypes.NodeTypeMeasure {
 		return types.ExampleComponentTypeMeasure
 	} else {
 		return types.ExampleComponentTypeIt
@@ -63,8 +64,8 @@ func (ex *example) subjectComponentType() types.ExampleComponentType {
 }
 
 func (ex *example) desiredNumberOfSamples() int {
-	if ex.subject.nodeType() == nodeTypeMeasure {
-		return ex.subject.(*measureNode).samples
+	if ex.subject.Type() == internaltypes.NodeTypeMeasure {
+		return ex.subject.(*measurenode.MeasureNode).Samples()
 	}
 
 	return 1
@@ -107,7 +108,7 @@ func (ex *example) runSample(sample int) (exampleState types.ExampleState, examp
 			for i := innerMostContainerIndexToUnwind; i >= 0; i-- {
 				container := ex.containers[i]
 				for _, afterEach := range container.afterEachNodes {
-					outcome, failure := afterEach.run()
+					outcome, failure := afterEach.Run()
 					afterEachState, afterEachFailure := ex.processOutcomeAndFailure(i, types.ExampleComponentTypeAfterEach, afterEach.codeLocation, outcome, failure)
 					if afterEachState != types.ExampleStatePassed && exampleState == types.ExampleStatePassed {
 						exampleState = afterEachState
@@ -121,7 +122,7 @@ func (ex *example) runSample(sample int) (exampleState types.ExampleState, examp
 	for i, container := range ex.containers {
 		innerMostContainerIndexToUnwind = i
 		for _, beforeEach := range container.beforeEachNodes {
-			outcome, failure := beforeEach.run()
+			outcome, failure := beforeEach.Run()
 			exampleState, exampleFailure = ex.processOutcomeAndFailure(i, types.ExampleComponentTypeBeforeEach, beforeEach.codeLocation, outcome, failure)
 			if exampleState != types.ExampleStatePassed {
 				return
@@ -131,7 +132,7 @@ func (ex *example) runSample(sample int) (exampleState types.ExampleState, examp
 
 	for i, container := range ex.containers {
 		for _, justBeforeEach := range container.justBeforeEachNodes {
-			outcome, failure := justBeforeEach.run()
+			outcome, failure := justBeforeEach.Run()
 			exampleState, exampleFailure = ex.processOutcomeAndFailure(i, types.ExampleComponentTypeJustBeforeEach, justBeforeEach.codeLocation, outcome, failure)
 			if exampleState != types.ExampleStatePassed {
 				return
@@ -139,8 +140,8 @@ func (ex *example) runSample(sample int) (exampleState types.ExampleState, examp
 		}
 	}
 
-	outcome, failure := ex.subject.run()
-	exampleState, exampleFailure = ex.processOutcomeAndFailure(len(ex.containers), ex.subjectComponentType(), ex.subject.getCodeLocation(), outcome, failure)
+	outcome, failure := ex.subject.Run()
+	exampleState, exampleFailure = ex.processOutcomeAndFailure(len(ex.containers), ex.subjectComponentType(), ex.subject.CodeLocation(), outcome, failure)
 
 	if exampleState != types.ExampleStatePassed {
 		return
@@ -149,25 +150,25 @@ func (ex *example) runSample(sample int) (exampleState types.ExampleState, examp
 	return
 }
 
-func (ex *example) processOutcomeAndFailure(containerIndex int, componentType types.ExampleComponentType, codeLocation types.CodeLocation, outcome runOutcome, failure failureData) (exampleState types.ExampleState, exampleFailure types.ExampleFailure) {
+func (ex *example) processOutcomeAndFailure(containerIndex int, componentType types.ExampleComponentType, codeLocation types.CodeLocation, outcome internaltypes.Outcome, failure internaltypes.FailureData) (exampleState types.ExampleState, exampleFailure types.ExampleFailure) {
 	exampleFailure = types.ExampleFailure{}
 	exampleState = types.ExampleStatePassed
 
 	if ex.didInterceptFailure {
 		exampleState = types.ExampleStateFailed
 		failure = ex.interceptedFailure
-	} else if outcome == runOutcomePanicked {
+	} else if outcome == internaltypes.OutcomePanicked {
 		exampleState = types.ExampleStatePanicked
-	} else if outcome == runOutcomeTimedOut {
+	} else if outcome == internaltypes.OutcomeTimedOut {
 		exampleState = types.ExampleStateTimedOut
 	} else {
 		return
 	}
 
 	exampleFailure = types.ExampleFailure{
-		Message:               failure.message,
-		Location:              failure.codeLocation,
-		ForwardedPanic:        failure.forwardedPanic,
+		Message:               failure.Message,
+		Location:              failure.CodeLocation,
+		ForwardedPanic:        failure.ForwardedPanic,
 		ComponentIndex:        containerIndex,
 		ComponentType:         componentType,
 		ComponentCodeLocation: codeLocation,
@@ -185,8 +186,8 @@ func (ex *example) summary(suiteID string) *types.ExampleSummary {
 		componentCodeLocations[i] = container.codeLocation
 	}
 
-	componentTexts[len(ex.containers)] = ex.subject.getText()
-	componentCodeLocations[len(ex.containers)] = ex.subject.getCodeLocation()
+	componentTexts[len(ex.containers)] = ex.subject.Text()
+	componentCodeLocations[len(ex.containers)] = ex.subject.CodeLocation()
 
 	return &types.ExampleSummary{
 		IsMeasurement:          ex.subjectComponentType() == types.ExampleComponentTypeMeasure,
@@ -226,7 +227,7 @@ func (ex *example) measurementsReport() (measurements map[string]*types.ExampleM
 		return
 	}
 
-	return ex.subject.(*measureNode).measurementsReport()
+	return ex.subject.(*measurenode.MeasureNode).MeasurementsReport()
 }
 
 func (ex *example) concatenatedString() string {
@@ -235,5 +236,5 @@ func (ex *example) concatenatedString() string {
 		s += container.text + " "
 	}
 
-	return s + ex.subject.getText()
+	return s + ex.subject.Text()
 }

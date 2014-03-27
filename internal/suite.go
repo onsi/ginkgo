@@ -3,6 +3,7 @@ package internal
 import (
 	"github.com/onsi/ginkgo/config"
 	"github.com/onsi/ginkgo/internal/codelocation"
+	"github.com/onsi/ginkgo/internal/measurenode"
 	internaltypes "github.com/onsi/ginkgo/internal/types"
 	"github.com/onsi/ginkgo/reporters"
 	"github.com/onsi/ginkgo/types"
@@ -11,12 +12,6 @@ import (
 	"time"
 )
 
-type failureData struct {
-	message        string
-	codeLocation   types.CodeLocation
-	forwardedPanic interface{}
-}
-
 type Suite struct {
 	topLevelContainer *containerNode
 	currentContainer  *containerNode
@@ -24,7 +19,7 @@ type Suite struct {
 }
 
 func NewSuite() *Suite {
-	topLevelContainer := newContainerNode("[Top Level]", FlagTypeNone, types.CodeLocation{})
+	topLevelContainer := newContainerNode("[Top Level]", internaltypes.FlagTypeNone, types.CodeLocation{})
 
 	return &Suite{
 		topLevelContainer: topLevelContainer,
@@ -51,9 +46,9 @@ func (suite *Suite) Run(t internaltypes.GinkgoTestingT, description string, repo
 
 func (suite *Suite) Fail(message string, callerSkip int) {
 	if suite.exampleCollection != nil {
-		suite.exampleCollection.fail(failureData{
-			message:      message,
-			codeLocation: codelocation.New(callerSkip + 2),
+		suite.exampleCollection.fail(internaltypes.FailureData{
+			Message:      message,
+			CodeLocation: codelocation.New(callerSkip + 2),
 		})
 	}
 }
@@ -62,7 +57,7 @@ func (suite *Suite) CurrentGinkgoTestDescription() internaltypes.GinkgoTestDescr
 	return suite.exampleCollection.currentGinkgoTestDescription()
 }
 
-func (suite *Suite) PushContainerNode(text string, body func(), flag FlagType, codeLocation types.CodeLocation) {
+func (suite *Suite) PushContainerNode(text string, body func(), flag internaltypes.FlagType, codeLocation types.CodeLocation) {
 	container := newContainerNode(text, flag, codeLocation)
 	suite.currentContainer.pushContainerNode(container)
 
@@ -74,12 +69,12 @@ func (suite *Suite) PushContainerNode(text string, body func(), flag FlagType, c
 	suite.currentContainer = previousContainer
 }
 
-func (suite *Suite) PushItNode(text string, body interface{}, flag FlagType, codeLocation types.CodeLocation, timeout time.Duration) {
+func (suite *Suite) PushItNode(text string, body interface{}, flag internaltypes.FlagType, codeLocation types.CodeLocation, timeout time.Duration) {
 	suite.currentContainer.pushSubjectNode(newItNode(text, body, flag, codeLocation, timeout))
 }
 
-func (suite *Suite) PushMeasureNode(text string, body interface{}, flag FlagType, codeLocation types.CodeLocation, samples int) {
-	suite.currentContainer.pushSubjectNode(newMeasureNode(text, body, flag, codeLocation, samples))
+func (suite *Suite) PushMeasureNode(text string, body interface{}, flag internaltypes.FlagType, codeLocation types.CodeLocation, samples int) {
+	suite.currentContainer.pushSubjectNode(measurenode.New(text, body, flag, codeLocation, samples))
 }
 
 func (suite *Suite) PushBeforeEachNode(body interface{}, codeLocation types.CodeLocation, timeout time.Duration) {
