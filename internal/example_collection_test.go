@@ -1,4 +1,4 @@
-package ginkgo
+package internal_test
 
 import (
 	"github.com/onsi/ginkgo/config"
@@ -23,7 +23,7 @@ func init() {
 			writer     *fakeGinkgoWriter
 		)
 
-		exampleWithItFunc := func(itText string, flag flagType, fail bool) *example {
+		exampleWithItFunc := func(itText string, flag FlagType, fail bool) *example {
 			return newExample(newItNode(itText, func() {
 				examplesThatWereRun = append(examplesThatWereRun, itText)
 				time.Sleep(time.Duration(0.001 * float64(time.Second)))
@@ -46,9 +46,9 @@ func init() {
 			var examples []*example
 			BeforeEach(func() {
 				examples = []*example{
-					exampleWithItFunc("C", flagTypeNone, false),
-					exampleWithItFunc("A", flagTypeNone, false),
-					exampleWithItFunc("B", flagTypeNone, false),
+					exampleWithItFunc("C", FlagTypeNone, false),
+					exampleWithItFunc("A", FlagTypeNone, false),
+					exampleWithItFunc("B", FlagTypeNone, false),
 				}
 				collection = newExampleCollection(fakeT, "collection description", examples, []Reporter{fakeR}, writer, config.GinkgoConfigType{})
 			})
@@ -63,9 +63,9 @@ func init() {
 		Describe("shuffling the collection", func() {
 			BeforeEach(func() {
 				collection = newExampleCollection(fakeT, "collection description", []*example{
-					exampleWithItFunc("C", flagTypeNone, false),
-					exampleWithItFunc("A", flagTypeNone, false),
-					exampleWithItFunc("B", flagTypeNone, false),
+					exampleWithItFunc("C", FlagTypeNone, false),
+					exampleWithItFunc("A", FlagTypeNone, false),
+					exampleWithItFunc("B", FlagTypeNone, false),
 				}, []Reporter{fakeR}, writer, config.GinkgoConfigType{})
 			})
 
@@ -88,9 +88,9 @@ func init() {
 				otherFakeR = reporters.NewFakeReporter()
 
 				collection = newExampleCollection(fakeT, "collection description", []*example{
-					exampleWithItFunc("C", flagTypeNone, false),
-					exampleWithItFunc("A", flagTypeNone, false),
-					exampleWithItFunc("B", flagTypeNone, false),
+					exampleWithItFunc("C", FlagTypeNone, false),
+					exampleWithItFunc("A", FlagTypeNone, false),
+					exampleWithItFunc("B", FlagTypeNone, false),
 				}, []Reporter{fakeR, otherFakeR}, writer, config.GinkgoConfigType{})
 				collection.run()
 			})
@@ -106,7 +106,7 @@ func init() {
 			Context("when a test fails", func() {
 				BeforeEach(func() {
 					collection = newExampleCollection(fakeT, "collection description", []*example{
-						exampleWithItFunc("C", flagTypeNone, true),
+						exampleWithItFunc("C", FlagTypeNone, true),
 					}, []Reporter{fakeR}, writer, config.GinkgoConfigType{})
 					collection.run()
 				})
@@ -120,7 +120,7 @@ func init() {
 			Context("when a test passes", func() {
 				BeforeEach(func() {
 					collection = newExampleCollection(fakeT, "collection description", []*example{
-						exampleWithItFunc("C", flagTypeNone, false),
+						exampleWithItFunc("C", FlagTypeNone, false),
 					}, []Reporter{fakeR}, writer, config.GinkgoConfigType{})
 					collection.run()
 				})
@@ -144,9 +144,9 @@ func init() {
 			BeforeEach(func() {
 				conf = config.GinkgoConfigType{FocusString: "", ParallelTotal: 1, ParallelNode: 1}
 
-				example1 = exampleWithItFunc("it 1", flagTypeNone, false)
-				example2 = exampleWithItFunc("it 2", flagTypeNone, false)
-				example3 = exampleWithItFunc("it 3", flagTypeNone, false)
+				example1 = exampleWithItFunc("it 1", FlagTypeNone, false)
+				example2 = exampleWithItFunc("it 2", FlagTypeNone, false)
+				example3 = exampleWithItFunc("it 3", FlagTypeNone, false)
 			})
 
 			JustBeforeEach(func() {
@@ -215,8 +215,8 @@ func init() {
 
 			Context("when examples fail", func() {
 				BeforeEach(func() {
-					example2 = exampleWithItFunc("failing it 2", flagTypeNone, true)
-					example3 = exampleWithItFunc("failing it 3", flagTypeNone, true)
+					example2 = exampleWithItFunc("failing it 2", FlagTypeNone, true)
+					example3 = exampleWithItFunc("failing it 3", FlagTypeNone, true)
 				})
 
 				It("should return false", func() {
@@ -269,7 +269,7 @@ func init() {
 
 			Context("when examples are pending", func() {
 				BeforeEach(func() {
-					example1 = exampleWithItFunc("pending it 1", flagTypePending, false)
+					example1 = exampleWithItFunc("pending it 1", FlagTypePending, false)
 				})
 
 				It("skips the pending examples", func() {
@@ -330,8 +330,8 @@ func init() {
 
 			Context("when examples are focused", func() {
 				BeforeEach(func() {
-					example1 = exampleWithItFunc("focused it 1", flagTypeFocused, false)
-					example3 = exampleWithItFunc("focused it 3", flagTypeFocused, false)
+					example1 = exampleWithItFunc("focused it 1", FlagTypeFocused, false)
+					example3 = exampleWithItFunc("focused it 3", FlagTypeFocused, false)
 				})
 
 				It("skips the non-focused examples", func() {
@@ -381,9 +381,9 @@ func init() {
 			Context("when a regexp focusString is provided", func() {
 				BeforeEach(func() {
 					conf.FocusString = `collection description.*pickles\d$`
-					example1 = exampleWithItFunc("focused it 1", flagTypeFocused, false)
-					example2 = exampleWithItFunc("another it pickles2", flagTypeNone, false)
-					example3 = exampleWithItFunc("focused it pickles3", flagTypeFocused, false)
+					example1 = exampleWithItFunc("focused it 1", FlagTypeFocused, false)
+					example2 = exampleWithItFunc("another it pickles2", FlagTypeNone, false)
+					example3 = exampleWithItFunc("focused it pickles3", FlagTypeFocused, false)
 				})
 
 				It("ignores the programmatic focus and applies the regexp focusString", func() {
@@ -429,9 +429,9 @@ func init() {
 			Context("when a regexp skipString is provided", func() {
 				BeforeEach(func() {
 					conf.SkipString = `collection description.*pickles\d$`
-					example1 = exampleWithItFunc("focused it 1", flagTypeFocused, false)
-					example2 = exampleWithItFunc("another it pickles2", flagTypeNone, false)
-					example3 = exampleWithItFunc("focused it pickles3", flagTypeFocused, false)
+					example1 = exampleWithItFunc("focused it 1", FlagTypeFocused, false)
+					example2 = exampleWithItFunc("another it pickles2", FlagTypeNone, false)
+					example3 = exampleWithItFunc("focused it pickles3", FlagTypeFocused, false)
 				})
 
 				It("ignores the programmatic focus and applies the regexp skipString", func() {
@@ -478,9 +478,9 @@ func init() {
 				BeforeEach(func() {
 					conf.SkipString = `collection description.*2`
 					conf.FocusString = `collection description.*A`
-					example1 = exampleWithItFunc("A1", flagTypeFocused, false)
-					example2 = exampleWithItFunc("A2", flagTypeNone, false)
-					example3 = exampleWithItFunc("B1", flagTypeFocused, false)
+					example1 = exampleWithItFunc("A1", FlagTypeFocused, false)
+					example2 = exampleWithItFunc("A2", FlagTypeNone, false)
+					example3 = exampleWithItFunc("B1", FlagTypeFocused, false)
 				})
 
 				It("ignores the programmatic focus and ANDs the focusString and skipString", func() {
@@ -573,7 +573,7 @@ func init() {
 			exampleWithMeasure := func(text string) *example {
 				return newExample(newMeasureNode(text, func(b Benchmarker) {
 					examplesThatWereRun = append(examplesThatWereRun, text)
-				}, flagTypeNone, codelocation.New(0), 1))
+				}, FlagTypeNone, codelocation.New(0), 1))
 			}
 
 			var conf config.GinkgoConfigType
@@ -584,9 +584,9 @@ func init() {
 
 			JustBeforeEach(func() {
 				collection = newExampleCollection(fakeT, "collection description", []*example{
-					exampleWithItFunc("C", flagTypeNone, false),
-					exampleWithItFunc("A", flagTypeNone, false),
-					exampleWithItFunc("B", flagTypeNone, false),
+					exampleWithItFunc("C", FlagTypeNone, false),
+					exampleWithItFunc("A", FlagTypeNone, false),
+					exampleWithItFunc("B", FlagTypeNone, false),
 					exampleWithMeasure("measure"),
 				}, []Reporter{fakeR}, writer, conf)
 

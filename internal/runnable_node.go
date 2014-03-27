@@ -1,4 +1,4 @@
-package ginkgo
+package internal
 
 import (
 	"fmt"
@@ -11,7 +11,7 @@ import (
 
 type runnableNode struct {
 	isAsync          bool
-	asyncFunc        func(Done)
+	asyncFunc        func(chan<- interface{})
 	syncFunc         func()
 	codeLocation     types.CodeLocation
 	timeoutThreshold time.Duration
@@ -33,13 +33,18 @@ func newRunnableNode(body interface{}, codeLocation types.CodeLocation, timeout 
 			timeoutThreshold: timeout,
 		}
 	case 1:
-		if bodyType.In(0) != reflect.TypeOf((*Done)(nil)).Elem() {
+		if !(bodyType.In(0).Kind() == reflect.Chan && bodyType.In(0).Elem().Kind() == reflect.Interface) {
 			panic(fmt.Sprintf("Must pass a Done channel to function at %v", codeLocation))
+		}
+
+		wrappedBody := func(done chan<- interface{}) {
+			bodyValue := reflect.ValueOf(body)
+			bodyValue.Call([]reflect.Value{reflect.ValueOf(done)})
 		}
 
 		return &runnableNode{
 			isAsync:          true,
-			asyncFunc:        body.(func(Done)),
+			asyncFunc:        wrappedBody,
 			syncFunc:         nil,
 			codeLocation:     codeLocation,
 			timeoutThreshold: timeout,
@@ -111,11 +116,11 @@ func (runnable *runnableNode) run() (outcome runOutcome, failure failureData) {
 type itNode struct {
 	*runnableNode
 
-	flag flagType
+	flag FlagType
 	text string
 }
 
-func newItNode(text string, body interface{}, flag flagType, codeLocation types.CodeLocation, timeout time.Duration) *itNode {
+func newItNode(text string, body interface{}, flag FlagType, codeLocation types.CodeLocation, timeout time.Duration) *itNode {
 	return &itNode{
 		runnableNode: newRunnableNode(body, codeLocation, timeout),
 		flag:         flag,
@@ -131,7 +136,7 @@ func (node *itNode) getText() string {
 	return node.text
 }
 
-func (node *itNode) getFlag() flagType {
+func (node *itNode) getFlag() FlagType {
 	return node.flag
 }
 

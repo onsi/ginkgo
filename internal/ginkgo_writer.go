@@ -1,4 +1,4 @@
-package ginkgo
+package internal
 
 import (
 	"bytes"
@@ -11,15 +11,15 @@ type ginkgoWriterInterface interface {
 	DumpOut()
 }
 
-type ginkgoWriter struct {
+type GinkgoWriter struct {
 	buffer         *bytes.Buffer
 	outWriter      io.Writer
 	lock           *sync.Mutex
 	directToStdout bool
 }
 
-func newGinkgoWriter(outWriter io.Writer) *ginkgoWriter {
-	return &ginkgoWriter{
+func NewGinkgoWriter(outWriter io.Writer) *GinkgoWriter {
+	return &GinkgoWriter{
 		buffer:         &bytes.Buffer{},
 		lock:           &sync.Mutex{},
 		outWriter:      outWriter,
@@ -27,13 +27,13 @@ func newGinkgoWriter(outWriter io.Writer) *ginkgoWriter {
 	}
 }
 
-func (w *ginkgoWriter) setDirectToStdout(directToStdout bool) {
+func (w *GinkgoWriter) SetDirectToStdout(directToStdout bool) {
 	w.lock.Lock()
 	defer w.lock.Unlock()
 	w.directToStdout = directToStdout
 }
 
-func (w *ginkgoWriter) Write(b []byte) (n int, err error) {
+func (w *GinkgoWriter) Write(b []byte) (n int, err error) {
 	w.lock.Lock()
 	defer w.lock.Unlock()
 
@@ -44,13 +44,13 @@ func (w *ginkgoWriter) Write(b []byte) (n int, err error) {
 	}
 }
 
-func (w *ginkgoWriter) Truncate() {
+func (w *GinkgoWriter) Truncate() {
 	w.lock.Lock()
 	defer w.lock.Unlock()
 	w.buffer.Truncate(0)
 }
 
-func (w *ginkgoWriter) DumpOut() {
+func (w *GinkgoWriter) DumpOut() {
 	w.lock.Lock()
 	defer w.lock.Unlock()
 	if !w.directToStdout {

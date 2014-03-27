@@ -1,4 +1,4 @@
-package ginkgo
+package internal
 
 func parallelizedIndexRange(length int, parallelTotal int, parallelNode int) (startIndex int, count int) {
 	count = length / parallelTotal

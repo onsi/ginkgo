@@ -1,8 +1,10 @@
-package ginkgo
+package internal
 
 import (
 	"github.com/onsi/ginkgo/config"
 	"github.com/onsi/ginkgo/internal/randomid"
+	internaltypes "github.com/onsi/ginkgo/internal/types"
+	"github.com/onsi/ginkgo/reporters"
 	"github.com/onsi/ginkgo/types"
 
 	"math/rand"
@@ -12,11 +14,11 @@ import (
 )
 
 type exampleCollection struct {
-	t                                 GinkgoTestingT
+	t                                 internaltypes.GinkgoTestingT
 	description                       string
 	examples                          []*example
 	exampleCountBeforeParallelization int
-	reporters                         []Reporter
+	reporters                         []reporters.Reporter
 	startTime                         time.Time
 	suiteID                           string
 	runningExample                    *example
@@ -24,7 +26,7 @@ type exampleCollection struct {
 	config                            config.GinkgoConfigType
 }
 
-func newExampleCollection(t GinkgoTestingT, description string, examples []*example, reporters []Reporter, writer ginkgoWriterInterface, config config.GinkgoConfigType) *exampleCollection {
+func newExampleCollection(t internaltypes.GinkgoTestingT, description string, examples []*example, reporters []reporters.Reporter, writer ginkgoWriterInterface, config config.GinkgoConfigType) *exampleCollection {
 	collection := &exampleCollection{
 		t:           t,
 		description: description,
@@ -172,10 +174,10 @@ func (collection *exampleCollection) fail(failure failureData) {
 	}
 }
 
-func (collection *exampleCollection) currentGinkgoTestDescription() GinkgoTestDescription {
+func (collection *exampleCollection) currentGinkgoTestDescription() internaltypes.GinkgoTestDescription {
 	currentExample := collection.runningExample
 	if currentExample == nil {
-		return GinkgoTestDescription{}
+		return internaltypes.GinkgoTestDescription{}
 	}
 
 	return currentExample.ginkgoTestDescription()

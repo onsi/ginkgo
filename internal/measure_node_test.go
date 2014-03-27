@@ -1,4 +1,4 @@
-package ginkgo
+package internal_test
 
 import (
 	"github.com/onsi/ginkgo/internal/codelocation"
@@ -18,12 +18,12 @@ func init() {
 			measure = newMeasureNode("foo", func(b Benchmarker) {
 				b.RecordValue("bar", float64(i))
 				i += 1
-			}, flagTypeFocused, codeLocation, 10)
+			}, FlagTypeFocused, codeLocation, 10)
 		})
 
 		It("should report on itself accurately", func() {
 			Ω(measure.getText()).Should(Equal("foo"))
-			Ω(measure.getFlag()).Should(Equal(flagTypeFocused))
+			Ω(measure.getFlag()).Should(Equal(FlagTypeFocused))
 			Ω(measure.getCodeLocation()).Should(Equal(codeLocation))
 			Ω(measure.nodeType()).Should(Equal(nodeTypeMeasure))
 			Ω(measure.samples).Should(Equal(10))
@@ -54,7 +54,7 @@ func init() {
 				measure = newMeasureNode("foo", func(Benchmarker) {
 					codeLocation = codelocation.New(0)
 					panic("kaboom")
-				}, flagTypeFocused, codeLocation, 10)
+				}, FlagTypeFocused, codeLocation, 10)
 				outcome, failure = measure.run()
 			})
 

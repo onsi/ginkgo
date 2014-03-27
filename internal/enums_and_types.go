@@ -1,4 +1,4 @@
-package ginkgo
+package internal
 
 import (
 	"github.com/onsi/ginkgo/types"
@@ -13,16 +13,16 @@ type exampleSubject interface {
 	node
 
 	run() (runOutcome, failureData)
-	getFlag() flagType
+	getFlag() FlagType
 	getCodeLocation() types.CodeLocation
 }
 
-type flagType uint
+type FlagType uint
 
 const (
-	flagTypeNone flagType = iota
-	flagTypeFocused
-	flagTypePending
+	FlagTypeNone FlagType = iota
+	FlagTypeFocused
+	FlagTypePending
 )
 
 type runOutcome uint

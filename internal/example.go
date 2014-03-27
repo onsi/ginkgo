@@ -1,6 +1,7 @@
-package ginkgo
+package internal
 
 import (
+	internaltypes "github.com/onsi/ginkgo/internal/types"
 	"github.com/onsi/ginkgo/types"
 	"strings"
 	"time"
@@ -23,10 +24,10 @@ type example struct {
 func newExample(subject exampleSubject) *example {
 	ex := &example{
 		subject: subject,
-		focused: subject.getFlag() == flagTypeFocused,
+		focused: subject.getFlag() == FlagTypeFocused,
 	}
 
-	if subject.getFlag() == flagTypePending {
+	if subject.getFlag() == FlagTypePending {
 		ex.state = types.ExampleStatePending
 	}
 
@@ -35,9 +36,9 @@ func newExample(subject exampleSubject) *example {
 
 func (ex *example) addContainerNode(container *containerNode) {
 	ex.containers = append([]*containerNode{container}, ex.containers...)
-	if container.flag == flagTypeFocused {
+	if container.flag == FlagTypeFocused {
 		ex.focused = true
-	} else if container.flag == flagTypePending {
+	} else if container.flag == FlagTypePending {
 		ex.state = types.ExampleStatePending
 	}
 }
@@ -201,12 +202,12 @@ func (ex *example) summary(suiteID string) *types.ExampleSummary {
 	}
 }
 
-func (ex *example) ginkgoTestDescription() GinkgoTestDescription {
+func (ex *example) ginkgoTestDescription() internaltypes.GinkgoTestDescription {
 	summary := ex.summary("")
 
 	leafCodeLocation := summary.ComponentCodeLocations[len(summary.ComponentCodeLocations)-1]
 
-	return GinkgoTestDescription{
+	return internaltypes.GinkgoTestDescription{
 		ComponentTexts: summary.ComponentTexts[1:],
 		FullTestText:   strings.Join(summary.ComponentTexts[1:], " "),
 		TestText:       summary.ComponentTexts[len(summary.ComponentTexts)-1],

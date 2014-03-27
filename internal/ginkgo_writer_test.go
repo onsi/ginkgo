@@ -1,4 +1,4 @@
-package ginkgo
+package internal_test
 
 import (
 	"bytes"

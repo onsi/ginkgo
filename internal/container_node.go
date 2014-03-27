@@ -1,4 +1,4 @@
-package ginkgo
+package internal
 
 import (
 	"github.com/onsi/ginkgo/types"
@@ -7,7 +7,7 @@ import (
 )
 
 type containerNode struct {
-	flag         flagType
+	flag         FlagType
 	text         string
 	codeLocation types.CodeLocation
 
@@ -17,7 +17,7 @@ type containerNode struct {
 	subjectAndContainerNodes []node
 }
 
-func newContainerNode(text string, flag flagType, codeLocation types.CodeLocation) *containerNode {
+func newContainerNode(text string, flag FlagType, codeLocation types.CodeLocation) *containerNode {
 	return &containerNode{
 		text:         text,
 		flag:         flag,

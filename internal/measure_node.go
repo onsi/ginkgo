@@ -1,23 +1,30 @@
-package ginkgo
+package internal
 
 import (
 	"github.com/onsi/ginkgo/internal/codelocation"
+	internaltypes "github.com/onsi/ginkgo/internal/types"
 	"github.com/onsi/ginkgo/types"
+	"reflect"
 )
 
 type measureNode struct {
 	text         string
-	body         func(Benchmarker)
-	flag         flagType
+	body         func(internaltypes.Benchmarker)
+	flag         FlagType
 	codeLocation types.CodeLocation
 	samples      int
 	benchmarker  *benchmarker
 }
 
-func newMeasureNode(text string, body func(Benchmarker), flag flagType, codeLocation types.CodeLocation, samples int) *measureNode {
+func newMeasureNode(text string, body interface{}, flag FlagType, codeLocation types.CodeLocation, samples int) *measureNode {
+	bodyValue := reflect.ValueOf(body)
+	wrappedBody := func(b internaltypes.Benchmarker) {
+		bodyValue.Call([]reflect.Value{reflect.ValueOf(b)})
+	}
+
 	return &measureNode{
 		text:         text,
-		body:         body,
+		body:         wrappedBody,
 		flag:         flag,
 		codeLocation: codeLocation,
 		samples:      samples,
@@ -55,7 +62,7 @@ func (node *measureNode) getText() string {
 	return node.text
 }
 
-func (node *measureNode) getFlag() flagType {
+func (node *measureNode) getFlag() FlagType {
 	return node.flag
 }
 

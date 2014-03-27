@@ -1,4 +1,4 @@
-package ginkgo
+package internal_test
 
 import (
 	"github.com/onsi/ginkgo/internal/codelocation"
@@ -164,8 +164,8 @@ func init() {
 	Describe("ItNodes", func() {
 		It("should save off the text and flags", func() {
 			codeLocation := codelocation.New(0)
-			it := newItNode("my it node", func() {}, flagTypeFocused, codeLocation, 0)
-			Ω(it.flag).Should(Equal(flagTypeFocused))
+			it := newItNode("my it node", func() {}, FlagTypeFocused, codeLocation, 0)
+			Ω(it.flag).Should(Equal(FlagTypeFocused))
 			Ω(it.text).Should(Equal("my it node"))
 			Ω(it.codeLocation).Should(Equal(codeLocation))
 		})

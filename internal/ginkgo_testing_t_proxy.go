@@ -1,21 +1,24 @@
-package ginkgo
+package internal
 
 import (
 	"fmt"
+	"io"
 )
 
 type failFunc func(message string, callerSkip ...int)
 
-func newGinkgoTestingTProxy(fail failFunc, offset int) *ginkgoTestingTProxy {
+func NewGinkgoTestingTProxy(writer io.Writer, fail failFunc, offset int) *ginkgoTestingTProxy {
 	return &ginkgoTestingTProxy{
 		fail:   fail,
 		offset: offset,
+		writer: writer,
 	}
 }
 
 type ginkgoTestingTProxy struct {
 	fail   failFunc
 	offset int
+	writer io.Writer
 }
 
 func (t *ginkgoTestingTProxy) Error(args ...interface{}) {
@@ -43,11 +46,11 @@ func (t *ginkgoTestingTProxy) Fatalf(format string, args ...interface{}) {
 }
 
 func (t *ginkgoTestingTProxy) Log(args ...interface{}) {
-	fmt.Fprintln(GinkgoWriter, args...)
+	fmt.Fprintln(t.writer, args...)
 }
 
 func (t *ginkgoTestingTProxy) Logf(format string, args ...interface{}) {
-	fmt.Fprintf(GinkgoWriter, format, args...)
+	fmt.Fprintf(t.writer, format, args...)
 }
 
 func (t *ginkgoTestingTProxy) Failed() bool {

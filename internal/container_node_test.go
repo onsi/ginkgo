@@ -1,4 +1,4 @@
-package ginkgo
+package internal_test
 
 import (
 	"github.com/onsi/ginkgo/internal/codelocation"
@@ -17,13 +17,13 @@ func init() {
 
 		BeforeEach(func() {
 			codeLocation = codelocation.New(0)
-			container = newContainerNode("description text", flagTypeFocused, codeLocation)
+			container = newContainerNode("description text", FlagTypeFocused, codeLocation)
 		})
 
 		Describe("creating a container node", func() {
 			It("stores off the passed in properties", func() {
 				Ω(container.text).Should(Equal("description text"))
-				Ω(container.flag).Should(Equal(flagTypeFocused))
+				Ω(container.flag).Should(Equal(FlagTypeFocused))
 				Ω(container.codeLocation).Should(Equal(codeLocation))
 			})
 		})
@@ -31,9 +31,9 @@ func init() {
 		Describe("appending", func() {
 			Describe("it nodes", func() {
 				It("can append container nodes and it nodes", func() {
-					itA := newItNode("itA", func() {}, flagTypeNone, codelocation.New(0), 0)
-					itB := newItNode("itB", func() {}, flagTypeNone, codelocation.New(0), 0)
-					subContainer := newContainerNode("subcontainer", flagTypeNone, codelocation.New(0))
+					itA := newItNode("itA", func() {}, FlagTypeNone, codelocation.New(0), 0)
+					itB := newItNode("itB", func() {}, FlagTypeNone, codelocation.New(0), 0)
+					subContainer := newContainerNode("subcontainer", FlagTypeNone, codelocation.New(0))
 					container.pushSubjectNode(itA)
 					container.pushContainerNode(subContainer)
 					container.pushSubjectNode(itB)
@@ -95,11 +95,11 @@ func init() {
 			)
 
 			BeforeEach(func() {
-				itA = newItNode("itA", func() {}, flagTypeNone, codelocation.New(0), 0)
-				itB = newItNode("itB", func() {}, flagTypeNone, codelocation.New(0), 0)
-				subContainer = newContainerNode("subcontainer", flagTypeNone, codelocation.New(0))
-				subItA = newItNode("subItA", func() {}, flagTypeNone, codelocation.New(0), 0)
-				subItB = newItNode("subItB", func() {}, flagTypeNone, codelocation.New(0), 0)
+				itA = newItNode("itA", func() {}, FlagTypeNone, codelocation.New(0), 0)
+				itB = newItNode("itB", func() {}, FlagTypeNone, codelocation.New(0), 0)
+				subContainer = newContainerNode("subcontainer", FlagTypeNone, codelocation.New(0))
+				subItA = newItNode("subItA", func() {}, FlagTypeNone, codelocation.New(0), 0)
+				subItB = newItNode("subItB", func() {}, FlagTypeNone, codelocation.New(0), 0)
 
 				container.pushSubjectNode(itA)
 				container.pushContainerNode(subContainer)
@@ -127,7 +127,7 @@ func init() {
 			})
 
 			It("ignores containers in the hierarchy that are empty", func() {
-				emptyContainer := newContainerNode("empty container", flagTypeNone, codelocation.New(0))
+				emptyContainer := newContainerNode("empty container", FlagTypeNone, codelocation.New(0))
 				emptyContainer.pushBeforeEachNode(newRunnableNode(func() {}, codelocation.New(0), 0))
 
 				container.pushContainerNode(emptyContainer)
@@ -146,11 +146,11 @@ func init() {
 			}
 
 			BeforeEach(func() {
-				itA := newItNode("Banana", func() {}, flagTypeNone, codelocation.New(0), 0)
-				itB := newItNode("Apple", func() {}, flagTypeNone, codelocation.New(0), 0)
-				itC := newItNode("Orange", func() {}, flagTypeNone, codelocation.New(0), 0)
-				containerA := newContainerNode("Cucumber", flagTypeNone, codelocation.New(0))
-				containerB := newContainerNode("Airplane", flagTypeNone, codelocation.New(0))
+				itA := newItNode("Banana", func() {}, FlagTypeNone, codelocation.New(0), 0)
+				itB := newItNode("Apple", func() {}, FlagTypeNone, codelocation.New(0), 0)
+				itC := newItNode("Orange", func() {}, FlagTypeNone, codelocation.New(0), 0)
+				containerA := newContainerNode("Cucumber", FlagTypeNone, codelocation.New(0))
+				containerB := newContainerNode("Airplane", FlagTypeNone, codelocation.New(0))
 
 				container.pushSubjectNode(itA)
 				container.pushContainerNode(containerA)

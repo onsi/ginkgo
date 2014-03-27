@@ -1,4 +1,4 @@
-package ginkgo
+package internal
 
 import (
 	"github.com/onsi/ginkgo/types"

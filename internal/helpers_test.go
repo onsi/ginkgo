@@ -1,4 +1,4 @@
-package ginkgo
+package internal_test
 
 import (
 	. "github.com/onsi/gomega"

@@ -1,4 +1,4 @@
-package ginkgo
+package internal_test
 
 import (
 	"github.com/onsi/ginkgo/config"
@@ -59,19 +59,19 @@ func init() {
 					specSuite.pushBeforeEachNode(f("BE"), codelocation.New(0), 0)
 					specSuite.pushJustBeforeEachNode(f("JBE"), codelocation.New(0), 0)
 					specSuite.pushAfterEachNode(f("AE"), codelocation.New(0), 0)
-					specSuite.pushItNode("it", f("IT"), flagTypeNone, codelocation.New(0), 0)
+					specSuite.pushItNode("it", f("IT"), FlagTypeNone, codelocation.New(0), 0)
 
 					specSuite.pushContainerNode("inner container", func() {
-						specSuite.pushItNode("inner it", f("inner IT"), flagTypeNone, codelocation.New(0), 0)
-					}, flagTypeNone, codelocation.New(0))
-				}, flagTypeNone, codelocation.New(0))
+						specSuite.pushItNode("inner it", f("inner IT"), FlagTypeNone, codelocation.New(0), 0)
+					}, FlagTypeNone, codelocation.New(0))
+				}, FlagTypeNone, codelocation.New(0))
 
 				specSuite.pushContainerNode("container 2", func() {
 					specSuite.pushBeforeEachNode(f("BE 2"), codelocation.New(0), 0)
-					specSuite.pushItNode("it 2", f("IT 2"), flagTypeNone, codelocation.New(0), 0)
-				}, flagTypeNone, codelocation.New(0))
+					specSuite.pushItNode("it 2", f("IT 2"), FlagTypeNone, codelocation.New(0), 0)
+				}, FlagTypeNone, codelocation.New(0))
 
-				specSuite.pushItNode("top level it", f("top IT"), flagTypeNone, codelocation.New(0), 0)
+				specSuite.pushItNode("top level it", f("top IT"), FlagTypeNone, codelocation.New(0), 0)
 			})
 
 			JustBeforeEach(func() {
@@ -203,7 +203,7 @@ func init() {
 					specSuite.pushItNode("top level it", func() {
 						location = codelocation.New(0)
 						func() { specSuite.fail("oops!", 0) }()
-					}, flagTypeNone, codelocation.New(0), 0)
+					}, FlagTypeNone, codelocation.New(0), 0)
 				})
 
 				It("should return false", func() {
