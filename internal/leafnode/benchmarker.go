@@ -1,4 +1,4 @@
-package measurenode
+package leafnode
 
 import (
 	"github.com/onsi/ginkgo/types"

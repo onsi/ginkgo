@@ -3,6 +3,7 @@ package leafnode_test
 import (
 	. "github.com/onsi/ginkgo"
 	. "github.com/onsi/gomega"
+	"reflect"
 
 	. "github.com/onsi/ginkgo/internal/leafnode"
 
@@ -19,14 +20,14 @@ type runnable interface {
 	CodeLocation() types.CodeLocation
 }
 
-func SharedRunnerBehaviors(build func(body interface{}, timeout time.Duration, failer *Failer.Failer, componentCodeLocation types.CodeLocation, componentIndex int) runnable, componentType types.ExampleComponentType) {
+func SynchronousSharedRunnerBehaviors(build func(body interface{}, timeout time.Duration, failer *Failer.Failer, componentCodeLocation types.CodeLocation, componentIndex int) runnable, componentType types.ExampleComponentType) {
 	var (
 		outcome types.ExampleState
 		failure types.ExampleFailure
 
-		failer         *Failer.Failer
-		componentIndex int
+		failer *Failer.Failer
 
+		componentIndex        int
 		componentCodeLocation types.CodeLocation
 		innerCodeLocation     types.CodeLocation
 
@@ -107,6 +108,30 @@ func SharedRunnerBehaviors(build func(body interface{}, timeout time.Duration, f
 			})
 		})
 	})
+}
+
+func AsynchronousSharedRunnerBehaviors(build func(body interface{}, timeout time.Duration, failer *Failer.Failer, componentCodeLocation types.CodeLocation, componentIndex int) runnable, componentType types.ExampleComponentType) {
+	var (
+		outcome types.ExampleState
+		failure types.ExampleFailure
+
+		failer *Failer.Failer
+
+		componentIndex        int
+		componentCodeLocation types.CodeLocation
+		innerCodeLocation     types.CodeLocation
+
+		didRun bool
+	)
+
+	BeforeEach(func() {
+		failer = Failer.New()
+		componentIndex = 3
+		componentCodeLocation = codelocation.New(0)
+		innerCodeLocation = codelocation.New(0)
+
+		didRun = false
+	})
 
 	Describe("asynchronous functions", func() {
 		var timeoutDuration time.Duration
@@ -177,7 +202,7 @@ func SharedRunnerBehaviors(build func(body interface{}, timeout time.Duration, f
 				outcome, failure = build(func(done Done) {
 					didRun = true
 					time.Sleep(20 * time.Millisecond)
-					failer.Fail("bam", innerCodeLocation)
+					panic("doesn't matter")
 					close(done)
 				}, 10*time.Millisecond, failer, componentCodeLocation, componentIndex).Run()
 			})
@@ -222,6 +247,22 @@ func SharedRunnerBehaviors(build func(body interface{}, timeout time.Duration, f
 			})
 		})
 	})
+}
+
+func InvalidSharedRunnerBehaviors(build func(body interface{}, timeout time.Duration, failer *Failer.Failer, componentCodeLocation types.CodeLocation, componentIndex int) runnable, componentType types.ExampleComponentType) {
+	var (
+		failer                *Failer.Failer
+		componentIndex        int
+		componentCodeLocation types.CodeLocation
+		innerCodeLocation     types.CodeLocation
+	)
+
+	BeforeEach(func() {
+		failer = Failer.New()
+		componentIndex = 3
+		componentCodeLocation = codelocation.New(0)
+		innerCodeLocation = codelocation.New(0)
+	})
 
 	Describe("invalid functions", func() {
 		Context("when passed something that's not a function", func() {
@@ -252,26 +293,52 @@ func SharedRunnerBehaviors(build func(body interface{}, timeout time.Duration, f
 
 var _ = Describe("Shared RunnableNode behavior", func() {
 	Describe("It Nodes", func() {
-		SharedRunnerBehaviors(func(body interface{}, timeout time.Duration, failer *Failer.Failer, componentCodeLocation types.CodeLocation, componentIndex int) runnable {
+		build := func(body interface{}, timeout time.Duration, failer *Failer.Failer, componentCodeLocation types.CodeLocation, componentIndex int) runnable {
 			return NewItNode("", body, internaltypes.FlagTypeFocused, componentCodeLocation, timeout, failer, componentIndex)
-		}, types.ExampleComponentTypeIt)
+		}
+
+		SynchronousSharedRunnerBehaviors(build, types.ExampleComponentTypeIt)
+		AsynchronousSharedRunnerBehaviors(build, types.ExampleComponentTypeIt)
+		InvalidSharedRunnerBehaviors(build, types.ExampleComponentTypeIt)
+	})
+
+	Describe("Measure Nodes", func() {
+		build := func(body interface{}, _ time.Duration, failer *Failer.Failer, componentCodeLocation types.CodeLocation, componentIndex int) runnable {
+			return NewMeasureNode("", func(Benchmarker) {
+				reflect.ValueOf(body).Call([]reflect.Value{})
+			}, internaltypes.FlagTypeFocused, componentCodeLocation, 10, failer, componentIndex)
+		}
+
+		SynchronousSharedRunnerBehaviors(build, types.ExampleComponentTypeMeasure)
 	})
 
 	Describe("BeforeEach Nodes", func() {
-		SharedRunnerBehaviors(func(body interface{}, timeout time.Duration, failer *Failer.Failer, componentCodeLocation types.CodeLocation, componentIndex int) runnable {
+		build := func(body interface{}, timeout time.Duration, failer *Failer.Failer, componentCodeLocation types.CodeLocation, componentIndex int) runnable {
 			return NewBeforeEachNode(body, componentCodeLocation, timeout, failer, componentIndex)
-		}, types.ExampleComponentTypeBeforeEach)
+		}
+
+		SynchronousSharedRunnerBehaviors(build, types.ExampleComponentTypeBeforeEach)
+		AsynchronousSharedRunnerBehaviors(build, types.ExampleComponentTypeBeforeEach)
+		InvalidSharedRunnerBehaviors(build, types.ExampleComponentTypeBeforeEach)
 	})
 
 	Describe("AfterEach Nodes", func() {
-		SharedRunnerBehaviors(func(body interface{}, timeout time.Duration, failer *Failer.Failer, componentCodeLocation types.CodeLocation, componentIndex int) runnable {
+		build := func(body interface{}, timeout time.Duration, failer *Failer.Failer, componentCodeLocation types.CodeLocation, componentIndex int) runnable {
 			return NewAfterEachNode(body, componentCodeLocation, timeout, failer, componentIndex)
-		}, types.ExampleComponentTypeAfterEach)
+		}
+
+		SynchronousSharedRunnerBehaviors(build, types.ExampleComponentTypeAfterEach)
+		AsynchronousSharedRunnerBehaviors(build, types.ExampleComponentTypeAfterEach)
+		InvalidSharedRunnerBehaviors(build, types.ExampleComponentTypeAfterEach)
 	})
 
 	Describe("JustBeforeEach Nodes", func() {
-		SharedRunnerBehaviors(func(body interface{}, timeout time.Duration, failer *Failer.Failer, componentCodeLocation types.CodeLocation, componentIndex int) runnable {
+		build := func(body interface{}, timeout time.Duration, failer *Failer.Failer, componentCodeLocation types.CodeLocation, componentIndex int) runnable {
 			return NewJustBeforeEachNode(body, componentCodeLocation, timeout, failer, componentIndex)
-		}, types.ExampleComponentTypeJustBeforeEach)
+		}
+
+		SynchronousSharedRunnerBehaviors(build, types.ExampleComponentTypeJustBeforeEach)
+		AsynchronousSharedRunnerBehaviors(build, types.ExampleComponentTypeJustBeforeEach)
+		InvalidSharedRunnerBehaviors(build, types.ExampleComponentTypeJustBeforeEach)
 	})
 })

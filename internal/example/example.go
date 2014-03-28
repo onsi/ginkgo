@@ -1,7 +1,7 @@
 package example
 
 import (
-	"github.com/onsi/ginkgo/internal/measurenode"
+	"github.com/onsi/ginkgo/internal/leafnode"
 	"github.com/onsi/ginkgo/internal/types"
 	"github.com/onsi/ginkgo/types"
 	"strings"
@@ -176,7 +176,7 @@ func (ex *Example) measurementsReport() map[string]*types.ExampleMeasurement {
 		return map[string]*types.ExampleMeasurement{}
 	}
 
-	return ex.subject.(*measurenode.MeasureNode).MeasurementsReport()
+	return ex.subject.(*leafnode.MeasureNode).MeasurementsReport()
 }
 
 func (ex *Example) ConcatenatedString() string {

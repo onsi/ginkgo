@@ -5,7 +5,6 @@ import (
 	"github.com/onsi/ginkgo/internal/containernode"
 	"github.com/onsi/ginkgo/internal/failer"
 	"github.com/onsi/ginkgo/internal/leafnode"
-	"github.com/onsi/ginkgo/internal/measurenode"
 	internaltypes "github.com/onsi/ginkgo/internal/types"
 	"github.com/onsi/ginkgo/reporters"
 	"github.com/onsi/ginkgo/types"
@@ -73,7 +72,7 @@ func (suite *Suite) PushItNode(text string, body interface{}, flag internaltypes
 }
 
 func (suite *Suite) PushMeasureNode(text string, body interface{}, flag internaltypes.FlagType, codeLocation types.CodeLocation, samples int) {
-	suite.currentContainer.PushSubjectNode(measurenode.New(text, body, flag, codeLocation, samples, suite.failer, suite.containerIndex))
+	suite.currentContainer.PushSubjectNode(leafnode.NewMeasureNode(text, body, flag, codeLocation, samples, suite.failer, suite.containerIndex))
 }
 
 func (suite *Suite) PushBeforeEachNode(body interface{}, codeLocation types.CodeLocation, timeout time.Duration) {
