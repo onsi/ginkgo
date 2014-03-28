@@ -1,176 +1,147 @@
 package containernode_test
 
-//TODO: FIX!
-
 import (
-	"github.com/onsi/ginkgo/internal/codelocation"
-	"github.com/onsi/ginkgo/types"
-	. "github.com/onsi/gomega"
+	"github.com/onsi/ginkgo/internal/leafnodes"
+	"github.com/onsi/ginkgo/internal/types"
 	"math/rand"
-	"sort"
+
+	. "github.com/onsi/ginkgo"
+	. "github.com/onsi/gomega"
+
+	"github.com/onsi/ginkgo/internal/codelocation"
+	. "github.com/onsi/ginkgo/internal/containernode"
+	"github.com/onsi/ginkgo/types"
 )
 
-func init() {
-	Describe("Container Node", func() {
+var _ = Describe("Container Node", func() {
+	var (
+		codeLocation types.CodeLocation
+		container    *ContainerNode
+	)
+
+	BeforeEach(func() {
+		codeLocation = codelocation.New(0)
+		container = New("description text", internaltypes.FlagTypeFocused, codeLocation)
+	})
+
+	Describe("creating a container node", func() {
+		It("can answer questions about itself", func() {
+			Ω(container.Text()).Should(Equal("description text"))
+			Ω(container.Flag()).Should(Equal(internaltypes.FlagTypeFocused))
+			Ω(container.CodeLocation()).Should(Equal(codeLocation))
+		})
+	})
+
+	Describe("pushing setup nodes", func() {
+		It("can append multiple before each nodes", func() {
+			a := leafnodes.NewBeforeEachNode(func() {}, codelocation.New(0), 0, nil, 0)
+			b := leafnodes.NewBeforeEachNode(func() {}, codelocation.New(0), 0, nil, 0)
+
+			container.PushBeforeEachNode(a)
+			container.PushBeforeEachNode(b)
+
+			Ω(container.BeforeEachNodes()).Should(Equal([]internaltypes.BasicNode{a, b}))
+		})
+
+		It("can append multiple after each nodes", func() {
+			a := leafnodes.NewAfterEachNode(func() {}, codelocation.New(0), 0, nil, 0)
+			b := leafnodes.NewAfterEachNode(func() {}, codelocation.New(0), 0, nil, 0)
+
+			container.PushAfterEachNode(a)
+			container.PushAfterEachNode(b)
+
+			Ω(container.AfterEachNodes()).Should(Equal([]internaltypes.BasicNode{a, b}))
+		})
+
+		It("can append multiple just before each nodes", func() {
+			a := leafnodes.NewJustBeforeEachNode(func() {}, codelocation.New(0), 0, nil, 0)
+			b := leafnodes.NewJustBeforeEachNode(func() {}, codelocation.New(0), 0, nil, 0)
+
+			container.PushJustBeforeEachNode(a)
+			container.PushJustBeforeEachNode(b)
+
+			Ω(container.JustBeforeEachNodes()).Should(Equal([]internaltypes.BasicNode{a, b}))
+		})
+	})
+
+	Context("With appended containers and subject nodes", func() {
 		var (
-			codeLocation types.CodeLocation
-			container    *containerNode
+			itA, itB, innerItA, innerItB internaltypes.SubjectNode
+			innerContainer               *ContainerNode
 		)
 
 		BeforeEach(func() {
-			codeLocation = codelocation.New(0)
-			container = newContainerNode("description text", FlagTypeFocused, codeLocation)
+			itA = leafnodes.NewItNode("Banana", func() {}, internaltypes.FlagTypeNone, codelocation.New(0), 0, nil, 0)
+			itB = leafnodes.NewItNode("Apple", func() {}, internaltypes.FlagTypeNone, codelocation.New(0), 0, nil, 0)
+
+			innerItA = leafnodes.NewItNode("inner A", func() {}, internaltypes.FlagTypeNone, codelocation.New(0), 0, nil, 0)
+			innerItB = leafnodes.NewItNode("inner B", func() {}, internaltypes.FlagTypeNone, codelocation.New(0), 0, nil, 0)
+
+			innerContainer = New("Orange", internaltypes.FlagTypeNone, codelocation.New(0))
+
+			container.PushSubjectNode(itA)
+			container.PushContainerNode(innerContainer)
+			innerContainer.PushSubjectNode(innerItA)
+			innerContainer.PushSubjectNode(innerItB)
+			container.PushSubjectNode(itB)
 		})
 
-		Describe("creating a container node", func() {
-			It("stores off the passed in properties", func() {
-				Ω(container.text).Should(Equal("description text"))
-				Ω(container.flag).Should(Equal(FlagTypeFocused))
-				Ω(container.codeLocation).Should(Equal(codeLocation))
+		Describe("Collating", func() {
+			It("should return a collated set of containers and subject nodes in the correct order", func() {
+				collated := container.Collate()
+				Ω(collated).Should(HaveLen(4))
+
+				Ω(collated[0]).Should(Equal(CollatedNodes{
+					Containers: []*ContainerNode{container},
+					Subject:    itA,
+				}))
+
+				Ω(collated[1]).Should(Equal(CollatedNodes{
+					Containers: []*ContainerNode{container, innerContainer},
+					Subject:    innerItA,
+				}))
+
+				Ω(collated[2]).Should(Equal(CollatedNodes{
+					Containers: []*ContainerNode{container, innerContainer},
+					Subject:    innerItB,
+				}))
+
+				Ω(collated[3]).Should(Equal(CollatedNodes{
+					Containers: []*ContainerNode{container},
+					Subject:    itB,
+				}))
 			})
 		})
 
-		Describe("appending", func() {
-			Describe("it nodes", func() {
-				It("can append container nodes and it nodes", func() {
-					itA := newItNode("itA", func() {}, FlagTypeNone, codelocation.New(0), 0)
-					itB := newItNode("itB", func() {}, FlagTypeNone, codelocation.New(0), 0)
-					subContainer := newContainerNode("subcontainer", FlagTypeNone, codelocation.New(0))
-					container.pushSubjectNode(itA)
-					container.pushContainerNode(subContainer)
-					container.pushSubjectNode(itB)
-					Ω(container.subjectAndContainerNodes).Should(Equal([]node{
-						itA,
-						subContainer,
-						itB,
-					}))
-				})
-			})
-
-			Describe("other runnable nodes", func() {
-				var (
-					runnableA *runnableNode
-					runnableB *runnableNode
-				)
-
-				BeforeEach(func() {
-					runnableA = newRunnableNode(func() {}, codelocation.New(0), 0)
-					runnableB = newRunnableNode(func() {}, codelocation.New(0), 0)
-				})
-
-				It("can append multiple beforeEach nodes", func() {
-					container.pushBeforeEachNode(runnableA)
-					container.pushBeforeEachNode(runnableB)
-					Ω(container.beforeEachNodes).Should(Equal([]*runnableNode{
-						runnableA,
-						runnableB,
-					}))
-				})
-
-				It("can append multiple justBeforeEach nodes", func() {
-					container.pushJustBeforeEachNode(runnableA)
-					container.pushJustBeforeEachNode(runnableB)
-					Ω(container.justBeforeEachNodes).Should(Equal([]*runnableNode{
-						runnableA,
-						runnableB,
-					}))
-				})
-
-				It("can append multiple afterEach nodes", func() {
-					container.pushAfterEachNode(runnableA)
-					container.pushAfterEachNode(runnableB)
-					Ω(container.afterEachNodes).Should(Equal([]*runnableNode{
-						runnableA,
-						runnableB,
-					}))
-				})
-			})
-		})
-
-		Describe("generating examples", func() {
-			var (
-				itA          *itNode
-				itB          *itNode
-				subContainer *containerNode
-				subItA       *itNode
-				subItB       *itNode
-			)
-
+		Describe("Shuffling", func() {
+			var unshuffledCollation []CollatedNodes
 			BeforeEach(func() {
-				itA = newItNode("itA", func() {}, FlagTypeNone, codelocation.New(0), 0)
-				itB = newItNode("itB", func() {}, FlagTypeNone, codelocation.New(0), 0)
-				subContainer = newContainerNode("subcontainer", FlagTypeNone, codelocation.New(0))
-				subItA = newItNode("subItA", func() {}, FlagTypeNone, codelocation.New(0), 0)
-				subItB = newItNode("subItB", func() {}, FlagTypeNone, codelocation.New(0), 0)
+				unshuffledCollation = container.Collate()
 
-				container.pushSubjectNode(itA)
-				container.pushContainerNode(subContainer)
-				container.pushSubjectNode(itB)
-
-				subContainer.pushSubjectNode(subItA)
-				subContainer.pushSubjectNode(subItB)
+				r := rand.New(rand.NewSource(17))
+				container.Shuffle(r)
 			})
 
-			It("generates an example for each It in the hierarchy", func() {
-				examples := container.generateExamples()
-				Ω(examples).Should(HaveLen(4))
+			It("should sort, and then shuffle, the top level contents of the container", func() {
+				shuffledCollation := container.Collate()
+				Ω(shuffledCollation).Should(HaveLen(len(unshuffledCollation)))
+				Ω(shuffledCollation).ShouldNot(Equal(unshuffledCollation))
 
-				Ω(examples[0].subject).Should(Equal(itA))
-				Ω(examples[0].containers).Should(Equal([]*containerNode{container}))
-
-				Ω(examples[1].subject).Should(Equal(subItA))
-				Ω(examples[1].containers).Should(Equal([]*containerNode{container, subContainer}))
-
-				Ω(examples[2].subject).Should(Equal(subItB))
-				Ω(examples[2].containers).Should(Equal([]*containerNode{container, subContainer}))
-
-				Ω(examples[3].subject).Should(Equal(itB))
-				Ω(examples[3].containers).Should(Equal([]*containerNode{container}))
-			})
-
-			It("ignores containers in the hierarchy that are empty", func() {
-				emptyContainer := newContainerNode("empty container", FlagTypeNone, codelocation.New(0))
-				emptyContainer.pushBeforeEachNode(newRunnableNode(func() {}, codelocation.New(0), 0))
-
-				container.pushContainerNode(emptyContainer)
-				examples := container.generateExamples()
-				Ω(examples).Should(HaveLen(4))
-			})
-		})
-
-		Describe("shuffling the container", func() {
-			texts := func(container *containerNode) []string {
-				texts := make([]string, 0)
-				for _, node := range container.subjectAndContainerNodes {
-					texts = append(texts, node.getText())
+				for _, entry := range unshuffledCollation {
+					Ω(shuffledCollation).Should(ContainElement(entry))
 				}
-				return texts
-			}
 
-			BeforeEach(func() {
-				itA := newItNode("Banana", func() {}, FlagTypeNone, codelocation.New(0), 0)
-				itB := newItNode("Apple", func() {}, FlagTypeNone, codelocation.New(0), 0)
-				itC := newItNode("Orange", func() {}, FlagTypeNone, codelocation.New(0), 0)
-				containerA := newContainerNode("Cucumber", FlagTypeNone, codelocation.New(0))
-				containerB := newContainerNode("Airplane", FlagTypeNone, codelocation.New(0))
+				innerAIndex, innerBIndex := 0, 0
+				for i, entry := range shuffledCollation {
+					if entry.Subject == innerItA {
+						innerAIndex = i
+					} else if entry.Subject == innerItB {
+						innerBIndex = i
+					}
+				}
 
-				container.pushSubjectNode(itA)
-				container.pushContainerNode(containerA)
-				container.pushSubjectNode(itB)
-				container.pushContainerNode(containerB)
-				container.pushSubjectNode(itC)
-			})
-
-			It("should be sortable", func() {
-				sort.Sort(container)
-				Ω(texts(container)).Should(Equal([]string{"Airplane", "Apple", "Banana", "Cucumber", "Orange"}))
-			})
-
-			It("shuffles all the examples after sorting them", func() {
-				container.shuffle(rand.New(rand.NewSource(17)))
-				expectedOrder := shuffleStrings([]string{"Airplane", "Apple", "Banana", "Cucumber", "Orange"}, 17)
-				Ω(texts(container)).Should(Equal(expectedOrder), "The permutation should be the same across test runs")
+				Ω(innerAIndex).Should(Equal(innerBIndex - 1))
 			})
 		})
 	})
-}
+})
