@@ -1,7 +1,6 @@
 package containernode
 
 import (
-	"github.com/onsi/ginkgo/internal/example"
 	"github.com/onsi/ginkgo/internal/types"
 	"github.com/onsi/ginkgo/types"
 	"math/rand"
@@ -19,6 +18,11 @@ func (n subjectOrContainerNode) text() string {
 	} else {
 		return n.subjectNode.Text()
 	}
+}
+
+type CollatedNodes struct {
+	Containers []*ContainerNode
+	Subject    internaltypes.SubjectNode
 }
 
 type ContainerNode struct {
@@ -50,26 +54,29 @@ func (container *ContainerNode) Shuffle(r *rand.Rand) {
 	container.subjectAndContainerNodes = shuffledNodes
 }
 
-func (node *ContainerNode) GenerateExamples() []*example.Example {
-	return node.generateExamples([]internaltypes.ContainerNode{})
+func (node *ContainerNode) Collate() []CollatedNodes {
+	return node.collate([]*ContainerNode{})
 }
 
-func (node *ContainerNode) generateExamples(enclosingContainers []internaltypes.ContainerNode) []*example.Example {
-	examples := make([]*example.Example, 0)
+func (node *ContainerNode) collate(enclosingContainers []*ContainerNode) []CollatedNodes {
+	collated := make([]CollatedNodes, 0)
 
-	containers := make([]internaltypes.ContainerNode, len(enclosingContainers))
+	containers := make([]*ContainerNode, len(enclosingContainers))
 	copy(containers, enclosingContainers)
 	containers = append(containers, node)
 
 	for _, subjectOrContainer := range node.subjectAndContainerNodes {
 		if subjectOrContainer.containerNode != nil {
-			examples = append(examples, subjectOrContainer.containerNode.generateExamples(containers)...)
+			collated = append(collated, subjectOrContainer.containerNode.collate(containers)...)
 		} else {
-			examples = append(examples, example.New(subjectOrContainer.subjectNode, containers))
+			collated = append(collated, CollatedNodes{
+				Containers: containers,
+				Subject:    subjectOrContainer.subjectNode,
+			})
 		}
 	}
 
-	return examples
+	return collated
 }
 
 func (node *ContainerNode) PushContainerNode(container *ContainerNode) {

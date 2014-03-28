@@ -3,6 +3,7 @@ package internal
 import (
 	"github.com/onsi/ginkgo/config"
 	"github.com/onsi/ginkgo/internal/containernode"
+	"github.com/onsi/ginkgo/internal/example"
 	"github.com/onsi/ginkgo/internal/failer"
 	"github.com/onsi/ginkgo/internal/leafnodes"
 	internaltypes "github.com/onsi/ginkgo/internal/types"
@@ -33,9 +34,6 @@ func NewSuite(failer *failer.Failer) *Suite {
 }
 
 func (suite *Suite) Run(t internaltypes.GinkgoTestingT, description string, reporters []reporters.Reporter, writer ginkgoWriterInterface, config config.GinkgoConfigType) bool {
-	r := rand.New(rand.NewSource(config.RandomSeed))
-	suite.topLevelContainer.Shuffle(r)
-
 	if config.ParallelTotal < 1 {
 		panic("ginkgo.parallel.total must be >= 1")
 	}
@@ -44,9 +42,19 @@ func (suite *Suite) Run(t internaltypes.GinkgoTestingT, description string, repo
 		panic("ginkgo.parallel.node is one-indexed and must be <= ginkgo.parallel.total")
 	}
 
-	suite.exampleCollection = newExampleCollection(t, description, suite.topLevelContainer.GenerateExamples(), reporters, writer, config)
+	r := rand.New(rand.NewSource(config.RandomSeed))
+	suite.topLevelContainer.Shuffle(r)
+	suite.exampleCollection = newExampleCollection(t, description, suite.generateExamples(), reporters, writer, config)
 
 	return suite.exampleCollection.run()
+}
+
+func (suite *Suite) generateExamples() []*example.Example {
+	examples := []*example.Example{}
+	for _, collatedNodes := range suite.topLevelContainer.Collate() {
+		examples = append(examples, example.New(collatedNodes.Subject, collatedNodes.Containers))
+	}
+	return examples
 }
 
 func (suite *Suite) CurrentGinkgoTestDescription() internaltypes.GinkgoTestDescription {

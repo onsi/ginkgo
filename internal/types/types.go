@@ -27,16 +27,6 @@ const (
 	FlagTypePending
 )
 
-type ContainerNode interface {
-	BeforeEachNodes() []BasicNode
-	AfterEachNodes() []BasicNode
-	JustBeforeEachNodes() []BasicNode
-
-	CodeLocation() types.CodeLocation
-	Text() string
-	Flag() FlagType
-}
-
 type BasicNode interface {
 	Type() types.ExampleComponentType
 	Run() (types.ExampleState, types.ExampleFailure)

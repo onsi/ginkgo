@@ -1,6 +1,7 @@
 package example
 
 import (
+	"github.com/onsi/ginkgo/internal/containernode"
 	"github.com/onsi/ginkgo/internal/leafnodes"
 	"github.com/onsi/ginkgo/internal/types"
 	"github.com/onsi/ginkgo/types"
@@ -12,14 +13,14 @@ type Example struct {
 	subject internaltypes.SubjectNode
 	focused bool
 
-	containers []internaltypes.ContainerNode
+	containers []*containernode.ContainerNode
 
 	state   types.ExampleState
 	runTime time.Duration
 	failure types.ExampleFailure
 }
 
-func New(subject internaltypes.SubjectNode, containers []internaltypes.ContainerNode) *Example {
+func New(subject internaltypes.SubjectNode, containers []*containernode.ContainerNode) *Example {
 	ex := &Example{
 		subject:    subject,
 		containers: containers,
