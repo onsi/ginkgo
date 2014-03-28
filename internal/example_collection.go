@@ -161,13 +161,12 @@ func (collection *exampleCollection) run() bool {
 	return !suiteFailed
 }
 
-func (collection *exampleCollection) currentGinkgoTestDescription() internaltypes.GinkgoTestDescription {
-	currentExample := collection.runningExample
-	if currentExample == nil {
-		return internaltypes.GinkgoTestDescription{}
+func (collection *exampleCollection) currentExampleSummary() (*types.ExampleSummary, bool) {
+	if collection.runningExample == nil {
+		return nil, false
 	}
 
-	return currentExample.GinkgoTestDescription()
+	return collection.runningExample.Summary(collection.suiteID), true
 }
 
 func (collection *exampleCollection) reportSuiteWillBegin() {

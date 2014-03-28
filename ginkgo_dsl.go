@@ -23,6 +23,7 @@ import (
 	"io"
 	"net/http"
 	"os"
+	"strings"
 	"time"
 )
 
@@ -131,7 +132,21 @@ type GinkgoTestDescription struct {
 
 //CurrentGinkgoTestDescripton returns information about the current running test.
 func CurrentGinkgoTestDescription() GinkgoTestDescription {
-	return GinkgoTestDescription(globalSuite.CurrentGinkgoTestDescription())
+	summary, ok := globalSuite.CurrentRunningExampleSummary()
+	if !ok {
+		return GinkgoTestDescription{}
+	}
+
+	subjectCodeLocation := summary.ComponentCodeLocations[len(summary.ComponentCodeLocations)-1]
+
+	return GinkgoTestDescription{
+		ComponentTexts: summary.ComponentTexts[1:],
+		FullTestText:   strings.Join(summary.ComponentTexts[1:], " "),
+		TestText:       summary.ComponentTexts[len(summary.ComponentTexts)-1],
+		IsMeasurement:  summary.IsMeasurement,
+		FileName:       subjectCodeLocation.FileName,
+		LineNumber:     subjectCodeLocation.LineNumber,
+	}
 }
 
 //Measurement tests receive a Benchmarker.

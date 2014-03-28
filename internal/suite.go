@@ -57,8 +57,8 @@ func (suite *Suite) generateExamples() []*example.Example {
 	return examples
 }
 
-func (suite *Suite) CurrentGinkgoTestDescription() internaltypes.GinkgoTestDescription {
-	return suite.exampleCollection.currentGinkgoTestDescription()
+func (suite *Suite) CurrentRunningExampleSummary() (*types.ExampleSummary, bool) {
+	return suite.exampleCollection.currentExampleSummary()
 }
 
 func (suite *Suite) PushContainerNode(text string, body func(), flag internaltypes.FlagType, codeLocation types.CodeLocation) {

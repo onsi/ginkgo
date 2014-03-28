@@ -5,7 +5,6 @@ import (
 	"github.com/onsi/ginkgo/internal/leafnodes"
 	"github.com/onsi/ginkgo/internal/types"
 	"github.com/onsi/ginkgo/types"
-	"strings"
 	"time"
 )
 
@@ -154,21 +153,6 @@ func (ex *Example) Summary(suiteID string) *types.ExampleSummary {
 		Failure:      ex.failure,
 		Measurements: ex.measurementsReport(),
 		SuiteID:      suiteID,
-	}
-}
-
-func (ex *Example) GinkgoTestDescription() internaltypes.GinkgoTestDescription {
-	summary := ex.Summary("")
-
-	leafCodeLocation := summary.ComponentCodeLocations[len(summary.ComponentCodeLocations)-1]
-
-	return internaltypes.GinkgoTestDescription{
-		ComponentTexts: summary.ComponentTexts[1:],
-		FullTestText:   strings.Join(summary.ComponentTexts[1:], " "),
-		TestText:       summary.ComponentTexts[len(summary.ComponentTexts)-1],
-		IsMeasurement:  summary.IsMeasurement,
-		FileName:       leafCodeLocation.FileName,
-		LineNumber:     leafCodeLocation.LineNumber,
 	}
 }
 

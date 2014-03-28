@@ -4,17 +4,6 @@ import (
 	"github.com/onsi/ginkgo/types"
 )
 
-type GinkgoTestDescription struct {
-	ComponentTexts []string
-	FullTestText   string
-	TestText       string
-
-	IsMeasurement bool
-
-	FileName   string
-	LineNumber int
-}
-
 type GinkgoTestingT interface {
 	Fail()
 }
