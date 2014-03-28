@@ -14,11 +14,9 @@ type Example struct {
 
 	containers []internaltypes.ContainerNode
 
-	state               types.ExampleState
-	runTime             time.Duration
-	failure             types.ExampleFailure
-	didInterceptFailure bool
-	interceptedFailure  types.ExampleFailure
+	state   types.ExampleState
+	runTime time.Duration
+	failure types.ExampleFailure
 }
 
 func New(subject internaltypes.SubjectNode, containers []internaltypes.ContainerNode) *Example {
@@ -41,13 +39,6 @@ func (ex *Example) processFlag(flag internaltypes.FlagType) {
 		ex.focused = true
 	} else if flag == internaltypes.FlagTypePending {
 		ex.state = types.ExampleStatePending
-	}
-}
-
-func (ex *Example) Fail(failure types.ExampleFailure) {
-	if !ex.didInterceptFailure {
-		ex.interceptedFailure = failure
-		ex.didInterceptFailure = true
 	}
 }
 
@@ -99,7 +90,7 @@ func (ex *Example) runSample(sample int) (exampleState types.ExampleState, examp
 		for i := innerMostContainerIndexToUnwind; i >= 0; i-- {
 			container := ex.containers[i]
 			for _, afterEach := range container.AfterEachNodes() {
-				afterEachState, afterEachFailure := ex.runComponent(afterEach, i)
+				afterEachState, afterEachFailure := afterEach.Run()
 				if afterEachState != types.ExampleStatePassed && exampleState == types.ExampleStatePassed {
 					exampleState = afterEachState
 					exampleFailure = afterEachFailure
@@ -111,44 +102,27 @@ func (ex *Example) runSample(sample int) (exampleState types.ExampleState, examp
 	for i, container := range ex.containers {
 		innerMostContainerIndexToUnwind = i
 		for _, beforeEach := range container.BeforeEachNodes() {
-			exampleState, exampleFailure = ex.runComponent(beforeEach, i)
+			exampleState, exampleFailure = beforeEach.Run()
 			if exampleState != types.ExampleStatePassed {
 				return
 			}
 		}
 	}
 
-	for i, container := range ex.containers {
+	for _, container := range ex.containers {
 		for _, justBeforeEach := range container.JustBeforeEachNodes() {
-			exampleState, exampleFailure = ex.runComponent(justBeforeEach, i)
+			exampleState, exampleFailure = justBeforeEach.Run()
 			if exampleState != types.ExampleStatePassed {
 				return
 			}
 		}
 	}
 
-	exampleState, exampleFailure = ex.runComponent(ex.subject, len(ex.containers))
+	exampleState, exampleFailure = ex.subject.Run()
 
 	if exampleState != types.ExampleStatePassed {
 		return
 	}
-
-	return
-}
-
-func (ex *Example) runComponent(node internaltypes.BasicNode, containerIndex int) (exampleState types.ExampleState, exampleFailure types.ExampleFailure) {
-	exampleState, exampleFailure = node.Run()
-
-	if ex.didInterceptFailure {
-		exampleState = types.ExampleStateFailed
-		exampleFailure = ex.interceptedFailure
-	} else if exampleState == types.ExampleStatePassed {
-		return
-	}
-
-	exampleFailure.ComponentIndex = containerIndex
-	exampleFailure.ComponentType = node.Type()
-	exampleFailure.ComponentCodeLocation = node.CodeLocation()
 
 	return
 }

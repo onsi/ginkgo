@@ -3,6 +3,7 @@ package measurenode_test
 import (
 	. "github.com/onsi/ginkgo"
 	"github.com/onsi/ginkgo/internal/codelocation"
+	"github.com/onsi/ginkgo/internal/failer"
 	. "github.com/onsi/ginkgo/internal/measurenode"
 	"github.com/onsi/ginkgo/internal/types"
 	"github.com/onsi/ginkgo/types"
@@ -11,17 +12,25 @@ import (
 )
 
 var _ = Describe("MeasureNode", func() {
-	var measure *MeasureNode
-	var i int
-	var codeLocation types.CodeLocation
+	var (
+		measure *MeasureNode
+		i       int
+		fail    *failer.Failer
+		outcome types.ExampleState
+		failure types.ExampleFailure
+
+		codeLocation      types.CodeLocation
+		innerCodeLocation types.CodeLocation
+	)
 
 	BeforeEach(func() {
+		fail = failer.New()
 		i = 0
 		codeLocation = codelocation.New(0)
 		measure = New("foo", func(b Benchmarker) {
 			b.RecordValue("bar", float64(i))
 			i += 1
-		}, internaltypes.FlagTypeFocused, codeLocation, 10)
+		}, internaltypes.FlagTypeFocused, codeLocation, 10, fail, 3)
 	})
 
 	It("should report on itself accurately", func() {
@@ -52,33 +61,47 @@ var _ = Describe("MeasureNode", func() {
 		})
 	})
 
-	Context("when run, and the function panics", func() {
-		var (
-			innerCodeLocation types.CodeLocation
-			outcome           types.ExampleState
-			failure           types.ExampleFailure
-		)
+	Context("when run, and a failure occurs", func() {
+		BeforeEach(func() {
+			measure = New("foo", func(Benchmarker) {
+				innerCodeLocation = codelocation.New(0)
+				fail.Fail("oops!", innerCodeLocation)
+				panic("not a problem")
+			}, internaltypes.FlagTypeFocused, codeLocation, 10, fail, 3)
 
+			outcome, failure = measure.Run()
+		})
+
+		It("should return said failure", func() {
+			Ω(outcome).Should(Equal(types.ExampleStateFailed))
+
+			Ω(failure.Message).Should(Equal("oops!"))
+			Ω(failure.Location).Should(Equal(innerCodeLocation))
+			Ω(failure.ForwardedPanic).Should(BeNil())
+			Ω(failure.ComponentIndex).Should(Equal(3))
+			Ω(failure.ComponentType).Should(Equal(types.ExampleComponentTypeMeasure))
+			Ω(failure.ComponentCodeLocation).Should(Equal(codeLocation))
+		})
+	})
+
+	Context("when run, and the function panics", func() {
 		BeforeEach(func() {
 			measure = New("foo", func(Benchmarker) {
 				innerCodeLocation = codelocation.New(0)
 				panic("kaboom")
-			}, internaltypes.FlagTypeFocused, innerCodeLocation, 10)
+			}, internaltypes.FlagTypeFocused, codeLocation, 10, fail, 3)
 			outcome, failure = measure.Run()
 		})
 
-		It("should run the function and report a runOutcomePanicked", func() {
+		It("should return a failure representing the panic", func() {
 			Ω(outcome).Should(Equal(types.ExampleStatePanicked))
+
 			Ω(failure.Message).Should(Equal("Test Panicked"))
-		})
-
-		It("should include the code location of the panic itself", func() {
-			Ω(failure.Location.FileName).Should(Equal(innerCodeLocation.FileName))
-			Ω(failure.Location.LineNumber).Should(Equal(innerCodeLocation.LineNumber + 1))
-		})
-
-		It("should include the panic data", func() {
+			Ω(failure.Location).Should(Equal(codeLocation))
 			Ω(failure.ForwardedPanic).Should(Equal("kaboom"))
+			Ω(failure.ComponentIndex).Should(Equal(3))
+			Ω(failure.ComponentType).Should(Equal(types.ExampleComponentTypeMeasure))
+			Ω(failure.ComponentCodeLocation).Should(Equal(codeLocation))
 		})
 	})
 
@@ -93,7 +116,7 @@ var _ = Describe("MeasureNode", func() {
 					b.RecordValue("bar", 0.1)
 					b.RecordValue("bar", 0.5)
 					b.RecordValue("bar", 0.7)
-				}, internaltypes.FlagTypeFocused, codeLocation, 1)
+				}, internaltypes.FlagTypeFocused, codeLocation, 1, fail, 3)
 				Ω(measure.Run()).Should(Equal(types.ExampleStatePassed))
 			})
 
@@ -138,7 +161,7 @@ var _ = Describe("MeasureNode", func() {
 					b.Time("foo", func() {
 						time.Sleep(170 * time.Millisecond)
 					})
-				}, internaltypes.FlagTypeFocused, codeLocation, 1)
+				}, internaltypes.FlagTypeFocused, codeLocation, 1, fail, 3)
 				Ω(measure.Run()).Should(Equal(types.ExampleStatePassed))
 			})
 

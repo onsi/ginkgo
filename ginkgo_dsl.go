@@ -12,10 +12,10 @@ Ginkgo is MIT-Licensed
 package ginkgo
 
 import (
-	"fmt"
 	"github.com/onsi/ginkgo/config"
 	"github.com/onsi/ginkgo/internal"
 	"github.com/onsi/ginkgo/internal/codelocation"
+	"github.com/onsi/ginkgo/internal/failer"
 	"github.com/onsi/ginkgo/internal/types"
 	"github.com/onsi/ginkgo/remote"
 	"github.com/onsi/ginkgo/reporters"
@@ -43,11 +43,13 @@ at the top of the goroutine that caused this panic.
 const defaultTimeout = 1
 
 var globalSuite *internal.Suite
+var globalFailer *failer.Failer
 
 func init() {
 	config.Flags("ginkgo", true)
 	GinkgoWriter = internal.NewGinkgoWriter(os.Stdout)
-	globalSuite = internal.NewSuite()
+	globalFailer = failer.New()
+	globalSuite = internal.NewSuite(globalFailer)
 }
 
 //GinkgoWriter implements an io.Writer
@@ -191,7 +193,8 @@ func Fail(message string, callerSkip ...int) {
 	if len(callerSkip) > 0 {
 		skip = callerSkip[0]
 	}
-	globalSuite.Fail(message, skip)
+
+	globalFailer.Fail(message, codelocation.New(skip+1))
 	panic(GINKGO_PANIC)
 }
 
@@ -208,7 +211,7 @@ func Fail(message string, callerSkip ...int) {
 func GinkgoRecover() {
 	e := recover()
 	if e != nil {
-		globalSuite.Fail(fmt.Sprintf("Goroutine Panicked\n%#v", e), 1)
+		globalFailer.Panic(codelocation.New(1), e)
 	}
 }
 

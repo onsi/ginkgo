@@ -1,4 +1,4 @@
-package leafnode_test
+package failer_test
 
 import (
 	. "github.com/onsi/ginkgo"
@@ -7,7 +7,7 @@ import (
 	"testing"
 )
 
-func TestRunnableNode(t *testing.T) {
+func TestFailer(t *testing.T) {
 	RegisterFailHandler(Fail)
-	RunSpecs(t, "RunnableNode Suite")
+	RunSpecs(t, "Failer Suite")
 }

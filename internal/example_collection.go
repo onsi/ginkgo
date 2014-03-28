@@ -161,12 +161,6 @@ func (collection *exampleCollection) run() bool {
 	return !suiteFailed
 }
 
-func (collection *exampleCollection) fail(failure types.ExampleFailure) {
-	if collection.runningExample != nil {
-		collection.runningExample.Fail(failure)
-	}
-}
-
 func (collection *exampleCollection) currentGinkgoTestDescription() internaltypes.GinkgoTestDescription {
 	currentExample := collection.runningExample
 	if currentExample == nil {

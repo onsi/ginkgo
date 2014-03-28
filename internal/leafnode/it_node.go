@@ -1,6 +1,7 @@
 package leafnode
 
 import (
+	"github.com/onsi/ginkgo/internal/failer"
 	"github.com/onsi/ginkgo/internal/types"
 	"github.com/onsi/ginkgo/types"
 	"time"
@@ -13,9 +14,9 @@ type ItNode struct {
 	text string
 }
 
-func NewItNode(text string, body interface{}, flag internaltypes.FlagType, codeLocation types.CodeLocation, timeout time.Duration) *ItNode {
+func NewItNode(text string, body interface{}, flag internaltypes.FlagType, codeLocation types.CodeLocation, timeout time.Duration, failer *failer.Failer, componentIndex int) *ItNode {
 	return &ItNode{
-		runner: newRunner(body, codeLocation, timeout),
+		runner: newRunner(body, codeLocation, timeout, failer, types.ExampleComponentTypeIt, componentIndex),
 		flag:   flag,
 		text:   text,
 	}

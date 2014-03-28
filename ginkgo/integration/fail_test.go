@@ -28,7 +28,7 @@ var _ = Describe("Failing Specs", func() {
 		Ω(output).Should(ContainSubstring("an async FAIL failure"))
 		Ω(output).Should(ContainSubstring("a goroutine FAIL failure"))
 		Ω(output).Should(ContainSubstring("a goroutine failure"))
-		Ω(output).Should(MatchRegexp(`Goroutine Panicked\n\s+"a goroutine panic"`))
+		Ω(output).Should(MatchRegexp(`Test Panicked\n\s+a goroutine panic`))
 		Ω(output).Should(ContainSubstring("a measure failure"))
 		Ω(output).Should(ContainSubstring("a measure FAIL failure"))
 		Ω(output).Should(MatchRegexp(`Test Panicked\n\s+a measure panic`))
