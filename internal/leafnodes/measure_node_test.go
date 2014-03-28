@@ -1,10 +1,10 @@
-package leafnode_test
+package leafnodes_test
 
 import (
 	. "github.com/onsi/ginkgo"
 	"github.com/onsi/ginkgo/internal/codelocation"
 	Failer "github.com/onsi/ginkgo/internal/failer"
-	. "github.com/onsi/ginkgo/internal/leafnode"
+	. "github.com/onsi/ginkgo/internal/leafnodes"
 	"github.com/onsi/ginkgo/internal/types"
 	"github.com/onsi/ginkgo/types"
 	. "github.com/onsi/gomega"

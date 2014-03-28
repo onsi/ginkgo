@@ -1,4 +1,4 @@
-package leafnode
+package leafnodes
 
 import (
 	"github.com/onsi/ginkgo/types"

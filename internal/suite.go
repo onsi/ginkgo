@@ -4,7 +4,7 @@ import (
 	"github.com/onsi/ginkgo/config"
 	"github.com/onsi/ginkgo/internal/containernode"
 	"github.com/onsi/ginkgo/internal/failer"
-	"github.com/onsi/ginkgo/internal/leafnode"
+	"github.com/onsi/ginkgo/internal/leafnodes"
 	internaltypes "github.com/onsi/ginkgo/internal/types"
 	"github.com/onsi/ginkgo/reporters"
 	"github.com/onsi/ginkgo/types"
@@ -68,21 +68,21 @@ func (suite *Suite) PushContainerNode(text string, body func(), flag internaltyp
 }
 
 func (suite *Suite) PushItNode(text string, body interface{}, flag internaltypes.FlagType, codeLocation types.CodeLocation, timeout time.Duration) {
-	suite.currentContainer.PushSubjectNode(leafnode.NewItNode(text, body, flag, codeLocation, timeout, suite.failer, suite.containerIndex))
+	suite.currentContainer.PushSubjectNode(leafnodes.NewItNode(text, body, flag, codeLocation, timeout, suite.failer, suite.containerIndex))
 }
 
 func (suite *Suite) PushMeasureNode(text string, body interface{}, flag internaltypes.FlagType, codeLocation types.CodeLocation, samples int) {
-	suite.currentContainer.PushSubjectNode(leafnode.NewMeasureNode(text, body, flag, codeLocation, samples, suite.failer, suite.containerIndex))
+	suite.currentContainer.PushSubjectNode(leafnodes.NewMeasureNode(text, body, flag, codeLocation, samples, suite.failer, suite.containerIndex))
 }
 
 func (suite *Suite) PushBeforeEachNode(body interface{}, codeLocation types.CodeLocation, timeout time.Duration) {
-	suite.currentContainer.PushBeforeEachNode(leafnode.NewBeforeEachNode(body, codeLocation, timeout, suite.failer, suite.containerIndex))
+	suite.currentContainer.PushBeforeEachNode(leafnodes.NewBeforeEachNode(body, codeLocation, timeout, suite.failer, suite.containerIndex))
 }
 
 func (suite *Suite) PushJustBeforeEachNode(body interface{}, codeLocation types.CodeLocation, timeout time.Duration) {
-	suite.currentContainer.PushJustBeforeEachNode(leafnode.NewJustBeforeEachNode(body, codeLocation, timeout, suite.failer, suite.containerIndex))
+	suite.currentContainer.PushJustBeforeEachNode(leafnodes.NewJustBeforeEachNode(body, codeLocation, timeout, suite.failer, suite.containerIndex))
 }
 
 func (suite *Suite) PushAfterEachNode(body interface{}, codeLocation types.CodeLocation, timeout time.Duration) {
-	suite.currentContainer.PushAfterEachNode(leafnode.NewAfterEachNode(body, codeLocation, timeout, suite.failer, suite.containerIndex))
+	suite.currentContainer.PushAfterEachNode(leafnodes.NewAfterEachNode(body, codeLocation, timeout, suite.failer, suite.containerIndex))
 }

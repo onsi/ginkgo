@@ -1,4 +1,4 @@
-package leafnode_test
+package leafnodes_test
 
 import (
 	. "github.com/onsi/ginkgo"

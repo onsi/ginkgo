@@ -1,4 +1,4 @@
-package leafnode
+package leafnodes
 
 import (
 	"fmt"
