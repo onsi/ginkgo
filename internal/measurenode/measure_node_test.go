@@ -28,7 +28,7 @@ var _ = Describe("MeasureNode", func() {
 		Ω(measure.Text()).Should(Equal("foo"))
 		Ω(measure.Flag()).Should(Equal(internaltypes.FlagTypeFocused))
 		Ω(measure.CodeLocation()).Should(Equal(codeLocation))
-		Ω(measure.Type()).Should(Equal(internaltypes.NodeTypeMeasure))
+		Ω(measure.Type()).Should(Equal(types.ExampleComponentTypeMeasure))
 		Ω(measure.Samples()).Should(Equal(10))
 	})
 
@@ -47,7 +47,7 @@ var _ = Describe("MeasureNode", func() {
 
 		It("should report success", func() {
 			outcome, failureData := measure.Run()
-			Ω(outcome).Should(Equal(internaltypes.OutcomeCompleted))
+			Ω(outcome).Should(Equal(types.ExampleStatePassed))
 			Ω(failureData).Should(BeZero())
 		})
 	})
@@ -55,8 +55,8 @@ var _ = Describe("MeasureNode", func() {
 	Context("when run, and the function panics", func() {
 		var (
 			innerCodeLocation types.CodeLocation
-			outcome           internaltypes.Outcome
-			failure           internaltypes.FailureData
+			outcome           types.ExampleState
+			failure           types.ExampleFailure
 		)
 
 		BeforeEach(func() {
@@ -68,13 +68,13 @@ var _ = Describe("MeasureNode", func() {
 		})
 
 		It("should run the function and report a runOutcomePanicked", func() {
-			Ω(outcome).Should(Equal(internaltypes.OutcomePanicked))
+			Ω(outcome).Should(Equal(types.ExampleStatePanicked))
 			Ω(failure.Message).Should(Equal("Test Panicked"))
 		})
 
 		It("should include the code location of the panic itself", func() {
-			Ω(failure.CodeLocation.FileName).Should(Equal(innerCodeLocation.FileName))
-			Ω(failure.CodeLocation.LineNumber).Should(Equal(innerCodeLocation.LineNumber + 1))
+			Ω(failure.Location.FileName).Should(Equal(innerCodeLocation.FileName))
+			Ω(failure.Location.LineNumber).Should(Equal(innerCodeLocation.LineNumber + 1))
 		})
 
 		It("should include the panic data", func() {
@@ -94,7 +94,7 @@ var _ = Describe("MeasureNode", func() {
 					b.RecordValue("bar", 0.5)
 					b.RecordValue("bar", 0.7)
 				}, internaltypes.FlagTypeFocused, codeLocation, 1)
-				Ω(measure.Run()).Should(Equal(internaltypes.OutcomeCompleted))
+				Ω(measure.Run()).Should(Equal(types.ExampleStatePassed))
 			})
 
 			It("records passed in values and reports on them", func() {
@@ -139,7 +139,7 @@ var _ = Describe("MeasureNode", func() {
 						time.Sleep(170 * time.Millisecond)
 					})
 				}, internaltypes.FlagTypeFocused, codeLocation, 1)
-				Ω(measure.Run()).Should(Equal(internaltypes.OutcomeCompleted))
+				Ω(measure.Run()).Should(Equal(types.ExampleStatePassed))
 			})
 
 			It("records passed in values and reports on them", func() {

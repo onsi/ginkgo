@@ -19,15 +19,6 @@ type GinkgoTestingT interface {
 	Fail()
 }
 
-type NodeType uint
-
-const (
-	NodeTypeInvalid NodeType = iota
-	NodeTypeContainer
-	NodeTypeIt
-	NodeTypeMeasure
-)
-
 type FlagType uint
 
 const (
@@ -36,17 +27,26 @@ const (
 	FlagTypePending
 )
 
-type Outcome uint
+type ContainerNode interface {
+	BeforeEachNodes() []BasicNode
+	AfterEachNodes() []BasicNode
+	JustBeforeEachNodes() []BasicNode
 
-const (
-	OutcomeInvalid Outcome = iota
-	OutcomePanicked
-	OutcomeTimedOut
-	OutcomeCompleted
-)
+	CodeLocation() types.CodeLocation
+	Text() string
+	Flag() FlagType
+}
 
-type FailureData struct {
-	Message        string
-	CodeLocation   types.CodeLocation
-	ForwardedPanic interface{}
+type BasicNode interface {
+	Type() types.ExampleComponentType
+	Run() (types.ExampleState, types.ExampleFailure)
+	CodeLocation() types.CodeLocation
+}
+
+type SubjectNode interface {
+	BasicNode
+
+	Text() string
+	Flag() FlagType
+	Samples() int
 }

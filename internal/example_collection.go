@@ -2,6 +2,7 @@ package internal
 
 import (
 	"github.com/onsi/ginkgo/config"
+	"github.com/onsi/ginkgo/internal/example"
 	"github.com/onsi/ginkgo/internal/randomid"
 	"github.com/onsi/ginkgo/internal/types"
 	"github.com/onsi/ginkgo/reporters"
@@ -16,17 +17,17 @@ import (
 type exampleCollection struct {
 	t                                 internaltypes.GinkgoTestingT
 	description                       string
-	examples                          []*example
+	examples                          []*example.Example
 	exampleCountBeforeParallelization int
 	reporters                         []reporters.Reporter
 	startTime                         time.Time
 	suiteID                           string
-	runningExample                    *example
+	runningExample                    *example.Example
 	writer                            ginkgoWriterInterface
 	config                            config.GinkgoConfigType
 }
 
-func newExampleCollection(t internaltypes.GinkgoTestingT, description string, examples []*example, reporters []reporters.Reporter, writer ginkgoWriterInterface, config config.GinkgoConfigType) *exampleCollection {
+func newExampleCollection(t internaltypes.GinkgoTestingT, description string, examples []*example.Example, reporters []reporters.Reporter, writer ginkgoWriterInterface, config config.GinkgoConfigType) *exampleCollection {
 	collection := &exampleCollection{
 		t:           t,
 		description: description,
@@ -37,8 +38,6 @@ func newExampleCollection(t internaltypes.GinkgoTestingT, description string, ex
 		suiteID:     randomid.New(),
 		exampleCountBeforeParallelization: len(examples),
 	}
-
-	collection.enumerateAndAssignExampleIndices()
 
 	r := rand.New(rand.NewSource(config.RandomSeed))
 	if config.RandomizeAllSpecs {
@@ -62,16 +61,10 @@ func newExampleCollection(t internaltypes.GinkgoTestingT, description string, ex
 	return collection
 }
 
-func (collection *exampleCollection) enumerateAndAssignExampleIndices() {
-	for index, example := range collection.examples {
-		example.exampleIndex = index
-	}
-}
-
 func (collection *exampleCollection) applyProgrammaticFocus() {
 	hasFocusedTests := false
 	for _, example := range collection.examples {
-		if example.focused {
+		if example.Focused() {
 			hasFocusedTests = true
 			break
 		}
@@ -79,8 +72,8 @@ func (collection *exampleCollection) applyProgrammaticFocus() {
 
 	if hasFocusedTests {
 		for _, example := range collection.examples {
-			if !example.focused {
-				example.skip()
+			if !example.Focused() {
+				example.Skip()
 			}
 		}
 	}
@@ -91,7 +84,7 @@ func (collection *exampleCollection) applyRegExpFocus(focusString string, skipSt
 		matchesFocus := true
 		matchesSkip := false
 
-		stringToMatch := collection.description + " " + example.concatenatedString()
+		stringToMatch := collection.description + " " + example.ConcatenatedString()
 
 		if focusString != "" {
 			focusFilter := regexp.MustCompile(focusString)
@@ -104,7 +97,7 @@ func (collection *exampleCollection) applyRegExpFocus(focusString string, skipSt
 		}
 
 		if !matchesFocus || matchesSkip {
-			example.skip()
+			example.Skip()
 		}
 	}
 }
@@ -112,7 +105,7 @@ func (collection *exampleCollection) applyRegExpFocus(focusString string, skipSt
 func (collection *exampleCollection) trimForParallelization(parallelTotal int, parallelNode int) {
 	startIndex, count := parallelizedIndexRange(len(collection.examples), parallelTotal, parallelNode)
 	if count == 0 {
-		collection.examples = make([]*example, 0)
+		collection.examples = make([]*example.Example, 0)
 	} else {
 		collection.examples = collection.examples[startIndex : startIndex+count]
 	}
@@ -120,8 +113,8 @@ func (collection *exampleCollection) trimForParallelization(parallelTotal int, p
 
 func (collection *exampleCollection) skipMeasurements() {
 	for _, example := range collection.examples {
-		if example.subjectComponentType() == types.ExampleComponentTypeMeasure {
-			example.skip()
+		if example.IsMeasurement() {
+			example.Skip()
 		}
 	}
 }
@@ -129,7 +122,7 @@ func (collection *exampleCollection) skipMeasurements() {
 func (collection *exampleCollection) shuffle(r *rand.Rand) {
 	sort.Sort(collection)
 	permutation := r.Perm(len(collection.examples))
-	shuffledExamples := make([]*example, len(collection.examples))
+	shuffledExamples := make([]*example.Example, len(collection.examples))
 	for i, j := range permutation {
 		shuffledExamples[i] = collection.examples[j]
 	}
@@ -145,14 +138,14 @@ func (collection *exampleCollection) run() bool {
 
 		collection.reportExampleWillRun(example)
 
-		if !example.skippedOrPending() {
+		if !example.Skipped() && !example.Pending() {
 			collection.runningExample = example
-			example.run()
-			if example.failed() {
+			example.Run()
+			if example.Failed() {
 				suiteFailed = true
 				collection.writer.DumpOut()
 			}
-		} else if example.pending() && collection.config.FailOnPending {
+		} else if example.Pending() && collection.config.FailOnPending {
 			suiteFailed = true
 		}
 
@@ -168,9 +161,9 @@ func (collection *exampleCollection) run() bool {
 	return !suiteFailed
 }
 
-func (collection *exampleCollection) fail(failure internaltypes.FailureData) {
+func (collection *exampleCollection) fail(failure types.ExampleFailure) {
 	if collection.runningExample != nil {
-		collection.runningExample.fail(failure)
+		collection.runningExample.Fail(failure)
 	}
 }
 
@@ -180,7 +173,7 @@ func (collection *exampleCollection) currentGinkgoTestDescription() internaltype
 		return internaltypes.GinkgoTestDescription{}
 	}
 
-	return currentExample.ginkgoTestDescription()
+	return currentExample.GinkgoTestDescription()
 }
 
 func (collection *exampleCollection) reportSuiteWillBegin() {
@@ -191,15 +184,15 @@ func (collection *exampleCollection) reportSuiteWillBegin() {
 	}
 }
 
-func (collection *exampleCollection) reportExampleWillRun(example *example) {
-	summary := example.summary(collection.suiteID)
+func (collection *exampleCollection) reportExampleWillRun(example *example.Example) {
+	summary := example.Summary(collection.suiteID)
 	for _, reporter := range collection.reporters {
 		reporter.ExampleWillRun(summary)
 	}
 }
 
-func (collection *exampleCollection) reportExampleDidComplete(example *example) {
-	summary := example.summary(collection.suiteID)
+func (collection *exampleCollection) reportExampleDidComplete(example *example.Example) {
+	summary := example.Summary(collection.suiteID)
 	for _, reporter := range collection.reporters {
 		reporter.ExampleDidComplete(summary)
 	}
@@ -213,7 +206,7 @@ func (collection *exampleCollection) reportSuiteDidEnd() {
 	}
 }
 
-func (collection *exampleCollection) countExamplesSatisfying(filter func(ex *example) bool) (count int) {
+func (collection *exampleCollection) countExamplesSatisfying(filter func(ex *example.Example) bool) (count int) {
 	count = 0
 
 	for _, example := range collection.examples {
@@ -226,24 +219,24 @@ func (collection *exampleCollection) countExamplesSatisfying(filter func(ex *exa
 }
 
 func (collection *exampleCollection) summary() *types.SuiteSummary {
-	numberOfExamplesThatWillBeRun := collection.countExamplesSatisfying(func(ex *example) bool {
-		return !ex.skippedOrPending()
+	numberOfExamplesThatWillBeRun := collection.countExamplesSatisfying(func(ex *example.Example) bool {
+		return !ex.Skipped() && !ex.Pending()
 	})
 
-	numberOfPendingExamples := collection.countExamplesSatisfying(func(ex *example) bool {
-		return ex.state == types.ExampleStatePending
+	numberOfPendingExamples := collection.countExamplesSatisfying(func(ex *example.Example) bool {
+		return ex.Pending()
 	})
 
-	numberOfSkippedExamples := collection.countExamplesSatisfying(func(ex *example) bool {
-		return ex.state == types.ExampleStateSkipped
+	numberOfSkippedExamples := collection.countExamplesSatisfying(func(ex *example.Example) bool {
+		return ex.Skipped()
 	})
 
-	numberOfPassedExamples := collection.countExamplesSatisfying(func(ex *example) bool {
-		return ex.state == types.ExampleStatePassed
+	numberOfPassedExamples := collection.countExamplesSatisfying(func(ex *example.Example) bool {
+		return ex.Passed()
 	})
 
-	numberOfFailedExamples := collection.countExamplesSatisfying(func(ex *example) bool {
-		return ex.failed()
+	numberOfFailedExamples := collection.countExamplesSatisfying(func(ex *example.Example) bool {
+		return ex.Failed()
 	})
 
 	success := true
@@ -276,7 +269,7 @@ func (collection *exampleCollection) Len() int {
 }
 
 func (collection *exampleCollection) Less(i, j int) bool {
-	return collection.examples[i].concatenatedString() < collection.examples[j].concatenatedString()
+	return collection.examples[i].ConcatenatedString() < collection.examples[j].ConcatenatedString()
 }
 
 func (collection *exampleCollection) Swap(i, j int) {

@@ -32,20 +32,20 @@ func New(text string, body interface{}, flag internaltypes.FlagType, codeLocatio
 	}
 }
 
-func (node *MeasureNode) Run() (outcome internaltypes.Outcome, failure internaltypes.FailureData) {
+func (node *MeasureNode) Run() (outcome types.ExampleState, failure types.ExampleFailure) {
 	defer func() {
 		if e := recover(); e != nil {
-			outcome = internaltypes.OutcomePanicked
-			failure = internaltypes.FailureData{
+			outcome = types.ExampleStatePanicked
+			failure = types.ExampleFailure{
 				Message:        "Test Panicked",
-				CodeLocation:   codelocation.New(2),
+				Location:       codelocation.New(2),
 				ForwardedPanic: e,
 			}
 		}
 	}()
 
 	node.body(node.benchmarker)
-	outcome = internaltypes.OutcomeCompleted
+	outcome = types.ExampleStatePassed
 
 	return
 }
@@ -54,8 +54,8 @@ func (node *MeasureNode) MeasurementsReport() map[string]*types.ExampleMeasureme
 	return node.benchmarker.measurementsReport()
 }
 
-func (node *MeasureNode) Type() internaltypes.NodeType {
-	return internaltypes.NodeTypeMeasure
+func (node *MeasureNode) Type() types.ExampleComponentType {
+	return types.ExampleComponentTypeMeasure
 }
 
 func (node *MeasureNode) Text() string {

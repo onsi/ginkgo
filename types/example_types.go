@@ -32,7 +32,6 @@ type ExampleSummary struct {
 
 	CapturedOutput string
 	SuiteID        string
-	ExampleIndex   int
 }
 
 type ExampleFailure struct {
@@ -80,6 +79,7 @@ type ExampleComponentType uint
 const (
 	ExampleComponentTypeInvalid ExampleComponentType = iota
 
+	ExampleComponentTypeContainer
 	ExampleComponentTypeBeforeEach
 	ExampleComponentTypeJustBeforeEach
 	ExampleComponentTypeAfterEach

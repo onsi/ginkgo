@@ -1,4 +1,6 @@
-package internal_test
+package example_test
+
+//TODO: FIX
 
 import (
 	"fmt"
