@@ -127,7 +127,7 @@ func (ex *Example) runSample(sample int) (exampleState types.ExampleState, examp
 	defer func() {
 		for i := innerMostContainerIndexToUnwind; i >= 0; i-- {
 			container := ex.containers[i]
-			for _, afterEach := range container.AfterEachNodes() {
+			for _, afterEach := range container.SetupNodesOfType(types.ExampleComponentTypeAfterEach) {
 				afterEachState, afterEachFailure := afterEach.Run()
 				if afterEachState != types.ExampleStatePassed && exampleState == types.ExampleStatePassed {
 					exampleState = afterEachState
@@ -139,7 +139,7 @@ func (ex *Example) runSample(sample int) (exampleState types.ExampleState, examp
 
 	for i, container := range ex.containers {
 		innerMostContainerIndexToUnwind = i
-		for _, beforeEach := range container.BeforeEachNodes() {
+		for _, beforeEach := range container.SetupNodesOfType(types.ExampleComponentTypeBeforeEach) {
 			exampleState, exampleFailure = beforeEach.Run()
 			if exampleState != types.ExampleStatePassed {
 				return
@@ -148,7 +148,7 @@ func (ex *Example) runSample(sample int) (exampleState types.ExampleState, examp
 	}
 
 	for _, container := range ex.containers {
-		for _, justBeforeEach := range container.JustBeforeEachNodes() {
+		for _, justBeforeEach := range container.SetupNodesOfType(types.ExampleComponentTypeJustBeforeEach) {
 			exampleState, exampleFailure = justBeforeEach.Run()
 			if exampleState != types.ExampleStatePassed {
 				return

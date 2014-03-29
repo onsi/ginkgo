@@ -68,14 +68,7 @@ var _ = Describe("Example", func() {
 	newContainer := func(text string, flag internaltypes.FlagType, setupNodes ...internaltypes.BasicNode) *containernode.ContainerNode {
 		c := containernode.New(text, flag, codeLocation)
 		for _, node := range setupNodes {
-			switch node.Type() {
-			case types.ExampleComponentTypeBeforeEach:
-				c.PushBeforeEachNode(node)
-			case types.ExampleComponentTypeAfterEach:
-				c.PushAfterEachNode(node)
-			case types.ExampleComponentTypeJustBeforeEach:
-				c.PushJustBeforeEachNode(node)
-			}
+			c.PushSetupNode(node)
 		}
 		return c
 	}

@@ -33,34 +33,28 @@ var _ = Describe("Container Node", func() {
 	})
 
 	Describe("pushing setup nodes", func() {
-		It("can append multiple before each nodes", func() {
-			a := leafnodes.NewBeforeEachNode(func() {}, codelocation.New(0), 0, nil, 0)
-			b := leafnodes.NewBeforeEachNode(func() {}, codelocation.New(0), 0, nil, 0)
+		It("can append setup nodes of various types and fetch them by type", func() {
+			befA := leafnodes.NewBeforeEachNode(func() {}, codelocation.New(0), 0, nil, 0)
+			befB := leafnodes.NewBeforeEachNode(func() {}, codelocation.New(0), 0, nil, 0)
+			aftA := leafnodes.NewAfterEachNode(func() {}, codelocation.New(0), 0, nil, 0)
+			aftB := leafnodes.NewAfterEachNode(func() {}, codelocation.New(0), 0, nil, 0)
+			jusBefA := leafnodes.NewJustBeforeEachNode(func() {}, codelocation.New(0), 0, nil, 0)
+			jusBefB := leafnodes.NewJustBeforeEachNode(func() {}, codelocation.New(0), 0, nil, 0)
 
-			container.PushBeforeEachNode(a)
-			container.PushBeforeEachNode(b)
+			container.PushSetupNode(befA)
+			container.PushSetupNode(befB)
+			container.PushSetupNode(aftA)
+			container.PushSetupNode(aftB)
+			container.PushSetupNode(jusBefA)
+			container.PushSetupNode(jusBefB)
 
-			Ω(container.BeforeEachNodes()).Should(Equal([]internaltypes.BasicNode{a, b}))
-		})
+			subject := leafnodes.NewItNode("subject", func() {}, internaltypes.FlagTypeNone, codelocation.New(0), 0, nil, 0)
+			container.PushSubjectNode(subject)
 
-		It("can append multiple after each nodes", func() {
-			a := leafnodes.NewAfterEachNode(func() {}, codelocation.New(0), 0, nil, 0)
-			b := leafnodes.NewAfterEachNode(func() {}, codelocation.New(0), 0, nil, 0)
-
-			container.PushAfterEachNode(a)
-			container.PushAfterEachNode(b)
-
-			Ω(container.AfterEachNodes()).Should(Equal([]internaltypes.BasicNode{a, b}))
-		})
-
-		It("can append multiple just before each nodes", func() {
-			a := leafnodes.NewJustBeforeEachNode(func() {}, codelocation.New(0), 0, nil, 0)
-			b := leafnodes.NewJustBeforeEachNode(func() {}, codelocation.New(0), 0, nil, 0)
-
-			container.PushJustBeforeEachNode(a)
-			container.PushJustBeforeEachNode(b)
-
-			Ω(container.JustBeforeEachNodes()).Should(Equal([]internaltypes.BasicNode{a, b}))
+			Ω(container.SetupNodesOfType(types.ExampleComponentTypeBeforeEach)).Should(Equal([]internaltypes.BasicNode{befA, befB}))
+			Ω(container.SetupNodesOfType(types.ExampleComponentTypeAfterEach)).Should(Equal([]internaltypes.BasicNode{aftA, aftB}))
+			Ω(container.SetupNodesOfType(types.ExampleComponentTypeJustBeforeEach)).Should(Equal([]internaltypes.BasicNode{jusBefA, jusBefB}))
+			Ω(container.SetupNodesOfType(types.ExampleComponentTypeIt)).Should(BeEmpty()) //subjects are not setup nodes
 		})
 	})
 

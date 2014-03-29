@@ -30,9 +30,7 @@ type ContainerNode struct {
 	flag         internaltypes.FlagType
 	codeLocation types.CodeLocation
 
-	beforeEachNodes          []internaltypes.BasicNode
-	justBeforeEachNodes      []internaltypes.BasicNode
-	afterEachNodes           []internaltypes.BasicNode
+	setupNodes               []internaltypes.BasicNode
 	subjectAndContainerNodes []subjectOrContainerNode
 }
 
@@ -87,28 +85,18 @@ func (node *ContainerNode) PushSubjectNode(subject internaltypes.SubjectNode) {
 	node.subjectAndContainerNodes = append(node.subjectAndContainerNodes, subjectOrContainerNode{subjectNode: subject})
 }
 
-func (node *ContainerNode) PushBeforeEachNode(beforeEach internaltypes.BasicNode) {
-	node.beforeEachNodes = append(node.beforeEachNodes, beforeEach)
+func (node *ContainerNode) PushSetupNode(setupNode internaltypes.BasicNode) {
+	node.setupNodes = append(node.setupNodes, setupNode)
 }
 
-func (node *ContainerNode) PushJustBeforeEachNode(justBeforeEach internaltypes.BasicNode) {
-	node.justBeforeEachNodes = append(node.justBeforeEachNodes, justBeforeEach)
-}
-
-func (node *ContainerNode) PushAfterEachNode(afterEach internaltypes.BasicNode) {
-	node.afterEachNodes = append(node.afterEachNodes, afterEach)
-}
-
-func (node *ContainerNode) BeforeEachNodes() []internaltypes.BasicNode {
-	return node.beforeEachNodes
-}
-
-func (node *ContainerNode) AfterEachNodes() []internaltypes.BasicNode {
-	return node.afterEachNodes
-}
-
-func (node *ContainerNode) JustBeforeEachNodes() []internaltypes.BasicNode {
-	return node.justBeforeEachNodes
+func (node *ContainerNode) SetupNodesOfType(nodeType types.ExampleComponentType) []internaltypes.BasicNode {
+	nodes := []internaltypes.BasicNode{}
+	for _, setupNode := range node.setupNodes {
+		if setupNode.Type() == nodeType {
+			nodes = append(nodes, setupNode)
+		}
+	}
+	return nodes
 }
 
 func (node *ContainerNode) Text() string {
