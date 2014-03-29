@@ -66,6 +66,44 @@ func (ex *Example) Focused() bool {
 	return ex.focused
 }
 
+func (ex *Example) IsMeasurement() bool {
+	return ex.subject.Type() == types.ExampleComponentTypeMeasure
+}
+
+func (ex *Example) Summary(suiteID string) *types.ExampleSummary {
+	componentTexts := make([]string, len(ex.containers)+1)
+	componentCodeLocations := make([]types.CodeLocation, len(ex.containers)+1)
+
+	for i, container := range ex.containers {
+		componentTexts[i] = container.Text()
+		componentCodeLocations[i] = container.CodeLocation()
+	}
+
+	componentTexts[len(ex.containers)] = ex.subject.Text()
+	componentCodeLocations[len(ex.containers)] = ex.subject.CodeLocation()
+
+	return &types.ExampleSummary{
+		IsMeasurement:          ex.IsMeasurement(),
+		NumberOfSamples:        ex.subject.Samples(),
+		ComponentTexts:         componentTexts,
+		ComponentCodeLocations: componentCodeLocations,
+		State:        ex.state,
+		RunTime:      ex.runTime,
+		Failure:      ex.failure,
+		Measurements: ex.measurementsReport(),
+		SuiteID:      suiteID,
+	}
+}
+
+func (ex *Example) ConcatenatedString() string {
+	s := ""
+	for _, container := range ex.containers {
+		s += container.Text() + " "
+	}
+
+	return s + ex.subject.Text()
+}
+
 func (ex *Example) Run() {
 	startTime := time.Now()
 	defer func() {
@@ -120,40 +158,7 @@ func (ex *Example) runSample(sample int) (exampleState types.ExampleState, examp
 
 	exampleState, exampleFailure = ex.subject.Run()
 
-	if exampleState != types.ExampleStatePassed {
-		return
-	}
-
 	return
-}
-
-func (ex *Example) IsMeasurement() bool {
-	return ex.subject.Type() == types.ExampleComponentTypeMeasure
-}
-
-func (ex *Example) Summary(suiteID string) *types.ExampleSummary {
-	componentTexts := make([]string, len(ex.containers)+1)
-	componentCodeLocations := make([]types.CodeLocation, len(ex.containers)+1)
-
-	for i, container := range ex.containers {
-		componentTexts[i] = container.Text()
-		componentCodeLocations[i] = container.CodeLocation()
-	}
-
-	componentTexts[len(ex.containers)] = ex.subject.Text()
-	componentCodeLocations[len(ex.containers)] = ex.subject.CodeLocation()
-
-	return &types.ExampleSummary{
-		IsMeasurement:          ex.IsMeasurement(),
-		NumberOfSamples:        ex.subject.Samples(),
-		ComponentTexts:         componentTexts,
-		ComponentCodeLocations: componentCodeLocations,
-		State:        ex.state,
-		RunTime:      ex.runTime,
-		Failure:      ex.failure,
-		Measurements: ex.measurementsReport(),
-		SuiteID:      suiteID,
-	}
 }
 
 func (ex *Example) measurementsReport() map[string]*types.ExampleMeasurement {
@@ -162,13 +167,4 @@ func (ex *Example) measurementsReport() map[string]*types.ExampleMeasurement {
 	}
 
 	return ex.subject.(*leafnodes.MeasureNode).MeasurementsReport()
-}
-
-func (ex *Example) ConcatenatedString() string {
-	s := ""
-	for _, container := range ex.containers {
-		s += container.Text() + " "
-	}
-
-	return s + ex.subject.Text()
 }

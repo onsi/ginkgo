@@ -1,735 +1,583 @@
 package example_test
 
-//TODO: FIX
-
 import (
-	"fmt"
-	"github.com/onsi/ginkgo/internal/codelocation"
-	"github.com/onsi/ginkgo/types"
+	. "github.com/onsi/ginkgo"
 	. "github.com/onsi/gomega"
 	"time"
+
+	. "github.com/onsi/ginkgo/internal/example"
+
+	"github.com/onsi/ginkgo/internal/codelocation"
+	"github.com/onsi/ginkgo/internal/containernode"
+	Failer "github.com/onsi/ginkgo/internal/failer"
+	"github.com/onsi/ginkgo/internal/leafnodes"
+	"github.com/onsi/ginkgo/internal/types"
+	"github.com/onsi/ginkgo/types"
 )
 
-func init() {
-	Describe("Example", func() {
-		var it *itNode
+var noneFlag = internaltypes.FlagTypeNone
+var focusedFlag = internaltypes.FlagTypeFocused
+var pendingFlag = internaltypes.FlagTypePending
 
-		BeforeEach(func() {
-			it = newItNode("It", func() {}, FlagTypeNone, codelocation.New(0), 0)
+var _ = Describe("Example", func() {
+	var (
+		failer       *Failer.Failer
+		codeLocation types.CodeLocation
+		nodesThatRan []string
+		example      *Example
+	)
+
+	newBody := func(text string, fail bool) func() {
+		return func() {
+			nodesThatRan = append(nodesThatRan, text)
+			if fail {
+				failer.Fail(text, codeLocation)
+			}
+		}
+	}
+
+	newIt := func(text string, flag internaltypes.FlagType, fail bool) *leafnodes.ItNode {
+		return leafnodes.NewItNode(text, newBody(text, fail), flag, codeLocation, 0, failer, 0)
+	}
+
+	newItWithBody := func(text string, body interface{}) *leafnodes.ItNode {
+		return leafnodes.NewItNode(text, body, noneFlag, codeLocation, 0, failer, 0)
+	}
+
+	newMeasure := func(text string, flag internaltypes.FlagType, fail bool, samples int) *leafnodes.MeasureNode {
+		return leafnodes.NewMeasureNode(text, func(Benchmarker) {
+			nodesThatRan = append(nodesThatRan, text)
+			if fail {
+				failer.Fail(text, codeLocation)
+			}
+		}, flag, codeLocation, samples, failer, 0)
+	}
+
+	newBef := func(text string, fail bool) internaltypes.BasicNode {
+		return leafnodes.NewBeforeEachNode(newBody(text, fail), codeLocation, 0, failer, 0)
+	}
+
+	newAft := func(text string, fail bool) internaltypes.BasicNode {
+		return leafnodes.NewAfterEachNode(newBody(text, fail), codeLocation, 0, failer, 0)
+	}
+
+	newJusBef := func(text string, fail bool) internaltypes.BasicNode {
+		return leafnodes.NewJustBeforeEachNode(newBody(text, fail), codeLocation, 0, failer, 0)
+	}
+
+	newContainer := func(text string, flag internaltypes.FlagType, setupNodes ...internaltypes.BasicNode) *containernode.ContainerNode {
+		c := containernode.New(text, flag, codeLocation)
+		for _, node := range setupNodes {
+			switch node.Type() {
+			case types.ExampleComponentTypeBeforeEach:
+				c.PushBeforeEachNode(node)
+			case types.ExampleComponentTypeAfterEach:
+				c.PushAfterEachNode(node)
+			case types.ExampleComponentTypeJustBeforeEach:
+				c.PushJustBeforeEachNode(node)
+			}
+		}
+		return c
+	}
+
+	containers := func(containers ...*containernode.ContainerNode) []*containernode.ContainerNode {
+		return containers
+	}
+
+	BeforeEach(func() {
+		failer = Failer.New()
+		codeLocation = codelocation.New(0)
+		nodesThatRan = []string{}
+	})
+
+	Describe("marking examples focused and pending", func() {
+		It("should satisfy various caes", func() {
+			cases := []struct {
+				ContainerFlags []internaltypes.FlagType
+				SubjectFlag    internaltypes.FlagType
+				Pending        bool
+				Focused        bool
+			}{
+				{[]internaltypes.FlagType{}, noneFlag, false, false},
+				{[]internaltypes.FlagType{}, focusedFlag, false, true},
+				{[]internaltypes.FlagType{}, pendingFlag, true, false},
+				{[]internaltypes.FlagType{noneFlag}, noneFlag, false, false},
+				{[]internaltypes.FlagType{focusedFlag}, noneFlag, false, true},
+				{[]internaltypes.FlagType{pendingFlag}, noneFlag, true, false},
+				{[]internaltypes.FlagType{noneFlag}, focusedFlag, false, true},
+				{[]internaltypes.FlagType{focusedFlag}, focusedFlag, false, true},
+				{[]internaltypes.FlagType{pendingFlag}, focusedFlag, true, true},
+				{[]internaltypes.FlagType{noneFlag}, pendingFlag, true, false},
+				{[]internaltypes.FlagType{focusedFlag}, pendingFlag, true, true},
+				{[]internaltypes.FlagType{pendingFlag}, pendingFlag, true, false},
+				{[]internaltypes.FlagType{focusedFlag, noneFlag}, noneFlag, false, true},
+				{[]internaltypes.FlagType{noneFlag, focusedFlag}, noneFlag, false, true},
+				{[]internaltypes.FlagType{pendingFlag, noneFlag}, noneFlag, true, false},
+				{[]internaltypes.FlagType{noneFlag, pendingFlag}, noneFlag, true, false},
+				{[]internaltypes.FlagType{focusedFlag, pendingFlag}, noneFlag, true, true},
+			}
+
+			for i, c := range cases {
+				subject := newIt("it node", c.SubjectFlag, false)
+				containers := []*containernode.ContainerNode{}
+				for _, flag := range c.ContainerFlags {
+					containers = append(containers, newContainer("container", flag))
+				}
+
+				example := New(subject, containers)
+				Ω(example.Pending()).Should(Equal(c.Pending), "Case %d: %#v", i, c)
+				Ω(example.Focused()).Should(Equal(c.Focused), "Case %d: %#v", i, c)
+
+				if c.Pending {
+					Ω(example.Summary("").State).Should(Equal(types.ExampleStatePending))
+				}
+			}
+		})
+	})
+
+	Describe("Skip", func() {
+		It("should be skipped", func() {
+			example := New(newIt("it node", noneFlag, false), containers(newContainer("container", noneFlag)))
+			Ω(example.Skipped()).Should(BeFalse())
+			example.Skip()
+			Ω(example.Skipped()).Should(BeTrue())
+			Ω(example.Summary("").State).Should(Equal(types.ExampleStateSkipped))
+		})
+	})
+
+	Describe("IsMeasurement", func() {
+		It("should be true if the subject is a measurement node", func() {
+			example := New(newIt("it node", noneFlag, false), containers(newContainer("container", noneFlag)))
+			Ω(example.IsMeasurement()).Should(BeFalse())
+			Ω(example.Summary("").IsMeasurement).Should(BeFalse())
+			Ω(example.Summary("").NumberOfSamples).Should(Equal(1))
+
+			example = New(newMeasure("measure node", noneFlag, false, 10), containers(newContainer("container", noneFlag)))
+			Ω(example.IsMeasurement()).Should(BeTrue())
+			Ω(example.Summary("").IsMeasurement).Should(BeTrue())
+			Ω(example.Summary("").NumberOfSamples).Should(Equal(10))
+		})
+	})
+
+	Describe("Passed", func() {
+		It("should pass when the subject passed", func() {
+			example := New(newIt("it node", noneFlag, false), containers())
+			example.Run()
+
+			Ω(example.Passed()).Should(BeTrue())
+			Ω(example.Failed()).Should(BeFalse())
+			Ω(example.Summary("").State).Should(Equal(types.ExampleStatePassed))
+			Ω(example.Summary("").Failure).Should(BeZero())
+		})
+	})
+
+	Describe("Failed", func() {
+		It("should be failed if the failure was panic", func() {
+			example := New(newItWithBody("panicky it", func() {
+				panic("bam")
+			}), containers())
+			example.Run()
+			Ω(example.Passed()).Should(BeFalse())
+			Ω(example.Failed()).Should(BeTrue())
+			Ω(example.Summary("").State).Should(Equal(types.ExampleStatePanicked))
+			Ω(example.Summary("").Failure.Message).Should(Equal("Test Panicked"))
+			Ω(example.Summary("").Failure.ForwardedPanic).Should(Equal("bam"))
 		})
 
-		Describe("creating examples and adding container nodes", func() {
-			var (
-				containerA *containerNode
-				containerB *containerNode
-				ex         *example
+		It("should be failed if the failure was a timeout", func() {
+			example := New(newItWithBody("sleepy it", func(done Done) {}), containers())
+			example.Run()
+			Ω(example.Passed()).Should(BeFalse())
+			Ω(example.Failed()).Should(BeTrue())
+			Ω(example.Summary("").State).Should(Equal(types.ExampleStateTimedOut))
+			Ω(example.Summary("").Failure.Message).Should(Equal("Timed out"))
+		})
+
+		It("should be failed if the failure was... a failure", func() {
+			example := New(newItWithBody("failing it", func() {
+				failer.Fail("bam", codeLocation)
+			}), containers())
+			example.Run()
+			Ω(example.Passed()).Should(BeFalse())
+			Ω(example.Failed()).Should(BeTrue())
+			Ω(example.Summary("").State).Should(Equal(types.ExampleStateFailed))
+			Ω(example.Summary("").Failure.Message).Should(Equal("bam"))
+		})
+	})
+
+	Describe("Concatenated string", func() {
+		It("should concatenate the texts of the containers and the subject", func() {
+			example := New(
+				newIt("it node", noneFlag, false),
+				containers(
+					newContainer("outer container", noneFlag),
+					newContainer("inner container", noneFlag),
+				),
 			)
 
+			Ω(example.ConcatenatedString()).Should(Equal("outer container inner container it node"))
+		})
+	})
+
+	Describe("running it examples", func() {
+		Context("with just an it", func() {
+			Context("that succeeds", func() {
+				It("should run the it and report on its success", func() {
+					example := New(newIt("it node", noneFlag, false), containers())
+					example.Run()
+					Ω(example.Passed()).Should(BeTrue())
+					Ω(example.Failed()).Should(BeFalse())
+					Ω(nodesThatRan).Should(Equal([]string{"it node"}))
+				})
+			})
+
+			Context("that fails", func() {
+				It("should run the it and report on its success", func() {
+					example := New(newIt("it node", noneFlag, true), containers())
+					example.Run()
+					Ω(example.Passed()).Should(BeFalse())
+					Ω(example.Failed()).Should(BeTrue())
+					Ω(example.Summary("").Failure.Message).Should(Equal("it node"))
+					Ω(nodesThatRan).Should(Equal([]string{"it node"}))
+				})
+			})
+		})
+
+		Context("with a full set of setup nodes", func() {
+			var failingNodes map[string]bool
+
 			BeforeEach(func() {
-				containerA = newContainerNode("A", FlagTypeNone, codelocation.New(0))
-				containerB = newContainerNode("B", FlagTypeNone, codelocation.New(0))
+				failingNodes = map[string]bool{}
 			})
 
 			JustBeforeEach(func() {
-				ex = newExample(it)
-				ex.addContainerNode(containerB)
-				ex.addContainerNode(containerA)
+				example = New(
+					newIt("it node", noneFlag, failingNodes["it node"]),
+					containers(
+						newContainer("outer container", noneFlag,
+							newBef("outer bef A", failingNodes["outer bef A"]),
+							newBef("outer bef B", failingNodes["outer bef B"]),
+							newJusBef("outer jusbef A", failingNodes["outer jusbef A"]),
+							newJusBef("outer jusbef B", failingNodes["outer jusbef B"]),
+							newAft("outer aft A", failingNodes["outer aft A"]),
+							newAft("outer aft B", failingNodes["outer aft B"]),
+						),
+						newContainer("inner container", noneFlag,
+							newBef("inner bef A", failingNodes["inner bef A"]),
+							newBef("inner bef B", failingNodes["inner bef B"]),
+							newJusBef("inner jusbef A", failingNodes["inner jusbef A"]),
+							newJusBef("inner jusbef B", failingNodes["inner jusbef B"]),
+							newAft("inner aft A", failingNodes["inner aft A"]),
+							newAft("inner aft B", failingNodes["inner aft B"]),
+						),
+					),
+				)
+				example.Run()
 			})
 
-			It("should store off the it node", func() {
-				Ω(ex.subject).Should(Equal(it))
-			})
-
-			It("should store off the container nodes in reverse order", func() {
-				Ω(ex.containers).Should(Equal([]*containerNode{containerA, containerB}))
-			})
-
-			It("should provide the concatenated strings", func() {
-				Ω(ex.concatenatedString()).Should(Equal("A B It"))
-			})
-
-			Context("when neither the It node nor the containers is focused or pending", func() {
-				It("should not be focused or pending", func() {
-					Ω(ex.focused).Should(BeFalse())
-					Ω(ex.state).Should(BeZero())
-				})
-			})
-
-			Context("when the It node is focused", func() {
-				BeforeEach(func() {
-					it.flag = FlagTypeFocused
-				})
-
-				It("should be focused", func() {
-					Ω(ex.focused).Should(BeTrue())
-				})
-			})
-
-			Context("when one of the containers is focused", func() {
-				BeforeEach(func() {
-					containerB.flag = FlagTypeFocused
-				})
-
-				It("should be focused", func() {
-					Ω(ex.focused).Should(BeTrue())
-				})
-			})
-
-			Context("when the It node is pending", func() {
-				BeforeEach(func() {
-					it.flag = FlagTypePending
-				})
-
-				It("should be in the pending state", func() {
-					Ω(ex.state).Should(Equal(types.ExampleStatePending))
-				})
-			})
-
-			Context("when one of the containers is pending", func() {
-				BeforeEach(func() {
-					containerB.flag = FlagTypePending
-				})
-
-				It("should be in the pending state", func() {
-					Ω(ex.state).Should(Equal(types.ExampleStatePending))
-				})
-			})
-
-			Context("when one container is pending and another container is focused", func() {
-				BeforeEach(func() {
-					containerA.flag = FlagTypeFocused
-					containerB.flag = FlagTypePending
-				})
-
-				It("should be focused and have the pending state", func() {
-					Ω(ex.focused).Should(BeTrue())
-					Ω(ex.state).Should(Equal(types.ExampleStatePending))
-				})
-			})
-		})
-
-		Describe("Skipping an example", func() {
-			It("should mark the example as skipped", func() {
-				ex := newExample(it)
-				ex.skip()
-				Ω(ex.state).Should(Equal(types.ExampleStateSkipped))
-			})
-		})
-
-		Describe("skippedOrPending", func() {
-			It("should be false if the example is neither pending nor skipped", func() {
-				ex := newExample(it)
-				Ω(ex.skippedOrPending()).Should(BeFalse())
-			})
-
-			It("should be true if the example is pending", func() {
-				it.flag = FlagTypePending
-				ex := newExample(it)
-				Ω(ex.skippedOrPending()).Should(BeTrue())
-			})
-
-			It("should be true if the example is skipped", func() {
-				ex := newExample(it)
-				ex.skip()
-				Ω(ex.skippedOrPending()).Should(BeTrue())
-			})
-		})
-
-		Describe("pending", func() {
-			It("should be false if the example is not pending", func() {
-				ex := newExample(it)
-				Ω(ex.pending()).Should(BeFalse())
-			})
-
-			It("should be true if the example is pending", func() {
-				it.flag = FlagTypePending
-				ex := newExample(it)
-				Ω(ex.pending()).Should(BeTrue())
-			})
-		})
-
-		Describe("running examples and getting summaries", func() {
-			var (
-				orderedList    []string
-				it             *itNode
-				innerContainer *containerNode
-				outerContainer *containerNode
-				ex             *example
-			)
-
-			newNode := func(identifier string) *runnableNode {
-				return newRunnableNode(func() {
-					orderedList = append(orderedList, identifier)
-				}, codelocation.New(0), 0)
-			}
-
-			BeforeEach(func() {
-				orderedList = make([]string, 0)
-				it = newItNode("it", func() {
-					orderedList = append(orderedList, "IT")
-					time.Sleep(time.Duration(0.01 * float64(time.Second)))
-				}, FlagTypeNone, codelocation.New(0), 0)
-				ex = newExample(it)
-
-				innerContainer = newContainerNode("inner", FlagTypeNone, codelocation.New(0))
-				innerContainer.pushBeforeEachNode(newNode("INNER_BEFORE_A"))
-				innerContainer.pushBeforeEachNode(newNode("INNER_BEFORE_B"))
-				innerContainer.pushJustBeforeEachNode(newNode("INNER_JUST_BEFORE_A"))
-				innerContainer.pushJustBeforeEachNode(newNode("INNER_JUST_BEFORE_B"))
-				innerContainer.pushAfterEachNode(newNode("INNER_AFTER_A"))
-				innerContainer.pushAfterEachNode(newNode("INNER_AFTER_B"))
-
-				ex.addContainerNode(innerContainer)
-
-				outerContainer = newContainerNode("outer", FlagTypeNone, codelocation.New(0))
-				outerContainer.pushBeforeEachNode(newNode("OUTER_BEFORE_A"))
-				outerContainer.pushBeforeEachNode(newNode("OUTER_BEFORE_B"))
-				outerContainer.pushJustBeforeEachNode(newNode("OUTER_JUST_BEFORE_A"))
-				outerContainer.pushJustBeforeEachNode(newNode("OUTER_JUST_BEFORE_B"))
-				outerContainer.pushAfterEachNode(newNode("OUTER_AFTER_A"))
-				outerContainer.pushAfterEachNode(newNode("OUTER_AFTER_B"))
-
-				ex.addContainerNode(outerContainer)
-			})
-
-			It("should report that it has an it node", func() {
-				Ω(ex.subjectComponentType()).Should(Equal(types.ExampleComponentTypeIt))
-			})
-
-			It("runs the before/justBefore/after nodes in each of the containers, and the it node, in the correct order", func() {
-				ex.run()
-				Ω(orderedList).Should(Equal([]string{
-					"OUTER_BEFORE_A",
-					"OUTER_BEFORE_B",
-					"INNER_BEFORE_A",
-					"INNER_BEFORE_B",
-					"OUTER_JUST_BEFORE_A",
-					"OUTER_JUST_BEFORE_B",
-					"INNER_JUST_BEFORE_A",
-					"INNER_JUST_BEFORE_B",
-					"IT",
-					"INNER_AFTER_A",
-					"INNER_AFTER_B",
-					"OUTER_AFTER_A",
-					"OUTER_AFTER_B",
-				}))
-			})
-
-			Describe("the summary", func() {
-				It("has the texts and code locations for the container nodes and the it node", func() {
-					ex.run()
-					summary := ex.summary("suite-id")
-					Ω(summary.ComponentTexts).Should(Equal([]string{
-						"outer", "inner", "it",
-					}))
-					Ω(summary.ComponentCodeLocations).Should(Equal([]types.CodeLocation{
-						outerContainer.codeLocation, innerContainer.codeLocation, it.codeLocation,
-					}))
-				})
-
-				It("should have the passed in SuiteID", func() {
-					ex.run()
-					summary := ex.summary("suite-id")
-					Ω(summary.SuiteID).Should(Equal("suite-id"))
-				})
-
-				It("should include the example's index", func() {
-					ex.exampleIndex = 17
-					ex.run()
-					summary := ex.summary("suite-id")
-					Ω(summary.ExampleIndex).Should(Equal(17))
-				})
-			})
-
-			Describe("the GinkgoTestDescription", func() {
-				It("should have the GinkgoTestDescription", func() {
-					ginkgoTestDescription := ex.ginkgoTestDescription()
-					Ω(ginkgoTestDescription.ComponentTexts).Should(Equal([]string{
-						"inner", "it",
-					}))
-
-					Ω(ginkgoTestDescription.FullTestText).Should(Equal("inner it"))
-					Ω(ginkgoTestDescription.TestText).Should(Equal("it"))
-					Ω(ginkgoTestDescription.IsMeasurement).Should(BeFalse())
-					Ω(ginkgoTestDescription.FileName).Should(Equal(it.codeLocation.FileName))
-					Ω(ginkgoTestDescription.LineNumber).Should(Equal(it.codeLocation.LineNumber))
-				})
-			})
-
-			Context("when none of the runnable nodes fail", func() {
-				It("has a summary reporting no failure", func() {
-					ex.run()
-					summary := ex.summary("suite-id")
-					Ω(summary.State).Should(Equal(types.ExampleStatePassed))
-					Ω(summary.RunTime.Seconds()).Should(BeNumerically(">", 0.01))
-					Ω(summary.IsMeasurement).Should(BeFalse())
-				})
-			})
-
-			componentTypes := []string{"BeforeEach", "JustBeforeEach", "AfterEach"}
-			expectedComponentTypes := []types.ExampleComponentType{types.ExampleComponentTypeBeforeEach, types.ExampleComponentTypeJustBeforeEach, types.ExampleComponentTypeAfterEach}
-			pushFuncs := []func(container *containerNode, node *runnableNode){(*containerNode).pushBeforeEachNode, (*containerNode).pushJustBeforeEachNode, (*containerNode).pushAfterEachNode}
-
-			for i := range componentTypes {
-				Context(fmt.Sprintf("when a %s node fails", componentTypes[i]), func() {
-					var componentCodeLocation types.CodeLocation
-
-					BeforeEach(func() {
-						componentCodeLocation = codelocation.New(0)
-					})
-
-					Context("because an expectation failed", func() {
-						var failure failureData
-
-						BeforeEach(func() {
-							failure = failureData{
-								message:      fmt.Sprintf("%s failed", componentTypes[i]),
-								codeLocation: codelocation.New(0),
-							}
-							node := newRunnableNode(func() {
-								ex.fail(failure)
-								ex.fail(failureData{message: "IGNORE ME!"})
-							}, componentCodeLocation, 0)
-
-							pushFuncs[i](innerContainer, node)
-						})
-
-						It("has a summary with the correct failure report", func() {
-							ex.run()
-							summary := ex.summary("suite-id")
-
-							Ω(summary.State).Should(Equal(types.ExampleStateFailed))
-							Ω(summary.Failure.Message).Should(Equal(failure.message))
-							Ω(summary.Failure.Location).Should(Equal(failure.codeLocation))
-							Ω(summary.Failure.ForwardedPanic).Should(BeNil())
-							Ω(summary.Failure.ComponentIndex).Should(Equal(1), "Should be the inner container that failed")
-							Ω(summary.Failure.ComponentType).Should(Equal(expectedComponentTypes[i]))
-							Ω(summary.Failure.ComponentCodeLocation).Should(Equal(componentCodeLocation))
-
-							Ω(ex.failed()).Should(BeTrue())
-						})
-					})
-
-					Context("because the function panicked", func() {
-						var panicCodeLocation types.CodeLocation
-
-						BeforeEach(func() {
-							node := newRunnableNode(func() {
-								panicCodeLocation = codelocation.New(0)
-								panic("kaboom!")
-							}, componentCodeLocation, 0)
-
-							pushFuncs[i](innerContainer, node)
-						})
-
-						It("has a summary with the correct failure report", func() {
-							ex.run()
-							summary := ex.summary("suite-id")
-
-							Ω(summary.State).Should(Equal(types.ExampleStatePanicked))
-							Ω(summary.Failure.Message).Should(Equal("Test Panicked"))
-							Ω(summary.Failure.Location.FileName).Should(Equal(panicCodeLocation.FileName))
-							Ω(summary.Failure.Location.LineNumber).Should(Equal(panicCodeLocation.LineNumber+1), "Expect panic code location to be correct")
-							Ω(summary.Failure.ForwardedPanic).Should(Equal("kaboom!"))
-							Ω(summary.Failure.ComponentIndex).Should(Equal(1), "Should be the inner container that failed")
-							Ω(summary.Failure.ComponentType).Should(Equal(expectedComponentTypes[i]))
-							Ω(summary.Failure.ComponentCodeLocation).Should(Equal(componentCodeLocation))
-
-							Ω(ex.failed()).Should(BeTrue())
-						})
-					})
-
-					Context("because the function timed out", func() {
-						BeforeEach(func() {
-							node := newRunnableNode(func(done Done) {
-								time.Sleep(time.Duration(0.002 * float64(time.Second)))
-								done <- true
-							}, componentCodeLocation, time.Duration(0.001*float64(time.Second)))
-
-							pushFuncs[i](innerContainer, node)
-						})
-
-						It("has a summary with the correct failure report", func() {
-							ex.run()
-							summary := ex.summary("suite-id")
-
-							Ω(summary.State).Should(Equal(types.ExampleStateTimedOut))
-							Ω(summary.Failure.Message).Should(Equal("Timed out"))
-							Ω(summary.Failure.Location).Should(Equal(componentCodeLocation))
-							Ω(summary.Failure.ForwardedPanic).Should(BeNil())
-							Ω(summary.Failure.ComponentIndex).Should(Equal(1), "Should be the inner container that failed")
-							Ω(summary.Failure.ComponentType).Should(Equal(expectedComponentTypes[i]))
-							Ω(summary.Failure.ComponentCodeLocation).Should(Equal(componentCodeLocation))
-
-							Ω(ex.failed()).Should(BeTrue())
-						})
-					})
-				})
-			}
-
-			Context("when the it node fails", func() {
-				var componentCodeLocation types.CodeLocation
-
-				BeforeEach(func() {
-					componentCodeLocation = codelocation.New(0)
-				})
-
-				Context("because an expectation failed", func() {
-					var failure failureData
-
-					BeforeEach(func() {
-						failure = failureData{
-							message:      "it failed",
-							codeLocation: codelocation.New(0),
-						}
-						ex.subject = newItNode("it", func() {
-							ex.fail(failure)
-							ex.fail(failureData{message: "IGNORE ME!"})
-						}, FlagTypeNone, componentCodeLocation, 0)
-					})
-
-					It("has a summary with the correct failure report", func() {
-						ex.run()
-						summary := ex.summary("suite-id")
-
-						Ω(summary.State).Should(Equal(types.ExampleStateFailed))
-						Ω(summary.Failure.Message).Should(Equal(failure.message))
-						Ω(summary.Failure.Location).Should(Equal(failure.codeLocation))
-						Ω(summary.Failure.ForwardedPanic).Should(BeNil())
-						Ω(summary.Failure.ComponentIndex).Should(Equal(2), "Should be the it node that failed")
-						Ω(summary.Failure.ComponentType).Should(Equal(types.ExampleComponentTypeIt))
-						Ω(summary.Failure.ComponentCodeLocation).Should(Equal(componentCodeLocation))
-
-						Ω(ex.failed()).Should(BeTrue())
-					})
-				})
-
-				Context("because the function panicked", func() {
-					var panicCodeLocation types.CodeLocation
-
-					BeforeEach(func() {
-						ex.subject = newItNode("it", func() {
-							panicCodeLocation = codelocation.New(0)
-							panic("kaboom!")
-						}, FlagTypeNone, componentCodeLocation, 0)
-					})
-
-					It("has a summary with the correct failure report", func() {
-						ex.run()
-						summary := ex.summary("suite-id")
-
-						Ω(summary.State).Should(Equal(types.ExampleStatePanicked))
-						Ω(summary.Failure.Message).Should(Equal("Test Panicked"))
-						Ω(summary.Failure.Location.FileName).Should(Equal(panicCodeLocation.FileName))
-						Ω(summary.Failure.Location.LineNumber).Should(Equal(panicCodeLocation.LineNumber+1), "Expect panic code location to be correct")
-						Ω(summary.Failure.ForwardedPanic).Should(Equal("kaboom!"))
-						Ω(summary.Failure.ComponentIndex).Should(Equal(2), "Should be the it node that failed")
-						Ω(summary.Failure.ComponentType).Should(Equal(types.ExampleComponentTypeIt))
-						Ω(summary.Failure.ComponentCodeLocation).Should(Equal(componentCodeLocation))
-
-						Ω(ex.failed()).Should(BeTrue())
-					})
-				})
-
-				Context("because the function timed out", func() {
-					BeforeEach(func() {
-						ex.subject = newItNode("it", func(done Done) {
-							time.Sleep(time.Duration(0.002 * float64(time.Second)))
-							done <- true
-						}, FlagTypeNone, componentCodeLocation, time.Duration(0.001*float64(time.Second)))
-					})
-
-					It("has a summary with the correct failure report", func() {
-						ex.run()
-						summary := ex.summary("suite-id")
-
-						Ω(summary.State).Should(Equal(types.ExampleStateTimedOut))
-						Ω(summary.Failure.Message).Should(Equal("Timed out"))
-						Ω(summary.Failure.Location).Should(Equal(componentCodeLocation))
-						Ω(summary.Failure.ForwardedPanic).Should(BeNil())
-						Ω(summary.Failure.ComponentIndex).Should(Equal(2), "Should be the it node that failed")
-						Ω(summary.Failure.ComponentType).Should(Equal(types.ExampleComponentTypeIt))
-						Ω(summary.Failure.ComponentCodeLocation).Should(Equal(componentCodeLocation))
-
-						Ω(ex.failed()).Should(BeTrue())
-					})
-				})
-			})
-		})
-
-		Describe("running measurement examples and getting summaries", func() {
-			var (
-				runs                  int
-				componentCodeLocation types.CodeLocation
-				ex                    *example
-			)
-
-			BeforeEach(func() {
-				runs = 0
-				componentCodeLocation = codelocation.New(0)
-			})
-
-			It("should report that it has a measurement", func() {
-				ex = newExample(newMeasureNode("measure", func(b Benchmarker) {}, FlagTypeNone, componentCodeLocation, 1))
-				Ω(ex.subjectComponentType()).Should(Equal(types.ExampleComponentTypeMeasure))
-			})
-
-			Context("when the measurement does not fail", func() {
-				BeforeEach(func() {
-					ex = newExample(newMeasureNode("measure", func(b Benchmarker) {
-						b.RecordValue("foo", float64(runs))
-						runs++
-					}, FlagTypeNone, componentCodeLocation, 5))
-				})
-
-				It("runs the measurement samples number of times and returns statistics", func() {
-					ex.run()
-					summary := ex.summary("suite-id")
-
-					Ω(runs).Should(Equal(5))
-
-					Ω(summary.State).Should(Equal(types.ExampleStatePassed))
-					Ω(summary.IsMeasurement).Should(BeTrue())
-					Ω(summary.NumberOfSamples).Should(Equal(5))
-					Ω(summary.Measurements).Should(HaveLen(1))
-					Ω(summary.Measurements["foo"].Name).Should(Equal("foo"))
-					Ω(summary.Measurements["foo"].Results).Should(Equal([]float64{0, 1, 2, 3, 4}))
-				})
-			})
-
-			Context("when one of the measurement samples fails", func() {
-				BeforeEach(func() {
-					ex = newExample(newMeasureNode("measure", func(b Benchmarker) {
-						b.RecordValue("foo", float64(runs))
-						runs++
-						if runs == 3 {
-							ex.fail(failureData{})
-						}
-					}, FlagTypeNone, componentCodeLocation, 5))
-				})
-
-				It("marks the measurement as failed and doesn't run any more samples", func() {
-					ex.run()
-					summary := ex.summary("suite-id")
-
-					Ω(runs).Should(Equal(3))
-
-					Ω(summary.State).Should(Equal(types.ExampleStateFailed))
-					Ω(summary.IsMeasurement).Should(BeTrue())
-					Ω(summary.NumberOfSamples).Should(Equal(5))
-					Ω(summary.Measurements).Should(BeEmpty())
-				})
-			})
-		})
-
-		Describe("running AfterEach nodes when other nodes fail", func() {
-			var (
-				orderedList []string
-				ex          *example
-			)
-
-			newNode := func(identifier string, fail bool) *runnableNode {
-				return newRunnableNode(func() {
-					orderedList = append(orderedList, identifier)
-					if fail {
-						ex.fail(failureData{
-							message: identifier + " failed",
-						})
-					}
-				}, codelocation.New(0), 0)
-			}
-
-			newIt := func(identifier string, fail bool) *itNode {
-				return newItNode(identifier, func() {
-					orderedList = append(orderedList, identifier)
-					if fail {
-						ex.fail(failureData{})
-					}
-				}, FlagTypeNone, codelocation.New(0), 0)
-			}
-
-			BeforeEach(func() {
-				orderedList = make([]string, 0)
-			})
-
-			Context("when the it node fails", func() {
-				BeforeEach(func() {
-					ex = newExample(newIt("it", true))
-
-					innerContainer := newContainerNode("inner", FlagTypeNone, codelocation.New(0))
-					innerContainer.pushBeforeEachNode(newNode("INNER_BEFORE_A", false))
-					innerContainer.pushBeforeEachNode(newNode("INNER_BEFORE_B", false))
-					innerContainer.pushJustBeforeEachNode(newNode("INNER_JUST_BEFORE_A", false))
-					innerContainer.pushJustBeforeEachNode(newNode("INNER_JUST_BEFORE_B", false))
-					innerContainer.pushAfterEachNode(newNode("INNER_AFTER_A", false))
-					innerContainer.pushAfterEachNode(newNode("INNER_AFTER_B", false))
-
-					ex.addContainerNode(innerContainer)
-
-					outerContainer := newContainerNode("outer", FlagTypeNone, codelocation.New(0))
-					outerContainer.pushBeforeEachNode(newNode("OUTER_BEFORE_A", false))
-					outerContainer.pushBeforeEachNode(newNode("OUTER_BEFORE_B", false))
-					outerContainer.pushJustBeforeEachNode(newNode("OUTER_JUST_BEFORE_A", false))
-					outerContainer.pushJustBeforeEachNode(newNode("OUTER_JUST_BEFORE_B", false))
-					outerContainer.pushAfterEachNode(newNode("OUTER_AFTER_A", false))
-					outerContainer.pushAfterEachNode(newNode("OUTER_AFTER_B", false))
-
-					ex.addContainerNode(outerContainer)
-					ex.run()
-				})
-
-				It("should run all the AfterEach nodes", func() {
-					Ω(orderedList).Should(Equal([]string{
-						"OUTER_BEFORE_A", "OUTER_BEFORE_B", "INNER_BEFORE_A", "INNER_BEFORE_B",
-						"OUTER_JUST_BEFORE_A", "OUTER_JUST_BEFORE_B", "INNER_JUST_BEFORE_A", "INNER_JUST_BEFORE_B",
-						"it",
-						"INNER_AFTER_A", "INNER_AFTER_B", "OUTER_AFTER_A", "OUTER_AFTER_B",
-					}))
-
-				})
-			})
-
-			Context("when an inner BeforeEach node fails", func() {
-				BeforeEach(func() {
-					ex = newExample(newIt("it", true))
-
-					innerContainer := newContainerNode("inner", FlagTypeNone, codelocation.New(0))
-					innerContainer.pushBeforeEachNode(newNode("INNER_BEFORE_A", true))
-					innerContainer.pushBeforeEachNode(newNode("INNER_BEFORE_B", false))
-					innerContainer.pushJustBeforeEachNode(newNode("INNER_JUST_BEFORE_A", false))
-					innerContainer.pushJustBeforeEachNode(newNode("INNER_JUST_BEFORE_B", false))
-					innerContainer.pushAfterEachNode(newNode("INNER_AFTER_A", false))
-					innerContainer.pushAfterEachNode(newNode("INNER_AFTER_B", false))
-
-					ex.addContainerNode(innerContainer)
-
-					outerContainer := newContainerNode("outer", FlagTypeNone, codelocation.New(0))
-					outerContainer.pushBeforeEachNode(newNode("OUTER_BEFORE_A", false))
-					outerContainer.pushBeforeEachNode(newNode("OUTER_BEFORE_B", false))
-					outerContainer.pushJustBeforeEachNode(newNode("OUTER_JUST_BEFORE_A", false))
-					outerContainer.pushJustBeforeEachNode(newNode("OUTER_JUST_BEFORE_B", false))
-					outerContainer.pushAfterEachNode(newNode("OUTER_AFTER_A", false))
-					outerContainer.pushAfterEachNode(newNode("OUTER_AFTER_B", false))
-
-					ex.addContainerNode(outerContainer)
-					ex.run()
-				})
-
-				It("should run all the AfterEach nodes at nesting levels equal to or lower than the failed BeforeEach block", func() {
-					Ω(orderedList).Should(Equal([]string{
-						"OUTER_BEFORE_A", "OUTER_BEFORE_B", "INNER_BEFORE_A",
-						"INNER_AFTER_A", "INNER_AFTER_B", "OUTER_AFTER_A", "OUTER_AFTER_B",
+			Context("that all pass", func() {
+				It("should walk through the nodes in the correct order", func() {
+					Ω(example.Passed()).Should(BeTrue())
+					Ω(example.Failed()).Should(BeFalse())
+					Ω(nodesThatRan).Should(Equal([]string{
+						"outer bef A",
+						"outer bef B",
+						"inner bef A",
+						"inner bef B",
+						"outer jusbef A",
+						"outer jusbef B",
+						"inner jusbef A",
+						"inner jusbef B",
+						"it node",
+						"inner aft A",
+						"inner aft B",
+						"outer aft A",
+						"outer aft B",
 					}))
 				})
 			})
 
-			Context("when an outer BeforeEach node fails", func() {
+			Context("when the subject fails", func() {
 				BeforeEach(func() {
-					ex = newExample(newIt("it", true))
-
-					innerContainer := newContainerNode("inner", FlagTypeNone, codelocation.New(0))
-					innerContainer.pushBeforeEachNode(newNode("INNER_BEFORE_A", false))
-					innerContainer.pushBeforeEachNode(newNode("INNER_BEFORE_B", false))
-					innerContainer.pushJustBeforeEachNode(newNode("INNER_JUST_BEFORE_A", false))
-					innerContainer.pushJustBeforeEachNode(newNode("INNER_JUST_BEFORE_B", false))
-					innerContainer.pushAfterEachNode(newNode("INNER_AFTER_A", false))
-					innerContainer.pushAfterEachNode(newNode("INNER_AFTER_B", false))
-
-					ex.addContainerNode(innerContainer)
-
-					outerContainer := newContainerNode("outer", FlagTypeNone, codelocation.New(0))
-					outerContainer.pushBeforeEachNode(newNode("OUTER_BEFORE_A", false))
-					outerContainer.pushBeforeEachNode(newNode("OUTER_BEFORE_B", true))
-					outerContainer.pushJustBeforeEachNode(newNode("OUTER_JUST_BEFORE_A", false))
-					outerContainer.pushJustBeforeEachNode(newNode("OUTER_JUST_BEFORE_B", false))
-					outerContainer.pushAfterEachNode(newNode("OUTER_AFTER_A", false))
-					outerContainer.pushAfterEachNode(newNode("OUTER_AFTER_B", false))
-
-					ex.addContainerNode(outerContainer)
-					ex.run()
+					failingNodes["it node"] = true
 				})
 
-				It("should run all the AfterEach nodes at nesting levels equal to or lower than the failed BeforeEach block", func() {
-					Ω(orderedList).Should(Equal([]string{
-						"OUTER_BEFORE_A", "OUTER_BEFORE_B",
-						"OUTER_AFTER_A", "OUTER_AFTER_B",
+				It("should run the afters", func() {
+					Ω(example.Passed()).Should(BeFalse())
+					Ω(example.Failed()).Should(BeTrue())
+					Ω(nodesThatRan).Should(Equal([]string{
+						"outer bef A",
+						"outer bef B",
+						"inner bef A",
+						"inner bef B",
+						"outer jusbef A",
+						"outer jusbef B",
+						"inner jusbef A",
+						"inner jusbef B",
+						"it node",
+						"inner aft A",
+						"inner aft B",
+						"outer aft A",
+						"outer aft B",
 					}))
+					Ω(example.Summary("").Failure.Message).Should(Equal("it node"))
 				})
 			})
 
-			Context("when a JustBeforeEach node fails", func() {
+			Context("when an inner before fails", func() {
 				BeforeEach(func() {
-					ex = newExample(newIt("it", true))
-
-					innerContainer := newContainerNode("inner", FlagTypeNone, codelocation.New(0))
-					innerContainer.pushBeforeEachNode(newNode("INNER_BEFORE_A", false))
-					innerContainer.pushBeforeEachNode(newNode("INNER_BEFORE_B", false))
-					innerContainer.pushJustBeforeEachNode(newNode("INNER_JUST_BEFORE_A", false))
-					innerContainer.pushJustBeforeEachNode(newNode("INNER_JUST_BEFORE_B", false))
-					innerContainer.pushAfterEachNode(newNode("INNER_AFTER_A", false))
-					innerContainer.pushAfterEachNode(newNode("INNER_AFTER_B", false))
-
-					ex.addContainerNode(innerContainer)
-
-					outerContainer := newContainerNode("outer", FlagTypeNone, codelocation.New(0))
-					outerContainer.pushBeforeEachNode(newNode("OUTER_BEFORE_A", false))
-					outerContainer.pushBeforeEachNode(newNode("OUTER_BEFORE_B", false))
-					outerContainer.pushJustBeforeEachNode(newNode("OUTER_JUST_BEFORE_A", true))
-					outerContainer.pushJustBeforeEachNode(newNode("OUTER_JUST_BEFORE_B", false))
-					outerContainer.pushAfterEachNode(newNode("OUTER_AFTER_A", false))
-					outerContainer.pushAfterEachNode(newNode("OUTER_AFTER_B", false))
-
-					ex.addContainerNode(outerContainer)
-					ex.run()
+					failingNodes["inner bef A"] = true
 				})
 
-				It("should run all the AfterEach nodes", func() {
-					Ω(orderedList).Should(Equal([]string{
-						"OUTER_BEFORE_A", "OUTER_BEFORE_B", "INNER_BEFORE_A", "INNER_BEFORE_B",
-						"OUTER_JUST_BEFORE_A",
-						"INNER_AFTER_A", "INNER_AFTER_B", "OUTER_AFTER_A", "OUTER_AFTER_B",
+				It("should not run any other befores, but it should run the subsequent afters", func() {
+					Ω(example.Passed()).Should(BeFalse())
+					Ω(example.Failed()).Should(BeTrue())
+					Ω(nodesThatRan).Should(Equal([]string{
+						"outer bef A",
+						"outer bef B",
+						"inner bef A",
+						"inner aft A",
+						"inner aft B",
+						"outer aft A",
+						"outer aft B",
 					}))
+					Ω(example.Summary("").Failure.Message).Should(Equal("inner bef A"))
 				})
 			})
 
-			Context("when an AfterEach node fails", func() {
+			Context("when an outer before fails", func() {
 				BeforeEach(func() {
-					ex = newExample(newIt("it", true))
-
-					innerContainer := newContainerNode("inner", FlagTypeNone, codelocation.New(0))
-					innerContainer.pushBeforeEachNode(newNode("INNER_BEFORE_A", false))
-					innerContainer.pushBeforeEachNode(newNode("INNER_BEFORE_B", false))
-					innerContainer.pushJustBeforeEachNode(newNode("INNER_JUST_BEFORE_A", true))
-					innerContainer.pushJustBeforeEachNode(newNode("INNER_JUST_BEFORE_B", false))
-					innerContainer.pushAfterEachNode(newNode("INNER_AFTER_A", false))
-					innerContainer.pushAfterEachNode(newNode("INNER_AFTER_B", true))
-
-					ex.addContainerNode(innerContainer)
-
-					outerContainer := newContainerNode("outer", FlagTypeNone, codelocation.New(0))
-					outerContainer.pushBeforeEachNode(newNode("OUTER_BEFORE_A", false))
-					outerContainer.pushBeforeEachNode(newNode("OUTER_BEFORE_B", false))
-					outerContainer.pushJustBeforeEachNode(newNode("OUTER_JUST_BEFORE_A", false))
-					outerContainer.pushJustBeforeEachNode(newNode("OUTER_JUST_BEFORE_B", false))
-					outerContainer.pushAfterEachNode(newNode("OUTER_AFTER_A", true))
-					outerContainer.pushAfterEachNode(newNode("OUTER_AFTER_B", false))
-
-					ex.addContainerNode(outerContainer)
-					ex.run()
+					failingNodes["outer bef B"] = true
 				})
 
-				It("should nonetheless continue to run subsequent after each nodes", func() {
-					Ω(orderedList).Should(Equal([]string{
-						"OUTER_BEFORE_A", "OUTER_BEFORE_B", "INNER_BEFORE_A", "INNER_BEFORE_B",
-						"OUTER_JUST_BEFORE_A", "OUTER_JUST_BEFORE_B", "INNER_JUST_BEFORE_A",
-						"INNER_AFTER_A", "INNER_AFTER_B", "OUTER_AFTER_A", "OUTER_AFTER_B",
+				It("should not run any other befores, but it should run the subsequent afters", func() {
+					Ω(example.Passed()).Should(BeFalse())
+					Ω(example.Failed()).Should(BeTrue())
+					Ω(nodesThatRan).Should(Equal([]string{
+						"outer bef A",
+						"outer bef B",
+						"outer aft A",
+						"outer aft B",
 					}))
+					Ω(example.Summary("").Failure.Message).Should(Equal("outer bef B"))
+				})
+			})
+
+			Context("when an after fails", func() {
+				BeforeEach(func() {
+					failingNodes["inner aft B"] = true
 				})
 
-				It("should not override the failure data of the earliest failure", func() {
-					Ω(ex.summary("suite-id").Failure.Message).Should(Equal("INNER_JUST_BEFORE_A failed"))
+				It("should run all other afters, but mark the test as failed", func() {
+					Ω(example.Passed()).Should(BeFalse())
+					Ω(example.Failed()).Should(BeTrue())
+					Ω(nodesThatRan).Should(Equal([]string{
+						"outer bef A",
+						"outer bef B",
+						"inner bef A",
+						"inner bef B",
+						"outer jusbef A",
+						"outer jusbef B",
+						"inner jusbef A",
+						"inner jusbef B",
+						"it node",
+						"inner aft A",
+						"inner aft B",
+						"outer aft A",
+						"outer aft B",
+					}))
+					Ω(example.Summary("").Failure.Message).Should(Equal("inner aft B"))
+				})
+			})
+
+			Context("when a just before each fails", func() {
+				BeforeEach(func() {
+					failingNodes["outer jusbef B"] = true
+				})
+
+				It("should run the afters, but not the subject", func() {
+					Ω(example.Passed()).Should(BeFalse())
+					Ω(example.Failed()).Should(BeTrue())
+					Ω(nodesThatRan).Should(Equal([]string{
+						"outer bef A",
+						"outer bef B",
+						"inner bef A",
+						"inner bef B",
+						"outer jusbef A",
+						"outer jusbef B",
+						"inner aft A",
+						"inner aft B",
+						"outer aft A",
+						"outer aft B",
+					}))
+					Ω(example.Summary("").Failure.Message).Should(Equal("outer jusbef B"))
+				})
+			})
+
+			Context("when an after fails after an earlier node has failed", func() {
+				BeforeEach(func() {
+					failingNodes["it node"] = true
+					failingNodes["inner aft B"] = true
+				})
+
+				It("should record the earlier failure", func() {
+					Ω(example.Passed()).Should(BeFalse())
+					Ω(example.Failed()).Should(BeTrue())
+					Ω(nodesThatRan).Should(Equal([]string{
+						"outer bef A",
+						"outer bef B",
+						"inner bef A",
+						"inner bef B",
+						"outer jusbef A",
+						"outer jusbef B",
+						"inner jusbef A",
+						"inner jusbef B",
+						"it node",
+						"inner aft A",
+						"inner aft B",
+						"outer aft A",
+						"outer aft B",
+					}))
+					Ω(example.Summary("").Failure.Message).Should(Equal("it node"))
 				})
 			})
 		})
 	})
-}
+
+	Describe("running measurement examples", func() {
+		Context("when the measurement succeeds", func() {
+			It("should run N samples", func() {
+				example = New(
+					newMeasure("measure node", noneFlag, false, 3),
+					containers(
+						newContainer("container", noneFlag,
+							newBef("bef A", false),
+							newJusBef("jusbef A", false),
+							newAft("aft A", false),
+						),
+					),
+				)
+				example.Run()
+
+				Ω(example.Passed()).Should(BeTrue())
+				Ω(example.Failed()).Should(BeFalse())
+				Ω(nodesThatRan).Should(Equal([]string{
+					"bef A",
+					"jusbef A",
+					"measure node",
+					"aft A",
+					"bef A",
+					"jusbef A",
+					"measure node",
+					"aft A",
+					"bef A",
+					"jusbef A",
+					"measure node",
+					"aft A",
+				}))
+			})
+		})
+
+		Context("when the measurement fails", func() {
+			It("should bail after the failure occurs", func() {
+				example = New(
+					newMeasure("measure node", noneFlag, true, 3),
+					containers(
+						newContainer("container", noneFlag,
+							newBef("bef A", false),
+							newJusBef("jusbef A", false),
+							newAft("aft A", false),
+						),
+					),
+				)
+				example.Run()
+
+				Ω(example.Passed()).Should(BeFalse())
+				Ω(example.Failed()).Should(BeTrue())
+				Ω(nodesThatRan).Should(Equal([]string{
+					"bef A",
+					"jusbef A",
+					"measure node",
+					"aft A",
+				}))
+			})
+		})
+	})
+
+	Describe("Summary", func() {
+		var (
+			subjectCodeLocation        types.CodeLocation
+			outerContainerCodeLocation types.CodeLocation
+			innerContainerCodeLocation types.CodeLocation
+			summary                    *types.ExampleSummary
+		)
+
+		BeforeEach(func() {
+			subjectCodeLocation = codelocation.New(0)
+			outerContainerCodeLocation = codelocation.New(0)
+			innerContainerCodeLocation = codelocation.New(0)
+
+			example = New(
+				leafnodes.NewItNode("it node", func() {
+					time.Sleep(10 * time.Millisecond)
+				}, noneFlag, subjectCodeLocation, 0, failer, 0),
+				containers(
+					containernode.New("outer container", noneFlag, outerContainerCodeLocation),
+					containernode.New("inner container", noneFlag, innerContainerCodeLocation),
+				),
+			)
+
+			example.Run()
+			Ω(example.Passed()).Should(BeTrue())
+			summary = example.Summary("suite id")
+		})
+
+		It("should have the suite id", func() {
+			Ω(summary.SuiteID).Should(Equal("suite id"))
+		})
+
+		It("should have the component texts and code locations", func() {
+			Ω(summary.ComponentTexts).Should(Equal([]string{"outer container", "inner container", "it node"}))
+			Ω(summary.ComponentCodeLocations).Should(Equal([]types.CodeLocation{outerContainerCodeLocation, innerContainerCodeLocation, subjectCodeLocation}))
+		})
+
+		It("should have a runtime", func() {
+			Ω(summary.RunTime).Should(BeNumerically(">=", 10*time.Millisecond))
+		})
+
+		It("should not be a measurement, or have a measurement summary", func() {
+			Ω(summary.IsMeasurement).Should(BeFalse())
+			Ω(summary.Measurements).Should(BeEmpty())
+		})
+	})
+
+	Describe("Summaries for measurements", func() {
+		var summary *types.ExampleSummary
+
+		BeforeEach(func() {
+			example = New(leafnodes.NewMeasureNode("measure node", func(b Benchmarker) {
+				b.RecordValue("a value", 7, "some info")
+			}, noneFlag, codeLocation, 4, failer, 0), containers())
+			example.Run()
+			Ω(example.Passed()).Should(BeTrue())
+			summary = example.Summary("suite id")
+		})
+
+		It("should include the number of samples", func() {
+			Ω(summary.NumberOfSamples).Should(Equal(4))
+		})
+
+		It("should be a measurement", func() {
+			Ω(summary.IsMeasurement).Should(BeTrue())
+		})
+
+		It("should have the measurements report", func() {
+			Ω(summary.Measurements).Should(HaveKey("a value"))
+
+			report := summary.Measurements["a value"]
+			Ω(report.Name).Should(Equal("a value"))
+			Ω(report.Info).Should(Equal("some info"))
+			Ω(report.Results).Should(Equal([]float64{7, 7, 7, 7}))
+		})
+	})
+})
