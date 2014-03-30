@@ -17,6 +17,7 @@ import (
 	"github.com/onsi/ginkgo/internal/codelocation"
 	"github.com/onsi/ginkgo/internal/failer"
 	"github.com/onsi/ginkgo/internal/types"
+	"github.com/onsi/ginkgo/internal/writer"
 	"github.com/onsi/ginkgo/remote"
 	"github.com/onsi/ginkgo/reporters"
 	"github.com/onsi/ginkgo/reporters/stenographer"
@@ -48,7 +49,7 @@ var globalFailer *failer.Failer
 
 func init() {
 	config.Flags("ginkgo", true)
-	GinkgoWriter = internal.NewGinkgoWriter(os.Stdout)
+	GinkgoWriter = writer.New(os.Stdout)
 	globalFailer = failer.New()
 	globalSuite = internal.NewSuite(globalFailer)
 }
@@ -183,8 +184,8 @@ func RunSpecsWithDefaultAndCustomReporters(t GinkgoTestingT, description string,
 //To run your tests with your custom reporter(s) (and *not* Ginkgo's default reporter), replace
 //RunSpecs() with this method.
 func RunSpecsWithCustomReporters(t GinkgoTestingT, description string, specReporters []Reporter) bool {
-	writer := GinkgoWriter.(*internal.GinkgoWriter)
-	writer.SetDirectToStdout(config.DefaultReporterConfig.Verbose)
+	writer := GinkgoWriter.(*writer.Writer)
+	writer.SetStream(config.DefaultReporterConfig.Verbose)
 	reporters := make([]reporters.Reporter, len(specReporters))
 	for i, reporter := range specReporters {
 		reporters[i] = reporter

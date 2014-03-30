@@ -33,16 +33,3 @@ type fakeTestingT struct {
 func (fakeT *fakeTestingT) Fail() {
 	fakeT.didFail = true
 }
-
-type fakeGinkgoWriter struct {
-	didTruncate bool
-	didDump     bool
-}
-
-func (writer *fakeGinkgoWriter) Truncate() {
-	writer.didTruncate = true
-}
-
-func (writer *fakeGinkgoWriter) DumpOut() {
-	writer.didDump = true
-}

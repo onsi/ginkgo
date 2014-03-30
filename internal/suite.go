@@ -6,7 +6,9 @@ import (
 	"github.com/onsi/ginkgo/internal/example"
 	"github.com/onsi/ginkgo/internal/failer"
 	"github.com/onsi/ginkgo/internal/leafnodes"
+	"github.com/onsi/ginkgo/internal/specrunner"
 	internaltypes "github.com/onsi/ginkgo/internal/types"
+	"github.com/onsi/ginkgo/internal/writer"
 	"github.com/onsi/ginkgo/reporters"
 	"github.com/onsi/ginkgo/types"
 
@@ -18,7 +20,7 @@ type Suite struct {
 	topLevelContainer *containernode.ContainerNode
 	currentContainer  *containernode.ContainerNode
 	containerIndex    int
-	exampleCollection *exampleCollection
+	runner            *specrunner.SpecRunner
 	failer            *failer.Failer
 }
 
@@ -33,7 +35,7 @@ func NewSuite(failer *failer.Failer) *Suite {
 	}
 }
 
-func (suite *Suite) Run(t internaltypes.GinkgoTestingT, description string, reporters []reporters.Reporter, writer ginkgoWriterInterface, config config.GinkgoConfigType) bool {
+func (suite *Suite) Run(t internaltypes.GinkgoTestingT, description string, reporters []reporters.Reporter, writer writer.WriterInterface, config config.GinkgoConfigType) bool {
 	if config.ParallelTotal < 1 {
 		panic("ginkgo.parallel.total must be >= 1")
 	}
@@ -44,21 +46,39 @@ func (suite *Suite) Run(t internaltypes.GinkgoTestingT, description string, repo
 
 	r := rand.New(rand.NewSource(config.RandomSeed))
 	suite.topLevelContainer.Shuffle(r)
-	suite.exampleCollection = newExampleCollection(t, description, suite.generateExamples(), reporters, writer, config)
+	examples := suite.generateExamples(description, config)
+	suite.runner = specrunner.New(t, description, examples, reporters, writer, config)
 
-	return suite.exampleCollection.run()
+	return suite.runner.Run()
 }
 
-func (suite *Suite) generateExamples() []*example.Example {
-	examples := []*example.Example{}
+func (suite *Suite) generateExamples(description string, config config.GinkgoConfigType) *example.Examples {
+	examplesSlice := []*example.Example{}
 	for _, collatedNodes := range suite.topLevelContainer.Collate() {
-		examples = append(examples, example.New(collatedNodes.Subject, collatedNodes.Containers))
+		examplesSlice = append(examplesSlice, example.New(collatedNodes.Subject, collatedNodes.Containers))
 	}
+
+	examples := example.NewExamples(examplesSlice)
+
+	if config.RandomizeAllSpecs {
+		examples.Shuffle(rand.New(rand.NewSource(config.RandomSeed)))
+	}
+
+	examples.ApplyFocus(description, config.FocusString, config.SkipString)
+
+	if config.SkipMeasurements {
+		examples.SkipMeasurements()
+	}
+
+	if config.ParallelTotal > 1 {
+		examples.TrimForParallelization(config.ParallelTotal, config.ParallelNode)
+	}
+
 	return examples
 }
 
 func (suite *Suite) CurrentRunningExampleSummary() (*types.ExampleSummary, bool) {
-	return suite.exampleCollection.currentExampleSummary()
+	return suite.runner.CurrentExampleSummary()
 }
 
 func (suite *Suite) PushContainerNode(text string, body func(), flag internaltypes.FlagType, codeLocation types.CodeLocation) {
