@@ -86,3 +86,11 @@ const (
 	ExampleComponentTypeIt
 	ExampleComponentTypeMeasure
 )
+
+type FlagType uint
+
+const (
+	FlagTypeNone FlagType = iota
+	FlagTypeFocused
+	FlagTypePending
+)
