@@ -1,6 +1,7 @@
 package containernode
 
 import (
+	"github.com/onsi/ginkgo/internal/leafnodes"
 	"github.com/onsi/ginkgo/internal/types"
 	"github.com/onsi/ginkgo/types"
 	"math/rand"
@@ -9,7 +10,7 @@ import (
 
 type subjectOrContainerNode struct {
 	containerNode *ContainerNode
-	subjectNode   internaltypes.SubjectNode
+	subjectNode   leafnodes.SubjectNode
 }
 
 func (n subjectOrContainerNode) text() string {
@@ -22,7 +23,7 @@ func (n subjectOrContainerNode) text() string {
 
 type CollatedNodes struct {
 	Containers []*ContainerNode
-	Subject    internaltypes.SubjectNode
+	Subject    leafnodes.SubjectNode
 }
 
 type ContainerNode struct {
@@ -30,7 +31,7 @@ type ContainerNode struct {
 	flag         internaltypes.FlagType
 	codeLocation types.CodeLocation
 
-	setupNodes               []internaltypes.BasicNode
+	setupNodes               []leafnodes.BasicNode
 	subjectAndContainerNodes []subjectOrContainerNode
 }
 
@@ -81,16 +82,16 @@ func (node *ContainerNode) PushContainerNode(container *ContainerNode) {
 	node.subjectAndContainerNodes = append(node.subjectAndContainerNodes, subjectOrContainerNode{containerNode: container})
 }
 
-func (node *ContainerNode) PushSubjectNode(subject internaltypes.SubjectNode) {
+func (node *ContainerNode) PushSubjectNode(subject leafnodes.SubjectNode) {
 	node.subjectAndContainerNodes = append(node.subjectAndContainerNodes, subjectOrContainerNode{subjectNode: subject})
 }
 
-func (node *ContainerNode) PushSetupNode(setupNode internaltypes.BasicNode) {
+func (node *ContainerNode) PushSetupNode(setupNode leafnodes.BasicNode) {
 	node.setupNodes = append(node.setupNodes, setupNode)
 }
 
-func (node *ContainerNode) SetupNodesOfType(nodeType types.ExampleComponentType) []internaltypes.BasicNode {
-	nodes := []internaltypes.BasicNode{}
+func (node *ContainerNode) SetupNodesOfType(nodeType types.ExampleComponentType) []leafnodes.BasicNode {
+	nodes := []leafnodes.BasicNode{}
 	for _, setupNode := range node.setupNodes {
 		if setupNode.Type() == nodeType {
 			nodes = append(nodes, setupNode)

@@ -53,19 +53,19 @@ var _ = Describe("Example", func() {
 		}, flag, codeLocation, samples, failer, 0)
 	}
 
-	newBef := func(text string, fail bool) internaltypes.BasicNode {
+	newBef := func(text string, fail bool) leafnodes.BasicNode {
 		return leafnodes.NewBeforeEachNode(newBody(text, fail), codeLocation, 0, failer, 0)
 	}
 
-	newAft := func(text string, fail bool) internaltypes.BasicNode {
+	newAft := func(text string, fail bool) leafnodes.BasicNode {
 		return leafnodes.NewAfterEachNode(newBody(text, fail), codeLocation, 0, failer, 0)
 	}
 
-	newJusBef := func(text string, fail bool) internaltypes.BasicNode {
+	newJusBef := func(text string, fail bool) leafnodes.BasicNode {
 		return leafnodes.NewJustBeforeEachNode(newBody(text, fail), codeLocation, 0, failer, 0)
 	}
 
-	newContainer := func(text string, flag internaltypes.FlagType, setupNodes ...internaltypes.BasicNode) *containernode.ContainerNode {
+	newContainer := func(text string, flag internaltypes.FlagType, setupNodes ...leafnodes.BasicNode) *containernode.ContainerNode {
 		c := containernode.New(text, flag, codeLocation)
 		for _, node := range setupNodes {
 			c.PushSetupNode(node)

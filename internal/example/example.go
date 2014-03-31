@@ -9,7 +9,7 @@ import (
 )
 
 type Example struct {
-	subject internaltypes.SubjectNode
+	subject leafnodes.SubjectNode
 	focused bool
 
 	containers []*containernode.ContainerNode
@@ -19,7 +19,7 @@ type Example struct {
 	failure types.ExampleFailure
 }
 
-func New(subject internaltypes.SubjectNode, containers []*containernode.ContainerNode) *Example {
+func New(subject leafnodes.SubjectNode, containers []*containernode.ContainerNode) *Example {
 	ex := &Example{
 		subject:    subject,
 		containers: containers,

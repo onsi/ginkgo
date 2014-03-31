@@ -1,9 +1,5 @@
 package internaltypes
 
-import (
-	"github.com/onsi/ginkgo/types"
-)
-
 type FlagType uint
 
 const (
@@ -11,17 +7,3 @@ const (
 	FlagTypeFocused
 	FlagTypePending
 )
-
-type BasicNode interface {
-	Type() types.ExampleComponentType
-	Run() (types.ExampleState, types.ExampleFailure)
-	CodeLocation() types.CodeLocation
-}
-
-type SubjectNode interface {
-	BasicNode
-
-	Text() string
-	Flag() FlagType
-	Samples() int
-}

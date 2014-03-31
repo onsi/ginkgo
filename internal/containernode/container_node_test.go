@@ -51,16 +51,16 @@ var _ = Describe("Container Node", func() {
 			subject := leafnodes.NewItNode("subject", func() {}, internaltypes.FlagTypeNone, codelocation.New(0), 0, nil, 0)
 			container.PushSubjectNode(subject)
 
-			Ω(container.SetupNodesOfType(types.ExampleComponentTypeBeforeEach)).Should(Equal([]internaltypes.BasicNode{befA, befB}))
-			Ω(container.SetupNodesOfType(types.ExampleComponentTypeAfterEach)).Should(Equal([]internaltypes.BasicNode{aftA, aftB}))
-			Ω(container.SetupNodesOfType(types.ExampleComponentTypeJustBeforeEach)).Should(Equal([]internaltypes.BasicNode{jusBefA, jusBefB}))
+			Ω(container.SetupNodesOfType(types.ExampleComponentTypeBeforeEach)).Should(Equal([]leafnodes.BasicNode{befA, befB}))
+			Ω(container.SetupNodesOfType(types.ExampleComponentTypeAfterEach)).Should(Equal([]leafnodes.BasicNode{aftA, aftB}))
+			Ω(container.SetupNodesOfType(types.ExampleComponentTypeJustBeforeEach)).Should(Equal([]leafnodes.BasicNode{jusBefA, jusBefB}))
 			Ω(container.SetupNodesOfType(types.ExampleComponentTypeIt)).Should(BeEmpty()) //subjects are not setup nodes
 		})
 	})
 
 	Context("With appended containers and subject nodes", func() {
 		var (
-			itA, itB, innerItA, innerItB internaltypes.SubjectNode
+			itA, itB, innerItA, innerItB leafnodes.SubjectNode
 			innerContainer               *ContainerNode
 		)
 
