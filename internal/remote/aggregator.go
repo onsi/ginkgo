@@ -1,18 +1,13 @@
 /*
 
 Aggregator is a reporter used by the Ginkgo CLI to aggregate and present parallel test output
-as one coherent stream.  You shouldn't need to use this in your code.  To run tests in parallel:
+coherently as tests complete.  You shouldn't need to use this in your code.  To run tests in parallel:
 
 	ginkgo -nodes=N
 
 where N is the number of nodes you desire.
-
-To disable streaming mode and, instead, have the test output blobbed onto screen when all the parallel nodes complete:
-
-	ginkgo -nodes=N -stream=false
-
 */
-package aggregator
+package remote
 
 import (
 	"github.com/onsi/ginkgo/config"

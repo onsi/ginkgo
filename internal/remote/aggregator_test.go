@@ -1,11 +1,11 @@
-package aggregator_test
+package remote_test
 
 import (
 	. "github.com/onsi/ginkgo"
 	. "github.com/onsi/gomega"
 
 	"github.com/onsi/ginkgo/config"
-	. "github.com/onsi/ginkgo/ginkgo/aggregator"
+	. "github.com/onsi/ginkgo/internal/remote"
 	st "github.com/onsi/ginkgo/reporters/stenographer"
 	"github.com/onsi/ginkgo/types"
 	"runtime"

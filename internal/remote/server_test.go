@@ -3,7 +3,7 @@ package remote_test
 import (
 	. "github.com/onsi/ginkgo"
 	"github.com/onsi/ginkgo/config"
-	. "github.com/onsi/ginkgo/remote"
+	. "github.com/onsi/ginkgo/internal/remote"
 	"github.com/onsi/ginkgo/reporters"
 	"github.com/onsi/ginkgo/types"
 	. "github.com/onsi/gomega"

@@ -3,7 +3,7 @@ package remote_test
 import (
 	"fmt"
 	. "github.com/onsi/ginkgo"
-	. "github.com/onsi/ginkgo/remote"
+	. "github.com/onsi/ginkgo/internal/remote"
 	. "github.com/onsi/gomega"
 	"os"
 )
