@@ -11,13 +11,12 @@ import (
 	"github.com/onsi/ginkgo/internal/containernode"
 	Failer "github.com/onsi/ginkgo/internal/failer"
 	"github.com/onsi/ginkgo/internal/leafnodes"
-	"github.com/onsi/ginkgo/internal/types"
 	"github.com/onsi/ginkgo/types"
 )
 
-var noneFlag = internaltypes.FlagTypeNone
-var focusedFlag = internaltypes.FlagTypeFocused
-var pendingFlag = internaltypes.FlagTypePending
+var noneFlag = types.FlagTypeNone
+var focusedFlag = types.FlagTypeFocused
+var pendingFlag = types.FlagTypePending
 
 var _ = Describe("Example", func() {
 	var (
@@ -36,7 +35,7 @@ var _ = Describe("Example", func() {
 		}
 	}
 
-	newIt := func(text string, flag internaltypes.FlagType, fail bool) *leafnodes.ItNode {
+	newIt := func(text string, flag types.FlagType, fail bool) *leafnodes.ItNode {
 		return leafnodes.NewItNode(text, newBody(text, fail), flag, codeLocation, 0, failer, 0)
 	}
 
@@ -44,7 +43,7 @@ var _ = Describe("Example", func() {
 		return leafnodes.NewItNode(text, body, noneFlag, codeLocation, 0, failer, 0)
 	}
 
-	newMeasure := func(text string, flag internaltypes.FlagType, fail bool, samples int) *leafnodes.MeasureNode {
+	newMeasure := func(text string, flag types.FlagType, fail bool, samples int) *leafnodes.MeasureNode {
 		return leafnodes.NewMeasureNode(text, func(Benchmarker) {
 			nodesThatRan = append(nodesThatRan, text)
 			if fail {
@@ -65,7 +64,7 @@ var _ = Describe("Example", func() {
 		return leafnodes.NewJustBeforeEachNode(newBody(text, fail), codeLocation, 0, failer, 0)
 	}
 
-	newContainer := func(text string, flag internaltypes.FlagType, setupNodes ...leafnodes.BasicNode) *containernode.ContainerNode {
+	newContainer := func(text string, flag types.FlagType, setupNodes ...leafnodes.BasicNode) *containernode.ContainerNode {
 		c := containernode.New(text, flag, codeLocation)
 		for _, node := range setupNodes {
 			c.PushSetupNode(node)
@@ -86,28 +85,28 @@ var _ = Describe("Example", func() {
 	Describe("marking examples focused and pending", func() {
 		It("should satisfy various caes", func() {
 			cases := []struct {
-				ContainerFlags []internaltypes.FlagType
-				SubjectFlag    internaltypes.FlagType
+				ContainerFlags []types.FlagType
+				SubjectFlag    types.FlagType
 				Pending        bool
 				Focused        bool
 			}{
-				{[]internaltypes.FlagType{}, noneFlag, false, false},
-				{[]internaltypes.FlagType{}, focusedFlag, false, true},
-				{[]internaltypes.FlagType{}, pendingFlag, true, false},
-				{[]internaltypes.FlagType{noneFlag}, noneFlag, false, false},
-				{[]internaltypes.FlagType{focusedFlag}, noneFlag, false, true},
-				{[]internaltypes.FlagType{pendingFlag}, noneFlag, true, false},
-				{[]internaltypes.FlagType{noneFlag}, focusedFlag, false, true},
-				{[]internaltypes.FlagType{focusedFlag}, focusedFlag, false, true},
-				{[]internaltypes.FlagType{pendingFlag}, focusedFlag, true, true},
-				{[]internaltypes.FlagType{noneFlag}, pendingFlag, true, false},
-				{[]internaltypes.FlagType{focusedFlag}, pendingFlag, true, true},
-				{[]internaltypes.FlagType{pendingFlag}, pendingFlag, true, false},
-				{[]internaltypes.FlagType{focusedFlag, noneFlag}, noneFlag, false, true},
-				{[]internaltypes.FlagType{noneFlag, focusedFlag}, noneFlag, false, true},
-				{[]internaltypes.FlagType{pendingFlag, noneFlag}, noneFlag, true, false},
-				{[]internaltypes.FlagType{noneFlag, pendingFlag}, noneFlag, true, false},
-				{[]internaltypes.FlagType{focusedFlag, pendingFlag}, noneFlag, true, true},
+				{[]types.FlagType{}, noneFlag, false, false},
+				{[]types.FlagType{}, focusedFlag, false, true},
+				{[]types.FlagType{}, pendingFlag, true, false},
+				{[]types.FlagType{noneFlag}, noneFlag, false, false},
+				{[]types.FlagType{focusedFlag}, noneFlag, false, true},
+				{[]types.FlagType{pendingFlag}, noneFlag, true, false},
+				{[]types.FlagType{noneFlag}, focusedFlag, false, true},
+				{[]types.FlagType{focusedFlag}, focusedFlag, false, true},
+				{[]types.FlagType{pendingFlag}, focusedFlag, true, true},
+				{[]types.FlagType{noneFlag}, pendingFlag, true, false},
+				{[]types.FlagType{focusedFlag}, pendingFlag, true, true},
+				{[]types.FlagType{pendingFlag}, pendingFlag, true, false},
+				{[]types.FlagType{focusedFlag, noneFlag}, noneFlag, false, true},
+				{[]types.FlagType{noneFlag, focusedFlag}, noneFlag, false, true},
+				{[]types.FlagType{pendingFlag, noneFlag}, noneFlag, true, false},
+				{[]types.FlagType{noneFlag, pendingFlag}, noneFlag, true, false},
+				{[]types.FlagType{focusedFlag, pendingFlag}, noneFlag, true, true},
 			}
 
 			for i, c := range cases {

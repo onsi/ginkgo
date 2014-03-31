@@ -2,21 +2,21 @@ package leafnodes_test
 
 import (
 	. "github.com/onsi/ginkgo"
+	. "github.com/onsi/ginkgo/internal/leafnodes"
+	. "github.com/onsi/gomega"
+
 	"github.com/onsi/ginkgo/internal/codelocation"
 	Failer "github.com/onsi/ginkgo/internal/failer"
-	. "github.com/onsi/ginkgo/internal/leafnodes"
-	"github.com/onsi/ginkgo/internal/types"
 	"github.com/onsi/ginkgo/types"
-	. "github.com/onsi/gomega"
 	"time"
 )
 
 var _ = Describe("Measure Nodes", func() {
 	It("should report the correct type, text, flag, and code location", func() {
 		codeLocation := codelocation.New(0)
-		measure := NewMeasureNode("my measure node", func(b Benchmarker) {}, internaltypes.FlagTypeFocused, codeLocation, 10, nil, 3)
+		measure := NewMeasureNode("my measure node", func(b Benchmarker) {}, types.FlagTypeFocused, codeLocation, 10, nil, 3)
 		Ω(measure.Type()).Should(Equal(types.ExampleComponentTypeMeasure))
-		Ω(measure.Flag()).Should(Equal(internaltypes.FlagTypeFocused))
+		Ω(measure.Flag()).Should(Equal(types.FlagTypeFocused))
 		Ω(measure.Text()).Should(Equal("my measure node"))
 		Ω(measure.CodeLocation()).Should(Equal(codeLocation))
 		Ω(measure.Samples()).Should(Equal(10))
@@ -35,7 +35,7 @@ var _ = Describe("Measure Nodes", func() {
 					b.RecordValue("bar", 0.1)
 					b.RecordValue("bar", 0.5)
 					b.RecordValue("bar", 0.7)
-				}, internaltypes.FlagTypeFocused, codelocation.New(0), 1, Failer.New(), 3)
+				}, types.FlagTypeFocused, codelocation.New(0), 1, Failer.New(), 3)
 				Ω(measure.Run()).Should(Equal(types.ExampleStatePassed))
 			})
 
@@ -80,7 +80,7 @@ var _ = Describe("Measure Nodes", func() {
 					b.Time("foo", func() {
 						time.Sleep(170 * time.Millisecond)
 					})
-				}, internaltypes.FlagTypeFocused, codelocation.New(0), 1, Failer.New(), 3)
+				}, types.FlagTypeFocused, codelocation.New(0), 1, Failer.New(), 3)
 				Ω(measure.Run()).Should(Equal(types.ExampleStatePassed))
 			})
 

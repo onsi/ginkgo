@@ -8,7 +8,6 @@ import (
 	"github.com/onsi/ginkgo/config"
 	"github.com/onsi/ginkgo/internal/codelocation"
 	Failer "github.com/onsi/ginkgo/internal/failer"
-	"github.com/onsi/ginkgo/internal/types"
 	Writer "github.com/onsi/ginkgo/internal/writer"
 	"github.com/onsi/ginkgo/reporters"
 	"github.com/onsi/ginkgo/types"
@@ -66,19 +65,19 @@ var _ = Describe("Suite", func() {
 				specSuite.PushBeforeEachNode(f("BE"), codelocation.New(0), 0)
 				specSuite.PushJustBeforeEachNode(f("JBE"), codelocation.New(0), 0)
 				specSuite.PushAfterEachNode(f("AE"), codelocation.New(0), 0)
-				specSuite.PushItNode("it", f("IT"), internaltypes.FlagTypeNone, codelocation.New(0), 0)
+				specSuite.PushItNode("it", f("IT"), types.FlagTypeNone, codelocation.New(0), 0)
 
 				specSuite.PushContainerNode("inner container", func() {
-					specSuite.PushItNode("inner it", f("inner IT"), internaltypes.FlagTypeNone, codelocation.New(0), 0)
-				}, internaltypes.FlagTypeNone, codelocation.New(0))
-			}, internaltypes.FlagTypeNone, codelocation.New(0))
+					specSuite.PushItNode("inner it", f("inner IT"), types.FlagTypeNone, codelocation.New(0), 0)
+				}, types.FlagTypeNone, codelocation.New(0))
+			}, types.FlagTypeNone, codelocation.New(0))
 
 			specSuite.PushContainerNode("container 2", func() {
 				specSuite.PushBeforeEachNode(f("BE 2"), codelocation.New(0), 0)
-				specSuite.PushItNode("it 2", f("IT 2"), internaltypes.FlagTypeNone, codelocation.New(0), 0)
-			}, internaltypes.FlagTypeNone, codelocation.New(0))
+				specSuite.PushItNode("it 2", f("IT 2"), types.FlagTypeNone, codelocation.New(0), 0)
+			}, types.FlagTypeNone, codelocation.New(0))
 
-			specSuite.PushItNode("top level it", f("top IT"), internaltypes.FlagTypeNone, codelocation.New(0), 0)
+			specSuite.PushItNode("top level it", f("top IT"), types.FlagTypeNone, codelocation.New(0), 0)
 		})
 
 		JustBeforeEach(func() {
@@ -210,7 +209,7 @@ var _ = Describe("Suite", func() {
 				specSuite.PushItNode("top level it", func() {
 					location = codelocation.New(0)
 					failer.Fail("oops!", location)
-				}, internaltypes.FlagTypeNone, codelocation.New(0), 0)
+				}, types.FlagTypeNone, codelocation.New(0), 0)
 			})
 
 			It("should return false", func() {

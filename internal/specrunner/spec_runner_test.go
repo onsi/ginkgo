@@ -12,14 +12,13 @@ import (
 	"github.com/onsi/ginkgo/internal/example"
 	Failer "github.com/onsi/ginkgo/internal/failer"
 	"github.com/onsi/ginkgo/internal/leafnodes"
-	"github.com/onsi/ginkgo/internal/types"
 	Writer "github.com/onsi/ginkgo/internal/writer"
 	"github.com/onsi/ginkgo/reporters"
 )
 
-var noneFlag = internaltypes.FlagTypeNone
-var focusedFlag = internaltypes.FlagTypeFocused
-var pendingFlag = internaltypes.FlagTypePending
+var noneFlag = types.FlagTypeNone
+var focusedFlag = types.FlagTypeFocused
+var pendingFlag = types.FlagTypePending
 
 var _ = Describe("Example Collection", func() {
 	var (
@@ -33,7 +32,7 @@ var _ = Describe("Example Collection", func() {
 		runner *SpecRunner
 	)
 
-	newExample := func(text string, flag internaltypes.FlagType, fail bool) *example.Example {
+	newExample := func(text string, flag types.FlagType, fail bool) *example.Example {
 		subject := leafnodes.NewItNode(text, func() {
 			writer.AddEvent(text)
 			examplesThatRan = append(examplesThatRan, text)

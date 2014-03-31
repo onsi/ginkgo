@@ -7,11 +7,9 @@ import (
 	"github.com/onsi/ginkgo/internal/failer"
 	"github.com/onsi/ginkgo/internal/leafnodes"
 	"github.com/onsi/ginkgo/internal/specrunner"
-	internaltypes "github.com/onsi/ginkgo/internal/types"
 	"github.com/onsi/ginkgo/internal/writer"
 	"github.com/onsi/ginkgo/reporters"
 	"github.com/onsi/ginkgo/types"
-
 	"math/rand"
 	"time"
 )
@@ -29,7 +27,7 @@ type Suite struct {
 }
 
 func New(failer *failer.Failer) *Suite {
-	topLevelContainer := containernode.New("[Top Level]", internaltypes.FlagTypeNone, types.CodeLocation{})
+	topLevelContainer := containernode.New("[Top Level]", types.FlagTypeNone, types.CodeLocation{})
 
 	return &Suite{
 		topLevelContainer: topLevelContainer,
@@ -89,7 +87,7 @@ func (suite *Suite) CurrentRunningExampleSummary() (*types.ExampleSummary, bool)
 	return suite.runner.CurrentExampleSummary()
 }
 
-func (suite *Suite) PushContainerNode(text string, body func(), flag internaltypes.FlagType, codeLocation types.CodeLocation) {
+func (suite *Suite) PushContainerNode(text string, body func(), flag types.FlagType, codeLocation types.CodeLocation) {
 	container := containernode.New(text, flag, codeLocation)
 	suite.currentContainer.PushContainerNode(container)
 
@@ -103,11 +101,11 @@ func (suite *Suite) PushContainerNode(text string, body func(), flag internaltyp
 	suite.currentContainer = previousContainer
 }
 
-func (suite *Suite) PushItNode(text string, body interface{}, flag internaltypes.FlagType, codeLocation types.CodeLocation, timeout time.Duration) {
+func (suite *Suite) PushItNode(text string, body interface{}, flag types.FlagType, codeLocation types.CodeLocation, timeout time.Duration) {
 	suite.currentContainer.PushSubjectNode(leafnodes.NewItNode(text, body, flag, codeLocation, timeout, suite.failer, suite.containerIndex))
 }
 
-func (suite *Suite) PushMeasureNode(text string, body interface{}, flag internaltypes.FlagType, codeLocation types.CodeLocation, samples int) {
+func (suite *Suite) PushMeasureNode(text string, body interface{}, flag types.FlagType, codeLocation types.CodeLocation, samples int) {
 	suite.currentContainer.PushSubjectNode(leafnodes.NewMeasureNode(text, body, flag, codeLocation, samples, suite.failer, suite.containerIndex))
 }
 

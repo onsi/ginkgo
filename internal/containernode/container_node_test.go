@@ -2,7 +2,6 @@ package containernode_test
 
 import (
 	"github.com/onsi/ginkgo/internal/leafnodes"
-	"github.com/onsi/ginkgo/internal/types"
 	"math/rand"
 
 	. "github.com/onsi/ginkgo"
@@ -21,13 +20,13 @@ var _ = Describe("Container Node", func() {
 
 	BeforeEach(func() {
 		codeLocation = codelocation.New(0)
-		container = New("description text", internaltypes.FlagTypeFocused, codeLocation)
+		container = New("description text", types.FlagTypeFocused, codeLocation)
 	})
 
 	Describe("creating a container node", func() {
 		It("can answer questions about itself", func() {
 			Ω(container.Text()).Should(Equal("description text"))
-			Ω(container.Flag()).Should(Equal(internaltypes.FlagTypeFocused))
+			Ω(container.Flag()).Should(Equal(types.FlagTypeFocused))
 			Ω(container.CodeLocation()).Should(Equal(codeLocation))
 		})
 	})
@@ -48,7 +47,7 @@ var _ = Describe("Container Node", func() {
 			container.PushSetupNode(jusBefA)
 			container.PushSetupNode(jusBefB)
 
-			subject := leafnodes.NewItNode("subject", func() {}, internaltypes.FlagTypeNone, codelocation.New(0), 0, nil, 0)
+			subject := leafnodes.NewItNode("subject", func() {}, types.FlagTypeNone, codelocation.New(0), 0, nil, 0)
 			container.PushSubjectNode(subject)
 
 			Ω(container.SetupNodesOfType(types.ExampleComponentTypeBeforeEach)).Should(Equal([]leafnodes.BasicNode{befA, befB}))
@@ -65,13 +64,13 @@ var _ = Describe("Container Node", func() {
 		)
 
 		BeforeEach(func() {
-			itA = leafnodes.NewItNode("Banana", func() {}, internaltypes.FlagTypeNone, codelocation.New(0), 0, nil, 0)
-			itB = leafnodes.NewItNode("Apple", func() {}, internaltypes.FlagTypeNone, codelocation.New(0), 0, nil, 0)
+			itA = leafnodes.NewItNode("Banana", func() {}, types.FlagTypeNone, codelocation.New(0), 0, nil, 0)
+			itB = leafnodes.NewItNode("Apple", func() {}, types.FlagTypeNone, codelocation.New(0), 0, nil, 0)
 
-			innerItA = leafnodes.NewItNode("inner A", func() {}, internaltypes.FlagTypeNone, codelocation.New(0), 0, nil, 0)
-			innerItB = leafnodes.NewItNode("inner B", func() {}, internaltypes.FlagTypeNone, codelocation.New(0), 0, nil, 0)
+			innerItA = leafnodes.NewItNode("inner A", func() {}, types.FlagTypeNone, codelocation.New(0), 0, nil, 0)
+			innerItB = leafnodes.NewItNode("inner B", func() {}, types.FlagTypeNone, codelocation.New(0), 0, nil, 0)
 
-			innerContainer = New("Orange", internaltypes.FlagTypeNone, codelocation.New(0))
+			innerContainer = New("Orange", types.FlagTypeNone, codelocation.New(0))
 
 			container.PushSubjectNode(itA)
 			container.PushContainerNode(innerContainer)

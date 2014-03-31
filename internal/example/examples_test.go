@@ -10,18 +10,18 @@ import (
 	"github.com/onsi/ginkgo/internal/codelocation"
 	"github.com/onsi/ginkgo/internal/containernode"
 	"github.com/onsi/ginkgo/internal/leafnodes"
-	"github.com/onsi/ginkgo/internal/types"
+	"github.com/onsi/ginkgo/types"
 )
 
 var _ = Describe("Examples", func() {
 	var examples *Examples
 
-	newExample := func(text string, flag internaltypes.FlagType) *Example {
+	newExample := func(text string, flag types.FlagType) *Example {
 		subject := leafnodes.NewItNode(text, func() {}, flag, codelocation.New(0), 0, nil, 0)
 		return New(subject, []*containernode.ContainerNode{})
 	}
 
-	newMeasureExample := func(text string, flag internaltypes.FlagType) *Example {
+	newMeasureExample := func(text string, flag types.FlagType) *Example {
 		subject := leafnodes.NewMeasureNode(text, func(Benchmarker) {}, flag, codelocation.New(0), 0, nil, 0)
 		return New(subject, []*containernode.ContainerNode{})
 	}
@@ -29,7 +29,7 @@ var _ = Describe("Examples", func() {
 	newExamples := func(args ...interface{}) *Examples {
 		examples := []*Example{}
 		for index := 0; index < len(args)-1; index += 2 {
-			examples = append(examples, newExample(args[index].(string), args[index+1].(internaltypes.FlagType)))
+			examples = append(examples, newExample(args[index].(string), args[index+1].(types.FlagType)))
 		}
 		return NewExamples(examples)
 	}

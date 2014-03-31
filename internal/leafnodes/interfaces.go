@@ -1,7 +1,6 @@
 package leafnodes
 
 import (
-	"github.com/onsi/ginkgo/internal/types"
 	"github.com/onsi/ginkgo/types"
 )
 
@@ -15,6 +14,6 @@ type SubjectNode interface {
 	BasicNode
 
 	Text() string
-	Flag() internaltypes.FlagType
+	Flag() types.FlagType
 	Samples() int
 }

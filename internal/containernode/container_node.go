@@ -2,7 +2,6 @@ package containernode
 
 import (
 	"github.com/onsi/ginkgo/internal/leafnodes"
-	"github.com/onsi/ginkgo/internal/types"
 	"github.com/onsi/ginkgo/types"
 	"math/rand"
 	"sort"
@@ -28,14 +27,14 @@ type CollatedNodes struct {
 
 type ContainerNode struct {
 	text         string
-	flag         internaltypes.FlagType
+	flag         types.FlagType
 	codeLocation types.CodeLocation
 
 	setupNodes               []leafnodes.BasicNode
 	subjectAndContainerNodes []subjectOrContainerNode
 }
 
-func New(text string, flag internaltypes.FlagType, codeLocation types.CodeLocation) *ContainerNode {
+func New(text string, flag types.FlagType, codeLocation types.CodeLocation) *ContainerNode {
 	return &ContainerNode{
 		text:         text,
 		flag:         flag,
@@ -108,7 +107,7 @@ func (node *ContainerNode) CodeLocation() types.CodeLocation {
 	return node.codeLocation
 }
 
-func (node *ContainerNode) Flag() internaltypes.FlagType {
+func (node *ContainerNode) Flag() types.FlagType {
 	return node.flag
 }
 

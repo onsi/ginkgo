@@ -2,17 +2,16 @@ package leafnodes_test
 
 import (
 	. "github.com/onsi/ginkgo"
-	. "github.com/onsi/gomega"
-	"reflect"
-
 	. "github.com/onsi/ginkgo/internal/leafnodes"
+	. "github.com/onsi/gomega"
+
+	"reflect"
+	"runtime"
+	"time"
 
 	"github.com/onsi/ginkgo/internal/codelocation"
 	Failer "github.com/onsi/ginkgo/internal/failer"
-	"github.com/onsi/ginkgo/internal/types"
 	"github.com/onsi/ginkgo/types"
-	"runtime"
-	"time"
 )
 
 type runnable interface {
@@ -294,7 +293,7 @@ func InvalidSharedRunnerBehaviors(build func(body interface{}, timeout time.Dura
 var _ = Describe("Shared RunnableNode behavior", func() {
 	Describe("It Nodes", func() {
 		build := func(body interface{}, timeout time.Duration, failer *Failer.Failer, componentCodeLocation types.CodeLocation, componentIndex int) runnable {
-			return NewItNode("", body, internaltypes.FlagTypeFocused, componentCodeLocation, timeout, failer, componentIndex)
+			return NewItNode("", body, types.FlagTypeFocused, componentCodeLocation, timeout, failer, componentIndex)
 		}
 
 		SynchronousSharedRunnerBehaviors(build, types.ExampleComponentTypeIt)
@@ -306,7 +305,7 @@ var _ = Describe("Shared RunnableNode behavior", func() {
 		build := func(body interface{}, _ time.Duration, failer *Failer.Failer, componentCodeLocation types.CodeLocation, componentIndex int) runnable {
 			return NewMeasureNode("", func(Benchmarker) {
 				reflect.ValueOf(body).Call([]reflect.Value{})
-			}, internaltypes.FlagTypeFocused, componentCodeLocation, 10, failer, componentIndex)
+			}, types.FlagTypeFocused, componentCodeLocation, 10, failer, componentIndex)
 		}
 
 		SynchronousSharedRunnerBehaviors(build, types.ExampleComponentTypeMeasure)

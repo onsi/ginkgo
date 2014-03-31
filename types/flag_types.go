@@ -1,4 +1,4 @@
-package internaltypes
+package types
 
 type FlagType uint
 

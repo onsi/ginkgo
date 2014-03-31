@@ -2,7 +2,6 @@ package leafnodes
 
 import (
 	"github.com/onsi/ginkgo/internal/failer"
-	"github.com/onsi/ginkgo/internal/types"
 	"github.com/onsi/ginkgo/types"
 	"reflect"
 )
@@ -11,12 +10,12 @@ type MeasureNode struct {
 	runner *runner
 
 	text        string
-	flag        internaltypes.FlagType
+	flag        types.FlagType
 	samples     int
 	benchmarker *benchmarker
 }
 
-func NewMeasureNode(text string, body interface{}, flag internaltypes.FlagType, codeLocation types.CodeLocation, samples int, failer *failer.Failer, componentIndex int) *MeasureNode {
+func NewMeasureNode(text string, body interface{}, flag types.FlagType, codeLocation types.CodeLocation, samples int, failer *failer.Failer, componentIndex int) *MeasureNode {
 	benchmarker := newBenchmarker()
 
 	wrappedBody := func() {
@@ -49,7 +48,7 @@ func (node *MeasureNode) Text() string {
 	return node.text
 }
 
-func (node *MeasureNode) Flag() internaltypes.FlagType {
+func (node *MeasureNode) Flag() types.FlagType {
 	return node.flag
 }
 

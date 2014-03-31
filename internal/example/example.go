@@ -3,7 +3,6 @@ package example
 import (
 	"github.com/onsi/ginkgo/internal/containernode"
 	"github.com/onsi/ginkgo/internal/leafnodes"
-	"github.com/onsi/ginkgo/internal/types"
 	"github.com/onsi/ginkgo/types"
 	"time"
 )
@@ -23,7 +22,7 @@ func New(subject leafnodes.SubjectNode, containers []*containernode.ContainerNod
 	ex := &Example{
 		subject:    subject,
 		containers: containers,
-		focused:    subject.Flag() == internaltypes.FlagTypeFocused,
+		focused:    subject.Flag() == types.FlagTypeFocused,
 	}
 
 	ex.processFlag(subject.Flag())
@@ -34,10 +33,10 @@ func New(subject leafnodes.SubjectNode, containers []*containernode.ContainerNod
 	return ex
 }
 
-func (ex *Example) processFlag(flag internaltypes.FlagType) {
-	if flag == internaltypes.FlagTypeFocused {
+func (ex *Example) processFlag(flag types.FlagType) {
+	if flag == types.FlagTypeFocused {
 		ex.focused = true
-	} else if flag == internaltypes.FlagTypePending {
+	} else if flag == types.FlagTypePending {
 		ex.state = types.ExampleStatePending
 	}
 }
