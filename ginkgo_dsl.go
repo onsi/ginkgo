@@ -75,6 +75,9 @@ type GinkgoTestingT interface {
 // For example, with testify:
 // assert.Equal(GinkgoT(), 123, 123, "they should be equal")
 //
+// Or with gomock:
+// gomock.NewController(GinkgoT())
+//
 // GinkgoT() takes an optional offset argument that can be used to get the
 // correct line number associated with the failure.
 func GinkgoT(optionalOffset ...int) GinkgoTInterface {

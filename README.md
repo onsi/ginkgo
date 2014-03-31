@@ -37,8 +37,10 @@ To discuss Ginkgo and get updates, join the [google group](https://groups.google
 
     The `ginkgo` CLI is convenient, but purely optional -- Ginkgo works just fine with `go test`
 
+- Straightforward support for third-party testing libraries such as [Gomock](https://code.google.com/p/gomock/) and [Testify](https://github.com/stretchr/testify).  Check out the [docs](http://onsi.github.io/ginkgo/#third_party_integrations) for details.
+
 - A modular architecture that lets you easily:
-    - Write [custom reporters](http://onsi.github.io/ginkgo/#writing_custom_reporters) (for example, Ginkgo comes with a [JUnit XML reporter](http://onsi.github.io/ginkgo/#generating_junit_xml_output))
+    - Write [custom reporters](http://onsi.github.io/ginkgo/#writing_custom_reporters) (for example, Ginkgo comes with a [JUnit XML reporter](http://onsi.github.io/ginkgo/#generating_junit_xml_output) and a TeamCity reporter).
     - [Adapt an existing matcher library (or write your own!)](http://onsi.github.io/ginkgo/#using_other_matcher_libraries) to work with Ginkgo
 
 ## [Gomega](http://github.com/onsi/gomega): Ginkgo's Preferred Matcher Library
