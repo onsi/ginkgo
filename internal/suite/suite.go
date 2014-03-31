@@ -1,4 +1,4 @@
-package internal
+package suite
 
 import (
 	"github.com/onsi/ginkgo/config"
@@ -24,7 +24,7 @@ type Suite struct {
 	failer            *failer.Failer
 }
 
-func NewSuite(failer *failer.Failer) *Suite {
+func New(failer *failer.Failer) *Suite {
 	topLevelContainer := containernode.New("[Top Level]", internaltypes.FlagTypeNone, types.CodeLocation{})
 
 	return &Suite{

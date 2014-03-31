@@ -13,9 +13,9 @@ package ginkgo
 
 import (
 	"github.com/onsi/ginkgo/config"
-	"github.com/onsi/ginkgo/internal"
 	"github.com/onsi/ginkgo/internal/codelocation"
 	"github.com/onsi/ginkgo/internal/failer"
+	"github.com/onsi/ginkgo/internal/suite"
 	"github.com/onsi/ginkgo/internal/testingtproxy"
 	"github.com/onsi/ginkgo/internal/types"
 	"github.com/onsi/ginkgo/internal/writer"
@@ -45,14 +45,14 @@ at the top of the goroutine that caused this panic.
 
 const defaultTimeout = 1
 
-var globalSuite *internal.Suite
+var globalSuite *suite.Suite
 var globalFailer *failer.Failer
 
 func init() {
 	config.Flags("ginkgo", true)
 	GinkgoWriter = writer.New(os.Stdout)
 	globalFailer = failer.New()
-	globalSuite = internal.NewSuite(globalFailer)
+	globalSuite = suite.New(globalFailer)
 }
 
 //GinkgoWriter implements an io.Writer
