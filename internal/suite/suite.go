@@ -16,6 +16,10 @@ import (
 	"time"
 )
 
+type ginkgoTestingT interface {
+	Fail()
+}
+
 type Suite struct {
 	topLevelContainer *containernode.ContainerNode
 	currentContainer  *containernode.ContainerNode
@@ -35,7 +39,7 @@ func New(failer *failer.Failer) *Suite {
 	}
 }
 
-func (suite *Suite) Run(t internaltypes.GinkgoTestingT, description string, reporters []reporters.Reporter, writer writer.WriterInterface, config config.GinkgoConfigType) bool {
+func (suite *Suite) Run(t ginkgoTestingT, description string, reporters []reporters.Reporter, writer writer.WriterInterface, config config.GinkgoConfigType) bool {
 	if config.ParallelTotal < 1 {
 		panic("ginkgo.parallel.total must be >= 1")
 	}
@@ -47,9 +51,13 @@ func (suite *Suite) Run(t internaltypes.GinkgoTestingT, description string, repo
 	r := rand.New(rand.NewSource(config.RandomSeed))
 	suite.topLevelContainer.Shuffle(r)
 	examples := suite.generateExamples(description, config)
-	suite.runner = specrunner.New(t, description, examples, reporters, writer, config)
+	suite.runner = specrunner.New(description, examples, reporters, writer, config)
 
-	return suite.runner.Run()
+	success := suite.runner.Run()
+	if !success {
+		t.Fail()
+	}
+	return success
 }
 
 func (suite *Suite) generateExamples(description string, config config.GinkgoConfigType) *example.Examples {

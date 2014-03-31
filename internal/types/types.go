@@ -4,10 +4,6 @@ import (
 	"github.com/onsi/ginkgo/types"
 )
 
-type GinkgoTestingT interface {
-	Fail()
-}
-
 type FlagType uint
 
 const (

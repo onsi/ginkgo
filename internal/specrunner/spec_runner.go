@@ -3,7 +3,6 @@ package specrunner
 import (
 	"github.com/onsi/ginkgo/config"
 	"github.com/onsi/ginkgo/internal/example"
-	"github.com/onsi/ginkgo/internal/types"
 	Writer "github.com/onsi/ginkgo/internal/writer"
 	"github.com/onsi/ginkgo/reporters"
 	"github.com/onsi/ginkgo/types"
@@ -12,7 +11,6 @@ import (
 )
 
 type SpecRunner struct {
-	t              internaltypes.GinkgoTestingT
 	description    string
 	examples       *example.Examples
 	reporters      []reporters.Reporter
@@ -23,9 +21,8 @@ type SpecRunner struct {
 	config         config.GinkgoConfigType
 }
 
-func New(t internaltypes.GinkgoTestingT, description string, examples *example.Examples, reporters []reporters.Reporter, writer Writer.WriterInterface, config config.GinkgoConfigType) *SpecRunner {
+func New(description string, examples *example.Examples, reporters []reporters.Reporter, writer Writer.WriterInterface, config config.GinkgoConfigType) *SpecRunner {
 	return &SpecRunner{
-		t:           t,
 		description: description,
 		examples:    examples,
 		reporters:   reporters,
@@ -35,81 +32,77 @@ func New(t internaltypes.GinkgoTestingT, description string, examples *example.E
 	}
 }
 
-func (collection *SpecRunner) Run() bool {
-	collection.reportSuiteWillBegin()
+func (runner *SpecRunner) Run() bool {
+	runner.reportSuiteWillBegin()
 	suiteFailed := false
 
-	for _, example := range collection.examples.Examples() {
-		collection.writer.Truncate()
+	for _, example := range runner.examples.Examples() {
+		runner.writer.Truncate()
 
-		collection.reportExampleWillRun(example)
+		runner.reportExampleWillRun(example)
 
 		if !example.Skipped() && !example.Pending() {
-			collection.runningExample = example
+			runner.runningExample = example
 			example.Run()
-			collection.runningExample = nil
+			runner.runningExample = nil
 			if example.Failed() {
 				suiteFailed = true
-				collection.writer.DumpOut()
+				runner.writer.DumpOut()
 			}
-		} else if example.Pending() && collection.config.FailOnPending {
+		} else if example.Pending() && runner.config.FailOnPending {
 			suiteFailed = true
 		}
 
-		collection.reportExampleDidComplete(example)
+		runner.reportExampleDidComplete(example)
 	}
 
-	collection.reportSuiteDidEnd()
-
-	if suiteFailed {
-		collection.t.Fail()
-	}
+	runner.reportSuiteDidEnd()
 
 	return !suiteFailed
 }
 
-func (collection *SpecRunner) CurrentExampleSummary() (*types.ExampleSummary, bool) {
-	if collection.runningExample == nil {
+func (runner *SpecRunner) CurrentExampleSummary() (*types.ExampleSummary, bool) {
+	if runner.runningExample == nil {
 		return nil, false
 	}
 
-	return collection.runningExample.Summary(collection.suiteID), true
+	return runner.runningExample.Summary(runner.suiteID), true
 }
 
-func (collection *SpecRunner) reportSuiteWillBegin() {
-	collection.startTime = time.Now()
-	summary := collection.summary()
-	for _, reporter := range collection.reporters {
-		reporter.SpecSuiteWillBegin(collection.config, summary)
+func (runner *SpecRunner) reportSuiteWillBegin() {
+	runner.startTime = time.Now()
+	summary := runner.summary()
+	for _, reporter := range runner.reporters {
+		reporter.SpecSuiteWillBegin(runner.config, summary)
 	}
 }
 
-func (collection *SpecRunner) reportExampleWillRun(example *example.Example) {
-	summary := example.Summary(collection.suiteID)
-	for _, reporter := range collection.reporters {
+func (runner *SpecRunner) reportExampleWillRun(example *example.Example) {
+	summary := example.Summary(runner.suiteID)
+	for _, reporter := range runner.reporters {
 		reporter.ExampleWillRun(summary)
 	}
 }
 
-func (collection *SpecRunner) reportExampleDidComplete(example *example.Example) {
-	summary := example.Summary(collection.suiteID)
-	for _, reporter := range collection.reporters {
+func (runner *SpecRunner) reportExampleDidComplete(example *example.Example) {
+	summary := example.Summary(runner.suiteID)
+	for _, reporter := range runner.reporters {
 		reporter.ExampleDidComplete(summary)
 	}
 }
 
-func (collection *SpecRunner) reportSuiteDidEnd() {
-	summary := collection.summary()
-	summary.RunTime = time.Since(collection.startTime)
-	for _, reporter := range collection.reporters {
+func (runner *SpecRunner) reportSuiteDidEnd() {
+	summary := runner.summary()
+	summary.RunTime = time.Since(runner.startTime)
+	for _, reporter := range runner.reporters {
 		reporter.SpecSuiteDidEnd(summary)
 	}
 }
 
-func (collection *SpecRunner) countExamplesSatisfying(filter func(ex *example.Example) bool) (count int) {
+func (runner *SpecRunner) countExamplesSatisfying(filter func(ex *example.Example) bool) (count int) {
 	count = 0
 
-	for _, example := range collection.examples.Examples() {
+	for _, example := range runner.examples.Examples() {
 		if filter(example) {
 			count++
 		}
@@ -118,24 +111,24 @@ func (collection *SpecRunner) countExamplesSatisfying(filter func(ex *example.Ex
 	return count
 }
 
-func (collection *SpecRunner) summary() *types.SuiteSummary {
-	numberOfExamplesThatWillBeRun := collection.countExamplesSatisfying(func(ex *example.Example) bool {
+func (runner *SpecRunner) summary() *types.SuiteSummary {
+	numberOfExamplesThatWillBeRun := runner.countExamplesSatisfying(func(ex *example.Example) bool {
 		return !ex.Skipped() && !ex.Pending()
 	})
 
-	numberOfPendingExamples := collection.countExamplesSatisfying(func(ex *example.Example) bool {
+	numberOfPendingExamples := runner.countExamplesSatisfying(func(ex *example.Example) bool {
 		return ex.Pending()
 	})
 
-	numberOfSkippedExamples := collection.countExamplesSatisfying(func(ex *example.Example) bool {
+	numberOfSkippedExamples := runner.countExamplesSatisfying(func(ex *example.Example) bool {
 		return ex.Skipped()
 	})
 
-	numberOfPassedExamples := collection.countExamplesSatisfying(func(ex *example.Example) bool {
+	numberOfPassedExamples := runner.countExamplesSatisfying(func(ex *example.Example) bool {
 		return ex.Passed()
 	})
 
-	numberOfFailedExamples := collection.countExamplesSatisfying(func(ex *example.Example) bool {
+	numberOfFailedExamples := runner.countExamplesSatisfying(func(ex *example.Example) bool {
 		return ex.Failed()
 	})
 
@@ -143,17 +136,17 @@ func (collection *SpecRunner) summary() *types.SuiteSummary {
 
 	if numberOfFailedExamples > 0 {
 		success = false
-	} else if numberOfPendingExamples > 0 && collection.config.FailOnPending {
+	} else if numberOfPendingExamples > 0 && runner.config.FailOnPending {
 		success = false
 	}
 
 	return &types.SuiteSummary{
-		SuiteDescription: collection.description,
+		SuiteDescription: runner.description,
 		SuiteSucceeded:   success,
-		SuiteID:          collection.suiteID,
+		SuiteID:          runner.suiteID,
 
-		NumberOfExamplesBeforeParallelization: collection.examples.NumberOfOriginalExamples(),
-		NumberOfTotalExamples:                 len(collection.examples.Examples()),
+		NumberOfExamplesBeforeParallelization: runner.examples.NumberOfOriginalExamples(),
+		NumberOfTotalExamples:                 len(runner.examples.Examples()),
 		NumberOfExamplesThatWillBeRun:         numberOfExamplesThatWillBeRun,
 		NumberOfPendingExamples:               numberOfPendingExamples,
 		NumberOfSkippedExamples:               numberOfSkippedExamples,

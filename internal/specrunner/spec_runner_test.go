@@ -23,7 +23,6 @@ var pendingFlag = internaltypes.FlagTypePending
 
 var _ = Describe("Example Collection", func() {
 	var (
-		T         *fakeTestingT
 		reporter1 *reporters.FakeReporter
 		reporter2 *reporters.FakeReporter
 		failer    *Failer.Failer
@@ -53,11 +52,10 @@ var _ = Describe("Example Collection", func() {
 	}
 
 	newRunner := func(config config.GinkgoConfigType, examples ...*example.Example) *SpecRunner {
-		return New(T, "description", example.NewExamples(examples), []reporters.Reporter{reporter1, reporter2}, writer, config)
+		return New("description", example.NewExamples(examples), []reporters.Reporter{reporter1, reporter2}, writer, config)
 	}
 
 	BeforeEach(func() {
-		T = &fakeTestingT{}
 		reporter1 = reporters.NewFakeReporter()
 		reporter2 = reporters.NewFakeReporter()
 		writer = Writer.NewFake()
@@ -170,7 +168,6 @@ var _ = Describe("Example Collection", func() {
 			It("should return true and report success", func() {
 				Ω(runner.Run()).Should(BeTrue())
 				Ω(reporter1.EndSummary.SuiteSucceeded).Should(BeTrue())
-				Ω(T.didFail).Should(BeFalse())
 			})
 		})
 
@@ -182,7 +179,6 @@ var _ = Describe("Example Collection", func() {
 			It("should return false and report failure", func() {
 				Ω(runner.Run()).Should(BeFalse())
 				Ω(reporter1.EndSummary.SuiteSucceeded).Should(BeFalse())
-				Ω(T.didFail).Should(BeTrue())
 			})
 		})
 
@@ -194,7 +190,6 @@ var _ = Describe("Example Collection", func() {
 			It("should return false and report failure", func() {
 				Ω(runner.Run()).Should(BeFalse())
 				Ω(reporter1.EndSummary.SuiteSucceeded).Should(BeFalse())
-				Ω(T.didFail).Should(BeTrue())
 			})
 		})
 	})
@@ -246,7 +241,7 @@ var _ = Describe("Example Collection", func() {
 				newExample("C", noneFlag, false),
 			})
 			examples.TrimForParallelization(2, 1)
-			runner = New(T, "description", examples, []reporters.Reporter{reporter1, reporter2}, writer, config.GinkgoConfigType{})
+			runner = New("description", examples, []reporters.Reporter{reporter1, reporter2}, writer, config.GinkgoConfigType{})
 			runner.Run()
 
 			Ω(reporter1.EndSummary.NumberOfExamplesBeforeParallelization).Should(Equal(3))
