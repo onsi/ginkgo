@@ -3,7 +3,6 @@ package specrunner
 import (
 	"github.com/onsi/ginkgo/config"
 	"github.com/onsi/ginkgo/internal/example"
-	"github.com/onsi/ginkgo/internal/randomid"
 	"github.com/onsi/ginkgo/internal/types"
 	Writer "github.com/onsi/ginkgo/internal/writer"
 	"github.com/onsi/ginkgo/reporters"
@@ -32,7 +31,7 @@ func New(t internaltypes.GinkgoTestingT, description string, examples *example.E
 		reporters:   reporters,
 		writer:      writer,
 		config:      config,
-		suiteID:     randomid.New(),
+		suiteID:     randomID(),
 	}
 }
 

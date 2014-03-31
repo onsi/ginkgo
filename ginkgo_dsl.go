@@ -16,6 +16,7 @@ import (
 	"github.com/onsi/ginkgo/internal"
 	"github.com/onsi/ginkgo/internal/codelocation"
 	"github.com/onsi/ginkgo/internal/failer"
+	"github.com/onsi/ginkgo/internal/testingtproxy"
 	"github.com/onsi/ginkgo/internal/types"
 	"github.com/onsi/ginkgo/internal/writer"
 	"github.com/onsi/ginkgo/remote"
@@ -81,7 +82,7 @@ func GinkgoT(optionalOffset ...int) GinkgoTInterface {
 	if len(optionalOffset) > 0 {
 		offset = optionalOffset[0]
 	}
-	return internal.NewGinkgoTestingTProxy(GinkgoWriter, Fail, offset)
+	return testingtproxy.New(GinkgoWriter, Fail, offset)
 }
 
 //The interface returned by GinkgoT()

@@ -1,11 +1,11 @@
-package randomid
+package specrunner
 
 import (
 	"crypto/rand"
 	"fmt"
 )
 
-func New() string {
+func randomID() string {
 	b := make([]byte, 8)
 	_, err := rand.Read(b)
 	if err != nil {

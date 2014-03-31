@@ -1,4 +1,4 @@
-package internal
+package testingtproxy
 
 import (
 	"fmt"
@@ -7,7 +7,7 @@ import (
 
 type failFunc func(message string, callerSkip ...int)
 
-func NewGinkgoTestingTProxy(writer io.Writer, fail failFunc, offset int) *ginkgoTestingTProxy {
+func New(writer io.Writer, fail failFunc, offset int) *ginkgoTestingTProxy {
 	return &ginkgoTestingTProxy{
 		fail:   fail,
 		offset: offset,

@@ -255,4 +255,22 @@ var _ = Describe("Example Collection", func() {
 			Ω(reporter1.EndSummary.NumberOfPendingExamples).Should(Equal(1))
 		})
 	})
+
+	Describe("generating a suite id", func() {
+		It("should generate an id randomly", func() {
+			runnerA := newRunner(config.GinkgoConfigType{})
+			runnerA.Run()
+			IDA := reporter1.BeginSummary.SuiteID
+
+			runnerB := newRunner(config.GinkgoConfigType{})
+			runnerB.Run()
+			IDB := reporter1.BeginSummary.SuiteID
+
+			IDRegexp := "[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}"
+			Ω(IDA).Should(MatchRegexp(IDRegexp))
+			Ω(IDB).Should(MatchRegexp(IDRegexp))
+
+			Ω(IDA).ShouldNot(Equal(IDB))
+		})
+	})
 })
