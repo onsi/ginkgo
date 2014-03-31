@@ -57,45 +57,45 @@ func NewJUnitReporter(filename string) *JUnitReporter {
 
 func (reporter *JUnitReporter) SpecSuiteWillBegin(config config.GinkgoConfigType, summary *types.SuiteSummary) {
 	reporter.suite = JUnitTestSuite{
-		Tests:     summary.NumberOfExamplesThatWillBeRun,
+		Tests:     summary.NumberOfSpecsThatWillBeRun,
 		TestCases: []JUnitTestCase{},
 	}
 	reporter.testSuiteName = summary.SuiteDescription
 }
 
-func (reporter *JUnitReporter) ExampleWillRun(exampleSummary *types.ExampleSummary) {
+func (reporter *JUnitReporter) SpecWillRun(specSummary *types.SpecSummary) {
 }
 
-func (reporter *JUnitReporter) ExampleDidComplete(exampleSummary *types.ExampleSummary) {
+func (reporter *JUnitReporter) SpecDidComplete(specSummary *types.SpecSummary) {
 	testCase := JUnitTestCase{
-		Name:      strings.Join(exampleSummary.ComponentTexts[1:], " "),
+		Name:      strings.Join(specSummary.ComponentTexts[1:], " "),
 		ClassName: reporter.testSuiteName,
 	}
-	if exampleSummary.State == types.ExampleStateFailed || exampleSummary.State == types.ExampleStateTimedOut || exampleSummary.State == types.ExampleStatePanicked {
+	if specSummary.State == types.SpecStateFailed || specSummary.State == types.SpecStateTimedOut || specSummary.State == types.SpecStatePanicked {
 		failureType := ""
-		switch exampleSummary.State {
-		case types.ExampleStateFailed:
+		switch specSummary.State {
+		case types.SpecStateFailed:
 			failureType = "Failure"
-		case types.ExampleStateTimedOut:
+		case types.SpecStateTimedOut:
 			failureType = "Timeout"
-		case types.ExampleStatePanicked:
+		case types.SpecStatePanicked:
 			failureType = "Panic"
 		}
 		testCase.FailureMessage = &JUnitFailureMessage{
 			Type:    failureType,
-			Message: fmt.Sprintf("%s\n%s", exampleSummary.Failure.ComponentCodeLocation.String(), exampleSummary.Failure.Message),
+			Message: fmt.Sprintf("%s\n%s", specSummary.Failure.ComponentCodeLocation.String(), specSummary.Failure.Message),
 		}
 	}
-	if exampleSummary.State == types.ExampleStateSkipped || exampleSummary.State == types.ExampleStatePending {
+	if specSummary.State == types.SpecStateSkipped || specSummary.State == types.SpecStatePending {
 		testCase.Skipped = &JUnitSkipped{}
 	}
-	testCase.Time = exampleSummary.RunTime.Seconds()
+	testCase.Time = specSummary.RunTime.Seconds()
 	reporter.suite.TestCases = append(reporter.suite.TestCases, testCase)
 }
 
 func (reporter *JUnitReporter) SpecSuiteDidEnd(summary *types.SuiteSummary) {
 	reporter.suite.Time = summary.RunTime.Seconds()
-	reporter.suite.Failures = summary.NumberOfFailedExamples
+	reporter.suite.Failures = summary.NumberOfFailedSpecs
 	file, err := os.Create(reporter.filename)
 	if err != nil {
 		fmt.Printf("Failed to create JUnit report file: %s\n\t%s", reporter.filename, err.Error())

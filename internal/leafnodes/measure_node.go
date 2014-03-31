@@ -23,7 +23,7 @@ func NewMeasureNode(text string, body interface{}, flag types.FlagType, codeLoca
 	}
 
 	return &MeasureNode{
-		runner: newRunner(wrappedBody, codeLocation, 0, failer, types.ExampleComponentTypeMeasure, componentIndex),
+		runner: newRunner(wrappedBody, codeLocation, 0, failer, types.SpecComponentTypeMeasure, componentIndex),
 
 		text:        text,
 		flag:        flag,
@@ -32,16 +32,16 @@ func NewMeasureNode(text string, body interface{}, flag types.FlagType, codeLoca
 	}
 }
 
-func (node *MeasureNode) Run() (outcome types.ExampleState, failure types.ExampleFailure) {
+func (node *MeasureNode) Run() (outcome types.SpecState, failure types.SpecFailure) {
 	return node.runner.run()
 }
 
-func (node *MeasureNode) MeasurementsReport() map[string]*types.ExampleMeasurement {
+func (node *MeasureNode) MeasurementsReport() map[string]*types.SpecMeasurement {
 	return node.benchmarker.measurementsReport()
 }
 
-func (node *MeasureNode) Type() types.ExampleComponentType {
-	return types.ExampleComponentTypeMeasure
+func (node *MeasureNode) Type() types.SpecComponentType {
+	return types.SpecComponentTypeMeasure
 }
 
 func (node *MeasureNode) Text() string {

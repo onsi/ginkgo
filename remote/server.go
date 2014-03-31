@@ -50,17 +50,17 @@ func (server *Server) Start() {
 		writer.WriteHeader(200)
 	})
 
-	mux.HandleFunc("/ExampleWillRun", func(writer http.ResponseWriter, request *http.Request) {
+	mux.HandleFunc("/SpecWillRun", func(writer http.ResponseWriter, request *http.Request) {
 		defer request.Body.Close()
 		body, _ := ioutil.ReadAll(request.Body)
-		server.exampleWillRun(body)
+		server.specWillRun(body)
 		writer.WriteHeader(200)
 	})
 
-	mux.HandleFunc("/ExampleDidComplete", func(writer http.ResponseWriter, request *http.Request) {
+	mux.HandleFunc("/SpecDidComplete", func(writer http.ResponseWriter, request *http.Request) {
 		defer request.Body.Close()
 		body, _ := ioutil.ReadAll(request.Body)
-		server.exampleDidComplete(body)
+		server.specDidComplete(body)
 		writer.WriteHeader(200)
 	})
 
@@ -102,21 +102,21 @@ func (server *Server) specSuiteWillBegin(body []byte) {
 	}
 }
 
-func (server *Server) exampleWillRun(body []byte) {
-	var exampleSummary *types.ExampleSummary
-	json.Unmarshal(body, &exampleSummary)
+func (server *Server) specWillRun(body []byte) {
+	var specSummary *types.SpecSummary
+	json.Unmarshal(body, &specSummary)
 
 	for _, reporter := range server.reporters {
-		reporter.ExampleWillRun(exampleSummary)
+		reporter.SpecWillRun(specSummary)
 	}
 }
 
-func (server *Server) exampleDidComplete(body []byte) {
-	var exampleSummary *types.ExampleSummary
-	json.Unmarshal(body, &exampleSummary)
+func (server *Server) specDidComplete(body []byte) {
+	var specSummary *types.SpecSummary
+	json.Unmarshal(body, &specSummary)
 
 	for _, reporter := range server.reporters {
-		reporter.ExampleDidComplete(exampleSummary)
+		reporter.SpecDidComplete(specSummary)
 	}
 }
 

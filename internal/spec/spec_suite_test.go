@@ -1,4 +1,4 @@
-package example_test
+package spec_test
 
 import (
 	. "github.com/onsi/ginkgo"
@@ -7,7 +7,7 @@ import (
 	"testing"
 )
 
-func TestExample(t *testing.T) {
+func TestSpec(t *testing.T) {
 	RegisterFailHandler(Fail)
-	RunSpecs(t, "Example Suite")
+	RunSpecs(t, "Spec Suite")
 }

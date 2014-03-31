@@ -25,7 +25,7 @@ var _ = Describe("Aggregator", func() {
 		suiteSummary1 *types.SuiteSummary
 		suiteSummary2 *types.SuiteSummary
 
-		exampleSummary *types.ExampleSummary
+		specSummary *types.SpecSummary
 
 		suiteDescription string
 	)
@@ -65,25 +65,25 @@ var _ = Describe("Aggregator", func() {
 		suiteSummary1 = &types.SuiteSummary{
 			SuiteDescription: suiteDescription,
 
-			NumberOfExamplesBeforeParallelization: 30,
-			NumberOfTotalExamples:                 17,
-			NumberOfExamplesThatWillBeRun:         15,
-			NumberOfPendingExamples:               1,
-			NumberOfSkippedExamples:               1,
+			NumberOfSpecsBeforeParallelization: 30,
+			NumberOfTotalSpecs:                 17,
+			NumberOfSpecsThatWillBeRun:         15,
+			NumberOfPendingSpecs:               1,
+			NumberOfSkippedSpecs:               1,
 		}
 
 		suiteSummary2 = &types.SuiteSummary{
 			SuiteDescription: suiteDescription,
 
-			NumberOfExamplesBeforeParallelization: 30,
-			NumberOfTotalExamples:                 13,
-			NumberOfExamplesThatWillBeRun:         8,
-			NumberOfPendingExamples:               2,
-			NumberOfSkippedExamples:               3,
+			NumberOfSpecsBeforeParallelization: 30,
+			NumberOfTotalSpecs:                 13,
+			NumberOfSpecsThatWillBeRun:         8,
+			NumberOfPendingSpecs:               2,
+			NumberOfSkippedSpecs:               3,
 		}
 
-		exampleSummary = &types.ExampleSummary{
-			State: types.ExampleStatePassed,
+		specSummary = &types.SpecSummary{
+			State: types.SpecStatePassed,
 		}
 	})
 
@@ -130,14 +130,14 @@ var _ = Describe("Aggregator", func() {
 		})
 	})
 
-	Describe("Announcing examples", func() {
+	Describe("Announcing specs", func() {
 		Context("when the parallel-suites have not all started", func() {
 			BeforeEach(func() {
-				aggregator.ExampleDidComplete(exampleSummary)
+				aggregator.SpecDidComplete(specSummary)
 				runtime.Gosched()
 			})
 
-			It("should not announce any examples", func() {
+			It("should not announce any specs", func() {
 				Ω(stenographer.Calls).Should(BeEmpty())
 			})
 
@@ -146,11 +146,11 @@ var _ = Describe("Aggregator", func() {
 					beginSuite()
 				})
 
-				It("should announce the examples", func() {
+				It("should announce the specs", func() {
 					Eventually(func() interface{} {
 						lastCall := stenographer.Calls[len(stenographer.Calls)-1]
 						return lastCall
-					}).Should(Equal(call("AnnounceSuccesfulExample", exampleSummary)))
+					}).Should(Equal(call("AnnounceSuccesfulSpec", specSummary)))
 				})
 			})
 		})
@@ -161,24 +161,24 @@ var _ = Describe("Aggregator", func() {
 				stenographer.Reset()
 			})
 
-			Context("When an example completes", func() {
+			Context("When a spec completes", func() {
 				BeforeEach(func() {
-					aggregator.ExampleDidComplete(exampleSummary)
+					aggregator.SpecDidComplete(specSummary)
 					Eventually(func() interface{} {
 						return stenographer.Calls
 					}).Should(HaveLen(3))
 				})
 
-				It("should announce that the example will run (when in verbose mode)", func() {
-					Ω(stenographer.Calls[0]).Should(Equal(call("AnnounceExampleWillRun", exampleSummary)))
+				It("should announce that the spec will run (when in verbose mode)", func() {
+					Ω(stenographer.Calls[0]).Should(Equal(call("AnnounceSpecWillRun", specSummary)))
 				})
 
-				It("should announce the captured stdout of the example", func() {
-					Ω(stenographer.Calls[1]).Should(Equal(call("AnnounceCapturedOutput", exampleSummary)))
+				It("should announce the captured stdout of the spec", func() {
+					Ω(stenographer.Calls[1]).Should(Equal(call("AnnounceCapturedOutput", specSummary)))
 				})
 
 				It("should announce completion", func() {
-					Ω(stenographer.Calls[2]).Should(Equal(call("AnnounceSuccesfulExample", exampleSummary)))
+					Ω(stenographer.Calls[2]).Should(Equal(call("AnnounceSuccesfulSpec", specSummary)))
 				})
 			})
 		})
@@ -210,11 +210,11 @@ var _ = Describe("Aggregator", func() {
 				time.Sleep(200 * time.Millisecond)
 
 				suiteSummary1.SuiteSucceeded = true
-				suiteSummary1.NumberOfPassedExamples = 15
-				suiteSummary1.NumberOfFailedExamples = 0
+				suiteSummary1.NumberOfPassedSpecs = 15
+				suiteSummary1.NumberOfFailedSpecs = 0
 				suiteSummary2.SuiteSucceeded = false
-				suiteSummary2.NumberOfPassedExamples = 5
-				suiteSummary2.NumberOfFailedExamples = 3
+				suiteSummary2.NumberOfPassedSpecs = 5
+				suiteSummary2.NumberOfFailedSpecs = 3
 
 				aggregator.SpecSuiteDidEnd(suiteSummary2)
 				aggregator.SpecSuiteDidEnd(suiteSummary1)
@@ -227,12 +227,12 @@ var _ = Describe("Aggregator", func() {
 				compositeSummary := stenographer.Calls[0].Args[0].(*types.SuiteSummary)
 
 				Ω(compositeSummary.SuiteSucceeded).Should(BeFalse())
-				Ω(compositeSummary.NumberOfExamplesThatWillBeRun).Should(Equal(23))
-				Ω(compositeSummary.NumberOfTotalExamples).Should(Equal(30))
-				Ω(compositeSummary.NumberOfPassedExamples).Should(Equal(20))
-				Ω(compositeSummary.NumberOfFailedExamples).Should(Equal(3))
-				Ω(compositeSummary.NumberOfPendingExamples).Should(Equal(3))
-				Ω(compositeSummary.NumberOfSkippedExamples).Should(Equal(4))
+				Ω(compositeSummary.NumberOfSpecsThatWillBeRun).Should(Equal(23))
+				Ω(compositeSummary.NumberOfTotalSpecs).Should(Equal(30))
+				Ω(compositeSummary.NumberOfPassedSpecs).Should(Equal(20))
+				Ω(compositeSummary.NumberOfFailedSpecs).Should(Equal(3))
+				Ω(compositeSummary.NumberOfPendingSpecs).Should(Equal(3))
+				Ω(compositeSummary.NumberOfSkippedSpecs).Should(Equal(4))
 				Ω(compositeSummary.RunTime.Seconds()).Should(BeNumerically(">", 0.2))
 			})
 		})

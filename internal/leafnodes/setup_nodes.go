@@ -8,14 +8,14 @@ import (
 
 type SetupNode struct {
 	runner   *runner
-	nodeType types.ExampleComponentType
+	nodeType types.SpecComponentType
 }
 
-func (node *SetupNode) Run() (outcome types.ExampleState, failure types.ExampleFailure) {
+func (node *SetupNode) Run() (outcome types.SpecState, failure types.SpecFailure) {
 	return node.runner.run()
 }
 
-func (node *SetupNode) Type() types.ExampleComponentType {
+func (node *SetupNode) Type() types.SpecComponentType {
 	return node.runner.nodeType
 }
 
@@ -25,18 +25,18 @@ func (node *SetupNode) CodeLocation() types.CodeLocation {
 
 func NewBeforeEachNode(body interface{}, codeLocation types.CodeLocation, timeout time.Duration, failer *failer.Failer, componentIndex int) *SetupNode {
 	return &SetupNode{
-		runner: newRunner(body, codeLocation, timeout, failer, types.ExampleComponentTypeBeforeEach, componentIndex),
+		runner: newRunner(body, codeLocation, timeout, failer, types.SpecComponentTypeBeforeEach, componentIndex),
 	}
 }
 
 func NewAfterEachNode(body interface{}, codeLocation types.CodeLocation, timeout time.Duration, failer *failer.Failer, componentIndex int) *SetupNode {
 	return &SetupNode{
-		runner: newRunner(body, codeLocation, timeout, failer, types.ExampleComponentTypeAfterEach, componentIndex),
+		runner: newRunner(body, codeLocation, timeout, failer, types.SpecComponentTypeAfterEach, componentIndex),
 	}
 }
 
 func NewJustBeforeEachNode(body interface{}, codeLocation types.CodeLocation, timeout time.Duration, failer *failer.Failer, componentIndex int) *SetupNode {
 	return &SetupNode{
-		runner: newRunner(body, codeLocation, timeout, failer, types.ExampleComponentTypeJustBeforeEach, componentIndex),
+		runner: newRunner(body, codeLocation, timeout, failer, types.SpecComponentTypeJustBeforeEach, componentIndex),
 	}
 }

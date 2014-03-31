@@ -89,7 +89,7 @@ func (node *ContainerNode) PushSetupNode(setupNode leafnodes.BasicNode) {
 	node.setupNodes = append(node.setupNodes, setupNode)
 }
 
-func (node *ContainerNode) SetupNodesOfType(nodeType types.ExampleComponentType) []leafnodes.BasicNode {
+func (node *ContainerNode) SetupNodesOfType(nodeType types.SpecComponentType) []leafnodes.BasicNode {
 	nodes := []leafnodes.BasicNode{}
 	for _, setupNode := range node.setupNodes {
 		if setupNode.Type() == nodeType {

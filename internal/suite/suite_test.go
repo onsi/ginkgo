@@ -123,7 +123,7 @@ var _ = Describe("Suite", func() {
 			Ω(randomValue).Should(BeNumerically(">=", 0.0))
 		}, 10)
 
-		It("creates a node hierarchy, converts it to an example collection, and runs it", func() {
+		It("creates a node hierarchy, converts it to a spec collection, and runs it", func() {
 			Ω(runOrder).Should(Equal([]string{
 				"top BE", "BE", "top JBE", "JBE", "IT", "AE", "top AE",
 				"top BE", "BE", "top JBE", "JBE", "inner IT", "AE", "top AE",
@@ -132,7 +132,7 @@ var _ = Describe("Suite", func() {
 			}))
 		})
 
-		Context("when told to randomize all examples", func() {
+		Context("when told to randomize all specs", func() {
 			BeforeEach(func() {
 				randomizeAllSpecs = true
 			})
@@ -185,7 +185,7 @@ var _ = Describe("Suite", func() {
 				focusString = `inner|\d`
 			})
 
-			It("converts the filter to a regular expression and uses it to filter the running examples", func() {
+			It("converts the filter to a regular expression and uses it to filter the running specs", func() {
 				Ω(runOrder).Should(Equal([]string{
 					"top BE", "BE", "top JBE", "JBE", "inner IT", "AE", "top AE",
 					"top BE", "BE 2", "top JBE", "IT 2", "top AE",
@@ -221,8 +221,8 @@ var _ = Describe("Suite", func() {
 			})
 
 			It("generates the correct failure data", func() {
-				Ω(fakeR.ExampleSummaries[0].Failure.Message).Should(Equal("oops!"))
-				Ω(fakeR.ExampleSummaries[0].Failure.Location).Should(Equal(location))
+				Ω(fakeR.SpecSummaries[0].Failure.Message).Should(Equal("oops!"))
+				Ω(fakeR.SpecSummaries[0].Failure.Location).Should(Equal(location))
 			})
 		})
 	})

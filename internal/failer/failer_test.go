@@ -24,57 +24,57 @@ var _ = Describe("Failer", func() {
 
 	Context("with no failures", func() {
 		It("should return success when drained", func() {
-			failure, state := failer.Drain(types.ExampleComponentTypeIt, 3, codeLocationB)
+			failure, state := failer.Drain(types.SpecComponentTypeIt, 3, codeLocationB)
 			Ω(failure).Should(BeZero())
-			Ω(state).Should(Equal(types.ExampleStatePassed))
+			Ω(state).Should(Equal(types.SpecStatePassed))
 		})
 	})
 
 	Describe("Fail", func() {
 		It("should handle failures", func() {
 			failer.Fail("something failed", codeLocationA)
-			failure, state := failer.Drain(types.ExampleComponentTypeIt, 3, codeLocationB)
-			Ω(failure).Should(Equal(types.ExampleFailure{
+			failure, state := failer.Drain(types.SpecComponentTypeIt, 3, codeLocationB)
+			Ω(failure).Should(Equal(types.SpecFailure{
 				Message:               "something failed",
 				Location:              codeLocationA,
 				ForwardedPanic:        nil,
-				ComponentType:         types.ExampleComponentTypeIt,
+				ComponentType:         types.SpecComponentTypeIt,
 				ComponentIndex:        3,
 				ComponentCodeLocation: codeLocationB,
 			}))
-			Ω(state).Should(Equal(types.ExampleStateFailed))
+			Ω(state).Should(Equal(types.SpecStateFailed))
 		})
 	})
 
 	Describe("Panic", func() {
 		It("should handle panics", func() {
 			failer.Panic(codeLocationA, "some forwarded panic")
-			failure, state := failer.Drain(types.ExampleComponentTypeIt, 3, codeLocationB)
-			Ω(failure).Should(Equal(types.ExampleFailure{
+			failure, state := failer.Drain(types.SpecComponentTypeIt, 3, codeLocationB)
+			Ω(failure).Should(Equal(types.SpecFailure{
 				Message:               "Test Panicked",
 				Location:              codeLocationA,
 				ForwardedPanic:        "some forwarded panic",
-				ComponentType:         types.ExampleComponentTypeIt,
+				ComponentType:         types.SpecComponentTypeIt,
 				ComponentIndex:        3,
 				ComponentCodeLocation: codeLocationB,
 			}))
-			Ω(state).Should(Equal(types.ExampleStatePanicked))
+			Ω(state).Should(Equal(types.SpecStatePanicked))
 		})
 	})
 
 	Describe("Timeout", func() {
 		It("should handle timeouts", func() {
 			failer.Timeout(codeLocationA)
-			failure, state := failer.Drain(types.ExampleComponentTypeIt, 3, codeLocationB)
-			Ω(failure).Should(Equal(types.ExampleFailure{
+			failure, state := failer.Drain(types.SpecComponentTypeIt, 3, codeLocationB)
+			Ω(failure).Should(Equal(types.SpecFailure{
 				Message:               "Timed out",
 				Location:              codeLocationA,
 				ForwardedPanic:        nil,
-				ComponentType:         types.ExampleComponentTypeIt,
+				ComponentType:         types.SpecComponentTypeIt,
 				ComponentIndex:        3,
 				ComponentCodeLocation: codeLocationB,
 			}))
-			Ω(state).Should(Equal(types.ExampleStateTimedOut))
+			Ω(state).Should(Equal(types.SpecStateTimedOut))
 		})
 	})
 
@@ -85,41 +85,41 @@ var _ = Describe("Failer", func() {
 		})
 
 		It("should only report the first one when drained", func() {
-			failure, state := failer.Drain(types.ExampleComponentTypeIt, 3, codeLocationB)
+			failure, state := failer.Drain(types.SpecComponentTypeIt, 3, codeLocationB)
 
-			Ω(failure).Should(Equal(types.ExampleFailure{
+			Ω(failure).Should(Equal(types.SpecFailure{
 				Message:               "something failed",
 				Location:              codeLocationA,
 				ForwardedPanic:        nil,
-				ComponentType:         types.ExampleComponentTypeIt,
+				ComponentType:         types.SpecComponentTypeIt,
 				ComponentIndex:        3,
 				ComponentCodeLocation: codeLocationB,
 			}))
-			Ω(state).Should(Equal(types.ExampleStateFailed))
+			Ω(state).Should(Equal(types.SpecStateFailed))
 		})
 
 		It("should report subsequent failures after being drained", func() {
-			failer.Drain(types.ExampleComponentTypeIt, 3, codeLocationB)
+			failer.Drain(types.SpecComponentTypeIt, 3, codeLocationB)
 			failer.Fail("yet another thing failed", codeLocationA)
 
-			failure, state := failer.Drain(types.ExampleComponentTypeIt, 3, codeLocationB)
+			failure, state := failer.Drain(types.SpecComponentTypeIt, 3, codeLocationB)
 
-			Ω(failure).Should(Equal(types.ExampleFailure{
+			Ω(failure).Should(Equal(types.SpecFailure{
 				Message:               "yet another thing failed",
 				Location:              codeLocationA,
 				ForwardedPanic:        nil,
-				ComponentType:         types.ExampleComponentTypeIt,
+				ComponentType:         types.SpecComponentTypeIt,
 				ComponentIndex:        3,
 				ComponentCodeLocation: codeLocationB,
 			}))
-			Ω(state).Should(Equal(types.ExampleStateFailed))
+			Ω(state).Should(Equal(types.SpecStateFailed))
 		})
 
 		It("should report sucess on subsequent drains if no errors occur", func() {
-			failer.Drain(types.ExampleComponentTypeIt, 3, codeLocationB)
-			failure, state := failer.Drain(types.ExampleComponentTypeIt, 3, codeLocationB)
+			failer.Drain(types.SpecComponentTypeIt, 3, codeLocationB)
+			failure, state := failer.Drain(types.SpecComponentTypeIt, 3, codeLocationB)
 			Ω(failure).Should(BeZero())
-			Ω(state).Should(Equal(types.ExampleStatePassed))
+			Ω(state).Should(Equal(types.SpecStatePassed))
 		})
 	})
 })

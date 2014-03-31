@@ -15,14 +15,14 @@ import (
 )
 
 type runnable interface {
-	Run() (outcome types.ExampleState, failure types.ExampleFailure)
+	Run() (outcome types.SpecState, failure types.SpecFailure)
 	CodeLocation() types.CodeLocation
 }
 
-func SynchronousSharedRunnerBehaviors(build func(body interface{}, timeout time.Duration, failer *Failer.Failer, componentCodeLocation types.CodeLocation, componentIndex int) runnable, componentType types.ExampleComponentType) {
+func SynchronousSharedRunnerBehaviors(build func(body interface{}, timeout time.Duration, failer *Failer.Failer, componentCodeLocation types.CodeLocation, componentIndex int) runnable, componentType types.SpecComponentType) {
 	var (
-		outcome types.ExampleState
-		failure types.ExampleFailure
+		outcome types.SpecState
+		failure types.SpecFailure
 
 		failer *Failer.Failer
 
@@ -53,7 +53,7 @@ func SynchronousSharedRunnerBehaviors(build func(body interface{}, timeout time.
 			It("should have a succesful outcome", func() {
 				Ω(didRun).Should(BeTrue())
 
-				Ω(outcome).Should(Equal(types.ExampleStatePassed))
+				Ω(outcome).Should(Equal(types.SpecStatePassed))
 				Ω(failure).Should(BeZero())
 			})
 		})
@@ -70,8 +70,8 @@ func SynchronousSharedRunnerBehaviors(build func(body interface{}, timeout time.
 			It("should return the failure", func() {
 				Ω(didRun).Should(BeTrue())
 
-				Ω(outcome).Should(Equal(types.ExampleStateFailed))
-				Ω(failure).Should(Equal(types.ExampleFailure{
+				Ω(outcome).Should(Equal(types.SpecStateFailed))
+				Ω(failure).Should(Equal(types.SpecFailure{
 					Message:               "bam",
 					Location:              innerCodeLocation,
 					ForwardedPanic:        nil,
@@ -94,9 +94,9 @@ func SynchronousSharedRunnerBehaviors(build func(body interface{}, timeout time.
 			It("should return the panic", func() {
 				Ω(didRun).Should(BeTrue())
 
-				Ω(outcome).Should(Equal(types.ExampleStatePanicked))
+				Ω(outcome).Should(Equal(types.SpecStatePanicked))
 				innerCodeLocation.LineNumber++
-				Ω(failure).Should(Equal(types.ExampleFailure{
+				Ω(failure).Should(Equal(types.SpecFailure{
 					Message:               "Test Panicked",
 					Location:              innerCodeLocation,
 					ForwardedPanic:        "ack!",
@@ -109,10 +109,10 @@ func SynchronousSharedRunnerBehaviors(build func(body interface{}, timeout time.
 	})
 }
 
-func AsynchronousSharedRunnerBehaviors(build func(body interface{}, timeout time.Duration, failer *Failer.Failer, componentCodeLocation types.CodeLocation, componentIndex int) runnable, componentType types.ExampleComponentType) {
+func AsynchronousSharedRunnerBehaviors(build func(body interface{}, timeout time.Duration, failer *Failer.Failer, componentCodeLocation types.CodeLocation, componentIndex int) runnable, componentType types.SpecComponentType) {
 	var (
-		outcome types.ExampleState
-		failure types.ExampleFailure
+		outcome types.SpecState
+		failure types.SpecFailure
 
 		failer *Failer.Failer
 
@@ -165,7 +165,7 @@ func AsynchronousSharedRunnerBehaviors(build func(body interface{}, timeout time
 
 			It("should have a succesful outcome", func() {
 				Ω(didRun).Should(BeTrue())
-				Ω(outcome).Should(Equal(types.ExampleStatePassed))
+				Ω(outcome).Should(Equal(types.SpecStatePassed))
 				Ω(failure).Should(BeZero())
 			})
 		})
@@ -184,8 +184,8 @@ func AsynchronousSharedRunnerBehaviors(build func(body interface{}, timeout time
 			It("should return the failure", func() {
 				Ω(didRun).Should(BeTrue())
 
-				Ω(outcome).Should(Equal(types.ExampleStateFailed))
-				Ω(failure).Should(Equal(types.ExampleFailure{
+				Ω(outcome).Should(Equal(types.SpecStateFailed))
+				Ω(failure).Should(Equal(types.SpecFailure{
 					Message:               "bam",
 					Location:              innerCodeLocation,
 					ForwardedPanic:        nil,
@@ -209,8 +209,8 @@ func AsynchronousSharedRunnerBehaviors(build func(body interface{}, timeout time
 			It("should return the timeout", func() {
 				Ω(didRun).Should(BeTrue())
 
-				Ω(outcome).Should(Equal(types.ExampleStateTimedOut))
-				Ω(failure).Should(Equal(types.ExampleFailure{
+				Ω(outcome).Should(Equal(types.SpecStateTimedOut))
+				Ω(failure).Should(Equal(types.SpecFailure{
 					Message:               "Timed out",
 					Location:              componentCodeLocation,
 					ForwardedPanic:        nil,
@@ -233,9 +233,9 @@ func AsynchronousSharedRunnerBehaviors(build func(body interface{}, timeout time
 			It("should return the panic", func() {
 				Ω(didRun).Should(BeTrue())
 
-				Ω(outcome).Should(Equal(types.ExampleStatePanicked))
+				Ω(outcome).Should(Equal(types.SpecStatePanicked))
 				innerCodeLocation.LineNumber++
-				Ω(failure).Should(Equal(types.ExampleFailure{
+				Ω(failure).Should(Equal(types.SpecFailure{
 					Message:               "Test Panicked",
 					Location:              innerCodeLocation,
 					ForwardedPanic:        "ack!",
@@ -248,7 +248,7 @@ func AsynchronousSharedRunnerBehaviors(build func(body interface{}, timeout time
 	})
 }
 
-func InvalidSharedRunnerBehaviors(build func(body interface{}, timeout time.Duration, failer *Failer.Failer, componentCodeLocation types.CodeLocation, componentIndex int) runnable, componentType types.ExampleComponentType) {
+func InvalidSharedRunnerBehaviors(build func(body interface{}, timeout time.Duration, failer *Failer.Failer, componentCodeLocation types.CodeLocation, componentIndex int) runnable, componentType types.SpecComponentType) {
 	var (
 		failer                *Failer.Failer
 		componentIndex        int
@@ -296,9 +296,9 @@ var _ = Describe("Shared RunnableNode behavior", func() {
 			return NewItNode("", body, types.FlagTypeFocused, componentCodeLocation, timeout, failer, componentIndex)
 		}
 
-		SynchronousSharedRunnerBehaviors(build, types.ExampleComponentTypeIt)
-		AsynchronousSharedRunnerBehaviors(build, types.ExampleComponentTypeIt)
-		InvalidSharedRunnerBehaviors(build, types.ExampleComponentTypeIt)
+		SynchronousSharedRunnerBehaviors(build, types.SpecComponentTypeIt)
+		AsynchronousSharedRunnerBehaviors(build, types.SpecComponentTypeIt)
+		InvalidSharedRunnerBehaviors(build, types.SpecComponentTypeIt)
 	})
 
 	Describe("Measure Nodes", func() {
@@ -308,7 +308,7 @@ var _ = Describe("Shared RunnableNode behavior", func() {
 			}, types.FlagTypeFocused, componentCodeLocation, 10, failer, componentIndex)
 		}
 
-		SynchronousSharedRunnerBehaviors(build, types.ExampleComponentTypeMeasure)
+		SynchronousSharedRunnerBehaviors(build, types.SpecComponentTypeMeasure)
 	})
 
 	Describe("BeforeEach Nodes", func() {
@@ -316,9 +316,9 @@ var _ = Describe("Shared RunnableNode behavior", func() {
 			return NewBeforeEachNode(body, componentCodeLocation, timeout, failer, componentIndex)
 		}
 
-		SynchronousSharedRunnerBehaviors(build, types.ExampleComponentTypeBeforeEach)
-		AsynchronousSharedRunnerBehaviors(build, types.ExampleComponentTypeBeforeEach)
-		InvalidSharedRunnerBehaviors(build, types.ExampleComponentTypeBeforeEach)
+		SynchronousSharedRunnerBehaviors(build, types.SpecComponentTypeBeforeEach)
+		AsynchronousSharedRunnerBehaviors(build, types.SpecComponentTypeBeforeEach)
+		InvalidSharedRunnerBehaviors(build, types.SpecComponentTypeBeforeEach)
 	})
 
 	Describe("AfterEach Nodes", func() {
@@ -326,9 +326,9 @@ var _ = Describe("Shared RunnableNode behavior", func() {
 			return NewAfterEachNode(body, componentCodeLocation, timeout, failer, componentIndex)
 		}
 
-		SynchronousSharedRunnerBehaviors(build, types.ExampleComponentTypeAfterEach)
-		AsynchronousSharedRunnerBehaviors(build, types.ExampleComponentTypeAfterEach)
-		InvalidSharedRunnerBehaviors(build, types.ExampleComponentTypeAfterEach)
+		SynchronousSharedRunnerBehaviors(build, types.SpecComponentTypeAfterEach)
+		AsynchronousSharedRunnerBehaviors(build, types.SpecComponentTypeAfterEach)
+		InvalidSharedRunnerBehaviors(build, types.SpecComponentTypeAfterEach)
 	})
 
 	Describe("JustBeforeEach Nodes", func() {
@@ -336,8 +336,8 @@ var _ = Describe("Shared RunnableNode behavior", func() {
 			return NewJustBeforeEachNode(body, componentCodeLocation, timeout, failer, componentIndex)
 		}
 
-		SynchronousSharedRunnerBehaviors(build, types.ExampleComponentTypeJustBeforeEach)
-		AsynchronousSharedRunnerBehaviors(build, types.ExampleComponentTypeJustBeforeEach)
-		InvalidSharedRunnerBehaviors(build, types.ExampleComponentTypeJustBeforeEach)
+		SynchronousSharedRunnerBehaviors(build, types.SpecComponentTypeJustBeforeEach)
+		AsynchronousSharedRunnerBehaviors(build, types.SpecComponentTypeJustBeforeEach)
+		InvalidSharedRunnerBehaviors(build, types.SpecComponentTypeJustBeforeEach)
 	})
 })

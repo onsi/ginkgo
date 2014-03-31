@@ -15,7 +15,7 @@ var _ = Describe("Measure Nodes", func() {
 	It("should report the correct type, text, flag, and code location", func() {
 		codeLocation := codelocation.New(0)
 		measure := NewMeasureNode("my measure node", func(b Benchmarker) {}, types.FlagTypeFocused, codeLocation, 10, nil, 3)
-		Ω(measure.Type()).Should(Equal(types.ExampleComponentTypeMeasure))
+		Ω(measure.Type()).Should(Equal(types.SpecComponentTypeMeasure))
 		Ω(measure.Flag()).Should(Equal(types.FlagTypeFocused))
 		Ω(measure.Text()).Should(Equal("my measure node"))
 		Ω(measure.CodeLocation()).Should(Equal(codeLocation))
@@ -36,7 +36,7 @@ var _ = Describe("Measure Nodes", func() {
 					b.RecordValue("bar", 0.5)
 					b.RecordValue("bar", 0.7)
 				}, types.FlagTypeFocused, codelocation.New(0), 1, Failer.New(), 3)
-				Ω(measure.Run()).Should(Equal(types.ExampleStatePassed))
+				Ω(measure.Run()).Should(Equal(types.SpecStatePassed))
 			})
 
 			It("records passed in values and reports on them", func() {
@@ -81,7 +81,7 @@ var _ = Describe("Measure Nodes", func() {
 						time.Sleep(170 * time.Millisecond)
 					})
 				}, types.FlagTypeFocused, codelocation.New(0), 1, Failer.New(), 3)
-				Ω(measure.Run()).Should(Equal(types.ExampleStatePassed))
+				Ω(measure.Run()).Should(Equal(types.SpecStatePassed))
 			})
 
 			It("records passed in values and reports on them", func() {

@@ -50,10 +50,10 @@ var _ = Describe("Container Node", func() {
 			subject := leafnodes.NewItNode("subject", func() {}, types.FlagTypeNone, codelocation.New(0), 0, nil, 0)
 			container.PushSubjectNode(subject)
 
-			Ω(container.SetupNodesOfType(types.ExampleComponentTypeBeforeEach)).Should(Equal([]leafnodes.BasicNode{befA, befB}))
-			Ω(container.SetupNodesOfType(types.ExampleComponentTypeAfterEach)).Should(Equal([]leafnodes.BasicNode{aftA, aftB}))
-			Ω(container.SetupNodesOfType(types.ExampleComponentTypeJustBeforeEach)).Should(Equal([]leafnodes.BasicNode{jusBefA, jusBefB}))
-			Ω(container.SetupNodesOfType(types.ExampleComponentTypeIt)).Should(BeEmpty()) //subjects are not setup nodes
+			Ω(container.SetupNodesOfType(types.SpecComponentTypeBeforeEach)).Should(Equal([]leafnodes.BasicNode{befA, befB}))
+			Ω(container.SetupNodesOfType(types.SpecComponentTypeAfterEach)).Should(Equal([]leafnodes.BasicNode{aftA, aftB}))
+			Ω(container.SetupNodesOfType(types.SpecComponentTypeJustBeforeEach)).Should(Equal([]leafnodes.BasicNode{jusBefA, jusBefB}))
+			Ω(container.SetupNodesOfType(types.SpecComponentTypeIt)).Should(BeEmpty()) //subjects are not setup nodes
 		})
 	})
 

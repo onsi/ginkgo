@@ -5,8 +5,8 @@ import (
 )
 
 type BasicNode interface {
-	Type() types.ExampleComponentType
-	Run() (types.ExampleState, types.ExampleFailure)
+	Type() types.SpecComponentType
+	Run() (types.SpecState, types.SpecFailure)
 	CodeLocation() types.CodeLocation
 }
 

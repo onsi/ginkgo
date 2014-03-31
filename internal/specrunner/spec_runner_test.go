@@ -9,9 +9,9 @@ import (
 	"github.com/onsi/ginkgo/config"
 	"github.com/onsi/ginkgo/internal/codelocation"
 	"github.com/onsi/ginkgo/internal/containernode"
-	"github.com/onsi/ginkgo/internal/example"
 	Failer "github.com/onsi/ginkgo/internal/failer"
 	"github.com/onsi/ginkgo/internal/leafnodes"
+	"github.com/onsi/ginkgo/internal/spec"
 	Writer "github.com/onsi/ginkgo/internal/writer"
 	"github.com/onsi/ginkgo/reporters"
 )
@@ -20,38 +20,38 @@ var noneFlag = types.FlagTypeNone
 var focusedFlag = types.FlagTypeFocused
 var pendingFlag = types.FlagTypePending
 
-var _ = Describe("Example Collection", func() {
+var _ = Describe("Spec Collection", func() {
 	var (
 		reporter1 *reporters.FakeReporter
 		reporter2 *reporters.FakeReporter
 		failer    *Failer.Failer
 		writer    *Writer.FakeGinkgoWriter
 
-		examplesThatRan []string
+		specsThatRan []string
 
 		runner *SpecRunner
 	)
 
-	newExample := func(text string, flag types.FlagType, fail bool) *example.Example {
+	newSpec := func(text string, flag types.FlagType, fail bool) *spec.Spec {
 		subject := leafnodes.NewItNode(text, func() {
 			writer.AddEvent(text)
-			examplesThatRan = append(examplesThatRan, text)
+			specsThatRan = append(specsThatRan, text)
 			if fail {
 				failer.Fail(text, codelocation.New(0))
 			}
 		}, flag, codelocation.New(0), 0, failer, 0)
 
-		return example.New(subject, []*containernode.ContainerNode{})
+		return spec.New(subject, []*containernode.ContainerNode{})
 	}
 
-	newExampleWithBody := func(text string, body interface{}) *example.Example {
+	newSpecWithBody := func(text string, body interface{}) *spec.Spec {
 		subject := leafnodes.NewItNode(text, body, noneFlag, codelocation.New(0), 0, failer, 0)
 
-		return example.New(subject, []*containernode.ContainerNode{})
+		return spec.New(subject, []*containernode.ContainerNode{})
 	}
 
-	newRunner := func(config config.GinkgoConfigType, examples ...*example.Example) *SpecRunner {
-		return New("description", example.NewExamples(examples), []reporters.Reporter{reporter1, reporter2}, writer, config)
+	newRunner := func(config config.GinkgoConfigType, specs ...*spec.Spec) *SpecRunner {
+		return New("description", spec.NewSpecs(specs), []reporters.Reporter{reporter1, reporter2}, writer, config)
 	}
 
 	BeforeEach(func() {
@@ -60,33 +60,33 @@ var _ = Describe("Example Collection", func() {
 		writer = Writer.NewFake()
 		failer = Failer.New()
 
-		examplesThatRan = []string{}
+		specsThatRan = []string{}
 	})
 
 	Describe("Running and Reporting", func() {
-		var exampleA, pendingExample, anotherPendingExample, failedExample, exampleB, skippedExample *example.Example
+		var specA, pendingSpec, anotherPendingSpec, failedSpec, specB, skippedSpec *spec.Spec
 		BeforeEach(func() {
-			exampleA = newExample("example A", noneFlag, false)
-			pendingExample = newExample("pending example", pendingFlag, false)
-			anotherPendingExample = newExample("another pending example", pendingFlag, false)
-			failedExample = newExample("failed example", noneFlag, true)
-			exampleB = newExample("example B", noneFlag, false)
-			skippedExample = newExample("skipped example", noneFlag, false)
-			skippedExample.Skip()
+			specA = newSpec("spec A", noneFlag, false)
+			pendingSpec = newSpec("pending spec", pendingFlag, false)
+			anotherPendingSpec = newSpec("another pending spec", pendingFlag, false)
+			failedSpec = newSpec("failed spec", noneFlag, true)
+			specB = newSpec("spec B", noneFlag, false)
+			skippedSpec = newSpec("skipped spec", noneFlag, false)
+			skippedSpec.Skip()
 
-			runner = newRunner(config.GinkgoConfigType{RandomSeed: 17}, exampleA, pendingExample, anotherPendingExample, failedExample, exampleB, skippedExample)
+			runner = newRunner(config.GinkgoConfigType{RandomSeed: 17}, specA, pendingSpec, anotherPendingSpec, failedSpec, specB, skippedSpec)
 			runner.Run()
 		})
 
 		It("should skip skipped/pending tests", func() {
-			Ω(examplesThatRan).Should(Equal([]string{"example A", "failed example", "example B"}))
+			Ω(specsThatRan).Should(Equal([]string{"spec A", "failed spec", "spec B"}))
 		})
 
 		It("should report to any attached reporters", func() {
 			Ω(reporter1.Config).Should(Equal(reporter2.Config))
 			Ω(reporter1.BeginSummary).Should(Equal(reporter2.BeginSummary))
-			Ω(reporter1.ExampleWillRunSummaries).Should(Equal(reporter2.ExampleWillRunSummaries))
-			Ω(reporter1.ExampleSummaries).Should(Equal(reporter2.ExampleSummaries))
+			Ω(reporter1.SpecWillRunSummaries).Should(Equal(reporter2.SpecWillRunSummaries))
+			Ω(reporter1.SpecSummaries).Should(Equal(reporter2.SpecSummaries))
 			Ω(reporter1.EndSummary).Should(Equal(reporter2.EndSummary))
 		})
 
@@ -97,71 +97,71 @@ var _ = Describe("Example Collection", func() {
 		It("should report the beginning of the suite", func() {
 			Ω(reporter1.BeginSummary.SuiteDescription).Should(Equal("description"))
 			Ω(reporter1.BeginSummary.SuiteID).Should(MatchRegexp("[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}"))
-			Ω(reporter1.BeginSummary.NumberOfExamplesBeforeParallelization).Should(Equal(6))
-			Ω(reporter1.BeginSummary.NumberOfTotalExamples).Should(Equal(6))
-			Ω(reporter1.BeginSummary.NumberOfExamplesThatWillBeRun).Should(Equal(3))
-			Ω(reporter1.BeginSummary.NumberOfPendingExamples).Should(Equal(2))
-			Ω(reporter1.BeginSummary.NumberOfSkippedExamples).Should(Equal(1))
+			Ω(reporter1.BeginSummary.NumberOfSpecsBeforeParallelization).Should(Equal(6))
+			Ω(reporter1.BeginSummary.NumberOfTotalSpecs).Should(Equal(6))
+			Ω(reporter1.BeginSummary.NumberOfSpecsThatWillBeRun).Should(Equal(3))
+			Ω(reporter1.BeginSummary.NumberOfPendingSpecs).Should(Equal(2))
+			Ω(reporter1.BeginSummary.NumberOfSkippedSpecs).Should(Equal(1))
 		})
 
 		It("should report the end of the suite", func() {
 			Ω(reporter1.EndSummary.SuiteDescription).Should(Equal("description"))
 			Ω(reporter1.EndSummary.SuiteSucceeded).Should(BeFalse())
 			Ω(reporter1.EndSummary.SuiteID).Should(MatchRegexp("[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}"))
-			Ω(reporter1.EndSummary.NumberOfExamplesBeforeParallelization).Should(Equal(6))
-			Ω(reporter1.EndSummary.NumberOfTotalExamples).Should(Equal(6))
-			Ω(reporter1.EndSummary.NumberOfExamplesThatWillBeRun).Should(Equal(3))
-			Ω(reporter1.EndSummary.NumberOfPendingExamples).Should(Equal(2))
-			Ω(reporter1.EndSummary.NumberOfSkippedExamples).Should(Equal(1))
-			Ω(reporter1.EndSummary.NumberOfPassedExamples).Should(Equal(2))
-			Ω(reporter1.EndSummary.NumberOfFailedExamples).Should(Equal(1))
+			Ω(reporter1.EndSummary.NumberOfSpecsBeforeParallelization).Should(Equal(6))
+			Ω(reporter1.EndSummary.NumberOfTotalSpecs).Should(Equal(6))
+			Ω(reporter1.EndSummary.NumberOfSpecsThatWillBeRun).Should(Equal(3))
+			Ω(reporter1.EndSummary.NumberOfPendingSpecs).Should(Equal(2))
+			Ω(reporter1.EndSummary.NumberOfSkippedSpecs).Should(Equal(1))
+			Ω(reporter1.EndSummary.NumberOfPassedSpecs).Should(Equal(2))
+			Ω(reporter1.EndSummary.NumberOfFailedSpecs).Should(Equal(1))
 		})
 	})
 
-	Describe("reporting on examples", func() {
+	Describe("reporting on specs", func() {
 		var proceed chan bool
 		BeforeEach(func() {
 			proceed = make(chan bool)
-			skippedExample := newExample("SKIP", noneFlag, false)
-			skippedExample.Skip()
+			skippedSpec := newSpec("SKIP", noneFlag, false)
+			skippedSpec.Skip()
 
 			runner = newRunner(
 				config.GinkgoConfigType{},
-				skippedExample,
-				newExample("PENDING", pendingFlag, false),
-				newExampleWithBody("RUN", func() {
+				skippedSpec,
+				newSpec("PENDING", pendingFlag, false),
+				newSpecWithBody("RUN", func() {
 					<-proceed
 				}),
 			)
 			go runner.Run()
 		})
 
-		It("should report about pending/skipped examples", func() {
+		It("should report about pending/skipped specs", func() {
 			Eventually(func() interface{} {
-				return reporter1.ExampleWillRunSummaries
+				return reporter1.SpecWillRunSummaries
 			}).Should(HaveLen(3))
 
-			Ω(reporter1.ExampleWillRunSummaries[0].ComponentTexts[0]).Should(Equal("SKIP"))
-			Ω(reporter1.ExampleWillRunSummaries[1].ComponentTexts[0]).Should(Equal("PENDING"))
-			Ω(reporter1.ExampleWillRunSummaries[2].ComponentTexts[0]).Should(Equal("RUN"))
+			Ω(reporter1.SpecWillRunSummaries[0].ComponentTexts[0]).Should(Equal("SKIP"))
+			Ω(reporter1.SpecWillRunSummaries[1].ComponentTexts[0]).Should(Equal("PENDING"))
+			Ω(reporter1.SpecWillRunSummaries[2].ComponentTexts[0]).Should(Equal("RUN"))
 
-			Ω(reporter1.ExampleSummaries[0].ComponentTexts[0]).Should(Equal("SKIP"))
-			Ω(reporter1.ExampleSummaries[1].ComponentTexts[0]).Should(Equal("PENDING"))
-			Ω(reporter1.ExampleSummaries).Should(HaveLen(2))
+			Ω(reporter1.SpecSummaries[0].ComponentTexts[0]).Should(Equal("SKIP"))
+			Ω(reporter1.SpecSummaries[1].ComponentTexts[0]).Should(Equal("PENDING"))
+			Ω(reporter1.SpecSummaries).Should(HaveLen(2))
 
 			close(proceed)
 
 			Eventually(func() interface{} {
-				return reporter1.ExampleSummaries
+				return reporter1.SpecSummaries
 			}).Should(HaveLen(3))
-			Ω(reporter1.ExampleSummaries[2].ComponentTexts[0]).Should(Equal("RUN"))
+			Ω(reporter1.SpecSummaries[2].ComponentTexts[0]).Should(Equal("RUN"))
 		})
 	})
 
 	Describe("Marking failure and success", func() {
 		Context("when all tests pass", func() {
 			BeforeEach(func() {
-				runner = newRunner(config.GinkgoConfigType{}, newExample("passing", noneFlag, false), newExample("pending", pendingFlag, false))
+				runner = newRunner(config.GinkgoConfigType{}, newSpec("passing", noneFlag, false), newSpec("pending", pendingFlag, false))
 			})
 
 			It("should return true and report success", func() {
@@ -172,7 +172,7 @@ var _ = Describe("Example Collection", func() {
 
 		Context("when a test fails", func() {
 			BeforeEach(func() {
-				runner = newRunner(config.GinkgoConfigType{}, newExample("failing", noneFlag, true), newExample("pending", pendingFlag, false))
+				runner = newRunner(config.GinkgoConfigType{}, newSpec("failing", noneFlag, true), newSpec("pending", pendingFlag, false))
 			})
 
 			It("should return false and report failure", func() {
@@ -183,7 +183,7 @@ var _ = Describe("Example Collection", func() {
 
 		Context("when there is a pending test, but pendings count as failures", func() {
 			BeforeEach(func() {
-				runner = newRunner(config.GinkgoConfigType{FailOnPending: true}, newExample("passing", noneFlag, false), newExample("pending", pendingFlag, false))
+				runner = newRunner(config.GinkgoConfigType{FailOnPending: true}, newSpec("passing", noneFlag, false), newSpec("pending", pendingFlag, false))
 			})
 
 			It("should return false and report failure", func() {
@@ -197,9 +197,9 @@ var _ = Describe("Example Collection", func() {
 		BeforeEach(func() {
 			runner = newRunner(
 				config.GinkgoConfigType{},
-				newExample("A", noneFlag, false),
-				newExample("B", noneFlag, true),
-				newExample("C", noneFlag, false),
+				newSpec("A", noneFlag, false),
+				newSpec("B", noneFlag, true),
+				newSpec("C", noneFlag, false),
 			)
 			runner.Run()
 		})
@@ -209,44 +209,44 @@ var _ = Describe("Example Collection", func() {
 		})
 	})
 
-	Describe("CurrentExampleSummary", func() {
-		It("should return the example summary for the currently running example", func() {
-			var summary *types.ExampleSummary
+	Describe("CurrentSpecSummary", func() {
+		It("should return the spec summary for the currently running spec", func() {
+			var summary *types.SpecSummary
 			runner = newRunner(
 				config.GinkgoConfigType{},
-				newExample("A", noneFlag, false),
-				newExampleWithBody("B", func() {
+				newSpec("A", noneFlag, false),
+				newSpecWithBody("B", func() {
 					var ok bool
-					summary, ok = runner.CurrentExampleSummary()
+					summary, ok = runner.CurrentSpecSummary()
 					Ω(ok).Should(BeTrue())
 				}),
-				newExample("C", noneFlag, false),
+				newSpec("C", noneFlag, false),
 			)
 			runner.Run()
 
 			Ω(summary.ComponentTexts).Should(Equal([]string{"B"}))
 
-			summary, ok := runner.CurrentExampleSummary()
+			summary, ok := runner.CurrentSpecSummary()
 			Ω(summary).Should(BeNil())
 			Ω(ok).Should(BeFalse())
 		})
 	})
 
 	Context("When running tests in parallel", func() {
-		It("reports the correct number of examples before parallelization", func() {
-			examples := example.NewExamples([]*example.Example{
-				newExample("A", noneFlag, false),
-				newExample("B", pendingFlag, false),
-				newExample("C", noneFlag, false),
+		It("reports the correct number of specs before parallelization", func() {
+			specs := spec.NewSpecs([]*spec.Spec{
+				newSpec("A", noneFlag, false),
+				newSpec("B", pendingFlag, false),
+				newSpec("C", noneFlag, false),
 			})
-			examples.TrimForParallelization(2, 1)
-			runner = New("description", examples, []reporters.Reporter{reporter1, reporter2}, writer, config.GinkgoConfigType{})
+			specs.TrimForParallelization(2, 1)
+			runner = New("description", specs, []reporters.Reporter{reporter1, reporter2}, writer, config.GinkgoConfigType{})
 			runner.Run()
 
-			Ω(reporter1.EndSummary.NumberOfExamplesBeforeParallelization).Should(Equal(3))
-			Ω(reporter1.EndSummary.NumberOfTotalExamples).Should(Equal(2))
-			Ω(reporter1.EndSummary.NumberOfExamplesThatWillBeRun).Should(Equal(1))
-			Ω(reporter1.EndSummary.NumberOfPendingExamples).Should(Equal(1))
+			Ω(reporter1.EndSummary.NumberOfSpecsBeforeParallelization).Should(Equal(3))
+			Ω(reporter1.EndSummary.NumberOfTotalSpecs).Should(Equal(2))
+			Ω(reporter1.EndSummary.NumberOfSpecsThatWillBeRun).Should(Equal(1))
+			Ω(reporter1.EndSummary.NumberOfPendingSpecs).Should(Equal(1))
 		})
 	})
 

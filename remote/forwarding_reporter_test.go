@@ -11,12 +11,12 @@ import (
 
 var _ = Describe("ForwardingReporter", func() {
 	var (
-		reporter       *ForwardingReporter
-		interceptor    *fakeOutputInterceptor
-		poster         *fakePoster
-		suiteSummary   *types.SuiteSummary
-		exampleSummary *types.ExampleSummary
-		serverHost     string
+		reporter     *ForwardingReporter
+		interceptor  *fakeOutputInterceptor
+		poster       *fakePoster
+		suiteSummary *types.SuiteSummary
+		specSummary  *types.SpecSummary
+		serverHost   string
 	)
 
 	BeforeEach(func() {
@@ -34,9 +34,9 @@ var _ = Describe("ForwardingReporter", func() {
 			SuiteDescription: "My Test Suite",
 		}
 
-		exampleSummary = &types.ExampleSummary{
-			ComponentTexts: []string{"My", "Example"},
-			State:          types.ExampleStatePassed,
+		specSummary = &types.SpecSummary{
+			ComponentTexts: []string{"My", "Spec"},
+			State:          types.SpecStatePassed,
 		}
 	})
 
@@ -63,42 +63,42 @@ var _ = Describe("ForwardingReporter", func() {
 		})
 	})
 
-	Context("When an example will run", func() {
+	Context("When a spec will run", func() {
 		BeforeEach(func() {
-			reporter.ExampleWillRun(exampleSummary)
+			reporter.SpecWillRun(specSummary)
 		})
 
-		It("should POST the ExampleSummary to the Ginkgo server", func() {
+		It("should POST the SpecSummary to the Ginkgo server", func() {
 			Ω(poster.posts).Should(HaveLen(1))
-			Ω(poster.posts[0].url).Should(Equal("http://127.0.0.1:7788/ExampleWillRun"))
+			Ω(poster.posts[0].url).Should(Equal("http://127.0.0.1:7788/SpecWillRun"))
 			Ω(poster.posts[0].bodyType).Should(Equal("application/json"))
 
-			var summary *types.ExampleSummary
+			var summary *types.SpecSummary
 			err := json.Unmarshal(poster.posts[0].bodyContent, &summary)
 			Ω(err).ShouldNot(HaveOccurred())
-			Ω(summary).Should(Equal(exampleSummary))
+			Ω(summary).Should(Equal(specSummary))
 		})
 
 		It("should start intercepting output", func() {
 			Ω(interceptor.DidStartInterceptingOutput).Should(BeTrue())
 		})
 
-		Context("When an example completes", func() {
+		Context("When a spec completes", func() {
 			BeforeEach(func() {
-				exampleSummary.State = types.ExampleStatePanicked
-				reporter.ExampleDidComplete(exampleSummary)
+				specSummary.State = types.SpecStatePanicked
+				reporter.SpecDidComplete(specSummary)
 			})
 
-			It("should POST the ExampleSummary to the Ginkgo server and include any intercepted output", func() {
+			It("should POST the SpecSummary to the Ginkgo server and include any intercepted output", func() {
 				Ω(poster.posts).Should(HaveLen(2))
-				Ω(poster.posts[1].url).Should(Equal("http://127.0.0.1:7788/ExampleDidComplete"))
+				Ω(poster.posts[1].url).Should(Equal("http://127.0.0.1:7788/SpecDidComplete"))
 				Ω(poster.posts[1].bodyType).Should(Equal("application/json"))
 
-				var summary *types.ExampleSummary
+				var summary *types.SpecSummary
 				err := json.Unmarshal(poster.posts[1].bodyContent, &summary)
 				Ω(err).ShouldNot(HaveOccurred())
-				exampleSummary.CapturedOutput = interceptor.InterceptedOutput
-				Ω(summary).Should(Equal(exampleSummary))
+				specSummary.CapturedOutput = interceptor.InterceptedOutput
+				Ω(summary).Should(Equal(specSummary))
 			})
 
 			It("should stop intercepting output", func() {

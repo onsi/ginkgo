@@ -3,9 +3,9 @@ package suite
 import (
 	"github.com/onsi/ginkgo/config"
 	"github.com/onsi/ginkgo/internal/containernode"
-	"github.com/onsi/ginkgo/internal/example"
 	"github.com/onsi/ginkgo/internal/failer"
 	"github.com/onsi/ginkgo/internal/leafnodes"
+	"github.com/onsi/ginkgo/internal/spec"
 	"github.com/onsi/ginkgo/internal/specrunner"
 	"github.com/onsi/ginkgo/internal/writer"
 	"github.com/onsi/ginkgo/reporters"
@@ -48,8 +48,8 @@ func (suite *Suite) Run(t ginkgoTestingT, description string, reporters []report
 
 	r := rand.New(rand.NewSource(config.RandomSeed))
 	suite.topLevelContainer.Shuffle(r)
-	examples := suite.generateExamples(description, config)
-	suite.runner = specrunner.New(description, examples, reporters, writer, config)
+	specs := suite.generateSpecs(description, config)
+	suite.runner = specrunner.New(description, specs, reporters, writer, config)
 
 	success := suite.runner.Run()
 	if !success {
@@ -58,33 +58,33 @@ func (suite *Suite) Run(t ginkgoTestingT, description string, reporters []report
 	return success
 }
 
-func (suite *Suite) generateExamples(description string, config config.GinkgoConfigType) *example.Examples {
-	examplesSlice := []*example.Example{}
+func (suite *Suite) generateSpecs(description string, config config.GinkgoConfigType) *spec.Specs {
+	specsSlice := []*spec.Spec{}
 	for _, collatedNodes := range suite.topLevelContainer.Collate() {
-		examplesSlice = append(examplesSlice, example.New(collatedNodes.Subject, collatedNodes.Containers))
+		specsSlice = append(specsSlice, spec.New(collatedNodes.Subject, collatedNodes.Containers))
 	}
 
-	examples := example.NewExamples(examplesSlice)
+	specs := spec.NewSpecs(specsSlice)
 
 	if config.RandomizeAllSpecs {
-		examples.Shuffle(rand.New(rand.NewSource(config.RandomSeed)))
+		specs.Shuffle(rand.New(rand.NewSource(config.RandomSeed)))
 	}
 
-	examples.ApplyFocus(description, config.FocusString, config.SkipString)
+	specs.ApplyFocus(description, config.FocusString, config.SkipString)
 
 	if config.SkipMeasurements {
-		examples.SkipMeasurements()
+		specs.SkipMeasurements()
 	}
 
 	if config.ParallelTotal > 1 {
-		examples.TrimForParallelization(config.ParallelTotal, config.ParallelNode)
+		specs.TrimForParallelization(config.ParallelTotal, config.ParallelNode)
 	}
 
-	return examples
+	return specs
 }
 
-func (suite *Suite) CurrentRunningExampleSummary() (*types.ExampleSummary, bool) {
-	return suite.runner.CurrentExampleSummary()
+func (suite *Suite) CurrentRunningSpecSummary() (*types.SpecSummary, bool) {
+	return suite.runner.CurrentSpecSummary()
 }
 
 func (suite *Suite) PushContainerNode(text string, body func(), flag types.FlagType, codeLocation types.CodeLocation) {

@@ -15,12 +15,12 @@ type runner struct {
 	syncFunc         func()
 	codeLocation     types.CodeLocation
 	timeoutThreshold time.Duration
-	nodeType         types.ExampleComponentType
+	nodeType         types.SpecComponentType
 	componentIndex   int
 	failer           *failer.Failer
 }
 
-func newRunner(body interface{}, codeLocation types.CodeLocation, timeout time.Duration, failer *failer.Failer, nodeType types.ExampleComponentType, componentIndex int) *runner {
+func newRunner(body interface{}, codeLocation types.CodeLocation, timeout time.Duration, failer *failer.Failer, nodeType types.SpecComponentType, componentIndex int) *runner {
 	bodyType := reflect.TypeOf(body)
 	if bodyType.Kind() != reflect.Func {
 		panic(fmt.Sprintf("Expected a function but got something else at %v", codeLocation))
@@ -56,7 +56,7 @@ func newRunner(body interface{}, codeLocation types.CodeLocation, timeout time.D
 	panic(fmt.Sprintf("Too many arguments to function at %v", codeLocation))
 }
 
-func (r *runner) run() (outcome types.ExampleState, failure types.ExampleFailure) {
+func (r *runner) run() (outcome types.SpecState, failure types.SpecFailure) {
 	if r.isAsync {
 		return r.runAsync()
 	} else {
@@ -64,7 +64,7 @@ func (r *runner) run() (outcome types.ExampleState, failure types.ExampleFailure
 	}
 }
 
-func (r *runner) runAsync() (outcome types.ExampleState, failure types.ExampleFailure) {
+func (r *runner) runAsync() (outcome types.SpecState, failure types.SpecFailure) {
 	done := make(chan interface{}, 1)
 
 	go func() {
@@ -92,7 +92,7 @@ func (r *runner) runAsync() (outcome types.ExampleState, failure types.ExampleFa
 	failure, outcome = r.failer.Drain(r.nodeType, r.componentIndex, r.codeLocation)
 	return
 }
-func (r *runner) runSync() (outcome types.ExampleState, failure types.ExampleFailure) {
+func (r *runner) runSync() (outcome types.SpecState, failure types.SpecFailure) {
 	defer func() {
 		if e := recover(); e != nil {
 			r.failer.Panic(codelocation.New(2), e)

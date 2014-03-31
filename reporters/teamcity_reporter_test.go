@@ -22,25 +22,25 @@ var _ = Describe("TeamCity Reporter", func() {
 		buffer.Truncate(0)
 		reporter = reporters.NewTeamCityReporter(&buffer)
 		reporter.SpecSuiteWillBegin(config.GinkgoConfigType{}, &types.SuiteSummary{
-			SuiteDescription:              "Foo's test suite",
-			NumberOfExamplesThatWillBeRun: 1,
+			SuiteDescription:           "Foo's test suite",
+			NumberOfSpecsThatWillBeRun: 1,
 		})
 	})
 
 	Describe("a passing test", func() {
 		BeforeEach(func() {
-			example := &types.ExampleSummary{
+			spec := &types.SpecSummary{
 				ComponentTexts: []string{"[Top Level]", "A", "B", "C"},
-				State:          types.ExampleStatePassed,
+				State:          types.SpecStatePassed,
 				RunTime:        5 * time.Second,
 			}
-			reporter.ExampleWillRun(example)
-			reporter.ExampleDidComplete(example)
+			reporter.SpecWillRun(spec)
+			reporter.SpecDidComplete(spec)
 
 			reporter.SpecSuiteDidEnd(&types.SuiteSummary{
-				NumberOfExamplesThatWillBeRun: 1,
-				NumberOfFailedExamples:        0,
-				RunTime:                       10 * time.Second,
+				NumberOfSpecsThatWillBeRun: 1,
+				NumberOfFailedSpecs:        0,
+				RunTime:                    10 * time.Second,
 			})
 		})
 
@@ -55,36 +55,36 @@ var _ = Describe("TeamCity Reporter", func() {
 		})
 	})
 
-	exampleStateCases := []struct {
-		state   types.ExampleState
+	specStateCases := []struct {
+		state   types.SpecState
 		message string
 	}{
-		{types.ExampleStateFailed, "Failure"},
-		{types.ExampleStateTimedOut, "Timeout"},
-		{types.ExampleStatePanicked, "Panic"},
+		{types.SpecStateFailed, "Failure"},
+		{types.SpecStateTimedOut, "Timeout"},
+		{types.SpecStatePanicked, "Panic"},
 	}
 
-	for _, exampleStateCase := range exampleStateCases {
-		exampleStateCase := exampleStateCase
+	for _, specStateCase := range specStateCases {
+		specStateCase := specStateCase
 		Describe("a failing test", func() {
-			var example *types.ExampleSummary
+			var spec *types.SpecSummary
 			BeforeEach(func() {
-				example = &types.ExampleSummary{
+				spec = &types.SpecSummary{
 					ComponentTexts: []string{"[Top Level]", "A", "B", "C"},
-					State:          exampleStateCase.state,
+					State:          specStateCase.state,
 					RunTime:        5 * time.Second,
-					Failure: types.ExampleFailure{
+					Failure: types.SpecFailure{
 						ComponentCodeLocation: codelocation.New(0),
 						Message:               "I failed",
 					},
 				}
-				reporter.ExampleWillRun(example)
-				reporter.ExampleDidComplete(example)
+				reporter.SpecWillRun(spec)
+				reporter.SpecDidComplete(spec)
 
 				reporter.SpecSuiteDidEnd(&types.SuiteSummary{
-					NumberOfExamplesThatWillBeRun: 1,
-					NumberOfFailedExamples:        1,
-					RunTime:                       10 * time.Second,
+					NumberOfSpecsThatWillBeRun: 1,
+					NumberOfFailedSpecs:        1,
+					RunTime:                    10 * time.Second,
 				})
 			})
 
@@ -95,29 +95,29 @@ var _ = Describe("TeamCity Reporter", func() {
 						"##teamcity[testStarted name='A B C']"+
 						"##teamcity[testFailed name='A B C' message='%s' details='I failed']"+
 						"##teamcity[testFinished name='A B C' duration='5000']"+
-						"##teamcity[testSuiteFinished name='Foo|'s test suite']", example.Failure.ComponentCodeLocation.String())
+						"##teamcity[testSuiteFinished name='Foo|'s test suite']", spec.Failure.ComponentCodeLocation.String())
 				Ω(actual).Should(Equal(expected))
 			})
 		})
 	}
 
-	for _, exampleStateCase := range []types.ExampleState{types.ExampleStatePending, types.ExampleStateSkipped} {
-		exampleStateCase := exampleStateCase
+	for _, specStateCase := range []types.SpecState{types.SpecStatePending, types.SpecStateSkipped} {
+		specStateCase := specStateCase
 		Describe("a skipped test", func() {
-			var example *types.ExampleSummary
+			var spec *types.SpecSummary
 			BeforeEach(func() {
-				example = &types.ExampleSummary{
+				spec = &types.SpecSummary{
 					ComponentTexts: []string{"[Top Level]", "A", "B", "C"},
-					State:          exampleStateCase,
+					State:          specStateCase,
 					RunTime:        5 * time.Second,
 				}
-				reporter.ExampleWillRun(example)
-				reporter.ExampleDidComplete(example)
+				reporter.SpecWillRun(spec)
+				reporter.SpecDidComplete(spec)
 
 				reporter.SpecSuiteDidEnd(&types.SuiteSummary{
-					NumberOfExamplesThatWillBeRun: 1,
-					NumberOfFailedExamples:        0,
-					RunTime:                       10 * time.Second,
+					NumberOfSpecsThatWillBeRun: 1,
+					NumberOfFailedSpecs:        0,
+					RunTime:                    10 * time.Second,
 				})
 			})
 

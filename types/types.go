@@ -9,42 +9,42 @@ type SuiteSummary struct {
 	SuiteSucceeded   bool
 	SuiteID          string
 
-	NumberOfExamplesBeforeParallelization int
-	NumberOfTotalExamples                 int
-	NumberOfExamplesThatWillBeRun         int
-	NumberOfPendingExamples               int
-	NumberOfSkippedExamples               int
-	NumberOfPassedExamples                int
-	NumberOfFailedExamples                int
-	RunTime                               time.Duration
+	NumberOfSpecsBeforeParallelization int
+	NumberOfTotalSpecs                 int
+	NumberOfSpecsThatWillBeRun         int
+	NumberOfPendingSpecs               int
+	NumberOfSkippedSpecs               int
+	NumberOfPassedSpecs                int
+	NumberOfFailedSpecs                int
+	RunTime                            time.Duration
 }
 
-type ExampleSummary struct {
+type SpecSummary struct {
 	ComponentTexts         []string
 	ComponentCodeLocations []CodeLocation
 
-	State           ExampleState
+	State           SpecState
 	RunTime         time.Duration
-	Failure         ExampleFailure
+	Failure         SpecFailure
 	IsMeasurement   bool
 	NumberOfSamples int
-	Measurements    map[string]*ExampleMeasurement
+	Measurements    map[string]*SpecMeasurement
 
 	CapturedOutput string
 	SuiteID        string
 }
 
-type ExampleFailure struct {
+type SpecFailure struct {
 	Message        string
 	Location       CodeLocation
 	ForwardedPanic interface{}
 
 	ComponentIndex        int
-	ComponentType         ExampleComponentType
+	ComponentType         SpecComponentType
 	ComponentCodeLocation CodeLocation
 }
 
-type ExampleMeasurement struct {
+type SpecMeasurement struct {
 	Name string
 	Info interface{}
 
@@ -61,30 +61,30 @@ type ExampleMeasurement struct {
 	Units         string
 }
 
-type ExampleState uint
+type SpecState uint
 
 const (
-	ExampleStateInvalid ExampleState = iota
+	SpecStateInvalid SpecState = iota
 
-	ExampleStatePending
-	ExampleStateSkipped
-	ExampleStatePassed
-	ExampleStateFailed
-	ExampleStatePanicked
-	ExampleStateTimedOut
+	SpecStatePending
+	SpecStateSkipped
+	SpecStatePassed
+	SpecStateFailed
+	SpecStatePanicked
+	SpecStateTimedOut
 )
 
-type ExampleComponentType uint
+type SpecComponentType uint
 
 const (
-	ExampleComponentTypeInvalid ExampleComponentType = iota
+	SpecComponentTypeInvalid SpecComponentType = iota
 
-	ExampleComponentTypeContainer
-	ExampleComponentTypeBeforeEach
-	ExampleComponentTypeJustBeforeEach
-	ExampleComponentTypeAfterEach
-	ExampleComponentTypeIt
-	ExampleComponentTypeMeasure
+	SpecComponentTypeContainer
+	SpecComponentTypeBeforeEach
+	SpecComponentTypeJustBeforeEach
+	SpecComponentTypeAfterEach
+	SpecComponentTypeIt
+	SpecComponentTypeMeasure
 )
 
 type FlagType uint

@@ -16,8 +16,8 @@ var _ = Describe("Server", func() {
 		reporterA, reporterB *reporters.FakeReporter
 		forwardingReporter   *ForwardingReporter
 
-		suiteSummary   *types.SuiteSummary
-		exampleSummary *types.ExampleSummary
+		suiteSummary *types.SuiteSummary
+		specSummary  *types.SpecSummary
 	)
 
 	BeforeEach(func() {
@@ -35,9 +35,9 @@ var _ = Describe("Server", func() {
 			SuiteDescription: "My Test Suite",
 		}
 
-		exampleSummary = &types.ExampleSummary{
-			ComponentTexts: []string{"My", "Example"},
-			State:          types.ExampleStatePassed,
+		specSummary = &types.SpecSummary{
+			ComponentTexts: []string{"My", "Spec"},
+			State:          types.SpecStatePassed,
 		}
 
 		server.Start()
@@ -62,20 +62,20 @@ var _ = Describe("Server", func() {
 		})
 	})
 
-	Describe("/ExampleWillRun", func() {
-		It("should decode and forward the example summary", func(done Done) {
-			forwardingReporter.ExampleWillRun(exampleSummary)
-			Ω(reporterA.ExampleWillRunSummaries[0]).Should(Equal(exampleSummary))
-			Ω(reporterB.ExampleWillRunSummaries[0]).Should(Equal(exampleSummary))
+	Describe("/SpecWillRun", func() {
+		It("should decode and forward the spec summary", func(done Done) {
+			forwardingReporter.SpecWillRun(specSummary)
+			Ω(reporterA.SpecWillRunSummaries[0]).Should(Equal(specSummary))
+			Ω(reporterB.SpecWillRunSummaries[0]).Should(Equal(specSummary))
 			close(done)
 		})
 	})
 
-	Describe("/ExampleDidComplete", func() {
-		It("should decode and forward the example summary", func(done Done) {
-			forwardingReporter.ExampleDidComplete(exampleSummary)
-			Ω(reporterA.ExampleSummaries[0]).Should(Equal(exampleSummary))
-			Ω(reporterB.ExampleSummaries[0]).Should(Equal(exampleSummary))
+	Describe("/SpecDidComplete", func() {
+		It("should decode and forward the spec summary", func(done Done) {
+			forwardingReporter.SpecDidComplete(specSummary)
+			Ω(reporterA.SpecSummaries[0]).Should(Equal(specSummary))
+			Ω(reporterB.SpecSummaries[0]).Should(Equal(specSummary))
 			close(done)
 		})
 	})

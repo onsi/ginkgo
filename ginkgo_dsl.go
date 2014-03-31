@@ -106,8 +106,7 @@ type GinkgoTInterface interface {
 //Custom Ginkgo test reporters must implement the Reporter interface.
 //
 //The custom reporter is passed in a SuiteSummary when the suite begins and ends,
-//and an ExmapleSummary just before an example (spec) begins
-//and just after an example (spec) ends
+//and a SpecSummary just before a spec begins and just after a spec ends
 type Reporter reporters.Reporter
 
 //Asynchronous specs given a channel of the Done type.  You must close the channel
@@ -134,7 +133,7 @@ type GinkgoTestDescription struct {
 
 //CurrentGinkgoTestDescripton returns information about the current running test.
 func CurrentGinkgoTestDescription() GinkgoTestDescription {
-	summary, ok := globalSuite.CurrentRunningExampleSummary()
+	summary, ok := globalSuite.CurrentRunningSpecSummary()
 	if !ok {
 		return GinkgoTestDescription{}
 	}

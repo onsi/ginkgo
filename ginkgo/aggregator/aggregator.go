@@ -35,8 +35,8 @@ type Aggregator struct {
 	suiteBeginnings           chan configAndSuite
 	aggregatedSuiteBeginnings []configAndSuite
 
-	exampleCompletions chan *types.ExampleSummary
-	completedExamples  []*types.ExampleSummary
+	specCompletions chan *types.SpecSummary
+	completedSpecs  []*types.SpecSummary
 
 	suiteEndings           chan *types.SuiteSummary
 	aggregatedSuiteEndings []*types.SuiteSummary
@@ -54,8 +54,8 @@ func NewAggregator(nodeCount int, result chan bool, config config.DefaultReporte
 		suiteBeginnings:           make(chan configAndSuite, 0),
 		aggregatedSuiteBeginnings: []configAndSuite{},
 
-		exampleCompletions: make(chan *types.ExampleSummary, 0),
-		completedExamples:  []*types.ExampleSummary{},
+		specCompletions: make(chan *types.SpecSummary, 0),
+		completedSpecs:  []*types.SpecSummary{},
 
 		suiteEndings:           make(chan *types.SuiteSummary, 0),
 		aggregatedSuiteEndings: []*types.SuiteSummary{},
@@ -70,12 +70,12 @@ func (aggregator *Aggregator) SpecSuiteWillBegin(config config.GinkgoConfigType,
 	aggregator.suiteBeginnings <- configAndSuite{config, summary}
 }
 
-func (aggregator *Aggregator) ExampleWillRun(exampleSummary *types.ExampleSummary) {
+func (aggregator *Aggregator) SpecWillRun(specSummary *types.SpecSummary) {
 	//noop
 }
 
-func (aggregator *Aggregator) ExampleDidComplete(exampleSummary *types.ExampleSummary) {
-	aggregator.exampleCompletions <- exampleSummary
+func (aggregator *Aggregator) SpecDidComplete(specSummary *types.SpecSummary) {
+	aggregator.specCompletions <- specSummary
 }
 
 func (aggregator *Aggregator) SpecSuiteDidEnd(summary *types.SuiteSummary) {
@@ -88,8 +88,8 @@ loop:
 		select {
 		case configAndSuite := <-aggregator.suiteBeginnings:
 			aggregator.registerSuiteBeginning(configAndSuite)
-		case exampleSummary := <-aggregator.exampleCompletions:
-			aggregator.registerExampleCompletion(exampleSummary)
+		case specSummary := <-aggregator.specCompletions:
+			aggregator.registerSpecCompletion(specSummary)
 		case suite := <-aggregator.suiteEndings:
 			finished, passed := aggregator.registerSuiteEnding(suite)
 			if finished {
@@ -116,62 +116,62 @@ func (aggregator *Aggregator) registerSuiteBeginning(configAndSuite configAndSui
 	numberOfSpecsToRun := 0
 	totalNumberOfSpecs := 0
 	for _, configAndSuite := range aggregator.aggregatedSuiteBeginnings {
-		numberOfSpecsToRun += configAndSuite.summary.NumberOfExamplesThatWillBeRun
-		totalNumberOfSpecs += configAndSuite.summary.NumberOfTotalExamples
+		numberOfSpecsToRun += configAndSuite.summary.NumberOfSpecsThatWillBeRun
+		totalNumberOfSpecs += configAndSuite.summary.NumberOfTotalSpecs
 	}
 
 	aggregator.stenographer.AnnounceNumberOfSpecs(numberOfSpecsToRun, totalNumberOfSpecs, aggregator.config.Succinct)
 	aggregator.stenographer.AnnounceAggregatedParallelRun(aggregator.nodeCount, aggregator.config.Succinct)
-	aggregator.flushCompletedExamples()
+	aggregator.flushCompletedSpecs()
 }
 
-func (aggregator *Aggregator) registerExampleCompletion(exampleSummary *types.ExampleSummary) {
-	aggregator.completedExamples = append(aggregator.completedExamples, exampleSummary)
-	aggregator.flushCompletedExamples()
+func (aggregator *Aggregator) registerSpecCompletion(specSummary *types.SpecSummary) {
+	aggregator.completedSpecs = append(aggregator.completedSpecs, specSummary)
+	aggregator.flushCompletedSpecs()
 }
 
-func (aggregator *Aggregator) flushCompletedExamples() {
+func (aggregator *Aggregator) flushCompletedSpecs() {
 	if len(aggregator.aggregatedSuiteBeginnings) != aggregator.nodeCount {
 		return
 	}
 
-	for _, exampleSummary := range aggregator.completedExamples {
-		aggregator.announceExample(exampleSummary)
+	for _, specSummary := range aggregator.completedSpecs {
+		aggregator.announceSpec(specSummary)
 	}
 
-	aggregator.completedExamples = []*types.ExampleSummary{}
+	aggregator.completedSpecs = []*types.SpecSummary{}
 }
 
-func (aggregator *Aggregator) announceExample(exampleSummary *types.ExampleSummary) {
-	if aggregator.config.Verbose && exampleSummary.State != types.ExampleStatePending && exampleSummary.State != types.ExampleStateSkipped {
-		aggregator.stenographer.AnnounceExampleWillRun(exampleSummary)
+func (aggregator *Aggregator) announceSpec(specSummary *types.SpecSummary) {
+	if aggregator.config.Verbose && specSummary.State != types.SpecStatePending && specSummary.State != types.SpecStateSkipped {
+		aggregator.stenographer.AnnounceSpecWillRun(specSummary)
 	}
 
-	aggregator.stenographer.AnnounceCapturedOutput(exampleSummary)
+	aggregator.stenographer.AnnounceCapturedOutput(specSummary)
 
-	switch exampleSummary.State {
-	case types.ExampleStatePassed:
+	switch specSummary.State {
+	case types.SpecStatePassed:
 		if !aggregator.config.Succinct {
-			if exampleSummary.IsMeasurement {
-				aggregator.stenographer.AnnounceSuccesfulMeasurement(exampleSummary, aggregator.config.Succinct)
-			} else if exampleSummary.RunTime.Seconds() >= aggregator.config.SlowSpecThreshold {
-				aggregator.stenographer.AnnounceSuccesfulSlowExample(exampleSummary, aggregator.config.Succinct)
+			if specSummary.IsMeasurement {
+				aggregator.stenographer.AnnounceSuccesfulMeasurement(specSummary, aggregator.config.Succinct)
+			} else if specSummary.RunTime.Seconds() >= aggregator.config.SlowSpecThreshold {
+				aggregator.stenographer.AnnounceSuccesfulSlowSpec(specSummary, aggregator.config.Succinct)
 			} else {
-				aggregator.stenographer.AnnounceSuccesfulExample(exampleSummary)
+				aggregator.stenographer.AnnounceSuccesfulSpec(specSummary)
 			}
 		} else {
-			aggregator.stenographer.AnnounceSuccesfulExample(exampleSummary)
+			aggregator.stenographer.AnnounceSuccesfulSpec(specSummary)
 		}
-	case types.ExampleStatePending:
-		aggregator.stenographer.AnnouncePendingExample(exampleSummary, aggregator.config.NoisyPendings && !aggregator.config.Succinct)
-	case types.ExampleStateSkipped:
-		aggregator.stenographer.AnnounceSkippedExample(exampleSummary)
-	case types.ExampleStateTimedOut:
-		aggregator.stenographer.AnnounceExampleTimedOut(exampleSummary, aggregator.config.Succinct)
-	case types.ExampleStatePanicked:
-		aggregator.stenographer.AnnounceExamplePanicked(exampleSummary, aggregator.config.Succinct)
-	case types.ExampleStateFailed:
-		aggregator.stenographer.AnnounceExampleFailed(exampleSummary, aggregator.config.Succinct)
+	case types.SpecStatePending:
+		aggregator.stenographer.AnnouncePendingSpec(specSummary, aggregator.config.NoisyPendings && !aggregator.config.Succinct)
+	case types.SpecStateSkipped:
+		aggregator.stenographer.AnnounceSkippedSpec(specSummary)
+	case types.SpecStateTimedOut:
+		aggregator.stenographer.AnnounceSpecTimedOut(specSummary, aggregator.config.Succinct)
+	case types.SpecStatePanicked:
+		aggregator.stenographer.AnnounceSpecPanicked(specSummary, aggregator.config.Succinct)
+	case types.SpecStateFailed:
+		aggregator.stenographer.AnnounceSpecFailed(specSummary, aggregator.config.Succinct)
 	}
 }
 
@@ -189,12 +189,12 @@ func (aggregator *Aggregator) registerSuiteEnding(suite *types.SuiteSummary) (fi
 			aggregatedSuiteSummary.SuiteSucceeded = false
 		}
 
-		aggregatedSuiteSummary.NumberOfExamplesThatWillBeRun += suiteSummary.NumberOfExamplesThatWillBeRun
-		aggregatedSuiteSummary.NumberOfTotalExamples += suiteSummary.NumberOfTotalExamples
-		aggregatedSuiteSummary.NumberOfPassedExamples += suiteSummary.NumberOfPassedExamples
-		aggregatedSuiteSummary.NumberOfFailedExamples += suiteSummary.NumberOfFailedExamples
-		aggregatedSuiteSummary.NumberOfPendingExamples += suiteSummary.NumberOfPendingExamples
-		aggregatedSuiteSummary.NumberOfSkippedExamples += suiteSummary.NumberOfSkippedExamples
+		aggregatedSuiteSummary.NumberOfSpecsThatWillBeRun += suiteSummary.NumberOfSpecsThatWillBeRun
+		aggregatedSuiteSummary.NumberOfTotalSpecs += suiteSummary.NumberOfTotalSpecs
+		aggregatedSuiteSummary.NumberOfPassedSpecs += suiteSummary.NumberOfPassedSpecs
+		aggregatedSuiteSummary.NumberOfFailedSpecs += suiteSummary.NumberOfFailedSpecs
+		aggregatedSuiteSummary.NumberOfPendingSpecs += suiteSummary.NumberOfPendingSpecs
+		aggregatedSuiteSummary.NumberOfSkippedSpecs += suiteSummary.NumberOfSkippedSpecs
 	}
 
 	aggregatedSuiteSummary.RunTime = time.Since(aggregator.startTime)

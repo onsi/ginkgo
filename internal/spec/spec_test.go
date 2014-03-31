@@ -1,11 +1,11 @@
-package example_test
+package spec_test
 
 import (
 	. "github.com/onsi/ginkgo"
 	. "github.com/onsi/gomega"
 	"time"
 
-	. "github.com/onsi/ginkgo/internal/example"
+	. "github.com/onsi/ginkgo/internal/spec"
 
 	"github.com/onsi/ginkgo/internal/codelocation"
 	"github.com/onsi/ginkgo/internal/containernode"
@@ -18,12 +18,12 @@ var noneFlag = types.FlagTypeNone
 var focusedFlag = types.FlagTypeFocused
 var pendingFlag = types.FlagTypePending
 
-var _ = Describe("Example", func() {
+var _ = Describe("Spec", func() {
 	var (
 		failer       *Failer.Failer
 		codeLocation types.CodeLocation
 		nodesThatRan []string
-		example      *Example
+		spec         *Spec
 	)
 
 	newBody := func(text string, fail bool) func() {
@@ -82,7 +82,7 @@ var _ = Describe("Example", func() {
 		nodesThatRan = []string{}
 	})
 
-	Describe("marking examples focused and pending", func() {
+	Describe("marking specs focused and pending", func() {
 		It("should satisfy various caes", func() {
 			cases := []struct {
 				ContainerFlags []types.FlagType
@@ -116,12 +116,12 @@ var _ = Describe("Example", func() {
 					containers = append(containers, newContainer("container", flag))
 				}
 
-				example := New(subject, containers)
-				Ω(example.Pending()).Should(Equal(c.Pending), "Case %d: %#v", i, c)
-				Ω(example.Focused()).Should(Equal(c.Focused), "Case %d: %#v", i, c)
+				spec := New(subject, containers)
+				Ω(spec.Pending()).Should(Equal(c.Pending), "Case %d: %#v", i, c)
+				Ω(spec.Focused()).Should(Equal(c.Focused), "Case %d: %#v", i, c)
 
 				if c.Pending {
-					Ω(example.Summary("").State).Should(Equal(types.ExampleStatePending))
+					Ω(spec.Summary("").State).Should(Equal(types.SpecStatePending))
 				}
 			}
 		})
@@ -129,77 +129,77 @@ var _ = Describe("Example", func() {
 
 	Describe("Skip", func() {
 		It("should be skipped", func() {
-			example := New(newIt("it node", noneFlag, false), containers(newContainer("container", noneFlag)))
-			Ω(example.Skipped()).Should(BeFalse())
-			example.Skip()
-			Ω(example.Skipped()).Should(BeTrue())
-			Ω(example.Summary("").State).Should(Equal(types.ExampleStateSkipped))
+			spec := New(newIt("it node", noneFlag, false), containers(newContainer("container", noneFlag)))
+			Ω(spec.Skipped()).Should(BeFalse())
+			spec.Skip()
+			Ω(spec.Skipped()).Should(BeTrue())
+			Ω(spec.Summary("").State).Should(Equal(types.SpecStateSkipped))
 		})
 	})
 
 	Describe("IsMeasurement", func() {
 		It("should be true if the subject is a measurement node", func() {
-			example := New(newIt("it node", noneFlag, false), containers(newContainer("container", noneFlag)))
-			Ω(example.IsMeasurement()).Should(BeFalse())
-			Ω(example.Summary("").IsMeasurement).Should(BeFalse())
-			Ω(example.Summary("").NumberOfSamples).Should(Equal(1))
+			spec := New(newIt("it node", noneFlag, false), containers(newContainer("container", noneFlag)))
+			Ω(spec.IsMeasurement()).Should(BeFalse())
+			Ω(spec.Summary("").IsMeasurement).Should(BeFalse())
+			Ω(spec.Summary("").NumberOfSamples).Should(Equal(1))
 
-			example = New(newMeasure("measure node", noneFlag, false, 10), containers(newContainer("container", noneFlag)))
-			Ω(example.IsMeasurement()).Should(BeTrue())
-			Ω(example.Summary("").IsMeasurement).Should(BeTrue())
-			Ω(example.Summary("").NumberOfSamples).Should(Equal(10))
+			spec = New(newMeasure("measure node", noneFlag, false, 10), containers(newContainer("container", noneFlag)))
+			Ω(spec.IsMeasurement()).Should(BeTrue())
+			Ω(spec.Summary("").IsMeasurement).Should(BeTrue())
+			Ω(spec.Summary("").NumberOfSamples).Should(Equal(10))
 		})
 	})
 
 	Describe("Passed", func() {
 		It("should pass when the subject passed", func() {
-			example := New(newIt("it node", noneFlag, false), containers())
-			example.Run()
+			spec := New(newIt("it node", noneFlag, false), containers())
+			spec.Run()
 
-			Ω(example.Passed()).Should(BeTrue())
-			Ω(example.Failed()).Should(BeFalse())
-			Ω(example.Summary("").State).Should(Equal(types.ExampleStatePassed))
-			Ω(example.Summary("").Failure).Should(BeZero())
+			Ω(spec.Passed()).Should(BeTrue())
+			Ω(spec.Failed()).Should(BeFalse())
+			Ω(spec.Summary("").State).Should(Equal(types.SpecStatePassed))
+			Ω(spec.Summary("").Failure).Should(BeZero())
 		})
 	})
 
 	Describe("Failed", func() {
 		It("should be failed if the failure was panic", func() {
-			example := New(newItWithBody("panicky it", func() {
+			spec := New(newItWithBody("panicky it", func() {
 				panic("bam")
 			}), containers())
-			example.Run()
-			Ω(example.Passed()).Should(BeFalse())
-			Ω(example.Failed()).Should(BeTrue())
-			Ω(example.Summary("").State).Should(Equal(types.ExampleStatePanicked))
-			Ω(example.Summary("").Failure.Message).Should(Equal("Test Panicked"))
-			Ω(example.Summary("").Failure.ForwardedPanic).Should(Equal("bam"))
+			spec.Run()
+			Ω(spec.Passed()).Should(BeFalse())
+			Ω(spec.Failed()).Should(BeTrue())
+			Ω(spec.Summary("").State).Should(Equal(types.SpecStatePanicked))
+			Ω(spec.Summary("").Failure.Message).Should(Equal("Test Panicked"))
+			Ω(spec.Summary("").Failure.ForwardedPanic).Should(Equal("bam"))
 		})
 
 		It("should be failed if the failure was a timeout", func() {
-			example := New(newItWithBody("sleepy it", func(done Done) {}), containers())
-			example.Run()
-			Ω(example.Passed()).Should(BeFalse())
-			Ω(example.Failed()).Should(BeTrue())
-			Ω(example.Summary("").State).Should(Equal(types.ExampleStateTimedOut))
-			Ω(example.Summary("").Failure.Message).Should(Equal("Timed out"))
+			spec := New(newItWithBody("sleepy it", func(done Done) {}), containers())
+			spec.Run()
+			Ω(spec.Passed()).Should(BeFalse())
+			Ω(spec.Failed()).Should(BeTrue())
+			Ω(spec.Summary("").State).Should(Equal(types.SpecStateTimedOut))
+			Ω(spec.Summary("").Failure.Message).Should(Equal("Timed out"))
 		})
 
 		It("should be failed if the failure was... a failure", func() {
-			example := New(newItWithBody("failing it", func() {
+			spec := New(newItWithBody("failing it", func() {
 				failer.Fail("bam", codeLocation)
 			}), containers())
-			example.Run()
-			Ω(example.Passed()).Should(BeFalse())
-			Ω(example.Failed()).Should(BeTrue())
-			Ω(example.Summary("").State).Should(Equal(types.ExampleStateFailed))
-			Ω(example.Summary("").Failure.Message).Should(Equal("bam"))
+			spec.Run()
+			Ω(spec.Passed()).Should(BeFalse())
+			Ω(spec.Failed()).Should(BeTrue())
+			Ω(spec.Summary("").State).Should(Equal(types.SpecStateFailed))
+			Ω(spec.Summary("").Failure.Message).Should(Equal("bam"))
 		})
 	})
 
 	Describe("Concatenated string", func() {
 		It("should concatenate the texts of the containers and the subject", func() {
-			example := New(
+			spec := New(
 				newIt("it node", noneFlag, false),
 				containers(
 					newContainer("outer container", noneFlag),
@@ -207,29 +207,29 @@ var _ = Describe("Example", func() {
 				),
 			)
 
-			Ω(example.ConcatenatedString()).Should(Equal("outer container inner container it node"))
+			Ω(spec.ConcatenatedString()).Should(Equal("outer container inner container it node"))
 		})
 	})
 
-	Describe("running it examples", func() {
+	Describe("running it specs", func() {
 		Context("with just an it", func() {
 			Context("that succeeds", func() {
 				It("should run the it and report on its success", func() {
-					example := New(newIt("it node", noneFlag, false), containers())
-					example.Run()
-					Ω(example.Passed()).Should(BeTrue())
-					Ω(example.Failed()).Should(BeFalse())
+					spec := New(newIt("it node", noneFlag, false), containers())
+					spec.Run()
+					Ω(spec.Passed()).Should(BeTrue())
+					Ω(spec.Failed()).Should(BeFalse())
 					Ω(nodesThatRan).Should(Equal([]string{"it node"}))
 				})
 			})
 
 			Context("that fails", func() {
 				It("should run the it and report on its success", func() {
-					example := New(newIt("it node", noneFlag, true), containers())
-					example.Run()
-					Ω(example.Passed()).Should(BeFalse())
-					Ω(example.Failed()).Should(BeTrue())
-					Ω(example.Summary("").Failure.Message).Should(Equal("it node"))
+					spec := New(newIt("it node", noneFlag, true), containers())
+					spec.Run()
+					Ω(spec.Passed()).Should(BeFalse())
+					Ω(spec.Failed()).Should(BeTrue())
+					Ω(spec.Summary("").Failure.Message).Should(Equal("it node"))
 					Ω(nodesThatRan).Should(Equal([]string{"it node"}))
 				})
 			})
@@ -243,7 +243,7 @@ var _ = Describe("Example", func() {
 			})
 
 			JustBeforeEach(func() {
-				example = New(
+				spec = New(
 					newIt("it node", noneFlag, failingNodes["it node"]),
 					containers(
 						newContainer("outer container", noneFlag,
@@ -264,13 +264,13 @@ var _ = Describe("Example", func() {
 						),
 					),
 				)
-				example.Run()
+				spec.Run()
 			})
 
 			Context("that all pass", func() {
 				It("should walk through the nodes in the correct order", func() {
-					Ω(example.Passed()).Should(BeTrue())
-					Ω(example.Failed()).Should(BeFalse())
+					Ω(spec.Passed()).Should(BeTrue())
+					Ω(spec.Failed()).Should(BeFalse())
 					Ω(nodesThatRan).Should(Equal([]string{
 						"outer bef A",
 						"outer bef B",
@@ -295,8 +295,8 @@ var _ = Describe("Example", func() {
 				})
 
 				It("should run the afters", func() {
-					Ω(example.Passed()).Should(BeFalse())
-					Ω(example.Failed()).Should(BeTrue())
+					Ω(spec.Passed()).Should(BeFalse())
+					Ω(spec.Failed()).Should(BeTrue())
 					Ω(nodesThatRan).Should(Equal([]string{
 						"outer bef A",
 						"outer bef B",
@@ -312,7 +312,7 @@ var _ = Describe("Example", func() {
 						"outer aft A",
 						"outer aft B",
 					}))
-					Ω(example.Summary("").Failure.Message).Should(Equal("it node"))
+					Ω(spec.Summary("").Failure.Message).Should(Equal("it node"))
 				})
 			})
 
@@ -322,8 +322,8 @@ var _ = Describe("Example", func() {
 				})
 
 				It("should not run any other befores, but it should run the subsequent afters", func() {
-					Ω(example.Passed()).Should(BeFalse())
-					Ω(example.Failed()).Should(BeTrue())
+					Ω(spec.Passed()).Should(BeFalse())
+					Ω(spec.Failed()).Should(BeTrue())
 					Ω(nodesThatRan).Should(Equal([]string{
 						"outer bef A",
 						"outer bef B",
@@ -333,7 +333,7 @@ var _ = Describe("Example", func() {
 						"outer aft A",
 						"outer aft B",
 					}))
-					Ω(example.Summary("").Failure.Message).Should(Equal("inner bef A"))
+					Ω(spec.Summary("").Failure.Message).Should(Equal("inner bef A"))
 				})
 			})
 
@@ -343,15 +343,15 @@ var _ = Describe("Example", func() {
 				})
 
 				It("should not run any other befores, but it should run the subsequent afters", func() {
-					Ω(example.Passed()).Should(BeFalse())
-					Ω(example.Failed()).Should(BeTrue())
+					Ω(spec.Passed()).Should(BeFalse())
+					Ω(spec.Failed()).Should(BeTrue())
 					Ω(nodesThatRan).Should(Equal([]string{
 						"outer bef A",
 						"outer bef B",
 						"outer aft A",
 						"outer aft B",
 					}))
-					Ω(example.Summary("").Failure.Message).Should(Equal("outer bef B"))
+					Ω(spec.Summary("").Failure.Message).Should(Equal("outer bef B"))
 				})
 			})
 
@@ -361,8 +361,8 @@ var _ = Describe("Example", func() {
 				})
 
 				It("should run all other afters, but mark the test as failed", func() {
-					Ω(example.Passed()).Should(BeFalse())
-					Ω(example.Failed()).Should(BeTrue())
+					Ω(spec.Passed()).Should(BeFalse())
+					Ω(spec.Failed()).Should(BeTrue())
 					Ω(nodesThatRan).Should(Equal([]string{
 						"outer bef A",
 						"outer bef B",
@@ -378,7 +378,7 @@ var _ = Describe("Example", func() {
 						"outer aft A",
 						"outer aft B",
 					}))
-					Ω(example.Summary("").Failure.Message).Should(Equal("inner aft B"))
+					Ω(spec.Summary("").Failure.Message).Should(Equal("inner aft B"))
 				})
 			})
 
@@ -388,8 +388,8 @@ var _ = Describe("Example", func() {
 				})
 
 				It("should run the afters, but not the subject", func() {
-					Ω(example.Passed()).Should(BeFalse())
-					Ω(example.Failed()).Should(BeTrue())
+					Ω(spec.Passed()).Should(BeFalse())
+					Ω(spec.Failed()).Should(BeTrue())
 					Ω(nodesThatRan).Should(Equal([]string{
 						"outer bef A",
 						"outer bef B",
@@ -402,7 +402,7 @@ var _ = Describe("Example", func() {
 						"outer aft A",
 						"outer aft B",
 					}))
-					Ω(example.Summary("").Failure.Message).Should(Equal("outer jusbef B"))
+					Ω(spec.Summary("").Failure.Message).Should(Equal("outer jusbef B"))
 				})
 			})
 
@@ -413,8 +413,8 @@ var _ = Describe("Example", func() {
 				})
 
 				It("should record the earlier failure", func() {
-					Ω(example.Passed()).Should(BeFalse())
-					Ω(example.Failed()).Should(BeTrue())
+					Ω(spec.Passed()).Should(BeFalse())
+					Ω(spec.Failed()).Should(BeTrue())
 					Ω(nodesThatRan).Should(Equal([]string{
 						"outer bef A",
 						"outer bef B",
@@ -430,16 +430,16 @@ var _ = Describe("Example", func() {
 						"outer aft A",
 						"outer aft B",
 					}))
-					Ω(example.Summary("").Failure.Message).Should(Equal("it node"))
+					Ω(spec.Summary("").Failure.Message).Should(Equal("it node"))
 				})
 			})
 		})
 	})
 
-	Describe("running measurement examples", func() {
+	Describe("running measurement specs", func() {
 		Context("when the measurement succeeds", func() {
 			It("should run N samples", func() {
-				example = New(
+				spec = New(
 					newMeasure("measure node", noneFlag, false, 3),
 					containers(
 						newContainer("container", noneFlag,
@@ -449,10 +449,10 @@ var _ = Describe("Example", func() {
 						),
 					),
 				)
-				example.Run()
+				spec.Run()
 
-				Ω(example.Passed()).Should(BeTrue())
-				Ω(example.Failed()).Should(BeFalse())
+				Ω(spec.Passed()).Should(BeTrue())
+				Ω(spec.Failed()).Should(BeFalse())
 				Ω(nodesThatRan).Should(Equal([]string{
 					"bef A",
 					"jusbef A",
@@ -472,7 +472,7 @@ var _ = Describe("Example", func() {
 
 		Context("when the measurement fails", func() {
 			It("should bail after the failure occurs", func() {
-				example = New(
+				spec = New(
 					newMeasure("measure node", noneFlag, true, 3),
 					containers(
 						newContainer("container", noneFlag,
@@ -482,10 +482,10 @@ var _ = Describe("Example", func() {
 						),
 					),
 				)
-				example.Run()
+				spec.Run()
 
-				Ω(example.Passed()).Should(BeFalse())
-				Ω(example.Failed()).Should(BeTrue())
+				Ω(spec.Passed()).Should(BeFalse())
+				Ω(spec.Failed()).Should(BeTrue())
 				Ω(nodesThatRan).Should(Equal([]string{
 					"bef A",
 					"jusbef A",
@@ -501,7 +501,7 @@ var _ = Describe("Example", func() {
 			subjectCodeLocation        types.CodeLocation
 			outerContainerCodeLocation types.CodeLocation
 			innerContainerCodeLocation types.CodeLocation
-			summary                    *types.ExampleSummary
+			summary                    *types.SpecSummary
 		)
 
 		BeforeEach(func() {
@@ -509,7 +509,7 @@ var _ = Describe("Example", func() {
 			outerContainerCodeLocation = codelocation.New(0)
 			innerContainerCodeLocation = codelocation.New(0)
 
-			example = New(
+			spec = New(
 				leafnodes.NewItNode("it node", func() {
 					time.Sleep(10 * time.Millisecond)
 				}, noneFlag, subjectCodeLocation, 0, failer, 0),
@@ -519,9 +519,9 @@ var _ = Describe("Example", func() {
 				),
 			)
 
-			example.Run()
-			Ω(example.Passed()).Should(BeTrue())
-			summary = example.Summary("suite id")
+			spec.Run()
+			Ω(spec.Passed()).Should(BeTrue())
+			summary = spec.Summary("suite id")
 		})
 
 		It("should have the suite id", func() {
@@ -544,15 +544,15 @@ var _ = Describe("Example", func() {
 	})
 
 	Describe("Summaries for measurements", func() {
-		var summary *types.ExampleSummary
+		var summary *types.SpecSummary
 
 		BeforeEach(func() {
-			example = New(leafnodes.NewMeasureNode("measure node", func(b Benchmarker) {
+			spec = New(leafnodes.NewMeasureNode("measure node", func(b Benchmarker) {
 				b.RecordValue("a value", 7, "some info")
 			}, noneFlag, codeLocation, 4, failer, 0), containers())
-			example.Run()
-			Ω(example.Passed()).Should(BeTrue())
-			summary = example.Summary("suite id")
+			spec.Run()
+			Ω(spec.Passed()).Should(BeTrue())
+			summary = spec.Summary("suite id")
 		})
 
 		It("should include the number of samples", func() {

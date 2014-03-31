@@ -7,12 +7,12 @@ import (
 )
 
 type benchmarker struct {
-	measurements map[string]*types.ExampleMeasurement
+	measurements map[string]*types.SpecMeasurement
 }
 
 func newBenchmarker() *benchmarker {
 	return &benchmarker{
-		measurements: make(map[string]*types.ExampleMeasurement, 0),
+		measurements: make(map[string]*types.SpecMeasurement, 0),
 	}
 }
 
@@ -32,7 +32,7 @@ func (b *benchmarker) RecordValue(name string, value float64, info ...interface{
 	measurement.Results = append(measurement.Results, value)
 }
 
-func (b *benchmarker) getMeasurement(name string, smallestLabel string, largestLabel string, averageLabel string, units string, info ...interface{}) *types.ExampleMeasurement {
+func (b *benchmarker) getMeasurement(name string, smallestLabel string, largestLabel string, averageLabel string, units string, info ...interface{}) *types.SpecMeasurement {
 	measurement, ok := b.measurements[name]
 	if !ok {
 		var computedInfo interface{}
@@ -40,7 +40,7 @@ func (b *benchmarker) getMeasurement(name string, smallestLabel string, largestL
 		if len(info) > 0 {
 			computedInfo = info[0]
 		}
-		measurement = &types.ExampleMeasurement{
+		measurement = &types.SpecMeasurement{
 			Name:          name,
 			Info:          computedInfo,
 			SmallestLabel: smallestLabel,
@@ -55,7 +55,7 @@ func (b *benchmarker) getMeasurement(name string, smallestLabel string, largestL
 	return measurement
 }
 
-func (b *benchmarker) measurementsReport() map[string]*types.ExampleMeasurement {
+func (b *benchmarker) measurementsReport() map[string]*types.SpecMeasurement {
 	for _, measurement := range b.measurements {
 		measurement.Smallest = math.MaxFloat64
 		measurement.Largest = -math.MaxFloat64

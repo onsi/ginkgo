@@ -28,41 +28,41 @@ func NewDefaultReporter(config config.DefaultReporterConfigType, stenographer st
 func (reporter *DefaultReporter) SpecSuiteWillBegin(config config.GinkgoConfigType, summary *types.SuiteSummary) {
 	reporter.stenographer.AnnounceSuite(summary.SuiteDescription, config.RandomSeed, config.RandomizeAllSpecs, reporter.config.Succinct)
 	if config.ParallelTotal > 1 {
-		reporter.stenographer.AnnounceParallelRun(config.ParallelNode, config.ParallelTotal, summary.NumberOfTotalExamples, summary.NumberOfExamplesBeforeParallelization, reporter.config.Succinct)
+		reporter.stenographer.AnnounceParallelRun(config.ParallelNode, config.ParallelTotal, summary.NumberOfTotalSpecs, summary.NumberOfSpecsBeforeParallelization, reporter.config.Succinct)
 	}
-	reporter.stenographer.AnnounceNumberOfSpecs(summary.NumberOfExamplesThatWillBeRun, summary.NumberOfTotalExamples, reporter.config.Succinct)
+	reporter.stenographer.AnnounceNumberOfSpecs(summary.NumberOfSpecsThatWillBeRun, summary.NumberOfTotalSpecs, reporter.config.Succinct)
 }
 
-func (reporter *DefaultReporter) ExampleWillRun(exampleSummary *types.ExampleSummary) {
-	if reporter.config.Verbose && !reporter.config.Succinct && exampleSummary.State != types.ExampleStatePending && exampleSummary.State != types.ExampleStateSkipped {
-		reporter.stenographer.AnnounceExampleWillRun(exampleSummary)
+func (reporter *DefaultReporter) SpecWillRun(specSummary *types.SpecSummary) {
+	if reporter.config.Verbose && !reporter.config.Succinct && specSummary.State != types.SpecStatePending && specSummary.State != types.SpecStateSkipped {
+		reporter.stenographer.AnnounceSpecWillRun(specSummary)
 	}
 }
 
-func (reporter *DefaultReporter) ExampleDidComplete(exampleSummary *types.ExampleSummary) {
-	switch exampleSummary.State {
-	case types.ExampleStatePassed:
+func (reporter *DefaultReporter) SpecDidComplete(specSummary *types.SpecSummary) {
+	switch specSummary.State {
+	case types.SpecStatePassed:
 		if !reporter.config.Succinct {
-			if exampleSummary.IsMeasurement {
-				reporter.stenographer.AnnounceSuccesfulMeasurement(exampleSummary, reporter.config.Succinct)
-			} else if exampleSummary.RunTime.Seconds() >= reporter.config.SlowSpecThreshold {
-				reporter.stenographer.AnnounceSuccesfulSlowExample(exampleSummary, reporter.config.Succinct)
+			if specSummary.IsMeasurement {
+				reporter.stenographer.AnnounceSuccesfulMeasurement(specSummary, reporter.config.Succinct)
+			} else if specSummary.RunTime.Seconds() >= reporter.config.SlowSpecThreshold {
+				reporter.stenographer.AnnounceSuccesfulSlowSpec(specSummary, reporter.config.Succinct)
 			} else {
-				reporter.stenographer.AnnounceSuccesfulExample(exampleSummary)
+				reporter.stenographer.AnnounceSuccesfulSpec(specSummary)
 			}
 		} else {
-			reporter.stenographer.AnnounceSuccesfulExample(exampleSummary)
+			reporter.stenographer.AnnounceSuccesfulSpec(specSummary)
 		}
-	case types.ExampleStatePending:
-		reporter.stenographer.AnnouncePendingExample(exampleSummary, reporter.config.NoisyPendings && !reporter.config.Succinct)
-	case types.ExampleStateSkipped:
-		reporter.stenographer.AnnounceSkippedExample(exampleSummary)
-	case types.ExampleStateTimedOut:
-		reporter.stenographer.AnnounceExampleTimedOut(exampleSummary, reporter.config.Succinct)
-	case types.ExampleStatePanicked:
-		reporter.stenographer.AnnounceExamplePanicked(exampleSummary, reporter.config.Succinct)
-	case types.ExampleStateFailed:
-		reporter.stenographer.AnnounceExampleFailed(exampleSummary, reporter.config.Succinct)
+	case types.SpecStatePending:
+		reporter.stenographer.AnnouncePendingSpec(specSummary, reporter.config.NoisyPendings && !reporter.config.Succinct)
+	case types.SpecStateSkipped:
+		reporter.stenographer.AnnounceSkippedSpec(specSummary)
+	case types.SpecStateTimedOut:
+		reporter.stenographer.AnnounceSpecTimedOut(specSummary, reporter.config.Succinct)
+	case types.SpecStatePanicked:
+		reporter.stenographer.AnnounceSpecPanicked(specSummary, reporter.config.Succinct)
+	case types.SpecStateFailed:
+		reporter.stenographer.AnnounceSpecFailed(specSummary, reporter.config.Succinct)
 	}
 }
 

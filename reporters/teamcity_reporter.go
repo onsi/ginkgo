@@ -36,24 +36,24 @@ func (reporter *TeamCityReporter) SpecSuiteWillBegin(config config.GinkgoConfigT
 	fmt.Fprintf(reporter.writer, "%s[testSuiteStarted name='%s']", messageId, reporter.testSuiteName)
 }
 
-func (reporter *TeamCityReporter) ExampleWillRun(exampleSummary *types.ExampleSummary) {
-	testName := escape(strings.Join(exampleSummary.ComponentTexts[1:], " "))
+func (reporter *TeamCityReporter) SpecWillRun(specSummary *types.SpecSummary) {
+	testName := escape(strings.Join(specSummary.ComponentTexts[1:], " "))
 	fmt.Fprintf(reporter.writer, "%s[testStarted name='%s']", messageId, testName)
 }
 
-func (reporter *TeamCityReporter) ExampleDidComplete(exampleSummary *types.ExampleSummary) {
-	testName := escape(strings.Join(exampleSummary.ComponentTexts[1:], " "))
+func (reporter *TeamCityReporter) SpecDidComplete(specSummary *types.SpecSummary) {
+	testName := escape(strings.Join(specSummary.ComponentTexts[1:], " "))
 
-	if exampleSummary.State == types.ExampleStateFailed || exampleSummary.State == types.ExampleStateTimedOut || exampleSummary.State == types.ExampleStatePanicked {
-		message := escape(exampleSummary.Failure.ComponentCodeLocation.String())
-		details := escape(exampleSummary.Failure.Message)
+	if specSummary.State == types.SpecStateFailed || specSummary.State == types.SpecStateTimedOut || specSummary.State == types.SpecStatePanicked {
+		message := escape(specSummary.Failure.ComponentCodeLocation.String())
+		details := escape(specSummary.Failure.Message)
 		fmt.Fprintf(reporter.writer, "%s[testFailed name='%s' message='%s' details='%s']", messageId, testName, message, details)
 	}
-	if exampleSummary.State == types.ExampleStateSkipped || exampleSummary.State == types.ExampleStatePending {
+	if specSummary.State == types.SpecStateSkipped || specSummary.State == types.SpecStatePending {
 		fmt.Fprintf(reporter.writer, "%s[testIgnored name='%s']", messageId, testName)
 	}
 
-	durationInMilliseconds := exampleSummary.RunTime.Seconds() * 1000
+	durationInMilliseconds := specSummary.RunTime.Seconds() * 1000
 	fmt.Fprintf(reporter.writer, "%s[testFinished name='%s' duration='%v']", messageId, testName, durationInMilliseconds)
 }
 

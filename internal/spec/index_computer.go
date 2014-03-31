@@ -1,4 +1,4 @@
-package example
+package spec
 
 import (
 	"math"
