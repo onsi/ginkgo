@@ -52,7 +52,7 @@ var _ = Describe("Running Specs", func() {
 		})
 
 		It("should run the ginkgo style tests", func() {
-			output, err := runGinkgo(tmpDir, "--noColor", "ginkgo", "./other")
+			output, err := runGinkgo(tmpDir, "--noColor", "--succinct=false", "ginkgo", "./other")
 
 			Ω(err).ShouldNot(HaveOccurred())
 			Ω(output).Should(ContainSubstring("Running Suite: Passing_ginkgo_tests Suite"))
@@ -146,8 +146,8 @@ var _ = Describe("Running Specs", func() {
 		})
 
 		Context("when all the tests pass", func() {
-			It("should run all the tests and succeed", func() {
-				output, err := runGinkgo(tmpDir, "--noColor", "-r", "-succinct")
+			It("should run all the tests (in succinct mode) and succeed", func() {
+				output, err := runGinkgo(tmpDir, "--noColor", "-r")
 
 				Ω(err).ShouldNot(HaveOccurred())
 				outputLines := strings.Split(output, "\n")
@@ -164,7 +164,7 @@ var _ = Describe("Running Specs", func() {
 			})
 
 			It("should fail and stop running tests", func() {
-				output, err := runGinkgo(tmpDir, "--noColor", "-r", "-succinct")
+				output, err := runGinkgo(tmpDir, "--noColor", "-r")
 
 				Ω(err).Should(HaveOccurred())
 				outputLines := strings.Split(output, "\n")
@@ -183,7 +183,7 @@ var _ = Describe("Running Specs", func() {
 			})
 
 			It("should fail and stop running tests", func() {
-				output, err := runGinkgo(tmpDir, "--noColor", "-r", "-succinct")
+				output, err := runGinkgo(tmpDir, "--noColor", "-r")
 
 				Ω(err).Should(HaveOccurred())
 				outputLines := strings.Split(output, "\n")
@@ -204,7 +204,7 @@ var _ = Describe("Running Specs", func() {
 			})
 
 			It("should soldier on", func() {
-				output, err := runGinkgo(tmpDir, "--noColor", "-r", "-succinct", "-keepGoing")
+				output, err := runGinkgo(tmpDir, "--noColor", "-r", "-keepGoing")
 
 				Ω(err).Should(HaveOccurred())
 				outputLines := strings.Split(output, "\n")

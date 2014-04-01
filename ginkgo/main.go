@@ -160,10 +160,12 @@ func main() {
 
 	registerSignalHandler()
 
+	suites := findSuites()
+	computeSuccinctMode(suites)
 	if watch {
-		watchTests()
+		watchTests(suites)
 	} else {
-		runTests()
+		runTests(suites)
 	}
 }
 
@@ -211,14 +213,32 @@ func findSuites() []*testsuite.TestSuite {
 	return suites
 }
 
-func runTests() {
+func computeSuccinctMode(suites []*testsuite.TestSuite) {
+	numSuites := len(suites)
+	if numSuites == 1 {
+		return
+	}
+
+	didSetSuccinct := false
+	flag.Visit(func(f *flag.Flag) {
+		if f.Name == "succinct" {
+			didSetSuccinct = true
+		}
+	})
+
+	if numSuites > 1 && !didSetSuccinct {
+		config.DefaultReporterConfig.Succinct = true
+	}
+}
+
+func runTests(suites []*testsuite.TestSuite) {
 	t := time.Now()
 
 	passed := true
 	if untilItFails {
 		iteration := 0
 		for {
-			passed = runTestSuites()
+			passed = runTestSuites(suites)
 			iteration++
 
 			if passed {
@@ -229,7 +249,7 @@ func runTests() {
 			}
 		}
 	} else {
-		passed = runTestSuites()
+		passed = runTestSuites(suites)
 	}
 
 	fmt.Printf("\nGinkgo ran in %s\n", time.Since(t))
@@ -260,10 +280,8 @@ func (c *compiler) compile() {
 	c.compilationError <- err
 }
 
-func runTestSuites() bool {
+func runTestSuites(suites []*testsuite.TestSuite) bool {
 	passed := true
-
-	suites := findSuites()
 
 	suiteCompilers := make([]*compiler, len(suites))
 	for i, suite := range suites {
@@ -326,15 +344,13 @@ func runTestSuites() bool {
 	return passed
 }
 
-func watchTests() {
-	suites := findSuites()
-
+func watchTests(suites []*testsuite.TestSuite) {
 	modifiedSuite := make(chan *testsuite.TestSuite)
 	for _, suite := range suites {
 		go suite.Watch(modifiedSuite)
 	}
 
-	if !recurse {
+	if len(suites) == 1 {
 		runTestForSuite(suites[0])
 	}
 
