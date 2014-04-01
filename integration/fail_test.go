@@ -18,6 +18,14 @@ var _ = Describe("Failing Specs", func() {
 
 		Ω(err).Should(HaveOccurred())
 		Ω(output).ShouldNot(ContainSubstring("NEVER SEE THIS"))
+
+		Ω(output).Should(ContainSubstring("a top level failure on line 9"))
+		Ω(output).Should(ContainSubstring("fail_fixture_test.go:9"))
+		Ω(output).Should(ContainSubstring("an async top level failure on line 14"))
+		Ω(output).Should(ContainSubstring("fail_fixture_test.go:14"))
+		Ω(output).Should(ContainSubstring("a top level goroutine failure on line 21"))
+		Ω(output).Should(ContainSubstring("fail_fixture_test.go:21"))
+
 		Ω(output).Should(ContainSubstring("a sync failure"))
 		Ω(output).Should(MatchRegexp(`Test Panicked\n\s+a sync panic`))
 		Ω(output).Should(ContainSubstring("a sync FAIL failure"))
@@ -33,6 +41,6 @@ var _ = Describe("Failing Specs", func() {
 		Ω(output).Should(ContainSubstring("a measure FAIL failure"))
 		Ω(output).Should(MatchRegexp(`Test Panicked\n\s+a measure panic`))
 
-		Ω(output).Should(ContainSubstring("0 Passed | 13 Failed"))
+		Ω(output).Should(ContainSubstring("0 Passed | 16 Failed"))
 	})
 })

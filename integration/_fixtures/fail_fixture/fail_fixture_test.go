@@ -5,6 +5,24 @@ import (
 	. "github.com/onsi/gomega"
 )
 
+var _ = It("handles top level failures", func() {
+	Ω("a top level failure on line 9").Should(Equal("nope"))
+	println("NEVER SEE THIS")
+})
+
+var _ = It("handles async top level failures", func(done Done) {
+	Fail("an async top level failure on line 14")
+	println("NEVER SEE THIS")
+}, 0.1)
+
+var _ = It("FAIL in a goroutine", func(done Done) {
+	go func() {
+		defer GinkgoRecover()
+		Fail("a top level goroutine failure on line 21")
+		println("NEVER SEE THIS")
+	}()
+}, 0.1)
+
 var _ = Describe("Excercising different failure modes", func() {
 	It("synchronous failures", func() {
 		Ω("a sync failure").Should(Equal("nope"))
