@@ -161,7 +161,7 @@ func main() {
 	registerSignalHandler()
 
 	suites := findSuites()
-	computeSuccinctMode(suites)
+	computeSuccinctMode(len(suites))
 	if watch {
 		watchTests(suites)
 	} else {
@@ -213,8 +213,12 @@ func findSuites() []*testsuite.TestSuite {
 	return suites
 }
 
-func computeSuccinctMode(suites []*testsuite.TestSuite) {
-	numSuites := len(suites)
+func computeSuccinctMode(numSuites int) {
+	if config.DefaultReporterConfig.Verbose {
+		config.DefaultReporterConfig.Succinct = false
+		return
+	}
+
 	if numSuites == 1 {
 		return
 	}

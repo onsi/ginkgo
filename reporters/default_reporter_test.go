@@ -260,8 +260,8 @@ var _ = Describe("DefaultReporter", func() {
 						spec.IsMeasurement = true
 					})
 
-					It("should announce, simply, a succesful measurement", func() {
-						Ω(stenographer.Calls[0]).Should(Equal(call("AnnounceSuccesfulSpec", spec)))
+					It("should announce the measurement", func() {
+						Ω(stenographer.Calls[0]).Should(Equal(call("AnnounceSuccesfulMeasurement", spec, true)))
 					})
 				})
 
@@ -270,8 +270,8 @@ var _ = Describe("DefaultReporter", func() {
 						spec.RunTime = time.Second
 					})
 
-					It("should announce, simply, a succesful measurement", func() {
-						Ω(stenographer.Calls[0]).Should(Equal(call("AnnounceSuccesfulSpec", spec)))
+					It("should announce that it was slow", func() {
+						Ω(stenographer.Calls[0]).Should(Equal(call("AnnounceSuccesfulSlowSpec", spec, true)))
 					})
 				})
 

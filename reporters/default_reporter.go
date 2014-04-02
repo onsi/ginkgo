@@ -42,14 +42,10 @@ func (reporter *DefaultReporter) SpecWillRun(specSummary *types.SpecSummary) {
 func (reporter *DefaultReporter) SpecDidComplete(specSummary *types.SpecSummary) {
 	switch specSummary.State {
 	case types.SpecStatePassed:
-		if !reporter.config.Succinct {
-			if specSummary.IsMeasurement {
-				reporter.stenographer.AnnounceSuccesfulMeasurement(specSummary, reporter.config.Succinct)
-			} else if specSummary.RunTime.Seconds() >= reporter.config.SlowSpecThreshold {
-				reporter.stenographer.AnnounceSuccesfulSlowSpec(specSummary, reporter.config.Succinct)
-			} else {
-				reporter.stenographer.AnnounceSuccesfulSpec(specSummary)
-			}
+		if specSummary.IsMeasurement {
+			reporter.stenographer.AnnounceSuccesfulMeasurement(specSummary, reporter.config.Succinct)
+		} else if specSummary.RunTime.Seconds() >= reporter.config.SlowSpecThreshold {
+			reporter.stenographer.AnnounceSuccesfulSlowSpec(specSummary, reporter.config.Succinct)
 		} else {
 			reporter.stenographer.AnnounceSuccesfulSpec(specSummary)
 		}

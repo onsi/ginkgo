@@ -205,7 +205,7 @@ func (s *consoleStenographer) AnnounceSuccesfulSlowSpec(spec *types.SpecSummary,
 func (s *consoleStenographer) AnnounceSuccesfulMeasurement(spec *types.SpecSummary, succinct bool) {
 	s.printBlockWithMessage(
 		s.colorize(greenColor, "• [MEASUREMENT]"),
-		s.measurementReport(spec),
+		s.measurementReport(spec, succinct),
 		spec,
 		succinct,
 	)
@@ -320,14 +320,14 @@ func (s *consoleStenographer) printCodeLocationBlock(spec *types.SpecSummary, fa
 				s.print(0, s.colorize(redColor+boldStyle, "[%s] %s ", blockType, spec.ComponentTexts[i]))
 			} else {
 				s.println(indentation, s.colorize(redColor+boldStyle, "%s [%s]", spec.ComponentTexts[i], blockType))
-				s.println(indentation, s.colorize(grayColor, "(%s)", spec.ComponentCodeLocations[i]))
+				s.println(indentation, s.colorize(grayColor, "%s", spec.ComponentCodeLocations[i]))
 			}
 		} else {
 			if succinct {
 				s.print(0, s.colorize(alternatingColors[i%2], "%s ", spec.ComponentTexts[i]))
 			} else {
 				s.println(indentation, spec.ComponentTexts[i])
-				s.println(indentation, s.colorize(grayColor, "(%s)", spec.ComponentCodeLocations[i]))
+				s.println(indentation, s.colorize(grayColor, "%s", spec.ComponentCodeLocations[i]))
 			}
 		}
 
@@ -337,7 +337,7 @@ func (s *consoleStenographer) printCodeLocationBlock(spec *types.SpecSummary, fa
 	if succinct {
 		if len(spec.ComponentTexts) > 0 {
 			s.printNewLine()
-			s.print(0, s.colorize(lightGrayColor, "(%s)", spec.ComponentCodeLocations[len(spec.ComponentCodeLocations)-1]))
+			s.print(0, s.colorize(lightGrayColor, "%s", spec.ComponentCodeLocations[len(spec.ComponentCodeLocations)-1]))
 		}
 		s.printNewLine()
 		indentation = 1
@@ -348,40 +348,55 @@ func (s *consoleStenographer) printCodeLocationBlock(spec *types.SpecSummary, fa
 	return indentation
 }
 
-func (s *consoleStenographer) measurementReport(spec *types.SpecSummary) string {
+func (s *consoleStenographer) measurementReport(spec *types.SpecSummary, succinct bool) string {
 	if len(spec.Measurements) == 0 {
 		return "Found no measurements"
 	}
 
 	message := []string{}
 
-	message = append(message, fmt.Sprintf("Ran %s samples:", s.colorize(boldStyle, "%d", spec.NumberOfSamples)))
-	i := 0
-	for _, measurement := range spec.Measurements {
-		if i > 0 {
-			message = append(message, "\n")
+	if succinct {
+		message = append(message, fmt.Sprintf("%s samples:", s.colorize(boldStyle, "%d", spec.NumberOfSamples)))
+		for _, measurement := range spec.Measurements {
+			message = append(message, fmt.Sprintf("  %s - %s: %s%s, %s: %s%s ± %s%s, %s: %s%s",
+				s.colorize(boldStyle, "%s", measurement.Name),
+				measurement.SmallestLabel,
+				s.colorize(greenColor, "%.3f", measurement.Smallest),
+				measurement.Units,
+				measurement.AverageLabel,
+				s.colorize(cyanColor, "%.3f", measurement.Average),
+				measurement.Units,
+				s.colorize(cyanColor, "%.3f", measurement.StdDeviation),
+				measurement.Units,
+				measurement.LargestLabel,
+				s.colorize(redColor, "%.3f", measurement.Largest),
+				measurement.Units,
+			))
 		}
-		info := ""
-		if measurement.Info != nil {
-			message = append(message, fmt.Sprintf("%v", measurement.Info))
-		}
+	} else {
+		message = append(message, fmt.Sprintf("Ran %s samples:", s.colorize(boldStyle, "%d", spec.NumberOfSamples)))
+		for _, measurement := range spec.Measurements {
+			info := ""
+			if measurement.Info != nil {
+				message = append(message, fmt.Sprintf("%v", measurement.Info))
+			}
 
-		message = append(message, fmt.Sprintf("%s:\n%s  %s: %s%s\n  %s: %s%s\n  %s: %s%s ± %s%s",
-			s.colorize(boldStyle, "%s", measurement.Name),
-			info,
-			measurement.SmallestLabel,
-			s.colorize(greenColor, "%.3f", measurement.Smallest),
-			measurement.Units,
-			measurement.LargestLabel,
-			s.colorize(redColor, "%.3f", measurement.Largest),
-			measurement.Units,
-			measurement.AverageLabel,
-			s.colorize(cyanColor, "%.3f", measurement.Average),
-			measurement.Units,
-			s.colorize(cyanColor, "%.3f", measurement.StdDeviation),
-			measurement.Units,
-		))
-		i++
+			message = append(message, fmt.Sprintf("%s:\n%s  %s: %s%s\n  %s: %s%s\n  %s: %s%s ± %s%s",
+				s.colorize(boldStyle, "%s", measurement.Name),
+				info,
+				measurement.SmallestLabel,
+				s.colorize(greenColor, "%.3f", measurement.Smallest),
+				measurement.Units,
+				measurement.LargestLabel,
+				s.colorize(redColor, "%.3f", measurement.Largest),
+				measurement.Units,
+				measurement.AverageLabel,
+				s.colorize(cyanColor, "%.3f", measurement.Average),
+				measurement.Units,
+				s.colorize(cyanColor, "%.3f", measurement.StdDeviation),
+				measurement.Units,
+			))
+		}
 	}
 
 	return strings.Join(message, "\n")
