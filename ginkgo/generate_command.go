@@ -1,6 +1,7 @@
 package main
 
 import (
+	"flag"
 	"fmt"
 	"os"
 	"path/filepath"
@@ -8,20 +9,18 @@ import (
 	"text/template"
 )
 
-var bootstrapText = `package {{.Package}}_test
-
-import (
-	. "github.com/onsi/ginkgo"
-	. "github.com/onsi/gomega"
-
-	"testing"
-)
-
-func Test{{.PackageTitleCase}}(t *testing.T) {
-	RegisterFailHandler(Fail)
-	RunSpecs(t, "{{.PackageTitleCase}} Suite")
+func BuildGenerateCommand() *Command {
+	return &Command{
+		Name:         "generate",
+		FlagSet:      flag.NewFlagSet("generate", flag.ExitOnError),
+		UsageCommand: "ginkgo generate <filename>",
+		Usage: []string{
+			"Generate a test file named filename_test.go",
+			"If the optional <filename> argument is omitted, a file named after the package in the current directory will be created.",
+		},
+		Command: generateSpec,
+	}
 }
-`
 
 var specText = `package {{.Package}}_test
 
@@ -36,47 +35,18 @@ var _ = Describe("{{.Subject}}", func() {
 })
 `
 
-type bootstrapData struct {
-	Package          string
-	PackageTitleCase string
-}
-
 type specData struct {
 	Package           string
 	Subject           string
 	PackageImportPath string
 }
 
-func generateBootstrap() {
-	packageName := getPackage()
-	data := bootstrapData{
-		Package:          packageName,
-		PackageTitleCase: strings.Title(packageName),
+func generateSpec(args []string) {
+	subject := ""
+	if len(args) > 0 {
+		subject = args[1]
 	}
 
-	targetFile := fmt.Sprintf("%s_suite_test.go", packageName)
-	if fileExists(targetFile) {
-		fmt.Printf("%s already exists.\n\n", targetFile)
-		os.Exit(1)
-	} else {
-		fmt.Printf("Generating ginkgo test suite bootstrap for %s in:\n\t%s\n\n", packageName, targetFile)
-	}
-
-	f, err := os.Create(targetFile)
-	if err != nil {
-		panic(err.Error())
-	}
-	defer f.Close()
-
-	bootstrapTemplate, err := template.New("bootstrap").Parse(bootstrapText)
-	if err != nil {
-		panic(err.Error())
-	}
-
-	bootstrapTemplate.Execute(f, data)
-}
-
-func generateSpec(subject string) {
 	packageName := getPackage()
 	if subject == "" {
 		subject = packageName
@@ -115,14 +85,6 @@ func generateSpec(subject string) {
 	specTemplate.Execute(f, data)
 }
 
-func getPackage() string {
-	workingDir, err := os.Getwd()
-	if err != nil {
-		panic(err.Error())
-	}
-	return filepath.Base(workingDir)
-}
-
 func getPackageImportPath() string {
 	workingDir, err := os.Getwd()
 	if err != nil {
@@ -135,15 +97,4 @@ func getPackageImportPath() string {
 		return "UNKOWN_PACKAGE_PATH"
 	}
 	return filepath.ToSlash(paths[len(paths)-1])
-}
-
-func fileExists(path string) bool {
-	_, err := os.Stat(path)
-	if err == nil {
-		return true
-	}
-	if os.IsNotExist(err) {
-		return false
-	}
-	return false
 }

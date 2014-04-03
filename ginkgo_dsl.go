@@ -12,6 +12,7 @@ Ginkgo is MIT-Licensed
 package ginkgo
 
 import (
+	"flag"
 	"github.com/onsi/ginkgo/config"
 	"github.com/onsi/ginkgo/internal/codelocation"
 	"github.com/onsi/ginkgo/internal/failer"
@@ -49,7 +50,7 @@ var globalSuite *suite.Suite
 var globalFailer *failer.Failer
 
 func init() {
-	config.Flags("ginkgo", true)
+	config.Flags(flag.CommandLine, "ginkgo", true)
 	GinkgoWriter = writer.New(os.Stdout)
 	globalFailer = failer.New()
 	globalSuite = suite.New(globalFailer)
