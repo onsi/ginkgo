@@ -26,6 +26,6 @@ func printHelp(args []string) {
 			complainAndQuit(fmt.Sprintf("Unkown command: %s", args[0]))
 		}
 
-		usageForCommand(command)
+		usageForCommand(command, true)
 	}
 }

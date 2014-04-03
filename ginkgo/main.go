@@ -37,17 +37,17 @@ By default, when running multiple tests (with -r or a list of packages) Ginkgo w
 
 To monitor packages and rerun tests when changes occur:
 
-	ginkgo -watch <-r> </path/to/package>
+	ginkgo watch <-r> </path/to/package>
 
-passing `ginkgo -watch` the `-r` flag will recursively detect all test suites under the current directory and monitor them.
-`-watch` does not detect *new* packages. Moreover, changes in package X only rerun the tests for package X, tests for packages
+passing `ginkgo watch` the `-r` flag will recursively detect all test suites under the current directory and monitor them.
+`watch` does not detect *new* packages. Moreover, changes in package X only rerun the tests for package X, tests for packages
 that depend on X are not rerun.
 
 [OSX only] To receive (desktop) notifications when a test run completes:
 
 	ginkgo -notify
 
-this is particularly useful with `ginkgo -watch`.  Notifications are currently only supported on OS X and require that you `brew install terminal-notifier`
+this is particularly useful with `ginkgo watch`.  Notifications are currently only supported on OS X and require that you `brew install terminal-notifier`
 
 Sometimes (to suss out race conditions/flakey tests, for example) you want to keep running a test suite until it fails.  You can do this with:
 
@@ -79,17 +79,20 @@ import (
 	"flag"
 	"fmt"
 	"github.com/onsi/ginkgo/config"
+	"github.com/onsi/ginkgo/ginkgo/testsuite"
 	"os"
 	"strings"
 )
 
 type Command struct {
-	Name         string
-	AltName      string
-	FlagSet      *flag.FlagSet
-	Usage        []string
-	UsageCommand string
-	Command      func(args []string)
+	Name                      string
+	AltName                   string
+	FlagSet                   *flag.FlagSet
+	Usage                     []string
+	UsageCommand              string
+	Command                   func(args []string)
+	SuppressFlagDocumentation bool
+	FlagDocSubstitute         []string
 }
 
 func (c *Command) Matches(name string) bool {
@@ -106,12 +109,13 @@ var Commands []*Command
 
 func init() {
 	DefaultCommand = BuildRunCommand()
+	Commands = append(Commands, BuildWatchCommand())
 	Commands = append(Commands, BuildBootstrapCommand())
 	Commands = append(Commands, BuildGenerateCommand())
 	Commands = append(Commands, BuildConvertCommand())
 	Commands = append(Commands, BuildUnfocusCommand())
 	Commands = append(Commands, BuildVersionCommand())
-	Commands = append(Commands, BuildHelpCommand()) //NEXT!
+	Commands = append(Commands, BuildHelpCommand())
 }
 
 func main() {
@@ -137,20 +141,42 @@ func commandMatching(name string) (*Command, bool) {
 
 func usage() {
 	fmt.Fprintf(os.Stderr, "Ginkgo Version %s\n\n", config.VERSION)
-	usageForCommand(DefaultCommand)
+	usageForCommand(DefaultCommand, false)
 	for _, command := range Commands {
 		fmt.Fprintf(os.Stderr, "\n")
-		usageForCommand(command)
+		usageForCommand(command, false)
 	}
 }
 
-func usageForCommand(command *Command) {
+func usageForCommand(command *Command, longForm bool) {
 	fmt.Fprintf(os.Stderr, "%s\n", command.UsageCommand)
 	fmt.Fprintf(os.Stderr, "  %s\n", strings.Join(command.Usage, "\n  "))
-	command.FlagSet.PrintDefaults()
+	if command.SuppressFlagDocumentation && !longForm {
+		fmt.Fprintf(os.Stderr, "  %s\n", strings.Join(command.FlagDocSubstitute, "\n  "))
+	} else {
+		command.FlagSet.PrintDefaults()
+	}
 }
 
 func complainAndQuit(complaint string) {
 	fmt.Fprintf(os.Stderr, "%s\nFor usage instructions:\n\tginkgo help\n", complaint)
 	os.Exit(1)
+}
+
+func findSuites(args []string, recurse bool) []*testsuite.TestSuite {
+	suites := []*testsuite.TestSuite{}
+
+	if len(args) > 0 {
+		for _, dir := range args {
+			suites = append(suites, testsuite.SuitesInDir(dir, recurse)...)
+		}
+	} else {
+		suites = testsuite.SuitesInDir(".", recurse)
+	}
+
+	if len(suites) == 0 {
+		complainAndQuit("Found no test suites")
+	}
+
+	return suites
 }
