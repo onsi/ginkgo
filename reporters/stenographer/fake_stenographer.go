@@ -69,6 +69,10 @@ func (stenographer *FakeStenographer) AnnounceSpecWillRun(spec *types.SpecSummar
 	stenographer.registerCall("AnnounceSpecWillRun", spec)
 }
 
+func (stenographer *FakeStenographer) AnnounceBeforeSuiteFailure(summary *types.SetupSummary, succinct bool) {
+	stenographer.registerCall("AnnounceBeforeSuiteFailure", summary, succinct)
+}
+
 func (stenographer *FakeStenographer) AnnounceCapturedOutput(spec *types.SpecSummary) {
 	stenographer.registerCall("AnnounceCapturedOutput", spec)
 }

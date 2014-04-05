@@ -33,6 +33,12 @@ func (reporter *DefaultReporter) SpecSuiteWillBegin(config config.GinkgoConfigTy
 	reporter.stenographer.AnnounceNumberOfSpecs(summary.NumberOfSpecsThatWillBeRun, summary.NumberOfTotalSpecs, reporter.config.Succinct)
 }
 
+func (reporter *DefaultReporter) BeforeSuiteDidRun(setupSummary *types.SetupSummary) {
+	if setupSummary.State != types.SpecStatePassed {
+		reporter.stenographer.AnnounceBeforeSuiteFailure(setupSummary, reporter.config.Succinct)
+	}
+}
+
 func (reporter *DefaultReporter) SpecWillRun(specSummary *types.SpecSummary) {
 	if reporter.config.Verbose && !reporter.config.Succinct && specSummary.State != types.SpecStatePending && specSummary.State != types.SpecStateSkipped {
 		reporter.stenographer.AnnounceSpecWillRun(specSummary)

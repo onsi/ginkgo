@@ -10,6 +10,7 @@ type FakeReporter struct {
 	Config config.GinkgoConfigType
 
 	BeginSummary         *types.SuiteSummary
+	BeforeSuiteSummary   *types.SetupSummary
 	SpecWillRunSummaries []*types.SpecSummary
 	SpecSummaries        []*types.SpecSummary
 	EndSummary           *types.SuiteSummary
@@ -25,6 +26,10 @@ func NewFakeReporter() *FakeReporter {
 func (fakeR *FakeReporter) SpecSuiteWillBegin(config config.GinkgoConfigType, summary *types.SuiteSummary) {
 	fakeR.Config = config
 	fakeR.BeginSummary = summary
+}
+
+func (fakeR *FakeReporter) BeforeSuiteDidRun(setupSummary *types.SetupSummary) {
+	fakeR.BeforeSuiteSummary = setupSummary
 }
 
 func (fakeR *FakeReporter) SpecWillRun(specSummary *types.SpecSummary) {

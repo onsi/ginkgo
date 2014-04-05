@@ -346,6 +346,12 @@ func XMeasure(text string, _ ...interface{}) bool {
 	return true
 }
 
+//TODO: document
+func BeforeSuite(body interface{}, timeout ...float64) bool {
+	globalSuite.SetBeforeSuiteNode(body, codelocation.New(1), parseTimeout(timeout...))
+	return true
+}
+
 //BeforeEach blocks are run before It blocks.  When multiple BeforeEach blocks are defined in nested
 //Describe and Context blocks the outermost BeforeEach blocks are run first.
 //

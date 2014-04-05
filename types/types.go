@@ -34,6 +34,18 @@ type SpecSummary struct {
 	SuiteID        string
 }
 
+type SetupSummary struct {
+	ComponentType SpecComponentType
+	CodeLocation  CodeLocation
+
+	State   SpecState
+	RunTime time.Duration
+	Failure SpecFailure
+
+	CapturedOutput string
+	SuiteID        string
+}
+
 type SpecFailure struct {
 	Message        string
 	Location       CodeLocation
@@ -80,6 +92,7 @@ const (
 	SpecComponentTypeInvalid SpecComponentType = iota
 
 	SpecComponentTypeContainer
+	SpecComponentTypeBeforeSuite
 	SpecComponentTypeBeforeEach
 	SpecComponentTypeJustBeforeEach
 	SpecComponentTypeAfterEach

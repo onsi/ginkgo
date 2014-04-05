@@ -7,8 +7,7 @@ import (
 )
 
 type SetupNode struct {
-	runner   *runner
-	nodeType types.SpecComponentType
+	runner *runner
 }
 
 func (node *SetupNode) Run() (outcome types.SpecState, failure types.SpecFailure) {

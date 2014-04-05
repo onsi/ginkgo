@@ -36,6 +36,20 @@ func (reporter *TeamCityReporter) SpecSuiteWillBegin(config config.GinkgoConfigT
 	fmt.Fprintf(reporter.writer, "%s[testSuiteStarted name='%s']", messageId, reporter.testSuiteName)
 }
 
+func (reporter *TeamCityReporter) BeforeSuiteDidRun(setupSummary *types.SetupSummary) {
+	if setupSummary.State != types.SpecStatePassed {
+		testName := escape("BeforeSuite")
+		fmt.Fprintf(reporter.writer, "%s[testStarted name='%s']", messageId, testName)
+		message := escape(setupSummary.Failure.ComponentCodeLocation.String())
+		details := escape(setupSummary.Failure.Message)
+		fmt.Fprintf(reporter.writer, "%s[testFailed name='%s' message='%s' details='%s']", messageId, testName, message, details)
+		durationInMilliseconds := setupSummary.RunTime.Seconds() * 1000
+		fmt.Fprintf(reporter.writer, "%s[testFinished name='%s' duration='%v']", messageId, testName, durationInMilliseconds)
+	}
+}
+
+//beforesuite, if failed: testStarted, then testFailed, as below
+
 func (reporter *TeamCityReporter) SpecWillRun(specSummary *types.SpecSummary) {
 	testName := escape(strings.Join(specSummary.ComponentTexts[1:], " "))
 	fmt.Fprintf(reporter.writer, "%s[testStarted name='%s']", messageId, testName)

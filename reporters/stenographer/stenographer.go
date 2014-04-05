@@ -38,6 +38,7 @@ type Stenographer interface {
 	AnnounceSpecRunCompletion(summary *types.SuiteSummary, succinct bool)
 
 	AnnounceSpecWillRun(spec *types.SpecSummary)
+	AnnounceBeforeSuiteFailure(summary *types.SetupSummary, succinct bool)
 
 	AnnounceCapturedOutput(spec *types.SpecSummary)
 
@@ -110,7 +111,7 @@ func (s *consoleStenographer) AnnounceAggregatedParallelRun(nodes int, succinct 
 func (s *consoleStenographer) AnnounceNumberOfSpecs(specsToRun int, total int, succinct bool) {
 	if succinct {
 		s.print(0, "- %d/%d specs ", specsToRun, total)
-		s.cursorState = cursorStateStreaming
+		s.stream()
 		return
 	}
 	s.println(0,
@@ -152,10 +153,7 @@ func (s *consoleStenographer) AnnounceSpecRunCompletion(summary *types.SuiteSumm
 }
 
 func (s *consoleStenographer) AnnounceSpecWillRun(spec *types.SpecSummary) {
-	if s.cursorState == cursorStateStreaming {
-		s.printNewLine()
-		s.printDelimiter()
-	}
+	s.startBlock()
 	for i, text := range spec.ComponentTexts[1 : len(spec.ComponentTexts)-1] {
 		s.print(0, s.colorize(alternatingColors[i%2], text)+" ")
 	}
@@ -170,7 +168,29 @@ func (s *consoleStenographer) AnnounceSpecWillRun(spec *types.SpecSummary) {
 	s.printNewLine()
 	s.print(indentation, s.colorize(lightGrayColor, spec.ComponentCodeLocations[index].String()))
 	s.printNewLine()
-	s.cursorState = cursorStateMidBlock
+	s.midBlock()
+}
+
+func (s *consoleStenographer) AnnounceBeforeSuiteFailure(summary *types.SetupSummary, succinct bool) {
+	s.startBlock()
+	var message string
+	switch summary.State {
+	case types.SpecStateFailed:
+		message = "Failure"
+	case types.SpecStatePanicked:
+		message = "Panic"
+	case types.SpecStateTimedOut:
+		message = "Timeout"
+	}
+
+	s.println(0, s.colorize(redColor+boldStyle, "%s [%.3f seconds]", message, summary.RunTime.Seconds()))
+
+	indentation := s.printCodeLocationBlock([]string{"BeforeSuite"}, []types.CodeLocation{summary.CodeLocation}, summary.ComponentType, 0, true, succinct)
+
+	s.printNewLine()
+	s.printFailure(indentation, summary.State, summary.Failure)
+
+	s.endBlock()
 }
 
 func (s *consoleStenographer) AnnounceCapturedOutput(spec *types.SpecSummary) {
@@ -178,19 +198,14 @@ func (s *consoleStenographer) AnnounceCapturedOutput(spec *types.SpecSummary) {
 		return
 	}
 
-	if s.cursorState == cursorStateStreaming {
-		s.printNewLine()
-		s.printDelimiter()
-	} else if s.cursorState == cursorStateMidBlock {
-		s.printNewLine()
-	}
+	s.startBlock()
 	s.println(0, spec.CapturedOutput)
-	s.cursorState = cursorStateMidBlock
+	s.midBlock()
 }
 
 func (s *consoleStenographer) AnnounceSuccesfulSpec(spec *types.SpecSummary) {
 	s.print(0, s.colorize(greenColor, "•"))
-	s.cursorState = cursorStateStreaming
+	s.stream()
 }
 
 func (s *consoleStenographer) AnnounceSuccesfulSlowSpec(spec *types.SpecSummary, succinct bool) {
@@ -221,90 +236,103 @@ func (s *consoleStenographer) AnnouncePendingSpec(spec *types.SpecSummary, noisy
 		)
 	} else {
 		s.print(0, s.colorize(greenColor, "P"))
-		s.cursorState = cursorStateStreaming
+		s.stream()
 	}
 }
 
 func (s *consoleStenographer) AnnounceSkippedSpec(spec *types.SpecSummary) {
 	s.print(0, s.colorize(cyanColor, "S"))
-	s.cursorState = cursorStateStreaming
+	s.stream()
 }
 
 func (s *consoleStenographer) AnnounceSpecTimedOut(spec *types.SpecSummary, succinct bool) {
-	s.printFailure("•... Timeout", spec, succinct)
+	s.printSpecFailure("•... Timeout", spec, succinct)
 }
 
 func (s *consoleStenographer) AnnounceSpecPanicked(spec *types.SpecSummary, succinct bool) {
-	s.printFailure("•! Panic", spec, succinct)
+	s.printSpecFailure("•! Panic", spec, succinct)
 }
 
 func (s *consoleStenographer) AnnounceSpecFailed(spec *types.SpecSummary, succinct bool) {
-	s.printFailure("• Failure", spec, succinct)
+	s.printSpecFailure("• Failure", spec, succinct)
 }
 
-func (s *consoleStenographer) printBlockWithMessage(header string, message string, spec *types.SpecSummary, succinct bool) {
+func (s *consoleStenographer) startBlock() {
 	if s.cursorState == cursorStateStreaming {
 		s.printNewLine()
 		s.printDelimiter()
 	} else if s.cursorState == cursorStateMidBlock {
 		s.printNewLine()
 	}
+}
 
+func (s *consoleStenographer) midBlock() {
+	s.cursorState = cursorStateMidBlock
+}
+
+func (s *consoleStenographer) endBlock() {
+	s.printDelimiter()
+	s.cursorState = cursorStateEndBlock
+}
+
+func (s *consoleStenographer) stream() {
+	s.cursorState = cursorStateStreaming
+}
+
+func (s *consoleStenographer) printBlockWithMessage(header string, message string, spec *types.SpecSummary, succinct bool) {
+	s.startBlock()
 	s.println(0, header)
 
-	indentation := s.printCodeLocationBlock(spec, false, succinct)
+	indentation := s.printCodeLocationBlock(spec.ComponentTexts, spec.ComponentCodeLocations, types.SpecComponentTypeInvalid, 0, false, succinct)
 
 	if message != "" {
 		s.printNewLine()
 		s.println(indentation, message)
 	}
 
-	s.printDelimiter()
-	s.cursorState = cursorStateEndBlock
+	s.endBlock()
 }
 
-func (s *consoleStenographer) printFailure(message string, spec *types.SpecSummary, succinct bool) {
-	if s.cursorState == cursorStateStreaming {
-		s.printNewLine()
-		s.printDelimiter()
-	} else if s.cursorState == cursorStateMidBlock {
-		s.printNewLine()
-	}
-
+func (s *consoleStenographer) printSpecFailure(message string, spec *types.SpecSummary, succinct bool) {
+	s.startBlock()
 	s.println(0, s.colorize(redColor+boldStyle, "%s [%.3f seconds]", message, spec.RunTime.Seconds()))
 
-	indentation := s.printCodeLocationBlock(spec, true, succinct)
+	indentation := s.printCodeLocationBlock(spec.ComponentTexts, spec.ComponentCodeLocations, spec.Failure.ComponentType, spec.Failure.ComponentIndex, true, succinct)
 
 	s.printNewLine()
-	if spec.State == types.SpecStatePanicked {
-		s.println(indentation, s.colorize(redColor+boldStyle, spec.Failure.Message))
-		s.println(indentation, s.colorize(redColor, "%v", spec.Failure.ForwardedPanic))
-		s.println(indentation, spec.Failure.Location.String())
-		s.printNewLine()
-		s.println(indentation, s.colorize(redColor, "Full Stack Trace"))
-		s.println(indentation, spec.Failure.Location.FullStackTrace)
-	} else {
-		s.println(indentation, s.colorize(redColor, spec.Failure.Message))
-		s.printNewLine()
-		s.println(indentation, spec.Failure.Location.String())
-	}
-
-	s.printDelimiter()
-	s.cursorState = cursorStateEndBlock
+	s.printFailure(indentation, spec.State, spec.Failure)
+	s.endBlock()
 }
 
-func (s *consoleStenographer) printCodeLocationBlock(spec *types.SpecSummary, failure bool, succinct bool) int {
+func (s *consoleStenographer) printFailure(indentation int, state types.SpecState, failure types.SpecFailure) {
+	if state == types.SpecStatePanicked {
+		s.println(indentation, s.colorize(redColor+boldStyle, failure.Message))
+		s.println(indentation, s.colorize(redColor, "%v", failure.ForwardedPanic))
+		s.println(indentation, failure.Location.String())
+		s.printNewLine()
+		s.println(indentation, s.colorize(redColor, "Full Stack Trace"))
+		s.println(indentation, failure.Location.FullStackTrace)
+	} else {
+		s.println(indentation, s.colorize(redColor, failure.Message))
+		s.printNewLine()
+		s.println(indentation, failure.Location.String())
+	}
+}
+
+func (s *consoleStenographer) printCodeLocationBlock(componentTexts []string, componentCodeLocations []types.CodeLocation, failedComponentType types.SpecComponentType, failedComponentIndex int, failure bool, succinct bool) int {
 	indentation := 0
 	startIndex := 1
 
-	if len(spec.ComponentTexts) == 1 {
+	if len(componentTexts) == 1 {
 		startIndex = 0
 	}
 
-	for i := startIndex; i < len(spec.ComponentTexts); i++ {
-		if failure && i == spec.Failure.ComponentIndex {
+	for i := startIndex; i < len(componentTexts); i++ {
+		if failure && i == failedComponentIndex {
 			blockType := ""
-			switch spec.Failure.ComponentType {
+			switch failedComponentType {
+			case types.SpecComponentTypeBeforeSuite:
+				blockType = "BeforeSuite"
 			case types.SpecComponentTypeBeforeEach:
 				blockType = "BeforeEach"
 			case types.SpecComponentTypeJustBeforeEach:
@@ -317,17 +345,17 @@ func (s *consoleStenographer) printCodeLocationBlock(spec *types.SpecSummary, fa
 				blockType = "Measurement"
 			}
 			if succinct {
-				s.print(0, s.colorize(redColor+boldStyle, "[%s] %s ", blockType, spec.ComponentTexts[i]))
+				s.print(0, s.colorize(redColor+boldStyle, "[%s] %s ", blockType, componentTexts[i]))
 			} else {
-				s.println(indentation, s.colorize(redColor+boldStyle, "%s [%s]", spec.ComponentTexts[i], blockType))
-				s.println(indentation, s.colorize(grayColor, "%s", spec.ComponentCodeLocations[i]))
+				s.println(indentation, s.colorize(redColor+boldStyle, "%s [%s]", componentTexts[i], blockType))
+				s.println(indentation, s.colorize(grayColor, "%s", componentCodeLocations[i]))
 			}
 		} else {
 			if succinct {
-				s.print(0, s.colorize(alternatingColors[i%2], "%s ", spec.ComponentTexts[i]))
+				s.print(0, s.colorize(alternatingColors[i%2], "%s ", componentTexts[i]))
 			} else {
-				s.println(indentation, spec.ComponentTexts[i])
-				s.println(indentation, s.colorize(grayColor, "%s", spec.ComponentCodeLocations[i]))
+				s.println(indentation, componentTexts[i])
+				s.println(indentation, s.colorize(grayColor, "%s", componentCodeLocations[i]))
 			}
 		}
 
@@ -335,9 +363,9 @@ func (s *consoleStenographer) printCodeLocationBlock(spec *types.SpecSummary, fa
 	}
 
 	if succinct {
-		if len(spec.ComponentTexts) > 0 {
+		if len(componentTexts) > 0 {
 			s.printNewLine()
-			s.print(0, s.colorize(lightGrayColor, "%s", spec.ComponentCodeLocations[len(spec.ComponentCodeLocations)-1]))
+			s.print(0, s.colorize(lightGrayColor, "%s", componentCodeLocations[len(componentCodeLocations)-1]))
 		}
 		s.printNewLine()
 		indentation = 1

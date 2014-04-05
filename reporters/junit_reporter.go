@@ -66,23 +66,30 @@ func (reporter *JUnitReporter) SpecSuiteWillBegin(config config.GinkgoConfigType
 func (reporter *JUnitReporter) SpecWillRun(specSummary *types.SpecSummary) {
 }
 
+func (reporter *JUnitReporter) BeforeSuiteDidRun(setupSummary *types.SetupSummary) {
+	if setupSummary.State != types.SpecStatePassed {
+		testCase := JUnitTestCase{
+			Name:      "BeforeSuite",
+			ClassName: reporter.testSuiteName,
+		}
+
+		testCase.FailureMessage = &JUnitFailureMessage{
+			Type:    reporter.failureTypeForState(setupSummary.State),
+			Message: fmt.Sprintf("%s\n%s", setupSummary.Failure.ComponentCodeLocation.String(), setupSummary.Failure.Message),
+		}
+		testCase.Time = setupSummary.RunTime.Seconds()
+		reporter.suite.TestCases = append(reporter.suite.TestCases, testCase)
+	}
+}
+
 func (reporter *JUnitReporter) SpecDidComplete(specSummary *types.SpecSummary) {
 	testCase := JUnitTestCase{
 		Name:      strings.Join(specSummary.ComponentTexts[1:], " "),
 		ClassName: reporter.testSuiteName,
 	}
 	if specSummary.State == types.SpecStateFailed || specSummary.State == types.SpecStateTimedOut || specSummary.State == types.SpecStatePanicked {
-		failureType := ""
-		switch specSummary.State {
-		case types.SpecStateFailed:
-			failureType = "Failure"
-		case types.SpecStateTimedOut:
-			failureType = "Timeout"
-		case types.SpecStatePanicked:
-			failureType = "Panic"
-		}
 		testCase.FailureMessage = &JUnitFailureMessage{
-			Type:    failureType,
+			Type:    reporter.failureTypeForState(specSummary.State),
 			Message: fmt.Sprintf("%s\n%s", specSummary.Failure.ComponentCodeLocation.String(), specSummary.Failure.Message),
 		}
 	}
@@ -107,5 +114,18 @@ func (reporter *JUnitReporter) SpecSuiteDidEnd(summary *types.SuiteSummary) {
 	err = encoder.Encode(reporter.suite)
 	if err != nil {
 		fmt.Printf("Failed to generate JUnit report\n\t%s", err.Error())
+	}
+}
+
+func (reporter *JUnitReporter) failureTypeForState(state types.SpecState) string {
+	switch state {
+	case types.SpecStateFailed:
+		return "Failure"
+	case types.SpecStateTimedOut:
+		return "Timeout"
+	case types.SpecStatePanicked:
+		return "Panic"
+	default:
+		return ""
 	}
 }

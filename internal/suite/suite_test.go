@@ -57,6 +57,7 @@ var _ = Describe("Suite", func() {
 			focusString = ""
 
 			runOrder = make([]string, 0)
+			specSuite.SetBeforeSuiteNode(f("BeforeSuite"), codelocation.New(0), 0)
 			specSuite.PushBeforeEachNode(f("top BE"), codelocation.New(0), 0)
 			specSuite.PushJustBeforeEachNode(f("top JBE"), codelocation.New(0), 0)
 			specSuite.PushAfterEachNode(f("top AE"), codelocation.New(0), 0)
@@ -96,6 +97,10 @@ var _ = Describe("Suite", func() {
 			Ω(fakeR.BeginSummary.SuiteDescription).Should(Equal("suite description"))
 		})
 
+		It("reports that the BeforeSuite node ran", func() {
+			Ω(fakeR.BeforeSuiteSummary).ShouldNot(BeNil())
+		})
+
 		It("provides information about the current test", func() {
 			description := CurrentGinkgoTestDescription()
 			Ω(description.ComponentTexts).Should(Equal([]string{"Suite", "running a suite", "provides information about the current test"}))
@@ -125,6 +130,7 @@ var _ = Describe("Suite", func() {
 
 		It("creates a node hierarchy, converts it to a spec collection, and runs it", func() {
 			Ω(runOrder).Should(Equal([]string{
+				"BeforeSuite",
 				"top BE", "BE", "top JBE", "JBE", "IT", "AE", "top AE",
 				"top BE", "BE", "top JBE", "JBE", "inner IT", "AE", "top AE",
 				"top BE", "BE 2", "top JBE", "IT 2", "top AE",
@@ -139,6 +145,7 @@ var _ = Describe("Suite", func() {
 
 			It("does", func() {
 				Ω(runOrder).Should(Equal([]string{
+					"BeforeSuite",
 					"top BE", "top JBE", "top IT", "top AE",
 					"top BE", "BE", "top JBE", "JBE", "inner IT", "AE", "top AE",
 					"top BE", "BE", "top JBE", "JBE", "IT", "AE", "top AE",
@@ -160,6 +167,7 @@ var _ = Describe("Suite", func() {
 
 				It("should run a subset of tests", func() {
 					Ω(runOrder).Should(Equal([]string{
+						"BeforeSuite",
 						"top BE", "top JBE", "top IT", "top AE",
 						"top BE", "BE", "top JBE", "JBE", "inner IT", "AE", "top AE",
 					}))
@@ -173,6 +181,7 @@ var _ = Describe("Suite", func() {
 
 				It("should run a (different) subset of tests", func() {
 					Ω(runOrder).Should(Equal([]string{
+						"BeforeSuite",
 						"top BE", "BE", "top JBE", "JBE", "IT", "AE", "top AE",
 						"top BE", "BE 2", "top JBE", "IT 2", "top AE",
 					}))
@@ -187,6 +196,7 @@ var _ = Describe("Suite", func() {
 
 			It("converts the filter to a regular expression and uses it to filter the running specs", func() {
 				Ω(runOrder).Should(Equal([]string{
+					"BeforeSuite",
 					"top BE", "BE", "top JBE", "JBE", "inner IT", "AE", "top AE",
 					"top BE", "BE 2", "top JBE", "IT 2", "top AE",
 				}))
@@ -223,6 +233,18 @@ var _ = Describe("Suite", func() {
 			It("generates the correct failure data", func() {
 				Ω(fakeR.SpecSummaries[0].Failure.Message).Should(Equal("oops!"))
 				Ω(fakeR.SpecSummaries[0].Failure.Location).Should(Equal(location))
+			})
+		})
+	})
+
+	Describe("BeforeSuite", func() {
+		Context("when setting BeforeSuite more than once", func() {
+			It("should panic", func() {
+				specSuite.SetBeforeSuiteNode(func() {}, codelocation.New(0), 0)
+
+				Ω(func() {
+					specSuite.SetBeforeSuiteNode(func() {}, codelocation.New(0), 0)
+				}).Should(Panic())
 			})
 		})
 	})

@@ -83,6 +83,30 @@ var _ = Describe("DefaultReporter", func() {
 		})
 	})
 
+	Describe("BeforeSuiteDidRun", func() {
+		Context("when the BeforeSuite passes", func() {
+			It("should announce nothing", func() {
+				reporter.BeforeSuiteDidRun(&types.SetupSummary{
+					State: types.SpecStatePassed,
+				})
+
+				Ω(stenographer.Calls).Should(BeEmpty())
+			})
+		})
+
+		Context("when the BeforeSuite fails", func() {
+			It("should announce the failure", func() {
+				summary := &types.SetupSummary{
+					State: types.SpecStateFailed,
+				}
+				reporter.BeforeSuiteDidRun(summary)
+
+				Ω(stenographer.Calls).Should(HaveLen(1))
+				Ω(stenographer.Calls[0]).Should(Equal(call("AnnounceBeforeSuiteFailure", summary, false)))
+			})
+		})
+	})
+
 	Describe("SpecWillRun", func() {
 		Context("When running in verbose mode", func() {
 			Context("and the spec will run", func() {

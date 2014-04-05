@@ -2,6 +2,7 @@ package specrunner
 
 import (
 	"github.com/onsi/ginkgo/config"
+	"github.com/onsi/ginkgo/internal/leafnodes"
 	"github.com/onsi/ginkgo/internal/spec"
 	Writer "github.com/onsi/ginkgo/internal/writer"
 	"github.com/onsi/ginkgo/reporters"
@@ -11,31 +12,54 @@ import (
 )
 
 type SpecRunner struct {
-	description string
-	specs       *spec.Specs
-	reporters   []reporters.Reporter
-	startTime   time.Time
-	suiteID     string
-	runningSpec *spec.Spec
-	writer      Writer.WriterInterface
-	config      config.GinkgoConfigType
+	description     string
+	beforeSuiteNode *leafnodes.SuiteNode
+	specs           *spec.Specs
+	reporters       []reporters.Reporter
+	startTime       time.Time
+	suiteID         string
+	runningSpec     *spec.Spec
+	writer          Writer.WriterInterface
+	config          config.GinkgoConfigType
 }
 
-func New(description string, specs *spec.Specs, reporters []reporters.Reporter, writer Writer.WriterInterface, config config.GinkgoConfigType) *SpecRunner {
+func New(description string, beforeSuiteNode *leafnodes.SuiteNode, specs *spec.Specs, reporters []reporters.Reporter, writer Writer.WriterInterface, config config.GinkgoConfigType) *SpecRunner {
 	return &SpecRunner{
-		description: description,
-		specs:       specs,
-		reporters:   reporters,
-		writer:      writer,
-		config:      config,
-		suiteID:     randomID(),
+		description:     description,
+		beforeSuiteNode: beforeSuiteNode,
+		specs:           specs,
+		reporters:       reporters,
+		writer:          writer,
+		config:          config,
+		suiteID:         randomID(),
 	}
 }
 
 func (runner *SpecRunner) Run() bool {
 	runner.reportSuiteWillBegin()
-	suiteFailed := false
 
+	suitePassed := runner.runBeforeSuite()
+	if suitePassed {
+		suitePassed = runner.runSpecs()
+	}
+
+	runner.reportSuiteDidEnd()
+
+	return suitePassed
+}
+
+func (runner *SpecRunner) runBeforeSuite() bool {
+	if runner.beforeSuiteNode == nil {
+		return true
+	}
+
+	passed := runner.beforeSuiteNode.Run()
+	runner.reportBeforeSuite(runner.beforeSuiteNode.Summary())
+	return passed
+}
+
+func (runner *SpecRunner) runSpecs() bool {
+	suiteFailed := false
 	for _, spec := range runner.specs.Specs() {
 		runner.writer.Truncate()
 
@@ -56,8 +80,6 @@ func (runner *SpecRunner) Run() bool {
 		runner.reportSpecDidComplete(spec)
 	}
 
-	runner.reportSuiteDidEnd()
-
 	return !suiteFailed
 }
 
@@ -74,6 +96,12 @@ func (runner *SpecRunner) reportSuiteWillBegin() {
 	summary := runner.summary()
 	for _, reporter := range runner.reporters {
 		reporter.SpecSuiteWillBegin(runner.config, summary)
+	}
+}
+
+func (runner *SpecRunner) reportBeforeSuite(summary *types.SetupSummary) {
+	for _, reporter := range runner.reporters {
+		reporter.BeforeSuiteDidRun(summary)
 	}
 }
 
@@ -138,6 +166,9 @@ func (runner *SpecRunner) summary() *types.SuiteSummary {
 		success = false
 	} else if numberOfPendingSpecs > 0 && runner.config.FailOnPending {
 		success = false
+	} else if runner.beforeSuiteNode != nil && !runner.beforeSuiteNode.Passed() {
+		success = false
+		numberOfFailedSpecs = numberOfSpecsThatWillBeRun
 	}
 
 	return &types.SuiteSummary{

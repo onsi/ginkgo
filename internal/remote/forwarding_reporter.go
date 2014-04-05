@@ -57,6 +57,10 @@ func (reporter *ForwardingReporter) SpecSuiteWillBegin(conf config.GinkgoConfigT
 	reporter.post("/SpecSuiteWillBegin", data)
 }
 
+func (fakeR *ForwardingReporter) BeforeSuiteDidRun(setupSummary *types.SetupSummary) {
+	println("TODO!")
+}
+
 func (reporter *ForwardingReporter) SpecWillRun(specSummary *types.SpecSummary) {
 	reporter.outputInterceptor.StartInterceptingOutput()
 	reporter.post("/SpecWillRun", specSummary)
