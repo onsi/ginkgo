@@ -73,8 +73,8 @@ func (stenographer *FakeStenographer) AnnounceBeforeSuiteFailure(summary *types.
 	stenographer.registerCall("AnnounceBeforeSuiteFailure", summary, succinct)
 }
 
-func (stenographer *FakeStenographer) AnnounceCapturedOutput(spec *types.SpecSummary) {
-	stenographer.registerCall("AnnounceCapturedOutput", spec)
+func (stenographer *FakeStenographer) AnnounceCapturedOutput(output string) {
+	stenographer.registerCall("AnnounceCapturedOutput", output)
 }
 
 func (stenographer *FakeStenographer) AnnounceSuccesfulSpec(spec *types.SpecSummary) {

@@ -30,6 +30,9 @@ type Aggregator struct {
 	suiteBeginnings           chan configAndSuite
 	aggregatedSuiteBeginnings []configAndSuite
 
+	beforeSuites           chan *types.SetupSummary
+	aggregatedBeforeSuites []*types.SetupSummary
+
 	specCompletions chan *types.SpecSummary
 	completedSpecs  []*types.SpecSummary
 
@@ -49,6 +52,8 @@ func NewAggregator(nodeCount int, result chan bool, config config.DefaultReporte
 		suiteBeginnings:           make(chan configAndSuite, 0),
 		aggregatedSuiteBeginnings: []configAndSuite{},
 
+		beforeSuites: make(chan *types.SetupSummary, 0),
+
 		specCompletions: make(chan *types.SpecSummary, 0),
 		completedSpecs:  []*types.SpecSummary{},
 
@@ -63,6 +68,10 @@ func NewAggregator(nodeCount int, result chan bool, config config.DefaultReporte
 
 func (aggregator *Aggregator) SpecSuiteWillBegin(config config.GinkgoConfigType, summary *types.SuiteSummary) {
 	aggregator.suiteBeginnings <- configAndSuite{config, summary}
+}
+
+func (aggregator *Aggregator) BeforeSuiteDidRun(setupSummary *types.SetupSummary) {
+	aggregator.beforeSuites <- setupSummary
 }
 
 func (aggregator *Aggregator) SpecWillRun(specSummary *types.SpecSummary) {
@@ -83,6 +92,8 @@ loop:
 		select {
 		case configAndSuite := <-aggregator.suiteBeginnings:
 			aggregator.registerSuiteBeginning(configAndSuite)
+		case setupSummary := <-aggregator.beforeSuites:
+			aggregator.registerBeforeSuite(setupSummary)
 		case specSummary := <-aggregator.specCompletions:
 			aggregator.registerSpecCompletion(specSummary)
 		case suite := <-aggregator.suiteEndings:
@@ -120,6 +131,11 @@ func (aggregator *Aggregator) registerSuiteBeginning(configAndSuite configAndSui
 	aggregator.flushCompletedSpecs()
 }
 
+func (aggregator *Aggregator) registerBeforeSuite(setupSummary *types.SetupSummary) {
+	aggregator.aggregatedBeforeSuites = append(aggregator.aggregatedBeforeSuites, setupSummary)
+	aggregator.flushCompletedSpecs()
+}
+
 func (aggregator *Aggregator) registerSpecCompletion(specSummary *types.SpecSummary) {
 	aggregator.completedSpecs = append(aggregator.completedSpecs, specSummary)
 	aggregator.flushCompletedSpecs()
@@ -130,11 +146,23 @@ func (aggregator *Aggregator) flushCompletedSpecs() {
 		return
 	}
 
+	for _, setupSummary := range aggregator.aggregatedBeforeSuites {
+		aggregator.announceBeforeSuite(setupSummary)
+	}
+
 	for _, specSummary := range aggregator.completedSpecs {
 		aggregator.announceSpec(specSummary)
 	}
 
+	aggregator.aggregatedBeforeSuites = []*types.SetupSummary{}
 	aggregator.completedSpecs = []*types.SpecSummary{}
+}
+
+func (aggregator *Aggregator) announceBeforeSuite(setupSummary *types.SetupSummary) {
+	aggregator.stenographer.AnnounceCapturedOutput(setupSummary.CapturedOutput)
+	if setupSummary.State != types.SpecStatePassed {
+		aggregator.stenographer.AnnounceBeforeSuiteFailure(setupSummary, aggregator.config.Succinct)
+	}
 }
 
 func (aggregator *Aggregator) announceSpec(specSummary *types.SpecSummary) {
@@ -142,7 +170,7 @@ func (aggregator *Aggregator) announceSpec(specSummary *types.SpecSummary) {
 		aggregator.stenographer.AnnounceSpecWillRun(specSummary)
 	}
 
-	aggregator.stenographer.AnnounceCapturedOutput(specSummary)
+	aggregator.stenographer.AnnounceCapturedOutput(specSummary.CapturedOutput)
 
 	switch specSummary.State {
 	case types.SpecStatePassed:

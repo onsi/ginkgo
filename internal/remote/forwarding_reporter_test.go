@@ -16,6 +16,7 @@ var _ = Describe("ForwardingReporter", func() {
 		poster       *fakePoster
 		suiteSummary *types.SuiteSummary
 		specSummary  *types.SpecSummary
+		setupSummary *types.SetupSummary
 		serverHost   string
 	)
 
@@ -34,6 +35,10 @@ var _ = Describe("ForwardingReporter", func() {
 			SuiteDescription: "My Test Suite",
 		}
 
+		setupSummary = &types.SetupSummary{
+			State: types.SpecStatePassed,
+		}
+
 		specSummary = &types.SpecSummary{
 			ComponentTexts: []string{"My", "Spec"},
 			State:          types.SpecStatePassed,
@@ -43,6 +48,10 @@ var _ = Describe("ForwardingReporter", func() {
 	Context("When a suite begins", func() {
 		BeforeEach(func() {
 			reporter.SpecSuiteWillBegin(config.GinkgoConfig, suiteSummary)
+		})
+
+		It("should start intercepting output", func() {
+			Ω(interceptor.DidStartInterceptingOutput).Should(BeTrue())
 		})
 
 		It("should POST the SuiteSummary and Ginkgo Config to the Ginkgo server", func() {
@@ -60,6 +69,28 @@ var _ = Describe("ForwardingReporter", func() {
 
 			Ω(sentData.SentConfig).Should(Equal(config.GinkgoConfig))
 			Ω(sentData.SentSuiteSummary).Should(Equal(suiteSummary))
+		})
+	})
+
+	Context("when a BeforeSuite completes", func() {
+		BeforeEach(func() {
+			reporter.BeforeSuiteDidRun(setupSummary)
+		})
+
+		It("should stop intercepting output", func() {
+			Ω(interceptor.DidStopInterceptingOutput).Should(BeTrue())
+		})
+
+		It("should POST the SetupSummary to the Ginkgo server", func() {
+			Ω(poster.posts).Should(HaveLen(1))
+			Ω(poster.posts[0].url).Should(Equal("http://127.0.0.1:7788/BeforeSuiteDidRun"))
+			Ω(poster.posts[0].bodyType).Should(Equal("application/json"))
+
+			var summary *types.SetupSummary
+			err := json.Unmarshal(poster.posts[0].bodyContent, &summary)
+			Ω(err).ShouldNot(HaveOccurred())
+			setupSummary.CapturedOutput = interceptor.InterceptedOutput
+			Ω(summary).Should(Equal(setupSummary))
 		})
 	})
 

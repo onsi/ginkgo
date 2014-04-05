@@ -8,7 +8,6 @@ import (
 	. "github.com/onsi/ginkgo/internal/remote"
 	st "github.com/onsi/ginkgo/reporters/stenographer"
 	"github.com/onsi/ginkgo/types"
-	"runtime"
 	"time"
 )
 
@@ -25,7 +24,8 @@ var _ = Describe("Aggregator", func() {
 		suiteSummary1 *types.SuiteSummary
 		suiteSummary2 *types.SuiteSummary
 
-		specSummary *types.SpecSummary
+		setupSummary *types.SetupSummary
+		specSummary  *types.SpecSummary
 
 		suiteDescription string
 	)
@@ -82,8 +82,14 @@ var _ = Describe("Aggregator", func() {
 			NumberOfSkippedSpecs:               3,
 		}
 
+		setupSummary = &types.SetupSummary{
+			State:          types.SpecStatePassed,
+			CapturedOutput: "BeforeSuiteOutput",
+		}
+
 		specSummary = &types.SpecSummary{
-			State: types.SpecStatePassed,
+			State:          types.SpecStatePassed,
+			CapturedOutput: "SpecOutput",
 		}
 	})
 
@@ -104,11 +110,10 @@ var _ = Describe("Aggregator", func() {
 		Context("When one of the parallel-suites starts", func() {
 			BeforeEach(func() {
 				aggregator.SpecSuiteWillBegin(ginkgoConfig2, suiteSummary2)
-				runtime.Gosched()
 			})
 
 			It("should be silent", func() {
-				Ω(stenographer.Calls).Should(BeEmpty())
+				Consistently(func() interface{} { return stenographer.Calls }).Should(BeEmpty())
 			})
 		})
 
@@ -130,15 +135,15 @@ var _ = Describe("Aggregator", func() {
 		})
 	})
 
-	Describe("Announcing specs", func() {
+	Describe("Announcing specs and before suites", func() {
 		Context("when the parallel-suites have not all started", func() {
 			BeforeEach(func() {
+				aggregator.BeforeSuiteDidRun(setupSummary)
 				aggregator.SpecDidComplete(specSummary)
-				runtime.Gosched()
 			})
 
 			It("should not announce any specs", func() {
-				Ω(stenographer.Calls).Should(BeEmpty())
+				Consistently(func() interface{} { return stenographer.Calls }).Should(BeEmpty())
 			})
 
 			Context("when the parallel-suites subsequently start", func() {
@@ -163,22 +168,27 @@ var _ = Describe("Aggregator", func() {
 
 			Context("When a spec completes", func() {
 				BeforeEach(func() {
+					aggregator.BeforeSuiteDidRun(setupSummary)
 					aggregator.SpecDidComplete(specSummary)
 					Eventually(func() interface{} {
 						return stenographer.Calls
-					}).Should(HaveLen(3))
+					}).Should(HaveLen(4))
+				})
+
+				It("should announce the captured output of the BeforeSuite", func() {
+					Ω(stenographer.Calls[0]).Should(Equal(call("AnnounceCapturedOutput", setupSummary.CapturedOutput)))
 				})
 
 				It("should announce that the spec will run (when in verbose mode)", func() {
-					Ω(stenographer.Calls[0]).Should(Equal(call("AnnounceSpecWillRun", specSummary)))
+					Ω(stenographer.Calls[1]).Should(Equal(call("AnnounceSpecWillRun", specSummary)))
 				})
 
 				It("should announce the captured stdout of the spec", func() {
-					Ω(stenographer.Calls[1]).Should(Equal(call("AnnounceCapturedOutput", specSummary)))
+					Ω(stenographer.Calls[2]).Should(Equal(call("AnnounceCapturedOutput", specSummary.CapturedOutput)))
 				})
 
 				It("should announce completion", func() {
-					Ω(stenographer.Calls[2]).Should(Equal(call("AnnounceSuccesfulSpec", specSummary)))
+					Ω(stenographer.Calls[3]).Should(Equal(call("AnnounceSuccesfulSpec", specSummary)))
 				})
 			})
 		})
@@ -193,11 +203,10 @@ var _ = Describe("Aggregator", func() {
 		Context("When one of the parallel-suites ends", func() {
 			BeforeEach(func() {
 				aggregator.SpecSuiteDidEnd(suiteSummary2)
-				runtime.Gosched()
 			})
 
 			It("should be silent", func() {
-				Ω(stenographer.Calls).Should(BeEmpty())
+				Consistently(func() interface{} { return stenographer.Calls }).Should(BeEmpty())
 			})
 
 			It("should not notify the channel", func() {

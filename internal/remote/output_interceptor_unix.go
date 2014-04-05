@@ -53,6 +53,10 @@ func (interceptor *outputInterceptor) StartInterceptingOutput() error {
 }
 
 func (interceptor *outputInterceptor) StopInterceptingAndReturnOutput() (string, error) {
+	if !interceptor.intercepting {
+		return "", errors.New("Not intercepting output!")
+	}
+
 	syscall.Dup2(int(interceptor.stdoutPlaceholder.Fd()), 1)
 	syscall.Dup2(int(interceptor.stderrPlaceholder.Fd()), 2)
 

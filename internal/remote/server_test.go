@@ -17,6 +17,7 @@ var _ = Describe("Server", func() {
 		forwardingReporter   *ForwardingReporter
 
 		suiteSummary *types.SuiteSummary
+		setupSummary *types.SetupSummary
 		specSummary  *types.SpecSummary
 	)
 
@@ -33,6 +34,10 @@ var _ = Describe("Server", func() {
 
 		suiteSummary = &types.SuiteSummary{
 			SuiteDescription: "My Test Suite",
+		}
+
+		setupSummary = &types.SetupSummary{
+			State: types.SpecStatePassed,
 		}
 
 		specSummary = &types.SpecSummary{
@@ -59,6 +64,14 @@ var _ = Describe("Server", func() {
 			Ω(reporterA.BeginSummary).Should(Equal(suiteSummary))
 			Ω(reporterB.BeginSummary).Should(Equal(suiteSummary))
 			close(done)
+		})
+	})
+
+	Describe("/BeforeSuiteDidRun", func() {
+		It("should decode and forward the setup summary", func() {
+			forwardingReporter.BeforeSuiteDidRun(setupSummary)
+			Ω(reporterA.BeforeSuiteSummary).Should(Equal(setupSummary))
+			Ω(reporterB.BeforeSuiteSummary).Should(Equal(setupSummary))
 		})
 	})
 

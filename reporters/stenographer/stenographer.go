@@ -40,7 +40,7 @@ type Stenographer interface {
 	AnnounceSpecWillRun(spec *types.SpecSummary)
 	AnnounceBeforeSuiteFailure(summary *types.SetupSummary, succinct bool)
 
-	AnnounceCapturedOutput(spec *types.SpecSummary)
+	AnnounceCapturedOutput(output string)
 
 	AnnounceSuccesfulSpec(spec *types.SpecSummary)
 	AnnounceSuccesfulSlowSpec(spec *types.SpecSummary, succinct bool)
@@ -193,13 +193,13 @@ func (s *consoleStenographer) AnnounceBeforeSuiteFailure(summary *types.SetupSum
 	s.endBlock()
 }
 
-func (s *consoleStenographer) AnnounceCapturedOutput(spec *types.SpecSummary) {
-	if spec.CapturedOutput == "" {
+func (s *consoleStenographer) AnnounceCapturedOutput(output string) {
+	if output == "" {
 		return
 	}
 
 	s.startBlock()
-	s.println(0, spec.CapturedOutput)
+	s.println(0, output)
 	s.midBlock()
 }
 
