@@ -11,8 +11,6 @@ import (
 	"os"
 	"os/exec"
 	"path/filepath"
-	"sync"
-	"syscall"
 	"time"
 )
 
@@ -23,21 +21,15 @@ type TestRunner struct {
 	parallelStream bool
 	race           bool
 	cover          bool
-
-	executedCommands []*exec.Cmd
-
-	lock *sync.Mutex
 }
 
 func New(suite *testsuite.TestSuite, numCPU int, parallelStream bool, race bool, cover bool) *TestRunner {
 	return &TestRunner{
-		suite:            suite,
-		numCPU:           numCPU,
-		parallelStream:   parallelStream,
-		race:             race,
-		cover:            cover,
-		executedCommands: []*exec.Cmd{},
-		lock:             &sync.Mutex{},
+		suite:          suite,
+		numCPU:         numCPU,
+		parallelStream: parallelStream,
+		race:           race,
+		cover:          cover,
 	}
 }
 
@@ -53,8 +45,6 @@ func (t *TestRunner) Compile() error {
 	}
 
 	cmd := exec.Command("go", args...)
-	t.registerCmd(cmd)
-	defer t.unregisterCmd(cmd)
 
 	cmd.Dir = t.suite.Path
 
@@ -91,19 +81,7 @@ func (t *TestRunner) Run() bool {
 }
 
 func (t *TestRunner) CleanUp(signal ...os.Signal) {
-	t.lock.Lock()
-	for _, cmd := range t.executedCommands {
-		if cmd.Process != nil {
-			if len(signal) == 0 {
-				cmd.Process.Signal(syscall.SIGINT)
-			} else {
-				cmd.Process.Signal(signal[0])
-			}
-			cmd.Wait()
-		}
-	}
 	os.Remove(t.compiledArtifact())
-	t.lock.Unlock()
 }
 
 func (t *TestRunner) compiledArtifact() string {
@@ -235,8 +213,6 @@ func (t *TestRunner) run(ginkgoArgs []string, env []string, stream io.Writer, co
 	args = append(args, ginkgoArgs...)
 
 	cmd := exec.Command(t.compiledArtifact(), args...)
-	t.registerCmd(cmd)
-	defer t.unregisterCmd(cmd)
 
 	cmd.Env = env
 	cmd.Dir = t.suite.Path
@@ -252,22 +228,4 @@ func (t *TestRunner) run(ginkgoArgs []string, env []string, stream io.Writer, co
 	err = cmd.Wait()
 
 	return err == nil
-}
-
-func (t *TestRunner) registerCmd(cmd *exec.Cmd) {
-	t.lock.Lock()
-	t.executedCommands = append(t.executedCommands, cmd)
-	t.lock.Unlock()
-}
-
-func (t *TestRunner) unregisterCmd(cmd *exec.Cmd) {
-	t.lock.Lock()
-	for commandIndex, executedCommand := range t.executedCommands {
-		if executedCommand == cmd {
-			t.executedCommands[commandIndex] = t.executedCommands[len(t.executedCommands)-1]
-			t.executedCommands = t.executedCommands[0 : len(t.executedCommands)-1]
-			break
-		}
-	}
-	t.lock.Unlock()
 }

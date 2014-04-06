@@ -147,7 +147,7 @@ func AsynchronousSharedRunnerBehaviors(build func(body interface{}, timeout time
 				}, timeoutDuration, failer, componentCodeLocation).Run()
 
 				Ω(didRun).Should(BeTrue())
-				Ω(numberOfGoRoutines).Should(Equal(initialNumberOfGoRoutines + 1))
+				Ω(numberOfGoRoutines).Should(BeNumerically(">=", initialNumberOfGoRoutines+1))
 			})
 		})
 

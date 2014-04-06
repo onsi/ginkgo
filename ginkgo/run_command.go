@@ -14,9 +14,9 @@ import (
 func BuildRunCommand() *Command {
 	commandFlags := NewRunCommandFlags(flag.NewFlagSet("ginkgo", flag.ExitOnError))
 	runner := &SpecRunner{
-		commandFlags: commandFlags,
-		manager:      NewTestRunnerManager(commandFlags),
-		notifier:     NewNotifier(commandFlags),
+		commandFlags:     commandFlags,
+		notifier:         NewNotifier(commandFlags),
+		interruptHandler: NewInterruptHandler(),
 	}
 
 	return &Command{
@@ -32,9 +32,9 @@ func BuildRunCommand() *Command {
 }
 
 type SpecRunner struct {
-	commandFlags *RunAndWatchCommandFlags
-	manager      *TestRunnerManager
-	notifier     *Notifier
+	commandFlags     *RunAndWatchCommandFlags
+	notifier         *Notifier
+	interruptHandler *InterruptHandler
 }
 
 func (r *SpecRunner) RunSpecs(args []string) {
@@ -51,6 +51,10 @@ func (r *SpecRunner) RunSpecs(args []string) {
 		for {
 			passed = r.RunSuites(suites)
 			iteration++
+
+			if r.interruptHandler.WasInterrupted() {
+				break
+			}
 
 			if passed {
 				fmt.Printf("\nAll tests passed...\nWill keep running them until they fail.\nThis was attempt #%d\n\n", iteration)
@@ -118,7 +122,7 @@ func (r *SpecRunner) RunSuites(suites []*testsuite.TestSuite) bool {
 
 	suiteCompilers := make([]*compiler, len(suites))
 	for i, suite := range suites {
-		runner := r.manager.MakeAndRegisterTestRunner(suite)
+		runner := testrunner.New(suite, r.commandFlags.NumCPU, r.commandFlags.ParallelStream, r.commandFlags.Race, r.commandFlags.Cover)
 		suiteCompilers[i] = &compiler{
 			runner:           runner,
 			compilationError: make(chan error, 1),
@@ -143,6 +147,10 @@ func (r *SpecRunner) RunSuites(suites []*testsuite.TestSuite) bool {
 
 	suitesThatFailed := []*testsuite.TestSuite{}
 	for i, suite := range suites {
+		if r.interruptHandler.WasInterrupted() {
+			break
+		}
+
 		compilationError := <-suiteCompilers[i].compilationError
 		if compilationError != nil {
 			fmt.Print(compilationError.Error())
@@ -164,7 +172,6 @@ func (r *SpecRunner) RunSuites(suites []*testsuite.TestSuite) bool {
 
 	for i := range suites {
 		suiteCompilers[i].runner.CleanUp()
-		r.manager.UnregisterRunner(suiteCompilers[i].runner)
 	}
 
 	if r.commandFlags.KeepGoing && !passed {

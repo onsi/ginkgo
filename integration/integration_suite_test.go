@@ -65,7 +65,7 @@ func copyIn(fixture string, destination string) {
 	})
 }
 
-func runGinkgo(dir string, args ...string) (string, error) {
+func ginkgoCommand(dir string, args ...string) *exec.Cmd {
 	cmd := exec.Command("ginkgo", args...)
 	cmd.Dir = dir
 	cmd.Env = []string{}
@@ -74,6 +74,12 @@ func runGinkgo(dir string, args ...string) (string, error) {
 			cmd.Env = append(cmd.Env, env)
 		}
 	}
+
+	return cmd
+}
+
+func runGinkgo(dir string, args ...string) (string, error) {
+	cmd := ginkgoCommand(dir, args...)
 	output, err := cmd.CombinedOutput()
 	GinkgoWriter.Write(output)
 	return string(output), err

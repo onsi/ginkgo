@@ -1,12 +1,16 @@
 package specrunner
 
 import (
+	"fmt"
 	"github.com/onsi/ginkgo/config"
 	"github.com/onsi/ginkgo/internal/leafnodes"
 	"github.com/onsi/ginkgo/internal/spec"
 	Writer "github.com/onsi/ginkgo/internal/writer"
 	"github.com/onsi/ginkgo/reporters"
 	"github.com/onsi/ginkgo/types"
+	"os"
+	"os/signal"
+	"sync"
 
 	"time"
 )
@@ -22,6 +26,8 @@ type SpecRunner struct {
 	runningSpec     *spec.Spec
 	writer          Writer.WriterInterface
 	config          config.GinkgoConfigType
+	interrupted     bool
+	lock            *sync.Mutex
 }
 
 func New(description string, beforeSuiteNode *leafnodes.SuiteNode, specs *spec.Specs, afterSuiteNode *leafnodes.SuiteNode, reporters []reporters.Reporter, writer Writer.WriterInterface, config config.GinkgoConfigType) *SpecRunner {
@@ -34,16 +40,22 @@ func New(description string, beforeSuiteNode *leafnodes.SuiteNode, specs *spec.S
 		writer:          writer,
 		config:          config,
 		suiteID:         randomID(),
+		lock:            &sync.Mutex{},
 	}
 }
 
 func (runner *SpecRunner) Run() bool {
 	runner.reportSuiteWillBegin()
+	go runner.registerForInterrupts()
 
 	suitePassed := runner.runBeforeSuite()
+
 	if suitePassed {
 		suitePassed = runner.runSpecs()
 	}
+
+	runner.blockForeverIfInterrupted()
+
 	suitePassed = runner.runAfterSuite() && suitePassed
 
 	runner.reportSuiteDidEnd()
@@ -52,7 +64,7 @@ func (runner *SpecRunner) Run() bool {
 }
 
 func (runner *SpecRunner) runBeforeSuite() bool {
-	if runner.beforeSuiteNode == nil {
+	if runner.beforeSuiteNode == nil || runner.wasInterrupted() {
 		return true
 	}
 
@@ -74,6 +86,9 @@ func (runner *SpecRunner) runAfterSuite() bool {
 func (runner *SpecRunner) runSpecs() bool {
 	suiteFailed := false
 	for _, spec := range runner.specs.Specs() {
+		if runner.wasInterrupted() {
+			return suiteFailed
+		}
 		runner.writer.Truncate()
 
 		runner.reportSpecWillRun(spec)
@@ -102,6 +117,53 @@ func (runner *SpecRunner) CurrentSpecSummary() (*types.SpecSummary, bool) {
 	}
 
 	return runner.runningSpec.Summary(runner.suiteID), true
+}
+
+func (runner *SpecRunner) registerForInterrupts() {
+	c := make(chan os.Signal, 1)
+	signal.Notify(c, os.Interrupt)
+
+	<-c
+	signal.Stop(c)
+	runner.markInterrupted()
+	go runner.registerForHardInterrupts()
+	if runner.afterSuiteNode != nil {
+		fmt.Fprintln(os.Stderr, "\nReceived interrupt.  Running AfterSuite...\n^C again to terminate immediately")
+		runner.runAfterSuite()
+	}
+	runner.reportSuiteDidEnd()
+	os.Exit(1)
+}
+
+func (runner *SpecRunner) registerForHardInterrupts() {
+	c := make(chan os.Signal, 1)
+	signal.Notify(c, os.Interrupt)
+
+	<-c
+	fmt.Fprintln(os.Stderr, "\nReceived second interrupt.  Shutting down.")
+	os.Exit(1)
+}
+
+func (runner *SpecRunner) blockForeverIfInterrupted() {
+	runner.lock.Lock()
+	interrupted := runner.interrupted
+	runner.lock.Unlock()
+
+	if interrupted {
+		select {}
+	}
+}
+
+func (runner *SpecRunner) markInterrupted() {
+	runner.lock.Lock()
+	defer runner.lock.Unlock()
+	runner.interrupted = true
+}
+
+func (runner *SpecRunner) wasInterrupted() bool {
+	runner.lock.Lock()
+	defer runner.lock.Unlock()
+	return runner.interrupted
 }
 
 func (runner *SpecRunner) reportSuiteWillBegin() {
@@ -189,6 +251,8 @@ func (runner *SpecRunner) summary() *types.SuiteSummary {
 		success = false
 		numberOfFailedSpecs = numberOfSpecsThatWillBeRun
 	} else if runner.afterSuiteNode != nil && !runner.afterSuiteNode.Passed() {
+		success = false
+	} else if runner.wasInterrupted() {
 		success = false
 	}
 

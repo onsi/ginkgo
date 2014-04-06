@@ -3,15 +3,16 @@ package main
 import (
 	"flag"
 	"fmt"
+	"github.com/onsi/ginkgo/ginkgo/testrunner"
 	"github.com/onsi/ginkgo/ginkgo/testsuite"
 )
 
 func BuildWatchCommand() *Command {
 	commandFlags := NewWatchCommandFlags(flag.NewFlagSet("watch", flag.ExitOnError))
 	watcher := &SpecWatcher{
-		commandFlags: commandFlags,
-		manager:      NewTestRunnerManager(commandFlags),
-		notifier:     NewNotifier(commandFlags),
+		commandFlags:     commandFlags,
+		notifier:         NewNotifier(commandFlags),
+		interruptHandler: NewInterruptHandler(),
 	}
 
 	return &Command{
@@ -30,9 +31,9 @@ func BuildWatchCommand() *Command {
 }
 
 type SpecWatcher struct {
-	commandFlags *RunAndWatchCommandFlags
-	manager      *TestRunnerManager
-	notifier     *Notifier
+	commandFlags     *RunAndWatchCommandFlags
+	notifier         *Notifier
+	interruptHandler *InterruptHandler
 }
 
 func (w *SpecWatcher) WatchSpecs(args []string) {
@@ -52,17 +53,18 @@ func (w *SpecWatcher) WatchSuites(suites []*testsuite.TestSuite) {
 		w.RunSuite(suites[0])
 	}
 
-	for {
-		suite := <-modifiedSuite
+	select {
+	case suite := <-modifiedSuite:
 		w.notifier.SendNotification("Ginkgo", fmt.Sprintf(`Detected change in "%s"...`, suite.PackageName))
 
 		fmt.Printf("\n\nDetected change in %s\n\n", suite.PackageName)
 		w.RunSuite(suite)
+	case <-w.interruptHandler.C:
 	}
 }
 
 func (w *SpecWatcher) RunSuite(suite *testsuite.TestSuite) {
-	runner := w.manager.MakeAndRegisterTestRunner(suite)
+	runner := testrunner.New(suite, w.commandFlags.NumCPU, w.commandFlags.ParallelStream, w.commandFlags.Race, w.commandFlags.Cover)
 	err := runner.Compile()
 	if err != nil {
 		fmt.Print(err.Error())
@@ -70,5 +72,4 @@ func (w *SpecWatcher) RunSuite(suite *testsuite.TestSuite) {
 	suitePassed := (err == nil) && runner.Run()
 	w.notifier.SendSuiteCompletionNotification(suite, suitePassed)
 	runner.CleanUp()
-	w.manager.UnregisterRunner(runner)
 }
