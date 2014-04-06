@@ -81,6 +81,7 @@ import (
 	"github.com/onsi/ginkgo/config"
 	"github.com/onsi/ginkgo/ginkgo/testsuite"
 	"os"
+	"regexp"
 	"strings"
 )
 
@@ -163,7 +164,7 @@ func complainAndQuit(complaint string) {
 	os.Exit(1)
 }
 
-func findSuites(args []string, recurse bool) []*testsuite.TestSuite {
+func findSuites(args []string, recurse bool, skipPackage string) []*testsuite.TestSuite {
 	suites := []*testsuite.TestSuite{}
 
 	if len(args) > 0 {
@@ -172,6 +173,23 @@ func findSuites(args []string, recurse bool) []*testsuite.TestSuite {
 		}
 	} else {
 		suites = testsuite.SuitesInDir(".", recurse)
+	}
+
+	if skipPackage != "" {
+		re := regexp.MustCompile(skipPackage)
+		filteredSuites := []*testsuite.TestSuite{}
+		skippedPackages := []string{}
+		for _, suite := range suites {
+			if re.Match([]byte(suite.PackageName)) {
+				skippedPackages = append(skippedPackages, suite.PackageName)
+			} else {
+				filteredSuites = append(filteredSuites, suite)
+			}
+		}
+		if len(skippedPackages) > 0 {
+			fmt.Printf("Will skip %s\n", strings.Join(skippedPackages, ", "))
+		}
+		suites = filteredSuites
 	}
 
 	if len(suites) == 0 {

@@ -61,6 +61,24 @@ var _ = Describe("Running Specs", func() {
 		})
 	})
 
+	Context("when told to skipPackages", func() {
+		BeforeEach(func() {
+			pathToTest = tmpPath("ginkgo")
+			otherPathToTest := tmpPath("other")
+			copyIn("passing_ginkgo_tests", pathToTest)
+			copyIn("more_ginkgo_tests", otherPathToTest)
+		})
+
+		It("should skip packages that match the regexp", func() {
+			output, err := runGinkgo(tmpDir, "--noColor", "--skipPackage=other", "-r")
+
+			Ω(err).ShouldNot(HaveOccurred())
+			Ω(output).Should(ContainSubstring("Passing_ginkgo_tests Suite"))
+			Ω(output).ShouldNot(ContainSubstring("More_ginkgo_tests Suite"))
+			Ω(output).Should(ContainSubstring("Test Suite Passed"))
+		})
+	})
+
 	Context("when pointed at a package with xunit style tests", func() {
 		BeforeEach(func() {
 			pathToTest = tmpPath("xunit")

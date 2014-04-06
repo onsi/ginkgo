@@ -40,7 +40,7 @@ type SpecRunner struct {
 func (r *SpecRunner) RunSpecs(args []string) {
 	r.notifier.VerifyNotificationsAreAvailable()
 
-	suites := findSuites(args, r.commandFlags.Recurse)
+	suites := findSuites(args, r.commandFlags.Recurse, r.commandFlags.SkipPackage)
 	r.ComputeSuccinctMode(len(suites))
 
 	t := time.Now()

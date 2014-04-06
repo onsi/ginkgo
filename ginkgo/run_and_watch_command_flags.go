@@ -13,6 +13,7 @@ type RunAndWatchCommandFlags struct {
 	Race           bool
 	Cover          bool
 	Notify         bool
+	SkipPackage    string
 
 	//not for watch command
 	KeepGoing    bool
@@ -48,7 +49,7 @@ func (c *RunAndWatchCommandFlags) flags(forWatchCommand bool) {
 	c.FlagSet.BoolVar(&(c.Recurse), "r", false, "Find and run test suites under the current directory recursively")
 	c.FlagSet.BoolVar(&(c.Race), "race", false, "Run tests with race detection enabled")
 	c.FlagSet.BoolVar(&(c.Cover), "cover", false, "Run tests with coverage analysis, will generate coverage profiles with the package name in the current directory")
-	// c.FlagSet.BoolVar(&(watch), "watch", false, "Monitor the target packages for changes, then run tests when changes are detected")
+	c.FlagSet.StringVar(&(c.SkipPackage), "skipPackage", "", "Packages with names matching this regular expression will be skipped")
 	if onOSX {
 		c.FlagSet.BoolVar(&(c.Notify), "notify", false, "Send desktop notifications when a test run completes")
 	}
