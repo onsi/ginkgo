@@ -23,6 +23,7 @@ type Suite struct {
 	currentContainer  *containernode.ContainerNode
 	containerIndex    int
 	beforeSuiteNode   *leafnodes.SuiteNode
+	afterSuiteNode    *leafnodes.SuiteNode
 	runner            *specrunner.SpecRunner
 	failer            *failer.Failer
 }
@@ -50,7 +51,7 @@ func (suite *Suite) Run(t ginkgoTestingT, description string, reporters []report
 	r := rand.New(rand.NewSource(config.RandomSeed))
 	suite.topLevelContainer.Shuffle(r)
 	specs := suite.generateSpecs(description, config)
-	suite.runner = specrunner.New(description, suite.beforeSuiteNode, specs, reporters, writer, config)
+	suite.runner = specrunner.New(description, suite.beforeSuiteNode, specs, suite.afterSuiteNode, reporters, writer, config)
 
 	success := suite.runner.Run()
 	if !success {
@@ -93,6 +94,13 @@ func (suite *Suite) SetBeforeSuiteNode(body interface{}, codeLocation types.Code
 		panic("You may only call BeforeSuite once!")
 	}
 	suite.beforeSuiteNode = leafnodes.NewBeforeSuiteNode(body, codeLocation, timeout, suite.failer)
+}
+
+func (suite *Suite) SetAfterSuiteNode(body interface{}, codeLocation types.CodeLocation, timeout time.Duration) {
+	if suite.afterSuiteNode != nil {
+		panic("You may only call AfterSuite once!")
+	}
+	suite.afterSuiteNode = leafnodes.NewAfterSuiteNode(body, codeLocation, timeout, suite.failer)
 }
 
 func (suite *Suite) PushContainerNode(text string, body func(), flag types.FlagType, codeLocation types.CodeLocation) {

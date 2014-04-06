@@ -37,8 +37,16 @@ func (reporter *TeamCityReporter) SpecSuiteWillBegin(config config.GinkgoConfigT
 }
 
 func (reporter *TeamCityReporter) BeforeSuiteDidRun(setupSummary *types.SetupSummary) {
+	reporter.handleSetupSummary("BeforeSuite", setupSummary)
+}
+
+func (reporter *TeamCityReporter) AfterSuiteDidRun(setupSummary *types.SetupSummary) {
+	reporter.handleSetupSummary("AfterSuite", setupSummary)
+}
+
+func (reporter *TeamCityReporter) handleSetupSummary(name string, setupSummary *types.SetupSummary) {
 	if setupSummary.State != types.SpecStatePassed {
-		testName := escape("BeforeSuite")
+		testName := escape(name)
 		fmt.Fprintf(reporter.writer, "%s[testStarted name='%s']", messageId, testName)
 		message := escape(setupSummary.Failure.ComponentCodeLocation.String())
 		details := escape(setupSummary.Failure.Message)
@@ -47,8 +55,6 @@ func (reporter *TeamCityReporter) BeforeSuiteDidRun(setupSummary *types.SetupSum
 		fmt.Fprintf(reporter.writer, "%s[testFinished name='%s' duration='%v']", messageId, testName, durationInMilliseconds)
 	}
 }
-
-//beforesuite, if failed: testStarted, then testFailed, as below
 
 func (reporter *TeamCityReporter) SpecWillRun(specSummary *types.SpecSummary) {
 	testName := escape(strings.Join(specSummary.ComponentTexts[1:], " "))

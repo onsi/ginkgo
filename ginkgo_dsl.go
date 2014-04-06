@@ -352,6 +352,12 @@ func BeforeSuite(body interface{}, timeout ...float64) bool {
 	return true
 }
 
+//TODO: document
+func AfterSuite(body interface{}, timeout ...float64) bool {
+	globalSuite.SetAfterSuiteNode(body, codelocation.New(1), parseTimeout(timeout...))
+	return true
+}
+
 //BeforeEach blocks are run before It blocks.  When multiple BeforeEach blocks are defined in nested
 //Describe and Context blocks the outermost BeforeEach blocks are run first.
 //

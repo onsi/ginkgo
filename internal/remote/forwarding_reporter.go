@@ -60,20 +60,27 @@ func (reporter *ForwardingReporter) SpecSuiteWillBegin(conf config.GinkgoConfigT
 
 func (reporter *ForwardingReporter) BeforeSuiteDidRun(setupSummary *types.SetupSummary) {
 	output, _ := reporter.outputInterceptor.StopInterceptingAndReturnOutput()
+	reporter.outputInterceptor.StartInterceptingOutput()
 	setupSummary.CapturedOutput = output
 	reporter.post("/BeforeSuiteDidRun", setupSummary)
 }
 
 func (reporter *ForwardingReporter) SpecWillRun(specSummary *types.SpecSummary) {
-	reporter.outputInterceptor.StopInterceptingAndReturnOutput()
-	reporter.outputInterceptor.StartInterceptingOutput()
 	reporter.post("/SpecWillRun", specSummary)
 }
 
 func (reporter *ForwardingReporter) SpecDidComplete(specSummary *types.SpecSummary) {
 	output, _ := reporter.outputInterceptor.StopInterceptingAndReturnOutput()
+	reporter.outputInterceptor.StartInterceptingOutput()
 	specSummary.CapturedOutput = output
 	reporter.post("/SpecDidComplete", specSummary)
+}
+
+func (reporter *ForwardingReporter) AfterSuiteDidRun(setupSummary *types.SetupSummary) {
+	output, _ := reporter.outputInterceptor.StopInterceptingAndReturnOutput()
+	reporter.outputInterceptor.StartInterceptingOutput()
+	setupSummary.CapturedOutput = output
+	reporter.post("/AfterSuiteDidRun", setupSummary)
 }
 
 func (reporter *ForwardingReporter) SpecSuiteDidEnd(summary *types.SuiteSummary) {

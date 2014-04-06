@@ -42,6 +42,16 @@ var _ = Describe("Spec Collection", func() {
 		}, codelocation.New(0), 0, failer)
 	}
 
+	newAftSuite := func(text string, fail bool) *leafnodes.SuiteNode {
+		return leafnodes.NewAfterSuiteNode(func() {
+			writer.AddEvent(text)
+			thingsThatRan = append(thingsThatRan, text)
+			if fail {
+				failer.Fail(text, codelocation.New(0))
+			}
+		}, codelocation.New(0), 0, failer)
+	}
+
 	newSpec := func(text string, flag types.FlagType, fail bool) *spec.Spec {
 		subject := leafnodes.NewItNode(text, func() {
 			writer.AddEvent(text)
@@ -60,8 +70,8 @@ var _ = Describe("Spec Collection", func() {
 		return spec.New(subject, []*containernode.ContainerNode{})
 	}
 
-	newRunner := func(config config.GinkgoConfigType, beforeSuiteNode *leafnodes.SuiteNode, specs ...*spec.Spec) *SpecRunner {
-		return New("description", beforeSuiteNode, spec.NewSpecs(specs), []reporters.Reporter{reporter1, reporter2}, writer, config)
+	newRunner := func(config config.GinkgoConfigType, beforeSuiteNode *leafnodes.SuiteNode, afterSuiteNode *leafnodes.SuiteNode, specs ...*spec.Spec) *SpecRunner {
+		return New("description", beforeSuiteNode, spec.NewSpecs(specs), afterSuiteNode, []reporters.Reporter{reporter1, reporter2}, writer, config)
 	}
 
 	BeforeEach(func() {
@@ -84,12 +94,12 @@ var _ = Describe("Spec Collection", func() {
 			skippedSpec = newSpec("skipped spec", noneFlag, false)
 			skippedSpec.Skip()
 
-			runner = newRunner(config.GinkgoConfigType{RandomSeed: 17}, newBefSuite("BefSuite", false), specA, pendingSpec, anotherPendingSpec, failedSpec, specB, skippedSpec)
+			runner = newRunner(config.GinkgoConfigType{RandomSeed: 17}, newBefSuite("BefSuite", false), newAftSuite("AftSuite", false), specA, pendingSpec, anotherPendingSpec, failedSpec, specB, skippedSpec)
 			runner.Run()
 		})
 
 		It("should skip skipped/pending tests", func() {
-			Ω(thingsThatRan).Should(Equal([]string{"BefSuite", "spec A", "failed spec", "spec B"}))
+			Ω(thingsThatRan).Should(Equal([]string{"BefSuite", "spec A", "failed spec", "spec B", "AftSuite"}))
 		})
 
 		It("should report to any attached reporters", func() {
@@ -138,6 +148,7 @@ var _ = Describe("Spec Collection", func() {
 			runner = newRunner(
 				config.GinkgoConfigType{},
 				newBefSuite("BefSuite", false),
+				newAftSuite("AftSuite", false),
 				skippedSpec,
 				newSpec("PENDING", pendingFlag, false),
 				newSpecWithBody("RUN", func() {
@@ -169,13 +180,15 @@ var _ = Describe("Spec Collection", func() {
 		})
 	})
 
-	Describe("Running BeforeSuite", func() {
+	Describe("Running BeforeSuite & AfterSuite", func() {
 		var success bool
 		var befSuite *leafnodes.SuiteNode
-		Context("with a nil BeforeSuite", func() {
+		var aftSuite *leafnodes.SuiteNode
+		Context("with a nil BeforeSuite & AfterSuite", func() {
 			BeforeEach(func() {
 				runner = newRunner(
 					config.GinkgoConfigType{},
+					nil,
 					nil,
 					newSpec("A", noneFlag, false),
 					newSpec("B", noneFlag, false),
@@ -187,29 +200,39 @@ var _ = Describe("Spec Collection", func() {
 				Ω(reporter1.BeforeSuiteSummary).Should(BeNil())
 			})
 
+			It("should not report about the AfterSuite", func() {
+				Ω(reporter1.AfterSuiteSummary).Should(BeNil())
+			})
+
 			It("should run the specs", func() {
 				Ω(thingsThatRan).Should(Equal([]string{"A", "B"}))
 			})
 		})
 
-		Context("when the BeforeSuite passes", func() {
+		Context("when the BeforeSuite & AfterSuite pass", func() {
 			BeforeEach(func() {
 				befSuite = newBefSuite("BefSuite", false)
+				aftSuite = newBefSuite("AftSuite", false)
 				runner = newRunner(
 					config.GinkgoConfigType{},
 					befSuite,
+					aftSuite,
 					newSpec("A", noneFlag, false),
 					newSpec("B", noneFlag, false),
 				)
 				success = runner.Run()
 			})
 
-			It("should run the BeforeSuite and the specs", func() {
-				Ω(thingsThatRan).Should(Equal([]string{"BefSuite", "A", "B"}))
+			It("should run the BeforeSuite, the AfterSuite and the specs", func() {
+				Ω(thingsThatRan).Should(Equal([]string{"BefSuite", "A", "B", "AftSuite"}))
 			})
 
 			It("should report about the BeforeSuite", func() {
 				Ω(reporter1.BeforeSuiteSummary).Should(Equal(befSuite.Summary()))
+			})
+
+			It("should report about the AfterSuite", func() {
+				Ω(reporter1.AfterSuiteSummary).Should(Equal(aftSuite.Summary()))
 			})
 
 			It("should report success", func() {
@@ -222,6 +245,7 @@ var _ = Describe("Spec Collection", func() {
 		Context("when the BeforeSuite fails", func() {
 			BeforeEach(func() {
 				befSuite = newBefSuite("BefSuite", true)
+				aftSuite = newBefSuite("AftSuite", false)
 
 				skipped := newSpec("Skipped", noneFlag, false)
 				skipped.Skip()
@@ -229,6 +253,7 @@ var _ = Describe("Spec Collection", func() {
 				runner = newRunner(
 					config.GinkgoConfigType{},
 					befSuite,
+					aftSuite,
 					newSpec("A", noneFlag, false),
 					newSpec("B", noneFlag, false),
 					newSpec("Pending", pendingFlag, false),
@@ -237,12 +262,16 @@ var _ = Describe("Spec Collection", func() {
 				success = runner.Run()
 			})
 
-			It("should not run the specs", func() {
-				Ω(thingsThatRan).Should(Equal([]string{"BefSuite"}))
+			It("should not run the specs, but it should run the AfterSuite", func() {
+				Ω(thingsThatRan).Should(Equal([]string{"BefSuite", "AftSuite"}))
 			})
 
 			It("should report about the BeforeSuite", func() {
 				Ω(reporter1.BeforeSuiteSummary).Should(Equal(befSuite.Summary()))
+			})
+
+			It("should report about the AfterSuite", func() {
+				Ω(reporter1.AfterSuiteSummary).Should(Equal(aftSuite.Summary()))
 			})
 
 			It("should report failure", func() {
@@ -252,12 +281,74 @@ var _ = Describe("Spec Collection", func() {
 				Ω(reporter1.EndSummary.NumberOfSpecsThatWillBeRun).Should(Equal(2))
 			})
 		})
+
+		Context("when some other test fails", func() {
+			BeforeEach(func() {
+				aftSuite = newBefSuite("AftSuite", false)
+
+				runner = newRunner(
+					config.GinkgoConfigType{},
+					nil,
+					aftSuite,
+					newSpec("A", noneFlag, true),
+				)
+				success = runner.Run()
+			})
+
+			It("should still run the AfterSuite", func() {
+				Ω(thingsThatRan).Should(Equal([]string{"A", "AftSuite"}))
+			})
+
+			It("should report about the AfterSuite", func() {
+				Ω(reporter1.AfterSuiteSummary).Should(Equal(aftSuite.Summary()))
+			})
+
+			It("should report failure", func() {
+				Ω(success).Should(BeFalse())
+				Ω(reporter1.EndSummary.SuiteSucceeded).Should(BeFalse())
+				Ω(reporter1.EndSummary.NumberOfFailedSpecs).Should(Equal(1))
+				Ω(reporter1.EndSummary.NumberOfSpecsThatWillBeRun).Should(Equal(1))
+			})
+		})
+
+		Context("when the AfterSuite fails", func() {
+			BeforeEach(func() {
+				befSuite = newBefSuite("BefSuite", false)
+				aftSuite = newBefSuite("AftSuite", true)
+				runner = newRunner(
+					config.GinkgoConfigType{},
+					befSuite,
+					aftSuite,
+					newSpec("A", noneFlag, false),
+					newSpec("B", noneFlag, false),
+				)
+				success = runner.Run()
+			})
+
+			It("should run everything", func() {
+				Ω(thingsThatRan).Should(Equal([]string{"BefSuite", "A", "B", "AftSuite"}))
+			})
+
+			It("should report about the BeforeSuite", func() {
+				Ω(reporter1.BeforeSuiteSummary).Should(Equal(befSuite.Summary()))
+			})
+
+			It("should report about the AfterSuite", func() {
+				Ω(reporter1.AfterSuiteSummary).Should(Equal(aftSuite.Summary()))
+			})
+
+			It("should report failure", func() {
+				Ω(success).Should(BeFalse())
+				Ω(reporter1.EndSummary.SuiteSucceeded).Should(BeFalse())
+				Ω(reporter1.EndSummary.NumberOfFailedSpecs).Should(Equal(0))
+			})
+		})
 	})
 
 	Describe("Marking failure and success", func() {
 		Context("when all tests pass", func() {
 			BeforeEach(func() {
-				runner = newRunner(config.GinkgoConfigType{}, nil, newSpec("passing", noneFlag, false), newSpec("pending", pendingFlag, false))
+				runner = newRunner(config.GinkgoConfigType{}, nil, nil, newSpec("passing", noneFlag, false), newSpec("pending", pendingFlag, false))
 			})
 
 			It("should return true and report success", func() {
@@ -268,7 +359,7 @@ var _ = Describe("Spec Collection", func() {
 
 		Context("when a test fails", func() {
 			BeforeEach(func() {
-				runner = newRunner(config.GinkgoConfigType{}, nil, newSpec("failing", noneFlag, true), newSpec("pending", pendingFlag, false))
+				runner = newRunner(config.GinkgoConfigType{}, nil, nil, newSpec("failing", noneFlag, true), newSpec("pending", pendingFlag, false))
 			})
 
 			It("should return false and report failure", func() {
@@ -279,7 +370,7 @@ var _ = Describe("Spec Collection", func() {
 
 		Context("when there is a pending test, but pendings count as failures", func() {
 			BeforeEach(func() {
-				runner = newRunner(config.GinkgoConfigType{FailOnPending: true}, nil, newSpec("passing", noneFlag, false), newSpec("pending", pendingFlag, false))
+				runner = newRunner(config.GinkgoConfigType{FailOnPending: true}, nil, nil, newSpec("passing", noneFlag, false), newSpec("pending", pendingFlag, false))
 			})
 
 			It("should return false and report failure", func() {
@@ -293,6 +384,7 @@ var _ = Describe("Spec Collection", func() {
 		BeforeEach(func() {
 			runner = newRunner(
 				config.GinkgoConfigType{},
+				nil,
 				nil,
 				newSpec("A", noneFlag, false),
 				newSpec("B", noneFlag, true),
@@ -311,6 +403,7 @@ var _ = Describe("Spec Collection", func() {
 			var summary *types.SpecSummary
 			runner = newRunner(
 				config.GinkgoConfigType{},
+				nil,
 				nil,
 				newSpec("A", noneFlag, false),
 				newSpecWithBody("B", func() {
@@ -338,7 +431,7 @@ var _ = Describe("Spec Collection", func() {
 				newSpec("C", noneFlag, false),
 			})
 			specs.TrimForParallelization(2, 1)
-			runner = New("description", nil, specs, []reporters.Reporter{reporter1, reporter2}, writer, config.GinkgoConfigType{})
+			runner = New("description", nil, specs, nil, []reporters.Reporter{reporter1, reporter2}, writer, config.GinkgoConfigType{})
 			runner.Run()
 
 			Ω(reporter1.EndSummary.NumberOfSpecsBeforeParallelization).Should(Equal(3))
@@ -350,11 +443,11 @@ var _ = Describe("Spec Collection", func() {
 
 	Describe("generating a suite id", func() {
 		It("should generate an id randomly", func() {
-			runnerA := newRunner(config.GinkgoConfigType{}, nil)
+			runnerA := newRunner(config.GinkgoConfigType{}, nil, nil)
 			runnerA.Run()
 			IDA := reporter1.BeginSummary.SuiteID
 
-			runnerB := newRunner(config.GinkgoConfigType{}, nil)
+			runnerB := newRunner(config.GinkgoConfigType{}, nil, nil)
 			runnerB.Run()
 			IDB := reporter1.BeginSummary.SuiteID
 

@@ -107,6 +107,30 @@ var _ = Describe("DefaultReporter", func() {
 		})
 	})
 
+	Describe("AfterSuiteDidRun", func() {
+		Context("when the AfterSuite passes", func() {
+			It("should announce nothing", func() {
+				reporter.AfterSuiteDidRun(&types.SetupSummary{
+					State: types.SpecStatePassed,
+				})
+
+				Ω(stenographer.Calls).Should(BeEmpty())
+			})
+		})
+
+		Context("when the AfterSuite fails", func() {
+			It("should announce the failure", func() {
+				summary := &types.SetupSummary{
+					State: types.SpecStateFailed,
+				}
+				reporter.AfterSuiteDidRun(summary)
+
+				Ω(stenographer.Calls).Should(HaveLen(1))
+				Ω(stenographer.Calls[0]).Should(Equal(call("AnnounceAfterSuiteFailure", summary, false)))
+			})
+		})
+	})
+
 	Describe("SpecWillRun", func() {
 		Context("When running in verbose mode", func() {
 			Context("and the spec will run", func() {

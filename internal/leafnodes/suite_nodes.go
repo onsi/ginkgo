@@ -40,3 +40,9 @@ func NewBeforeSuiteNode(body interface{}, codeLocation types.CodeLocation, timeo
 		runner: newRunner(body, codeLocation, timeout, failer, types.SpecComponentTypeBeforeSuite, 0),
 	}
 }
+
+func NewAfterSuiteNode(body interface{}, codeLocation types.CodeLocation, timeout time.Duration, failer *failer.Failer) *SuiteNode {
+	return &SuiteNode{
+		runner: newRunner(body, codeLocation, timeout, failer, types.SpecComponentTypeAfterSuite, 0),
+	}
+}

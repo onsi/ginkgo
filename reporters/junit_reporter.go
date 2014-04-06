@@ -67,9 +67,17 @@ func (reporter *JUnitReporter) SpecWillRun(specSummary *types.SpecSummary) {
 }
 
 func (reporter *JUnitReporter) BeforeSuiteDidRun(setupSummary *types.SetupSummary) {
+	reporter.handleSetupSummary("BeforeSuite", setupSummary)
+}
+
+func (reporter *JUnitReporter) AfterSuiteDidRun(setupSummary *types.SetupSummary) {
+	reporter.handleSetupSummary("AfterSuite", setupSummary)
+}
+
+func (reporter *JUnitReporter) handleSetupSummary(name string, setupSummary *types.SetupSummary) {
 	if setupSummary.State != types.SpecStatePassed {
 		testCase := JUnitTestCase{
-			Name:      "BeforeSuite",
+			Name:      name,
 			ClassName: reporter.testSuiteName,
 		}
 

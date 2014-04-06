@@ -24,8 +24,9 @@ var _ = Describe("Aggregator", func() {
 		suiteSummary1 *types.SuiteSummary
 		suiteSummary2 *types.SuiteSummary
 
-		setupSummary *types.SetupSummary
-		specSummary  *types.SpecSummary
+		beforeSummary *types.SetupSummary
+		afterSummary  *types.SetupSummary
+		specSummary   *types.SpecSummary
 
 		suiteDescription string
 	)
@@ -82,9 +83,14 @@ var _ = Describe("Aggregator", func() {
 			NumberOfSkippedSpecs:               3,
 		}
 
-		setupSummary = &types.SetupSummary{
+		beforeSummary = &types.SetupSummary{
 			State:          types.SpecStatePassed,
 			CapturedOutput: "BeforeSuiteOutput",
+		}
+
+		afterSummary = &types.SetupSummary{
+			State:          types.SpecStatePassed,
+			CapturedOutput: "AfterSuiteOutput",
 		}
 
 		specSummary = &types.SpecSummary{
@@ -138,7 +144,8 @@ var _ = Describe("Aggregator", func() {
 	Describe("Announcing specs and before suites", func() {
 		Context("when the parallel-suites have not all started", func() {
 			BeforeEach(func() {
-				aggregator.BeforeSuiteDidRun(setupSummary)
+				aggregator.BeforeSuiteDidRun(beforeSummary)
+				aggregator.AfterSuiteDidRun(afterSummary)
 				aggregator.SpecDidComplete(specSummary)
 			})
 
@@ -151,11 +158,13 @@ var _ = Describe("Aggregator", func() {
 					beginSuite()
 				})
 
-				It("should announce the specs", func() {
+				It("should announce the specs, the before suites and the after suites", func() {
 					Eventually(func() interface{} {
-						lastCall := stenographer.Calls[len(stenographer.Calls)-1]
-						return lastCall
-					}).Should(Equal(call("AnnounceSuccesfulSpec", specSummary)))
+						return stenographer.Calls
+					}).Should(ContainElement(call("AnnounceSuccesfulSpec", specSummary)))
+
+					Ω(stenographer.Calls).Should(ContainElement(call("AnnounceCapturedOutput", beforeSummary.CapturedOutput)))
+					Ω(stenographer.Calls).Should(ContainElement(call("AnnounceCapturedOutput", afterSummary.CapturedOutput)))
 				})
 			})
 		})
@@ -168,15 +177,16 @@ var _ = Describe("Aggregator", func() {
 
 			Context("When a spec completes", func() {
 				BeforeEach(func() {
-					aggregator.BeforeSuiteDidRun(setupSummary)
+					aggregator.BeforeSuiteDidRun(beforeSummary)
 					aggregator.SpecDidComplete(specSummary)
+					aggregator.AfterSuiteDidRun(afterSummary)
 					Eventually(func() interface{} {
 						return stenographer.Calls
-					}).Should(HaveLen(4))
+					}).Should(HaveLen(5))
 				})
 
 				It("should announce the captured output of the BeforeSuite", func() {
-					Ω(stenographer.Calls[0]).Should(Equal(call("AnnounceCapturedOutput", setupSummary.CapturedOutput)))
+					Ω(stenographer.Calls[0]).Should(Equal(call("AnnounceCapturedOutput", beforeSummary.CapturedOutput)))
 				})
 
 				It("should announce that the spec will run (when in verbose mode)", func() {
@@ -189,6 +199,10 @@ var _ = Describe("Aggregator", func() {
 
 				It("should announce completion", func() {
 					Ω(stenographer.Calls[3]).Should(Equal(call("AnnounceSuccesfulSpec", specSummary)))
+				})
+
+				It("should announce the captured output of the AfterSuite", func() {
+					Ω(stenographer.Calls[4]).Should(Equal(call("AnnounceCapturedOutput", afterSummary.CapturedOutput)))
 				})
 			})
 		})

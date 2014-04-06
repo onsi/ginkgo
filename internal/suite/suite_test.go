@@ -79,6 +79,8 @@ var _ = Describe("Suite", func() {
 			}, types.FlagTypeNone, codelocation.New(0))
 
 			specSuite.PushItNode("top level it", f("top IT"), types.FlagTypeNone, codelocation.New(0), 0)
+
+			specSuite.SetAfterSuiteNode(f("AfterSuite"), codelocation.New(0), 0)
 		})
 
 		JustBeforeEach(func() {
@@ -99,6 +101,10 @@ var _ = Describe("Suite", func() {
 
 		It("reports that the BeforeSuite node ran", func() {
 			Ω(fakeR.BeforeSuiteSummary).ShouldNot(BeNil())
+		})
+
+		It("reports that the AfterSuite node ran", func() {
+			Ω(fakeR.AfterSuiteSummary).ShouldNot(BeNil())
 		})
 
 		It("provides information about the current test", func() {
@@ -135,6 +141,7 @@ var _ = Describe("Suite", func() {
 				"top BE", "BE", "top JBE", "JBE", "inner IT", "AE", "top AE",
 				"top BE", "BE 2", "top JBE", "IT 2", "top AE",
 				"top BE", "top JBE", "top IT", "top AE",
+				"AfterSuite",
 			}))
 		})
 
@@ -150,6 +157,7 @@ var _ = Describe("Suite", func() {
 					"top BE", "BE", "top JBE", "JBE", "inner IT", "AE", "top AE",
 					"top BE", "BE", "top JBE", "JBE", "IT", "AE", "top AE",
 					"top BE", "BE 2", "top JBE", "IT 2", "top AE",
+					"AfterSuite",
 				}))
 			})
 		})
@@ -170,6 +178,7 @@ var _ = Describe("Suite", func() {
 						"BeforeSuite",
 						"top BE", "top JBE", "top IT", "top AE",
 						"top BE", "BE", "top JBE", "JBE", "inner IT", "AE", "top AE",
+						"AfterSuite",
 					}))
 				})
 			})
@@ -184,6 +193,7 @@ var _ = Describe("Suite", func() {
 						"BeforeSuite",
 						"top BE", "BE", "top JBE", "JBE", "IT", "AE", "top AE",
 						"top BE", "BE 2", "top JBE", "IT 2", "top AE",
+						"AfterSuite",
 					}))
 				})
 			})
@@ -199,6 +209,7 @@ var _ = Describe("Suite", func() {
 					"BeforeSuite",
 					"top BE", "BE", "top JBE", "JBE", "inner IT", "AE", "top AE",
 					"top BE", "BE 2", "top JBE", "IT 2", "top AE",
+					"AfterSuite",
 				}))
 			})
 		})
@@ -244,6 +255,18 @@ var _ = Describe("Suite", func() {
 
 				Ω(func() {
 					specSuite.SetBeforeSuiteNode(func() {}, codelocation.New(0), 0)
+				}).Should(Panic())
+			})
+		})
+	})
+
+	Describe("AfterSuite", func() {
+		Context("when setting AfterSuite more than once", func() {
+			It("should panic", func() {
+				specSuite.SetAfterSuiteNode(func() {}, codelocation.New(0), 0)
+
+				Ω(func() {
+					specSuite.SetAfterSuiteNode(func() {}, codelocation.New(0), 0)
 				}).Should(Panic())
 			})
 		})

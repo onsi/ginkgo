@@ -39,6 +39,7 @@ type Stenographer interface {
 
 	AnnounceSpecWillRun(spec *types.SpecSummary)
 	AnnounceBeforeSuiteFailure(summary *types.SetupSummary, succinct bool)
+	AnnounceAfterSuiteFailure(summary *types.SetupSummary, succinct bool)
 
 	AnnounceCapturedOutput(output string)
 
@@ -172,6 +173,14 @@ func (s *consoleStenographer) AnnounceSpecWillRun(spec *types.SpecSummary) {
 }
 
 func (s *consoleStenographer) AnnounceBeforeSuiteFailure(summary *types.SetupSummary, succinct bool) {
+	s.announceSetupFailure("BeforeSuite", summary, succinct)
+}
+
+func (s *consoleStenographer) AnnounceAfterSuiteFailure(summary *types.SetupSummary, succinct bool) {
+	s.announceSetupFailure("AfterSuite", summary, succinct)
+}
+
+func (s *consoleStenographer) announceSetupFailure(name string, summary *types.SetupSummary, succinct bool) {
 	s.startBlock()
 	var message string
 	switch summary.State {
@@ -185,7 +194,7 @@ func (s *consoleStenographer) AnnounceBeforeSuiteFailure(summary *types.SetupSum
 
 	s.println(0, s.colorize(redColor+boldStyle, "%s [%.3f seconds]", message, summary.RunTime.Seconds()))
 
-	indentation := s.printCodeLocationBlock([]string{"BeforeSuite"}, []types.CodeLocation{summary.CodeLocation}, summary.ComponentType, 0, true, succinct)
+	indentation := s.printCodeLocationBlock([]string{name}, []types.CodeLocation{summary.CodeLocation}, summary.ComponentType, 0, true, succinct)
 
 	s.printNewLine()
 	s.printFailure(indentation, summary.State, summary.Failure)
@@ -333,6 +342,8 @@ func (s *consoleStenographer) printCodeLocationBlock(componentTexts []string, co
 			switch failedComponentType {
 			case types.SpecComponentTypeBeforeSuite:
 				blockType = "BeforeSuite"
+			case types.SpecComponentTypeAfterSuite:
+				blockType = "AfterSuite"
 			case types.SpecComponentTypeBeforeEach:
 				blockType = "BeforeEach"
 			case types.SpecComponentTypeJustBeforeEach:

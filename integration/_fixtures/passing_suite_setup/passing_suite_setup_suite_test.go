@@ -7,14 +7,20 @@ import (
 	"testing"
 )
 
-func TestPassing_before_suite(t *testing.T) {
+func TestPassingSuiteSetup(t *testing.T) {
 	RegisterFailHandler(Fail)
-	RunSpecs(t, "Passing_before_suite Suite")
+	RunSpecs(t, "PassingSuiteSetup Suite")
 }
 
 var a string
+var b string
 
 var _ = BeforeSuite(func() {
 	a = "ran before suite"
 	println("BEFORE SUITE")
+})
+
+var _ = AfterSuite(func() {
+	b = "ran after suite"
+	println("AFTER SUITE")
 })

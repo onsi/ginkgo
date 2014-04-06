@@ -57,6 +57,13 @@ func (server *Server) Start() {
 		writer.WriteHeader(200)
 	})
 
+	mux.HandleFunc("/AfterSuiteDidRun", func(writer http.ResponseWriter, request *http.Request) {
+		defer request.Body.Close()
+		body, _ := ioutil.ReadAll(request.Body)
+		server.afterSuiteDidRun(body)
+		writer.WriteHeader(200)
+	})
+
 	mux.HandleFunc("/SpecWillRun", func(writer http.ResponseWriter, request *http.Request) {
 		defer request.Body.Close()
 		body, _ := ioutil.ReadAll(request.Body)
@@ -115,6 +122,15 @@ func (server *Server) beforeSuiteDidRun(body []byte) {
 
 	for _, reporter := range server.reporters {
 		reporter.BeforeSuiteDidRun(setupSummary)
+	}
+}
+
+func (server *Server) afterSuiteDidRun(body []byte) {
+	var setupSummary *types.SetupSummary
+	json.Unmarshal(body, &setupSummary)
+
+	for _, reporter := range server.reporters {
+		reporter.AfterSuiteDidRun(setupSummary)
 	}
 }
 

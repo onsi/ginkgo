@@ -15,6 +15,7 @@ type SpecRunner struct {
 	description     string
 	beforeSuiteNode *leafnodes.SuiteNode
 	specs           *spec.Specs
+	afterSuiteNode  *leafnodes.SuiteNode
 	reporters       []reporters.Reporter
 	startTime       time.Time
 	suiteID         string
@@ -23,11 +24,12 @@ type SpecRunner struct {
 	config          config.GinkgoConfigType
 }
 
-func New(description string, beforeSuiteNode *leafnodes.SuiteNode, specs *spec.Specs, reporters []reporters.Reporter, writer Writer.WriterInterface, config config.GinkgoConfigType) *SpecRunner {
+func New(description string, beforeSuiteNode *leafnodes.SuiteNode, specs *spec.Specs, afterSuiteNode *leafnodes.SuiteNode, reporters []reporters.Reporter, writer Writer.WriterInterface, config config.GinkgoConfigType) *SpecRunner {
 	return &SpecRunner{
 		description:     description,
 		beforeSuiteNode: beforeSuiteNode,
 		specs:           specs,
+		afterSuiteNode:  afterSuiteNode,
 		reporters:       reporters,
 		writer:          writer,
 		config:          config,
@@ -42,6 +44,7 @@ func (runner *SpecRunner) Run() bool {
 	if suitePassed {
 		suitePassed = runner.runSpecs()
 	}
+	suitePassed = runner.runAfterSuite() && suitePassed
 
 	runner.reportSuiteDidEnd()
 
@@ -55,6 +58,16 @@ func (runner *SpecRunner) runBeforeSuite() bool {
 
 	passed := runner.beforeSuiteNode.Run()
 	runner.reportBeforeSuite(runner.beforeSuiteNode.Summary())
+	return passed
+}
+
+func (runner *SpecRunner) runAfterSuite() bool {
+	if runner.afterSuiteNode == nil {
+		return true
+	}
+
+	passed := runner.afterSuiteNode.Run()
+	runner.reportAfterSuite(runner.afterSuiteNode.Summary())
 	return passed
 }
 
@@ -102,6 +115,12 @@ func (runner *SpecRunner) reportSuiteWillBegin() {
 func (runner *SpecRunner) reportBeforeSuite(summary *types.SetupSummary) {
 	for _, reporter := range runner.reporters {
 		reporter.BeforeSuiteDidRun(summary)
+	}
+}
+
+func (runner *SpecRunner) reportAfterSuite(summary *types.SetupSummary) {
+	for _, reporter := range runner.reporters {
+		reporter.AfterSuiteDidRun(summary)
 	}
 }
 
@@ -169,6 +188,8 @@ func (runner *SpecRunner) summary() *types.SuiteSummary {
 	} else if runner.beforeSuiteNode != nil && !runner.beforeSuiteNode.Passed() {
 		success = false
 		numberOfFailedSpecs = numberOfSpecsThatWillBeRun
+	} else if runner.afterSuiteNode != nil && !runner.afterSuiteNode.Passed() {
+		success = false
 	}
 
 	return &types.SuiteSummary{

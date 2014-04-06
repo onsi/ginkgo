@@ -34,6 +34,11 @@ var _ = Describe("TeamCity Reporter", func() {
 			}
 			reporter.BeforeSuiteDidRun(beforeSuite)
 
+			afterSuite := &types.SetupSummary{
+				State: types.SpecStatePassed,
+			}
+			reporter.AfterSuiteDidRun(afterSuite)
+
 			spec := &types.SpecSummary{
 				ComponentTexts: []string{"[Top Level]", "A", "B", "C"},
 				State:          types.SpecStatePassed,
@@ -94,6 +99,39 @@ var _ = Describe("TeamCity Reporter", func() {
 		})
 	})
 
+	Describe("when the AfterSuite fails", func() {
+		var afterSuite *types.SetupSummary
+
+		BeforeEach(func() {
+			afterSuite = &types.SetupSummary{
+				State:   types.SpecStateFailed,
+				RunTime: 3 * time.Second,
+				Failure: types.SpecFailure{
+					Message:               "failed to setup\n",
+					ComponentCodeLocation: codelocation.New(0),
+				},
+			}
+			reporter.AfterSuiteDidRun(afterSuite)
+
+			reporter.SpecSuiteDidEnd(&types.SuiteSummary{
+				NumberOfSpecsThatWillBeRun: 1,
+				NumberOfFailedSpecs:        1,
+				RunTime:                    10 * time.Second,
+			})
+		})
+
+		It("should record the test as having failed", func() {
+			actual := buffer.String()
+			expected := fmt.Sprintf(
+				"##teamcity[testSuiteStarted name='Foo|'s test suite']"+
+					"##teamcity[testStarted name='AfterSuite']"+
+					"##teamcity[testFailed name='AfterSuite' message='%s' details='failed to setup|n']"+
+					"##teamcity[testFinished name='AfterSuite' duration='3000']"+
+					"##teamcity[testSuiteFinished name='Foo|'s test suite']", afterSuite.Failure.ComponentCodeLocation.String(),
+			)
+			Ω(actual).Should(Equal(expected))
+		})
+	})
 	specStateCases := []struct {
 		state   types.SpecState
 		message string

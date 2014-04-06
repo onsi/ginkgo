@@ -7,16 +7,16 @@ import (
 	"testing"
 )
 
-func TestFailing_before_suite(t *testing.T) {
+func TestFailingAfterSuite(t *testing.T) {
 	RegisterFailHandler(Fail)
-	RunSpecs(t, "Failing_before_suite Suite")
+	RunSpecs(t, "FailingAfterSuite Suite")
 }
 
 var _ = BeforeSuite(func() {
 	println("BEFORE SUITE")
-	panic("BAM!")
 })
 
 var _ = AfterSuite(func() {
 	println("AFTER SUITE")
+	panic("BAM!")
 })

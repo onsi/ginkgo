@@ -44,6 +44,11 @@ var _ = Describe("JUnit Reporter", func() {
 			}
 			reporter.BeforeSuiteDidRun(beforeSuite)
 
+			afterSuite := &types.SetupSummary{
+				State: types.SpecStatePassed,
+			}
+			reporter.AfterSuiteDidRun(afterSuite)
+
 			spec := &types.SpecSummary{
 				ComponentTexts: []string{"[Top Level]", "A", "B", "C"},
 				State:          types.SpecStatePassed,
@@ -105,6 +110,42 @@ var _ = Describe("JUnit Reporter", func() {
 			Ω(output.TestCases[0].FailureMessage.Type).Should(Equal("Failure"))
 			Ω(output.TestCases[0].FailureMessage.Message).Should(ContainSubstring("failed to setup"))
 			Ω(output.TestCases[0].FailureMessage.Message).Should(ContainSubstring(beforeSuite.Failure.ComponentCodeLocation.String()))
+			Ω(output.TestCases[0].Skipped).Should(BeNil())
+		})
+	})
+
+	Describe("when the AfterSuite fails", func() {
+		var afterSuite *types.SetupSummary
+
+		BeforeEach(func() {
+			afterSuite = &types.SetupSummary{
+				State:   types.SpecStateFailed,
+				RunTime: 3 * time.Second,
+				Failure: types.SpecFailure{
+					Message:               "failed to setup",
+					ComponentCodeLocation: codelocation.New(0),
+				},
+			}
+			reporter.AfterSuiteDidRun(afterSuite)
+
+			reporter.SpecSuiteDidEnd(&types.SuiteSummary{
+				NumberOfSpecsThatWillBeRun: 1,
+				NumberOfFailedSpecs:        1,
+				RunTime:                    10 * time.Second,
+			})
+		})
+
+		It("should record the test as having failed", func() {
+			output := readOutputFile()
+			Ω(output.Tests).Should(Equal(1))
+			Ω(output.Failures).Should(Equal(1))
+			Ω(output.Time).Should(Equal(10.0))
+			Ω(output.TestCases[0].Name).Should(Equal("AfterSuite"))
+			Ω(output.TestCases[0].Time).Should(Equal(3.0))
+			Ω(output.TestCases[0].ClassName).Should(Equal("My test suite"))
+			Ω(output.TestCases[0].FailureMessage.Type).Should(Equal("Failure"))
+			Ω(output.TestCases[0].FailureMessage.Message).Should(ContainSubstring("failed to setup"))
+			Ω(output.TestCases[0].FailureMessage.Message).Should(ContainSubstring(afterSuite.Failure.ComponentCodeLocation.String()))
 			Ω(output.TestCases[0].Skipped).Should(BeNil())
 		})
 	})

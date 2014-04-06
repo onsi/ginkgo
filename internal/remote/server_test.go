@@ -75,6 +75,14 @@ var _ = Describe("Server", func() {
 		})
 	})
 
+	Describe("/AfterSuiteDidRun", func() {
+		It("should decode and forward the setup summary", func() {
+			forwardingReporter.AfterSuiteDidRun(setupSummary)
+			Ω(reporterA.AfterSuiteSummary).Should(Equal(setupSummary))
+			Ω(reporterB.AfterSuiteSummary).Should(Equal(setupSummary))
+		})
+	})
+
 	Describe("/SpecWillRun", func() {
 		It("should decode and forward the spec summary", func(done Done) {
 			forwardingReporter.SpecWillRun(specSummary)

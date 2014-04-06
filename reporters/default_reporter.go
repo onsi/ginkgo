@@ -39,6 +39,12 @@ func (reporter *DefaultReporter) BeforeSuiteDidRun(setupSummary *types.SetupSumm
 	}
 }
 
+func (reporter *DefaultReporter) AfterSuiteDidRun(setupSummary *types.SetupSummary) {
+	if setupSummary.State != types.SpecStatePassed {
+		reporter.stenographer.AnnounceAfterSuiteFailure(setupSummary, reporter.config.Succinct)
+	}
+}
+
 func (reporter *DefaultReporter) SpecWillRun(specSummary *types.SpecSummary) {
 	if reporter.config.Verbose && !reporter.config.Succinct && specSummary.State != types.SpecStatePending && specSummary.State != types.SpecStateSkipped {
 		reporter.stenographer.AnnounceSpecWillRun(specSummary)

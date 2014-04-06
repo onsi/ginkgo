@@ -5,20 +5,24 @@ import (
 	. "github.com/onsi/gomega"
 )
 
-var _ = Describe("PassingBeforeSuite", func() {
+var _ = Describe("PassingSuiteSetup", func() {
 	It("should pass", func() {
 		Ω(a).Should(Equal("ran before suite"))
+		Ω(b).Should(BeEmpty())
 	})
 
 	It("should pass", func() {
 		Ω(a).Should(Equal("ran before suite"))
+		Ω(b).Should(BeEmpty())
 	})
 
 	It("should pass", func() {
 		Ω(a).Should(Equal("ran before suite"))
+		Ω(b).Should(BeEmpty())
 	})
 
 	It("should pass", func() {
 		Ω(a).Should(Equal("ran before suite"))
+		Ω(b).Should(BeEmpty())
 	})
 })

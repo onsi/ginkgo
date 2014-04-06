@@ -77,13 +77,37 @@ var _ = Describe("ForwardingReporter", func() {
 			reporter.BeforeSuiteDidRun(setupSummary)
 		})
 
-		It("should stop intercepting output", func() {
+		It("should stop, then start intercepting output", func() {
 			Ω(interceptor.DidStopInterceptingOutput).Should(BeTrue())
+			Ω(interceptor.DidStartInterceptingOutput).Should(BeTrue())
 		})
 
 		It("should POST the SetupSummary to the Ginkgo server", func() {
 			Ω(poster.posts).Should(HaveLen(1))
 			Ω(poster.posts[0].url).Should(Equal("http://127.0.0.1:7788/BeforeSuiteDidRun"))
+			Ω(poster.posts[0].bodyType).Should(Equal("application/json"))
+
+			var summary *types.SetupSummary
+			err := json.Unmarshal(poster.posts[0].bodyContent, &summary)
+			Ω(err).ShouldNot(HaveOccurred())
+			setupSummary.CapturedOutput = interceptor.InterceptedOutput
+			Ω(summary).Should(Equal(setupSummary))
+		})
+	})
+
+	Context("when an AfterSuite completes", func() {
+		BeforeEach(func() {
+			reporter.AfterSuiteDidRun(setupSummary)
+		})
+
+		It("should stop, then start intercepting output", func() {
+			Ω(interceptor.DidStopInterceptingOutput).Should(BeTrue())
+			Ω(interceptor.DidStartInterceptingOutput).Should(BeTrue())
+		})
+
+		It("should POST the SetupSummary to the Ginkgo server", func() {
+			Ω(poster.posts).Should(HaveLen(1))
+			Ω(poster.posts[0].url).Should(Equal("http://127.0.0.1:7788/AfterSuiteDidRun"))
 			Ω(poster.posts[0].bodyType).Should(Equal("application/json"))
 
 			var summary *types.SetupSummary
@@ -110,10 +134,6 @@ var _ = Describe("ForwardingReporter", func() {
 			Ω(summary).Should(Equal(specSummary))
 		})
 
-		It("should start intercepting output", func() {
-			Ω(interceptor.DidStartInterceptingOutput).Should(BeTrue())
-		})
-
 		Context("When a spec completes", func() {
 			BeforeEach(func() {
 				specSummary.State = types.SpecStatePanicked
@@ -132,8 +152,9 @@ var _ = Describe("ForwardingReporter", func() {
 				Ω(summary).Should(Equal(specSummary))
 			})
 
-			It("should stop intercepting output", func() {
+			It("should stop, then start intercepting output", func() {
 				Ω(interceptor.DidStopInterceptingOutput).Should(BeTrue())
+				Ω(interceptor.DidStartInterceptingOutput).Should(BeTrue())
 			})
 		})
 	})
