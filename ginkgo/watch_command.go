@@ -53,13 +53,16 @@ func (w *SpecWatcher) WatchSuites(suites []*testsuite.TestSuite) {
 		w.RunSuite(suites[0])
 	}
 
-	select {
-	case suite := <-modifiedSuite:
-		w.notifier.SendNotification("Ginkgo", fmt.Sprintf(`Detected change in "%s"...`, suite.PackageName))
+	for {
+		select {
+		case suite := <-modifiedSuite:
+			w.notifier.SendNotification("Ginkgo", fmt.Sprintf(`Detected change in "%s"...`, suite.PackageName))
 
-		fmt.Printf("\n\nDetected change in %s\n\n", suite.PackageName)
-		w.RunSuite(suite)
-	case <-w.interruptHandler.C:
+			fmt.Printf("\n\nDetected change in %s\n\n", suite.PackageName)
+			w.RunSuite(suite)
+		case <-w.interruptHandler.C:
+			return
+		}
 	}
 }
 
