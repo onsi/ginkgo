@@ -17,9 +17,9 @@ import (
 
 type SpecRunner struct {
 	description     string
-	beforeSuiteNode *leafnodes.SuiteNode
+	beforeSuiteNode leafnodes.SuiteNode
 	specs           *spec.Specs
-	afterSuiteNode  *leafnodes.SuiteNode
+	afterSuiteNode  leafnodes.SuiteNode
 	reporters       []reporters.Reporter
 	startTime       time.Time
 	suiteID         string
@@ -30,7 +30,7 @@ type SpecRunner struct {
 	lock            *sync.Mutex
 }
 
-func New(description string, beforeSuiteNode *leafnodes.SuiteNode, specs *spec.Specs, afterSuiteNode *leafnodes.SuiteNode, reporters []reporters.Reporter, writer Writer.WriterInterface, config config.GinkgoConfigType) *SpecRunner {
+func New(description string, beforeSuiteNode leafnodes.SuiteNode, specs *spec.Specs, afterSuiteNode leafnodes.SuiteNode, reporters []reporters.Reporter, writer Writer.WriterInterface, config config.GinkgoConfigType) *SpecRunner {
 	return &SpecRunner{
 		description:     description,
 		beforeSuiteNode: beforeSuiteNode,

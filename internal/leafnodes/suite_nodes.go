@@ -6,14 +6,20 @@ import (
 	"time"
 )
 
-type SuiteNode struct {
+type SuiteNode interface {
+	Run() bool
+	Passed() bool
+	Summary() *types.SetupSummary
+}
+
+type simpleSuiteNode struct {
 	runner  *runner
 	outcome types.SpecState
 	failure types.SpecFailure
 	runTime time.Duration
 }
 
-func (node *SuiteNode) Run() bool {
+func (node *simpleSuiteNode) Run() bool {
 	t := time.Now()
 	node.outcome, node.failure = node.runner.run()
 	node.runTime = time.Since(t)
@@ -21,11 +27,11 @@ func (node *SuiteNode) Run() bool {
 	return node.outcome == types.SpecStatePassed
 }
 
-func (node *SuiteNode) Passed() bool {
+func (node *simpleSuiteNode) Passed() bool {
 	return node.outcome == types.SpecStatePassed
 }
 
-func (node *SuiteNode) Summary() *types.SetupSummary {
+func (node *simpleSuiteNode) Summary() *types.SetupSummary {
 	return &types.SetupSummary{
 		ComponentType: node.runner.nodeType,
 		CodeLocation:  node.runner.codeLocation,
@@ -35,14 +41,14 @@ func (node *SuiteNode) Summary() *types.SetupSummary {
 	}
 }
 
-func NewBeforeSuiteNode(body interface{}, codeLocation types.CodeLocation, timeout time.Duration, failer *failer.Failer) *SuiteNode {
-	return &SuiteNode{
+func NewBeforeSuiteNode(body interface{}, codeLocation types.CodeLocation, timeout time.Duration, failer *failer.Failer) SuiteNode {
+	return &simpleSuiteNode{
 		runner: newRunner(body, codeLocation, timeout, failer, types.SpecComponentTypeBeforeSuite, 0),
 	}
 }
 
-func NewAfterSuiteNode(body interface{}, codeLocation types.CodeLocation, timeout time.Duration, failer *failer.Failer) *SuiteNode {
-	return &SuiteNode{
+func NewAfterSuiteNode(body interface{}, codeLocation types.CodeLocation, timeout time.Duration, failer *failer.Failer) SuiteNode {
+	return &simpleSuiteNode{
 		runner: newRunner(body, codeLocation, timeout, failer, types.SpecComponentTypeAfterSuite, 0),
 	}
 }

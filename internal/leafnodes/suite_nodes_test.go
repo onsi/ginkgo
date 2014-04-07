@@ -14,7 +14,7 @@ import (
 
 var _ = Describe("SuiteNodes", func() {
 	Describe("BeforeSuite nodes", func() {
-		var befSuite *SuiteNode
+		var befSuite SuiteNode
 		var failer *Failer.Failer
 		var codeLocation types.CodeLocation
 		var innerCodeLocation types.CodeLocation
@@ -121,7 +121,7 @@ var _ = Describe("SuiteNodes", func() {
 	})
 
 	Describe("AfterSuite nodes", func() {
-		var aftSuite *SuiteNode
+		var aftSuite SuiteNode
 		var failer *Failer.Failer
 		var codeLocation types.CodeLocation
 		var innerCodeLocation types.CodeLocation

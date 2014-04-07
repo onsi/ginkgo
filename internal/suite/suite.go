@@ -22,8 +22,8 @@ type Suite struct {
 	topLevelContainer *containernode.ContainerNode
 	currentContainer  *containernode.ContainerNode
 	containerIndex    int
-	beforeSuiteNode   *leafnodes.SuiteNode
-	afterSuiteNode    *leafnodes.SuiteNode
+	beforeSuiteNode   leafnodes.SuiteNode
+	afterSuiteNode    leafnodes.SuiteNode
 	runner            *specrunner.SpecRunner
 	failer            *failer.Failer
 }

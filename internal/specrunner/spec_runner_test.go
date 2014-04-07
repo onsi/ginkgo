@@ -32,7 +32,7 @@ var _ = Describe("Spec Collection", func() {
 		runner *SpecRunner
 	)
 
-	newBefSuite := func(text string, fail bool) *leafnodes.SuiteNode {
+	newBefSuite := func(text string, fail bool) leafnodes.SuiteNode {
 		return leafnodes.NewBeforeSuiteNode(func() {
 			writer.AddEvent(text)
 			thingsThatRan = append(thingsThatRan, text)
@@ -42,7 +42,7 @@ var _ = Describe("Spec Collection", func() {
 		}, codelocation.New(0), 0, failer)
 	}
 
-	newAftSuite := func(text string, fail bool) *leafnodes.SuiteNode {
+	newAftSuite := func(text string, fail bool) leafnodes.SuiteNode {
 		return leafnodes.NewAfterSuiteNode(func() {
 			writer.AddEvent(text)
 			thingsThatRan = append(thingsThatRan, text)
@@ -70,7 +70,7 @@ var _ = Describe("Spec Collection", func() {
 		return spec.New(subject, []*containernode.ContainerNode{})
 	}
 
-	newRunner := func(config config.GinkgoConfigType, beforeSuiteNode *leafnodes.SuiteNode, afterSuiteNode *leafnodes.SuiteNode, specs ...*spec.Spec) *SpecRunner {
+	newRunner := func(config config.GinkgoConfigType, beforeSuiteNode leafnodes.SuiteNode, afterSuiteNode leafnodes.SuiteNode, specs ...*spec.Spec) *SpecRunner {
 		return New("description", beforeSuiteNode, spec.NewSpecs(specs), afterSuiteNode, []reporters.Reporter{reporter1, reporter2}, writer, config)
 	}
 
@@ -182,8 +182,8 @@ var _ = Describe("Spec Collection", func() {
 
 	Describe("Running BeforeSuite & AfterSuite", func() {
 		var success bool
-		var befSuite *leafnodes.SuiteNode
-		var aftSuite *leafnodes.SuiteNode
+		var befSuite leafnodes.SuiteNode
+		var aftSuite leafnodes.SuiteNode
 		Context("with a nil BeforeSuite & AfterSuite", func() {
 			BeforeEach(func() {
 				runner = newRunner(
