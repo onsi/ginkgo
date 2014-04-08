@@ -1,0 +1,431 @@
+package leafnodes_test
+
+import (
+	. "github.com/onsi/ginkgo"
+	. "github.com/onsi/ginkgo/internal/leafnodes"
+	. "github.com/onsi/gomega"
+	"github.com/onsi/gomega/ghttp"
+	"net/http"
+
+	"github.com/onsi/ginkgo/internal/codelocation"
+	Failer "github.com/onsi/ginkgo/internal/failer"
+	"github.com/onsi/ginkgo/types"
+	"time"
+)
+
+var _ = Describe("CompoundBeforeSuiteNode", func() {
+	var failer *Failer.Failer
+	var node SuiteNode
+	var codeLocation types.CodeLocation
+	var innerCodeLocation types.CodeLocation
+	var outcome bool
+	var server *ghttp.Server
+
+	BeforeEach(func() {
+		server = ghttp.NewServer()
+		codeLocation = codelocation.New(0)
+		innerCodeLocation = codelocation.New(0)
+		failer = Failer.New()
+	})
+
+	AfterEach(func() {
+		server.Close()
+	})
+
+	newNode := func(bodyA interface{}, bodyB interface{}, ginkgoNode int, totalGinkgoNodes int) SuiteNode {
+		return NewCompoundBeforeSuiteNode(bodyA, bodyB, codeLocation, time.Millisecond, failer, ginkgoNode, totalGinkgoNodes, server.URL())
+	}
+
+	Describe("when not running in parallel", func() {
+		Context("when all is well", func() {
+			var data []byte
+			BeforeEach(func() {
+				data = nil
+
+				node = newNode(func() []byte {
+					return []byte("my data")
+				}, func(d []byte) {
+					data = d
+				}, 1, 1)
+
+				outcome = node.Run()
+			})
+
+			It("should run A, then B passing the output from A to B", func() {
+				Ω(data).Should(Equal([]byte("my data")))
+			})
+
+			It("should pass", func() {
+				Ω(outcome).Should(BeTrue())
+				Ω(node.Summary().State).Should(Equal(types.SpecStatePassed))
+			})
+		})
+
+		Context("when A fails", func() {
+			var ranB bool
+			BeforeEach(func() {
+				ranB = false
+				node = newNode(func() []byte {
+					failer.Fail("boom", innerCodeLocation)
+					return nil
+				}, func([]byte) {
+					ranB = true
+				}, 1, 1)
+
+				outcome = node.Run()
+			})
+
+			It("should not run B", func() {
+				Ω(ranB).Should(BeFalse())
+			})
+
+			It("should report failure", func() {
+				Ω(outcome).Should(BeFalse())
+				Ω(node.Summary().State).Should(Equal(types.SpecStateFailed))
+			})
+		})
+
+		Context("when B fails", func() {
+			BeforeEach(func() {
+				node = newNode(func() []byte {
+					return nil
+				}, func([]byte) {
+					failer.Fail("boom", innerCodeLocation)
+				}, 1, 1)
+
+				outcome = node.Run()
+			})
+
+			It("should report failure", func() {
+				Ω(outcome).Should(BeFalse())
+				Ω(node.Summary().State).Should(Equal(types.SpecStateFailed))
+			})
+		})
+
+		Context("when A times out", func() {
+			var ranB bool
+			BeforeEach(func() {
+				ranB = false
+				node = newNode(func(Done) []byte {
+					time.Sleep(time.Second)
+					return nil
+				}, func([]byte) {
+					ranB = true
+				}, 1, 1)
+
+				outcome = node.Run()
+			})
+
+			It("should not run B", func() {
+				Ω(ranB).Should(BeFalse())
+			})
+
+			It("should report failure", func() {
+				Ω(outcome).Should(BeFalse())
+				Ω(node.Summary().State).Should(Equal(types.SpecStateTimedOut))
+			})
+		})
+
+		Context("when B times out", func() {
+			BeforeEach(func() {
+				node = newNode(func() []byte {
+					return nil
+				}, func([]byte, Done) {
+					time.Sleep(time.Second)
+				}, 1, 1)
+
+				outcome = node.Run()
+			})
+
+			It("should report failure", func() {
+				Ω(outcome).Should(BeFalse())
+				Ω(node.Summary().State).Should(Equal(types.SpecStateTimedOut))
+			})
+		})
+	})
+
+	Describe("when running in parallel", func() {
+		var ranB bool
+		BeforeEach(func() {
+			ranB = false
+		})
+
+		Context("as the first node, it runs A", func() {
+			var expectedJSON []byte
+
+			JustBeforeEach(func() {
+				server.AppendHandlers(ghttp.CombineHandlers(
+					ghttp.VerifyRequest("POST", "/BeforeSuiteState"),
+					ghttp.VerifyJSON(string(expectedJSON)),
+				))
+
+				outcome = node.Run()
+			})
+
+			Context("when A succeeds", func() {
+				BeforeEach(func() {
+					expectedJSON = RemoteState{[]byte("my data"), RemoteStateStatePassed}.ToJSON()
+
+					node = newNode(func() []byte {
+						return []byte("my data")
+					}, func([]byte) {
+						ranB = true
+					}, 1, 3)
+				})
+
+				It("should post about A succeeding", func() {
+					Ω(server.ReceivedRequests()).Should(HaveLen(1))
+				})
+
+				It("should run B", func() {
+					Ω(ranB).Should(BeTrue())
+				})
+
+				It("should report success", func() {
+					Ω(outcome).Should(BeTrue())
+				})
+			})
+
+			Context("when A fails", func() {
+				BeforeEach(func() {
+					expectedJSON = (RemoteState{nil, RemoteStateStateFailed}).ToJSON()
+
+					node = newNode(func() []byte {
+						panic("BAM")
+						return []byte("my data")
+					}, func([]byte) {
+						ranB = true
+					}, 1, 3)
+				})
+
+				It("should post about A failing", func() {
+					Ω(server.ReceivedRequests()).Should(HaveLen(1))
+				})
+
+				It("should not run B", func() {
+					Ω(ranB).Should(BeFalse())
+				})
+
+				It("should report failure", func() {
+					Ω(outcome).Should(BeFalse())
+				})
+			})
+		})
+
+		Context("as the Nth first node", func() {
+			var statusCode int
+			var responseBody string
+			var ranA bool
+			var bData []byte
+
+			BeforeEach(func() {
+				ranA = false
+				bData = nil
+
+				statusCode = http.StatusOK
+
+				server.AppendHandlers(ghttp.CombineHandlers(
+					ghttp.VerifyRequest("GET", "/BeforeSuiteState"),
+					ghttp.RespondWith(http.StatusOK, string((RemoteState{nil, RemoteStateStatePending}).ToJSON())),
+				), ghttp.CombineHandlers(
+					ghttp.VerifyRequest("GET", "/BeforeSuiteState"),
+					ghttp.RespondWith(http.StatusOK, string((RemoteState{nil, RemoteStateStatePending}).ToJSON())),
+				), ghttp.CombineHandlers(
+					ghttp.VerifyRequest("GET", "/BeforeSuiteState"),
+					ghttp.RespondWithPtr(&statusCode, &responseBody),
+				))
+
+				node = newNode(func() []byte {
+					ranA = true
+					return nil
+				}, func(data []byte) {
+					bData = data
+				}, 2, 3)
+			})
+
+			Context("when A on node1 succeeds", func() {
+				BeforeEach(func() {
+					responseBody = string((RemoteState{[]byte("my data"), RemoteStateStatePassed}).ToJSON())
+					outcome = node.Run()
+				})
+
+				It("should not run A", func() {
+					Ω(ranA).Should(BeFalse())
+				})
+
+				It("should poll for A", func() {
+					Ω(server.ReceivedRequests()).Should(HaveLen(3))
+				})
+
+				It("should run B when the polling succeeds", func() {
+					Ω(bData).Should(Equal([]byte("my data")))
+				})
+
+				It("should succeed", func() {
+					Ω(outcome).Should(BeTrue())
+					Ω(node.Passed()).Should(BeTrue())
+				})
+			})
+
+			Context("when A on node1 fails", func() {
+				BeforeEach(func() {
+					responseBody = string((RemoteState{[]byte("my data"), RemoteStateStateFailed}).ToJSON())
+					outcome = node.Run()
+				})
+
+				It("should not run A", func() {
+					Ω(ranA).Should(BeFalse())
+				})
+
+				It("should poll for A", func() {
+					Ω(server.ReceivedRequests()).Should(HaveLen(3))
+				})
+
+				It("should not run B", func() {
+					Ω(bData).Should(BeNil())
+				})
+
+				It("should fail", func() {
+					Ω(outcome).Should(BeFalse())
+					Ω(node.Passed()).Should(BeFalse())
+
+					summary := node.Summary()
+					Ω(summary.State).Should(Equal(types.SpecStateFailed))
+					Ω(summary.Failure.Message).Should(Equal("BeforeSuite on Node 1 failed"))
+					Ω(summary.Failure.Location).Should(Equal(codeLocation))
+					Ω(summary.Failure.ComponentType).Should(Equal(types.SpecComponentTypeBeforeSuite))
+					Ω(summary.Failure.ComponentIndex).Should(Equal(0))
+					Ω(summary.Failure.ComponentCodeLocation).Should(Equal(codeLocation))
+				})
+			})
+
+			Context("when node1 disappears", func() {
+				BeforeEach(func() {
+					responseBody = string((RemoteState{[]byte("my data"), RemoteStateStateDisappeared}).ToJSON())
+					outcome = node.Run()
+				})
+
+				It("should not run A", func() {
+					Ω(ranA).Should(BeFalse())
+				})
+
+				It("should poll for A", func() {
+					Ω(server.ReceivedRequests()).Should(HaveLen(3))
+				})
+
+				It("should not run B", func() {
+					Ω(bData).Should(BeNil())
+				})
+
+				It("should fail", func() {
+					Ω(outcome).Should(BeFalse())
+					Ω(node.Passed()).Should(BeFalse())
+
+					summary := node.Summary()
+					Ω(summary.State).Should(Equal(types.SpecStateFailed))
+					Ω(summary.Failure.Message).Should(Equal("Node 1 dissappeared before completing BeforeSuite"))
+					Ω(summary.Failure.Location).Should(Equal(codeLocation))
+					Ω(summary.Failure.ComponentType).Should(Equal(types.SpecComponentTypeBeforeSuite))
+					Ω(summary.Failure.ComponentIndex).Should(Equal(0))
+					Ω(summary.Failure.ComponentCodeLocation).Should(Equal(codeLocation))
+				})
+			})
+		})
+	})
+
+	Describe("construction", func() {
+		Describe("the first function", func() {
+			Context("when the first function returns a byte array", func() {
+				Context("and takes nothing", func() {
+					It("should be fine", func() {
+						Ω(func() {
+							newNode(func() []byte { return nil }, func([]byte) {}, 1, 1)
+						}).ShouldNot(Panic())
+					})
+				})
+
+				Context("and takes a done function", func() {
+					It("should be fine", func() {
+						Ω(func() {
+							newNode(func(Done) []byte { return nil }, func([]byte) {}, 1, 1)
+						}).ShouldNot(Panic())
+					})
+				})
+
+				Context("and takes more than one thing", func() {
+					It("should panic", func() {
+						Ω(func() {
+							newNode(func(Done, Done) []byte { return nil }, func([]byte) {}, 1, 1)
+						}).Should(Panic())
+					})
+				})
+
+				Context("and takes something else", func() {
+					It("should panic", func() {
+						Ω(func() {
+							newNode(func(bool) []byte { return nil }, func([]byte) {}, 1, 1)
+						}).Should(Panic())
+					})
+				})
+			})
+
+			Context("when the first function does not return a byte array", func() {
+				It("should panic", func() {
+					Ω(func() {
+						newNode(func() {}, func([]byte) {}, 1, 1)
+					}).Should(Panic())
+
+					Ω(func() {
+						newNode(func() []int { return nil }, func([]byte) {}, 1, 1)
+					}).Should(Panic())
+				})
+			})
+		})
+
+		Describe("the second function", func() {
+			Context("when the second function takes a byte array", func() {
+				It("should be fine", func() {
+					Ω(func() {
+						newNode(func() []byte { return nil }, func([]byte) {}, 1, 1)
+					}).ShouldNot(Panic())
+				})
+			})
+
+			Context("when it also takes a done channel", func() {
+				It("should be fine", func() {
+					Ω(func() {
+						newNode(func() []byte { return nil }, func([]byte, Done) {}, 1, 1)
+					}).ShouldNot(Panic())
+				})
+			})
+
+			Context("if it takes anything else", func() {
+				It("should panic", func() {
+					Ω(func() {
+						newNode(func() []byte { return nil }, func([]byte, chan bool) {}, 1, 1)
+					}).Should(Panic())
+
+					Ω(func() {
+						newNode(func() []byte { return nil }, func(string) {}, 1, 1)
+					}).Should(Panic())
+				})
+			})
+
+			Context("if it takes nothing at all", func() {
+				It("should panic", func() {
+					Ω(func() {
+						newNode(func() []byte { return nil }, func() {}, 1, 1)
+					}).Should(Panic())
+				})
+			})
+
+			Context("if it returns something", func() {
+				It("should panic", func() {
+					Ω(func() {
+						newNode(func() []byte { return nil }, func([]byte) []byte { return nil }, 1, 1)
+					}).Should(Panic())
+				})
+			})
+		})
+	})
+})
