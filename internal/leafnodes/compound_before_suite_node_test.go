@@ -151,12 +151,12 @@ var _ = Describe("CompoundBeforeSuiteNode", func() {
 		})
 
 		Context("as the first node, it runs A", func() {
-			var expectedJSON []byte
+			var expectedState RemoteState
 
 			JustBeforeEach(func() {
 				server.AppendHandlers(ghttp.CombineHandlers(
 					ghttp.VerifyRequest("POST", "/BeforeSuiteState"),
-					ghttp.VerifyJSON(string(expectedJSON)),
+					ghttp.VerifyJSONRepresenting(expectedState),
 				))
 
 				outcome = node.Run()
@@ -164,7 +164,7 @@ var _ = Describe("CompoundBeforeSuiteNode", func() {
 
 			Context("when A succeeds", func() {
 				BeforeEach(func() {
-					expectedJSON = RemoteState{[]byte("my data"), RemoteStateStatePassed}.ToJSON()
+					expectedState = RemoteState{[]byte("my data"), RemoteStateStatePassed}
 
 					node = newNode(func() []byte {
 						return []byte("my data")
@@ -188,7 +188,7 @@ var _ = Describe("CompoundBeforeSuiteNode", func() {
 
 			Context("when A fails", func() {
 				BeforeEach(func() {
-					expectedJSON = (RemoteState{nil, RemoteStateStateFailed}).ToJSON()
+					expectedState = RemoteState{nil, RemoteStateStateFailed}
 
 					node = newNode(func() []byte {
 						panic("BAM")
@@ -214,7 +214,7 @@ var _ = Describe("CompoundBeforeSuiteNode", func() {
 
 		Context("as the Nth first node", func() {
 			var statusCode int
-			var responseBody string
+			var response interface{}
 			var ranA bool
 			var bData []byte
 
@@ -232,7 +232,7 @@ var _ = Describe("CompoundBeforeSuiteNode", func() {
 					ghttp.RespondWith(http.StatusOK, string((RemoteState{nil, RemoteStateStatePending}).ToJSON())),
 				), ghttp.CombineHandlers(
 					ghttp.VerifyRequest("GET", "/BeforeSuiteState"),
-					ghttp.RespondWithPtr(&statusCode, &responseBody),
+					ghttp.RespondWithJSONEncodedPtr(&statusCode, &response),
 				))
 
 				node = newNode(func() []byte {
@@ -245,7 +245,7 @@ var _ = Describe("CompoundBeforeSuiteNode", func() {
 
 			Context("when A on node1 succeeds", func() {
 				BeforeEach(func() {
-					responseBody = string((RemoteState{[]byte("my data"), RemoteStateStatePassed}).ToJSON())
+					response = RemoteState{[]byte("my data"), RemoteStateStatePassed}
 					outcome = node.Run()
 				})
 
@@ -269,7 +269,7 @@ var _ = Describe("CompoundBeforeSuiteNode", func() {
 
 			Context("when A on node1 fails", func() {
 				BeforeEach(func() {
-					responseBody = string((RemoteState{[]byte("my data"), RemoteStateStateFailed}).ToJSON())
+					response = RemoteState{[]byte("my data"), RemoteStateStateFailed}
 					outcome = node.Run()
 				})
 
@@ -301,7 +301,7 @@ var _ = Describe("CompoundBeforeSuiteNode", func() {
 
 			Context("when node1 disappears", func() {
 				BeforeEach(func() {
-					responseBody = string((RemoteState{[]byte("my data"), RemoteStateStateDisappeared}).ToJSON())
+					response = RemoteState{[]byte("my data"), RemoteStateStateDisappeared}
 					outcome = node.Run()
 				})
 
