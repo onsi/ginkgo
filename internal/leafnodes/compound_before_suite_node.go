@@ -11,27 +11,6 @@ import (
 	"time"
 )
 
-type RemoteStateState int
-
-const (
-	RemoteStateStateInvalid RemoteStateState = iota
-
-	RemoteStateStatePending
-	RemoteStateStatePassed
-	RemoteStateStateFailed
-	RemoteStateStateDisappeared
-)
-
-type RemoteState struct {
-	Data  []byte
-	State RemoteStateState
-}
-
-func (r RemoteState) ToJSON() []byte {
-	data, _ := json.Marshal(r)
-	return data
-}
-
 type compoundBeforeSuiteNode struct {
 	runnerA *runner
 	runnerB *runner
