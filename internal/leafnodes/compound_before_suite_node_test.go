@@ -4,6 +4,7 @@ import (
 	. "github.com/onsi/ginkgo"
 	. "github.com/onsi/ginkgo/internal/leafnodes"
 	. "github.com/onsi/gomega"
+
 	"github.com/onsi/gomega/ghttp"
 	"net/http"
 
@@ -55,8 +56,9 @@ var _ = Describe("CompoundBeforeSuiteNode", func() {
 				Ω(data).Should(Equal([]byte("my data")))
 			})
 
-			It("should pass", func() {
+			It("should report success", func() {
 				Ω(outcome).Should(BeTrue())
+				Ω(node.Passed()).Should(BeTrue())
 				Ω(node.Summary().State).Should(Equal(types.SpecStatePassed))
 			})
 		})
@@ -81,6 +83,7 @@ var _ = Describe("CompoundBeforeSuiteNode", func() {
 
 			It("should report failure", func() {
 				Ω(outcome).Should(BeFalse())
+				Ω(node.Passed()).Should(BeFalse())
 				Ω(node.Summary().State).Should(Equal(types.SpecStateFailed))
 			})
 		})
@@ -98,6 +101,7 @@ var _ = Describe("CompoundBeforeSuiteNode", func() {
 
 			It("should report failure", func() {
 				Ω(outcome).Should(BeFalse())
+				Ω(node.Passed()).Should(BeFalse())
 				Ω(node.Summary().State).Should(Equal(types.SpecStateFailed))
 			})
 		})
@@ -122,6 +126,7 @@ var _ = Describe("CompoundBeforeSuiteNode", func() {
 
 			It("should report failure", func() {
 				Ω(outcome).Should(BeFalse())
+				Ω(node.Passed()).Should(BeFalse())
 				Ω(node.Summary().State).Should(Equal(types.SpecStateTimedOut))
 			})
 		})
@@ -139,6 +144,7 @@ var _ = Describe("CompoundBeforeSuiteNode", func() {
 
 			It("should report failure", func() {
 				Ω(outcome).Should(BeFalse())
+				Ω(node.Passed()).Should(BeFalse())
 				Ω(node.Summary().State).Should(Equal(types.SpecStateTimedOut))
 			})
 		})
