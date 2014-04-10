@@ -68,7 +68,8 @@ func (runner *SpecRunner) runBeforeSuite() bool {
 		return true
 	}
 
-	passed := runner.beforeSuiteNode.Run()
+	conf := runner.config
+	passed := runner.beforeSuiteNode.Run(conf.ParallelNode, conf.ParallelTotal, conf.SyncHost)
 	runner.reportBeforeSuite(runner.beforeSuiteNode.Summary())
 	return passed
 }
@@ -78,7 +79,8 @@ func (runner *SpecRunner) runAfterSuite() bool {
 		return true
 	}
 
-	passed := runner.afterSuiteNode.Run()
+	conf := runner.config
+	passed := runner.afterSuiteNode.Run(conf.ParallelNode, conf.ParallelTotal, conf.SyncHost)
 	runner.reportAfterSuite(runner.afterSuiteNode.Summary())
 	return passed
 }

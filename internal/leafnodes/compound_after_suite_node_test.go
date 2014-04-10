@@ -38,8 +38,8 @@ var _ = Describe("CompoundAfterSuiteNode", func() {
 		server.Close()
 	})
 
-	newNode := func(bodyA interface{}, bodyB interface{}, ginkgoNode int, totalGinkgoNodes int) SuiteNode {
-		return NewCompoundAfterSuiteNode(bodyA, bodyB, codeLocation, time.Millisecond, failer, ginkgoNode, totalGinkgoNodes, server.URL())
+	newNode := func(bodyA interface{}, bodyB interface{}) SuiteNode {
+		return NewCompoundAfterSuiteNode(bodyA, bodyB, codeLocation, time.Millisecond, failer)
 	}
 
 	ranThing := func(thing string) {
@@ -61,9 +61,9 @@ var _ = Describe("CompoundAfterSuiteNode", func() {
 					ranThing("A")
 				}, func() {
 					ranThing("B")
-				}, 1, 1)
+				})
 
-				outcome = node.Run()
+				outcome = node.Run(1, 1, server.URL())
 			})
 
 			It("should run A, then B", func() {
@@ -84,9 +84,9 @@ var _ = Describe("CompoundAfterSuiteNode", func() {
 					failer.Fail("bam", innerCodeLocation)
 				}, func() {
 					ranThing("B")
-				}, 1, 1)
+				})
 
-				outcome = node.Run()
+				outcome = node.Run(1, 1, server.URL())
 			})
 
 			It("should still run B", func() {
@@ -107,9 +107,9 @@ var _ = Describe("CompoundAfterSuiteNode", func() {
 				}, func() {
 					ranThing("B")
 					failer.Fail("bam", innerCodeLocation)
-				}, 1, 1)
+				})
 
-				outcome = node.Run()
+				outcome = node.Run(1, 1, server.URL())
 			})
 
 			It("should run all the things", func() {
@@ -151,9 +151,9 @@ var _ = Describe("CompoundAfterSuiteNode", func() {
 					ranThing("A")
 				}, func() {
 					ranThing("B")
-				}, 1, 3)
+				})
 
-				outcome = node.Run()
+				outcome = node.Run(1, 3, server.URL())
 			})
 
 			It("should run A and, when the server says its time, run B", func() {
@@ -173,9 +173,9 @@ var _ = Describe("CompoundAfterSuiteNode", func() {
 					ranThing("A")
 				}, func() {
 					ranThing("B")
-				}, 2, 3)
+				})
 
-				outcome = node.Run()
+				outcome = node.Run(2, 3, server.URL())
 			})
 
 			It("should run A, and not run B", func() {

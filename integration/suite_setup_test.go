@@ -79,4 +79,67 @@ var _ = Describe("SuiteSetup", func() {
 			Ω(strings.Count(output, "A TEST")).Should(Equal(2))
 		})
 	})
+
+	Context("With compound before and after suites", func() {
+		BeforeEach(func() {
+			pathToTest = tmpPath("suite_setup")
+			copyIn("compound_setup_tests", pathToTest)
+		})
+
+		Context("when run with one node", func() {
+			It("should do all the work on that one node", func() {
+				output, err := runGinkgo(pathToTest, "--noColor")
+				Ω(err).ShouldNot(HaveOccurred())
+
+				Ω(output).Should(ContainSubstring("BEFORE_A_1\nBEFORE_B_1: DATA"))
+				Ω(output).Should(ContainSubstring("AFTER_A_1\nAFTER_B_1"))
+			})
+		})
+
+		Context("when run across multiple nodes", func() {
+			It("should run the first BeforeSuite function (BEFORE_A) on node 1, the second (BEFORE_B) on all the nodes, the first AfterSuite (AFTER_A) on all the nodes, and then the second (AFTER_B) on Node 1 *after* everything else is finished", func() {
+				output, err := runGinkgo(pathToTest, "--noColor", "--nodes=3")
+				Ω(err).ShouldNot(HaveOccurred())
+
+				Ω(output).Should(ContainSubstring("BEFORE_A_1"))
+				Ω(output).Should(ContainSubstring("BEFORE_B_1: DATA"))
+				Ω(output).Should(ContainSubstring("BEFORE_B_2: DATA"))
+				Ω(output).Should(ContainSubstring("BEFORE_B_3: DATA"))
+
+				Ω(output).ShouldNot(ContainSubstring("BEFORE_A_2"))
+				Ω(output).ShouldNot(ContainSubstring("BEFORE_A_3"))
+
+				Ω(output).Should(ContainSubstring("AFTER_A_1"))
+				Ω(output).Should(ContainSubstring("AFTER_A_2"))
+				Ω(output).Should(ContainSubstring("AFTER_A_3"))
+				Ω(output).Should(ContainSubstring("AFTER_B_1"))
+
+				Ω(output).ShouldNot(ContainSubstring("AFTER_B_2"))
+				Ω(output).ShouldNot(ContainSubstring("AFTER_B_3"))
+			})
+		})
+
+		Context("when streaming across multiple nodes", func() {
+			It("should run the first BeforeSuite function (BEFORE_A) on node 1, the second (BEFORE_B) on all the nodes, the first AfterSuite (AFTER_A) on all the nodes, and then the second (AFTER_B) on Node 1 *after* everything else is finished", func() {
+				output, err := runGinkgo(pathToTest, "--noColor", "--nodes=3", "--stream")
+				Ω(err).ShouldNot(HaveOccurred())
+
+				Ω(output).Should(ContainSubstring("[1] BEFORE_A_1"))
+				Ω(output).Should(ContainSubstring("[1] BEFORE_B_1: DATA"))
+				Ω(output).Should(ContainSubstring("[2] BEFORE_B_2: DATA"))
+				Ω(output).Should(ContainSubstring("[3] BEFORE_B_3: DATA"))
+
+				Ω(output).ShouldNot(ContainSubstring("BEFORE_A_2"))
+				Ω(output).ShouldNot(ContainSubstring("BEFORE_A_3"))
+
+				Ω(output).Should(ContainSubstring("[1] AFTER_A_1"))
+				Ω(output).Should(ContainSubstring("[2] AFTER_A_2"))
+				Ω(output).Should(ContainSubstring("[3] AFTER_A_3"))
+				Ω(output).Should(ContainSubstring("[1] AFTER_B_1"))
+
+				Ω(output).ShouldNot(ContainSubstring("AFTER_B_2"))
+				Ω(output).ShouldNot(ContainSubstring("AFTER_B_3"))
+			})
+		})
+	})
 })

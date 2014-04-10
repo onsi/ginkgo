@@ -198,7 +198,7 @@ func RunSpecsWithCustomReporters(t GinkgoTestingT, description string, specRepor
 }
 
 func buildDefaultReporter() Reporter {
-	remoteReportingServer := os.Getenv("GINKGO_REMOTE_REPORTING_SERVER")
+	remoteReportingServer := config.GinkgoConfig.StreamHost
 	if remoteReportingServer == "" {
 		stenographer := stenographer.New(!config.DefaultReporterConfig.NoColor)
 		return reporters.NewDefaultReporter(config.DefaultReporterConfig, stenographer)
@@ -355,6 +355,28 @@ func BeforeSuite(body interface{}, timeout ...float64) bool {
 //TODO: document
 func AfterSuite(body interface{}, timeout ...float64) bool {
 	globalSuite.SetAfterSuiteNode(body, codelocation.New(1), parseTimeout(timeout...))
+	return true
+}
+
+//TODO: document
+func CompoundBeforeSuite(node1Body interface{}, allNodesBody interface{}, timeout ...float64) bool {
+	globalSuite.SetCompoundBeforeSuiteNode(
+		node1Body,
+		allNodesBody,
+		codelocation.New(1),
+		parseTimeout(timeout...),
+	)
+	return true
+}
+
+//TODO: document
+func CompoundAfterSuite(allNodesBody interface{}, node1Body interface{}, timeout ...float64) bool {
+	globalSuite.SetCompoundAfterSuiteNode(
+		allNodesBody,
+		node1Body,
+		codelocation.New(1),
+		parseTimeout(timeout...),
+	)
 	return true
 }
 

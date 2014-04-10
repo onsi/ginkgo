@@ -31,7 +31,7 @@ var _ = Describe("SuiteNodes", func() {
 				befSuite = NewBeforeSuiteNode(func() {
 					time.Sleep(10 * time.Millisecond)
 				}, codeLocation, 0, failer)
-				outcome = befSuite.Run()
+				outcome = befSuite.Run(0, 0, "")
 			})
 
 			It("should return true when run and report as passed", func() {
@@ -54,7 +54,7 @@ var _ = Describe("SuiteNodes", func() {
 				befSuite = NewBeforeSuiteNode(func() {
 					failer.Fail("oops", innerCodeLocation)
 				}, codeLocation, 0, failer)
-				outcome = befSuite.Run()
+				outcome = befSuite.Run(0, 0, "")
 			})
 
 			It("should return false when run and report as failed", func() {
@@ -78,7 +78,7 @@ var _ = Describe("SuiteNodes", func() {
 			BeforeEach(func() {
 				befSuite = NewBeforeSuiteNode(func(done Done) {
 				}, codeLocation, time.Millisecond, failer)
-				outcome = befSuite.Run()
+				outcome = befSuite.Run(0, 0, "")
 			})
 
 			It("should return false when run and report as failed", func() {
@@ -101,7 +101,7 @@ var _ = Describe("SuiteNodes", func() {
 				befSuite = NewBeforeSuiteNode(func() {
 					panic("bam")
 				}, codeLocation, 0, failer)
-				outcome = befSuite.Run()
+				outcome = befSuite.Run(0, 0, "")
 			})
 
 			It("should return false when run and report as failed", func() {
@@ -138,7 +138,7 @@ var _ = Describe("SuiteNodes", func() {
 				aftSuite = NewAfterSuiteNode(func() {
 					time.Sleep(10 * time.Millisecond)
 				}, codeLocation, 0, failer)
-				outcome = aftSuite.Run()
+				outcome = aftSuite.Run(0, 0, "")
 			})
 
 			It("should return true when run and report as passed", func() {
@@ -161,7 +161,7 @@ var _ = Describe("SuiteNodes", func() {
 				aftSuite = NewAfterSuiteNode(func() {
 					failer.Fail("oops", innerCodeLocation)
 				}, codeLocation, 0, failer)
-				outcome = aftSuite.Run()
+				outcome = aftSuite.Run(0, 0, "")
 			})
 
 			It("should return false when run and report as failed", func() {
@@ -185,7 +185,7 @@ var _ = Describe("SuiteNodes", func() {
 			BeforeEach(func() {
 				aftSuite = NewAfterSuiteNode(func(done Done) {
 				}, codeLocation, time.Millisecond, failer)
-				outcome = aftSuite.Run()
+				outcome = aftSuite.Run(0, 0, "")
 			})
 
 			It("should return false when run and report as failed", func() {
@@ -208,7 +208,7 @@ var _ = Describe("SuiteNodes", func() {
 				aftSuite = NewAfterSuiteNode(func() {
 					panic("bam")
 				}, codeLocation, 0, failer)
-				outcome = aftSuite.Run()
+				outcome = aftSuite.Run(0, 0, "")
 			})
 
 			It("should return false when run and report as failed", func() {

@@ -33,8 +33,8 @@ var _ = Describe("CompoundBeforeSuiteNode", func() {
 		server.Close()
 	})
 
-	newNode := func(bodyA interface{}, bodyB interface{}, ginkgoNode int, totalGinkgoNodes int) SuiteNode {
-		return NewCompoundBeforeSuiteNode(bodyA, bodyB, codeLocation, time.Millisecond, failer, ginkgoNode, totalGinkgoNodes, server.URL())
+	newNode := func(bodyA interface{}, bodyB interface{}) SuiteNode {
+		return NewCompoundBeforeSuiteNode(bodyA, bodyB, codeLocation, time.Millisecond, failer)
 	}
 
 	Describe("when not running in parallel", func() {
@@ -47,9 +47,9 @@ var _ = Describe("CompoundBeforeSuiteNode", func() {
 					return []byte("my data")
 				}, func(d []byte) {
 					data = d
-				}, 1, 1)
+				})
 
-				outcome = node.Run()
+				outcome = node.Run(1, 1, server.URL())
 			})
 
 			It("should run A, then B passing the output from A to B", func() {
@@ -72,9 +72,9 @@ var _ = Describe("CompoundBeforeSuiteNode", func() {
 					return nil
 				}, func([]byte) {
 					ranB = true
-				}, 1, 1)
+				})
 
-				outcome = node.Run()
+				outcome = node.Run(1, 1, server.URL())
 			})
 
 			It("should not run B", func() {
@@ -94,9 +94,9 @@ var _ = Describe("CompoundBeforeSuiteNode", func() {
 					return nil
 				}, func([]byte) {
 					failer.Fail("boom", innerCodeLocation)
-				}, 1, 1)
+				})
 
-				outcome = node.Run()
+				outcome = node.Run(1, 1, server.URL())
 			})
 
 			It("should report failure", func() {
@@ -115,9 +115,9 @@ var _ = Describe("CompoundBeforeSuiteNode", func() {
 					return nil
 				}, func([]byte) {
 					ranB = true
-				}, 1, 1)
+				})
 
-				outcome = node.Run()
+				outcome = node.Run(1, 1, server.URL())
 			})
 
 			It("should not run B", func() {
@@ -137,9 +137,9 @@ var _ = Describe("CompoundBeforeSuiteNode", func() {
 					return nil
 				}, func([]byte, Done) {
 					time.Sleep(time.Second)
-				}, 1, 1)
+				})
 
-				outcome = node.Run()
+				outcome = node.Run(1, 1, server.URL())
 			})
 
 			It("should report failure", func() {
@@ -152,12 +152,18 @@ var _ = Describe("CompoundBeforeSuiteNode", func() {
 
 	Describe("when running in parallel", func() {
 		var ranB bool
+		var parallelNode, parallelTotal int
 		BeforeEach(func() {
 			ranB = false
+			parallelNode, parallelTotal = 1, 3
 		})
 
 		Context("as the first node, it runs A", func() {
 			var expectedState RemoteState
+
+			BeforeEach(func() {
+				parallelNode, parallelTotal = 1, 3
+			})
 
 			JustBeforeEach(func() {
 				server.AppendHandlers(ghttp.CombineHandlers(
@@ -165,7 +171,7 @@ var _ = Describe("CompoundBeforeSuiteNode", func() {
 					ghttp.VerifyJSONRepresenting(expectedState),
 				))
 
-				outcome = node.Run()
+				outcome = node.Run(parallelNode, parallelTotal, server.URL())
 			})
 
 			Context("when A succeeds", func() {
@@ -176,7 +182,7 @@ var _ = Describe("CompoundBeforeSuiteNode", func() {
 						return []byte("my data")
 					}, func([]byte) {
 						ranB = true
-					}, 1, 3)
+					})
 				})
 
 				It("should post about A succeeding", func() {
@@ -201,7 +207,7 @@ var _ = Describe("CompoundBeforeSuiteNode", func() {
 						return []byte("my data")
 					}, func([]byte) {
 						ranB = true
-					}, 1, 3)
+					})
 				})
 
 				It("should post about A failing", func() {
@@ -218,7 +224,7 @@ var _ = Describe("CompoundBeforeSuiteNode", func() {
 			})
 		})
 
-		Context("as the Nth first node", func() {
+		Context("as the Nth node", func() {
 			var statusCode int
 			var response interface{}
 			var ranA bool
@@ -246,13 +252,15 @@ var _ = Describe("CompoundBeforeSuiteNode", func() {
 					return nil
 				}, func(data []byte) {
 					bData = data
-				}, 2, 3)
+				})
+
+				parallelNode, parallelTotal = 2, 3
 			})
 
 			Context("when A on node1 succeeds", func() {
 				BeforeEach(func() {
 					response = RemoteState{[]byte("my data"), RemoteStateStatePassed}
-					outcome = node.Run()
+					outcome = node.Run(parallelNode, parallelTotal, server.URL())
 				})
 
 				It("should not run A", func() {
@@ -276,7 +284,7 @@ var _ = Describe("CompoundBeforeSuiteNode", func() {
 			Context("when A on node1 fails", func() {
 				BeforeEach(func() {
 					response = RemoteState{[]byte("my data"), RemoteStateStateFailed}
-					outcome = node.Run()
+					outcome = node.Run(parallelNode, parallelTotal, server.URL())
 				})
 
 				It("should not run A", func() {
@@ -308,7 +316,7 @@ var _ = Describe("CompoundBeforeSuiteNode", func() {
 			Context("when node1 disappears", func() {
 				BeforeEach(func() {
 					response = RemoteState{[]byte("my data"), RemoteStateStateDisappeared}
-					outcome = node.Run()
+					outcome = node.Run(parallelNode, parallelTotal, server.URL())
 				})
 
 				It("should not run A", func() {
@@ -345,7 +353,7 @@ var _ = Describe("CompoundBeforeSuiteNode", func() {
 				Context("and takes nothing", func() {
 					It("should be fine", func() {
 						Ω(func() {
-							newNode(func() []byte { return nil }, func([]byte) {}, 1, 1)
+							newNode(func() []byte { return nil }, func([]byte) {})
 						}).ShouldNot(Panic())
 					})
 				})
@@ -353,7 +361,7 @@ var _ = Describe("CompoundBeforeSuiteNode", func() {
 				Context("and takes a done function", func() {
 					It("should be fine", func() {
 						Ω(func() {
-							newNode(func(Done) []byte { return nil }, func([]byte) {}, 1, 1)
+							newNode(func(Done) []byte { return nil }, func([]byte) {})
 						}).ShouldNot(Panic())
 					})
 				})
@@ -361,7 +369,7 @@ var _ = Describe("CompoundBeforeSuiteNode", func() {
 				Context("and takes more than one thing", func() {
 					It("should panic", func() {
 						Ω(func() {
-							newNode(func(Done, Done) []byte { return nil }, func([]byte) {}, 1, 1)
+							newNode(func(Done, Done) []byte { return nil }, func([]byte) {})
 						}).Should(Panic())
 					})
 				})
@@ -369,7 +377,7 @@ var _ = Describe("CompoundBeforeSuiteNode", func() {
 				Context("and takes something else", func() {
 					It("should panic", func() {
 						Ω(func() {
-							newNode(func(bool) []byte { return nil }, func([]byte) {}, 1, 1)
+							newNode(func(bool) []byte { return nil }, func([]byte) {})
 						}).Should(Panic())
 					})
 				})
@@ -378,11 +386,11 @@ var _ = Describe("CompoundBeforeSuiteNode", func() {
 			Context("when the first function does not return a byte array", func() {
 				It("should panic", func() {
 					Ω(func() {
-						newNode(func() {}, func([]byte) {}, 1, 1)
+						newNode(func() {}, func([]byte) {})
 					}).Should(Panic())
 
 					Ω(func() {
-						newNode(func() []int { return nil }, func([]byte) {}, 1, 1)
+						newNode(func() []int { return nil }, func([]byte) {})
 					}).Should(Panic())
 				})
 			})
@@ -392,7 +400,7 @@ var _ = Describe("CompoundBeforeSuiteNode", func() {
 			Context("when the second function takes a byte array", func() {
 				It("should be fine", func() {
 					Ω(func() {
-						newNode(func() []byte { return nil }, func([]byte) {}, 1, 1)
+						newNode(func() []byte { return nil }, func([]byte) {})
 					}).ShouldNot(Panic())
 				})
 			})
@@ -400,7 +408,7 @@ var _ = Describe("CompoundBeforeSuiteNode", func() {
 			Context("when it also takes a done channel", func() {
 				It("should be fine", func() {
 					Ω(func() {
-						newNode(func() []byte { return nil }, func([]byte, Done) {}, 1, 1)
+						newNode(func() []byte { return nil }, func([]byte, Done) {})
 					}).ShouldNot(Panic())
 				})
 			})
@@ -408,11 +416,11 @@ var _ = Describe("CompoundBeforeSuiteNode", func() {
 			Context("if it takes anything else", func() {
 				It("should panic", func() {
 					Ω(func() {
-						newNode(func() []byte { return nil }, func([]byte, chan bool) {}, 1, 1)
+						newNode(func() []byte { return nil }, func([]byte, chan bool) {})
 					}).Should(Panic())
 
 					Ω(func() {
-						newNode(func() []byte { return nil }, func(string) {}, 1, 1)
+						newNode(func() []byte { return nil }, func(string) {})
 					}).Should(Panic())
 				})
 			})
@@ -420,7 +428,7 @@ var _ = Describe("CompoundBeforeSuiteNode", func() {
 			Context("if it takes nothing at all", func() {
 				It("should panic", func() {
 					Ω(func() {
-						newNode(func() []byte { return nil }, func() {}, 1, 1)
+						newNode(func() []byte { return nil }, func() {})
 					}).Should(Panic())
 				})
 			})
@@ -428,7 +436,7 @@ var _ = Describe("CompoundBeforeSuiteNode", func() {
 			Context("if it returns something", func() {
 				It("should panic", func() {
 					Ω(func() {
-						newNode(func() []byte { return nil }, func([]byte) []byte { return nil }, 1, 1)
+						newNode(func() []byte { return nil }, func([]byte) []byte { return nil })
 					}).Should(Panic())
 				})
 			})

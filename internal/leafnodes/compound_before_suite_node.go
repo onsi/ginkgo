@@ -15,10 +15,6 @@ type compoundBeforeSuiteNode struct {
 	runnerA *runner
 	runnerB *runner
 
-	ginkgoNode       int
-	totalGinkgoNodes int
-	syncHost         string
-
 	data []byte
 
 	outcome types.SpecState
@@ -26,12 +22,8 @@ type compoundBeforeSuiteNode struct {
 	runTime time.Duration
 }
 
-func NewCompoundBeforeSuiteNode(bodyA interface{}, bodyB interface{}, codeLocation types.CodeLocation, timeout time.Duration, failer *failer.Failer, ginkgoNode int, totalGinkgoNodes int, syncHost string) SuiteNode {
-	node := &compoundBeforeSuiteNode{
-		ginkgoNode:       ginkgoNode,
-		totalGinkgoNodes: totalGinkgoNodes,
-		syncHost:         syncHost,
-	}
+func NewCompoundBeforeSuiteNode(bodyA interface{}, bodyB interface{}, codeLocation types.CodeLocation, timeout time.Duration, failer *failer.Failer) SuiteNode {
+	node := &compoundBeforeSuiteNode{}
 
 	node.runnerA = newRunner(node.wrapA(bodyA), codeLocation, timeout, failer, types.SpecComponentTypeBeforeSuite, 0)
 	node.runnerB = newRunner(node.wrapB(bodyB), codeLocation, timeout, failer, types.SpecComponentTypeBeforeSuite, 0)
@@ -39,16 +31,16 @@ func NewCompoundBeforeSuiteNode(bodyA interface{}, bodyB interface{}, codeLocati
 	return node
 }
 
-func (node *compoundBeforeSuiteNode) Run() bool {
+func (node *compoundBeforeSuiteNode) Run(parallelNode int, parallelTotal int, syncHost string) bool {
 	t := time.Now()
 	defer func() {
 		node.runTime = time.Since(t)
 	}()
 
-	if node.ginkgoNode == 1 {
-		node.outcome, node.failure = node.runA()
+	if parallelNode == 1 {
+		node.outcome, node.failure = node.runA(parallelTotal, syncHost)
 	} else {
-		node.outcome, node.failure = node.waitForA()
+		node.outcome, node.failure = node.waitForA(syncHost)
 	}
 
 	if node.outcome != types.SpecStatePassed {
@@ -59,10 +51,10 @@ func (node *compoundBeforeSuiteNode) Run() bool {
 	return node.outcome == types.SpecStatePassed
 }
 
-func (node *compoundBeforeSuiteNode) runA() (types.SpecState, types.SpecFailure) {
+func (node *compoundBeforeSuiteNode) runA(parallelTotal int, syncHost string) (types.SpecState, types.SpecFailure) {
 	outcome, failure := node.runnerA.run()
 
-	if node.totalGinkgoNodes > 1 {
+	if parallelTotal > 1 {
 		state := RemoteStateStatePassed
 		if outcome != types.SpecStatePassed {
 			state = RemoteStateStateFailed
@@ -71,13 +63,13 @@ func (node *compoundBeforeSuiteNode) runA() (types.SpecState, types.SpecFailure)
 			Data:  node.data,
 			State: state,
 		}).ToJSON()
-		http.Post(node.syncHost+"/BeforeSuiteState", "application/json", bytes.NewBuffer(json))
+		http.Post(syncHost+"/BeforeSuiteState", "application/json", bytes.NewBuffer(json))
 	}
 
 	return outcome, failure
 }
 
-func (node *compoundBeforeSuiteNode) waitForA() (types.SpecState, types.SpecFailure) {
+func (node *compoundBeforeSuiteNode) waitForA(syncHost string) (types.SpecState, types.SpecFailure) {
 	failure := func(message string) types.SpecFailure {
 		return types.SpecFailure{
 			Message:               message,
@@ -88,7 +80,7 @@ func (node *compoundBeforeSuiteNode) waitForA() (types.SpecState, types.SpecFail
 		}
 	}
 	for {
-		resp, err := http.Get(node.syncHost + "/BeforeSuiteState")
+		resp, err := http.Get(syncHost + "/BeforeSuiteState")
 		if err != nil || resp.StatusCode != http.StatusOK {
 			return types.SpecStateFailed, failure("Failed to fetch BeforeSuite state")
 		}

@@ -13,31 +13,24 @@ type compoundAfterSuiteNode struct {
 	runnerA *runner
 	runnerB *runner
 
-	ginkgoNode       int
-	totalGinkgoNodes int
-	syncHost         string
-
 	outcome types.SpecState
 	failure types.SpecFailure
 	runTime time.Duration
 }
 
-func NewCompoundAfterSuiteNode(bodyA interface{}, bodyB interface{}, codeLocation types.CodeLocation, timeout time.Duration, failer *failer.Failer, ginkgoNode int, totalGinkgoNodes int, syncHost string) SuiteNode {
+func NewCompoundAfterSuiteNode(bodyA interface{}, bodyB interface{}, codeLocation types.CodeLocation, timeout time.Duration, failer *failer.Failer) SuiteNode {
 	return &compoundAfterSuiteNode{
-		runnerA:          newRunner(bodyA, codeLocation, timeout, failer, types.SpecComponentTypeAfterSuite, 0),
-		runnerB:          newRunner(bodyB, codeLocation, timeout, failer, types.SpecComponentTypeAfterSuite, 0),
-		ginkgoNode:       ginkgoNode,
-		totalGinkgoNodes: totalGinkgoNodes,
-		syncHost:         syncHost,
+		runnerA: newRunner(bodyA, codeLocation, timeout, failer, types.SpecComponentTypeAfterSuite, 0),
+		runnerB: newRunner(bodyB, codeLocation, timeout, failer, types.SpecComponentTypeAfterSuite, 0),
 	}
 }
 
-func (node *compoundAfterSuiteNode) Run() bool {
+func (node *compoundAfterSuiteNode) Run(parallelNode int, parallelTotal int, syncHost string) bool {
 	node.outcome, node.failure = node.runnerA.run()
 
-	if node.ginkgoNode == 1 {
-		if node.totalGinkgoNodes > 1 {
-			node.waitUntilOtherNodesAreDone()
+	if parallelNode == 1 {
+		if parallelTotal > 1 {
+			node.waitUntilOtherNodesAreDone(syncHost)
 		}
 
 		outcome, failure := node.runnerB.run()
@@ -64,9 +57,9 @@ func (node *compoundAfterSuiteNode) Summary() *types.SetupSummary {
 	}
 }
 
-func (node *compoundAfterSuiteNode) waitUntilOtherNodesAreDone() {
+func (node *compoundAfterSuiteNode) waitUntilOtherNodesAreDone(syncHost string) {
 	for {
-		if node.canRun() {
+		if node.canRun(syncHost) {
 			return
 		}
 
@@ -74,8 +67,8 @@ func (node *compoundAfterSuiteNode) waitUntilOtherNodesAreDone() {
 	}
 }
 
-func (node *compoundAfterSuiteNode) canRun() bool {
-	resp, err := http.Get(node.syncHost + "/AfterSuiteCanRun")
+func (node *compoundAfterSuiteNode) canRun(syncHost string) bool {
+	resp, err := http.Get(syncHost + "/AfterSuiteCanRun")
 	if err != nil || resp.StatusCode != http.StatusOK {
 		return false
 	}

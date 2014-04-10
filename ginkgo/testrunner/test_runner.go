@@ -5,6 +5,7 @@ import (
 	"fmt"
 	"github.com/onsi/ginkgo/config"
 	"github.com/onsi/ginkgo/ginkgo/testsuite"
+	"github.com/onsi/ginkgo/internal/leafnodes"
 	"github.com/onsi/ginkgo/internal/remote"
 	"github.com/onsi/ginkgo/reporters/stenographer"
 	"io"
@@ -91,26 +92,44 @@ func (t *TestRunner) compiledArtifact() string {
 
 func (t *TestRunner) runSerialGinkgoSuite() bool {
 	ginkgoArgs := config.BuildFlagArgs("ginkgo", config.GinkgoConfig, config.DefaultReporterConfig)
-	return t.run(ginkgoArgs, nil, os.Stdout, nil)
+	return t.run(t.cmd(ginkgoArgs, os.Stdout), nil)
 }
 
 func (t *TestRunner) runGoTestSuite() bool {
-	return t.run([]string{"-test.v"}, nil, os.Stdout, nil)
+	return t.run(t.cmd([]string{"-test.v"}, os.Stdout), nil)
 }
 
 func (t *TestRunner) runAndStreamParallelGinkgoSuite() bool {
 	completions := make(chan bool)
 	writers := make([]*logWriter, t.numCPU)
 
+	syncServer, err := leafnodes.NewCompoundServer(t.numCPU)
+	if err != nil {
+		panic(fmt.Sprintf("Couldn't start sync server: %s", err.Error()))
+	}
+	syncServer.Start()
+	defer syncServer.Close()
+	syncServerAddress := "http://" + syncServer.Address()
+
 	for cpu := 0; cpu < t.numCPU; cpu++ {
 		config.GinkgoConfig.ParallelNode = cpu + 1
 		config.GinkgoConfig.ParallelTotal = t.numCPU
+		config.GinkgoConfig.SyncHost = syncServerAddress
 
 		ginkgoArgs := config.BuildFlagArgs("ginkgo", config.GinkgoConfig, config.DefaultReporterConfig)
 
 		writers[cpu] = newLogWriter(fmt.Sprintf("[%d]", cpu+1))
 
-		go t.run(ginkgoArgs, nil, writers[cpu], completions)
+		cmd := t.cmd(ginkgoArgs, writers[cpu])
+
+		syncServer.RegisterAlive(cpu+1, func() bool {
+			if cmd.ProcessState == nil {
+				return true
+			}
+			return !cmd.ProcessState.Exited()
+		})
+
+		go t.run(cmd, completions)
 	}
 
 	passed := true
@@ -135,41 +154,58 @@ func (t *TestRunner) runParallelGinkgoSuite() bool {
 
 	stenographer := stenographer.New(!config.DefaultReporterConfig.NoColor)
 	aggregator := remote.NewAggregator(t.numCPU, result, config.DefaultReporterConfig, stenographer)
-	server, err := remote.NewServer()
+	streamServer, err := remote.NewServer()
 	if err != nil {
 		panic("Failed to start parallel spec server")
 	}
 
-	server.RegisterReporters(aggregator)
-	server.Start()
-	defer server.Stop()
-	serverAddress := server.Address()
+	streamServer.RegisterReporters(aggregator)
+	streamServer.Start()
+	defer streamServer.Stop()
+	streamServerAddress := streamServer.Address()
+
+	syncServer, err := leafnodes.NewCompoundServer(t.numCPU)
+	if err != nil {
+		panic(fmt.Sprintf("Couldn't start sync server: %s", err.Error()))
+	}
+	syncServer.Start()
+	defer syncServer.Close()
+	syncServerAddress := "http://" + syncServer.Address()
 
 	for cpu := 0; cpu < t.numCPU; cpu++ {
 		config.GinkgoConfig.ParallelNode = cpu + 1
 		config.GinkgoConfig.ParallelTotal = t.numCPU
+		config.GinkgoConfig.SyncHost = syncServerAddress
+		config.GinkgoConfig.StreamHost = streamServerAddress
 
 		ginkgoArgs := config.BuildFlagArgs("ginkgo", config.GinkgoConfig, config.DefaultReporterConfig)
 
-		env := os.Environ()
-		env = append(env, fmt.Sprintf("GINKGO_REMOTE_REPORTING_SERVER=%s", serverAddress))
-
 		reports[cpu] = &bytes.Buffer{}
-		go t.run(ginkgoArgs, env, reports[cpu], completions)
+
+		cmd := t.cmd(ginkgoArgs, reports[cpu])
+
+		syncServer.RegisterAlive(cpu+1, func() bool {
+			if cmd.ProcessState == nil {
+				return true
+			}
+			return !cmd.ProcessState.Exited()
+		})
+
+		go t.run(cmd, completions)
 	}
 
+	passed := true
+
 	for cpu := 0; cpu < t.numCPU; cpu++ {
-		<-completions
+		passed = <-completions && passed
 	}
 
 	//all test processes are done, at this point
 	//we should be able to wait for the aggregator to tell us that it's done
 
-	var passed = false
 	select {
-	case passed = <-result:
+	case <-result:
 		fmt.Println("")
-		//the aggregator is done and can tell us whether or not the suite passed
 	case <-time.After(time.Second):
 		//the aggregator never got back to us!  something must have gone wrong
 		fmt.Println("")
@@ -197,14 +233,7 @@ func (t *TestRunner) runParallelGinkgoSuite() bool {
 	return passed
 }
 
-func (t *TestRunner) run(ginkgoArgs []string, env []string, stream io.Writer, completions chan bool) bool {
-	var err error
-	defer func() {
-		if completions != nil {
-			completions <- (err == nil)
-		}
-	}()
-
+func (t *TestRunner) cmd(ginkgoArgs []string, stream io.Writer) *exec.Cmd {
 	args := []string{"-test.timeout=24h"}
 	if t.cover {
 		args = append(args, "--test.coverprofile="+t.suite.PackageName+".coverprofile")
@@ -214,10 +243,20 @@ func (t *TestRunner) run(ginkgoArgs []string, env []string, stream io.Writer, co
 
 	cmd := exec.Command(t.compiledArtifact(), args...)
 
-	cmd.Env = env
 	cmd.Dir = t.suite.Path
 	cmd.Stderr = stream
 	cmd.Stdout = stream
+
+	return cmd
+}
+
+func (t *TestRunner) run(cmd *exec.Cmd, completions chan bool) bool {
+	var err error
+	defer func() {
+		if completions != nil {
+			completions <- (err == nil)
+		}
+	}()
 
 	err = cmd.Start()
 	if err != nil {

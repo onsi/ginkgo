@@ -7,7 +7,7 @@ import (
 )
 
 type SuiteNode interface {
-	Run() bool
+	Run(parallelNode int, parallelTotal int, syncHost string) bool
 	Passed() bool
 	Summary() *types.SetupSummary
 }
@@ -19,7 +19,7 @@ type simpleSuiteNode struct {
 	runTime time.Duration
 }
 
-func (node *simpleSuiteNode) Run() bool {
+func (node *simpleSuiteNode) Run(parallelNode int, parallelTotal int, syncHost string) bool {
 	t := time.Now()
 	node.outcome, node.failure = node.runner.run()
 	node.runTime = time.Since(t)

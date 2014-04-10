@@ -27,10 +27,13 @@ type GinkgoConfigType struct {
 	RandomizeAllSpecs bool
 	FocusString       string
 	SkipString        string
-	ParallelNode      int
-	ParallelTotal     int
 	SkipMeasurements  bool
 	FailOnPending     bool
+
+	ParallelNode  int
+	ParallelTotal int
+	SyncHost      string
+	StreamHost    string
 }
 
 var GinkgoConfig = GinkgoConfigType{}
@@ -64,6 +67,8 @@ func Flags(flagSet *flag.FlagSet, prefix string, includeParallelFlags bool) {
 	if includeParallelFlags {
 		flagSet.IntVar(&(GinkgoConfig.ParallelNode), prefix+"parallel.node", 1, "This worker node's (one-indexed) node number.  For running specs in parallel.")
 		flagSet.IntVar(&(GinkgoConfig.ParallelTotal), prefix+"parallel.total", 1, "The total number of worker nodes.  For running specs in parallel.")
+		flagSet.StringVar(&(GinkgoConfig.SyncHost), prefix+"parallel.synchost", "", "The address for the server that will synchronize the running nodes.")
+		flagSet.StringVar(&(GinkgoConfig.StreamHost), prefix+"parallel.streamhost", "", "The address for the server that the running nodes should stream data to.")
 	}
 
 	flagSet.BoolVar(&(DefaultReporterConfig.NoColor), prefix+"noColor", false, "If set, suppress color output in default reporter.")
@@ -107,6 +112,14 @@ func BuildFlagArgs(prefix string, ginkgo GinkgoConfigType, reporter DefaultRepor
 
 	if ginkgo.ParallelTotal != 0 {
 		result = append(result, fmt.Sprintf("--%sparallel.total=%d", prefix, ginkgo.ParallelTotal))
+	}
+
+	if ginkgo.StreamHost != "" {
+		result = append(result, fmt.Sprintf("--%sparallel.streamhost=%s", prefix, ginkgo.StreamHost))
+	}
+
+	if ginkgo.SyncHost != "" {
+		result = append(result, fmt.Sprintf("--%sparallel.synchost=%s", prefix, ginkgo.SyncHost))
 	}
 
 	if reporter.NoColor {

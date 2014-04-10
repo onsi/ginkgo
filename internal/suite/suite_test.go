@@ -256,6 +256,7 @@ var _ = Describe("Suite", func() {
 				Ω(func() {
 					specSuite.SetBeforeSuiteNode(func() {}, codelocation.New(0), 0)
 				}).Should(Panic())
+
 			})
 		})
 	})
