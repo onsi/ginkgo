@@ -117,7 +117,7 @@ func (t *TestRunner) runAndStreamParallelGinkgoSuite() bool {
 
 		ginkgoArgs := config.BuildFlagArgs("ginkgo", config.GinkgoConfig, config.DefaultReporterConfig)
 
-		writers[cpu] = newLogWriter(fmt.Sprintf("[%d]", cpu+1))
+		writers[cpu] = newLogWriter(os.Stdout, cpu+1)
 
 		cmd := t.cmd(ginkgoArgs, writers[cpu])
 
@@ -149,6 +149,7 @@ func (t *TestRunner) runAndStreamParallelGinkgoSuite() bool {
 func (t *TestRunner) runParallelGinkgoSuite() bool {
 	result := make(chan bool)
 	completions := make(chan bool)
+	writers := make([]*logWriter, t.numCPU)
 	reports := make([]*bytes.Buffer, t.numCPU)
 
 	stenographer := stenographer.New(!config.DefaultReporterConfig.NoColor)
@@ -171,8 +172,9 @@ func (t *TestRunner) runParallelGinkgoSuite() bool {
 		ginkgoArgs := config.BuildFlagArgs("ginkgo", config.GinkgoConfig, config.DefaultReporterConfig)
 
 		reports[cpu] = &bytes.Buffer{}
+		writers[cpu] = newLogWriter(reports[cpu], cpu+1)
 
-		cmd := t.cmd(ginkgoArgs, reports[cpu])
+		cmd := t.cmd(ginkgoArgs, writers[cpu])
 
 		server.RegisterAlive(cpu+1, func() bool {
 			if cmd.ProcessState == nil {
@@ -212,6 +214,10 @@ func (t *TestRunner) runParallelGinkgoSuite() bool {
 		os.Stdout.Sync()
 
 		time.Sleep(time.Second)
+
+		for _, writer := range writers {
+			writer.Close()
+		}
 
 		for _, report := range reports {
 			fmt.Print(report.String())
