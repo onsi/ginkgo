@@ -104,7 +104,7 @@ func (node *compoundBeforeSuiteNode) waitForA(syncHost string) (types.SpecState,
 		case RemoteStateStateFailed:
 			return types.SpecStateFailed, failure("BeforeSuite on Node 1 failed")
 		case RemoteStateStateDisappeared:
-			return types.SpecStateFailed, failure("Node 1 dissappeared before completing BeforeSuite")
+			return types.SpecStateFailed, failure("Node 1 disappeared before completing BeforeSuite")
 		}
 
 		time.Sleep(50 * time.Millisecond)

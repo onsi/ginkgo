@@ -80,7 +80,7 @@ var _ = Describe("SuiteSetup", func() {
 		})
 	})
 
-	Context("With compound before and after suites", func() {
+	Context("With passing compound before and after suites", func() {
 		BeforeEach(func() {
 			pathToTest = tmpPath("suite_setup")
 			copyIn("compound_setup_tests", pathToTest)
@@ -140,6 +140,21 @@ var _ = Describe("SuiteSetup", func() {
 				Ω(output).ShouldNot(ContainSubstring("AFTER_B_2"))
 				Ω(output).ShouldNot(ContainSubstring("AFTER_B_3"))
 			})
+		})
+	})
+
+	Context("With a failing compound before suite", func() {
+		BeforeEach(func() {
+			pathToTest = tmpPath("suite_setup")
+			copyIn("exiting_compound_setup_tests", pathToTest)
+		})
+
+		It("should fail and let the user know that node 1 disappeared prematurely", func() {
+			output, err := runGinkgo(pathToTest, "--noColor", "--nodes=3")
+			Ω(err).Should(HaveOccurred())
+
+			Ω(output).Should(ContainSubstring("Node 1 disappeared before completing BeforeSuite"))
+			Ω(output).Should(ContainSubstring("Ginkgo timed out waiting for all parallel nodes to end"))
 		})
 	})
 })

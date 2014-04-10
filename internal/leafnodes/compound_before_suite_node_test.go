@@ -337,7 +337,7 @@ var _ = Describe("CompoundBeforeSuiteNode", func() {
 
 					summary := node.Summary()
 					Ω(summary.State).Should(Equal(types.SpecStateFailed))
-					Ω(summary.Failure.Message).Should(Equal("Node 1 dissappeared before completing BeforeSuite"))
+					Ω(summary.Failure.Message).Should(Equal("Node 1 disappeared before completing BeforeSuite"))
 					Ω(summary.Failure.Location).Should(Equal(codeLocation))
 					Ω(summary.Failure.ComponentType).Should(Equal(types.SpecComponentTypeBeforeSuite))
 					Ω(summary.Failure.ComponentIndex).Should(Equal(0))
