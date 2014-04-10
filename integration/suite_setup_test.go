@@ -80,10 +80,10 @@ var _ = Describe("SuiteSetup", func() {
 		})
 	})
 
-	Context("With passing compound before and after suites", func() {
+	Context("With passing synchronized before and after suites", func() {
 		BeforeEach(func() {
 			pathToTest = tmpPath("suite_setup")
-			copyIn("compound_setup_tests", pathToTest)
+			copyIn("synchronized_setup_tests", pathToTest)
 		})
 
 		Context("when run with one node", func() {
@@ -143,10 +143,10 @@ var _ = Describe("SuiteSetup", func() {
 		})
 	})
 
-	Context("With a failing compound before suite", func() {
+	Context("With a failing synchronized before suite", func() {
 		BeforeEach(func() {
 			pathToTest = tmpPath("suite_setup")
-			copyIn("exiting_compound_setup_tests", pathToTest)
+			copyIn("exiting_synchronized_setup_tests", pathToTest)
 		})
 
 		It("should fail and let the user know that node 1 disappeared prematurely", func() {

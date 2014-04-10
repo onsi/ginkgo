@@ -103,18 +103,18 @@ func (suite *Suite) SetAfterSuiteNode(body interface{}, codeLocation types.CodeL
 	suite.afterSuiteNode = leafnodes.NewAfterSuiteNode(body, codeLocation, timeout, suite.failer)
 }
 
-func (suite *Suite) SetCompoundBeforeSuiteNode(bodyA interface{}, bodyB interface{}, codeLocation types.CodeLocation, timeout time.Duration) {
+func (suite *Suite) SetSynchronizedBeforeSuiteNode(bodyA interface{}, bodyB interface{}, codeLocation types.CodeLocation, timeout time.Duration) {
 	if suite.beforeSuiteNode != nil {
 		panic("You may only call BeforeSuite once!")
 	}
-	suite.beforeSuiteNode = leafnodes.NewCompoundBeforeSuiteNode(bodyA, bodyB, codeLocation, timeout, suite.failer)
+	suite.beforeSuiteNode = leafnodes.NewSynchronizedBeforeSuiteNode(bodyA, bodyB, codeLocation, timeout, suite.failer)
 }
 
-func (suite *Suite) SetCompoundAfterSuiteNode(bodyA interface{}, bodyB interface{}, codeLocation types.CodeLocation, timeout time.Duration) {
+func (suite *Suite) SetSynchronizedAfterSuiteNode(bodyA interface{}, bodyB interface{}, codeLocation types.CodeLocation, timeout time.Duration) {
 	if suite.afterSuiteNode != nil {
 		panic("You may only call AfterSuite once!")
 	}
-	suite.afterSuiteNode = leafnodes.NewCompoundAfterSuiteNode(bodyA, bodyB, codeLocation, timeout, suite.failer)
+	suite.afterSuiteNode = leafnodes.NewSynchronizedAfterSuiteNode(bodyA, bodyB, codeLocation, timeout, suite.failer)
 }
 
 func (suite *Suite) PushContainerNode(text string, body func(), flag types.FlagType, codeLocation types.CodeLocation) {

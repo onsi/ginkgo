@@ -1,4 +1,4 @@
-package compound_setup_tests_test
+package synchronized_setup_tests_test
 
 import (
 	. "github.com/onsi/ginkgo"
@@ -11,14 +11,14 @@ import (
 	"testing"
 )
 
-func TestCompound_setup_tests(t *testing.T) {
+func TestSynchronized_setup_tests(t *testing.T) {
 	RegisterFailHandler(Fail)
-	RunSpecs(t, "Compound_setup_tests Suite")
+	RunSpecs(t, "Synchronized_setup_tests Suite")
 }
 
 var beforeData string
 
-var _ = CompoundBeforeSuite(func() []byte {
+var _ = SynchronizedBeforeSuite(func() []byte {
 	fmt.Printf("BEFORE_A_%d\n", config.GinkgoConfig.ParallelNode)
 	os.Exit(1)
 	return []byte("WHAT EVZ")
@@ -26,7 +26,7 @@ var _ = CompoundBeforeSuite(func() []byte {
 	println("NEVER SEE THIS")
 })
 
-var _ = Describe("Compound Setup", func() {
+var _ = Describe("Synchronized Setup", func() {
 	It("should do nothing", func() {
 		Ω(true).Should(BeTrue())
 	})

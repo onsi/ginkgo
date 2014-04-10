@@ -14,7 +14,7 @@ import (
 	"time"
 )
 
-var _ = Describe("CompoundBeforeSuiteNode", func() {
+var _ = Describe("SynchronizedBeforeSuiteNode", func() {
 	var failer *Failer.Failer
 	var node SuiteNode
 	var codeLocation types.CodeLocation
@@ -34,7 +34,7 @@ var _ = Describe("CompoundBeforeSuiteNode", func() {
 	})
 
 	newNode := func(bodyA interface{}, bodyB interface{}) SuiteNode {
-		return NewCompoundBeforeSuiteNode(bodyA, bodyB, codeLocation, time.Millisecond, failer)
+		return NewSynchronizedBeforeSuiteNode(bodyA, bodyB, codeLocation, time.Millisecond, failer)
 	}
 
 	Describe("when not running in parallel", func() {

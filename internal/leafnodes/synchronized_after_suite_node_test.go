@@ -15,7 +15,7 @@ import (
 	"time"
 )
 
-var _ = Describe("CompoundAfterSuiteNode", func() {
+var _ = Describe("SynchronizedAfterSuiteNode", func() {
 	var failer *Failer.Failer
 	var node SuiteNode
 	var codeLocation types.CodeLocation
@@ -39,7 +39,7 @@ var _ = Describe("CompoundAfterSuiteNode", func() {
 	})
 
 	newNode := func(bodyA interface{}, bodyB interface{}) SuiteNode {
-		return NewCompoundAfterSuiteNode(bodyA, bodyB, codeLocation, time.Millisecond, failer)
+		return NewSynchronizedAfterSuiteNode(bodyA, bodyB, codeLocation, time.Millisecond, failer)
 	}
 
 	ranThing := func(thing string) {

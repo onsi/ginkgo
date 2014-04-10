@@ -359,8 +359,8 @@ func AfterSuite(body interface{}, timeout ...float64) bool {
 }
 
 //TODO: document
-func CompoundBeforeSuite(node1Body interface{}, allNodesBody interface{}, timeout ...float64) bool {
-	globalSuite.SetCompoundBeforeSuiteNode(
+func SynchronizedBeforeSuite(node1Body interface{}, allNodesBody interface{}, timeout ...float64) bool {
+	globalSuite.SetSynchronizedBeforeSuiteNode(
 		node1Body,
 		allNodesBody,
 		codelocation.New(1),
@@ -370,8 +370,8 @@ func CompoundBeforeSuite(node1Body interface{}, allNodesBody interface{}, timeou
 }
 
 //TODO: document
-func CompoundAfterSuite(allNodesBody interface{}, node1Body interface{}, timeout ...float64) bool {
-	globalSuite.SetCompoundAfterSuiteNode(
+func SynchronizedAfterSuite(allNodesBody interface{}, node1Body interface{}, timeout ...float64) bool {
+	globalSuite.SetSynchronizedAfterSuiteNode(
 		allNodesBody,
 		node1Body,
 		codelocation.New(1),

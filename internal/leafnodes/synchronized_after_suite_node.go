@@ -9,7 +9,7 @@ import (
 	"time"
 )
 
-type compoundAfterSuiteNode struct {
+type synchronizedAfterSuiteNode struct {
 	runnerA *runner
 	runnerB *runner
 
@@ -18,14 +18,14 @@ type compoundAfterSuiteNode struct {
 	runTime time.Duration
 }
 
-func NewCompoundAfterSuiteNode(bodyA interface{}, bodyB interface{}, codeLocation types.CodeLocation, timeout time.Duration, failer *failer.Failer) SuiteNode {
-	return &compoundAfterSuiteNode{
+func NewSynchronizedAfterSuiteNode(bodyA interface{}, bodyB interface{}, codeLocation types.CodeLocation, timeout time.Duration, failer *failer.Failer) SuiteNode {
+	return &synchronizedAfterSuiteNode{
 		runnerA: newRunner(bodyA, codeLocation, timeout, failer, types.SpecComponentTypeAfterSuite, 0),
 		runnerB: newRunner(bodyB, codeLocation, timeout, failer, types.SpecComponentTypeAfterSuite, 0),
 	}
 }
 
-func (node *compoundAfterSuiteNode) Run(parallelNode int, parallelTotal int, syncHost string) bool {
+func (node *synchronizedAfterSuiteNode) Run(parallelNode int, parallelTotal int, syncHost string) bool {
 	node.outcome, node.failure = node.runnerA.run()
 
 	if parallelNode == 1 {
@@ -43,11 +43,11 @@ func (node *compoundAfterSuiteNode) Run(parallelNode int, parallelTotal int, syn
 	return node.outcome == types.SpecStatePassed
 }
 
-func (node *compoundAfterSuiteNode) Passed() bool {
+func (node *synchronizedAfterSuiteNode) Passed() bool {
 	return node.outcome == types.SpecStatePassed
 }
 
-func (node *compoundAfterSuiteNode) Summary() *types.SetupSummary {
+func (node *synchronizedAfterSuiteNode) Summary() *types.SetupSummary {
 	return &types.SetupSummary{
 		ComponentType: node.runnerA.nodeType,
 		CodeLocation:  node.runnerA.codeLocation,
@@ -57,7 +57,7 @@ func (node *compoundAfterSuiteNode) Summary() *types.SetupSummary {
 	}
 }
 
-func (node *compoundAfterSuiteNode) waitUntilOtherNodesAreDone(syncHost string) {
+func (node *synchronizedAfterSuiteNode) waitUntilOtherNodesAreDone(syncHost string) {
 	for {
 		if node.canRun(syncHost) {
 			return
@@ -67,7 +67,7 @@ func (node *compoundAfterSuiteNode) waitUntilOtherNodesAreDone(syncHost string) 
 	}
 }
 
-func (node *compoundAfterSuiteNode) canRun(syncHost string) bool {
+func (node *synchronizedAfterSuiteNode) canRun(syncHost string) bool {
 	resp, err := http.Get(syncHost + "/RemoteAfterSuiteData")
 	if err != nil || resp.StatusCode != http.StatusOK {
 		return false
