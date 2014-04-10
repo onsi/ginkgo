@@ -42,7 +42,7 @@ func NewForwardingReporter(serverHost string, poster Poster, outputInterceptor O
 func (reporter *ForwardingReporter) post(path string, data interface{}) {
 	encoded, _ := json.Marshal(data)
 	buffer := bytes.NewBuffer(encoded)
-	reporter.poster.Post("http://"+reporter.serverHost+path, "application/json", buffer)
+	reporter.poster.Post(reporter.serverHost+path, "application/json", buffer)
 }
 
 func (reporter *ForwardingReporter) SpecSuiteWillBegin(conf config.GinkgoConfigType, summary *types.SuiteSummary) {

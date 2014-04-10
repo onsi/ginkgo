@@ -21,7 +21,7 @@ var _ = Describe("ForwardingReporter", func() {
 	)
 
 	BeforeEach(func() {
-		serverHost = "127.0.0.1:7788"
+		serverHost = "http://127.0.0.1:7788"
 
 		poster = newFakePoster()
 

@@ -15,6 +15,7 @@ import (
 	"io/ioutil"
 	"net"
 	"net/http"
+	"sync"
 )
 
 /*
@@ -22,18 +23,26 @@ Server spins up on an automatically selected port and listens for communication 
 It then forwards that communication to attached reporters.
 */
 type Server struct {
-	listener  net.Listener
-	reporters []reporters.Reporter
+	listener        net.Listener
+	reporters       []reporters.Reporter
+	alives          []func() bool
+	lock            *sync.Mutex
+	beforeSuiteData types.RemoteBeforeSuiteData
+	parallelTotal   int
 }
 
 //Create a new server, automatically selecting a port
-func NewServer() (*Server, error) {
+func NewServer(parallelTotal int) (*Server, error) {
 	listener, err := net.Listen("tcp", "127.0.0.1:0")
 	if err != nil {
 		return nil, err
 	}
 	return &Server{
-		listener: listener,
+		listener:        listener,
+		lock:            &sync.Mutex{},
+		alives:          make([]func() bool, parallelTotal),
+		beforeSuiteData: types.RemoteBeforeSuiteData{nil, types.RemoteBeforeSuiteStatePending},
+		parallelTotal:   parallelTotal,
 	}, nil
 }
 
@@ -43,67 +52,49 @@ func (server *Server) Start() {
 	mux := http.NewServeMux()
 	httpServer.Handler = mux
 
-	mux.HandleFunc("/SpecSuiteWillBegin", func(writer http.ResponseWriter, request *http.Request) {
-		defer request.Body.Close()
-		body, _ := ioutil.ReadAll(request.Body)
-		server.specSuiteWillBegin(body)
-		writer.WriteHeader(200)
-	})
+	//streaming endpoints
+	mux.HandleFunc("/SpecSuiteWillBegin", server.specSuiteWillBegin)
+	mux.HandleFunc("/BeforeSuiteDidRun", server.beforeSuiteDidRun)
+	mux.HandleFunc("/AfterSuiteDidRun", server.afterSuiteDidRun)
+	mux.HandleFunc("/SpecWillRun", server.specWillRun)
+	mux.HandleFunc("/SpecDidComplete", server.specDidComplete)
+	mux.HandleFunc("/SpecSuiteDidEnd", server.specSuiteDidEnd)
 
-	mux.HandleFunc("/BeforeSuiteDidRun", func(writer http.ResponseWriter, request *http.Request) {
-		defer request.Body.Close()
-		body, _ := ioutil.ReadAll(request.Body)
-		server.beforeSuiteDidRun(body)
-		writer.WriteHeader(200)
-	})
-
-	mux.HandleFunc("/AfterSuiteDidRun", func(writer http.ResponseWriter, request *http.Request) {
-		defer request.Body.Close()
-		body, _ := ioutil.ReadAll(request.Body)
-		server.afterSuiteDidRun(body)
-		writer.WriteHeader(200)
-	})
-
-	mux.HandleFunc("/SpecWillRun", func(writer http.ResponseWriter, request *http.Request) {
-		defer request.Body.Close()
-		body, _ := ioutil.ReadAll(request.Body)
-		server.specWillRun(body)
-		writer.WriteHeader(200)
-	})
-
-	mux.HandleFunc("/SpecDidComplete", func(writer http.ResponseWriter, request *http.Request) {
-		defer request.Body.Close()
-		body, _ := ioutil.ReadAll(request.Body)
-		server.specDidComplete(body)
-		writer.WriteHeader(200)
-	})
-
-	mux.HandleFunc("/SpecSuiteDidEnd", func(writer http.ResponseWriter, request *http.Request) {
-		defer request.Body.Close()
-		body, _ := ioutil.ReadAll(request.Body)
-		server.specSuiteDidEnd(body)
-		writer.WriteHeader(200)
-	})
+	//synchronization endpoints
+	mux.HandleFunc("/BeforeSuiteState", server.handleBeforeSuiteState)
+	mux.HandleFunc("/RemoteAfterSuiteData", server.handleRemoteAfterSuiteData)
 
 	go httpServer.Serve(server.listener)
 }
 
 //Stop the server
-func (server *Server) Stop() {
+func (server *Server) Close() {
 	server.listener.Close()
 }
 
 //The address the server can be reached it.  Pass this into the `ForwardingReporter`.
 func (server *Server) Address() string {
-	return server.listener.Addr().String()
+	return "http://" + server.listener.Addr().String()
 }
 
+//
+// Streaming Endpoints
+//
+
 //The server will forward all received messages to Ginkgo reporters registered with `RegisterReporters`
+func (server *Server) readAll(request *http.Request) []byte {
+	defer request.Body.Close()
+	body, _ := ioutil.ReadAll(request.Body)
+	return body
+}
+
 func (server *Server) RegisterReporters(reporters ...reporters.Reporter) {
 	server.reporters = reporters
 }
 
-func (server *Server) specSuiteWillBegin(body []byte) {
+func (server *Server) specSuiteWillBegin(writer http.ResponseWriter, request *http.Request) {
+	body := server.readAll(request)
+
 	var data struct {
 		Config  config.GinkgoConfigType `json:"config"`
 		Summary *types.SuiteSummary     `json:"suite-summary"`
@@ -116,7 +107,8 @@ func (server *Server) specSuiteWillBegin(body []byte) {
 	}
 }
 
-func (server *Server) beforeSuiteDidRun(body []byte) {
+func (server *Server) beforeSuiteDidRun(writer http.ResponseWriter, request *http.Request) {
+	body := server.readAll(request)
 	var setupSummary *types.SetupSummary
 	json.Unmarshal(body, &setupSummary)
 
@@ -125,7 +117,8 @@ func (server *Server) beforeSuiteDidRun(body []byte) {
 	}
 }
 
-func (server *Server) afterSuiteDidRun(body []byte) {
+func (server *Server) afterSuiteDidRun(writer http.ResponseWriter, request *http.Request) {
+	body := server.readAll(request)
 	var setupSummary *types.SetupSummary
 	json.Unmarshal(body, &setupSummary)
 
@@ -134,7 +127,8 @@ func (server *Server) afterSuiteDidRun(body []byte) {
 	}
 }
 
-func (server *Server) specWillRun(body []byte) {
+func (server *Server) specWillRun(writer http.ResponseWriter, request *http.Request) {
+	body := server.readAll(request)
 	var specSummary *types.SpecSummary
 	json.Unmarshal(body, &specSummary)
 
@@ -143,7 +137,8 @@ func (server *Server) specWillRun(body []byte) {
 	}
 }
 
-func (server *Server) specDidComplete(body []byte) {
+func (server *Server) specDidComplete(writer http.ResponseWriter, request *http.Request) {
+	body := server.readAll(request)
 	var specSummary *types.SpecSummary
 	json.Unmarshal(body, &specSummary)
 
@@ -152,11 +147,58 @@ func (server *Server) specDidComplete(body []byte) {
 	}
 }
 
-func (server *Server) specSuiteDidEnd(body []byte) {
+func (server *Server) specSuiteDidEnd(writer http.ResponseWriter, request *http.Request) {
+	body := server.readAll(request)
 	var suiteSummary *types.SuiteSummary
 	json.Unmarshal(body, &suiteSummary)
 
 	for _, reporter := range server.reporters {
 		reporter.SpecSuiteDidEnd(suiteSummary)
 	}
+}
+
+//
+// Synchronization Endpoints
+//
+
+func (server *Server) RegisterAlive(node int, alive func() bool) {
+	server.lock.Lock()
+	defer server.lock.Unlock()
+	server.alives[node-1] = alive
+}
+
+func (server *Server) nodeIsAlive(node int) bool {
+	server.lock.Lock()
+	defer server.lock.Unlock()
+	alive := server.alives[node-1]
+	if alive == nil {
+		return true
+	}
+	return alive()
+}
+
+func (server *Server) handleBeforeSuiteState(writer http.ResponseWriter, request *http.Request) {
+	if request.Method == "POST" {
+		dec := json.NewDecoder(request.Body)
+		dec.Decode(&(server.beforeSuiteData))
+	} else {
+		beforeSuiteData := server.beforeSuiteData
+		if beforeSuiteData.State == types.RemoteBeforeSuiteStatePending && !server.nodeIsAlive(1) {
+			beforeSuiteData.State = types.RemoteBeforeSuiteStateDisappeared
+		}
+		enc := json.NewEncoder(writer)
+		enc.Encode(beforeSuiteData)
+	}
+}
+
+func (server *Server) handleRemoteAfterSuiteData(writer http.ResponseWriter, request *http.Request) {
+	afterSuiteData := types.RemoteAfterSuiteData{
+		CanRun: true,
+	}
+	for i := 2; i <= server.parallelTotal; i++ {
+		afterSuiteData.CanRun = afterSuiteData.CanRun && !server.nodeIsAlive(i)
+	}
+
+	enc := json.NewEncoder(writer)
+	enc.Encode(afterSuiteData)
 }

@@ -55,11 +55,11 @@ func (node *compoundBeforeSuiteNode) runA(parallelTotal int, syncHost string) (t
 	outcome, failure := node.runnerA.run()
 
 	if parallelTotal > 1 {
-		state := RemoteStateStatePassed
+		state := types.RemoteBeforeSuiteStatePassed
 		if outcome != types.SpecStatePassed {
-			state = RemoteStateStateFailed
+			state = types.RemoteBeforeSuiteStateFailed
 		}
-		json := (RemoteState{
+		json := (types.RemoteBeforeSuiteData{
 			Data:  node.data,
 			State: state,
 		}).ToJSON()
@@ -91,19 +91,19 @@ func (node *compoundBeforeSuiteNode) waitForA(syncHost string) (types.SpecState,
 		}
 		resp.Body.Close()
 
-		r := RemoteState{}
-		err = json.Unmarshal(body, &r)
+		beforeSuiteData := types.RemoteBeforeSuiteData{}
+		err = json.Unmarshal(body, &beforeSuiteData)
 		if err != nil {
 			return types.SpecStateFailed, failure("Failed to decode BeforeSuite state")
 		}
 
-		switch r.State {
-		case RemoteStateStatePassed:
-			node.data = r.Data
+		switch beforeSuiteData.State {
+		case types.RemoteBeforeSuiteStatePassed:
+			node.data = beforeSuiteData.Data
 			return types.SpecStatePassed, types.SpecFailure{}
-		case RemoteStateStateFailed:
+		case types.RemoteBeforeSuiteStateFailed:
 			return types.SpecStateFailed, failure("BeforeSuite on Node 1 failed")
-		case RemoteStateStateDisappeared:
+		case types.RemoteBeforeSuiteStateDisappeared:
 			return types.SpecStateFailed, failure("Node 1 disappeared before completing BeforeSuite")
 		}
 

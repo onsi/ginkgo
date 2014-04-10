@@ -159,7 +159,7 @@ var _ = Describe("CompoundBeforeSuiteNode", func() {
 		})
 
 		Context("as the first node, it runs A", func() {
-			var expectedState RemoteState
+			var expectedState types.RemoteBeforeSuiteData
 
 			BeforeEach(func() {
 				parallelNode, parallelTotal = 1, 3
@@ -176,7 +176,7 @@ var _ = Describe("CompoundBeforeSuiteNode", func() {
 
 			Context("when A succeeds", func() {
 				BeforeEach(func() {
-					expectedState = RemoteState{[]byte("my data"), RemoteStateStatePassed}
+					expectedState = types.RemoteBeforeSuiteData{[]byte("my data"), types.RemoteBeforeSuiteStatePassed}
 
 					node = newNode(func() []byte {
 						return []byte("my data")
@@ -200,7 +200,7 @@ var _ = Describe("CompoundBeforeSuiteNode", func() {
 
 			Context("when A fails", func() {
 				BeforeEach(func() {
-					expectedState = RemoteState{nil, RemoteStateStateFailed}
+					expectedState = types.RemoteBeforeSuiteData{nil, types.RemoteBeforeSuiteStateFailed}
 
 					node = newNode(func() []byte {
 						panic("BAM")
@@ -238,10 +238,10 @@ var _ = Describe("CompoundBeforeSuiteNode", func() {
 
 				server.AppendHandlers(ghttp.CombineHandlers(
 					ghttp.VerifyRequest("GET", "/BeforeSuiteState"),
-					ghttp.RespondWith(http.StatusOK, string((RemoteState{nil, RemoteStateStatePending}).ToJSON())),
+					ghttp.RespondWith(http.StatusOK, string((types.RemoteBeforeSuiteData{nil, types.RemoteBeforeSuiteStatePending}).ToJSON())),
 				), ghttp.CombineHandlers(
 					ghttp.VerifyRequest("GET", "/BeforeSuiteState"),
-					ghttp.RespondWith(http.StatusOK, string((RemoteState{nil, RemoteStateStatePending}).ToJSON())),
+					ghttp.RespondWith(http.StatusOK, string((types.RemoteBeforeSuiteData{nil, types.RemoteBeforeSuiteStatePending}).ToJSON())),
 				), ghttp.CombineHandlers(
 					ghttp.VerifyRequest("GET", "/BeforeSuiteState"),
 					ghttp.RespondWithJSONEncodedPtr(&statusCode, &response),
@@ -259,7 +259,7 @@ var _ = Describe("CompoundBeforeSuiteNode", func() {
 
 			Context("when A on node1 succeeds", func() {
 				BeforeEach(func() {
-					response = RemoteState{[]byte("my data"), RemoteStateStatePassed}
+					response = types.RemoteBeforeSuiteData{[]byte("my data"), types.RemoteBeforeSuiteStatePassed}
 					outcome = node.Run(parallelNode, parallelTotal, server.URL())
 				})
 
@@ -283,7 +283,7 @@ var _ = Describe("CompoundBeforeSuiteNode", func() {
 
 			Context("when A on node1 fails", func() {
 				BeforeEach(func() {
-					response = RemoteState{[]byte("my data"), RemoteStateStateFailed}
+					response = types.RemoteBeforeSuiteData{[]byte("my data"), types.RemoteBeforeSuiteStateFailed}
 					outcome = node.Run(parallelNode, parallelTotal, server.URL())
 				})
 
@@ -315,7 +315,7 @@ var _ = Describe("CompoundBeforeSuiteNode", func() {
 
 			Context("when node1 disappears", func() {
 				BeforeEach(func() {
-					response = RemoteState{[]byte("my data"), RemoteStateStateDisappeared}
+					response = types.RemoteBeforeSuiteData{[]byte("my data"), types.RemoteBeforeSuiteStateDisappeared}
 					outcome = node.Run(parallelNode, parallelTotal, server.URL())
 				})
 

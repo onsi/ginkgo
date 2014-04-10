@@ -5,7 +5,6 @@ import (
 	"fmt"
 	"github.com/onsi/ginkgo/config"
 	"github.com/onsi/ginkgo/ginkgo/testsuite"
-	"github.com/onsi/ginkgo/internal/leafnodes"
 	"github.com/onsi/ginkgo/internal/remote"
 	"github.com/onsi/ginkgo/reporters/stenographer"
 	"io"
@@ -103,18 +102,18 @@ func (t *TestRunner) runAndStreamParallelGinkgoSuite() bool {
 	completions := make(chan bool)
 	writers := make([]*logWriter, t.numCPU)
 
-	syncServer, err := leafnodes.NewCompoundServer(t.numCPU)
+	server, err := remote.NewServer(t.numCPU)
 	if err != nil {
-		panic(fmt.Sprintf("Couldn't start sync server: %s", err.Error()))
+		panic("Failed to start parallel spec server")
 	}
-	syncServer.Start()
-	defer syncServer.Close()
-	syncServerAddress := "http://" + syncServer.Address()
+
+	server.Start()
+	defer server.Close()
 
 	for cpu := 0; cpu < t.numCPU; cpu++ {
 		config.GinkgoConfig.ParallelNode = cpu + 1
 		config.GinkgoConfig.ParallelTotal = t.numCPU
-		config.GinkgoConfig.SyncHost = syncServerAddress
+		config.GinkgoConfig.SyncHost = server.Address()
 
 		ginkgoArgs := config.BuildFlagArgs("ginkgo", config.GinkgoConfig, config.DefaultReporterConfig)
 
@@ -122,7 +121,7 @@ func (t *TestRunner) runAndStreamParallelGinkgoSuite() bool {
 
 		cmd := t.cmd(ginkgoArgs, writers[cpu])
 
-		syncServer.RegisterAlive(cpu+1, func() bool {
+		server.RegisterAlive(cpu+1, func() bool {
 			if cmd.ProcessState == nil {
 				return true
 			}
@@ -154,29 +153,20 @@ func (t *TestRunner) runParallelGinkgoSuite() bool {
 
 	stenographer := stenographer.New(!config.DefaultReporterConfig.NoColor)
 	aggregator := remote.NewAggregator(t.numCPU, result, config.DefaultReporterConfig, stenographer)
-	streamServer, err := remote.NewServer()
+
+	server, err := remote.NewServer(t.numCPU)
 	if err != nil {
 		panic("Failed to start parallel spec server")
 	}
-
-	streamServer.RegisterReporters(aggregator)
-	streamServer.Start()
-	defer streamServer.Stop()
-	streamServerAddress := streamServer.Address()
-
-	syncServer, err := leafnodes.NewCompoundServer(t.numCPU)
-	if err != nil {
-		panic(fmt.Sprintf("Couldn't start sync server: %s", err.Error()))
-	}
-	syncServer.Start()
-	defer syncServer.Close()
-	syncServerAddress := "http://" + syncServer.Address()
+	server.RegisterReporters(aggregator)
+	server.Start()
+	defer server.Close()
 
 	for cpu := 0; cpu < t.numCPU; cpu++ {
 		config.GinkgoConfig.ParallelNode = cpu + 1
 		config.GinkgoConfig.ParallelTotal = t.numCPU
-		config.GinkgoConfig.SyncHost = syncServerAddress
-		config.GinkgoConfig.StreamHost = streamServerAddress
+		config.GinkgoConfig.SyncHost = server.Address()
+		config.GinkgoConfig.StreamHost = server.Address()
 
 		ginkgoArgs := config.BuildFlagArgs("ginkgo", config.GinkgoConfig, config.DefaultReporterConfig)
 
@@ -184,7 +174,7 @@ func (t *TestRunner) runParallelGinkgoSuite() bool {
 
 		cmd := t.cmd(ginkgoArgs, reports[cpu])
 
-		syncServer.RegisterAlive(cpu+1, func() bool {
+		server.RegisterAlive(cpu+1, func() bool {
 			if cmd.ProcessState == nil {
 				return true
 			}

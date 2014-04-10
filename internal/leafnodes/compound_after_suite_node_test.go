@@ -128,23 +128,23 @@ var _ = Describe("CompoundAfterSuiteNode", func() {
 		Context("as the first node", func() {
 			BeforeEach(func() {
 				server.AppendHandlers(ghttp.CombineHandlers(
-					ghttp.VerifyRequest("GET", "/AfterSuiteCanRun"),
+					ghttp.VerifyRequest("GET", "/RemoteAfterSuiteData"),
 					func(writer http.ResponseWriter, request *http.Request) {
 						ranThing("Request1")
 					},
-					ghttp.RespondWithJSONEncoded(200, AfterSuiteCanRun{false}),
+					ghttp.RespondWithJSONEncoded(200, types.RemoteAfterSuiteData{false}),
 				), ghttp.CombineHandlers(
-					ghttp.VerifyRequest("GET", "/AfterSuiteCanRun"),
+					ghttp.VerifyRequest("GET", "/RemoteAfterSuiteData"),
 					func(writer http.ResponseWriter, request *http.Request) {
 						ranThing("Request2")
 					},
-					ghttp.RespondWithJSONEncoded(200, AfterSuiteCanRun{false}),
+					ghttp.RespondWithJSONEncoded(200, types.RemoteAfterSuiteData{false}),
 				), ghttp.CombineHandlers(
-					ghttp.VerifyRequest("GET", "/AfterSuiteCanRun"),
+					ghttp.VerifyRequest("GET", "/RemoteAfterSuiteData"),
 					func(writer http.ResponseWriter, request *http.Request) {
 						ranThing("Request3")
 					},
-					ghttp.RespondWithJSONEncoded(200, AfterSuiteCanRun{true}),
+					ghttp.RespondWithJSONEncoded(200, types.RemoteAfterSuiteData{true}),
 				))
 
 				node = newNode(func() {

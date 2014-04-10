@@ -68,7 +68,7 @@ func (node *compoundAfterSuiteNode) waitUntilOtherNodesAreDone(syncHost string) 
 }
 
 func (node *compoundAfterSuiteNode) canRun(syncHost string) bool {
-	resp, err := http.Get(syncHost + "/AfterSuiteCanRun")
+	resp, err := http.Get(syncHost + "/RemoteAfterSuiteData")
 	if err != nil || resp.StatusCode != http.StatusOK {
 		return false
 	}
@@ -79,11 +79,11 @@ func (node *compoundAfterSuiteNode) canRun(syncHost string) bool {
 	}
 	resp.Body.Close()
 
-	r := AfterSuiteCanRun{}
-	err = json.Unmarshal(body, &r)
+	afterSuiteData := types.RemoteAfterSuiteData{}
+	err = json.Unmarshal(body, &afterSuiteData)
 	if err != nil {
 		return false
 	}
 
-	return r.CanRun
+	return afterSuiteData.CanRun
 }
