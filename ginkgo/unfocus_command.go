@@ -19,7 +19,7 @@ func BuildUnfocusCommand() *Command {
 	}
 }
 
-func unfocusSpecs([]string) {
+func unfocusSpecs([]string, []string) {
 	unfocus("Describe")
 	unfocus("Context")
 	unfocus("It")

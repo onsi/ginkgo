@@ -1,11 +1,19 @@
 package flags_test
 
 import (
+	"flag"
+	"fmt"
 	. "github.com/onsi/ginkgo"
 	. "github.com/onsi/ginkgo/integration/_fixtures/flags_tests"
 	. "github.com/onsi/gomega"
 	"time"
 )
+
+var customFlag string
+
+func init() {
+	flag.StringVar(&customFlag, "customFlag", "default", "custom flag!")
+}
 
 var _ = Describe("Testing various flags", func() {
 	FDescribe("the focused set", func() {
@@ -53,6 +61,10 @@ var _ = Describe("Testing various flags", func() {
 
 		It("should honor -slowSpecThreshold", func() {
 			time.Sleep(100 * time.Millisecond)
+		})
+
+		It("should pass in additional arguments after '--' directly to the test process", func() {
+			fmt.Printf("CUSTOM_FLAG: %s", customFlag)
 		})
 	})
 

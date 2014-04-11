@@ -36,21 +36,21 @@ type SpecWatcher struct {
 	interruptHandler *InterruptHandler
 }
 
-func (w *SpecWatcher) WatchSpecs(args []string) {
+func (w *SpecWatcher) WatchSpecs(args []string, additionalArgs []string) {
 	w.notifier.VerifyNotificationsAreAvailable()
 
 	suites := findSuites(args, w.commandFlags.Recurse, w.commandFlags.SkipPackage)
-	w.WatchSuites(suites)
+	w.WatchSuites(suites, additionalArgs)
 }
 
-func (w *SpecWatcher) WatchSuites(suites []*testsuite.TestSuite) {
+func (w *SpecWatcher) WatchSuites(suites []*testsuite.TestSuite, additionalArgs []string) {
 	modifiedSuite := make(chan *testsuite.TestSuite)
 	for _, suite := range suites {
 		go suite.Watch(modifiedSuite)
 	}
 
 	if len(suites) == 1 {
-		w.RunSuite(suites[0])
+		w.RunSuite(suites[0], additionalArgs)
 	}
 
 	for {
@@ -59,15 +59,15 @@ func (w *SpecWatcher) WatchSuites(suites []*testsuite.TestSuite) {
 			w.notifier.SendNotification("Ginkgo", fmt.Sprintf(`Detected change in "%s"...`, suite.PackageName))
 
 			fmt.Printf("\n\nDetected change in %s\n\n", suite.PackageName)
-			w.RunSuite(suite)
+			w.RunSuite(suite, additionalArgs)
 		case <-w.interruptHandler.C:
 			return
 		}
 	}
 }
 
-func (w *SpecWatcher) RunSuite(suite *testsuite.TestSuite) {
-	runner := testrunner.New(suite, w.commandFlags.NumCPU, w.commandFlags.ParallelStream, w.commandFlags.Race, w.commandFlags.Cover)
+func (w *SpecWatcher) RunSuite(suite *testsuite.TestSuite, additionalArgs []string) {
+	runner := testrunner.New(suite, w.commandFlags.NumCPU, w.commandFlags.ParallelStream, w.commandFlags.Race, w.commandFlags.Cover, additionalArgs)
 	err := runner.Compile()
 	if err != nil {
 		fmt.Print(err.Error())

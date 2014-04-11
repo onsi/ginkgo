@@ -91,7 +91,7 @@ type Command struct {
 	FlagSet                   *flag.FlagSet
 	Usage                     []string
 	UsageCommand              string
-	Command                   func(args []string)
+	Command                   func(args []string, additionalArgs []string)
 	SuppressFlagDocumentation bool
 	FlagDocSubstitute         []string
 }
@@ -100,9 +100,9 @@ func (c *Command) Matches(name string) bool {
 	return c.Name == name || (c.AltName != "" && c.AltName == name)
 }
 
-func (c *Command) Run(args []string) {
+func (c *Command) Run(args []string, additionalArgs []string) {
 	c.FlagSet.Parse(args)
-	c.Command(c.FlagSet.Args())
+	c.Command(c.FlagSet.Args(), additionalArgs)
 }
 
 var DefaultCommand *Command
@@ -120,15 +120,35 @@ func init() {
 }
 
 func main() {
-	if len(os.Args) > 1 {
-		commandToRun, found := commandMatching(os.Args[1])
+	args := []string{}
+	additionalArgs := []string{}
+
+	foundDelimiter := false
+
+	for _, arg := range os.Args[1:] {
+		if !foundDelimiter {
+			if arg == "--" {
+				foundDelimiter = true
+				continue
+			}
+		}
+
+		if foundDelimiter {
+			additionalArgs = append(additionalArgs, arg)
+		} else {
+			args = append(args, arg)
+		}
+	}
+
+	if len(args) > 0 {
+		commandToRun, found := commandMatching(args[0])
 		if found {
-			commandToRun.Run(os.Args[2:])
+			commandToRun.Run(args[1:], additionalArgs)
 			return
 		}
 	}
 
-	DefaultCommand.Run(os.Args[1:])
+	DefaultCommand.Run(args, additionalArgs)
 }
 
 func commandMatching(name string) (*Command, bool) {
@@ -168,8 +188,8 @@ func findSuites(args []string, recurse bool, skipPackage string) []*testsuite.Te
 	suites := []*testsuite.TestSuite{}
 
 	if len(args) > 0 {
-		for _, dir := range args {
-			suites = append(suites, testsuite.SuitesInDir(dir, recurse)...)
+		for _, arg := range args {
+			suites = append(suites, testsuite.SuitesInDir(arg, recurse)...)
 		}
 	} else {
 		suites = testsuite.SuitesInDir(".", recurse)

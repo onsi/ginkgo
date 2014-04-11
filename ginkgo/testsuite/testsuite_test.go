@@ -120,21 +120,13 @@ var _ = Describe("TestSuite", func() {
 			suite.Watch(channel)
 		})
 
-		ensureNoNotificationsAreReceived := func() {
-			select {
-			case <-channel:
-				Fail("did not expect to get any notifications")
-			case <-time.After(100 * time.Millisecond):
-			}
-		}
-
 		Context("when a non-go file is created/modified", func() {
 			BeforeEach(func() {
 				writeFile("/colonelmustard", "poupon.jpg", "spicy")
 			})
 
 			It("should not send a notification down the channel", func() {
-				ensureNoNotificationsAreReceived()
+				Consistently(channel).ShouldNot(Receive())
 			})
 		})
 
@@ -148,7 +140,7 @@ func() {}
 
 			It("should send one notification down the channel", func() {
 				Ω(<-channel).Should(Equal(suite))
-				ensureNoNotificationsAreReceived()
+				Consistently(channel).ShouldNot(Receive())
 			})
 		})
 
@@ -162,7 +154,7 @@ func() {}
 
 			It("should send one notification down the channel", func() {
 				Ω(<-channel).Should(Equal(suite))
-				ensureNoNotificationsAreReceived()
+				Consistently(channel).ShouldNot(Receive())
 			})
 		})
 
@@ -172,7 +164,7 @@ func() {}
 			})
 
 			It("should send nothing down the channel", func() {
-				ensureNoNotificationsAreReceived()
+				Consistently(channel).ShouldNot(Receive())
 			})
 		})
 
@@ -192,7 +184,7 @@ func Color() string {
 }
 `)
 					Ω(<-channel).Should(Equal(suite))
-					ensureNoNotificationsAreReceived()
+					Consistently(channel).ShouldNot(Receive())
 				})
 			})
 
@@ -209,7 +201,7 @@ func Color() string {
 }
 `)
 					Ω(<-channel).Should(Equal(suite))
-					ensureNoNotificationsAreReceived()
+					Consistently(channel).ShouldNot(Receive())
 				})
 			})
 		})

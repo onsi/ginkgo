@@ -58,7 +58,7 @@ func fileExists(path string) bool {
 	return false
 }
 
-func generateBootstrap(args []string) {
+func generateBootstrap(args []string, additionalArgs []string) {
 	packageName := getPackage()
 	data := bootstrapData{
 		Package:          packageName,

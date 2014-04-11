@@ -19,7 +19,7 @@ func BuildConvertCommand() *Command {
 	}
 }
 
-func convertPackage(args []string) {
+func convertPackage(args []string, additionalArgs []string) {
 	if len(args) != 1 {
 		println(fmt.Sprintf("usage: ginkgo convert /path/to/your/package"))
 		os.Exit(1)

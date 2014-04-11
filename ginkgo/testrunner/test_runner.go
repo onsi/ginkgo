@@ -21,15 +21,17 @@ type TestRunner struct {
 	parallelStream bool
 	race           bool
 	cover          bool
+	additionalArgs []string
 }
 
-func New(suite *testsuite.TestSuite, numCPU int, parallelStream bool, race bool, cover bool) *TestRunner {
+func New(suite *testsuite.TestSuite, numCPU int, parallelStream bool, race bool, cover bool, additionalArgs []string) *TestRunner {
 	return &TestRunner{
 		suite:          suite,
 		numCPU:         numCPU,
 		parallelStream: parallelStream,
 		race:           race,
 		cover:          cover,
+		additionalArgs: additionalArgs,
 	}
 }
 
@@ -236,6 +238,7 @@ func (t *TestRunner) cmd(ginkgoArgs []string, stream io.Writer) *exec.Cmd {
 	}
 
 	args = append(args, ginkgoArgs...)
+	args = append(args, t.additionalArgs...)
 
 	cmd := exec.Command(t.compiledArtifact(), args...)
 

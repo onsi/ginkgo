@@ -37,7 +37,7 @@ type SpecRunner struct {
 	interruptHandler *InterruptHandler
 }
 
-func (r *SpecRunner) RunSpecs(args []string) {
+func (r *SpecRunner) RunSpecs(args []string, additionalArgs []string) {
 	r.notifier.VerifyNotificationsAreAvailable()
 
 	suites := findSuites(args, r.commandFlags.Recurse, r.commandFlags.SkipPackage)
@@ -49,7 +49,7 @@ func (r *SpecRunner) RunSpecs(args []string) {
 	if r.commandFlags.UntilItFails {
 		iteration := 0
 		for {
-			passed = r.RunSuites(suites)
+			passed = r.RunSuites(suites, additionalArgs)
 			iteration++
 
 			if r.interruptHandler.WasInterrupted() {
@@ -64,7 +64,7 @@ func (r *SpecRunner) RunSpecs(args []string) {
 			}
 		}
 	} else {
-		passed = r.RunSuites(suites)
+		passed = r.RunSuites(suites, additionalArgs)
 	}
 
 	fmt.Printf("\nGinkgo ran in %s\n", time.Since(t))
@@ -117,12 +117,12 @@ func (c *compiler) compile() {
 	c.compilationError <- err
 }
 
-func (r *SpecRunner) RunSuites(suites []*testsuite.TestSuite) bool {
+func (r *SpecRunner) RunSuites(suites []*testsuite.TestSuite, additionalArgs []string) bool {
 	passed := true
 
 	suiteCompilers := make([]*compiler, len(suites))
 	for i, suite := range suites {
-		runner := testrunner.New(suite, r.commandFlags.NumCPU, r.commandFlags.ParallelStream, r.commandFlags.Race, r.commandFlags.Cover)
+		runner := testrunner.New(suite, r.commandFlags.NumCPU, r.commandFlags.ParallelStream, r.commandFlags.Race, r.commandFlags.Cover, additionalArgs)
 		suiteCompilers[i] = &compiler{
 			runner:           runner,
 			compilationError: make(chan error, 1),

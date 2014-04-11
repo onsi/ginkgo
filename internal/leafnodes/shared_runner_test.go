@@ -223,7 +223,7 @@ func AsynchronousSharedRunnerBehaviors(build func(body interface{}, timeout time
 					didRun = true
 					innerCodeLocation = codelocation.New(0)
 					panic("ack!")
-				}, 10*time.Millisecond, failer, componentCodeLocation).Run()
+				}, 100*time.Millisecond, failer, componentCodeLocation).Run()
 			})
 
 			It("should return the panic", func() {

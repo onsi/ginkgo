@@ -17,7 +17,7 @@ func BuildHelpCommand() *Command {
 	}
 }
 
-func printHelp(args []string) {
+func printHelp(args []string, additionalArgs []string) {
 	if len(args) == 0 {
 		usage()
 	} else {

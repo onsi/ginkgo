@@ -41,7 +41,7 @@ type specData struct {
 	PackageImportPath string
 }
 
-func generateSpec(args []string) {
+func generateSpec(args []string, additionalArgs []string) {
 	subject := ""
 	if len(args) > 0 {
 		subject = args[0]
