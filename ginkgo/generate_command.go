@@ -10,15 +10,22 @@ import (
 )
 
 func BuildGenerateCommand() *Command {
+	var noDot bool
+	flagSet := flag.NewFlagSet("generate", flag.ExitOnError)
+	flagSet.BoolVar(&noDot, "nodot", false, "If set, generate will generate a test file that does not . import ginkgo and gomega")
+
 	return &Command{
 		Name:         "generate",
-		FlagSet:      flag.NewFlagSet("generate", flag.ExitOnError),
+		FlagSet:      flagSet,
 		UsageCommand: "ginkgo generate <filename>",
 		Usage: []string{
 			"Generate a test file named filename_test.go",
 			"If the optional <filename> argument is omitted, a file named after the package in the current directory will be created.",
+			"Accepts the following flags:",
 		},
-		Command: generateSpec,
+		Command: func(args []string, additionalArgs []string) {
+			generateSpec(args, noDot)
+		},
 	}
 }
 
@@ -26,8 +33,9 @@ var specText = `package {{.Package}}_test
 
 import (
 	. "{{.PackageImportPath}}"
-	. "github.com/onsi/ginkgo"
-	. "github.com/onsi/gomega"
+
+	{{if .IncludeImports}}. "github.com/onsi/ginkgo"{{end}}
+	{{if .IncludeImports}}. "github.com/onsi/gomega"{{end}}
 )
 
 var _ = Describe("{{.Subject}}", func() {
@@ -39,9 +47,10 @@ type specData struct {
 	Package           string
 	Subject           string
 	PackageImportPath string
+	IncludeImports    bool
 }
 
-func generateSpec(args []string, additionalArgs []string) {
+func generateSpec(args []string, noDot bool) {
 	subject := ""
 	if len(args) > 0 {
 		subject = args[0]
@@ -61,6 +70,7 @@ func generateSpec(args []string, additionalArgs []string) {
 		Package:           packageName,
 		Subject:           formattedSubject,
 		PackageImportPath: getPackageImportPath(),
+		IncludeImports:    !noDot,
 	}
 
 	targetFile := fmt.Sprintf("%s_test.go", subject)
@@ -83,6 +93,7 @@ func generateSpec(args []string, additionalArgs []string) {
 	}
 
 	specTemplate.Execute(f, data)
+	goFmt(targetFile)
 }
 
 func getPackageImportPath() string {

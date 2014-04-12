@@ -323,13 +323,14 @@ func XIt(text string, _ ...interface{}) bool {
 
 //Measure blocks run the passed in body function repeatedly (determined by the samples argument)
 //and accumulate metrics provided to the Benchmarker by the body function.
-func Measure(text string, body func(Benchmarker), samples int) bool {
+//TODO: body should...
+func Measure(text string, body interface{}, samples int) bool {
 	globalSuite.PushMeasureNode(text, body, types.FlagTypeNone, codelocation.New(1), samples)
 	return true
 }
 
 //You can focus individual Measures using FMeasure
-func FMeasure(text string, body func(Benchmarker), samples int) bool {
+func FMeasure(text string, body interface{}, samples int) bool {
 	globalSuite.PushMeasureNode(text, body, types.FlagTypeFocused, codelocation.New(1), samples)
 	return true
 }

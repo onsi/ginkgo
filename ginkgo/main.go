@@ -81,6 +81,7 @@ import (
 	"github.com/onsi/ginkgo/config"
 	"github.com/onsi/ginkgo/ginkgo/testsuite"
 	"os"
+	"os/exec"
 	"regexp"
 	"strings"
 )
@@ -113,6 +114,7 @@ func init() {
 	Commands = append(Commands, BuildWatchCommand())
 	Commands = append(Commands, BuildBootstrapCommand())
 	Commands = append(Commands, BuildGenerateCommand())
+	Commands = append(Commands, BuildNodotCommand())
 	Commands = append(Commands, BuildConvertCommand())
 	Commands = append(Commands, BuildUnfocusCommand())
 	Commands = append(Commands, BuildVersionCommand())
@@ -217,4 +219,11 @@ func findSuites(args []string, recurse bool, skipPackage string) []*testsuite.Te
 	}
 
 	return suites
+}
+
+func goFmt(path string) {
+	err := exec.Command("go", "fmt", path).Run()
+	if err != nil {
+		complainAndQuit("Could not fmt: " + err.Error())
+	}
 }

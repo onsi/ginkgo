@@ -6,6 +6,7 @@ import (
 	"io/ioutil"
 	"os"
 	"path/filepath"
+	"strings"
 )
 
 var _ = Describe("Subcommand", func() {
@@ -23,9 +24,62 @@ var _ = Describe("Subcommand", func() {
 			Ω(content).Should(ContainSubstring("RegisterFailHandler"))
 			Ω(content).Should(ContainSubstring("RunSpecs"))
 
+			Ω(content).Should(ContainSubstring("\t" + `. "github.com/onsi/ginkgo"`))
+			Ω(content).Should(ContainSubstring("\t" + `. "github.com/onsi/gomega"`))
+
 			output, err = runGinkgo(pkgPath, "bootstrap")
 			Ω(err).Should(HaveOccurred())
 			Ω(output).Should(ContainSubstring("foo_suite_test.go already exists"))
+		})
+
+		It("should import nodot declarations when told to", func() {
+			pkgPath := tmpPath("foo")
+			os.Mkdir(pkgPath, 0777)
+			output, err := runGinkgo(pkgPath, "bootstrap", "--nodot")
+			Ω(err).ShouldNot(HaveOccurred())
+			Ω(output).Should(ContainSubstring("foo_suite_test.go"))
+
+			content, err := ioutil.ReadFile(filepath.Join(pkgPath, "foo_suite_test.go"))
+			Ω(err).ShouldNot(HaveOccurred())
+			Ω(content).Should(ContainSubstring("func TestFoo(t *testing.T) {"))
+			Ω(content).Should(ContainSubstring("RegisterFailHandler"))
+			Ω(content).Should(ContainSubstring("RunSpecs"))
+
+			Ω(content).Should(ContainSubstring("var It = ginkgo.It"))
+			Ω(content).Should(ContainSubstring("var Ω = gomega.Ω"))
+
+			Ω(content).Should(ContainSubstring("\t" + `"github.com/onsi/ginkgo"`))
+			Ω(content).Should(ContainSubstring("\t" + `"github.com/onsi/gomega"`))
+		})
+	})
+
+	Describe("nodot", func() {
+		It("should update the declarations in the bootstrap file", func() {
+			pkgPath := tmpPath("foo")
+			os.Mkdir(pkgPath, 0777)
+
+			_, err := runGinkgo(pkgPath, "bootstrap", "--nodot")
+			Ω(err).ShouldNot(HaveOccurred())
+
+			byteContent, err := ioutil.ReadFile(filepath.Join(pkgPath, "foo_suite_test.go"))
+			Ω(err).ShouldNot(HaveOccurred())
+
+			content := string(byteContent)
+			content = strings.Replace(content, "var It =", "var MyIt =", -1)
+			content = strings.Replace(content, "var Ω = gomega.Ω\n", "", -1)
+
+			err = ioutil.WriteFile(filepath.Join(pkgPath, "foo_suite_test.go"), []byte(content), os.ModePerm)
+			Ω(err).ShouldNot(HaveOccurred())
+
+			_, err = runGinkgo(pkgPath, "nodot")
+			Ω(err).ShouldNot(HaveOccurred())
+
+			byteContent, err = ioutil.ReadFile(filepath.Join(pkgPath, "foo_suite_test.go"))
+			Ω(err).ShouldNot(HaveOccurred())
+
+			Ω(byteContent).Should(ContainSubstring("var MyIt = ginkgo.It"))
+			Ω(byteContent).ShouldNot(ContainSubstring("var It = ginkgo.It"))
+			Ω(byteContent).Should(ContainSubstring("var Ω = gomega.Ω"))
 		})
 	})
 
@@ -46,6 +100,8 @@ var _ = Describe("Subcommand", func() {
 				content, err := ioutil.ReadFile(filepath.Join(pkgPath, "foo_bar_test.go"))
 				Ω(err).ShouldNot(HaveOccurred())
 				Ω(content).Should(ContainSubstring(`var _ = Describe("FooBar", func() {`))
+				Ω(content).Should(ContainSubstring("\t" + `. "github.com/onsi/ginkgo"`))
+				Ω(content).Should(ContainSubstring("\t" + `. "github.com/onsi/gomega"`))
 
 				output, err = runGinkgo(pkgPath, "generate")
 				Ω(err).Should(HaveOccurred())
@@ -99,6 +155,19 @@ var _ = Describe("Subcommand", func() {
 				content, err := ioutil.ReadFile(filepath.Join(pkgPath, "baz_buzz_test.go"))
 				Ω(err).ShouldNot(HaveOccurred())
 				Ω(content).Should(ContainSubstring(`var _ = Describe("BazBuzz", func() {`))
+			})
+		})
+
+		Context("with nodot", func() {
+			It("should not import ginkgo or gomega", func() {
+				output, err := runGinkgo(pkgPath, "generate", "--nodot")
+				Ω(err).ShouldNot(HaveOccurred())
+				Ω(output).Should(ContainSubstring("foo_bar_test.go"))
+
+				content, err := ioutil.ReadFile(filepath.Join(pkgPath, "foo_bar_test.go"))
+				Ω(err).ShouldNot(HaveOccurred())
+				Ω(content).ShouldNot(ContainSubstring("\t" + `. "github.com/onsi/ginkgo"`))
+				Ω(content).ShouldNot(ContainSubstring("\t" + `. "github.com/onsi/gomega"`))
 			})
 		})
 	})
