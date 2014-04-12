@@ -69,12 +69,12 @@ func (stenographer *FakeStenographer) AnnounceSpecWillRun(spec *types.SpecSummar
 	stenographer.registerCall("AnnounceSpecWillRun", spec)
 }
 
-func (stenographer *FakeStenographer) AnnounceBeforeSuiteFailure(summary *types.SetupSummary, succinct bool) {
-	stenographer.registerCall("AnnounceBeforeSuiteFailure", summary, succinct)
+func (stenographer *FakeStenographer) AnnounceBeforeSuiteFailure(summary *types.SetupSummary, succinct bool, fullTrace bool) {
+	stenographer.registerCall("AnnounceBeforeSuiteFailure", summary, succinct, fullTrace)
 }
 
-func (stenographer *FakeStenographer) AnnounceAfterSuiteFailure(summary *types.SetupSummary, succinct bool) {
-	stenographer.registerCall("AnnounceAfterSuiteFailure", summary, succinct)
+func (stenographer *FakeStenographer) AnnounceAfterSuiteFailure(summary *types.SetupSummary, succinct bool, fullTrace bool) {
+	stenographer.registerCall("AnnounceAfterSuiteFailure", summary, succinct, fullTrace)
 }
 func (stenographer *FakeStenographer) AnnounceCapturedOutput(output string) {
 	stenographer.registerCall("AnnounceCapturedOutput", output)
@@ -100,14 +100,14 @@ func (stenographer *FakeStenographer) AnnounceSkippedSpec(spec *types.SpecSummar
 	stenographer.registerCall("AnnounceSkippedSpec", spec)
 }
 
-func (stenographer *FakeStenographer) AnnounceSpecTimedOut(spec *types.SpecSummary, succinct bool) {
-	stenographer.registerCall("AnnounceSpecTimedOut", spec, succinct)
+func (stenographer *FakeStenographer) AnnounceSpecTimedOut(spec *types.SpecSummary, succinct bool, fullTrace bool) {
+	stenographer.registerCall("AnnounceSpecTimedOut", spec, succinct, fullTrace)
 }
 
-func (stenographer *FakeStenographer) AnnounceSpecPanicked(spec *types.SpecSummary, succinct bool) {
-	stenographer.registerCall("AnnounceSpecPanicked", spec, succinct)
+func (stenographer *FakeStenographer) AnnounceSpecPanicked(spec *types.SpecSummary, succinct bool, fullTrace bool) {
+	stenographer.registerCall("AnnounceSpecPanicked", spec, succinct, fullTrace)
 }
 
-func (stenographer *FakeStenographer) AnnounceSpecFailed(spec *types.SpecSummary, succinct bool) {
-	stenographer.registerCall("AnnounceSpecFailed", spec, succinct)
+func (stenographer *FakeStenographer) AnnounceSpecFailed(spec *types.SpecSummary, succinct bool, fullTrace bool) {
+	stenographer.registerCall("AnnounceSpecFailed", spec, succinct, fullTrace)
 }

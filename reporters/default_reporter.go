@@ -35,13 +35,13 @@ func (reporter *DefaultReporter) SpecSuiteWillBegin(config config.GinkgoConfigTy
 
 func (reporter *DefaultReporter) BeforeSuiteDidRun(setupSummary *types.SetupSummary) {
 	if setupSummary.State != types.SpecStatePassed {
-		reporter.stenographer.AnnounceBeforeSuiteFailure(setupSummary, reporter.config.Succinct)
+		reporter.stenographer.AnnounceBeforeSuiteFailure(setupSummary, reporter.config.Succinct, reporter.config.FullTrace)
 	}
 }
 
 func (reporter *DefaultReporter) AfterSuiteDidRun(setupSummary *types.SetupSummary) {
 	if setupSummary.State != types.SpecStatePassed {
-		reporter.stenographer.AnnounceAfterSuiteFailure(setupSummary, reporter.config.Succinct)
+		reporter.stenographer.AnnounceAfterSuiteFailure(setupSummary, reporter.config.Succinct, reporter.config.FullTrace)
 	}
 }
 
@@ -66,11 +66,11 @@ func (reporter *DefaultReporter) SpecDidComplete(specSummary *types.SpecSummary)
 	case types.SpecStateSkipped:
 		reporter.stenographer.AnnounceSkippedSpec(specSummary)
 	case types.SpecStateTimedOut:
-		reporter.stenographer.AnnounceSpecTimedOut(specSummary, reporter.config.Succinct)
+		reporter.stenographer.AnnounceSpecTimedOut(specSummary, reporter.config.Succinct, reporter.config.FullTrace)
 	case types.SpecStatePanicked:
-		reporter.stenographer.AnnounceSpecPanicked(specSummary, reporter.config.Succinct)
+		reporter.stenographer.AnnounceSpecPanicked(specSummary, reporter.config.Succinct, reporter.config.FullTrace)
 	case types.SpecStateFailed:
-		reporter.stenographer.AnnounceSpecFailed(specSummary, reporter.config.Succinct)
+		reporter.stenographer.AnnounceSpecFailed(specSummary, reporter.config.Succinct, reporter.config.FullTrace)
 	}
 }
 

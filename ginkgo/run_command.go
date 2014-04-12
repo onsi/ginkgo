@@ -22,9 +22,10 @@ func BuildRunCommand() *Command {
 	return &Command{
 		Name:         "",
 		FlagSet:      commandFlags.FlagSet,
-		UsageCommand: "ginkgo <FLAGS> <PACKAGES>...",
+		UsageCommand: "ginkgo <FLAGS> <PACKAGES> -- <PASS-THROUGHS>",
 		Usage: []string{
 			"Run the tests in the passed in <PACKAGES> (or the package in the current directory if left blank).",
+			"Any arguments after -- will be passed to the test.",
 			"Accepts the following flags:",
 		},
 		Command: runner.RunSpecs,

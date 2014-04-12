@@ -73,4 +73,10 @@ var _ = Describe("Testing various flags", func() {
 			println("smores")
 		})
 	})
+
+	Describe("a failing test", func() {
+		It("should fail", func() {
+			Ω(true).Should(Equal(false))
+		})
+	})
 })

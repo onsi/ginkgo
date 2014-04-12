@@ -38,8 +38,8 @@ type Stenographer interface {
 	AnnounceSpecRunCompletion(summary *types.SuiteSummary, succinct bool)
 
 	AnnounceSpecWillRun(spec *types.SpecSummary)
-	AnnounceBeforeSuiteFailure(summary *types.SetupSummary, succinct bool)
-	AnnounceAfterSuiteFailure(summary *types.SetupSummary, succinct bool)
+	AnnounceBeforeSuiteFailure(summary *types.SetupSummary, succinct bool, fullTrace bool)
+	AnnounceAfterSuiteFailure(summary *types.SetupSummary, succinct bool, fullTrace bool)
 
 	AnnounceCapturedOutput(output string)
 
@@ -50,9 +50,9 @@ type Stenographer interface {
 	AnnouncePendingSpec(spec *types.SpecSummary, noisy bool)
 	AnnounceSkippedSpec(spec *types.SpecSummary)
 
-	AnnounceSpecTimedOut(spec *types.SpecSummary, succinct bool)
-	AnnounceSpecPanicked(spec *types.SpecSummary, succinct bool)
-	AnnounceSpecFailed(spec *types.SpecSummary, succinct bool)
+	AnnounceSpecTimedOut(spec *types.SpecSummary, succinct bool, fullTrace bool)
+	AnnounceSpecPanicked(spec *types.SpecSummary, succinct bool, fullTrace bool)
+	AnnounceSpecFailed(spec *types.SpecSummary, succinct bool, fullTrace bool)
 }
 
 func New(color bool) Stenographer {
@@ -172,15 +172,15 @@ func (s *consoleStenographer) AnnounceSpecWillRun(spec *types.SpecSummary) {
 	s.midBlock()
 }
 
-func (s *consoleStenographer) AnnounceBeforeSuiteFailure(summary *types.SetupSummary, succinct bool) {
-	s.announceSetupFailure("BeforeSuite", summary, succinct)
+func (s *consoleStenographer) AnnounceBeforeSuiteFailure(summary *types.SetupSummary, succinct bool, fullTrace bool) {
+	s.announceSetupFailure("BeforeSuite", summary, succinct, fullTrace)
 }
 
-func (s *consoleStenographer) AnnounceAfterSuiteFailure(summary *types.SetupSummary, succinct bool) {
-	s.announceSetupFailure("AfterSuite", summary, succinct)
+func (s *consoleStenographer) AnnounceAfterSuiteFailure(summary *types.SetupSummary, succinct bool, fullTrace bool) {
+	s.announceSetupFailure("AfterSuite", summary, succinct, fullTrace)
 }
 
-func (s *consoleStenographer) announceSetupFailure(name string, summary *types.SetupSummary, succinct bool) {
+func (s *consoleStenographer) announceSetupFailure(name string, summary *types.SetupSummary, succinct bool, fullTrace bool) {
 	s.startBlock()
 	var message string
 	switch summary.State {
@@ -197,7 +197,7 @@ func (s *consoleStenographer) announceSetupFailure(name string, summary *types.S
 	indentation := s.printCodeLocationBlock([]string{name}, []types.CodeLocation{summary.CodeLocation}, summary.ComponentType, 0, true, succinct)
 
 	s.printNewLine()
-	s.printFailure(indentation, summary.State, summary.Failure)
+	s.printFailure(indentation, summary.State, summary.Failure, fullTrace)
 
 	s.endBlock()
 }
@@ -254,16 +254,16 @@ func (s *consoleStenographer) AnnounceSkippedSpec(spec *types.SpecSummary) {
 	s.stream()
 }
 
-func (s *consoleStenographer) AnnounceSpecTimedOut(spec *types.SpecSummary, succinct bool) {
-	s.printSpecFailure("•... Timeout", spec, succinct)
+func (s *consoleStenographer) AnnounceSpecTimedOut(spec *types.SpecSummary, succinct bool, fullTrace bool) {
+	s.printSpecFailure("•... Timeout", spec, succinct, fullTrace)
 }
 
-func (s *consoleStenographer) AnnounceSpecPanicked(spec *types.SpecSummary, succinct bool) {
-	s.printSpecFailure("•! Panic", spec, succinct)
+func (s *consoleStenographer) AnnounceSpecPanicked(spec *types.SpecSummary, succinct bool, fullTrace bool) {
+	s.printSpecFailure("•! Panic", spec, succinct, fullTrace)
 }
 
-func (s *consoleStenographer) AnnounceSpecFailed(spec *types.SpecSummary, succinct bool) {
-	s.printSpecFailure("• Failure", spec, succinct)
+func (s *consoleStenographer) AnnounceSpecFailed(spec *types.SpecSummary, succinct bool, fullTrace bool) {
+	s.printSpecFailure("• Failure", spec, succinct, fullTrace)
 }
 
 func (s *consoleStenographer) startBlock() {
@@ -302,18 +302,18 @@ func (s *consoleStenographer) printBlockWithMessage(header string, message strin
 	s.endBlock()
 }
 
-func (s *consoleStenographer) printSpecFailure(message string, spec *types.SpecSummary, succinct bool) {
+func (s *consoleStenographer) printSpecFailure(message string, spec *types.SpecSummary, succinct bool, fullTrace bool) {
 	s.startBlock()
 	s.println(0, s.colorize(redColor+boldStyle, "%s [%.3f seconds]", message, spec.RunTime.Seconds()))
 
 	indentation := s.printCodeLocationBlock(spec.ComponentTexts, spec.ComponentCodeLocations, spec.Failure.ComponentType, spec.Failure.ComponentIndex, true, succinct)
 
 	s.printNewLine()
-	s.printFailure(indentation, spec.State, spec.Failure)
+	s.printFailure(indentation, spec.State, spec.Failure, fullTrace)
 	s.endBlock()
 }
 
-func (s *consoleStenographer) printFailure(indentation int, state types.SpecState, failure types.SpecFailure) {
+func (s *consoleStenographer) printFailure(indentation int, state types.SpecState, failure types.SpecFailure, fullTrace bool) {
 	if state == types.SpecStatePanicked {
 		s.println(indentation, s.colorize(redColor+boldStyle, failure.Message))
 		s.println(indentation, s.colorize(redColor, "%v", failure.ForwardedPanic))
@@ -325,6 +325,11 @@ func (s *consoleStenographer) printFailure(indentation int, state types.SpecStat
 		s.println(indentation, s.colorize(redColor, failure.Message))
 		s.printNewLine()
 		s.println(indentation, failure.Location.String())
+		if fullTrace {
+			s.printNewLine()
+			s.println(indentation, s.colorize(redColor, "Full Stack Trace"))
+			s.println(indentation, failure.Location.FullStackTrace)
+		}
 	}
 }
 

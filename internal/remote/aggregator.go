@@ -175,14 +175,14 @@ func (aggregator *Aggregator) flushCompletedSpecs() {
 func (aggregator *Aggregator) announceBeforeSuite(setupSummary *types.SetupSummary) {
 	aggregator.stenographer.AnnounceCapturedOutput(setupSummary.CapturedOutput)
 	if setupSummary.State != types.SpecStatePassed {
-		aggregator.stenographer.AnnounceBeforeSuiteFailure(setupSummary, aggregator.config.Succinct)
+		aggregator.stenographer.AnnounceBeforeSuiteFailure(setupSummary, aggregator.config.Succinct, aggregator.config.FullTrace)
 	}
 }
 
 func (aggregator *Aggregator) announceAfterSuite(setupSummary *types.SetupSummary) {
 	aggregator.stenographer.AnnounceCapturedOutput(setupSummary.CapturedOutput)
 	if setupSummary.State != types.SpecStatePassed {
-		aggregator.stenographer.AnnounceAfterSuiteFailure(setupSummary, aggregator.config.Succinct)
+		aggregator.stenographer.AnnounceAfterSuiteFailure(setupSummary, aggregator.config.Succinct, aggregator.config.FullTrace)
 	}
 }
 
@@ -208,11 +208,11 @@ func (aggregator *Aggregator) announceSpec(specSummary *types.SpecSummary) {
 	case types.SpecStateSkipped:
 		aggregator.stenographer.AnnounceSkippedSpec(specSummary)
 	case types.SpecStateTimedOut:
-		aggregator.stenographer.AnnounceSpecTimedOut(specSummary, aggregator.config.Succinct)
+		aggregator.stenographer.AnnounceSpecTimedOut(specSummary, aggregator.config.Succinct, aggregator.config.FullTrace)
 	case types.SpecStatePanicked:
-		aggregator.stenographer.AnnounceSpecPanicked(specSummary, aggregator.config.Succinct)
+		aggregator.stenographer.AnnounceSpecPanicked(specSummary, aggregator.config.Succinct, aggregator.config.FullTrace)
 	case types.SpecStateFailed:
-		aggregator.stenographer.AnnounceSpecFailed(specSummary, aggregator.config.Succinct)
+		aggregator.stenographer.AnnounceSpecFailed(specSummary, aggregator.config.Succinct, aggregator.config.FullTrace)
 	}
 }
 

@@ -28,6 +28,7 @@ var _ = Describe("DefaultReporter", func() {
 			SlowSpecThreshold: 0.1,
 			NoisyPendings:     true,
 			Verbose:           true,
+			FullTrace:         true,
 		}
 
 		reporter = reporters.NewDefaultReporter(reporterConfig, stenographer)
@@ -102,7 +103,7 @@ var _ = Describe("DefaultReporter", func() {
 				reporter.BeforeSuiteDidRun(summary)
 
 				Ω(stenographer.Calls).Should(HaveLen(1))
-				Ω(stenographer.Calls[0]).Should(Equal(call("AnnounceBeforeSuiteFailure", summary, false)))
+				Ω(stenographer.Calls[0]).Should(Equal(call("AnnounceBeforeSuiteFailure", summary, false, true)))
 			})
 		})
 	})
@@ -126,7 +127,7 @@ var _ = Describe("DefaultReporter", func() {
 				reporter.AfterSuiteDidRun(summary)
 
 				Ω(stenographer.Calls).Should(HaveLen(1))
-				Ω(stenographer.Calls[0]).Should(Equal(call("AnnounceAfterSuiteFailure", summary, false)))
+				Ω(stenographer.Calls[0]).Should(Equal(call("AnnounceAfterSuiteFailure", summary, false, true)))
 			})
 		})
 	})
@@ -268,7 +269,7 @@ var _ = Describe("DefaultReporter", func() {
 			})
 
 			It("should announce the timedout spec", func() {
-				Ω(stenographer.Calls[0]).Should(Equal(call("AnnounceSpecTimedOut", spec, false)))
+				Ω(stenographer.Calls[0]).Should(Equal(call("AnnounceSpecTimedOut", spec, false, true)))
 			})
 		})
 
@@ -278,7 +279,7 @@ var _ = Describe("DefaultReporter", func() {
 			})
 
 			It("should announce the panicked spec", func() {
-				Ω(stenographer.Calls[0]).Should(Equal(call("AnnounceSpecPanicked", spec, false)))
+				Ω(stenographer.Calls[0]).Should(Equal(call("AnnounceSpecPanicked", spec, false, true)))
 			})
 		})
 
@@ -288,7 +289,7 @@ var _ = Describe("DefaultReporter", func() {
 			})
 
 			It("should announce the failed spec", func() {
-				Ω(stenographer.Calls[0]).Should(Equal(call("AnnounceSpecFailed", spec, false)))
+				Ω(stenographer.Calls[0]).Should(Equal(call("AnnounceSpecFailed", spec, false, true)))
 			})
 		})
 
@@ -356,7 +357,7 @@ var _ = Describe("DefaultReporter", func() {
 				})
 
 				It("should announce the timedout spec", func() {
-					Ω(stenographer.Calls[0]).Should(Equal(call("AnnounceSpecTimedOut", spec, true)))
+					Ω(stenographer.Calls[0]).Should(Equal(call("AnnounceSpecTimedOut", spec, true, true)))
 				})
 			})
 
@@ -366,7 +367,7 @@ var _ = Describe("DefaultReporter", func() {
 				})
 
 				It("should announce the panicked spec", func() {
-					Ω(stenographer.Calls[0]).Should(Equal(call("AnnounceSpecPanicked", spec, true)))
+					Ω(stenographer.Calls[0]).Should(Equal(call("AnnounceSpecPanicked", spec, true, true)))
 				})
 			})
 
@@ -376,7 +377,7 @@ var _ = Describe("DefaultReporter", func() {
 				})
 
 				It("should announce the failed spec", func() {
-					Ω(stenographer.Calls[0]).Should(Equal(call("AnnounceSpecFailed", spec, true)))
+					Ω(stenographer.Calls[0]).Should(Equal(call("AnnounceSpecFailed", spec, true, true)))
 				})
 			})
 		})

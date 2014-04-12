@@ -18,9 +18,10 @@ func BuildWatchCommand() *Command {
 	return &Command{
 		Name:         "watch",
 		FlagSet:      commandFlags.FlagSet,
-		UsageCommand: "ginkgo watch <FLAGS> <PACKAGES>...",
+		UsageCommand: "ginkgo watch <FLAGS> <PACKAGES> -- <PASS-THROUGHS>",
 		Usage: []string{
 			"Watches the tests in the passed in <PACKAGES> and runs them when changes occur.",
+			"Any arguments after -- will be passed to the test.",
 		},
 		Command:                   watcher.WatchSpecs,
 		SuppressFlagDocumentation: true,

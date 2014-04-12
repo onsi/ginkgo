@@ -27,7 +27,7 @@ var _ = Describe("Flags Specs", func() {
 		Ω(output).Should(ContainSubstring("10 Passed"))
 		Ω(output).Should(ContainSubstring("0 Failed"))
 		Ω(output).Should(ContainSubstring("1 Pending"))
-		Ω(output).Should(ContainSubstring("1 Skipped"))
+		Ω(output).Should(ContainSubstring("2 Skipped"))
 		Ω(output).Should(ContainSubstring("[PENDING]"))
 		Ω(output).Should(ContainSubstring("marshmallow"))
 		Ω(output).Should(ContainSubstring("chocolate"))
@@ -70,11 +70,11 @@ var _ = Describe("Flags Specs", func() {
 		Ω(output).Should(ContainSubstring("3 Passed"))
 		Ω(output).Should(ContainSubstring("0 Failed"))
 		Ω(output).Should(ContainSubstring("0 Pending"))
-		Ω(output).Should(ContainSubstring("9 Skipped"))
+		Ω(output).Should(ContainSubstring("10 Skipped"))
 	})
 
 	It("should override the programmatic focus when told to skip", func() {
-		output, err := runGinkgo(pathToTest, "--noColor", "--skip=marshmallow")
+		output, err := runGinkgo(pathToTest, "--noColor", "--skip=marshmallow|failing")
 		Ω(err).ShouldNot(HaveOccurred())
 		Ω(output).ShouldNot(ContainSubstring("marshmallow"))
 		Ω(output).Should(ContainSubstring("chocolate"))
@@ -82,7 +82,7 @@ var _ = Describe("Flags Specs", func() {
 		Ω(output).Should(ContainSubstring("10 Passed"))
 		Ω(output).Should(ContainSubstring("0 Failed"))
 		Ω(output).Should(ContainSubstring("1 Pending"))
-		Ω(output).Should(ContainSubstring("1 Skipped"))
+		Ω(output).Should(ContainSubstring("2 Skipped"))
 	})
 
 	It("should run the race detector when told to", func() {
@@ -92,7 +92,7 @@ var _ = Describe("Flags Specs", func() {
 	})
 
 	It("should randomize tests when told to", func() {
-		output, err := runGinkgo(pathToTest, "--noColor", "--randomizeAllSpecs", "--seed=17")
+		output, err := runGinkgo(pathToTest, "--noColor", "--randomizeAllSpecs", "--seed=21")
 		Ω(err).ShouldNot(HaveOccurred())
 		orders := getRandomOrders(output)
 		Ω(orders[0]).ShouldNot(BeNumerically("<", orders[1]))
@@ -102,7 +102,7 @@ var _ = Describe("Flags Specs", func() {
 		output, err := runGinkgo(pathToTest, "--skipMeasurements")
 		Ω(err).ShouldNot(HaveOccurred())
 		Ω(output).ShouldNot(ContainSubstring("Ran 3 samples:"), "has a measurement")
-		Ω(output).Should(ContainSubstring("2 Skipped"))
+		Ω(output).Should(ContainSubstring("3 Skipped"))
 	})
 
 	It("should watch for slow specs", func() {
@@ -116,5 +116,11 @@ var _ = Describe("Flags Specs", func() {
 		output, err := runGinkgo(pathToTest, "--", "--customFlag=madagascar")
 		Ω(err).ShouldNot(HaveOccurred())
 		Ω(output).Should(ContainSubstring("CUSTOM_FLAG: madagascar"))
+	})
+
+	It("should print out full stack traces for failures when told to", func() {
+		output, err := runGinkgo(pathToTest, "--focus=a failing test", "--trace")
+		Ω(err).Should(HaveOccurred())
+		Ω(output).Should(ContainSubstring("Full Stack Trace"))
 	})
 })

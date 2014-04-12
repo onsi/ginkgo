@@ -172,10 +172,10 @@ func usage() {
 }
 
 func usageForCommand(command *Command, longForm bool) {
-	fmt.Fprintf(os.Stderr, "%s\n", command.UsageCommand)
-	fmt.Fprintf(os.Stderr, "  %s\n", strings.Join(command.Usage, "\n  "))
+	fmt.Fprintf(os.Stderr, "%s\n%s\n", command.UsageCommand, strings.Repeat("-", len(command.UsageCommand)))
+	fmt.Fprintf(os.Stderr, "%s\n", strings.Join(command.Usage, "\n"))
 	if command.SuppressFlagDocumentation && !longForm {
-		fmt.Fprintf(os.Stderr, "  %s\n", strings.Join(command.FlagDocSubstitute, "\n  "))
+		fmt.Fprintf(os.Stderr, "%s\n", strings.Join(command.FlagDocSubstitute, "\n  "))
 	} else {
 		command.FlagSet.PrintDefaults()
 	}
