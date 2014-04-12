@@ -39,15 +39,15 @@ import (
 	"testing"
 )
 
-func Test{{.PackageTitleCase}}(t *testing.T) {
+func Test{{.FormattedPackage}}(t *testing.T) {
 	RegisterFailHandler(Fail)
-	RunSpecs(t, "{{.PackageTitleCase}} Suite")
+	RunSpecs(t, "{{.FormattedPackage}} Suite")
 }
 `
 
 type bootstrapData struct {
 	Package          string
-	PackageTitleCase string
+	FormattedPackage string
 	GinkgoImport     string
 	GomegaImport     string
 }
@@ -73,9 +73,10 @@ func fileExists(path string) bool {
 
 func generateBootstrap(noDot bool) {
 	packageName := getPackage()
+	formattedPackage := strings.Replace(strings.Title(strings.Replace(packageName, "_", " ", -1)), " ", "", -1)
 	data := bootstrapData{
 		Package:          packageName,
-		PackageTitleCase: strings.Title(packageName),
+		FormattedPackage: formattedPackage,
 		GinkgoImport:     `. "github.com/onsi/ginkgo"`,
 		GomegaImport:     `. "github.com/onsi/gomega"`,
 	}

@@ -7,7 +7,7 @@ import (
 	"testing"
 )
 
-func TestConvert_fixtures(t *testing.T) {
+func TestConvertFixtures(t *testing.T) {
 	RegisterFailHandler(Fail)
-	RunSpecs(t, "Convert_fixtures Suite")
+	RunSpecs(t, "ConvertFixtures Suite")
 }
