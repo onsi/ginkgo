@@ -3,6 +3,12 @@ The Ginkgo CLI
 
 The Ginkgo CLI is fully documented [here](http://onsi.github.io/ginkgo/#the_ginkgo_cli)
 
+You can also learn more by running:
+
+	ginkgo help
+
+Here are some of the more commonly used commands:
+
 To install:
 
 	go install github.com/onsi/ginkgo/ginkgo
@@ -61,9 +67,28 @@ To generate a test file:
 
 	ginkgo generate <test_file_name>
 
+To bootstrap/generate test files without using "." imports:
+
+	ginkgo bootstrap --nodot
+	ginkgo generate --nodot
+
+this will explicitly export all the identifiers in Ginkgo and Gomega allowing you to rename them to avoid collisions.  When you pull to the latest Ginkgo/Gomega you'll want to run
+
+	ginkgo nodot
+
+to refresh this list and pull in any new identifiers.  In particular, this will pull in any new Gomega matchers that get added.
+
+To convert an existing XUnit style test suite to a Ginkgo-style test suite:
+
+	ginkgo convert .
+
 To unfocus tests:
 
 	ginkgo unfocus
+
+or
+
+	ginkgo blur
 
 To print out Ginkgo's version:
 

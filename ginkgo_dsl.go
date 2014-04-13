@@ -58,10 +58,8 @@ func init() {
 
 //GinkgoWriter implements an io.Writer
 //When running in verbose mode any writes to GinkgoWriter will be immediately printed
-//to stdout
-//
-//When not in verbose mode, GinkgoWriter will buffer any writes and flush them to screen
-//only if the current test fails.  In this mode, GinkgoWriter is truncated between tests.
+//to stdout.  Otherwise, GinkgoWriter will buffer any writes produced during the current test and flush them to screen
+//only if the current test fails.
 var GinkgoWriter io.Writer
 
 //The interface by which Ginkgo receives *testing.T
@@ -89,7 +87,8 @@ func GinkgoT(optionalOffset ...int) GinkgoTInterface {
 	return testingtproxy.New(GinkgoWriter, Fail, offset)
 }
 
-//The interface returned by GinkgoT()
+//The interface returned by GinkgoT().  This covers most of the methods
+//in the testing package's T.
 type GinkgoTInterface interface {
 	Fail()
 	Error(args ...interface{})
@@ -113,20 +112,20 @@ type GinkgoTInterface interface {
 //and a SpecSummary just before a spec begins and just after a spec ends
 type Reporter reporters.Reporter
 
-//Asynchronous specs given a channel of the Done type.  You must close the channel
+//Asynchronous specs are given a channel of the Done type.  You must close or write to the channel
 //to tell Ginkgo that your async test is done.
 type Done chan<- interface{}
 
-//GinkgoTestDescription represents the information about the current running test returned by CurrentGinkgoTest
-//  ComponentTexts: a list of all texts for the Describes & Contexts leading up to the current test
-//  FullTestText: a concatenation of ComponentTexts
-//  TestText: the text in the actual It or Measure node
-//  IsMeasurement: true if the current test is a measurement
-//  FileName: the name of the file containing the current test
-//  LineNumber: the line number for the current test
+//GinkgoTestDescription represents the information about the current running test returned by CurrentGinkgoTestDescription
+//	FullTestText: a concatenation of ComponentTexts and the TestText
+//	ComponentTexts: a list of all texts for the Describes & Contexts leading up to the current test
+//	TestText: the text in the actual It or Measure node
+//	IsMeasurement: true if the current test is a measurement
+//	FileName: the name of the file containing the current test
+//	LineNumber: the line number for the current test
 type GinkgoTestDescription struct {
-	ComponentTexts []string
 	FullTestText   string
+	ComponentTexts []string
 	TestText       string
 
 	IsMeasurement bool
@@ -158,8 +157,8 @@ func CurrentGinkgoTestDescription() GinkgoTestDescription {
 //
 //You use the Time() function to time how long the passed in body function takes to run
 //You use the RecordValue() function to track arbitrary numerical measurements.
-//The optional info argument is passed to the test reporter and can be used, alongside a custom
-//reporter, to provide the measurement data with context.
+//The optional info argument is passed to the test reporter and can be used to
+// provide the measurement data to a custom reporter with context.
 //
 //See http://onsi.github.io/ginkgo/#benchmark_tests for more details
 type Benchmarker interface {
@@ -168,7 +167,7 @@ type Benchmarker interface {
 }
 
 //RunSpecs is the entry point for the Ginkgo test runner.
-//You must call this within a Go Test... function.
+//You must call this within a Golang testing TestX(t *testing.T) function.
 //
 //To bootstrap a test suite you can use the Ginkgo CLI:
 //
@@ -186,7 +185,7 @@ func RunSpecsWithDefaultAndCustomReporters(t GinkgoTestingT, description string,
 }
 
 //To run your tests with your custom reporter(s) (and *not* Ginkgo's default reporter), replace
-//RunSpecs() with this method.
+//RunSpecs() with this method.  Note that parallel tests will not work correctly without the default reporter
 func RunSpecsWithCustomReporters(t GinkgoTestingT, description string, specReporters []Reporter) bool {
 	writer := GinkgoWriter.(*writer.Writer)
 	writer.SetStream(config.DefaultReporterConfig.Verbose)
@@ -323,7 +322,9 @@ func XIt(text string, _ ...interface{}) bool {
 
 //Measure blocks run the passed in body function repeatedly (determined by the samples argument)
 //and accumulate metrics provided to the Benchmarker by the body function.
-//TODO: body should...
+//
+//The body function must have the signature:
+//	func(b Benchmarker)
 func Measure(text string, body interface{}, samples int) bool {
 	globalSuite.PushMeasureNode(text, body, types.FlagTypeNone, codelocation.New(1), samples)
 	return true
@@ -347,19 +348,70 @@ func XMeasure(text string, _ ...interface{}) bool {
 	return true
 }
 
-//TODO: document
+//BeforeSuite blocks are run just once before any specs are run.  When running in parallel, each
+//parallel node process will call BeforeSuite.
+//
+//BeforeSuite blocks can be made asynchronous by providing a body function that accepts a Done channel
+//
+//You may only register *one* BeforeSuite handler per test suite.  You typically do so in your bootstrap file at the top level.
 func BeforeSuite(body interface{}, timeout ...float64) bool {
 	globalSuite.SetBeforeSuiteNode(body, codelocation.New(1), parseTimeout(timeout...))
 	return true
 }
 
-//TODO: document
+//AfterSuite blocks are *always* run after all the specs regardless of whether specs have passed or failed.
+//Moreover, if Ginkgo receives an interrupt signal (^C) it will attempt to run the AfterSuite before exiting.
+//
+//When running in parallel, each parallel node process will call AfterSuite.
+//
+//AfterSuite blocks can be made asynchronous by providing a body function that accepts a Done channel
+//
+//You may only register *one* AfterSuite handler per test suite.  You typically do so in your bootstrap file at the top level.
 func AfterSuite(body interface{}, timeout ...float64) bool {
 	globalSuite.SetAfterSuiteNode(body, codelocation.New(1), parseTimeout(timeout...))
 	return true
 }
 
-//TODO: document
+//SynchronizedBeforeSuite blocks are primarily meant to solve the problem of setting up singleton external resources shared across
+//nodes when running tests in parallel.  For example, say you have a shared database that you can only start one instance of that
+//must be used in your tests.  When running in parallel, only one node should set up the database and all other nodes should wait
+//until that node is done before running.
+//
+//SynchronizedBeforeSuite accomplishes this by taking *two* function arguments.  The first is only run on parallel node #1.  The second is
+//run on all nodes, but *only* after the first function completes succesfully.  Ginkgo also makes it possible to send data from the first function (on Node 1)
+//to the second function (on all the other nodes).
+//
+//The functions have the following signatures.  The first function (which only runs on node 1) has the signature:
+//
+//	func() []byte
+//
+//or, to run asynchronously:
+//
+//	func(done Done) []byte
+//
+//The byte array returned by the first function is then passed to the second function, which has the signature:
+//
+//	func(data []byte)
+//
+//or, to run asynchronously:
+//
+//	func(data []byte, done Done)
+//
+//Here's a simple pseudo-code example that starts a shared database on Node 1 and shares the database's address with the other nodes:
+//
+//	var sharedDBClient db.Client
+//	var sharedDBRunner db.Runner
+//
+//	var _ = SynchronizedBeforeSuite(func() []byte {
+//		sharedDBRunner = db.NewRunner()
+//		err := sharedDBRunner.Start()
+//		Ω(err).ShouldNot(HaveOccurred())
+//		return []byte(sharedDBRunner.URL)
+//	}, func(data []byte) {
+//		sharedDBClient = db.NewClient()
+//		err := sharedDBClient.Connect(string(data))
+//		Ω(err).ShouldNot(HaveOccurred())
+//	})
 func SynchronizedBeforeSuite(node1Body interface{}, allNodesBody interface{}, timeout ...float64) bool {
 	globalSuite.SetSynchronizedBeforeSuiteNode(
 		node1Body,
@@ -370,7 +422,23 @@ func SynchronizedBeforeSuite(node1Body interface{}, allNodesBody interface{}, ti
 	return true
 }
 
-//TODO: document
+//SynchronizedAfterSuite blocks complement the SynchronizedBeforeSuite blocks in solving the problem of setting up
+//external singleton resources shared across nodes when running tests in parallel.
+//
+//SynchronizedAfterSuite accomplishes this by taking *two* function arguments.  The first runs on all nodes.  The second runs only on parallel node #1
+//and *only* after all other nodes have finished and exited.  This ensures that node 1, and any resources it is running, remain alive until
+//all other nodes are finished.
+//
+//Both functions have the same signature: either func() or func(done Done) to run asynchronously.
+//
+//Here's a pseudo-code example that complements that given in SynchronizedBeforeSuite.  Here, SynchronizedAfterSuite is used to tear down the shared database
+//only after all nodes have finished:
+//
+//	var _ = SynchronizedAfterSuite(func() {
+//		sharedDBClient.Cleanup()
+//	}, func() {
+//		sharedDBRunner.Stop()
+//	})
 func SynchronizedAfterSuite(allNodesBody interface{}, node1Body interface{}, timeout ...float64) bool {
 	globalSuite.SetSynchronizedAfterSuiteNode(
 		allNodesBody,
