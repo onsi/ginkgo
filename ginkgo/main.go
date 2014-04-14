@@ -25,6 +25,10 @@ To run tests in particular packages:
 
 	ginkgo <flags> /path/to/package /path/to/another/package
 
+To pass arguments/flags to your tests:
+
+	ginkgo <flags> <packages> -- <pass-throughs>
+
 To run tests in parallel
 
 	ginkgo -nodes=N

@@ -399,17 +399,17 @@ func AfterSuite(body interface{}, timeout ...float64) bool {
 //
 //Here's a simple pseudo-code example that starts a shared database on Node 1 and shares the database's address with the other nodes:
 //
-//	var sharedDBClient db.Client
-//	var sharedDBRunner db.Runner
+//	var dbClient db.Client
+//	var dbRunner db.Runner
 //
 //	var _ = SynchronizedBeforeSuite(func() []byte {
-//		sharedDBRunner = db.NewRunner()
-//		err := sharedDBRunner.Start()
+//		dbRunner = db.NewRunner()
+//		err := dbRunner.Start()
 //		Ω(err).ShouldNot(HaveOccurred())
-//		return []byte(sharedDBRunner.URL)
+//		return []byte(dbRunner.URL)
 //	}, func(data []byte) {
-//		sharedDBClient = db.NewClient()
-//		err := sharedDBClient.Connect(string(data))
+//		dbClient = db.NewClient()
+//		err := dbClient.Connect(string(data))
 //		Ω(err).ShouldNot(HaveOccurred())
 //	})
 func SynchronizedBeforeSuite(node1Body interface{}, allNodesBody interface{}, timeout ...float64) bool {
@@ -435,9 +435,9 @@ func SynchronizedBeforeSuite(node1Body interface{}, allNodesBody interface{}, ti
 //only after all nodes have finished:
 //
 //	var _ = SynchronizedAfterSuite(func() {
-//		sharedDBClient.Cleanup()
+//		dbClient.Cleanup()
 //	}, func() {
-//		sharedDBRunner.Stop()
+//		dbRunner.Stop()
 //	})
 func SynchronizedAfterSuite(allNodesBody interface{}, node1Body interface{}, timeout ...float64) bool {
 	globalSuite.SetSynchronizedAfterSuiteNode(

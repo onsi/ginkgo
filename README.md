@@ -15,6 +15,7 @@ To discuss Ginkgo and get updates, join the [google group](https://groups.google
     - [`BeforeEach` and `AfterEach` blocks](http://onsi.github.io/ginkgo/#extracting_common_setup_) for setup and teardown
     - [`It` blocks](http://onsi.github.io/ginkgo/#individual_specs_) that hold your assertions
     - [`JustBeforeEach` blocks](http://onsi.github.io/ginkgo/#separating_creation_and_configuration_) that separate creation from configuration (also known as the subject action pattern).
+    - [`BeforeSuite` and `AfterSuite` blocks](http://onsi.github.io/ginkgo/#global_setup_and_teardown__and_) to prep for and cleanup after a suite.
 
 - A comprehensive test runner that lets you:
     - Mark specs as [pending](http://onsi.github.io/ginkgo/#pending_specs)
@@ -27,13 +28,15 @@ To discuss Ginkgo and get updates, join the [google group](https://groups.google
 - Built-in support for [benchmarking](http://onsi.github.io/ginkgo/#benchmark_tests) your code.  Control the number of benchmark samples as you gather runtimes and other, arbitrary, bits of numerical information about your code. 
 
 - `ginkgo`: a command line interface with plenty of handy command line arguments for [running your tests](http://onsi.github.io/ginkgo/#running_tests) and [generating](http://onsi.github.io/ginkgo/#generators) test files.  Here are a few choice examples:
-    - `ginkgo -nodes=N` runs your tests in `N` parallel processes
-    - `ginkgo -cover` will run your tests using Golang's code coverage tool
+    - `ginkgo -nodes=N` runs your tests in `N` parallel processes and print out coherent output in realtime
+    - `ginkgo -cover` runs your tests using Golang's code coverage tool
     - `ginkgo convert` converts an XUnit-style `testing` package to a Ginkgo-style package
     - `ginkgo -focus="REGEXP"` and `ginkgo -skip="REGEXP"` allow you to specify a subset of tests to run via regular expression
     - `ginkgo -r` runs all tests suites under the current directory
     - `ginkgo -v` prints out identifying information for each tests just before it runs
-    - `ginkgo -watch` watches packages for changes, then reruns tests
+    - `ginkgo watch` watches packages for changes, then reruns tests
+
+    And much more: run `ginkgo help` for details!
 
     The `ginkgo` CLI is convenient, but purely optional -- Ginkgo works just fine with `go test`
 
@@ -104,4 +107,4 @@ Go explore!
 
 Ginkgo is MIT-Licensed
 
-`ginkgo -watch` uses [fsnotify](https://github.com/howeyc/fsnotify) which is embedded in the source to simplify distribution.  fsnotify has a BSD-style license.  This dependency will be removed when fsnotify is added to Golang's standard library in v1.3
+`ginkgo watch` uses [fsnotify](https://github.com/howeyc/fsnotify) which is embedded in the source to simplify distribution.  fsnotify has a BSD-style license.  This dependency will be removed when fsnotify is added to Golang's standard library in v1.3
