@@ -51,7 +51,8 @@ This will generate a file named `books_suite_test.go` containing:
 Let's break this down:
 
 - Go allows us to specify the `books_test` package alongside the `books` package.  Using `books_test` instead of `books` allows us to respect the encapsulation of the `books` package: your tests will need to import `books` and access it from the outside, like any other package.  This is preferred to reaching into the package and testing its internals and leads to more behavioral tests.  You can, of course, opt out of this -- just change `package books_test` to `package books`
-- `TestBooks` is a `testing` test.  The Go test runner will run this function when you run `go test`.
+- We import the `ginkgo` and `gomega` packages into the test's top-level namespace by performing a dot-import.  If you'd rather not do this, check out the [Avoiding Dot Imports](#avoiding_dot_imports) section below.
+- `TestBooks` is a `testing` test.  The Go test runner will run this function when you run `go test` or `ginkgo`.
 - `RegisterFailHandler(Fail)`: A Ginkgo test signals failure by calling Ginkgo's `Fail(description string)` function.  We pass this function to Gomega using `RegisterFailHandler`.  This is the sole connection point between Ginkgo and Gomega.
 - `RunSpecs(t *testing.T, suiteDescription string)` tells Ginkgo to start the test suite.  Ginkgo will automatically fail the `testing.T` if any of your specs fail.
 
@@ -96,7 +97,7 @@ This will generate a file named `book_test.go` containing:
 
 Let's break this down:
 
-- We import the `ginkgo` and `gomega` packages into the global name space.  While incredibly convenient, this is not - strictly speaking - necessary.
+- We import the `ginkgo` and `gomega` packages into the top-level namespace.  While incredibly convenient, this is not - strictly speaking - necessary.  If youd like to avoid this check out the [Avoiding Dot Imports](#avoiding_dot_imports) section below.
 - Similarly, we import the `books` package since we are using the special `books_test` package to isolate our tests from our code.  For convenience we import the `books` package into the namespace.  You can opt out of either these decisions by editing the generated test file.
 - We add a *top-level* describe container using Ginkgo's `Describe(text string, body func()) bool` function.  The `var _ = ...` trick allows us to evaluate the Describe at the top level without having to wrap it in a `func init() {}`
 
@@ -196,18 +197,6 @@ More details about `Fail` and about using matcher libraries other than Gomega ca
 
 Ginkgo provides a globally available `io.Writer` called `GinkgoWriter` that you can write to.  `GinkgoWriter` aggregates input while a test is running and only dumps it to stdout if the test fails.  When running in verbose mode (`ginkgo -v` or `go test -ginkgo.v`) `GinkgoWriter` always immediately redirects its input to stdout.
 
-###Converting Existing Tests
-
-If you have an existing XUnit test suite that you'd like to convert to a Ginkgo suite, you can use the `ginkgo convert` command:
-
-    ginkgo convert github.com/your/package
-
-This will generate a Ginkgo bootstrap file and convert any `TestX...(t *testing.T)` XUnit style tsts into simply (flat) Ginkgo tests.  It also substitutes `GinkgoT()` for any references to `*testing.T` in your code.  `ginkgo convert` usually gets things right the first time round, but you may need to go in and tweak your tests after the fact.
-
-Also: `ginkgo convert` will **overwrite** your existing test files, so make sure you don't have any uncommitted changes before trying `ginkgo convert`!
-
-`ginkgo convert` is the brainchild of [Tim Jarratt](http://github.com/tjarratt)
- 
 ---
 
 ##Structuring Your Specs
@@ -399,11 +388,11 @@ Abstractly, `JustBeforeEach` allows you to decouple **creation** from **configur
 >
 > Some parting words: `JustBeforeEach` is a powerful tool that can be easily abused.  Use it well.
 
-### Global Setup and Teardown: Before and After the Suite
+### Global Setup and Teardown: `BeforeSuite` and `AfterSuite`
 
 Sometimes you want to run some set up code once before the entire test suite and some clean up code once after the entire test suite.  For example, perhaps you need to spin up and tear down an external database.
 
-A convenient pattern for doing this is to use the bootstrap test file:
+Ginkgo provides `BeforeSuite` and `AfterSuite` to accomplish this.  You typically define these at the top-level in the bootstrap file.  For example, say you need to set up an external database:
 
     package books_test
 
@@ -411,16 +400,44 @@ A convenient pattern for doing this is to use the bootstrap test file:
         . "github.com/onsi/ginkgo"
         . "github.com/onsi/gomega"
 
+        "your/db"
+
         "testing"
     )
+
+    var dbRunner *db.Runner
+    var dbClient *db.Client
 
     func TestBooks(t *testing.T) {
         RegisterFailHandler(Fail)
 
-        //Code to set up your infrastructure
         RunSpecs(t, "Books Suite")
-        //Code to tear down your infrastructure
     }
+
+    var _ = BeforeSuite(func() {
+        dbRunner = db.NewRunner()
+        err := dbRunner.Start()
+        Expect(err).NotTo(HaveOccurred())
+
+        dbClient = db.NewClient()
+        err = dbClient.Connect(dbRunner.Address())
+        Expect(err).NotTo(HaveOccurred())
+    })
+
+    var _ = AfterSuite(func() {
+        dbClient.Cleanup()
+        dbRunner.Stop()
+    })
+
+The `BeforeSuite` function is run before any specs are run.  If a failure occurs in the `BeforeSuite` then none of the specs are run and the test suite ends.
+
+The `AfterSuite` function is run after all the specs have run, regardless of whether any tests have failed.  Since the `AfterSuite` typically includes code to clean up persistent state ginkgo will *also* run `AfterSuite` when you send the running test suite an interrupt signal (`^C`).  To abort the `AfterSuite` send another interrupt signal.
+
+Both `BeforeSuite` and `AfterSuite` can be run asynchronously by passing a function that takes a `Done` parameter.
+
+You are only allowed to define `BeforeSuite` and `AfterSuite` *once* in a test suite (you shouldn't need more than one!) 
+
+Finally, when running in parallel, each parallel process will run `BeforeSuite` and `AfterSuite` functions.  [Look here](#parallel_specs) for more on running tests in parallel.
 
 ---
 
@@ -466,6 +483,8 @@ It is often convenient, when developing to be able to run a subset of specs.  Gi
 
 > You can unfocus programatically focused tests by running `ginkgo unfocus`.  This will strip the `F`s off of any `FDescribe`, `FContext`, and `FIt`s that your tests in the current directory may have.
 
+> If you want to skip entire packages (when running `ginkgo` recursively with the `-r` flag) you can pass a regular expression to `--skipPackage=REGEXP`.  Any packages with names matching this regexp will be skipped entirely.
+
 ### Spec Permutation
 
 By default, Ginkgo will randomize the order in which your specs are run.  This can help suss out test pollution early on in a suite's development.
@@ -480,7 +499,7 @@ Ginkgo uses the current time to seed the randomization.  It prints out the seed 
 
 Ginkgo has support for running specs in parallel.  It does this by spawning separate `go test` processes and dividing the specs evenly among these processes.  This is important for a BDD test framework, as the shared context of the closures does not parallelize well in-process.
 
-To run a Ginkgo suite in parallel you must use the `ginkgo` CLI.  To run N processes in parallel invoke:
+To run a Ginkgo suite in parallel you *must* use the `ginkgo` CLI.  To run N processes in parallel invoke:
 
     ginkgo -nodes=N
 
@@ -492,9 +511,11 @@ It is sometimes necessary/preferable to view the output of the individual parall
 
 When run with the `-stream` flag the test runner simply pipes the output from each individual node as it runs (it prepends each line of output with the node # that the output came from).  This results in less coherent output (lines from different nodes will be interleaved) but can be valuable when debugging flakey/hanging test suites.
 
-On windows, parallel tests default to `-stream` because Ginkgo can't capture logging to stdout/stderr (necessary for aggregation) on windows.
+> On windows, parallel tests default to `-stream` because Ginkgo can't capture logging to stdout/stderr (necessary for aggregation) on windows.
 
-If your tests spin up or connect to external processes you'll need to make sure that those connections are safe in a parallel context.  One way to ensure this would be, for example, to spin up a separate instance of an external resource for each Ginkgo process.  For example, let's say your tests spin up and hit a local web server.  You could bring up a different server bound to a different port for each of your parallel processes:
+#### Managing External Processes in Parallel Test Suites
+
+If your tests spin up or connect to external processes you'll need to make sure that those connections are safe in a parallel context.  One way to ensure this would be, for example, to spin up a separate instance of an external resource for each Ginkgo process.  For example, let's say your tests spin up and hit a database.  You could bring up a different database server bound to a different port for each of your parallel processes:
 
     package books_test
 
@@ -503,19 +524,82 @@ If your tests spin up or connect to external processes you'll need to make sure 
         . "github.com/onsi/gomega"
         "github.com/onsi/ginkgo/config"
 
+        "your/db"
+
         "testing"
     )
+
+    var dbRunner *db.Runner
+    var dbClient *db.Client
+
 
     func TestBooks(t *testing.T) {
         RegisterFailHandler(Fail)
 
-        port := 4000 + config.GinkgoConfig.ParallelNode
-        startServer(port)
-
         RunSpecs(t, "Books Suite")
     }
 
+    var _ = BeforeSuite(func() {
+        port := 4000 + config.GinkgoConfig.ParallelNode
+
+        dbRunner = db.NewRunner()
+        err := dbRunner.Start(port)
+        Expect(err).NotTo(HaveOccurred())
+
+        dbClient = db.NewClient()
+        err = dbClient.Connect(dbRunner.Address())
+        Expect(err).NotTo(HaveOccurred())
+    })
+
+    var _ = AfterSuite(func() {
+        dbClient.Cleanup()
+        dbRunner.Stop()
+    })
+
+
 The `github.com/onsi/ginkgo/config` package provides your suite with access to the command line configuration parameters passed into Ginkgo.  The `config.GinkgoConfig.ParallelNode` parameter is the index for the current node (starts with `1`, goes up to `N`).  Similarly `config.GinkgoConfig.ParallelTotal` is the total number of nodes running in parallel.
+
+#### Managing *Singleton* External Processes in Parallel Test Suites
+
+When possible, you should make every effort to start up a new instance of an external resource for every parallel node.  This helps avoid test-pollution by strictly separating each parallel node.
+
+Sometimes (rarely) this is not possible.  Perhaps, for reasons beyond your control, you can only start one instance of a service on your machine.  Ginkgo provides a workaround for this with `SynchronizedBeforeSuite` and `SynchronizedAfterSuite`.
+
+The idea here is simple.  With `SynchronizedBeforeSuite` Ginkgo gives you a way to run some preliminary setup code on just one parallel node (Node 1) and other setup code on all nodes.  Ginkgo synchronizes these functions and guarantees that node 1 will complete its preliminary setup before the other nodes run their setup code.  Moreover, Ginkgo makes it possible for the preliminary setup code on the first node to pass information on to the setup code on the other nodes.
+
+Here's what our earlier database example looks like using `SynchronizedBeforeSuite`:
+
+    var _ = SynchronizedBeforeSuite(func() []byte {
+        port := 4000 + config.GinkgoConfig.ParallelNode
+
+        dbRunner = db.NewRunner()
+        err := dbRunner.Start(port)
+        Expect(err).NotTo(HaveOccurred())
+
+        return []byte(dbRunner.Address())
+    }, func(data []byte) {
+        dbAddress := string(data)
+
+        dbClient = db.NewClient()
+        err = dbClient.Connect(dbAddress)
+        Expect(err).NotTo(HaveOccurred())
+    })
+
+`SynchronizedBeforeSuite` must be passed two functions.  The first must return `[]byte` and the second must accept `[]byte`.  When running with multiple nodes the *first* function is only run on node 1.  When this function completes, all nodes (including node 1) proceed to run the *second* function and will receive the data returned by the first function.  In this example, we use this data-passing mechanism to forward the database's address (set up on node 1) to all nodes.
+
+To clean up correctly, you should use `SynchronizedAfterSuite`.  Continuing our example:
+
+    var _ = SynchronizedAfterSuite(func() {
+        dbClient.Cleanup()
+    }, func() {
+        dbRunner.Stop()
+    })
+
+With `SynchronizedAfterSuite` the *first* function is run on *all* nodes (including node 1).  The *second* function is only run on node 1.  Moreover, the second function is only run when all other nodes have finished running.  This is important, since node 1 is responsible for setting up and tearing down the singleton resources it must wait for the other nodes to end before tearing down the resources they depend on.
+
+Finally, all of these function can be passed an additional `Done` parameter to run asynchronously.  When running asynchronously, an optional timeout can be provided as a third parameter to `SynchronizedBeforeSuite` and `SynchronizedAfterSuite`.  The same timeout is applied to both functions.
+
+> Note an important subtelty:  The `dbRunner` variable is *only* populated on Node 1.  No other node should attempt to touch the data in that variable (it will be nil on the other nodes).  The `dbClient` variable, which is populated in the second `SynchronizedBeforeSuite` function is, of course, available across all nodes.
 
 ---
 
@@ -570,53 +654,29 @@ To run the suites in other directories, simply run:
 
     $ ginkgo /path/to/package /path/to/other/package ...
 
-There are a number of command line flags that can be passed to the `ginkgo` test runner.  Additionally, most of these can also be passed to `go test`, though you will need to prepend `ginkgo.` to each flag when using `go test`:
+To pass arguments/custom flags down to your test suite:
 
-- `--seed=SEED`
+    $ ginkgo -- <PASS-THROUGHS>
 
-    The random seed to use when permuting the specs.
+Note: the `--` is important!  Only arguments following `--` will be passed to your suite.
 
-- `--randomizeAllSpecs`
+Of course, ginkgo takes a number of flags.  These must be specified *before* you specify the packages to run.  Here's a summary of the call syntax:
 
-    If present, all specs will be permuted.  By default Ginkgo will only permute the order of the top level containers.
+    $ ginkgo <FLAGS> <PACKAGES> -- <PASS-THROUGHS>
 
-- `--skipMeasurements`
+Here are the flags that Ginkgo accepts:
 
-    If present, Ginkgo will skip any `Measure` specs you've defined.
-
-- `--failOnPending`
-
-    If present, Ginkgo will mark a test suite as failed if it has any pending specs.
-
-- `--focus=REGEXP`
+**Controlling which test suites run:a**
+   
+- `-r`
     
-    If provided, Ginkgo will only run specs with descriptions that match the regular expression REGEXP.
+    Set `-r` to have the `ginkgo` CLI recursively run all test suites under the target directories.  Useful for running all the tests across all your packages.
 
-- `--skip=REGEXP`
+- `-skipPackage=REGEXP`
 
-    If provided, Ginkgo will only run specs with descriptions that do not match the regular expression REGEXP.
+    When running with `-r` you can pass `-skipPackage` a regular expression.  Any packages with names that match the regular expression will not be run.
 
-- `--noColor`
-    
-    If provided, Ginkgo's default reporter will not print out in color.
-
-- `--slowSpecThreshold=TIME_IN_SECONDS`
-
-    By default, Ginkgo's default reporter will flag tests that take longer than 5 seconds to run -- this does not fail the suite, it simply notifies you of slow running specs.  You can change this threshold using this flag.
-
-- `--noisyPendings=false`
-
-    By default, Ginkgo's defautlt reporter will provide detailed output for pending specs.  You can set --noisyPendings=false to supress this behavior.
-
-- `--succinct`
-    
-    Succinct silences much of Ginkgo's more verbose output.  Test suites that succeed basically get printed out on just one line!
-
-- `--v`
-
-    If present, Ginkgo's default reporter will print out the text and location for each spec before running it.
-
-Additional flags supported by the `ginkgo` command:
+**Running in parallel:**
 
 - `--nodes=NODE_TOTAL`
 
@@ -626,13 +686,53 @@ Additional flags supported by the `ginkgo` command:
 
     By default, when parallelizing a suite, the test runner aggregates data from each parallel node and produces coherent output as the tests run.  Setting `stream` to `true` will, instead, stream output from all parallel nodes in real-time, prepending each log line with the node # that emitted it.  This leads to incoherent (interleaved) output, but is useful when debugging flakey/hanging test suites.
 
-- `-r`
-    
-    Set `-r` to have the `ginkgo` CLI recursively run all test suites under the target directories.  Useful for running all the tests across all your packages.
+**Modifying output of the default reporter:**
 
-- `-i`
+- `--noColor`
     
-    Set `-i` to have the `ginkgo` CLI invoke the mysterious `go test -i` before running your tests.
+    If provided, Ginkgo's default reporter will not print out in color.
+
+- `--succinct`
+    
+    Succinct silences much of Ginkgo's more verbose output.  Test suites that succeed basically get printed out on just one line!  Succinct is turned off, by default, when running tests for one package.  It is turned on by default when Ginkgo runs multiple test packages.
+
+- `--v`
+
+    If present, Ginkgo's default reporter will print out the text and location for each spec before running it.  Also, the GinkgoWriter will flush its output to stdout in realtime.
+
+- `--noisyPendings=false`
+
+    By default, Ginkgo's defautlt reporter will provide detailed output for pending specs.  You can set --noisyPendings=false to supress this behavior.
+
+- `--trace`
+
+    If present, Ginkgo will print out full stack traces for each failure, not just the line number at which the failure occurs.
+
+**Controlling randomization:**
+
+- `--seed=SEED`
+
+    The random seed to use when permuting the specs.
+
+- `--randomizeAllSpecs`
+
+    If present, all specs will be permuted.  By default Ginkgo will only permute the order of the top level containers.
+
+**Focusing and Skipping specs:**
+
+- `--skipMeasurements`
+
+    If present, Ginkgo will skip any `Measure` specs you've defined.
+
+- `--focus=REGEXP`
+    
+    If provided, Ginkgo will only run specs with descriptions that match the regular expression REGEXP.
+
+- `--skip=REGEXP`
+
+    If provided, Ginkgo will only run specs with descriptions that do not match the regular expression REGEXP.
+
+**Running the race detector and code coverage tools:**
 
 - `-race`
     
@@ -642,31 +742,39 @@ Additional flags supported by the `ginkgo` command:
 
     Set `-cover` to have the `ginkgo` CLI run your tests with coverage analysis turned on (a Golang 1.2+ feature).  Ginkgo will generate coverage profiles under the current directory named `PACKAGE.coverprofile` for each set of package tests that is run.
 
-- `-watch`
+**Miscellaneous:**
 
-    Set `-watch` to monitor the target packages for changes.  Any detected changes will trigger a test run.  `-watch` is best used in concert with `-r` to monitor an entire directory of packages for changes.  Note that *new* test packages are not automatically detected by `-watch` -- you'll need to rerun the `ginkgo -watch` command to pick them up.  Also, if changes are made to package `X` only the tests for package `X` will be rerun -- the tests for packages that depend on `X` are *not* rerun.
+- `--failOnPending`
 
-- `-notify`
+    If present, Ginkgo will mark a test suite as failed if it has any pending specs.
 
-    Set `-notify` to receive desktop notifications when a test suite completes.  This is especially useful with the `-watch` flag.  Currently `-notify` is only supported on OS X.  You'll also need to `brew install terminal-notifier` to receive notifications.
 
 - `-keepGoing`
 
     By default, when running multiple tests (with -r or a list of packages) Ginkgo will abort when a test fails.  To have Ginkgo run subsequent test suites after a failure you can set -keepGoing.
 
+- `-notify`
+
+    Set `-notify` to receive desktop notifications when a test suite completes.  This is especially useful with the `watch` subcommand.  Currently `-notify` is only supported on OS X.  You'll also need to `brew install terminal-notifier` to receive notifications.
+
+- `--slowSpecThreshold=TIME_IN_SECONDS`
+
+    By default, Ginkgo's default reporter will flag tests that take longer than 5 seconds to run -- this does not fail the suite, it simply notifies you of slow running specs.  You can change this threshold using this flag.
+
 - `-untilItFails`
     
     If set to `true`, Ginkgo will keep running your tests until a failure occurs.  This can be useful to help suss out race conditions or flakey tests.
 
-Flags for `go test` only:
+### Watching For Changes
 
-- `--ginkgo.parallel.node=NODE_INDEX`
-    
-    For parallel tests, this specifies the node index for this test run.  `parallel.node` and `parallel.total` are used in conjunction to select a subset of tests to run.  You generally don't need to set this, instead pass the `--nodes=NODE_TOTAL` flag to the `ginkgo` CLI.
+The Ginkgo CLI provides a `watch` subcommand that takes (almost) all the flags that the main `ginkgo` command takes.  With `ginkgo watch` ginkgo will monitor the package in the current directory and trigger tests when changes are detected.
 
-- `--ginkgo.parallel.total=NODE_TOTAL`
-    
-    For parallel tests, this specifies the total number of nodes for this test run.  `parallel.node` and `parallel.total` are used in conjunction to select a subset of tests to run.  You generally don't need to set this, instead pass the `--nodes=NODE_TOTAL` flag to the `ginkgo` CLI.
+You can also run `ginkgo watch -r` to monitor all packages recursively.
+
+Passing the `-notify` flag on OS X will trigger desktop notifications when `ginkgo watch` triggers and completes a test run.
+
+One limitation of `ginkgo watch` is that it will only trigger tests for a watched package if files within that package (not subpackages or other dependencies) are changed.  There are plans to find ways around this in the future by monitoring dependencies, but there isn't a timeline for implementing this yet.
+
 
 ### Generators
 
@@ -682,7 +790,64 @@ Flags for `go test` only:
 
     This will generate a file named `SUBJECT_test.go`.  If you don't specify SUBJECT, it will generate a file named `PACKAGE_test.go` where PACKAGE is the name of the current directory.
 
+By default, these generators will dot-import both Ginkgo and Gomega.  To avoid dot imports, you can pass `--nodot` to both subcommands.  This is discussed more fully in the [next section](#avoiding_dot_imports).
+
 > Note that you don't have to use either of these generators.  They're just convenient helpers to get you up and running quickly.
+
+###Avoiding Dot Imports
+
+Ginkgo and Gomega provide a DSL and, by default, the `ginkgo bootstrap` and `ginkgo generate` commands import both packages into the top-level namespace using dot imports.
+
+There are certain, rare, cases where you need to avoid this.  For example, your code may define methods with names that conflict with the methods defined in Ginkgo and/or Goemga.  In such cases you can either import your code into its own namespace (i.e. drop the `.` in front of your package import).  Or, you can drop the `.` in front of Ginkgo and/or Gomega.  The latter comes at the cost of constantly having to preface your `Describe`s and `It`s with `ginkgo.` and your `Expect`s and `ContainSubstring`s with `gomega.`.
+
+There is a *third* option that the ginkgo CLI provides, however.  If you need to (or simply want to!) avoid dot imports you can:
+
+    ginkgo bootstrap --nodot
+
+and
+
+    ginkgo generate --nodot <filename>
+
+This will create a bootstrap file that *explicitly* imports all the exported identifiers in Ginkgo and Gomega into the top level namespace.  This happens at the bottom of your bootstrap file and generates code that looks something like:
+
+    import (
+        github.com/onsi/ginkgo
+        ...
+    )
+
+    ...
+
+    // Declarations for Ginkgo DSL
+    var Describe = ginkgo.Describe
+    var Context = ginkgo.Context
+    var It = ginkgo.It
+    // etc...
+
+This allows you to write tests using `Describe`, `Context`, and `It` without dot imports and without the `ginkgo.` prefix.  Crucially, it also allows you to redefine any conflicting identifiers (or even cook up your own semantics!).  For example:
+
+    var _ = ginkgo.Describe
+    var When = ginkgo.Context
+    var Then = ginkgo.It
+
+This will avoid importing `Describe` and will rename `Context` to `When` and `It` to `Then`.
+
+As new matchers are added to Gomega you may need to update the set of imports identifiers.  You can do this by entering the directory containing your bootstrap file and running:
+
+    ginkgo nodot
+
+this will update the imports, preserving any renames that you've provided.
+ 
+###Converting Existing Tests
+
+If you have an existing XUnit test suite that you'd like to convert to a Ginkgo suite, you can use the `ginkgo convert` command:
+
+    ginkgo convert github.com/your/package
+
+This will generate a Ginkgo bootstrap file and convert any `TestX...(t *testing.T)` XUnit style tsts into simply (flat) Ginkgo tests.  It also substitutes `GinkgoT()` for any references to `*testing.T` in your code.  `ginkgo convert` usually gets things right the first time round, but you may need to go in and tweak your tests after the fact.
+
+Also: `ginkgo convert` will **overwrite** your existing test files, so make sure you don't have any uncommitted changes before trying `ginkgo convert`!
+
+`ginkgo convert` is the brainchild of [Tim Jarratt](http://github.com/tjarratt)
 
 ### Other Subcommands
 
@@ -693,6 +858,10 @@ Flags for `go test` only:
 - For help:
 
         $ ginkgo help
+
+    For help on a particular subcommand:
+
+        $ ginkgo help <COMMAND>
 
 - To get the current version of Ginkgo:
 
@@ -895,25 +1064,6 @@ Here's what the calling test might look like:
 
 ## Ginkgo and Gomega on TravisCI
 
-Here's a sample `.travis.yml` for golang versions under 1.2:
-
-    language: go
-    go:
-      - 1.1.2
-      - tip
-
-    install:
-      - go get -v ./...
-      - go get -v github.com/onsi/ginkgo
-      - go get -v github.com/onsi/gomega
-      - go install -v github.com/onsi/ginkgo/ginkgo
-
-    script: PATH=$HOME/gopath/bin:$PATH ginkgo -r  -i --randomizeAllSpecs --failOnPending --skipMeasurements
-
-Notice the manual steps to get ginkgo and gomega.  This is because version of go before 1.2 do not fetch test-only dependencies
-
-For golang > 1.2:
-
     language: go
     go:
       - 1.1.2
@@ -925,9 +1075,9 @@ For golang > 1.2:
       - go get -v github.com/onsi/gomega
       - go install -v github.com/onsi/ginkgo/ginkgo
 
-    script: PATH=$HOME/gopath/bin:$PATH ginkgo -r  -i --randomizeAllSpecs --failOnPending --skipMeasurements --cover
+    script: PATH=$HOME/gopath/bin:$PATH ginkgo -r --randomizeAllSpecs --failOnPending --skipMeasurements --cover --trace --race
 
-In both of these examples we're using the `ginkgo` CLI to recursively run all the tests in our package, we're also passing in a number of [flags](#running_tests) that are particularly pertinent for a CI environment.  You can, of course, use `go test` instead, in which case you can skip the `go install -v github.com/onsi/ginkgo/ginkgo` command.
+In both of these examples we're using the `ginkgo` CLI to recursively run all the tests in our package, we're also passing in a number of [flags](#running_tests) that are particularly pertinent for a CI environment.  
 
 ---
 
@@ -938,13 +1088,15 @@ While Ginkgo's default reporter offers a comprehensive set of features, Ginkgo m
 In Ginkgo a reporter must satisfy the `Reporter` interface:
 
     type Reporter interface {
-        SpecSuiteWillBegin(config config.GinkgoConfigType, summary *SuiteSummary)
-        ExampleWillRun(exampleSummary *ExampleSummary)
-        ExampleDidComplete(exampleSummary *ExampleSummary)
-        SpecSuiteDidEnd(summary *SuiteSummary)
+        SpecSuiteWillBegin(config config.GinkgoConfigType, summary *types.SuiteSummary)
+        BeforeSuiteDidRun(setupSummary *types.SetupSummary)
+        SpecWillRun(specSummary *types.SpecSummary)
+        SpecDidComplete(specSummary *types.SpecSummary)
+        AfterSuiteDidRun(setupSummary *types.SetupSummary)
+        SpecSuiteDidEnd(summary *types.SuiteSummary)
     }
 
-The method names should be self-explanatory.  Be sure to dig into the `SuiteSummary` and `ExampleSummary` objects to get a sense of what data is available to your reporter.  If you're writing a custom reporter to ingest benchmarking data generated by `Measure` nodes you'll want to look at the `ExampleMeasurement` struct that is provided by `ExampleSummary.Measurements`.
+The method names should be self-explanatory.  Be sure to dig into the `SuiteSummary` and `SpecSummary` objects to get a sense of what data is available to your reporter.  If you're writing a custom reporter to ingest benchmarking data generated by `Measure` nodes you'll want to look at the `ExampleMeasurement` struct that is provided by `ExampleSummary.Measurements`.
 
 Once you've created your custom reporter you may pass an instance of it to Ginkgo by replacing the `RunSpecs` command in your test suite bootstrap with either: 
 
@@ -956,19 +1108,47 @@ or
 
 `RunSpecsWithDefaultAndCustomReporters` will run your custom reporters alongside Ginkgo's default reporter.  `RunSpecsWithCustomReporters` will only run the custom reporters you pass in.
 
+If you wish to run your tests in parallel you should not use `RunSpecsWithCustomReporters` as the default reporter plays an important role in streaming test output to the ginkgo CLI.
+
 ---
 
 ## Third Party Integrations
+
+### Using Other Matcher Libraries
+
+Most matcher library accept the `*testing.T` object.  Unfortunately, since this is a concrete type is can be tricky to pass in an equivalent that will work with Ginkgo.
+
+It is, typically, not difficult to replace `*testing.T` in such libraries with an interface that `*testing.T` satisfies.  For example [testify](https://github.com/stretchr/testify) accepts `t` via an interface.  In such cases you can pass `GinkgoT()`.  This generates an object that mimics `*testing.T` and communicates to Ginkgo directly.
+
+For example, to get testify working:
+
+    package foo_test
+
+    import (
+        . "github.com/onsi/ginkgo"
+
+        "github.com/stretchr/testify/assert"
+    )
+
+    var _ = Describe(func("foo") {
+        It("should testify to its correctness", func)({
+            assert.Equal(GinkgoT(), foo{}.Name(), "foo")
+        })
+    })
+
+> Note that passing the `*testing.T` from Ginkgo's bootstrap `Test...()` function will cause the suite to abort as soon as the first failure is encountered.  Don't do this.  You need to communicate failure to Ginkgo's single (global) `Fail` function
 
 ### Integrating with Gomock
 
 Ginkgo does not provide a mocking/stubbing framework.  It's the author's opinion that mocks and stubs can be avoided completely by embracing dependency injection and always injecting Go interfaces.  Real dependencies are then injected in production code, and fake dependencies are injected under test.  Building and maintaining such fakes tends to be straightforward and can allow for clearer and more expressive tests than mocks.
 
-With that said, it is relatively straightforward to use a mocking framework such as [Gomock](https://code.google.com/p/gomock/).  Ginkgo provides a Ginkgo-friendly implementation of Gomock's `TestReporter` interface under `github.com/onsi/ginkgo/thirdparty/gomocktestreporter`.  Here's how you use it (for example):
+With that said, it is relatively straightforward to use a mocking framework such as [Gomock](https://code.google.com/p/gomock/).  `GinkgoT()` implements Gomock's `TestReporter` interface.  Here's how you use it (for example):
 
     import (
       "code.google.com/p/gomock/gomock"
-      "github.com/onsi/ginkgo/thirdparty/gomocktestreporter"
+
+      . github.com/onsi/ginkgo
+      . github.com/onsi/gomega
     )
 
     var _ = Describe("Consumer", func() {
@@ -979,7 +1159,7 @@ With that said, it is relatively straightforward to use a mocking framework such
         )
 
         BeforeEach(func() {
-            mockCtrl = gomock.NewController(gomocktestreporter.New())
+            mockCtrl = gomock.NewController(GinkgoT())
             mockThing = mockthing.NewMockThing(mockCtrl)
             consumer = NewConsumer(mockThing)
         })
@@ -993,6 +1173,8 @@ With that said, it is relatively straightforward to use a mocking framework such
             consumer.Consume()
         })
     })
+
+When using Gomock you may want to run `ginkgo` with the `-trace` flag to print out stack traces for failures which will help you trace down where, in your code, invalid calls occured.
 
 ### Generating JUnit XML Output
 
@@ -1021,27 +1203,3 @@ If you want to run your tests in parallel you'll need to make your JUnit xml fil
     junitReporter := reporters.NewJUnitReporter(fmt.Sprintf("junit_%d.xml", config.GinkgoConfig.ParallelNode))
 
 Note that you'll need to import `fmt` and `github.com/onsi/ginkgo/config` to get this to work.  This will generate an xml file for each parallel node.  The Jenkins JUnit plugin (for example) automatically aggregates data from across all these files.
-
-### Using Other Matcher Libraries
-
-Most matcher library accept the `*testing.T` object.  Unfortunately, since this is a concrete type is can be tricky to pass in an equivalent that will work with Ginkgo.
-
-It is, typically, not difficult to replace `*testing.T` in such libraries with an interface that `*testing.T` satisfies.  For example [testify](https://github.com/stretchr/testify) accepts `t` via an interface.  In such cases you can pass `GinkgoT()`.  This generates an object that mimics `*testing.T` and communicates to Ginkgo directly.
-
-For example, to get testify working:
-
-    package foo_test
-
-    import (
-        . "github.com/onsi/ginkgo"
-
-        "github.com/stretchr/testify/assert"
-    )
-
-    var _ = Describe(func("foo") {
-        It("should testify to its correctness", func)({
-            assert.Equal(GinkgoT(), foo{}.Name(), "foo")
-        })
-    })
-
-> Note that passing the `*testing.T` from Ginkgo's bootstrap `Test...()` function will cause the suite to abort as soon as the first failure is encountered.  Don't do this.  You need to communicate failure to Ginkgo's single (global) `Fail` function
