@@ -472,7 +472,7 @@ func JustBeforeEach(body interface{}, timeout ...float64) bool {
 //AfterEach blocks are run after It blocks.   When multiple AfterEach blocks are defined in nested
 //Describe and Context blocks the innermost AfterEach blocks are run first.
 //
-//Like It blocks, BeforeEach blocks can be made asynchronous by providing a body function that accepts
+//Like It blocks, AfterEach blocks can be made asynchronous by providing a body function that accepts
 //a Done channel
 func AfterEach(body interface{}, timeout ...float64) bool {
 	globalSuite.PushAfterEachNode(body, codelocation.New(1), parseTimeout(timeout...))
