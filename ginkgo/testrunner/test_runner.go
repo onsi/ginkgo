@@ -3,15 +3,19 @@ package testrunner
 import (
 	"bytes"
 	"fmt"
+	"io"
+	"io/ioutil"
+	"os"
+	"os/exec"
+	"path/filepath"
+	"strconv"
+	"strings"
+	"time"
+
 	"github.com/onsi/ginkgo/config"
 	"github.com/onsi/ginkgo/ginkgo/testsuite"
 	"github.com/onsi/ginkgo/internal/remote"
 	"github.com/onsi/ginkgo/reporters/stenographer"
-	"io"
-	"os"
-	"os/exec"
-	"path/filepath"
-	"time"
 )
 
 type TestRunner struct {
@@ -93,11 +97,11 @@ func (t *TestRunner) compiledArtifact() string {
 
 func (t *TestRunner) runSerialGinkgoSuite() bool {
 	ginkgoArgs := config.BuildFlagArgs("ginkgo", config.GinkgoConfig, config.DefaultReporterConfig)
-	return t.run(t.cmd(ginkgoArgs, os.Stdout), nil)
+	return t.run(t.cmd(ginkgoArgs, os.Stdout, 1), nil)
 }
 
 func (t *TestRunner) runGoTestSuite() bool {
-	return t.run(t.cmd([]string{"-test.v"}, os.Stdout), nil)
+	return t.run(t.cmd([]string{"-test.v"}, os.Stdout, 1), nil)
 }
 
 func (t *TestRunner) runAndStreamParallelGinkgoSuite() bool {
@@ -121,7 +125,7 @@ func (t *TestRunner) runAndStreamParallelGinkgoSuite() bool {
 
 		writers[cpu] = newLogWriter(os.Stdout, cpu+1)
 
-		cmd := t.cmd(ginkgoArgs, writers[cpu])
+		cmd := t.cmd(ginkgoArgs, writers[cpu], cpu+1)
 
 		server.RegisterAlive(cpu+1, func() bool {
 			if cmd.ProcessState == nil {
@@ -144,6 +148,10 @@ func (t *TestRunner) runAndStreamParallelGinkgoSuite() bool {
 	}
 
 	os.Stdout.Sync()
+
+	if t.cover {
+		t.combineCoverprofiles()
+	}
 
 	return passed
 }
@@ -176,7 +184,7 @@ func (t *TestRunner) runParallelGinkgoSuite() bool {
 		reports[cpu] = &bytes.Buffer{}
 		writers[cpu] = newLogWriter(reports[cpu], cpu+1)
 
-		cmd := t.cmd(ginkgoArgs, writers[cpu])
+		cmd := t.cmd(ginkgoArgs, writers[cpu], cpu+1)
 
 		server.RegisterAlive(cpu+1, func() bool {
 			if cmd.ProcessState == nil {
@@ -228,13 +236,21 @@ func (t *TestRunner) runParallelGinkgoSuite() bool {
 		os.Stdout.Sync()
 	}
 
+	if t.cover {
+		t.combineCoverprofiles()
+	}
+
 	return passed
 }
 
-func (t *TestRunner) cmd(ginkgoArgs []string, stream io.Writer) *exec.Cmd {
+func (t *TestRunner) cmd(ginkgoArgs []string, stream io.Writer, node int) *exec.Cmd {
 	args := []string{"-test.timeout=24h"}
 	if t.cover {
-		args = append(args, "--test.coverprofile="+t.suite.PackageName+".coverprofile")
+		coverprofile := "--test.coverprofile=" + t.suite.PackageName + ".coverprofile"
+		if t.numCPU > 1 {
+			coverprofile = fmt.Sprintf("%s.%d", coverprofile, node)
+		}
+		args = append(args, coverprofile)
 	}
 
 	args = append(args, ginkgoArgs...)
@@ -266,4 +282,43 @@ func (t *TestRunner) run(cmd *exec.Cmd, completions chan bool) bool {
 	err = cmd.Wait()
 
 	return err == nil
+}
+
+func (t *TestRunner) combineCoverprofiles() {
+	profiles := []string{}
+	for cpu := 1; cpu <= t.numCPU; cpu++ {
+		coverFile := fmt.Sprintf("%s.coverprofile.%d", t.suite.PackageName, cpu)
+		coverFile = filepath.Join(t.suite.Path, coverFile)
+		coverProfile, err := ioutil.ReadFile(coverFile)
+		os.Remove(coverFile)
+
+		if err == nil {
+			profiles = append(profiles, string(coverProfile))
+		}
+	}
+
+	if len(profiles) != t.numCPU {
+		return
+	}
+
+	lines := map[string]int{}
+
+	for _, coverProfile := range profiles {
+		for _, line := range strings.Split(string(coverProfile), "\n")[1:] {
+			if len(line) == 0 {
+				continue
+			}
+			components := strings.Split(line, " ")
+			count, _ := strconv.Atoi(components[len(components)-1])
+			prefix := strings.Join(components[0:len(components)-1], " ")
+			lines[prefix] += count
+		}
+	}
+
+	output := []string{"mode: atomic"}
+	for line, count := range lines {
+		output = append(output, fmt.Sprintf("%s %d", line, count))
+	}
+	finalOutput := strings.Join(output, "\n")
+	ioutil.WriteFile(filepath.Join(t.suite.Path, fmt.Sprintf("%s.coverprofile", t.suite.PackageName)), []byte(finalOutput), 0666)
 }
