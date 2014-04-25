@@ -13,6 +13,12 @@ package ginkgo
 
 import (
 	"flag"
+	"io"
+	"net/http"
+	"os"
+	"strings"
+	"time"
+
 	"github.com/onsi/ginkgo/config"
 	"github.com/onsi/ginkgo/internal/codelocation"
 	"github.com/onsi/ginkgo/internal/failer"
@@ -23,11 +29,6 @@ import (
 	"github.com/onsi/ginkgo/reporters"
 	"github.com/onsi/ginkgo/reporters/stenographer"
 	"github.com/onsi/ginkgo/types"
-	"io"
-	"net/http"
-	"os"
-	"strings"
-	"time"
 )
 
 const GINKGO_VERSION = config.VERSION
@@ -65,6 +66,12 @@ var GinkgoWriter io.Writer
 //The interface by which Ginkgo receives *testing.T
 type GinkgoTestingT interface {
 	Fail()
+}
+
+//GinkgoParallelNode returns the parallel node number for the current ginkgo process
+//The node number is 1-indexed
+func GinkgoParallelNode() int {
+	return config.GinkgoConfig.ParallelNode
 }
 
 //Some matcher libraries or legacy codebases require a *testing.T
