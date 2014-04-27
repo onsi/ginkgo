@@ -119,7 +119,7 @@ func generateNodotSections() ([]nodotSection, error) {
 		types:        []string{"Done", "Benchmarker"},
 	})
 
-	declarations, err = getExportedDeclerationsForPackage("github.com/onsi/gomega", "gomega.go", "GOMEGA_VERSION", "DefaultEventuallyTimeout", "DefaultEventuallyPollingInterval", "DefaultConsistentlyDuration", "DefaultConsistentlyPollingInterval")
+	declarations, err = getExportedDeclerationsForPackage("github.com/onsi/gomega", "gomega.go", "GOMEGA_VERSION")
 	if err != nil {
 		return nil, err
 	}

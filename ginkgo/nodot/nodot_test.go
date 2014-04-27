@@ -1,8 +1,8 @@
 package nodot_test
 
 import (
-	"strings"
 	. "github.com/onsi/ginkgo/ginkgo/nodot"
+	"strings"
 )
 
 var _ = Describe("ApplyNoDot", func() {
@@ -46,10 +46,6 @@ var _ = Describe("ApplyNoDot", func() {
 			Ω(result).ShouldNot(ContainSubstring("GINKGO_VERSION"))
 			Ω(result).ShouldNot(ContainSubstring("GINKGO_PANIC"))
 			Ω(result).ShouldNot(ContainSubstring("GOMEGA_VERSION"))
-			Ω(result).ShouldNot(ContainSubstring("DefaultEventuallyTimeout"))
-			Ω(result).ShouldNot(ContainSubstring("DefaultEventuallyPollingInterval"))
-			Ω(result).ShouldNot(ContainSubstring("DefaultConsistentlyDuration"))
-			Ω(result).ShouldNot(ContainSubstring("DefaultConsistentlyPollingInterval"))
 		})
 	})
 
