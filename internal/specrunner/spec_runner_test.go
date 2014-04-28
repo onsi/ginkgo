@@ -240,6 +240,10 @@ var _ = Describe("Spec Collection", func() {
 				Ω(reporter1.EndSummary.SuiteSucceeded).Should(BeTrue())
 				Ω(reporter1.EndSummary.NumberOfFailedSpecs).Should(Equal(0))
 			})
+
+			It("should not dump the writer", func() {
+				Ω(writer.EventStream).ShouldNot(ContainElement("DUMP"))
+			})
 		})
 
 		Context("when the BeforeSuite fails", func() {
@@ -279,6 +283,10 @@ var _ = Describe("Spec Collection", func() {
 				Ω(reporter1.EndSummary.SuiteSucceeded).Should(BeFalse())
 				Ω(reporter1.EndSummary.NumberOfFailedSpecs).Should(Equal(2))
 				Ω(reporter1.EndSummary.NumberOfSpecsThatWillBeRun).Should(Equal(2))
+			})
+
+			It("should dump the writer", func() {
+				Ω(writer.EventStream).Should(ContainElement("DUMP"))
 			})
 		})
 
@@ -341,6 +349,10 @@ var _ = Describe("Spec Collection", func() {
 				Ω(success).Should(BeFalse())
 				Ω(reporter1.EndSummary.SuiteSucceeded).Should(BeFalse())
 				Ω(reporter1.EndSummary.NumberOfFailedSpecs).Should(Equal(0))
+			})
+
+			It("should dump the writer", func() {
+				Ω(writer.EventStream).Should(ContainElement("DUMP"))
 			})
 		})
 	})

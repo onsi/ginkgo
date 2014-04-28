@@ -2,15 +2,15 @@ package specrunner
 
 import (
 	"fmt"
+	"os"
+	"os/signal"
+	"sync"
 	"github.com/onsi/ginkgo/config"
 	"github.com/onsi/ginkgo/internal/leafnodes"
 	"github.com/onsi/ginkgo/internal/spec"
 	Writer "github.com/onsi/ginkgo/internal/writer"
 	"github.com/onsi/ginkgo/reporters"
 	"github.com/onsi/ginkgo/types"
-	"os"
-	"os/signal"
-	"sync"
 
 	"time"
 )
@@ -68,8 +68,12 @@ func (runner *SpecRunner) runBeforeSuite() bool {
 		return true
 	}
 
+	runner.writer.Truncate()
 	conf := runner.config
 	passed := runner.beforeSuiteNode.Run(conf.ParallelNode, conf.ParallelTotal, conf.SyncHost)
+	if !passed {
+		runner.writer.DumpOut()
+	}
 	runner.reportBeforeSuite(runner.beforeSuiteNode.Summary())
 	return passed
 }
@@ -79,8 +83,12 @@ func (runner *SpecRunner) runAfterSuite() bool {
 		return true
 	}
 
+	runner.writer.Truncate()
 	conf := runner.config
 	passed := runner.afterSuiteNode.Run(conf.ParallelNode, conf.ParallelTotal, conf.SyncHost)
+	if !passed {
+		runner.writer.DumpOut()
+	}
 	runner.reportAfterSuite(runner.afterSuiteNode.Summary())
 	return passed
 }
