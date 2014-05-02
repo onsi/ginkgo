@@ -1,10 +1,11 @@
 package containernode
 
 import (
-	"github.com/onsi/ginkgo/internal/leafnodes"
-	"github.com/onsi/ginkgo/types"
 	"math/rand"
 	"sort"
+
+	"github.com/onsi/ginkgo/internal/leafnodes"
+	"github.com/onsi/ginkgo/types"
 )
 
 type subjectOrContainerNode struct {

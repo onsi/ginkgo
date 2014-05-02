@@ -8,6 +8,7 @@ import (
 	"os"
 	"os/exec"
 	"path/filepath"
+	"regexp"
 	"strconv"
 	"strings"
 	"time"
@@ -57,13 +58,43 @@ func (t *TestRunner) Compile() error {
 	output, err := cmd.CombinedOutput()
 
 	if err != nil {
+		fixedOutput := fixCompilationOutput(string(output), t.suite.Path)
 		if len(output) > 0 {
-			return fmt.Errorf("Failed to compile %s:\n\n%s", t.suite.PackageName, output)
+			return fmt.Errorf("Failed to compile %s:\n\n%s", t.suite.PackageName, fixedOutput)
 		}
 		return fmt.Errorf("")
 	}
 
 	return nil
+}
+
+/*
+go test -c -i spits package.test out into the cwd. there's no way to change this.
+
+to make sure it doesn't generate conflicting .test files in the cwd, Compile() must switch the cwd to the test package.
+
+unfortunately, this causes go test's compile output to be expressed *relative to the test package* instead of the cwd.
+
+this makes it hard to reason about what failed, and also prevents iterm's Cmd+click from working.
+
+fixCompilationOutput..... rewrites the output to fix the paths.
+
+yeah......
+*/
+func fixCompilationOutput(output string, relToPath string) string {
+	re := regexp.MustCompile(`^(\S.*\.go)\:\d+\:`)
+	lines := strings.Split(output, "\n")
+	for i, line := range lines {
+		indices := re.FindStringSubmatchIndex(line)
+		if len(indices) == 0 {
+			continue
+		}
+
+		path := line[indices[2]:indices[3]]
+		path = filepath.Join(relToPath, path)
+		lines[i] = path + line[indices[3]:]
+	}
+	return strings.Join(lines, "\n")
 }
 
 func (t *TestRunner) Run() bool {
