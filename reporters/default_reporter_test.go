@@ -1,13 +1,13 @@
 package reporters_test
 
 import (
+	"time"
 	. "github.com/onsi/ginkgo"
 	"github.com/onsi/ginkgo/config"
 	"github.com/onsi/ginkgo/reporters"
 	st "github.com/onsi/ginkgo/reporters/stenographer"
 	"github.com/onsi/ginkgo/types"
 	. "github.com/onsi/gomega"
-	"time"
 )
 
 var _ = Describe("DefaultReporter", func() {
@@ -60,9 +60,9 @@ var _ = Describe("DefaultReporter", func() {
 			})
 
 			It("should announce the suite, then announce the number of specs", func() {
-				Ω(stenographer.Calls).Should(HaveLen(2))
-				Ω(stenographer.Calls[0]).Should(Equal(call("AnnounceSuite", "A Sweet Suite", ginkgoConfig.RandomSeed, true, false)))
-				Ω(stenographer.Calls[1]).Should(Equal(call("AnnounceNumberOfSpecs", 8, 10, false)))
+				Ω(stenographer.Calls()).Should(HaveLen(2))
+				Ω(stenographer.Calls()[0]).Should(Equal(call("AnnounceSuite", "A Sweet Suite", ginkgoConfig.RandomSeed, true, false)))
+				Ω(stenographer.Calls()[1]).Should(Equal(call("AnnounceNumberOfSpecs", 8, 10, false)))
 			})
 		})
 
@@ -76,10 +76,10 @@ var _ = Describe("DefaultReporter", func() {
 			})
 
 			It("should announce the suite, announce that it's a parallel run, then announce the number of specs", func() {
-				Ω(stenographer.Calls).Should(HaveLen(3))
-				Ω(stenographer.Calls[0]).Should(Equal(call("AnnounceSuite", "A Sweet Suite", ginkgoConfig.RandomSeed, true, false)))
-				Ω(stenographer.Calls[1]).Should(Equal(call("AnnounceParallelRun", 1, 2, 10, 20, false)))
-				Ω(stenographer.Calls[2]).Should(Equal(call("AnnounceNumberOfSpecs", 8, 10, false)))
+				Ω(stenographer.Calls()).Should(HaveLen(3))
+				Ω(stenographer.Calls()[0]).Should(Equal(call("AnnounceSuite", "A Sweet Suite", ginkgoConfig.RandomSeed, true, false)))
+				Ω(stenographer.Calls()[1]).Should(Equal(call("AnnounceParallelRun", 1, 2, 10, 20, false)))
+				Ω(stenographer.Calls()[2]).Should(Equal(call("AnnounceNumberOfSpecs", 8, 10, false)))
 			})
 		})
 	})
@@ -91,7 +91,7 @@ var _ = Describe("DefaultReporter", func() {
 					State: types.SpecStatePassed,
 				})
 
-				Ω(stenographer.Calls).Should(BeEmpty())
+				Ω(stenographer.Calls()).Should(BeEmpty())
 			})
 		})
 
@@ -102,8 +102,8 @@ var _ = Describe("DefaultReporter", func() {
 				}
 				reporter.BeforeSuiteDidRun(summary)
 
-				Ω(stenographer.Calls).Should(HaveLen(1))
-				Ω(stenographer.Calls[0]).Should(Equal(call("AnnounceBeforeSuiteFailure", summary, false, true)))
+				Ω(stenographer.Calls()).Should(HaveLen(1))
+				Ω(stenographer.Calls()[0]).Should(Equal(call("AnnounceBeforeSuiteFailure", summary, false, true)))
 			})
 		})
 	})
@@ -115,7 +115,7 @@ var _ = Describe("DefaultReporter", func() {
 					State: types.SpecStatePassed,
 				})
 
-				Ω(stenographer.Calls).Should(BeEmpty())
+				Ω(stenographer.Calls()).Should(BeEmpty())
 			})
 		})
 
@@ -126,8 +126,8 @@ var _ = Describe("DefaultReporter", func() {
 				}
 				reporter.AfterSuiteDidRun(summary)
 
-				Ω(stenographer.Calls).Should(HaveLen(1))
-				Ω(stenographer.Calls[0]).Should(Equal(call("AnnounceAfterSuiteFailure", summary, false, true)))
+				Ω(stenographer.Calls()).Should(HaveLen(1))
+				Ω(stenographer.Calls()[0]).Should(Equal(call("AnnounceAfterSuiteFailure", summary, false, true)))
 			})
 		})
 	})
@@ -141,8 +141,8 @@ var _ = Describe("DefaultReporter", func() {
 				})
 
 				It("should announce that the spec will run", func() {
-					Ω(stenographer.Calls).Should(HaveLen(1))
-					Ω(stenographer.Calls[0]).Should(Equal(call("AnnounceSpecWillRun", spec)))
+					Ω(stenographer.Calls()).Should(HaveLen(1))
+					Ω(stenographer.Calls()[0]).Should(Equal(call("AnnounceSpecWillRun", spec)))
 				})
 			})
 
@@ -156,7 +156,7 @@ var _ = Describe("DefaultReporter", func() {
 					})
 
 					It("should announce nothing", func() {
-						Ω(stenographer.Calls).Should(BeEmpty())
+						Ω(stenographer.Calls()).Should(BeEmpty())
 					})
 				})
 
@@ -169,7 +169,7 @@ var _ = Describe("DefaultReporter", func() {
 					})
 
 					It("should announce nothing", func() {
-						Ω(stenographer.Calls).Should(BeEmpty())
+						Ω(stenographer.Calls()).Should(BeEmpty())
 					})
 				})
 			})
@@ -184,7 +184,7 @@ var _ = Describe("DefaultReporter", func() {
 			})
 
 			It("should announce nothing", func() {
-				Ω(stenographer.Calls).Should(BeEmpty())
+				Ω(stenographer.Calls()).Should(BeEmpty())
 			})
 		})
 
@@ -197,7 +197,7 @@ var _ = Describe("DefaultReporter", func() {
 			})
 
 			It("should announce nothing", func() {
-				Ω(stenographer.Calls).Should(BeEmpty())
+				Ω(stenographer.Calls()).Should(BeEmpty())
 			})
 		})
 	})
@@ -222,7 +222,7 @@ var _ = Describe("DefaultReporter", func() {
 				})
 
 				It("should announce the measurement", func() {
-					Ω(stenographer.Calls[0]).Should(Equal(call("AnnounceSuccesfulMeasurement", spec, false)))
+					Ω(stenographer.Calls()[0]).Should(Equal(call("AnnounceSuccesfulMeasurement", spec, false)))
 				})
 			})
 
@@ -232,13 +232,13 @@ var _ = Describe("DefaultReporter", func() {
 				})
 
 				It("should announce that it was slow", func() {
-					Ω(stenographer.Calls[0]).Should(Equal(call("AnnounceSuccesfulSlowSpec", spec, false)))
+					Ω(stenographer.Calls()[0]).Should(Equal(call("AnnounceSuccesfulSlowSpec", spec, false)))
 				})
 			})
 
 			Context("Otherwise", func() {
 				It("should announce the succesful spec", func() {
-					Ω(stenographer.Calls[0]).Should(Equal(call("AnnounceSuccesfulSpec", spec)))
+					Ω(stenographer.Calls()[0]).Should(Equal(call("AnnounceSuccesfulSpec", spec)))
 				})
 			})
 		})
@@ -249,7 +249,7 @@ var _ = Describe("DefaultReporter", func() {
 			})
 
 			It("should announce the pending spec", func() {
-				Ω(stenographer.Calls[0]).Should(Equal(call("AnnouncePendingSpec", spec, true)))
+				Ω(stenographer.Calls()[0]).Should(Equal(call("AnnouncePendingSpec", spec, true)))
 			})
 		})
 
@@ -259,7 +259,7 @@ var _ = Describe("DefaultReporter", func() {
 			})
 
 			It("should announce the skipped spec", func() {
-				Ω(stenographer.Calls[0]).Should(Equal(call("AnnounceSkippedSpec", spec)))
+				Ω(stenographer.Calls()[0]).Should(Equal(call("AnnounceSkippedSpec", spec)))
 			})
 		})
 
@@ -269,7 +269,7 @@ var _ = Describe("DefaultReporter", func() {
 			})
 
 			It("should announce the timedout spec", func() {
-				Ω(stenographer.Calls[0]).Should(Equal(call("AnnounceSpecTimedOut", spec, false, true)))
+				Ω(stenographer.Calls()[0]).Should(Equal(call("AnnounceSpecTimedOut", spec, false, true)))
 			})
 		})
 
@@ -279,7 +279,7 @@ var _ = Describe("DefaultReporter", func() {
 			})
 
 			It("should announce the panicked spec", func() {
-				Ω(stenographer.Calls[0]).Should(Equal(call("AnnounceSpecPanicked", spec, false, true)))
+				Ω(stenographer.Calls()[0]).Should(Equal(call("AnnounceSpecPanicked", spec, false, true)))
 			})
 		})
 
@@ -289,7 +289,7 @@ var _ = Describe("DefaultReporter", func() {
 			})
 
 			It("should announce the failed spec", func() {
-				Ω(stenographer.Calls[0]).Should(Equal(call("AnnounceSpecFailed", spec, false, true)))
+				Ω(stenographer.Calls()[0]).Should(Equal(call("AnnounceSpecFailed", spec, false, true)))
 			})
 		})
 
@@ -310,7 +310,7 @@ var _ = Describe("DefaultReporter", func() {
 					})
 
 					It("should announce the measurement", func() {
-						Ω(stenographer.Calls[0]).Should(Equal(call("AnnounceSuccesfulMeasurement", spec, true)))
+						Ω(stenographer.Calls()[0]).Should(Equal(call("AnnounceSuccesfulMeasurement", spec, true)))
 					})
 				})
 
@@ -320,13 +320,13 @@ var _ = Describe("DefaultReporter", func() {
 					})
 
 					It("should announce that it was slow", func() {
-						Ω(stenographer.Calls[0]).Should(Equal(call("AnnounceSuccesfulSlowSpec", spec, true)))
+						Ω(stenographer.Calls()[0]).Should(Equal(call("AnnounceSuccesfulSlowSpec", spec, true)))
 					})
 				})
 
 				Context("Otherwise", func() {
 					It("should announce the succesful spec", func() {
-						Ω(stenographer.Calls[0]).Should(Equal(call("AnnounceSuccesfulSpec", spec)))
+						Ω(stenographer.Calls()[0]).Should(Equal(call("AnnounceSuccesfulSpec", spec)))
 					})
 				})
 			})
@@ -337,7 +337,7 @@ var _ = Describe("DefaultReporter", func() {
 				})
 
 				It("should announce the pending spec, but never noisily", func() {
-					Ω(stenographer.Calls[0]).Should(Equal(call("AnnouncePendingSpec", spec, false)))
+					Ω(stenographer.Calls()[0]).Should(Equal(call("AnnouncePendingSpec", spec, false)))
 				})
 			})
 
@@ -347,7 +347,7 @@ var _ = Describe("DefaultReporter", func() {
 				})
 
 				It("should announce the skipped spec", func() {
-					Ω(stenographer.Calls[0]).Should(Equal(call("AnnounceSkippedSpec", spec)))
+					Ω(stenographer.Calls()[0]).Should(Equal(call("AnnounceSkippedSpec", spec)))
 				})
 			})
 
@@ -357,7 +357,7 @@ var _ = Describe("DefaultReporter", func() {
 				})
 
 				It("should announce the timedout spec", func() {
-					Ω(stenographer.Calls[0]).Should(Equal(call("AnnounceSpecTimedOut", spec, true, true)))
+					Ω(stenographer.Calls()[0]).Should(Equal(call("AnnounceSpecTimedOut", spec, true, true)))
 				})
 			})
 
@@ -367,7 +367,7 @@ var _ = Describe("DefaultReporter", func() {
 				})
 
 				It("should announce the panicked spec", func() {
-					Ω(stenographer.Calls[0]).Should(Equal(call("AnnounceSpecPanicked", spec, true, true)))
+					Ω(stenographer.Calls()[0]).Should(Equal(call("AnnounceSpecPanicked", spec, true, true)))
 				})
 			})
 
@@ -377,7 +377,7 @@ var _ = Describe("DefaultReporter", func() {
 				})
 
 				It("should announce the failed spec", func() {
-					Ω(stenographer.Calls[0]).Should(Equal(call("AnnounceSpecFailed", spec, true, true)))
+					Ω(stenographer.Calls()[0]).Should(Equal(call("AnnounceSpecFailed", spec, true, true)))
 				})
 			})
 		})
@@ -390,7 +390,7 @@ var _ = Describe("DefaultReporter", func() {
 		})
 
 		It("should announce the spec run's completion", func() {
-			Ω(stenographer.Calls[0]).Should(Equal(call("AnnounceSpecRunCompletion", suite, false)))
+			Ω(stenographer.Calls()[0]).Should(Equal(call("AnnounceSpecRunCompletion", suite, false)))
 		})
 	})
 })

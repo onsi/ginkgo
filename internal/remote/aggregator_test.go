@@ -4,11 +4,11 @@ import (
 	. "github.com/onsi/ginkgo"
 	. "github.com/onsi/gomega"
 
+	"time"
 	"github.com/onsi/ginkgo/config"
 	. "github.com/onsi/ginkgo/internal/remote"
 	st "github.com/onsi/ginkgo/reporters/stenographer"
 	"github.com/onsi/ginkgo/types"
-	"time"
 )
 
 var _ = Describe("Aggregator", func() {
@@ -108,7 +108,7 @@ var _ = Describe("Aggregator", func() {
 		aggregator.SpecSuiteWillBegin(ginkgoConfig2, suiteSummary2)
 		aggregator.SpecSuiteWillBegin(ginkgoConfig1, suiteSummary1)
 		Eventually(func() interface{} {
-			return len(stenographer.Calls)
+			return len(stenographer.Calls())
 		}).Should(BeNumerically(">=", 3))
 	}
 
@@ -119,7 +119,7 @@ var _ = Describe("Aggregator", func() {
 			})
 
 			It("should be silent", func() {
-				Consistently(func() interface{} { return stenographer.Calls }).Should(BeEmpty())
+				Consistently(func() interface{} { return stenographer.Calls() }).Should(BeEmpty())
 			})
 		})
 
@@ -128,15 +128,15 @@ var _ = Describe("Aggregator", func() {
 				aggregator.SpecSuiteWillBegin(ginkgoConfig2, suiteSummary2)
 				aggregator.SpecSuiteWillBegin(ginkgoConfig1, suiteSummary1)
 				Eventually(func() interface{} {
-					return stenographer.Calls
+					return stenographer.Calls()
 				}).Should(HaveLen(3))
 			})
 
 			It("should announce the beginning of the suite", func() {
-				Ω(stenographer.Calls).Should(HaveLen(3))
-				Ω(stenographer.Calls[0]).Should(Equal(call("AnnounceSuite", suiteDescription, ginkgoConfig1.RandomSeed, true, false)))
-				Ω(stenographer.Calls[1]).Should(Equal(call("AnnounceNumberOfSpecs", 23, 30, false)))
-				Ω(stenographer.Calls[2]).Should(Equal(call("AnnounceAggregatedParallelRun", 2, false)))
+				Ω(stenographer.Calls()).Should(HaveLen(3))
+				Ω(stenographer.Calls()[0]).Should(Equal(call("AnnounceSuite", suiteDescription, ginkgoConfig1.RandomSeed, true, false)))
+				Ω(stenographer.Calls()[1]).Should(Equal(call("AnnounceNumberOfSpecs", 23, 30, false)))
+				Ω(stenographer.Calls()[2]).Should(Equal(call("AnnounceAggregatedParallelRun", 2, false)))
 			})
 		})
 	})
@@ -150,7 +150,7 @@ var _ = Describe("Aggregator", func() {
 			})
 
 			It("should not announce any specs", func() {
-				Consistently(func() interface{} { return stenographer.Calls }).Should(BeEmpty())
+				Consistently(func() interface{} { return stenographer.Calls() }).Should(BeEmpty())
 			})
 
 			Context("when the parallel-suites subsequently start", func() {
@@ -160,11 +160,11 @@ var _ = Describe("Aggregator", func() {
 
 				It("should announce the specs, the before suites and the after suites", func() {
 					Eventually(func() interface{} {
-						return stenographer.Calls
+						return stenographer.Calls()
 					}).Should(ContainElement(call("AnnounceSuccesfulSpec", specSummary)))
 
-					Ω(stenographer.Calls).Should(ContainElement(call("AnnounceCapturedOutput", beforeSummary.CapturedOutput)))
-					Ω(stenographer.Calls).Should(ContainElement(call("AnnounceCapturedOutput", afterSummary.CapturedOutput)))
+					Ω(stenographer.Calls()).Should(ContainElement(call("AnnounceCapturedOutput", beforeSummary.CapturedOutput)))
+					Ω(stenographer.Calls()).Should(ContainElement(call("AnnounceCapturedOutput", afterSummary.CapturedOutput)))
 				})
 			})
 		})
@@ -181,28 +181,28 @@ var _ = Describe("Aggregator", func() {
 					aggregator.SpecDidComplete(specSummary)
 					aggregator.AfterSuiteDidRun(afterSummary)
 					Eventually(func() interface{} {
-						return stenographer.Calls
+						return stenographer.Calls()
 					}).Should(HaveLen(5))
 				})
 
 				It("should announce the captured output of the BeforeSuite", func() {
-					Ω(stenographer.Calls[0]).Should(Equal(call("AnnounceCapturedOutput", beforeSummary.CapturedOutput)))
+					Ω(stenographer.Calls()[0]).Should(Equal(call("AnnounceCapturedOutput", beforeSummary.CapturedOutput)))
 				})
 
 				It("should announce that the spec will run (when in verbose mode)", func() {
-					Ω(stenographer.Calls[1]).Should(Equal(call("AnnounceSpecWillRun", specSummary)))
+					Ω(stenographer.Calls()[1]).Should(Equal(call("AnnounceSpecWillRun", specSummary)))
 				})
 
 				It("should announce the captured stdout of the spec", func() {
-					Ω(stenographer.Calls[2]).Should(Equal(call("AnnounceCapturedOutput", specSummary.CapturedOutput)))
+					Ω(stenographer.Calls()[2]).Should(Equal(call("AnnounceCapturedOutput", specSummary.CapturedOutput)))
 				})
 
 				It("should announce completion", func() {
-					Ω(stenographer.Calls[3]).Should(Equal(call("AnnounceSuccesfulSpec", specSummary)))
+					Ω(stenographer.Calls()[3]).Should(Equal(call("AnnounceSuccesfulSpec", specSummary)))
 				})
 
 				It("should announce the captured output of the AfterSuite", func() {
-					Ω(stenographer.Calls[4]).Should(Equal(call("AnnounceCapturedOutput", afterSummary.CapturedOutput)))
+					Ω(stenographer.Calls()[4]).Should(Equal(call("AnnounceCapturedOutput", afterSummary.CapturedOutput)))
 				})
 			})
 		})
@@ -220,7 +220,7 @@ var _ = Describe("Aggregator", func() {
 			})
 
 			It("should be silent", func() {
-				Consistently(func() interface{} { return stenographer.Calls }).Should(BeEmpty())
+				Consistently(func() interface{} { return stenographer.Calls() }).Should(BeEmpty())
 			})
 
 			It("should not notify the channel", func() {
@@ -242,12 +242,12 @@ var _ = Describe("Aggregator", func() {
 				aggregator.SpecSuiteDidEnd(suiteSummary2)
 				aggregator.SpecSuiteDidEnd(suiteSummary1)
 				Eventually(func() interface{} {
-					return stenographer.Calls
+					return stenographer.Calls()
 				}).Should(HaveLen(1))
 			})
 
 			It("should announce the end of the suite", func() {
-				compositeSummary := stenographer.Calls[0].Args[0].(*types.SuiteSummary)
+				compositeSummary := stenographer.Calls()[0].Args[0].(*types.SuiteSummary)
 
 				Ω(compositeSummary.SuiteSucceeded).Should(BeFalse())
 				Ω(compositeSummary.NumberOfSpecsThatWillBeRun).Should(Equal(23))
@@ -268,12 +268,12 @@ var _ = Describe("Aggregator", func() {
 				aggregator.SpecSuiteDidEnd(suiteSummary2)
 				aggregator.SpecSuiteDidEnd(suiteSummary1)
 				Eventually(func() interface{} {
-					return stenographer.Calls
+					return stenographer.Calls()
 				}).Should(HaveLen(1))
 			})
 
 			It("should report success", func() {
-				compositeSummary := stenographer.Calls[0].Args[0].(*types.SuiteSummary)
+				compositeSummary := stenographer.Calls()[0].Args[0].(*types.SuiteSummary)
 
 				Ω(compositeSummary.SuiteSucceeded).Should(BeTrue())
 			})
@@ -292,12 +292,12 @@ var _ = Describe("Aggregator", func() {
 				aggregator.SpecSuiteDidEnd(suiteSummary2)
 				aggregator.SpecSuiteDidEnd(suiteSummary1)
 				Eventually(func() interface{} {
-					return stenographer.Calls
+					return stenographer.Calls()
 				}).Should(HaveLen(1))
 			})
 
 			It("should report failure", func() {
-				compositeSummary := stenographer.Calls[0].Args[0].(*types.SuiteSummary)
+				compositeSummary := stenographer.Calls()[0].Args[0].(*types.SuiteSummary)
 
 				Ω(compositeSummary.SuiteSucceeded).Should(BeFalse())
 			})

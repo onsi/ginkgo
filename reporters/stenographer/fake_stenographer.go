@@ -1,6 +1,8 @@
 package stenographer
 
 import (
+	"sync"
+
 	"github.com/onsi/ginkgo/types"
 )
 
@@ -12,7 +14,8 @@ func NewFakeStenographerCall(method string, args ...interface{}) FakeStenographe
 }
 
 type FakeStenographer struct {
-	Calls []FakeStenographerCall
+	calls []FakeStenographerCall
+	lock  *sync.Mutex
 }
 
 type FakeStenographerCall struct {
@@ -21,18 +24,33 @@ type FakeStenographerCall struct {
 }
 
 func NewFakeStenographer() *FakeStenographer {
-	stenographer := &FakeStenographer{}
+	stenographer := &FakeStenographer{
+		lock: &sync.Mutex{},
+	}
 	stenographer.Reset()
 	return stenographer
 }
 
+func (stenographer *FakeStenographer) Calls() []FakeStenographerCall {
+	stenographer.lock.Lock()
+	defer stenographer.lock.Unlock()
+
+	return stenographer.calls
+}
+
 func (stenographer *FakeStenographer) Reset() {
-	stenographer.Calls = make([]FakeStenographerCall, 0)
+	stenographer.lock.Lock()
+	defer stenographer.lock.Unlock()
+
+	stenographer.calls = make([]FakeStenographerCall, 0)
 }
 
 func (stenographer *FakeStenographer) CallsTo(method string) []FakeStenographerCall {
+	stenographer.lock.Lock()
+	defer stenographer.lock.Unlock()
+
 	results := make([]FakeStenographerCall, 0)
-	for _, call := range stenographer.Calls {
+	for _, call := range stenographer.calls {
 		if call.Method == method {
 			results = append(results, call)
 		}
@@ -42,7 +60,10 @@ func (stenographer *FakeStenographer) CallsTo(method string) []FakeStenographerC
 }
 
 func (stenographer *FakeStenographer) registerCall(method string, args ...interface{}) {
-	stenographer.Calls = append(stenographer.Calls, NewFakeStenographerCall(method, args...))
+	stenographer.lock.Lock()
+	defer stenographer.lock.Unlock()
+
+	stenographer.calls = append(stenographer.calls, NewFakeStenographerCall(method, args...))
 }
 
 func (stenographer *FakeStenographer) AnnounceSuite(description string, randomSeed int64, randomizingAll bool, succinct bool) {
