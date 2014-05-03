@@ -5,6 +5,7 @@ import (
 	"os"
 	"os/signal"
 	"sync"
+	"syscall"
 	"github.com/onsi/ginkgo/config"
 	"github.com/onsi/ginkgo/internal/leafnodes"
 	"github.com/onsi/ginkgo/internal/spec"
@@ -147,7 +148,7 @@ func (runner *SpecRunner) registerForInterrupts() {
 
 func (runner *SpecRunner) registerForHardInterrupts() {
 	c := make(chan os.Signal, 1)
-	signal.Notify(c, os.Interrupt)
+	signal.Notify(c, os.Interrupt, syscall.SIGTERM)
 
 	<-c
 	fmt.Fprintln(os.Stderr, "\nReceived second interrupt.  Shutting down.")
