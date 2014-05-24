@@ -41,6 +41,10 @@ var _ = AfterEach(func() {
 	Ω(err).ShouldNot(HaveOccurred())
 })
 
+var _ = AfterSuite(func() {
+	gexec.CleanupBuildArtifacts()
+})
+
 func tmpPath(destination string) string {
 	return filepath.Join(tmpDir, destination)
 }
