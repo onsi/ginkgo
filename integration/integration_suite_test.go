@@ -1,32 +1,34 @@
 package integration_test
 
 import (
-	"fmt"
-	. "github.com/onsi/ginkgo"
-	. "github.com/onsi/gomega"
 	"io"
 	"io/ioutil"
 	"os"
 	"os/exec"
 	"path/filepath"
 	"strings"
+	. "github.com/onsi/ginkgo"
+	. "github.com/onsi/gomega"
+	"github.com/onsi/gomega/gexec"
 
 	"testing"
+	"time"
 )
 
 var tmpDir string
+var pathToGinkgo string
 
 func TestIntegration(t *testing.T) {
+	SetDefaultEventuallyTimeout(5 * time.Second)
 	RegisterFailHandler(Fail)
-
-	installGinkgoCommand := exec.Command("go", "install", "github.com/onsi/ginkgo/ginkgo")
-	err := installGinkgoCommand.Run()
-	if err != nil {
-		fmt.Printf("Failed to compile Ginkgo\n\t%s", err.Error())
-	}
-
 	RunSpecs(t, "Integration Suite")
 }
+
+var _ = BeforeSuite(func() {
+	var err error
+	pathToGinkgo, err = gexec.Build("github.com/onsi/ginkgo/ginkgo")
+	Ω(err).ShouldNot(HaveOccurred())
+})
 
 var _ = BeforeEach(func() {
 	var err error
@@ -78,9 +80,9 @@ func ginkgoCommand(dir string, args ...string) *exec.Cmd {
 	return cmd
 }
 
-func runGinkgo(dir string, args ...string) (string, error) {
+func startGinkgo(dir string, args ...string) *gexec.Session {
 	cmd := ginkgoCommand(dir, args...)
-	output, err := cmd.CombinedOutput()
-	GinkgoWriter.Write(output)
-	return string(output), err
+	session, err := gexec.Start(cmd, GinkgoWriter, GinkgoWriter)
+	Ω(err).ShouldNot(HaveOccurred())
+	return session
 }

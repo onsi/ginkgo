@@ -1,9 +1,10 @@
 package integration_test
 
 import (
+	"strings"
 	. "github.com/onsi/ginkgo"
 	. "github.com/onsi/gomega"
-	"strings"
+	"github.com/onsi/gomega/gexec"
 )
 
 var _ = Describe("SuiteSetup", func() {
@@ -16,15 +17,19 @@ var _ = Describe("SuiteSetup", func() {
 		})
 
 		It("should run the BeforeSuite once, then run all the tests", func() {
-			output, err := runGinkgo(pathToTest, "--noColor")
-			Ω(err).ShouldNot(HaveOccurred())
+			session := startGinkgo(pathToTest, "--noColor")
+			Eventually(session).Should(gexec.Exit(0))
+			output := string(session.Out.Contents())
+
 			Ω(strings.Count(output, "BEFORE SUITE")).Should(Equal(1))
 			Ω(strings.Count(output, "AFTER SUITE")).Should(Equal(1))
 		})
 
 		It("should run the BeforeSuite once per parallel node, then run all the tests", func() {
-			output, err := runGinkgo(pathToTest, "--noColor", "--nodes=2")
-			Ω(err).ShouldNot(HaveOccurred())
+			session := startGinkgo(pathToTest, "--noColor", "--nodes=2")
+			Eventually(session).Should(gexec.Exit(0))
+			output := string(session.Out.Contents())
+
 			Ω(strings.Count(output, "BEFORE SUITE")).Should(Equal(2))
 			Ω(strings.Count(output, "AFTER SUITE")).Should(Equal(2))
 		})
@@ -37,8 +42,10 @@ var _ = Describe("SuiteSetup", func() {
 		})
 
 		It("should run the BeforeSuite once, none of the tests, but it should run the AfterSuite", func() {
-			output, err := runGinkgo(pathToTest, "--noColor")
-			Ω(err).Should(HaveOccurred())
+			session := startGinkgo(pathToTest, "--noColor")
+			Eventually(session).Should(gexec.Exit(1))
+			output := string(session.Out.Contents())
+
 			Ω(strings.Count(output, "BEFORE SUITE")).Should(Equal(1))
 			Ω(strings.Count(output, "Test Panicked")).Should(Equal(1))
 			Ω(strings.Count(output, "AFTER SUITE")).Should(Equal(1))
@@ -46,8 +53,10 @@ var _ = Describe("SuiteSetup", func() {
 		})
 
 		It("should run the BeforeSuite once per parallel node, none of the tests, but it should run the AfterSuite for each node", func() {
-			output, err := runGinkgo(pathToTest, "--noColor", "--nodes=2")
-			Ω(err).Should(HaveOccurred())
+			session := startGinkgo(pathToTest, "--noColor", "--nodes=2")
+			Eventually(session).Should(gexec.Exit(1))
+			output := string(session.Out.Contents())
+
 			Ω(strings.Count(output, "BEFORE SUITE")).Should(Equal(2))
 			Ω(strings.Count(output, "Test Panicked")).Should(Equal(2))
 			Ω(strings.Count(output, "AFTER SUITE")).Should(Equal(2))
@@ -62,8 +71,10 @@ var _ = Describe("SuiteSetup", func() {
 		})
 
 		It("should run the BeforeSuite once, none of the tests, but it should run the AfterSuite", func() {
-			output, err := runGinkgo(pathToTest, "--noColor")
-			Ω(err).Should(HaveOccurred())
+			session := startGinkgo(pathToTest, "--noColor")
+			Eventually(session).Should(gexec.Exit(1))
+			output := string(session.Out.Contents())
+
 			Ω(strings.Count(output, "BEFORE SUITE")).Should(Equal(1))
 			Ω(strings.Count(output, "AFTER SUITE")).Should(Equal(1))
 			Ω(strings.Count(output, "Test Panicked")).Should(Equal(1))
@@ -71,8 +82,10 @@ var _ = Describe("SuiteSetup", func() {
 		})
 
 		It("should run the BeforeSuite once per parallel node, none of the tests, but it should run the AfterSuite for each node", func() {
-			output, err := runGinkgo(pathToTest, "--noColor", "--nodes=2")
-			Ω(err).Should(HaveOccurred())
+			session := startGinkgo(pathToTest, "--noColor", "--nodes=2")
+			Eventually(session).Should(gexec.Exit(1))
+			output := string(session.Out.Contents())
+
 			Ω(strings.Count(output, "BEFORE SUITE")).Should(Equal(2))
 			Ω(strings.Count(output, "AFTER SUITE")).Should(Equal(2))
 			Ω(strings.Count(output, "Test Panicked")).Should(Equal(2))
@@ -88,8 +101,9 @@ var _ = Describe("SuiteSetup", func() {
 
 		Context("when run with one node", func() {
 			It("should do all the work on that one node", func() {
-				output, err := runGinkgo(pathToTest, "--noColor")
-				Ω(err).ShouldNot(HaveOccurred())
+				session := startGinkgo(pathToTest, "--noColor")
+				Eventually(session).Should(gexec.Exit(0))
+				output := string(session.Out.Contents())
 
 				Ω(output).Should(ContainSubstring("BEFORE_A_1\nBEFORE_B_1: DATA"))
 				Ω(output).Should(ContainSubstring("AFTER_A_1\nAFTER_B_1"))
@@ -98,8 +112,9 @@ var _ = Describe("SuiteSetup", func() {
 
 		Context("when run across multiple nodes", func() {
 			It("should run the first BeforeSuite function (BEFORE_A) on node 1, the second (BEFORE_B) on all the nodes, the first AfterSuite (AFTER_A) on all the nodes, and then the second (AFTER_B) on Node 1 *after* everything else is finished", func() {
-				output, err := runGinkgo(pathToTest, "--noColor", "--nodes=3")
-				Ω(err).ShouldNot(HaveOccurred())
+				session := startGinkgo(pathToTest, "--noColor", "--nodes=3")
+				Eventually(session).Should(gexec.Exit(0))
+				output := string(session.Out.Contents())
 
 				Ω(output).Should(ContainSubstring("BEFORE_A_1"))
 				Ω(output).Should(ContainSubstring("BEFORE_B_1: DATA"))
@@ -121,8 +136,9 @@ var _ = Describe("SuiteSetup", func() {
 
 		Context("when streaming across multiple nodes", func() {
 			It("should run the first BeforeSuite function (BEFORE_A) on node 1, the second (BEFORE_B) on all the nodes, the first AfterSuite (AFTER_A) on all the nodes, and then the second (AFTER_B) on Node 1 *after* everything else is finished", func() {
-				output, err := runGinkgo(pathToTest, "--noColor", "--nodes=3", "--stream")
-				Ω(err).ShouldNot(HaveOccurred())
+				session := startGinkgo(pathToTest, "--noColor", "--nodes=3", "--stream")
+				Eventually(session).Should(gexec.Exit(0))
+				output := string(session.Out.Contents())
 
 				Ω(output).Should(ContainSubstring("[1] BEFORE_A_1"))
 				Ω(output).Should(ContainSubstring("[1] BEFORE_B_1: DATA"))
@@ -150,8 +166,9 @@ var _ = Describe("SuiteSetup", func() {
 		})
 
 		It("should fail and let the user know that node 1 disappeared prematurely", func() {
-			output, err := runGinkgo(pathToTest, "--noColor", "--nodes=3")
-			Ω(err).Should(HaveOccurred())
+			session := startGinkgo(pathToTest, "--noColor", "--nodes=3")
+			Eventually(session).Should(gexec.Exit(1))
+			output := string(session.Out.Contents())
 
 			Ω(output).Should(ContainSubstring("Node 1 disappeared before completing BeforeSuite"))
 			Ω(output).Should(ContainSubstring("Ginkgo timed out waiting for all parallel nodes to end"))
