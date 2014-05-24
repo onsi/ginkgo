@@ -4,6 +4,7 @@ import (
 	"strings"
 	. "github.com/onsi/ginkgo"
 	. "github.com/onsi/gomega"
+	"github.com/onsi/gomega/gbytes"
 	"github.com/onsi/gomega/gexec"
 )
 
@@ -246,6 +247,32 @@ var _ = Describe("Running Specs", func() {
 				Ω(output).Should(MatchRegexp(`\[\d+\] More_ginkgo_tests Suite - 2/2 specs •• SUCCESS! [\d.mus]+ PASS`))
 				Ω(output).Should(ContainSubstring("Test Suite Failed"))
 			})
+		})
+	})
+
+	Context("when told to keep going --untilItFails", func() {
+		BeforeEach(func() {
+			copyIn("eventually_failing", tmpDir)
+		})
+
+		It("should keep rerunning the tests, until a failure occurs", func() {
+			session := startGinkgo(tmpDir, "--untilItFails", "--noColor")
+			Eventually(session).Should(gexec.Exit(1))
+			Ω(session).Should(gbytes.Say("This was attempt #1"))
+			Ω(session).Should(gbytes.Say("This was attempt #2"))
+			Ω(session).Should(gbytes.Say("Tests failed on attempt #3"))
+
+			//it should change the random seed between each test
+			lines := strings.Split(string(session.Out.Contents()), "\n")
+			randomSeeds := []string{}
+			for _, line := range lines {
+				if strings.Contains(line, "Random Seed:") {
+					randomSeeds = append(randomSeeds, strings.Split(line, ": ")[1])
+				}
+			}
+			Ω(randomSeeds[0]).ShouldNot(Equal(randomSeeds[1]))
+			Ω(randomSeeds[1]).ShouldNot(Equal(randomSeeds[2]))
+			Ω(randomSeeds[0]).ShouldNot(Equal(randomSeeds[2]))
 		})
 	})
 })
