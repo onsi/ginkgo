@@ -72,7 +72,7 @@ func copyIn(fixture string, destination string) {
 }
 
 func ginkgoCommand(dir string, args ...string) *exec.Cmd {
-	cmd := exec.Command("ginkgo", args...)
+	cmd := exec.Command(pathToGinkgo, args...)
 	cmd.Dir = dir
 	cmd.Env = []string{}
 	for _, env := range os.Environ() {
