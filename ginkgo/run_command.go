@@ -52,6 +52,7 @@ func (r *SpecRunner) RunSpecs(args []string, additionalArgs []string) {
 	if r.commandFlags.UntilItFails {
 		iteration := 0
 		for {
+			r.UpdateSeed()
 			passed, numSuites = r.RunSuites(suites, additionalArgs)
 			iteration++
 
@@ -96,15 +97,14 @@ func (r *SpecRunner) ComputeSuccinctMode(numSuites int) {
 		return
 	}
 
-	didSetSuccinct := false
-	r.commandFlags.FlagSet.Visit(func(f *flag.Flag) {
-		if f.Name == "succinct" {
-			didSetSuccinct = true
-		}
-	})
-
-	if numSuites > 1 && !didSetSuccinct {
+	if numSuites > 1 && !r.commandFlags.wasSet("succinct") {
 		config.DefaultReporterConfig.Succinct = true
+	}
+}
+
+func (r *SpecRunner) UpdateSeed() {
+	if !r.commandFlags.wasSet("seed") {
+		config.GinkgoConfig.RandomSeed = time.Now().Unix()
 	}
 }
 

@@ -3,6 +3,9 @@ package main
 import (
 	"flag"
 	"fmt"
+	"time"
+
+	"github.com/onsi/ginkgo/config"
 	"github.com/onsi/ginkgo/ginkgo/testrunner"
 	"github.com/onsi/ginkgo/ginkgo/testsuite"
 )
@@ -68,6 +71,7 @@ func (w *SpecWatcher) WatchSuites(suites []*testsuite.TestSuite, additionalArgs 
 }
 
 func (w *SpecWatcher) RunSuite(suite *testsuite.TestSuite, additionalArgs []string) {
+	w.UpdateSeed()
 	runner := testrunner.New(suite, w.commandFlags.NumCPU, w.commandFlags.ParallelStream, w.commandFlags.Race, w.commandFlags.Cover, additionalArgs)
 	err := runner.Compile()
 	if err != nil {
@@ -76,4 +80,10 @@ func (w *SpecWatcher) RunSuite(suite *testsuite.TestSuite, additionalArgs []stri
 	suitePassed := (err == nil) && runner.Run()
 	w.notifier.SendSuiteCompletionNotification(suite, suitePassed)
 	runner.CleanUp()
+}
+
+func (w *SpecWatcher) UpdateSeed() {
+	if !w.commandFlags.wasSet("seed") {
+		config.GinkgoConfig.RandomSeed = time.Now().Unix()
+	}
 }

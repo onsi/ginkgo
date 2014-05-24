@@ -1,10 +1,11 @@
 package spec
 
 import (
+	"time"
+
 	"github.com/onsi/ginkgo/internal/containernode"
 	"github.com/onsi/ginkgo/internal/leafnodes"
 	"github.com/onsi/ginkgo/types"
-	"time"
 )
 
 type Spec struct {

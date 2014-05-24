@@ -2,8 +2,9 @@ package main
 
 import (
 	"flag"
-	"github.com/onsi/ginkgo/config"
 	"runtime"
+
+	"github.com/onsi/ginkgo/config"
 )
 
 type RunAndWatchCommandFlags struct {
@@ -36,6 +37,17 @@ func NewWatchCommandFlags(flagSet *flag.FlagSet) *RunAndWatchCommandFlags {
 	}
 	c.flags(true)
 	return c
+}
+
+func (c *RunAndWatchCommandFlags) wasSet(flagName string) bool {
+	wasSet := false
+	c.FlagSet.Visit(func(f *flag.Flag) {
+		if f.Name == flagName {
+			wasSet = true
+		}
+	})
+
+	return wasSet
 }
 
 func (c *RunAndWatchCommandFlags) flags(forWatchCommand bool) {
