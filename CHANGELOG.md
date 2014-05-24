@@ -1,3 +1,19 @@
+## 1.0.0 (5/24/214)
+New Features:
+
+- Add `GinkgoParallelNode()` - shorthand for `config.GinkgoConfig.ParallelNode`
+
+Improvements:
+
+- When compilation fails, the compilation output is rewritten to present a correct *relative* path.  Allows ⌘-clicking in iTerm open the file in your text editor.
+- `--untilItFails` and `ginkgo watch` now generate new random seeds between test runs, unless a particular random seed is specified.
+
+Bug Fixes:
+
+- `-cover` now generates a correctly combined coverprofile when running with in parallel with multiple `-node`s.
+- Print out the contents of the `GinkgoWriter` when `BeforeSuite` or `AfterSuite` fail.
+- Fix all remaining race conditions in Ginkgo's test suite.
+
 ## 1.0.0-beta (4/14/2014)
 Breaking changes:
 
