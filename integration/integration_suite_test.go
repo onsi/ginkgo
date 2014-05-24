@@ -19,7 +19,7 @@ var tmpDir string
 var pathToGinkgo string
 
 func TestIntegration(t *testing.T) {
-	SetDefaultEventuallyTimeout(10 * time.Second)
+	SetDefaultEventuallyTimeout(15 * time.Second)
 	RegisterFailHandler(Fail)
 	RunSpecs(t, "Integration Suite")
 }
