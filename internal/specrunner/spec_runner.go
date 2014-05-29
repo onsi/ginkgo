@@ -59,7 +59,7 @@ func (runner *SpecRunner) Run() bool {
 
 	suitePassed = runner.runAfterSuite() && suitePassed
 
-	runner.reportSuiteDidEnd()
+	runner.reportSuiteDidEnd(suitePassed)
 
 	return suitePassed
 }
@@ -142,7 +142,7 @@ func (runner *SpecRunner) registerForInterrupts() {
 		fmt.Fprintln(os.Stderr, "\nReceived interrupt.  Running AfterSuite...\n^C again to terminate immediately")
 		runner.runAfterSuite()
 	}
-	runner.reportSuiteDidEnd()
+	runner.reportSuiteDidEnd(false)
 	os.Exit(1)
 }
 
@@ -179,7 +179,7 @@ func (runner *SpecRunner) wasInterrupted() bool {
 
 func (runner *SpecRunner) reportSuiteWillBegin() {
 	runner.startTime = time.Now()
-	summary := runner.summary()
+	summary := runner.summary(true)
 	for _, reporter := range runner.reporters {
 		reporter.SpecSuiteWillBegin(runner.config, summary)
 	}
@@ -211,8 +211,8 @@ func (runner *SpecRunner) reportSpecDidComplete(spec *spec.Spec) {
 	}
 }
 
-func (runner *SpecRunner) reportSuiteDidEnd() {
-	summary := runner.summary()
+func (runner *SpecRunner) reportSuiteDidEnd(success bool) {
+	summary := runner.summary(success)
 	summary.RunTime = time.Since(runner.startTime)
 	for _, reporter := range runner.reporters {
 		reporter.SpecSuiteDidEnd(summary)
@@ -231,7 +231,7 @@ func (runner *SpecRunner) countSpecsSatisfying(filter func(ex *spec.Spec) bool) 
 	return count
 }
 
-func (runner *SpecRunner) summary() *types.SuiteSummary {
+func (runner *SpecRunner) summary(success bool) *types.SuiteSummary {
 	numberOfSpecsThatWillBeRun := runner.countSpecsSatisfying(func(ex *spec.Spec) bool {
 		return !ex.Skipped() && !ex.Pending()
 	})
@@ -252,19 +252,8 @@ func (runner *SpecRunner) summary() *types.SuiteSummary {
 		return ex.Failed()
 	})
 
-	success := true
-
-	if numberOfFailedSpecs > 0 {
-		success = false
-	} else if numberOfPendingSpecs > 0 && runner.config.FailOnPending {
-		success = false
-	} else if runner.beforeSuiteNode != nil && !runner.beforeSuiteNode.Passed() {
-		success = false
+	if runner.beforeSuiteNode != nil && !runner.beforeSuiteNode.Passed() {
 		numberOfFailedSpecs = numberOfSpecsThatWillBeRun
-	} else if runner.afterSuiteNode != nil && !runner.afterSuiteNode.Passed() {
-		success = false
-	} else if runner.wasInterrupted() {
-		success = false
 	}
 
 	return &types.SuiteSummary{

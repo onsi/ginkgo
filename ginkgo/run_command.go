@@ -48,19 +48,19 @@ func (r *SpecRunner) RunSpecs(args []string, additionalArgs []string) {
 	t := time.Now()
 
 	numSuites := 0
-	passed := true
+	runResult := testrunner.PassingRunResult()
 	if r.commandFlags.UntilItFails {
 		iteration := 0
 		for {
 			r.UpdateSeed()
-			passed, numSuites = r.RunSuites(suites, additionalArgs)
+			runResult, numSuites = r.RunSuites(suites, additionalArgs)
 			iteration++
 
 			if r.interruptHandler.WasInterrupted() {
 				break
 			}
 
-			if passed {
+			if runResult.Passed {
 				fmt.Printf("\nAll tests passed...\nWill keep running them until they fail.\nThis was attempt #%d\n%s\n", iteration, orcMessage(iteration))
 			} else {
 				fmt.Printf("\nTests failed on attempt #%d\n\n", iteration)
@@ -68,7 +68,7 @@ func (r *SpecRunner) RunSpecs(args []string, additionalArgs []string) {
 			}
 		}
 	} else {
-		passed, numSuites = r.RunSuites(suites, additionalArgs)
+		runResult, numSuites = r.RunSuites(suites, additionalArgs)
 	}
 
 	noun := "suites"
@@ -78,9 +78,15 @@ func (r *SpecRunner) RunSpecs(args []string, additionalArgs []string) {
 
 	fmt.Printf("\nGinkgo ran %d %s in %s\n", numSuites, noun, time.Since(t))
 
-	if passed {
-		fmt.Printf("Test Suite Passed\n")
-		os.Exit(0)
+	if runResult.Passed {
+		if runResult.HasProgrammaticFocus {
+			fmt.Printf("Test Suite Passed\n")
+			fmt.Printf("Detected Programmatic Focus - setting exit status to 2\n")
+			os.Exit(2)
+		} else {
+			fmt.Printf("Test Suite Passed\n")
+			os.Exit(0)
+		}
 	} else {
 		fmt.Printf("Test Suite Failed\n")
 		os.Exit(1)
@@ -125,8 +131,8 @@ func (c *compiler) compile() {
 	c.compilationError <- err
 }
 
-func (r *SpecRunner) RunSuites(suites []*testsuite.TestSuite, additionalArgs []string) (bool, int) {
-	passed := true
+func (r *SpecRunner) RunSuites(suites []*testsuite.TestSuite, additionalArgs []string) (testrunner.RunResult, int) {
+	runResult := testrunner.PassingRunResult()
 
 	suiteCompilers := make([]*compiler, len(suites))
 	for i, suite := range suites {
@@ -165,11 +171,13 @@ func (r *SpecRunner) RunSuites(suites []*testsuite.TestSuite, additionalArgs []s
 			fmt.Print(compilationError.Error())
 		}
 		numSuitesThatRan++
-		suitePassed := (compilationError == nil) && suiteCompilers[i].runner.Run()
-		r.notifier.SendSuiteCompletionNotification(suite, suitePassed)
-
-		if !suitePassed {
-			passed = false
+		suiteRunResult := testrunner.FailingRunResult()
+		if compilationError == nil {
+			suiteRunResult = suiteCompilers[i].runner.Run()
+		}
+		r.notifier.SendSuiteCompletionNotification(suite, suiteRunResult.Passed)
+		runResult = runResult.Merge(suiteRunResult)
+		if !suiteRunResult.Passed {
 			suitesThatFailed = append(suitesThatFailed, suite)
 			if !r.commandFlags.KeepGoing {
 				break
@@ -184,11 +192,11 @@ func (r *SpecRunner) RunSuites(suites []*testsuite.TestSuite, additionalArgs []s
 		suiteCompilers[i].runner.CleanUp()
 	}
 
-	if r.commandFlags.KeepGoing && !passed {
+	if r.commandFlags.KeepGoing && !runResult.Passed {
 		r.listFailedSuites(suitesThatFailed)
 	}
 
-	return passed, numSuitesThatRan
+	return runResult, numSuitesThatRan
 }
 
 func (r *SpecRunner) listFailedSuites(suitesThatFailed []*testsuite.TestSuite) {

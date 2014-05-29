@@ -1,6 +1,9 @@
 package suite
 
 import (
+	"math/rand"
+	"time"
+
 	"github.com/onsi/ginkgo/config"
 	"github.com/onsi/ginkgo/internal/containernode"
 	"github.com/onsi/ginkgo/internal/failer"
@@ -10,8 +13,6 @@ import (
 	"github.com/onsi/ginkgo/internal/writer"
 	"github.com/onsi/ginkgo/reporters"
 	"github.com/onsi/ginkgo/types"
-	"math/rand"
-	"time"
 )
 
 type ginkgoTestingT interface {
@@ -39,7 +40,7 @@ func New(failer *failer.Failer) *Suite {
 	}
 }
 
-func (suite *Suite) Run(t ginkgoTestingT, description string, reporters []reporters.Reporter, writer writer.WriterInterface, config config.GinkgoConfigType) bool {
+func (suite *Suite) Run(t ginkgoTestingT, description string, reporters []reporters.Reporter, writer writer.WriterInterface, config config.GinkgoConfigType) (bool, bool) {
 	if config.ParallelTotal < 1 {
 		panic("ginkgo.parallel.total must be >= 1")
 	}
@@ -57,7 +58,7 @@ func (suite *Suite) Run(t ginkgoTestingT, description string, reporters []report
 	if !success {
 		t.Fail()
 	}
-	return success
+	return success, specs.HasProgrammaticFocus()
 }
 
 func (suite *Suite) generateSpecs(description string, config config.GinkgoConfigType) *spec.Specs {

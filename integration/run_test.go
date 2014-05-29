@@ -66,6 +66,28 @@ var _ = Describe("Running Specs", func() {
 		})
 	})
 
+	Context("when passed a number of packages to run, some of which have focused tests", func() {
+		BeforeEach(func() {
+			pathToTest = tmpPath("ginkgo")
+			otherPathToTest := tmpPath("other")
+			focusedPathToTest := tmpPath("focused")
+			copyIn("passing_ginkgo_tests", pathToTest)
+			copyIn("more_ginkgo_tests", otherPathToTest)
+			copyIn("focused_fixture", focusedPathToTest)
+		})
+
+		It("should exit with a status code of 2 and explain why", func() {
+			session := startGinkgo(tmpDir, "--noColor", "--succinct=false", "-r")
+			Eventually(session).Should(gexec.Exit(2))
+			output := string(session.Out.Contents())
+
+			Ω(output).Should(ContainSubstring("Running Suite: Passing_ginkgo_tests Suite"))
+			Ω(output).Should(ContainSubstring("Running Suite: More_ginkgo_tests Suite"))
+			Ω(output).Should(ContainSubstring("Test Suite Passed"))
+			Ω(output).Should(ContainSubstring("Detected Programmatic Focus - setting exit status to 2"))
+		})
+	})
+
 	Context("when told to skipPackages", func() {
 		BeforeEach(func() {
 			pathToTest = tmpPath("ginkgo")

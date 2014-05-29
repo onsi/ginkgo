@@ -13,6 +13,7 @@ package ginkgo
 
 import (
 	"flag"
+	"fmt"
 	"io"
 	"net/http"
 	"os"
@@ -200,7 +201,12 @@ func RunSpecsWithCustomReporters(t GinkgoTestingT, description string, specRepor
 	for i, reporter := range specReporters {
 		reporters[i] = reporter
 	}
-	return globalSuite.Run(t, description, reporters, writer, config.GinkgoConfig)
+	passed, hasFocusedTests := globalSuite.Run(t, description, reporters, writer, config.GinkgoConfig)
+	if passed && hasFocusedTests {
+		fmt.Println("PASS | FOCUSED")
+		os.Exit(2)
+	}
+	return passed
 }
 
 func buildDefaultReporter() Reporter {

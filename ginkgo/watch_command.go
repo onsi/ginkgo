@@ -77,8 +77,11 @@ func (w *SpecWatcher) RunSuite(suite *testsuite.TestSuite, additionalArgs []stri
 	if err != nil {
 		fmt.Print(err.Error())
 	}
-	suitePassed := (err == nil) && runner.Run()
-	w.notifier.SendSuiteCompletionNotification(suite, suitePassed)
+	runResult := testrunner.FailingRunResult()
+	if err == nil {
+		runResult = runner.Run()
+	}
+	w.notifier.SendSuiteCompletionNotification(suite, runResult.Passed)
 	runner.CleanUp()
 }
 

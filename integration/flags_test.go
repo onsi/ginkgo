@@ -23,7 +23,7 @@ var _ = Describe("Flags Specs", func() {
 
 	It("normally passes, runs measurements, prints out noisy pendings, does not randomize tests, and honors the programmatic focus", func() {
 		session := startGinkgo(pathToTest, "--noColor")
-		Eventually(session).Should(gexec.Exit(0))
+		Eventually(session).Should(gexec.Exit(2))
 		output := string(session.Out.Contents())
 
 		Ω(output).Should(ContainSubstring("Ran 3 samples:"), "has a measurement")
@@ -35,6 +35,7 @@ var _ = Describe("Flags Specs", func() {
 		Ω(output).Should(ContainSubstring("marshmallow"))
 		Ω(output).Should(ContainSubstring("chocolate"))
 		Ω(output).Should(ContainSubstring("CUSTOM_FLAG: default"))
+		Ω(output).Should(ContainSubstring("Detected Programmatic Focus - setting exit status to 2"))
 		Ω(output).ShouldNot(ContainSubstring("smores"))
 		Ω(output).ShouldNot(ContainSubstring("SLOW TEST"))
 		Ω(output).ShouldNot(ContainSubstring("should honor -slowSpecThreshold"))
@@ -45,7 +46,7 @@ var _ = Describe("Flags Specs", func() {
 	})
 
 	It("should run a coverprofile when passed -cover", func() {
-		session := startGinkgo(pathToTest, "--noColor", "--cover")
+		session := startGinkgo(pathToTest, "--noColor", "--cover", "--focus=the focused set")
 		Eventually(session).Should(gexec.Exit(0))
 		output := string(session.Out.Contents())
 
@@ -61,7 +62,7 @@ var _ = Describe("Flags Specs", func() {
 
 	It("should not print out pendings when --noisyPendings=false", func() {
 		session := startGinkgo(pathToTest, "--noColor", "--noisyPendings=false")
-		Eventually(session).Should(gexec.Exit(0))
+		Eventually(session).Should(gexec.Exit(2))
 		output := string(session.Out.Contents())
 
 		Ω(output).ShouldNot(ContainSubstring("[PENDING]"))
@@ -98,7 +99,7 @@ var _ = Describe("Flags Specs", func() {
 
 	It("should run the race detector when told to", func() {
 		session := startGinkgo(pathToTest, "--noColor", "--race")
-		Eventually(session).Should(gexec.Exit(1))
+		Eventually(session).Should(gexec.Exit(2))
 		output := string(session.Out.Contents())
 
 		Ω(output).Should(ContainSubstring("WARNING: DATA RACE"))
@@ -106,7 +107,7 @@ var _ = Describe("Flags Specs", func() {
 
 	It("should randomize tests when told to", func() {
 		session := startGinkgo(pathToTest, "--noColor", "--randomizeAllSpecs", "--seed=21")
-		Eventually(session).Should(gexec.Exit(0))
+		Eventually(session).Should(gexec.Exit(2))
 		output := string(session.Out.Contents())
 
 		orders := getRandomOrders(output)
@@ -115,7 +116,7 @@ var _ = Describe("Flags Specs", func() {
 
 	It("should skip measurements when told to", func() {
 		session := startGinkgo(pathToTest, "--skipMeasurements")
-		Eventually(session).Should(gexec.Exit(0))
+		Eventually(session).Should(gexec.Exit(2))
 		output := string(session.Out.Contents())
 
 		Ω(output).ShouldNot(ContainSubstring("Ran 3 samples:"), "has a measurement")
@@ -124,7 +125,7 @@ var _ = Describe("Flags Specs", func() {
 
 	It("should watch for slow specs", func() {
 		session := startGinkgo(pathToTest, "--slowSpecThreshold=0.05")
-		Eventually(session).Should(gexec.Exit(0))
+		Eventually(session).Should(gexec.Exit(2))
 		output := string(session.Out.Contents())
 
 		Ω(output).Should(ContainSubstring("SLOW TEST"))
@@ -133,7 +134,7 @@ var _ = Describe("Flags Specs", func() {
 
 	It("should pass additional arguments in", func() {
 		session := startGinkgo(pathToTest, "--", "--customFlag=madagascar")
-		Eventually(session).Should(gexec.Exit(0))
+		Eventually(session).Should(gexec.Exit(2))
 		output := string(session.Out.Contents())
 
 		Ω(output).Should(ContainSubstring("CUSTOM_FLAG: madagascar"))

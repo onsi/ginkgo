@@ -198,7 +198,7 @@ var _ = Describe("Subcommand", func() {
 			copyIn("focused_fixture", pathToTest)
 
 			session := startGinkgo(pathToTest, "--noColor")
-			Eventually(session).Should(gexec.Exit(0))
+			Eventually(session).Should(gexec.Exit(2))
 			output := session.Out.Contents()
 
 			Ω(output).Should(ContainSubstring("3 Passed"))

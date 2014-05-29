@@ -9,6 +9,7 @@ import (
 type Specs struct {
 	specs                 []*Spec
 	numberOfOriginalSpecs int
+	hasProgrammaticFocus  bool
 }
 
 func NewSpecs(specs []*Spec) *Specs {
@@ -24,6 +25,10 @@ func (e *Specs) Specs() []*Spec {
 
 func (e *Specs) NumberOfOriginalSpecs() int {
 	return e.numberOfOriginalSpecs
+}
+
+func (e *Specs) HasProgrammaticFocus() bool {
+	return e.hasProgrammaticFocus
 }
 
 func (e *Specs) Shuffle(r *rand.Rand) {
@@ -45,15 +50,15 @@ func (e *Specs) ApplyFocus(description string, focusString string, skipString st
 }
 
 func (e *Specs) applyProgrammaticFocus() {
-	hasFocusedTests := false
+	e.hasProgrammaticFocus = false
 	for _, spec := range e.specs {
 		if spec.Focused() {
-			hasFocusedTests = true
+			e.hasProgrammaticFocus = true
 			break
 		}
 	}
 
-	if hasFocusedTests {
+	if e.hasProgrammaticFocus {
 		for _, spec := range e.specs {
 			if !spec.Focused() {
 				spec.Skip()
