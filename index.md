@@ -477,7 +477,7 @@ It is often convenient, when developing to be able to run a subset of specs.  Gi
 
 2. You can pass in a regular expression with the `--focus=REGEXP` and/or `--skip=REGEXP` flags.  Ginkgo will only run specs that match the focus regular expression and don't match the skip regular expression.
 
-When Ginkgo detects that a passing test suite has a programmatically focused test it causes the suite to exit with status code 2.  This is to help detect erroneously committed focused tests on CI systems.  When passed a command-line focus/skip flag Ginkgo exits with status code 0 - if you want to focus tests on your CI system you should explicitly pass in a -focus or -skip flag.
+When Ginkgo detects that a passing test suite has a programmatically focused test it causes the suite to exit with a non-zero status code.  This is to help detect erroneously committed focused tests on CI systems.  When passed a command-line focus/skip flag Ginkgo exits with status code 0 - if you want to focus tests on your CI system you should explicitly pass in a -focus or -skip flag.
 
 > The programatic approach and the `--focus=REGEXP`/`--skip=REGEXP` approach are mutually exclusive.  Using the command line flags will override the programmatic focus.
 
