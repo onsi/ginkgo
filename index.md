@@ -501,9 +501,19 @@ Ginkgo uses the current time to seed the randomization.  It prints out the seed 
 
 Ginkgo has support for running specs in parallel.  It does this by spawning separate `go test` processes and dividing the specs evenly among these processes.  This is important for a BDD test framework, as the shared context of the closures does not parallelize well in-process.
 
-To run a Ginkgo suite in parallel you *must* use the `ginkgo` CLI.  To run N processes in parallel invoke:
+To run a Ginkgo suite in parallel you *must* use the `ginkgo` CLI.  Simply pass in the `-p` flag:
+
+    ginkgo -p
+
+this will automatically detect the optimal number of test nodes to spawn (see the note below.
+
+To specify the number of nodes to spawn, use `-nodes`:
 
     ginkgo -nodes=N
+
+> You do not need to specify both `-p` and `-nodes`.  Setting `-nodes` to anything greater than 1 implies a parallelized test run.
+
+> The number of nodes used with `-p` is `runtime.NumCPU()` if `runtime.NumCPU() <= 4`, otherwise it is `runtime.NumCPU() - 1` based on a rigorous science based heuristic best characterized as "my gut sense based on a few months of experience"
 
 The test runner collates output from the running processes into one coherent output.  This is done, under the hood, via a client-server model: as each client suite completes a test, the test output and status is sent to the server which then prints to screen.  This collates the output of simultaneous test runners to one coherent (i.e. non-interleaved), aggregated, output.
 
@@ -680,9 +690,13 @@ Here are the flags that Ginkgo accepts:
 
 **Running in parallel:**
 
+- `-p`
+
+    Set `-p` to parallelize the test suite across an auto-detected number of nodes.
+
 - `--nodes=NODE_TOTAL`
 
-    Use this to parallelize the suite across NODE_TOTAL processes.
+    Use this to parallelize the suite across NODE_TOTAL processes.  You don't need to specify `-p` as well (though you can!)
 
 - `-stream`
 
@@ -743,6 +757,8 @@ Here are the flags that Ginkgo accepts:
 - `-cover`
 
     Set `-cover` to have the `ginkgo` CLI run your tests with coverage analysis turned on (a Golang 1.2+ feature).  Ginkgo will generate coverage profiles under the current directory named `PACKAGE.coverprofile` for each set of package tests that is run.
+
+** Build flags: **
 
 - `-tags`
     
