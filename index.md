@@ -1,4 +1,4 @@
----
+ss---
 layout: default
 title: Ginkgo
 ---
@@ -743,6 +743,10 @@ Here are the flags that Ginkgo accepts:
 - `-cover`
 
     Set `-cover` to have the `ginkgo` CLI run your tests with coverage analysis turned on (a Golang 1.2+ feature).  Ginkgo will generate coverage profiles under the current directory named `PACKAGE.coverprofile` for each set of package tests that is run.
+
+- `-tags`
+    
+    Set `-tags` to pass in build tags down to the compilation step.
 
 **Miscellaneous:**
 
