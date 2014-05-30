@@ -3,6 +3,7 @@ package integration_test
 import (
 	"strings"
 	. "github.com/onsi/ginkgo"
+	"github.com/onsi/ginkgo/types"
 	. "github.com/onsi/gomega"
 	"github.com/onsi/gomega/gbytes"
 	"github.com/onsi/gomega/gexec"
@@ -78,13 +79,13 @@ var _ = Describe("Running Specs", func() {
 
 		It("should exit with a status code of 2 and explain why", func() {
 			session := startGinkgo(tmpDir, "--noColor", "--succinct=false", "-r")
-			Eventually(session).Should(gexec.Exit(2))
+			Eventually(session).Should(gexec.Exit(types.GINKGO_FOCUS_EXIT_CODE))
 			output := string(session.Out.Contents())
 
 			Ω(output).Should(ContainSubstring("Running Suite: Passing_ginkgo_tests Suite"))
 			Ω(output).Should(ContainSubstring("Running Suite: More_ginkgo_tests Suite"))
 			Ω(output).Should(ContainSubstring("Test Suite Passed"))
-			Ω(output).Should(ContainSubstring("Detected Programmatic Focus - setting exit status to 2"))
+			Ω(output).Should(ContainSubstring("Detected Programmatic Focus - setting exit status to %d", types.GINKGO_FOCUS_EXIT_CODE))
 		})
 	})
 

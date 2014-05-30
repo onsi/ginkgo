@@ -6,6 +6,7 @@ import (
 	"path/filepath"
 	"strings"
 	. "github.com/onsi/ginkgo"
+	"github.com/onsi/ginkgo/types"
 	. "github.com/onsi/gomega"
 	"github.com/onsi/gomega/gexec"
 )
@@ -198,7 +199,7 @@ var _ = Describe("Subcommand", func() {
 			copyIn("focused_fixture", pathToTest)
 
 			session := startGinkgo(pathToTest, "--noColor")
-			Eventually(session).Should(gexec.Exit(2))
+			Eventually(session).Should(gexec.Exit(types.GINKGO_FOCUS_EXIT_CODE))
 			output := session.Out.Contents()
 
 			Ω(output).Should(ContainSubstring("3 Passed"))

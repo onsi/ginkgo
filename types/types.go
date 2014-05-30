@@ -4,6 +4,8 @@ import (
 	"time"
 )
 
+const GINKGO_FOCUS_EXIT_CODE = 197
+
 type SuiteSummary struct {
 	SuiteDescription string
 	SuiteSucceeded   bool

@@ -13,11 +13,11 @@ import (
 	"strings"
 	"syscall"
 	"time"
-
 	"github.com/onsi/ginkgo/config"
 	"github.com/onsi/ginkgo/ginkgo/testsuite"
 	"github.com/onsi/ginkgo/internal/remote"
 	"github.com/onsi/ginkgo/reporters/stenographer"
+	"github.com/onsi/ginkgo/types"
 )
 
 type TestRunner struct {
@@ -310,8 +310,8 @@ func (t *TestRunner) run(cmd *exec.Cmd, completions chan RunResult) RunResult {
 
 	cmd.Wait()
 	exitStatus := cmd.ProcessState.Sys().(syscall.WaitStatus).ExitStatus()
-	res.Passed = (exitStatus == 0) || (exitStatus == 2)
-	res.HasProgrammaticFocus = (exitStatus == 2)
+	res.Passed = (exitStatus == 0) || (exitStatus == types.GINKGO_FOCUS_EXIT_CODE)
+	res.HasProgrammaticFocus = (exitStatus == types.GINKGO_FOCUS_EXIT_CODE)
 
 	return res
 }

@@ -10,6 +10,7 @@ import (
 	"github.com/onsi/ginkgo/config"
 	"github.com/onsi/ginkgo/ginkgo/testrunner"
 	"github.com/onsi/ginkgo/ginkgo/testsuite"
+	"github.com/onsi/ginkgo/types"
 )
 
 func BuildRunCommand() *Command {
@@ -81,8 +82,8 @@ func (r *SpecRunner) RunSpecs(args []string, additionalArgs []string) {
 	if runResult.Passed {
 		if runResult.HasProgrammaticFocus {
 			fmt.Printf("Test Suite Passed\n")
-			fmt.Printf("Detected Programmatic Focus - setting exit status to 2\n")
-			os.Exit(2)
+			fmt.Printf("Detected Programmatic Focus - setting exit status to %d\n", types.GINKGO_FOCUS_EXIT_CODE)
+			os.Exit(types.GINKGO_FOCUS_EXIT_CODE)
 		} else {
 			fmt.Printf("Test Suite Passed\n")
 			os.Exit(0)

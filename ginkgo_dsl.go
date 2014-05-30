@@ -45,7 +45,6 @@ To circumvent this, you should call
 
 at the top of the goroutine that caused this panic.
 `
-
 const defaultTimeout = 1
 
 var globalSuite *suite.Suite
@@ -204,7 +203,7 @@ func RunSpecsWithCustomReporters(t GinkgoTestingT, description string, specRepor
 	passed, hasFocusedTests := globalSuite.Run(t, description, reporters, writer, config.GinkgoConfig)
 	if passed && hasFocusedTests {
 		fmt.Println("PASS | FOCUSED")
-		os.Exit(2)
+		os.Exit(types.GINKGO_FOCUS_EXIT_CODE)
 	}
 	return passed
 }
