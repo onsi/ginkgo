@@ -4,11 +4,12 @@ import (
 	"bytes"
 	"flag"
 	"fmt"
-	"github.com/onsi/ginkgo/ginkgo/nodot"
 	"os"
 	"path/filepath"
 	"strings"
 	"text/template"
+
+	"github.com/onsi/ginkgo/ginkgo/nodot"
 )
 
 func BuildBootstrapCommand() *Command {
@@ -57,7 +58,8 @@ func getPackage() string {
 	if err != nil {
 		complainAndQuit("Could not find package: " + err.Error())
 	}
-	return filepath.Base(workingDir)
+	packageName := filepath.Base(workingDir)
+	return strings.Replace(packageName, "-", "_", -1)
 }
 
 func fileExists(path string) bool {
