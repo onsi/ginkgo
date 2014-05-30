@@ -1,13 +1,13 @@
 package integration_test
 
 import (
-	"os"
-	"path/filepath"
-	"strings"
 	. "github.com/onsi/ginkgo"
 	"github.com/onsi/ginkgo/types"
 	. "github.com/onsi/gomega"
 	"github.com/onsi/gomega/gexec"
+	"os"
+	"path/filepath"
+	"strings"
 )
 
 var _ = Describe("Flags Specs", func() {

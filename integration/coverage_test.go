@@ -1,11 +1,11 @@
 package integration_test
 
 import (
-	"os"
-	"os/exec"
 	. "github.com/onsi/ginkgo"
 	. "github.com/onsi/gomega"
 	"github.com/onsi/gomega/gexec"
+	"os"
+	"os/exec"
 )
 
 var _ = Describe("Coverage Specs", func() {

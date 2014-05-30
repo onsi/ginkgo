@@ -15,6 +15,7 @@ type RunAndWatchCommandFlags struct {
 	Cover          bool
 	Notify         bool
 	SkipPackage    string
+	Tags           string
 
 	//not for watch command
 	KeepGoing    bool
@@ -65,6 +66,7 @@ func (c *RunAndWatchCommandFlags) flags(forWatchCommand bool) {
 	if onOSX {
 		c.FlagSet.BoolVar(&(c.Notify), "notify", false, "Send desktop notifications when a test run completes")
 	}
+	c.FlagSet.StringVar(&(c.Tags), "tags", "", "A list of build tags to consider satisfied during the build")
 	if !forWatchCommand {
 		c.FlagSet.BoolVar(&(c.KeepGoing), "keepGoing", false, "When true, failures from earlier test suites do not prevent later test suites from running")
 		c.FlagSet.BoolVar(&(c.UntilItFails), "untilItFails", false, "When true, Ginkgo will keep rerunning tests until a failure occurs")

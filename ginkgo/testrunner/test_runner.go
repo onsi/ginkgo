@@ -13,6 +13,7 @@ import (
 	"strings"
 	"syscall"
 	"time"
+
 	"github.com/onsi/ginkgo/config"
 	"github.com/onsi/ginkgo/ginkgo/testsuite"
 	"github.com/onsi/ginkgo/internal/remote"
@@ -27,16 +28,18 @@ type TestRunner struct {
 	parallelStream bool
 	race           bool
 	cover          bool
+	tags           string
 	additionalArgs []string
 }
 
-func New(suite *testsuite.TestSuite, numCPU int, parallelStream bool, race bool, cover bool, additionalArgs []string) *TestRunner {
+func New(suite *testsuite.TestSuite, numCPU int, parallelStream bool, race bool, cover bool, tags string, additionalArgs []string) *TestRunner {
 	return &TestRunner{
 		suite:          suite,
 		numCPU:         numCPU,
 		parallelStream: parallelStream,
 		race:           race,
 		cover:          cover,
+		tags:           tags,
 		additionalArgs: additionalArgs,
 	}
 }
@@ -50,6 +53,9 @@ func (t *TestRunner) Compile() error {
 	}
 	if t.cover {
 		args = append(args, "-cover", "-covermode=atomic")
+	}
+	if t.tags != "" {
+		args = append(args, fmt.Sprintf("-tags=%s", t.tags))
 	}
 
 	cmd := exec.Command("go", args...)

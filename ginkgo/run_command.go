@@ -137,7 +137,7 @@ func (r *SpecRunner) RunSuites(suites []*testsuite.TestSuite, additionalArgs []s
 
 	suiteCompilers := make([]*compiler, len(suites))
 	for i, suite := range suites {
-		runner := testrunner.New(suite, r.commandFlags.NumCPU, r.commandFlags.ParallelStream, r.commandFlags.Race, r.commandFlags.Cover, additionalArgs)
+		runner := testrunner.New(suite, r.commandFlags.NumCPU, r.commandFlags.ParallelStream, r.commandFlags.Race, r.commandFlags.Cover, r.commandFlags.Tags, additionalArgs)
 		suiteCompilers[i] = &compiler{
 			runner:           runner,
 			compilationError: make(chan error, 1),
