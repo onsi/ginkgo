@@ -41,6 +41,7 @@ type SpecWatcher struct {
 }
 
 func (w *SpecWatcher) WatchSpecs(args []string, additionalArgs []string) {
+	w.commandFlags.computeNodes()
 	w.notifier.VerifyNotificationsAreAvailable()
 
 	suites := findSuites(args, w.commandFlags.Recurse, w.commandFlags.SkipPackage)

@@ -41,6 +41,7 @@ type SpecRunner struct {
 }
 
 func (r *SpecRunner) RunSpecs(args []string, additionalArgs []string) {
+	r.commandFlags.computeNodes()
 	r.notifier.VerifyNotificationsAreAvailable()
 
 	suites := findSuites(args, r.commandFlags.Recurse, r.commandFlags.SkipPackage)

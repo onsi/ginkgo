@@ -31,10 +31,15 @@ To pass arguments/flags to your tests:
 
 To run tests in parallel
 
+	ginkgo -p
+
+this will automatically detect the optimal number of nodes to use.  Alternatively, you can specify the number of nodes with:
+
 	ginkgo -nodes=N
 
-where N is the number of nodes.  By default the Ginkgo CLI will spin up a server that the individual
-test processes send test output to.  The CLI aggregates this output and then presents coherent test output, one test at a time, as each test completes.
+(note that you don't need to provide -p in this case).
+
+By default the Ginkgo CLI will spin up a server that the individual test processes send test output to.  The CLI aggregates this output and then presents coherent test output, one test at a time, as each test completes.
 An alternative is to have the parallel nodes run and stream interleaved output back.  This useful for debugging, particularly in contexts where tests hang/fail to start.  To get this interleaved output:
 
 	ginkgo -nodes=N -stream=true
@@ -107,12 +112,13 @@ package main
 import (
 	"flag"
 	"fmt"
-	"github.com/onsi/ginkgo/config"
-	"github.com/onsi/ginkgo/ginkgo/testsuite"
 	"os"
 	"os/exec"
 	"regexp"
 	"strings"
+
+	"github.com/onsi/ginkgo/config"
+	"github.com/onsi/ginkgo/ginkgo/testsuite"
 )
 
 type Command struct {
