@@ -1,4 +1,4 @@
-ss---
+---
 layout: default
 title: Ginkgo
 ---
