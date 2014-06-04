@@ -1,14 +1,14 @@
 package integration_test
 
 import (
-	. "github.com/onsi/ginkgo"
-	"github.com/onsi/ginkgo/types"
-	. "github.com/onsi/gomega"
-	"github.com/onsi/gomega/gexec"
 	"io/ioutil"
 	"os"
 	"path/filepath"
 	"strings"
+	. "github.com/onsi/ginkgo"
+	"github.com/onsi/ginkgo/types"
+	. "github.com/onsi/gomega"
+	"github.com/onsi/gomega/gexec"
 )
 
 var _ = Describe("Subcommand", func() {
@@ -174,6 +174,25 @@ var _ = Describe("Subcommand", func() {
 				content, err := ioutil.ReadFile(filepath.Join(pkgPath, "baz_buzz_test.go"))
 				Ω(err).ShouldNot(HaveOccurred())
 				Ω(content).Should(ContainSubstring(`var _ = Describe("BazBuzz", func() {`))
+			})
+		})
+
+		Context("with multiple arguments", func() {
+			It("should generate a test file named after the argument", func() {
+				session := startGinkgo(pkgPath, "generate", "baz", "buzz")
+				Eventually(session).Should(gexec.Exit(0))
+				output := session.Out.Contents()
+
+				Ω(output).Should(ContainSubstring("baz_test.go"))
+				Ω(output).Should(ContainSubstring("buzz_test.go"))
+
+				content, err := ioutil.ReadFile(filepath.Join(pkgPath, "baz_test.go"))
+				Ω(err).ShouldNot(HaveOccurred())
+				Ω(content).Should(ContainSubstring(`var _ = Describe("Baz", func() {`))
+
+				content, err = ioutil.ReadFile(filepath.Join(pkgPath, "buzz_test.go"))
+				Ω(err).ShouldNot(HaveOccurred())
+				Ω(content).Should(ContainSubstring(`var _ = Describe("Buzz", func() {`))
 			})
 		})
 

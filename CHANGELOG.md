@@ -5,6 +5,7 @@ New Features:
 - `ginkgo -p` runs the testsuite in parallel with an auto-detected number of nodes.
 - `ginkgo -tags=TAG_LIST` passes a list of tags down to the `go build` command.
 - `ginkgo --failFast` aborts the test suite after the first failure.
+- `ginkgo generate file_1 file_2` can take multiple file arguments.
 
 Bug Fixes:
 

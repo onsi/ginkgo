@@ -17,10 +17,10 @@ func BuildGenerateCommand() *Command {
 	return &Command{
 		Name:         "generate",
 		FlagSet:      flagSet,
-		UsageCommand: "ginkgo generate <filename>",
+		UsageCommand: "ginkgo generate <filename(s)>",
 		Usage: []string{
 			"Generate a test file named filename_test.go",
-			"If the optional <filename> argument is omitted, a file named after the package in the current directory will be created.",
+			"If the optional <filenames> argument is omitted, a file named after the package in the current directory will be created.",
 			"Accepts the following flags:",
 		},
 		Command: func(args []string, additionalArgs []string) {
@@ -51,11 +51,32 @@ type specData struct {
 }
 
 func generateSpec(args []string, noDot bool) {
-	subject := ""
-	if len(args) > 0 {
-		subject = args[0]
+	if len(args) == 0 {
+		err := generateSpecForSubject("", noDot)
+		if err != nil {
+			fmt.Println(err.Error())
+			fmt.Println("")
+			os.Exit(1)
+		}
+		fmt.Println("")
+		return
 	}
 
+	var failed bool
+	for _, arg := range args {
+		err := generateSpecForSubject(arg, noDot)
+		if err != nil {
+			failed = true
+			fmt.Println(err.Error())
+		}
+	}
+	fmt.Println("")
+	if failed {
+		os.Exit(1)
+	}
+}
+
+func generateSpecForSubject(subject string, noDot bool) error {
 	packageName := getPackage()
 	if subject == "" {
 		subject = packageName
@@ -75,25 +96,25 @@ func generateSpec(args []string, noDot bool) {
 
 	targetFile := fmt.Sprintf("%s_test.go", subject)
 	if fileExists(targetFile) {
-		fmt.Printf("%s already exists.\n\n", targetFile)
-		os.Exit(1)
+		return fmt.Errorf("%s already exists.", targetFile)
 	} else {
-		fmt.Printf("Generating ginkgo test for %s in:\n\t%s\n\n", data.Subject, targetFile)
+		fmt.Printf("Generating ginkgo test for %s in:\n  %s\n", data.Subject, targetFile)
 	}
 
 	f, err := os.Create(targetFile)
 	if err != nil {
-		panic(err.Error())
+		return err
 	}
 	defer f.Close()
 
 	specTemplate, err := template.New("spec").Parse(specText)
 	if err != nil {
-		panic(err.Error())
+		return err
 	}
 
 	specTemplate.Execute(f, data)
 	goFmt(targetFile)
+	return nil
 }
 
 func getPackageImportPath() string {
