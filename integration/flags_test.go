@@ -1,13 +1,13 @@
 package integration_test
 
 import (
+	"os"
+	"path/filepath"
+	"strings"
 	. "github.com/onsi/ginkgo"
 	"github.com/onsi/ginkgo/types"
 	. "github.com/onsi/gomega"
 	"github.com/onsi/gomega/gexec"
-	"os"
-	"path/filepath"
-	"strings"
 )
 
 var _ = Describe("Flags Specs", func() {
@@ -147,5 +147,16 @@ var _ = Describe("Flags Specs", func() {
 		output := string(session.Out.Contents())
 
 		Ω(output).Should(ContainSubstring("Full Stack Trace"))
+	})
+
+	It("should fail fast when told to", func() {
+		pathToTest = tmpPath("fail")
+		copyIn("fail_fixture", pathToTest)
+		session := startGinkgo(pathToTest, "--failFast")
+		Eventually(session).Should(gexec.Exit(1))
+		output := string(session.Out.Contents())
+
+		Ω(output).Should(ContainSubstring("1 Failed"))
+		Ω(output).Should(ContainSubstring("15 Skipped"))
 	})
 })

@@ -96,9 +96,13 @@ func (runner *SpecRunner) runAfterSuite() bool {
 
 func (runner *SpecRunner) runSpecs() bool {
 	suiteFailed := false
+	skipRemainingSpecs := false
 	for _, spec := range runner.specs.Specs() {
 		if runner.wasInterrupted() {
 			return suiteFailed
+		}
+		if skipRemainingSpecs {
+			spec.Skip()
 		}
 		runner.writer.Truncate()
 
@@ -117,6 +121,10 @@ func (runner *SpecRunner) runSpecs() bool {
 		}
 
 		runner.reportSpecDidComplete(spec)
+
+		if spec.Failed() && runner.config.FailFast {
+			skipRemainingSpecs = true
+		}
 	}
 
 	return !suiteFailed

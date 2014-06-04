@@ -363,6 +363,33 @@ var _ = Describe("Spec Collection", func() {
 		})
 	})
 
+	Describe("When instructed to fail fast", func() {
+		BeforeEach(func() {
+			conf := config.GinkgoConfigType{
+				FailFast: true,
+			}
+			runner = newRunner(conf, nil, newAftSuite("after-suite", false), newSpec("passing", noneFlag, false), newSpec("failing", noneFlag, true), newSpec("dont-see", noneFlag, true), newSpec("dont-see", noneFlag, true))
+		})
+
+		It("should return false, report failure, and not run anything past the failing test", func() {
+			Ω(runner.Run()).Should(BeFalse())
+			Ω(reporter1.EndSummary.SuiteSucceeded).Should(BeFalse())
+			Ω(thingsThatRan).Should(Equal([]string{"passing", "failing", "after-suite"}))
+		})
+
+		It("should announce the subsequent specs as skipped", func() {
+			runner.Run()
+			Ω(reporter1.SpecSummaries).Should(HaveLen(4))
+			Ω(reporter1.SpecSummaries[2].State).Should(Equal(types.SpecStateSkipped))
+			Ω(reporter1.SpecSummaries[3].State).Should(Equal(types.SpecStateSkipped))
+		})
+
+		It("should mark all subsequent specs as skipped", func() {
+			runner.Run()
+			Ω(reporter1.EndSummary.NumberOfSkippedSpecs).Should(Equal(2))
+		})
+	})
+
 	Describe("Marking failure and success", func() {
 		Context("when all tests pass", func() {
 			BeforeEach(func() {
