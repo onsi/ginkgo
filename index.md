@@ -764,16 +764,25 @@ Here are the flags that Ginkgo accepts:
     
     Set `-tags` to pass in build tags down to the compilation step.
 
-**Miscellaneous:**
+** Failure behavior: **
 
 - `--failOnPending`
 
     If present, Ginkgo will mark a test suite as failed if it has any pending specs.
 
+- `--failFast`
+
+    If present, Ginkgo will stop the suite right after the first spec failure.  When set during parallel tests, a failure on one node does *not* stop other nodes from running - only the node that failed will stop running.
+
+**Miscellaneous:**
 
 - `-keepGoing`
 
     By default, when running multiple tests (with -r or a list of packages) Ginkgo will abort when a test fails.  To have Ginkgo run subsequent test suites after a failure you can set -keepGoing.
+
+- `-untilItFails`
+    
+    If set to `true`, Ginkgo will keep running your tests until a failure occurs.  This can be useful to help suss out race conditions or flakey tests.
 
 - `-notify`
 
@@ -782,10 +791,6 @@ Here are the flags that Ginkgo accepts:
 - `--slowSpecThreshold=TIME_IN_SECONDS`
 
     By default, Ginkgo's default reporter will flag tests that take longer than 5 seconds to run -- this does not fail the suite, it simply notifies you of slow running specs.  You can change this threshold using this flag.
-
-- `-untilItFails`
-    
-    If set to `true`, Ginkgo will keep running your tests until a failure occurs.  This can be useful to help suss out race conditions or flakey tests.
 
 ### Watching For Changes
 
