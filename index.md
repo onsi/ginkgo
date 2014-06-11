@@ -497,6 +497,8 @@ To randomize *all* specs in a suite, you can pass the `--randomizeAllSpecs` flag
 
 Ginkgo uses the current time to seed the randomization.  It prints out the seed near the beginning of the test output.  If you notice test intermittent test failures that you think may be due to test pollution, you can use the seed from a failing suite to exactly reproduce the spec order for that suite.  To do this pass the `--seed=SEED` flag.
 
+When running multiple spec suites Ginkgo defaults to running the suites in the order they would be listed on the file-system.  You can permute the suites by passing `ginkgo --randomizeSuites`
+
 ### Parallel Specs
 
 Ginkgo has support for running specs in parallel.  It does this by spawning separate `go test` processes and dividing the specs evenly among these processes.  This is important for a BDD test framework, as the shared context of the closures does not parallelize well in-process.
@@ -737,6 +739,10 @@ Here are the flags that Ginkgo accepts:
 - `--randomizeAllSpecs`
 
     If present, all specs will be permuted.  By default Ginkgo will only permute the order of the top level containers.
+
+- `--randomizeSuites`
+
+    If present and running multiple spec suites, the order in which the specs run will be randomized.
 
 **Focusing and Skipping specs:**
 
@@ -1093,7 +1099,24 @@ Here's what the calling test might look like:
 
 ---
 
-## Ginkgo and Gomega on TravisCI
+## Ginkgo and Continuous Integration
+
+Ginkgo comes with a number of [flags](#running_tests) that you probably want to turn on when running in a Continuous Integration environment.  The following is recommended:
+
+    ginkgo -r --randomizeAllSpecs --randomizeSuites --failOnPending --cover --trace --race
+
+- `-r` will recursively find and run all spec suites in the current directory
+- `--randomizeAllSpecs` and `--randomizeSuites` will shuffle both the order in which specs within a suite run, and the order in which different suites run.  This can be *great* for identifying test pollution.  You can always rerun a given ordering later by passing the `--seed` flag a matching seed.
+- `--failOnPending` causes the test suite to fail if there are any pending tests (typically these should not be committed but should signify work in progress).
+- `--cover` generates `.coverprofile`s and coverage statistics for each test suite.
+- `--trace` prints out a full stack trace when failures occur.  This makes debugging based on CI logs easier.
+- `--race` runs the tests with the race detector turned on.
+
+It is *not* recommended that you run tests in parallel on CI with `-p`.  Many CI systems run on multi-core machines that report very many (e.g. 32 nodes).  Parallelizing on such a high scale typically yields *longer* test run times (particularly since your tests are probably running inside some sort of cpu-share limited container: you don't actually have free reign of all 32 cores).  To run tests in parallel on CI you're probably better off providing an explicit number of parallel nodes with `-nodes`.
+
+### Sample .travis.yml
+
+For Travis CI, you could use something like this:
 
     language: go
     go:
@@ -1101,14 +1124,12 @@ Here's what the calling test might look like:
       - tip
 
     install:
-      - go get -v -t ./...
-      - go get -v github.com/onsi/ginkgo
+      - go get -v github.com/onsi/ginkgo/ginkgo
       - go get -v github.com/onsi/gomega
-      - go install -v github.com/onsi/ginkgo/ginkgo
+      - go get -v -t ./...
+      - export PATH=$PATH:$HOME/gopath/bin
 
-    script: PATH=$HOME/gopath/bin:$PATH ginkgo -r --randomizeAllSpecs --failOnPending --skipMeasurements --cover --trace --race
-
-In both of these examples we're using the `ginkgo` CLI to recursively run all the tests in our package, we're also passing in a number of [flags](#running_tests) that are particularly pertinent for a CI environment.  
+    script: ginkgo -r --randomizeAllSpecs --randomizeSuites --failOnPending --cover --trace --race
 
 ---
 
