@@ -29,6 +29,7 @@ var _ = Describe("DefaultReporter", func() {
 			NoisyPendings:     true,
 			Verbose:           true,
 			FullTrace:         true,
+			Summarize:         true,
 		}
 
 		reporter = reporters.NewDefaultReporter(reporterConfig, stenographer)
@@ -390,7 +391,7 @@ var _ = Describe("DefaultReporter", func() {
 		})
 
 		It("should announce the spec run's completion", func() {
-			Ω(stenographer.Calls()[0]).Should(Equal(call("AnnounceSpecRunCompletion", suite, false)))
+			Ω(stenographer.Calls()[1]).Should(Equal(call("AnnounceSpecRunCompletion", suite, false)))
 		})
 	})
 })

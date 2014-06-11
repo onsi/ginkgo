@@ -132,3 +132,7 @@ func (stenographer *FakeStenographer) AnnounceSpecPanicked(spec *types.SpecSumma
 func (stenographer *FakeStenographer) AnnounceSpecFailed(spec *types.SpecSummary, succinct bool, fullTrace bool) {
 	stenographer.registerCall("AnnounceSpecFailed", spec, succinct, fullTrace)
 }
+
+func (stenographer *FakeStenographer) SummarizeFailures(summaries []*types.SpecSummary) {
+	stenographer.registerCall("SummarizeFailures", summaries)
+}

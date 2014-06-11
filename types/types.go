@@ -36,6 +36,34 @@ type SpecSummary struct {
 	SuiteID        string
 }
 
+func (s SpecSummary) HasFailureState() bool {
+	return s.State == SpecStateTimedOut || s.State == SpecStatePanicked || s.State == SpecStateFailed
+}
+
+func (s SpecSummary) TimedOut() bool {
+	return s.State == SpecStateTimedOut
+}
+
+func (s SpecSummary) Panicked() bool {
+	return s.State == SpecStatePanicked
+}
+
+func (s SpecSummary) Failed() bool {
+	return s.State == SpecStateFailed
+}
+
+func (s SpecSummary) Passed() bool {
+	return s.State == SpecStatePassed
+}
+
+func (s SpecSummary) Skipped() bool {
+	return s.State == SpecStateSkipped
+}
+
+func (s SpecSummary) Pending() bool {
+	return s.State == SpecStatePending
+}
+
 type SetupSummary struct {
 	ComponentType SpecComponentType
 	CodeLocation  CodeLocation

@@ -14,8 +14,9 @@ import (
 )
 
 type DefaultReporter struct {
-	config       config.DefaultReporterConfigType
-	stenographer stenographer.Stenographer
+	config        config.DefaultReporterConfigType
+	stenographer  stenographer.Stenographer
+	specSummaries []*types.SpecSummary
 }
 
 func NewDefaultReporter(config config.DefaultReporterConfigType, stenographer stenographer.Stenographer) *DefaultReporter {
@@ -72,8 +73,13 @@ func (reporter *DefaultReporter) SpecDidComplete(specSummary *types.SpecSummary)
 	case types.SpecStateFailed:
 		reporter.stenographer.AnnounceSpecFailed(specSummary, reporter.config.Succinct, reporter.config.FullTrace)
 	}
+
+	reporter.specSummaries = append(reporter.specSummaries, specSummary)
 }
 
 func (reporter *DefaultReporter) SpecSuiteDidEnd(summary *types.SuiteSummary) {
+	if reporter.config.Summarize {
+		reporter.stenographer.SummarizeFailures(reporter.specSummaries)
+	}
 	reporter.stenographer.AnnounceSpecRunCompletion(summary, reporter.config.Succinct)
 }

@@ -10,10 +10,11 @@ where N is the number of nodes you desire.
 package remote
 
 import (
+	"time"
+
 	"github.com/onsi/ginkgo/config"
 	"github.com/onsi/ginkgo/reporters/stenographer"
 	"github.com/onsi/ginkgo/types"
-	"time"
 )
 
 type configAndSuite struct {
@@ -41,6 +42,7 @@ type Aggregator struct {
 
 	suiteEndings           chan *types.SuiteSummary
 	aggregatedSuiteEndings []*types.SuiteSummary
+	specs                  []*types.SpecSummary
 
 	startTime time.Time
 }
@@ -147,6 +149,7 @@ func (aggregator *Aggregator) registerAfterSuite(setupSummary *types.SetupSummar
 
 func (aggregator *Aggregator) registerSpecCompletion(specSummary *types.SpecSummary) {
 	aggregator.completedSpecs = append(aggregator.completedSpecs, specSummary)
+	aggregator.specs = append(aggregator.specs, specSummary)
 	aggregator.flushCompletedSpecs()
 }
 
@@ -239,6 +242,11 @@ func (aggregator *Aggregator) registerSuiteEnding(suite *types.SuiteSummary) (fi
 	}
 
 	aggregatedSuiteSummary.RunTime = time.Since(aggregator.startTime)
+
+	if aggregator.config.Summarize {
+		aggregator.stenographer.SummarizeFailures(aggregator.specs)
+	}
+
 	aggregator.stenographer.AnnounceSpecRunCompletion(aggregatedSuiteSummary, aggregator.config.Succinct)
 
 	return true, aggregatedSuiteSummary.SuiteSucceeded
