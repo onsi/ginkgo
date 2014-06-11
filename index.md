@@ -718,11 +718,15 @@ Here are the flags that Ginkgo accepts:
 
 - `--noisyPendings=false`
 
-    By default, Ginkgo's defautlt reporter will provide detailed output for pending specs.  You can set --noisyPendings=false to supress this behavior.
+    By default, Ginkgo's default reporter will provide detailed output for pending specs.  You can set --noisyPendings=false to supress this behavior.
 
 - `--trace`
 
     If present, Ginkgo will print out full stack traces for each failure, not just the line number at which the failure occurs.
+
+- `--summarize=false`
+    
+    By default, Ginkgo's default reporter will summarize any test failures that occurred during the test run at the end of the test run.  You can set --summarize=false to turn this behavior off.
 
 **Controlling randomization:**
 
