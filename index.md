@@ -726,10 +726,6 @@ Here are the flags that Ginkgo accepts:
 
     If present, Ginkgo will print out full stack traces for each failure, not just the line number at which the failure occurs.
 
-- `--summarize=false`
-    
-    By default, Ginkgo's default reporter will summarize any test failures that occurred during the test run at the end of the test run.  You can set --summarize=false to turn this behavior off.
-
 **Controlling randomization:**
 
 - `--seed=SEED`
