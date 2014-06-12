@@ -29,7 +29,6 @@ var _ = Describe("DefaultReporter", func() {
 			NoisyPendings:     true,
 			Verbose:           true,
 			FullTrace:         true,
-			Summarize:         true,
 		}
 
 		reporter = reporters.NewDefaultReporter(reporterConfig, stenographer)

@@ -1,13 +1,13 @@
 package integration_test
 
 import (
-	"os"
-	"path/filepath"
-	"strings"
 	. "github.com/onsi/ginkgo"
 	"github.com/onsi/ginkgo/types"
 	. "github.com/onsi/gomega"
 	"github.com/onsi/gomega/gexec"
+	"os"
+	"path/filepath"
+	"strings"
 )
 
 var _ = Describe("Flags Specs", func() {
@@ -147,22 +147,6 @@ var _ = Describe("Flags Specs", func() {
 		output := string(session.Out.Contents())
 
 		Ω(output).Should(ContainSubstring("Full Stack Trace"))
-	})
-
-	It("should print out summaries by default, but not print them out when told not to", func() {
-		session := startGinkgo(pathToTest, "--focus=a failing test", "--noColor")
-		Eventually(session).Should(gexec.Exit(1))
-		output := string(session.Out.Contents())
-
-		Ω(output).Should(ContainSubstring("Summarizing 1 Failure:"))
-		Ω(output).Should(ContainSubstring("[Fail] Testing various flags a failing test [It] should fail"))
-
-		session = startGinkgo(pathToTest, "--focus=a failing test", "--summarize=false", "--noColor")
-		Eventually(session).Should(gexec.Exit(1))
-		output = string(session.Out.Contents())
-
-		Ω(output).ShouldNot(ContainSubstring("Summarizing 1 Failure:"))
-		Ω(output).ShouldNot(ContainSubstring("[Fail] Testing various flags a failing test [It] should fail"))
 	})
 
 	It("should fail fast when told to", func() {

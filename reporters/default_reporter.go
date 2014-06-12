@@ -78,8 +78,6 @@ func (reporter *DefaultReporter) SpecDidComplete(specSummary *types.SpecSummary)
 }
 
 func (reporter *DefaultReporter) SpecSuiteDidEnd(summary *types.SuiteSummary) {
-	if reporter.config.Summarize {
-		reporter.stenographer.SummarizeFailures(reporter.specSummaries)
-	}
+	reporter.stenographer.SummarizeFailures(reporter.specSummaries)
 	reporter.stenographer.AnnounceSpecRunCompletion(summary, reporter.config.Succinct)
 }

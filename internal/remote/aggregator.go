@@ -243,10 +243,7 @@ func (aggregator *Aggregator) registerSuiteEnding(suite *types.SuiteSummary) (fi
 
 	aggregatedSuiteSummary.RunTime = time.Since(aggregator.startTime)
 
-	if aggregator.config.Summarize {
-		aggregator.stenographer.SummarizeFailures(aggregator.specs)
-	}
-
+	aggregator.stenographer.SummarizeFailures(aggregator.specs)
 	aggregator.stenographer.AnnounceSpecRunCompletion(aggregatedSuiteSummary, aggregator.config.Succinct)
 
 	return true, aggregatedSuiteSummary.SuiteSucceeded

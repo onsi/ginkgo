@@ -46,7 +46,6 @@ type DefaultReporterConfigType struct {
 	Succinct          bool
 	Verbose           bool
 	FullTrace         bool
-	Summarize         bool
 }
 
 var DefaultReporterConfig = DefaultReporterConfigType{}
@@ -81,7 +80,6 @@ func Flags(flagSet *flag.FlagSet, prefix string, includeParallelFlags bool) {
 	flagSet.BoolVar(&(DefaultReporterConfig.Verbose), prefix+"v", false, "If set, default reporter print out all specs as they begin.")
 	flagSet.BoolVar(&(DefaultReporterConfig.Succinct), prefix+"succinct", false, "If set, default reporter prints out a very succinct report")
 	flagSet.BoolVar(&(DefaultReporterConfig.FullTrace), prefix+"trace", false, "If set, default reporter prints out the full stack trace when a failure occurs")
-	flagSet.BoolVar(&(DefaultReporterConfig.Summarize), prefix+"summarize", true, "If set, default reporter prints out a summary of all failures when a failure occurs")
 }
 
 func BuildFlagArgs(prefix string, ginkgo GinkgoConfigType, reporter DefaultReporterConfigType) []string {
@@ -154,10 +152,6 @@ func BuildFlagArgs(prefix string, ginkgo GinkgoConfigType, reporter DefaultRepor
 
 	if reporter.FullTrace {
 		result = append(result, fmt.Sprintf("--%strace", prefix))
-	}
-
-	if !reporter.Summarize {
-		result = append(result, fmt.Sprintf("--%ssummarize=false", prefix))
 	}
 
 	return result

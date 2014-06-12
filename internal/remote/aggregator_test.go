@@ -243,11 +243,11 @@ var _ = Describe("Aggregator", func() {
 				aggregator.SpecSuiteDidEnd(suiteSummary1)
 				Eventually(func() interface{} {
 					return stenographer.Calls()
-				}).Should(HaveLen(1))
+				}).Should(HaveLen(2))
 			})
 
 			It("should announce the end of the suite", func() {
-				compositeSummary := stenographer.Calls()[0].Args[0].(*types.SuiteSummary)
+				compositeSummary := stenographer.Calls()[1].Args[0].(*types.SuiteSummary)
 
 				Ω(compositeSummary.SuiteSucceeded).Should(BeFalse())
 				Ω(compositeSummary.NumberOfSpecsThatWillBeRun).Should(Equal(23))
@@ -269,11 +269,11 @@ var _ = Describe("Aggregator", func() {
 				aggregator.SpecSuiteDidEnd(suiteSummary1)
 				Eventually(func() interface{} {
 					return stenographer.Calls()
-				}).Should(HaveLen(1))
+				}).Should(HaveLen(2))
 			})
 
 			It("should report success", func() {
-				compositeSummary := stenographer.Calls()[0].Args[0].(*types.SuiteSummary)
+				compositeSummary := stenographer.Calls()[1].Args[0].(*types.SuiteSummary)
 
 				Ω(compositeSummary.SuiteSucceeded).Should(BeTrue())
 			})
@@ -293,11 +293,11 @@ var _ = Describe("Aggregator", func() {
 				aggregator.SpecSuiteDidEnd(suiteSummary1)
 				Eventually(func() interface{} {
 					return stenographer.Calls()
-				}).Should(HaveLen(1))
+				}).Should(HaveLen(2))
 			})
 
 			It("should report failure", func() {
-				compositeSummary := stenographer.Calls()[0].Args[0].(*types.SuiteSummary)
+				compositeSummary := stenographer.Calls()[1].Args[0].(*types.SuiteSummary)
 
 				Ω(compositeSummary.SuiteSucceeded).Should(BeFalse())
 			})

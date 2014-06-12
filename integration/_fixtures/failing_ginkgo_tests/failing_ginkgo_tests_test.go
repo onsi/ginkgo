@@ -7,11 +7,11 @@ import (
 )
 
 var _ = Describe("FailingGinkgoTests", func() {
-	It("should pass", func() {
+	It("should fail", func() {
 		Ω(AlwaysFalse()).Should(BeTrue())
 	})
 
-	It("should fail", func() {
+	It("should pass", func() {
 		Ω(AlwaysFalse()).Should(BeFalse())
 	})
 })

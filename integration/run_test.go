@@ -1,13 +1,13 @@
 package integration_test
 
 import (
-	"runtime"
-	"strings"
 	. "github.com/onsi/ginkgo"
 	"github.com/onsi/ginkgo/types"
 	. "github.com/onsi/gomega"
 	"github.com/onsi/gomega/gbytes"
 	"github.com/onsi/gomega/gexec"
+	"runtime"
+	"strings"
 )
 
 var _ = Describe("Running Specs", func() {
@@ -267,6 +267,9 @@ var _ = Describe("Running Specs", func() {
 				Ω(output).Should(ContainSubstring("• Failure"))
 				Ω(output).ShouldNot(ContainSubstring("More_ginkgo_tests Suite"))
 				Ω(output).Should(ContainSubstring("Test Suite Failed"))
+
+				Ω(output).Should(ContainSubstring("Summarizing 1 Failure:"))
+				Ω(output).Should(ContainSubstring("[Fail] FailingGinkgoTests [It] should fail"))
 			})
 		})
 
