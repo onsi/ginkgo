@@ -6,7 +6,8 @@ New Features:
 - `ginkgo -tags=TAG_LIST` passes a list of tags down to the `go build` command.
 - `ginkgo --failFast` aborts the test suite after the first failure.
 - `ginkgo generate file_1 file_2` can take multiple file arguments.
-- Ginkgo now summarizes any spec failures that occured at the end of the test run.  This is the new default behavior and can be turned off with `--summarize=false`
+- Ginkgo now summarizes any spec failures that occured at the end of the test run. 
+- `ginkgo --randomizeSuites` will run tests *suites* in random order using the generated/passed-in seed.
 
 Bug Fixes:
 
