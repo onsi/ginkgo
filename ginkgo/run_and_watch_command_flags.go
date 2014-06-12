@@ -19,8 +19,9 @@ type RunAndWatchCommandFlags struct {
 	AutoNodes      bool
 
 	//not for watch command
-	KeepGoing    bool
-	UntilItFails bool
+	KeepGoing       bool
+	UntilItFails    bool
+	RandomizeSuites bool
 
 	FlagSet *flag.FlagSet
 }
@@ -86,5 +87,6 @@ func (c *RunAndWatchCommandFlags) flags(forWatchCommand bool) {
 	if !forWatchCommand {
 		c.FlagSet.BoolVar(&(c.KeepGoing), "keepGoing", false, "When true, failures from earlier test suites do not prevent later test suites from running")
 		c.FlagSet.BoolVar(&(c.UntilItFails), "untilItFails", false, "When true, Ginkgo will keep rerunning tests until a failure occurs")
+		c.FlagSet.BoolVar(&(c.RandomizeSuites), "randomizeSuites", false, "When true, Ginkgo will randomize the order in which test suites run")
 	}
 }

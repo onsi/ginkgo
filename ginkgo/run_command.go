@@ -3,6 +3,7 @@ package main
 import (
 	"flag"
 	"fmt"
+	"math/rand"
 	"os"
 	"runtime"
 	"time"
@@ -55,7 +56,8 @@ func (r *SpecRunner) RunSpecs(args []string, additionalArgs []string) {
 		iteration := 0
 		for {
 			r.UpdateSeed()
-			runResult, numSuites = r.RunSuites(suites, additionalArgs)
+			randomizedSuites := r.randomizeSuiteOrder(suites)
+			runResult, numSuites = r.RunSuites(randomizedSuites, additionalArgs)
 			iteration++
 
 			if r.interruptHandler.WasInterrupted() {
@@ -70,7 +72,8 @@ func (r *SpecRunner) RunSpecs(args []string, additionalArgs []string) {
 			}
 		}
 	} else {
-		runResult, numSuites = r.RunSuites(suites, additionalArgs)
+		randomizedSuites := r.randomizeSuiteOrder(suites)
+		runResult, numSuites = r.RunSuites(randomizedSuites, additionalArgs)
 	}
 
 	noun := "suites"
@@ -114,6 +117,24 @@ func (r *SpecRunner) UpdateSeed() {
 	if !r.commandFlags.wasSet("seed") {
 		config.GinkgoConfig.RandomSeed = time.Now().Unix()
 	}
+}
+
+func (r *SpecRunner) randomizeSuiteOrder(suites []*testsuite.TestSuite) []*testsuite.TestSuite {
+	if !r.commandFlags.RandomizeSuites {
+		return suites
+	}
+
+	if len(suites) <= 1 {
+		return suites
+	}
+
+	randomizedSuites := make([]*testsuite.TestSuite, len(suites))
+	randomizer := rand.New(rand.NewSource(config.GinkgoConfig.RandomSeed))
+	permutation := randomizer.Perm(len(randomizedSuites))
+	for i, j := range permutation {
+		randomizedSuites[i] = suites[j]
+	}
+	return randomizedSuites
 }
 
 type compiler struct {

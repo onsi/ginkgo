@@ -109,6 +109,29 @@ var _ = Describe("Running Specs", func() {
 		})
 	})
 
+	Context("when told to randomizeSuites", func() {
+		BeforeEach(func() {
+			pathToTest = tmpPath("ginkgo")
+			otherPathToTest := tmpPath("other")
+			copyIn("passing_ginkgo_tests", pathToTest)
+			copyIn("more_ginkgo_tests", otherPathToTest)
+		})
+
+		It("should skip packages that match the regexp", func() {
+			session := startGinkgo(tmpDir, "--noColor", "--randomizeSuites", "-r", "--seed=2")
+			Eventually(session).Should(gexec.Exit(0))
+
+			Ω(session).Should(gbytes.Say("More_ginkgo_tests Suite"))
+			Ω(session).Should(gbytes.Say("Passing_ginkgo_tests Suite"))
+
+			session = startGinkgo(tmpDir, "--noColor", "--randomizeSuites", "-r", "--seed=3")
+			Eventually(session).Should(gexec.Exit(0))
+
+			Ω(session).Should(gbytes.Say("Passing_ginkgo_tests Suite"))
+			Ω(session).Should(gbytes.Say("More_ginkgo_tests Suite"))
+		})
+	})
+
 	Context("when pointed at a package with xunit style tests", func() {
 		BeforeEach(func() {
 			pathToTest = tmpPath("xunit")
