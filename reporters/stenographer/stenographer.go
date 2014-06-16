@@ -15,12 +15,14 @@ import (
 
 const defaultStyle = "\x1b[0m"
 const boldStyle = "\x1b[1m"
-const redColor = "\x1b[91m"
+const redColor = "\x1b[31m"
 const greenColor = "\x1b[32m"
 const yellowColor = "\x1b[33m"
+//const blueColor = "\x1b[34m"
+//const magentaColor = "\x1b[35m"
 const cyanColor = "\x1b[36m"
-const grayColor = "\x1b[90m"
 const lightGrayColor = "\x1b[37m"
+const grayColor = "\x1b[90m"
 
 type cursorStateType int
 
