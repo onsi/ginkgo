@@ -51,7 +51,7 @@ This will generate a file named `books_suite_test.go` containing:
 Let's break this down:
 
 - Go allows us to specify the `books_test` package alongside the `books` package.  Using `books_test` instead of `books` allows us to respect the encapsulation of the `books` package: your tests will need to import `books` and access it from the outside, like any other package.  This is preferred to reaching into the package and testing its internals and leads to more behavioral tests.  You can, of course, opt out of this -- just change `package books_test` to `package books`
-- We import the `ginkgo` and `gomega` packages into the test's top-level namespace by performing a dot-import.  If you'd rather not do this, check out the [Avoiding Dot Imports](#avoiding_dot_imports) section below.
+- We import the `ginkgo` and `gomega` packages into the test's top-level namespace by performing a dot-import.  If you'd rather not do this, check out the [Avoiding Dot Imports](#avoiding-dot-imports) section below.
 - `TestBooks` is a `testing` test.  The Go test runner will run this function when you run `go test` or `ginkgo`.
 - `RegisterFailHandler(Fail)`: A Ginkgo test signals failure by calling Ginkgo's `Fail(description string)` function.  We pass this function to Gomega using `RegisterFailHandler`.  This is the sole connection point between Ginkgo and Gomega.
 - `RunSpecs(t *testing.T, suiteDescription string)` tells Ginkgo to start the test suite.  Ginkgo will automatically fail the `testing.T` if any of your specs fail.
@@ -97,7 +97,7 @@ This will generate a file named `book_test.go` containing:
 
 Let's break this down:
 
-- We import the `ginkgo` and `gomega` packages into the top-level namespace.  While incredibly convenient, this is not - strictly speaking - necessary.  If youd like to avoid this check out the [Avoiding Dot Imports](#avoiding_dot_imports) section below.
+- We import the `ginkgo` and `gomega` packages into the top-level namespace.  While incredibly convenient, this is not - strictly speaking - necessary.  If youd like to avoid this check out the [Avoiding Dot Imports](#avoiding-dot-imports) section below.
 - Similarly, we import the `books` package since we are using the special `books_test` package to isolate our tests from our code.  For convenience we import the `books` package into the namespace.  You can opt out of either these decisions by editing the generated test file.
 - We add a *top-level* describe container using Ginkgo's `Describe(text string, body func()) bool` function.  The `var _ = ...` trick allows us to evaluate the Describe at the top level without having to wrap it in a `func init() {}`
 
@@ -191,7 +191,7 @@ However, if your test launches a *goroutine* that calls `Fail` (or, equivalently
 
 Now, if `doSomething()` returns false, Gomega will call `Fail` which will panic but the `defer`red `GinkgoRecover()` will recover said panic and prevent the test suite from exploding.
 
-More details about `Fail` and about using matcher libraries other than Gomega can be found in the [Using Other Matcher Libraries](#using_other_matcher_libraries) section.
+More details about `Fail` and about using matcher libraries other than Gomega can be found in the [Using Other Matcher Libraries](#using-other-matcher-libraries) section.
 
 ###Logging Output
 
@@ -437,7 +437,7 @@ Both `BeforeSuite` and `AfterSuite` can be run asynchronously by passing a funct
 
 You are only allowed to define `BeforeSuite` and `AfterSuite` *once* in a test suite (you shouldn't need more than one!) 
 
-Finally, when running in parallel, each parallel process will run `BeforeSuite` and `AfterSuite` functions.  [Look here](#parallel_specs) for more on running tests in parallel.
+Finally, when running in parallel, each parallel process will run `BeforeSuite` and `AfterSuite` functions.  [Look here](#parallel-specs) for more on running tests in parallel.
 
 ---
 
@@ -823,7 +823,7 @@ One limitation of `ginkgo watch` is that it will only trigger tests for a watche
 
     This will generate a file named `SUBJECT_test.go`.  If you don't specify SUBJECT, it will generate a file named `PACKAGE_test.go` where PACKAGE is the name of the current directory.
 
-By default, these generators will dot-import both Ginkgo and Gomega.  To avoid dot imports, you can pass `--nodot` to both subcommands.  This is discussed more fully in the [next section](#avoiding_dot_imports).
+By default, these generators will dot-import both Ginkgo and Gomega.  To avoid dot imports, you can pass `--nodot` to both subcommands.  This is discussed more fully in the [next section](#avoiding-dot-imports).
 
 > Note that you don't have to use either of these generators.  They're just convenient helpers to get you up and running quickly.
 
@@ -962,7 +962,7 @@ The `Benchmarker` also provides the
 
 method.  `RecordValue` allows you to record arbitrary numerical data.  These results are aggregated and some simple statistics are computed.  These stats appear in the spec output under the `name` you pass in.  Note that `name` must be unique within the scope of the `Measure` node.
 
-The optional `info` parameter can be used to pass structured data to a custom reporter.  See [Measuring Time](#measuring_time) above for more details.
+The optional `info` parameter can be used to pass structured data to a custom reporter.  See [Measuring Time](#measuring-time) above for more details.
 
 ---
 
@@ -1097,7 +1097,7 @@ Here's what the calling test might look like:
 
 ## Ginkgo and Continuous Integration
 
-Ginkgo comes with a number of [flags](#running_tests) that you probably want to turn on when running in a Continuous Integration environment.  The following is recommended:
+Ginkgo comes with a number of [flags](#running-tests) that you probably want to turn on when running in a Continuous Integration environment.  The following is recommended:
 
     ginkgo -r --randomizeAllSpecs --randomizeSuites --failOnPending --cover --trace --race
 
@@ -1131,7 +1131,7 @@ For Travis CI, you could use something like this:
 
 ## Writing Custom Reporters
 
-While Ginkgo's default reporter offers a comprehensive set of features, Ginkgo makes it easy to write and run multiple custom reporters at once.  There are many usecases for this - you might implement a custom reporter to support a special output format for your CI setup, or you might implement a custom reporter to [aggregate data](#measuring_time) from Ginkgo's `Measure` nodes and produce HTML or CSV reports (or even plots!)
+While Ginkgo's default reporter offers a comprehensive set of features, Ginkgo makes it easy to write and run multiple custom reporters at once.  There are many usecases for this - you might implement a custom reporter to support a special output format for your CI setup, or you might implement a custom reporter to [aggregate data](#measuring-time) from Ginkgo's `Measure` nodes and produce HTML or CSV reports (or even plots!)
 
 In Ginkgo a reporter must satisfy the `Reporter` interface:
 
@@ -1226,7 +1226,7 @@ When using Gomock you may want to run `ginkgo` with the `-trace` flag to print o
 
 ### Generating JUnit XML Output
 
-Ginkgo provides a [custom reporter](#writing_custom_reporters) for generating JUnit compatible XML output.  Here's a sample bootstrap file that instantiates a JUnit reporter and passes it to the test runner:
+Ginkgo provides a [custom reporter](#writing-custom-reporters) for generating JUnit compatible XML output.  Here's a sample bootstrap file that instantiates a JUnit reporter and passes it to the test runner:
 
     package foo_test
 
