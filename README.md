@@ -8,26 +8,26 @@ To discuss Ginkgo and get updates, join the [google group](https://groups.google
 
 ## Feature List
 
-- Ginkgo uses Go's `testing` package and can live alongside your existing `testing` tests.  It's easy to [bootstrap](http://onsi.github.io/ginkgo/#bootstrapping_a_suite) and start writing your [first tests](http://onsi.github.io/ginkgo/#adding_specs_to_a_suite)
+- Ginkgo uses Go's `testing` package and can live alongside your existing `testing` tests.  It's easy to [bootstrap](http://onsi.github.io/ginkgo/#bootstrapping-a-suite) and start writing your [first tests](http://onsi.github.io/ginkgo/#adding-specs-to-a-suite)
 
 - Structure your BDD-style tests expressively:
-    - Nestable [`Describe` and `Context` container blocks](http://onsi.github.io/ginkgo/#organizing_specs_with_containers__and_)
-    - [`BeforeEach` and `AfterEach` blocks](http://onsi.github.io/ginkgo/#extracting_common_setup_) for setup and teardown
-    - [`It` blocks](http://onsi.github.io/ginkgo/#individual_specs_) that hold your assertions
-    - [`JustBeforeEach` blocks](http://onsi.github.io/ginkgo/#separating_creation_and_configuration_) that separate creation from configuration (also known as the subject action pattern).
-    - [`BeforeSuite` and `AfterSuite` blocks](http://onsi.github.io/ginkgo/#global_setup_and_teardown__and_) to prep for and cleanup after a suite.
+    - Nestable [`Describe` and `Context` container blocks](http://onsi.github.io/ginkgo/#organizing-specs-with-containers-describe-and-context)
+    - [`BeforeEach` and `AfterEach` blocks](http://onsi.github.io/ginkgo/#extracting-common-setup-beforeeach) for setup and teardown
+    - [`It` blocks](http://onsi.github.io/ginkgo/#individual-specs-) that hold your assertions
+    - [`JustBeforeEach` blocks](http://onsi.github.io/ginkgo/#separating-creation-and-configuration-justbeforeeach) that separate creation from configuration (also known as the subject action pattern).
+    - [`BeforeSuite` and `AfterSuite` blocks](http://onsi.github.io/ginkgo/#global-setup-and-teardown-beforesuite-and-aftersuite) to prep for and cleanup after a suite.
 
 - A comprehensive test runner that lets you:
-    - Mark specs as [pending](http://onsi.github.io/ginkgo/#pending_specs)
-    - [Focus](http://onsi.github.io/ginkgo/#focused_specs) individual specs, and groups of specs, either programmatically or on the command line
-    - Run your tests in [random order](http://onsi.github.io/ginkgo/#spec_permutation), and then reuse random seeds to replicate the same order.
-    - Break up your test suite into parallel processes for straightforward [test parallelization](http://onsi.github.io/ginkgo/#parallel_specs)
+    - Mark specs as [pending](http://onsi.github.io/ginkgo/#pending-specs)
+    - [Focus](http://onsi.github.io/ginkgo/#focused-specs) individual specs, and groups of specs, either programmatically or on the command line
+    - Run your tests in [random order](http://onsi.github.io/ginkgo/#spec-permutation), and then reuse random seeds to replicate the same order.
+    - Break up your test suite into parallel processes for straightforward [test parallelization](http://onsi.github.io/ginkgo/#parallel-specs)
 
-- Built-in support for testing [asynchronicity](http://onsi.github.io/ginkgo/#asynchronous_tests)
+- Built-in support for testing [asynchronicity](http://onsi.github.io/ginkgo/#asynchronous-tests)
 
-- Built-in support for [benchmarking](http://onsi.github.io/ginkgo/#benchmark_tests) your code.  Control the number of benchmark samples as you gather runtimes and other, arbitrary, bits of numerical information about your code. 
+- Built-in support for [benchmarking](http://onsi.github.io/ginkgo/#benchmark-tests) your code.  Control the number of benchmark samples as you gather runtimes and other, arbitrary, bits of numerical information about your code. 
 
-- `ginkgo`: a command line interface with plenty of handy command line arguments for [running your tests](http://onsi.github.io/ginkgo/#running_tests) and [generating](http://onsi.github.io/ginkgo/#generators) test files.  Here are a few choice examples:
+- `ginkgo`: a command line interface with plenty of handy command line arguments for [running your tests](http://onsi.github.io/ginkgo/#running-tests) and [generating](http://onsi.github.io/ginkgo/#generators) test files.  Here are a few choice examples:
     - `ginkgo -nodes=N` runs your tests in `N` parallel processes and print out coherent output in realtime
     - `ginkgo -cover` runs your tests using Golang's code coverage tool
     - `ginkgo convert` converts an XUnit-style `testing` package to a Ginkgo-style package
@@ -40,11 +40,11 @@ To discuss Ginkgo and get updates, join the [google group](https://groups.google
 
     The `ginkgo` CLI is convenient, but purely optional -- Ginkgo works just fine with `go test`
 
-- Straightforward support for third-party testing libraries such as [Gomock](https://code.google.com/p/gomock/) and [Testify](https://github.com/stretchr/testify).  Check out the [docs](http://onsi.github.io/ginkgo/#third_party_integrations) for details.
+- Straightforward support for third-party testing libraries such as [Gomock](https://code.google.com/p/gomock/) and [Testify](https://github.com/stretchr/testify).  Check out the [docs](http://onsi.github.io/ginkgo/#third-party-integrations) for details.
 
 - A modular architecture that lets you easily:
-    - Write [custom reporters](http://onsi.github.io/ginkgo/#writing_custom_reporters) (for example, Ginkgo comes with a [JUnit XML reporter](http://onsi.github.io/ginkgo/#generating_junit_xml_output) and a TeamCity reporter).
-    - [Adapt an existing matcher library (or write your own!)](http://onsi.github.io/ginkgo/#using_other_matcher_libraries) to work with Ginkgo
+    - Write [custom reporters](http://onsi.github.io/ginkgo/#writing-custom-reporters) (for example, Ginkgo comes with a [JUnit XML reporter](http://onsi.github.io/ginkgo/#generating-junit-xml-output) and a TeamCity reporter).
+    - [Adapt an existing matcher library (or write your own!)](http://onsi.github.io/ginkgo/#using-other-matcher-libraries) to work with Ginkgo
 
 ## [Gomega](http://github.com/onsi/gomega): Ginkgo's Preferred Matcher Library
 
@@ -87,7 +87,7 @@ A number of matcher libraries have been written to augment Go's built-in XUnit s
 - [testify](https://github.com/stretchr/testify)
 - [gocheck](http://labix.org/gocheck)
 
-You can also use Ginkgo's matcher library [Gomega](https://github.com/onsi/gomega) in [XUnit style tests](http://onsi.github.io/gomega/#using_gomega_with_golangs_xunitstyle_tests)
+You can also use Ginkgo's matcher library [Gomega](https://github.com/onsi/gomega) in [XUnit style tests](http://onsi.github.io/gomega/#using-gomega-with-golangs-xunitstyle-tests)
 
 ### BDD style testing frameworks
 
