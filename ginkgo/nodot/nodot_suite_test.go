@@ -17,6 +17,7 @@ type Done ginkgo.Done
 type Benchmarker ginkgo.Benchmarker
 
 var GinkgoWriter = ginkgo.GinkgoWriter
+var GinkgoParallelNode = ginkgo.GinkgoParallelNode
 var GinkgoT = ginkgo.GinkgoT
 var CurrentGinkgoTestDescription = ginkgo.CurrentGinkgoTestDescription
 var RunSpecs = ginkgo.RunSpecs
@@ -50,6 +51,8 @@ var AfterEach = ginkgo.AfterEach
 
 // Declarations for Gomega DSL
 var RegisterFailHandler = gomega.RegisterFailHandler
+var RegisterTestingT = gomega.RegisterTestingT
+var InterceptGomegaFailures = gomega.InterceptGomegaFailures
 var Ω = gomega.Ω
 var Expect = gomega.Expect
 var ExpectWithOffset = gomega.ExpectWithOffset
@@ -57,6 +60,10 @@ var Eventually = gomega.Eventually
 var EventuallyWithOffset = gomega.EventuallyWithOffset
 var Consistently = gomega.Consistently
 var ConsistentlyWithOffset = gomega.ConsistentlyWithOffset
+var SetDefaultEventuallyTimeout = gomega.SetDefaultEventuallyTimeout
+var SetDefaultEventuallyPollingInterval = gomega.SetDefaultEventuallyPollingInterval
+var SetDefaultConsistentlyDuration = gomega.SetDefaultConsistentlyDuration
+var SetDefaultConsistentlyPollingInterval = gomega.SetDefaultConsistentlyPollingInterval
 
 // Declarations for Gomega Matchers
 var Equal = gomega.Equal
@@ -75,7 +82,10 @@ var BeEmpty = gomega.BeEmpty
 var HaveLen = gomega.HaveLen
 var BeZero = gomega.BeZero
 var ContainElement = gomega.ContainElement
+var ConsistOf = gomega.ConsistOf
 var HaveKey = gomega.HaveKey
+var HaveKeyWithValue = gomega.HaveKeyWithValue
 var BeNumerically = gomega.BeNumerically
+var BeTemporally = gomega.BeTemporally
 var BeAssignableToTypeOf = gomega.BeAssignableToTypeOf
 var Panic = gomega.Panic
