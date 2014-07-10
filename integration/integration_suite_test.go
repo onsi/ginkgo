@@ -1,15 +1,15 @@
 package integration_test
 
 import (
-	. "github.com/onsi/ginkgo"
-	. "github.com/onsi/gomega"
-	"github.com/onsi/gomega/gexec"
 	"io"
 	"io/ioutil"
 	"os"
 	"os/exec"
 	"path/filepath"
 	"strings"
+	. "github.com/onsi/ginkgo"
+	. "github.com/onsi/gomega"
+	"github.com/onsi/gomega/gexec"
 
 	"testing"
 	"time"
@@ -54,10 +54,11 @@ func copyIn(fixture string, destination string) {
 	Ω(err).ShouldNot(HaveOccurred())
 
 	filepath.Walk(filepath.Join("_fixtures", fixture), func(path string, info os.FileInfo, err error) error {
-		base := filepath.Base(path)
-		if base == fixture {
+		if info.IsDir() {
 			return nil
 		}
+
+		base := filepath.Base(path)
 
 		src, err := os.Open(path)
 		Ω(err).ShouldNot(HaveOccurred())

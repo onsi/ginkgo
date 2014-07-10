@@ -1,13 +1,12 @@
 package testsuite_test
 
 import (
-	. "github.com/onsi/ginkgo"
-	. "github.com/onsi/ginkgo/ginkgo/testsuite"
-	. "github.com/onsi/gomega"
 	"io/ioutil"
 	"os"
 	"path/filepath"
-	"time"
+	. "github.com/onsi/ginkgo"
+	. "github.com/onsi/ginkgo/ginkgo/testsuite"
+	. "github.com/onsi/gomega"
 )
 
 var _ = Describe("TestSuite", func() {
@@ -89,120 +88,21 @@ var _ = Describe("TestSuite", func() {
 				suites := SuitesInDir(tmpDir, true)
 				Ω(suites).Should(HaveLen(3))
 
-				Ω(suites).Should(ContainElement(&TestSuite{
+				Ω(suites).Should(ContainElement(TestSuite{
 					Path:        relTmpDir + "/colonelmustard",
 					PackageName: "colonelmustard",
 					IsGinkgo:    true,
 				}))
-				Ω(suites).Should(ContainElement(&TestSuite{
+				Ω(suites).Should(ContainElement(TestSuite{
 					Path:        relTmpDir + "/proffessorplum",
 					PackageName: "proffessorplum",
 					IsGinkgo:    false,
 				}))
-				Ω(suites).Should(ContainElement(&TestSuite{
+				Ω(suites).Should(ContainElement(TestSuite{
 					Path:        relTmpDir + "/colonelmustard/library",
 					PackageName: "library",
 					IsGinkgo:    true,
 				}))
-			})
-		})
-	})
-
-	Describe("watching for changes", func() {
-		var (
-			suite   *TestSuite
-			channel chan *TestSuite
-		)
-
-		BeforeEach(func() {
-			suite = SuitesInDir(filepath.Join(tmpDir, "colonelmustard"), false)[0]
-			channel = make(chan *TestSuite, 0)
-			suite.Watch(channel)
-		})
-
-		Context("when a non-go file is created/modified", func() {
-			BeforeEach(func() {
-				writeFile("/colonelmustard", "poupon.jpg", "spicy")
-			})
-
-			It("should not send a notification down the channel", func() {
-				Consistently(channel).ShouldNot(Receive())
-			})
-		})
-
-		Context("when a go file is modified", func() {
-			BeforeEach(func() {
-				writeFile("/colonelmustard", "colonelmustard_test.go", `
-import "github.com/onsi/ginkgo"
-func() {}
-`)
-			})
-
-			It("should send one notification down the channel", func() {
-				Ω(<-channel).Should(Equal(suite))
-				Consistently(channel).ShouldNot(Receive())
-			})
-		})
-
-		Context("when a go file is created", func() {
-			BeforeEach(func() {
-				writeFile("/colonelmustard", "poupon.go", `
-import "mustards"
-func() {}
-`)
-			})
-
-			It("should send one notification down the channel", func() {
-				Ω(<-channel).Should(Equal(suite))
-				Consistently(channel).ShouldNot(Receive())
-			})
-		})
-
-		Context("when events are emitted but there are no actual changes", func() {
-			BeforeEach(func() {
-				writeFile("/colonelmustard", "colonelmustard_test.go", `import "github.com/onsi/ginkgo"`)
-			})
-
-			It("should send nothing down the channel", func() {
-				Consistently(channel).ShouldNot(Receive())
-			})
-		})
-
-		Context("when multiple changes happen", func() {
-			Context("and the channel is read between changes", func() {
-				It("should send a notification when the subsequent change happens", func() {
-					writeFile("/colonelmustard", "poupon.go", `
-import "mustards"
-func() {}
-`)
-					Ω(<-channel).Should(Equal(suite))
-					time.Sleep(10 * time.Millisecond)
-					writeFile("/colonelmustard", "poupon.go", `
-import "mustards"
-func Color() string {
-    return "grey"
-}
-`)
-					Ω(<-channel).Should(Equal(suite))
-					Consistently(channel).ShouldNot(Receive())
-				})
-			})
-
-			Context("and the channel is only read *after* the changes have happened", func() {
-				It("should not pile on multiple notifications", func() {
-					writeFile("/colonelmustard", "poupon.go", `
-import "mustards"
-func() {}
-`)
-					writeFile("/colonelmustard", "poupon.go", `
-import "mustards"
-func Color() string {
-    return "grey"
-}
-`)
-					Ω(<-channel).Should(Equal(suite))
-					Consistently(channel).ShouldNot(Receive())
-				})
 			})
 		})
 	})

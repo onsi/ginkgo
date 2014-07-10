@@ -18,10 +18,14 @@ type RunAndWatchCommandFlags struct {
 	Tags           string
 	AutoNodes      bool
 
-	//not for watch command
+	//only for run command
 	KeepGoing       bool
 	UntilItFails    bool
 	RandomizeSuites bool
+
+	//only for watch command
+	Depth     int
+	DepFilter string
 
 	FlagSet *flag.FlagSet
 }
@@ -88,5 +92,9 @@ func (c *RunAndWatchCommandFlags) flags(forWatchCommand bool) {
 		c.FlagSet.BoolVar(&(c.KeepGoing), "keepGoing", false, "When true, failures from earlier test suites do not prevent later test suites from running")
 		c.FlagSet.BoolVar(&(c.UntilItFails), "untilItFails", false, "When true, Ginkgo will keep rerunning tests until a failure occurs")
 		c.FlagSet.BoolVar(&(c.RandomizeSuites), "randomizeSuites", false, "When true, Ginkgo will randomize the order in which test suites run")
+	}
+	if forWatchCommand {
+		c.FlagSet.IntVar(&(c.Depth), "depth", 1, "Ginkgo will watch dependencies down to this depth in the dependency tree")
+		c.FlagSet.StringVar(&(c.DepFilter), "dependencyFilter", "", "Ginkgo will ignore dependencies that match this regular expression")
 	}
 }

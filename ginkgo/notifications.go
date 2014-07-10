@@ -2,9 +2,10 @@ package main
 
 import (
 	"fmt"
-	"github.com/onsi/ginkgo/ginkgo/testsuite"
 	"os"
 	"os/exec"
+
+	"github.com/onsi/ginkgo/ginkgo/testsuite"
 )
 
 type Notifier struct {
@@ -36,7 +37,7 @@ To learn more about terminal-notifier:
 	}
 }
 
-func (n *Notifier) SendSuiteCompletionNotification(suite *testsuite.TestSuite, suitePassed bool) {
+func (n *Notifier) SendSuiteCompletionNotification(suite testsuite.TestSuite, suitePassed bool) {
 	if suitePassed {
 		n.SendNotification("Ginkgo [PASS]", fmt.Sprintf(`Test suite for "%s" passed.`, suite.PackageName))
 	} else {

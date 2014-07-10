@@ -45,7 +45,17 @@ func (r *SpecRunner) RunSpecs(args []string, additionalArgs []string) {
 	r.commandFlags.computeNodes()
 	r.notifier.VerifyNotificationsAreAvailable()
 
-	suites := findSuites(args, r.commandFlags.Recurse, r.commandFlags.SkipPackage)
+	suites, skippedPackages := findSuites(args, r.commandFlags.Recurse, r.commandFlags.SkipPackage)
+	if len(skippedPackages) > 0 {
+		fmt.Println("Will skip:")
+		for _, skippedPackage := range skippedPackages {
+			fmt.Println("  " + skippedPackage)
+		}
+	}
+	if len(suites) == 0 {
+		complainAndQuit("Found no test suites")
+	}
+
 	r.ComputeSuccinctMode(len(suites))
 
 	t := time.Now()
@@ -119,7 +129,7 @@ func (r *SpecRunner) UpdateSeed() {
 	}
 }
 
-func (r *SpecRunner) randomizeSuiteOrder(suites []*testsuite.TestSuite) []*testsuite.TestSuite {
+func (r *SpecRunner) randomizeSuiteOrder(suites []testsuite.TestSuite) []testsuite.TestSuite {
 	if !r.commandFlags.RandomizeSuites {
 		return suites
 	}
@@ -128,7 +138,7 @@ func (r *SpecRunner) randomizeSuiteOrder(suites []*testsuite.TestSuite) []*tests
 		return suites
 	}
 
-	randomizedSuites := make([]*testsuite.TestSuite, len(suites))
+	randomizedSuites := make([]testsuite.TestSuite, len(suites))
 	randomizer := rand.New(rand.NewSource(config.GinkgoConfig.RandomSeed))
 	permutation := randomizer.Perm(len(randomizedSuites))
 	for i, j := range permutation {
@@ -154,7 +164,7 @@ func (c *compiler) compile() {
 	c.compilationError <- err
 }
 
-func (r *SpecRunner) RunSuites(suites []*testsuite.TestSuite, additionalArgs []string) (testrunner.RunResult, int) {
+func (r *SpecRunner) RunSuites(suites []testsuite.TestSuite, additionalArgs []string) (testrunner.RunResult, int) {
 	runResult := testrunner.PassingRunResult()
 
 	suiteCompilers := make([]*compiler, len(suites))
@@ -183,7 +193,7 @@ func (r *SpecRunner) RunSuites(suites []*testsuite.TestSuite, additionalArgs []s
 	}()
 
 	numSuitesThatRan := 0
-	suitesThatFailed := []*testsuite.TestSuite{}
+	suitesThatFailed := []testsuite.TestSuite{}
 	for i, suite := range suites {
 		if r.interruptHandler.WasInterrupted() {
 			break
@@ -222,7 +232,7 @@ func (r *SpecRunner) RunSuites(suites []*testsuite.TestSuite, additionalArgs []s
 	return runResult, numSuitesThatRan
 }
 
-func (r *SpecRunner) listFailedSuites(suitesThatFailed []*testsuite.TestSuite) {
+func (r *SpecRunner) listFailedSuites(suitesThatFailed []testsuite.TestSuite) {
 	fmt.Println("")
 	fmt.Println("There were failures detected in the following suites:")
 

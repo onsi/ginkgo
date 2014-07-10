@@ -221,8 +221,8 @@ func complainAndQuit(complaint string) {
 	os.Exit(1)
 }
 
-func findSuites(args []string, recurse bool, skipPackage string) []*testsuite.TestSuite {
-	suites := []*testsuite.TestSuite{}
+func findSuites(args []string, recurse bool, skipPackage string) ([]testsuite.TestSuite, []string) {
+	suites := []testsuite.TestSuite{}
 
 	if len(args) > 0 {
 		for _, arg := range args {
@@ -232,28 +232,21 @@ func findSuites(args []string, recurse bool, skipPackage string) []*testsuite.Te
 		suites = testsuite.SuitesInDir(".", recurse)
 	}
 
+	skippedPackages := []string{}
 	if skipPackage != "" {
 		re := regexp.MustCompile(skipPackage)
-		filteredSuites := []*testsuite.TestSuite{}
-		skippedPackages := []string{}
+		filteredSuites := []testsuite.TestSuite{}
 		for _, suite := range suites {
 			if re.Match([]byte(suite.PackageName)) {
-				skippedPackages = append(skippedPackages, suite.PackageName)
+				skippedPackages = append(skippedPackages, suite.Path)
 			} else {
 				filteredSuites = append(filteredSuites, suite)
 			}
 		}
-		if len(skippedPackages) > 0 {
-			fmt.Printf("Will skip %s\n", strings.Join(skippedPackages, ", "))
-		}
 		suites = filteredSuites
 	}
 
-	if len(suites) == 0 {
-		complainAndQuit("Found no test suites")
-	}
-
-	return suites
+	return suites, skippedPackages
 }
 
 func goFmt(path string) {

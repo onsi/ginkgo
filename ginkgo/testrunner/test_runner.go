@@ -22,7 +22,7 @@ import (
 )
 
 type TestRunner struct {
-	suite *testsuite.TestSuite
+	suite testsuite.TestSuite
 
 	numCPU         int
 	parallelStream bool
@@ -32,7 +32,7 @@ type TestRunner struct {
 	additionalArgs []string
 }
 
-func New(suite *testsuite.TestSuite, numCPU int, parallelStream bool, race bool, cover bool, tags string, additionalArgs []string) *TestRunner {
+func New(suite testsuite.TestSuite, numCPU int, parallelStream bool, race bool, cover bool, tags string, additionalArgs []string) *TestRunner {
 	return &TestRunner{
 		suite:          suite,
 		numCPU:         numCPU,
