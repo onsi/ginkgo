@@ -121,6 +121,11 @@ import (
 	"github.com/onsi/ginkgo/ginkgo/testsuite"
 )
 
+const greenColor = "\x1b[32m"
+const redColor = "\x1b[91m"
+const defaultStyle = "\x1b[0m"
+const lightGrayColor = "\x1b[37m"
+
 type Command struct {
 	Name                      string
 	AltName                   string
@@ -254,4 +259,11 @@ func goFmt(path string) {
 	if err != nil {
 		complainAndQuit("Could not fmt: " + err.Error())
 	}
+}
+
+func pluralizedWord(singular, plural string, count int) string {
+	if count == 1 {
+		return singular
+	}
+	return plural
 }

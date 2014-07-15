@@ -1,20 +1,28 @@
 package watch
 
-import "path/filepath"
+import (
+	"path/filepath"
+	"sync"
+)
 
 type PackageHashes struct {
 	PackageHashes map[string]*PackageHash
 	usedPaths     map[string]bool
+	lock          *sync.Mutex
 }
 
 func NewPackageHashes() *PackageHashes {
 	return &PackageHashes{
 		PackageHashes: map[string]*PackageHash{},
 		usedPaths:     nil,
+		lock:          &sync.Mutex{},
 	}
 }
 
 func (p *PackageHashes) CheckForChanges() []string {
+	p.lock.Lock()
+	defer p.lock.Unlock()
+
 	modified := []string{}
 
 	for _, packageHash := range p.PackageHashes {
@@ -27,16 +35,25 @@ func (p *PackageHashes) CheckForChanges() []string {
 }
 
 func (p *PackageHashes) Add(path string) *PackageHash {
+	p.lock.Lock()
+	defer p.lock.Unlock()
+
 	path, _ = filepath.Abs(path)
 	_, ok := p.PackageHashes[path]
 	if !ok {
 		p.PackageHashes[path] = NewPackageHash(path)
 	}
 
-	return p.Get(path)
+	if p.usedPaths != nil {
+		p.usedPaths[path] = true
+	}
+	return p.PackageHashes[path]
 }
 
 func (p *PackageHashes) Get(path string) *PackageHash {
+	p.lock.Lock()
+	defer p.lock.Unlock()
+
 	path, _ = filepath.Abs(path)
 	if p.usedPaths != nil {
 		p.usedPaths[path] = true
@@ -45,10 +62,16 @@ func (p *PackageHashes) Get(path string) *PackageHash {
 }
 
 func (p *PackageHashes) StartTrackingUsage() {
+	p.lock.Lock()
+	defer p.lock.Unlock()
+
 	p.usedPaths = map[string]bool{}
 }
 
 func (p *PackageHashes) StopTrackingUsageAndPrune() {
+	p.lock.Lock()
+	defer p.lock.Unlock()
+
 	for path := range p.PackageHashes {
 		if !p.usedPaths[path] {
 			delete(p.PackageHashes, path)

@@ -34,7 +34,7 @@ To discuss Ginkgo and get updates, join the [google group](https://groups.google
     - `ginkgo -focus="REGEXP"` and `ginkgo -skip="REGEXP"` allow you to specify a subset of tests to run via regular expression
     - `ginkgo -r` runs all tests suites under the current directory
     - `ginkgo -v` prints out identifying information for each tests just before it runs
-    - `ginkgo watch` watches packages for changes, then reruns tests
+    - `ginkgo watch` [watches](https://onsi.github.io/ginkgo/#watching-for-changes) packages and their dependencies for changes, then reruns tests
 
     And much more: run `ginkgo help` for details!
 

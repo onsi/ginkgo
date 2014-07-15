@@ -5,7 +5,6 @@ import (
 	"fmt"
 	"math/rand"
 	"os"
-	"runtime"
 	"time"
 
 	"github.com/onsi/ginkgo/config"
@@ -16,10 +15,13 @@ import (
 
 func BuildRunCommand() *Command {
 	commandFlags := NewRunCommandFlags(flag.NewFlagSet("ginkgo", flag.ExitOnError))
+	notifier := NewNotifier(commandFlags)
+	interruptHandler := NewInterruptHandler()
 	runner := &SpecRunner{
 		commandFlags:     commandFlags,
-		notifier:         NewNotifier(commandFlags),
-		interruptHandler: NewInterruptHandler(),
+		notifier:         notifier,
+		interruptHandler: interruptHandler,
+		suiteRunner:      NewSuiteRunner(notifier, commandFlags, interruptHandler),
 	}
 
 	return &Command{
@@ -39,6 +41,7 @@ type SpecRunner struct {
 	commandFlags     *RunAndWatchCommandFlags
 	notifier         *Notifier
 	interruptHandler *InterruptHandler
+	suiteRunner      *SuiteRunner
 }
 
 func (r *SpecRunner) RunSpecs(args []string, additionalArgs []string) {
@@ -67,7 +70,7 @@ func (r *SpecRunner) RunSpecs(args []string, additionalArgs []string) {
 		for {
 			r.UpdateSeed()
 			randomizedSuites := r.randomizeSuiteOrder(suites)
-			runResult, numSuites = r.RunSuites(randomizedSuites, additionalArgs)
+			runResult, numSuites = r.suiteRunner.RunSuites(randomizedSuites, additionalArgs, r.commandFlags.KeepGoing, nil)
 			iteration++
 
 			if r.interruptHandler.WasInterrupted() {
@@ -83,15 +86,10 @@ func (r *SpecRunner) RunSpecs(args []string, additionalArgs []string) {
 		}
 	} else {
 		randomizedSuites := r.randomizeSuiteOrder(suites)
-		runResult, numSuites = r.RunSuites(randomizedSuites, additionalArgs)
+		runResult, numSuites = r.suiteRunner.RunSuites(randomizedSuites, additionalArgs, r.commandFlags.KeepGoing, nil)
 	}
 
-	noun := "suites"
-	if numSuites == 1 {
-		noun = "suite"
-	}
-
-	fmt.Printf("\nGinkgo ran %d %s in %s\n", numSuites, noun, time.Since(t))
+	fmt.Printf("\nGinkgo ran %d %s in %s\n", numSuites, pluralizedWord("suite", "suites", numSuites), time.Since(t))
 
 	if runResult.Passed {
 		if runResult.HasProgrammaticFocus {
@@ -145,117 +143,6 @@ func (r *SpecRunner) randomizeSuiteOrder(suites []testsuite.TestSuite) []testsui
 		randomizedSuites[i] = suites[j]
 	}
 	return randomizedSuites
-}
-
-type compiler struct {
-	runner           *testrunner.TestRunner
-	compilationError chan error
-}
-
-func (c *compiler) compile() {
-	retries := 0
-
-	err := c.runner.Compile()
-	for err != nil && retries < 5 { //We retry because Go sometimes steps on itself when multiple compiles happen in parallel.  This is ugly, but should help resolve flakiness...
-		err = c.runner.Compile()
-		retries++
-	}
-
-	c.compilationError <- err
-}
-
-func (r *SpecRunner) RunSuites(suites []testsuite.TestSuite, additionalArgs []string) (testrunner.RunResult, int) {
-	runResult := testrunner.PassingRunResult()
-
-	suiteCompilers := make([]*compiler, len(suites))
-	for i, suite := range suites {
-		runner := testrunner.New(suite, r.commandFlags.NumCPU, r.commandFlags.ParallelStream, r.commandFlags.Race, r.commandFlags.Cover, r.commandFlags.Tags, additionalArgs)
-		suiteCompilers[i] = &compiler{
-			runner:           runner,
-			compilationError: make(chan error, 1),
-		}
-	}
-
-	compilerChannel := make(chan *compiler)
-	numCompilers := runtime.NumCPU()
-	for i := 0; i < numCompilers; i++ {
-		go func() {
-			for compiler := range compilerChannel {
-				compiler.compile()
-			}
-		}()
-	}
-	go func() {
-		for _, compiler := range suiteCompilers {
-			compilerChannel <- compiler
-		}
-		close(compilerChannel)
-	}()
-
-	numSuitesThatRan := 0
-	suitesThatFailed := []testsuite.TestSuite{}
-	for i, suite := range suites {
-		if r.interruptHandler.WasInterrupted() {
-			break
-		}
-
-		compilationError := <-suiteCompilers[i].compilationError
-		if compilationError != nil {
-			fmt.Print(compilationError.Error())
-		}
-		numSuitesThatRan++
-		suiteRunResult := testrunner.FailingRunResult()
-		if compilationError == nil {
-			suiteRunResult = suiteCompilers[i].runner.Run()
-		}
-		r.notifier.SendSuiteCompletionNotification(suite, suiteRunResult.Passed)
-		runResult = runResult.Merge(suiteRunResult)
-		if !suiteRunResult.Passed {
-			suitesThatFailed = append(suitesThatFailed, suite)
-			if !r.commandFlags.KeepGoing {
-				break
-			}
-		}
-		if i < len(suites)-1 && !config.DefaultReporterConfig.Succinct {
-			fmt.Println("")
-		}
-	}
-
-	for i := range suites {
-		suiteCompilers[i].runner.CleanUp()
-	}
-
-	if r.commandFlags.KeepGoing && !runResult.Passed {
-		r.listFailedSuites(suitesThatFailed)
-	}
-
-	return runResult, numSuitesThatRan
-}
-
-func (r *SpecRunner) listFailedSuites(suitesThatFailed []testsuite.TestSuite) {
-	fmt.Println("")
-	fmt.Println("There were failures detected in the following suites:")
-
-	redColor := "\x1b[91m"
-	defaultStyle := "\x1b[0m"
-	lightGrayColor := "\x1b[37m"
-
-	maxPackageNameLength := 0
-	for _, suite := range suitesThatFailed {
-		if len(suite.PackageName) > maxPackageNameLength {
-			maxPackageNameLength = len(suite.PackageName)
-		}
-	}
-
-	packageNameFormatter := fmt.Sprintf("%%%ds", maxPackageNameLength)
-
-	for _, suite := range suitesThatFailed {
-		if config.DefaultReporterConfig.NoColor {
-			fmt.Printf("\t"+packageNameFormatter+" %s\n", suite.PackageName, suite.Path)
-		} else {
-			fmt.Printf("\t%s"+packageNameFormatter+"%s %s%s%s\n", redColor, suite.PackageName, defaultStyle, lightGrayColor, suite.Path, defaultStyle)
-		}
-	}
 }
 
 func orcMessage(iteration int) string {
