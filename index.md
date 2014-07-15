@@ -780,7 +780,17 @@ Here are the flags that Ginkgo accepts:
 
     If present, Ginkgo will stop the suite right after the first spec failure.  When set during parallel tests, a failure on one node does *not* stop other nodes from running - only the node that failed will stop running.
 
-**Miscellaneous:**
+** Watch flags: **
+
+- `--depth=DEPTH`
+
+    When watching packages, Ginkgo also watches those package's dependencies for changes.  The default value for `--depth` is `1` meaning that only the immediate dependencies of a package are monitored.  You can adjust this up to monitor dependencies-of-dependencies, or set it to `0` to only monitor the package itself, not its dependencies.
+
+- `--dependencyFilter=DEPENDENCY_FILTER`
+
+    When watching package dependencies, you can specify dependencies to *ignore* by passing `dependencyFilter` a regular expression.  Any dependency that satisifes this regexp will not be monitored.
+
+** Miscellaneous: **
 
 - `-keepGoing`
 
@@ -804,10 +814,9 @@ The Ginkgo CLI provides a `watch` subcommand that takes (almost) all the flags t
 
 You can also run `ginkgo watch -r` to monitor all packages recursively.
 
+For each monitored packaged, Ginkgo will also monitor that package's dependencies and trigger the monitored package's test suite when a change in a dependency is detected.  By default, `ginkgo watch` monitors a package's immediate dependencies.  You can adjust this using the `-depth` flag.  Set `-depth` to `0` to disable monitoring dependencies and set `-depth` to something greater than `1` to monitor deeper down the dependency graph.  If there are dependencies you'd like to explicitly ignore, pass a regular expression to `-dependencyFilter` -- any dependencies that satisfy this regular expression will be ignored.
+
 Passing the `-notify` flag on OS X will trigger desktop notifications when `ginkgo watch` triggers and completes a test run.
-
-One limitation of `ginkgo watch` is that it will only trigger tests for a watched package if files within that package (not subpackages or other dependencies) are changed.  There are plans to find ways around this in the future by monitoring dependencies, but there isn't a timeline for implementing this yet.
-
 
 ### Generators
 
