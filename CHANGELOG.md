@@ -1,6 +1,7 @@
-## Head
+## 1.1.0-beta (6/15/2014)
 New Features:
 
+- `ginkgo watch` now monitors packages *and their dependencies* for changes.  The depth of the dependency tree can be modified with the `-depth` flag.
 - Test suites with a programmatic focus (`FIt`, `FDescribe`, etc...) exit with non-zero status code, evne when they pass.  This allows CI systems to detect accidental commits of focused test suites.
 - `ginkgo -p` runs the testsuite in parallel with an auto-detected number of nodes.
 - `ginkgo -tags=TAG_LIST` passes a list of tags down to the `go build` command.
@@ -14,7 +15,7 @@ Bug Fixes:
 - `ginkgo boostrap` and `ginkgo generate` no longer fail when dealing with `hyphen-separated-packages`.
 - parallel specs are now better distributed across nodes - fixed a crashing bug where (for example) distributing 11 tests across 7 nodes would panic
 
-## 1.0.0 (5/24/214)
+## 1.0.0 (5/24/2014)
 New Features:
 
 - Add `GinkgoParallelNode()` - shorthand for `config.GinkgoConfig.ParallelNode`
