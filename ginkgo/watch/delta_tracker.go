@@ -2,7 +2,6 @@ package watch
 
 import (
 	"fmt"
-	"regexp"
 
 	"github.com/onsi/ginkgo/ginkgo/testsuite"
 )
@@ -11,19 +10,13 @@ type SuiteErrors map[testsuite.TestSuite]error
 
 type DeltaTracker struct {
 	maxDepth      int
-	depFilter     *regexp.Regexp
 	suites        map[string]*Suite
 	packageHashes *PackageHashes
 }
 
-func NewDeltaTracker(maxDepth int, depFilterString string) *DeltaTracker {
-	var depFilter *regexp.Regexp
-	if depFilterString != "" {
-		depFilter = regexp.MustCompile(depFilterString)
-	}
+func NewDeltaTracker(maxDepth int) *DeltaTracker {
 	return &DeltaTracker{
 		maxDepth:      maxDepth,
-		depFilter:     depFilter,
 		packageHashes: NewPackageHashes(),
 		suites:        map[string]*Suite{},
 	}
@@ -55,7 +48,7 @@ func (d *DeltaTracker) Delta(suites []testsuite.TestSuite) (delta Delta, errors 
 	for _, suite := range suites {
 		_, ok := d.suites[suite.Path]
 		if !ok {
-			s, err := NewSuite(suite, d.maxDepth, d.depFilter, d.packageHashes)
+			s, err := NewSuite(suite, d.maxDepth, d.packageHashes)
 			if err != nil {
 				errors[suite] = err
 				continue
@@ -74,5 +67,5 @@ func (d *DeltaTracker) WillRun(suite testsuite.TestSuite) error {
 		return fmt.Errorf("unkown suite %s", suite.Path)
 	}
 
-	return s.MarkAsRunAndRecomputedDependencies(d.maxDepth, d.depFilter)
+	return s.MarkAsRunAndRecomputedDependencies(d.maxDepth)
 }

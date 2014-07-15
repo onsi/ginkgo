@@ -24,8 +24,7 @@ type RunAndWatchCommandFlags struct {
 	RandomizeSuites bool
 
 	//only for watch command
-	Depth     int
-	DepFilter string
+	Depth int
 
 	FlagSet *flag.FlagSet
 }
@@ -95,6 +94,5 @@ func (c *RunAndWatchCommandFlags) flags(forWatchCommand bool) {
 	}
 	if forWatchCommand {
 		c.FlagSet.IntVar(&(c.Depth), "depth", 1, "Ginkgo will watch dependencies down to this depth in the dependency tree")
-		c.FlagSet.StringVar(&(c.DepFilter), "dependencyFilter", "", "Ginkgo will ignore dependencies that match this regular expression")
 	}
 }

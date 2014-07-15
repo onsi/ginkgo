@@ -3,7 +3,6 @@ package watch
 import (
 	"fmt"
 	"math"
-	"regexp"
 	"time"
 
 	"github.com/onsi/ginkgo/ginkgo/testsuite"
@@ -17,8 +16,8 @@ type Suite struct {
 	sharedPackageHashes *PackageHashes
 }
 
-func NewSuite(suite testsuite.TestSuite, maxDepth int, depFilter *regexp.Regexp, sharedPackageHashes *PackageHashes) (*Suite, error) {
-	deps, err := NewDependencies(suite.Path, maxDepth, depFilter)
+func NewSuite(suite testsuite.TestSuite, maxDepth int, sharedPackageHashes *PackageHashes) (*Suite, error) {
+	deps, err := NewDependencies(suite.Path, maxDepth)
 	if err != nil {
 		return nil, err
 	}
@@ -44,10 +43,10 @@ func (s *Suite) Delta() float64 {
 	return delta
 }
 
-func (s *Suite) MarkAsRunAndRecomputedDependencies(maxDepth int, depFilter *regexp.Regexp) error {
+func (s *Suite) MarkAsRunAndRecomputedDependencies(maxDepth int) error {
 	s.RunTime = time.Now()
 
-	deps, err := NewDependencies(s.Suite.Path, maxDepth, depFilter)
+	deps, err := NewDependencies(s.Suite.Path, maxDepth)
 	if err != nil {
 		return err
 	}
