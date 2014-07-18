@@ -11,13 +11,11 @@ import (
 
 type SuiteRunner struct {
 	notifier         *Notifier
-	commandFlags     *RunAndWatchCommandFlags
 	interruptHandler *InterruptHandler
 }
 
 type compiler struct {
 	runner           *testrunner.TestRunner
-	suite            testsuite.TestSuite
 	compilationError chan error
 }
 
@@ -33,23 +31,20 @@ func (c *compiler) compile() {
 	c.compilationError <- err
 }
 
-func NewSuiteRunner(notifier *Notifier, commandFlags *RunAndWatchCommandFlags, interruptHandler *InterruptHandler) *SuiteRunner {
+func NewSuiteRunner(notifier *Notifier, interruptHandler *InterruptHandler) *SuiteRunner {
 	return &SuiteRunner{
 		notifier:         notifier,
-		commandFlags:     commandFlags,
 		interruptHandler: interruptHandler,
 	}
 }
 
-func (r *SuiteRunner) RunSuites(suites []testsuite.TestSuite, additionalArgs []string, keepGoing bool, willCompile func(suite testsuite.TestSuite)) (testrunner.RunResult, int) {
+func (r *SuiteRunner) RunSuites(runners []*testrunner.TestRunner, keepGoing bool, willCompile func(suite testsuite.TestSuite)) (testrunner.RunResult, int) {
 	runResult := testrunner.PassingRunResult()
 
-	suiteCompilers := make([]*compiler, len(suites))
-	for i, suite := range suites {
-		runner := testrunner.New(suite, r.commandFlags.NumCPU, r.commandFlags.ParallelStream, r.commandFlags.Race, r.commandFlags.Cover, r.commandFlags.Tags, additionalArgs)
-		suiteCompilers[i] = &compiler{
+	compilers := make([]*compiler, len(runners))
+	for i, runner := range runners {
+		compilers[i] = &compiler{
 			runner:           runner,
-			suite:            suite,
 			compilationError: make(chan error, 1),
 		}
 	}
@@ -60,14 +55,14 @@ func (r *SuiteRunner) RunSuites(suites []testsuite.TestSuite, additionalArgs []s
 		go func() {
 			for compiler := range compilerChannel {
 				if willCompile != nil {
-					willCompile(compiler.suite)
+					willCompile(compiler.runner.Suite)
 				}
 				compiler.compile()
 			}
 		}()
 	}
 	go func() {
-		for _, compiler := range suiteCompilers {
+		for _, compiler := range compilers {
 			compilerChannel <- compiler
 		}
 		close(compilerChannel)
@@ -75,35 +70,31 @@ func (r *SuiteRunner) RunSuites(suites []testsuite.TestSuite, additionalArgs []s
 
 	numSuitesThatRan := 0
 	suitesThatFailed := []testsuite.TestSuite{}
-	for i, suite := range suites {
+	for i, runner := range runners {
 		if r.interruptHandler.WasInterrupted() {
 			break
 		}
 
-		compilationError := <-suiteCompilers[i].compilationError
+		compilationError := <-compilers[i].compilationError
 		if compilationError != nil {
 			fmt.Print(compilationError.Error())
 		}
 		numSuitesThatRan++
 		suiteRunResult := testrunner.FailingRunResult()
 		if compilationError == nil {
-			suiteRunResult = suiteCompilers[i].runner.Run()
+			suiteRunResult = compilers[i].runner.Run()
 		}
-		r.notifier.SendSuiteCompletionNotification(suite, suiteRunResult.Passed)
+		r.notifier.SendSuiteCompletionNotification(runner.Suite, suiteRunResult.Passed)
 		runResult = runResult.Merge(suiteRunResult)
 		if !suiteRunResult.Passed {
-			suitesThatFailed = append(suitesThatFailed, suite)
+			suitesThatFailed = append(suitesThatFailed, runner.Suite)
 			if !keepGoing {
 				break
 			}
 		}
-		if i < len(suites)-1 && !config.DefaultReporterConfig.Succinct {
+		if i < len(runners)-1 && !config.DefaultReporterConfig.Succinct {
 			fmt.Println("")
 		}
-	}
-
-	for i := range suites {
-		suiteCompilers[i].runner.CleanUp()
 	}
 
 	if keepGoing && !runResult.Passed {

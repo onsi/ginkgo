@@ -14,6 +14,7 @@ Bug Fixes:
 
 - `ginkgo boostrap` and `ginkgo generate` no longer fail when dealing with `hyphen-separated-packages`.
 - parallel specs are now better distributed across nodes - fixed a crashing bug where (for example) distributing 11 tests across 7 nodes would panic
+- `ginkgo --untilItFails` no longer recompiles between attempts.
 
 ## 1.0.0 (5/24/2014)
 New Features:

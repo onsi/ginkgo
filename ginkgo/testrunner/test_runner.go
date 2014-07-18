@@ -22,7 +22,8 @@ import (
 )
 
 type TestRunner struct {
-	suite testsuite.TestSuite
+	Suite    testsuite.TestSuite
+	compiled bool
 
 	numCPU         int
 	parallelStream bool
@@ -34,7 +35,7 @@ type TestRunner struct {
 
 func New(suite testsuite.TestSuite, numCPU int, parallelStream bool, race bool, cover bool, tags string, additionalArgs []string) *TestRunner {
 	return &TestRunner{
-		suite:          suite,
+		Suite:          suite,
 		numCPU:         numCPU,
 		parallelStream: parallelStream,
 		race:           race,
@@ -45,6 +46,10 @@ func New(suite testsuite.TestSuite, numCPU int, parallelStream bool, race bool, 
 }
 
 func (t *TestRunner) Compile() error {
+	if t.compiled {
+		return nil
+	}
+
 	os.Remove(t.compiledArtifact())
 
 	args := []string{"test", "-c", "-i"}
@@ -60,18 +65,19 @@ func (t *TestRunner) Compile() error {
 
 	cmd := exec.Command("go", args...)
 
-	cmd.Dir = t.suite.Path
+	cmd.Dir = t.Suite.Path
 
 	output, err := cmd.CombinedOutput()
 
 	if err != nil {
-		fixedOutput := fixCompilationOutput(string(output), t.suite.Path)
+		fixedOutput := fixCompilationOutput(string(output), t.Suite.Path)
 		if len(output) > 0 {
-			return fmt.Errorf("Failed to compile %s:\n\n%s", t.suite.PackageName, fixedOutput)
+			return fmt.Errorf("Failed to compile %s:\n\n%s", t.Suite.PackageName, fixedOutput)
 		}
 		return fmt.Errorf("")
 	}
 
+	t.compiled = true
 	return nil
 }
 
@@ -105,7 +111,7 @@ func fixCompilationOutput(output string, relToPath string) string {
 }
 
 func (t *TestRunner) Run() RunResult {
-	if t.suite.IsGinkgo {
+	if t.Suite.IsGinkgo {
 		if t.numCPU > 1 {
 			if t.parallelStream {
 				return t.runAndStreamParallelGinkgoSuite()
@@ -120,12 +126,12 @@ func (t *TestRunner) Run() RunResult {
 	}
 }
 
-func (t *TestRunner) CleanUp(signal ...os.Signal) {
+func (t *TestRunner) CleanUp() {
 	os.Remove(t.compiledArtifact())
 }
 
 func (t *TestRunner) compiledArtifact() string {
-	compiledArtifact, _ := filepath.Abs(filepath.Join(t.suite.Path, fmt.Sprintf("%s.test", t.suite.PackageName)))
+	compiledArtifact, _ := filepath.Abs(filepath.Join(t.Suite.Path, fmt.Sprintf("%s.test", t.Suite.PackageName)))
 	return compiledArtifact
 }
 
@@ -280,7 +286,7 @@ func (t *TestRunner) runParallelGinkgoSuite() RunResult {
 func (t *TestRunner) cmd(ginkgoArgs []string, stream io.Writer, node int) *exec.Cmd {
 	args := []string{"-test.timeout=24h"}
 	if t.cover {
-		coverprofile := "--test.coverprofile=" + t.suite.PackageName + ".coverprofile"
+		coverprofile := "--test.coverprofile=" + t.Suite.PackageName + ".coverprofile"
 		if t.numCPU > 1 {
 			coverprofile = fmt.Sprintf("%s.%d", coverprofile, node)
 		}
@@ -292,7 +298,7 @@ func (t *TestRunner) cmd(ginkgoArgs []string, stream io.Writer, node int) *exec.
 
 	cmd := exec.Command(t.compiledArtifact(), args...)
 
-	cmd.Dir = t.suite.Path
+	cmd.Dir = t.Suite.Path
 	cmd.Stderr = stream
 	cmd.Stdout = stream
 
@@ -325,8 +331,8 @@ func (t *TestRunner) run(cmd *exec.Cmd, completions chan RunResult) RunResult {
 func (t *TestRunner) combineCoverprofiles() {
 	profiles := []string{}
 	for cpu := 1; cpu <= t.numCPU; cpu++ {
-		coverFile := fmt.Sprintf("%s.coverprofile.%d", t.suite.PackageName, cpu)
-		coverFile = filepath.Join(t.suite.Path, coverFile)
+		coverFile := fmt.Sprintf("%s.coverprofile.%d", t.Suite.PackageName, cpu)
+		coverFile = filepath.Join(t.Suite.Path, coverFile)
 		coverProfile, err := ioutil.ReadFile(coverFile)
 		os.Remove(coverFile)
 
@@ -358,5 +364,5 @@ func (t *TestRunner) combineCoverprofiles() {
 		output = append(output, fmt.Sprintf("%s %d", line, count))
 	}
 	finalOutput := strings.Join(output, "\n")
-	ioutil.WriteFile(filepath.Join(t.suite.Path, fmt.Sprintf("%s.coverprofile", t.suite.PackageName)), []byte(finalOutput), 0666)
+	ioutil.WriteFile(filepath.Join(t.Suite.Path, fmt.Sprintf("%s.coverprofile", t.Suite.PackageName)), []byte(finalOutput), 0666)
 }

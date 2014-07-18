@@ -9,7 +9,6 @@ import (
 
 	"github.com/onsi/ginkgo/config"
 	"github.com/onsi/ginkgo/ginkgo/testrunner"
-	"github.com/onsi/ginkgo/ginkgo/testsuite"
 	"github.com/onsi/ginkgo/types"
 )
 
@@ -21,7 +20,7 @@ func BuildRunCommand() *Command {
 		commandFlags:     commandFlags,
 		notifier:         notifier,
 		interruptHandler: interruptHandler,
-		suiteRunner:      NewSuiteRunner(notifier, commandFlags, interruptHandler),
+		suiteRunner:      NewSuiteRunner(notifier, interruptHandler),
 	}
 
 	return &Command{
@@ -63,14 +62,19 @@ func (r *SpecRunner) RunSpecs(args []string, additionalArgs []string) {
 
 	t := time.Now()
 
+	runners := []*testrunner.TestRunner{}
+	for _, suite := range suites {
+		runners = append(runners, testrunner.New(suite, r.commandFlags.NumCPU, r.commandFlags.ParallelStream, r.commandFlags.Race, r.commandFlags.Cover, r.commandFlags.Tags, additionalArgs))
+	}
+
 	numSuites := 0
 	runResult := testrunner.PassingRunResult()
 	if r.commandFlags.UntilItFails {
 		iteration := 0
 		for {
 			r.UpdateSeed()
-			randomizedSuites := r.randomizeSuiteOrder(suites)
-			runResult, numSuites = r.suiteRunner.RunSuites(randomizedSuites, additionalArgs, r.commandFlags.KeepGoing, nil)
+			randomizedRunners := r.randomizeOrder(runners)
+			runResult, numSuites = r.suiteRunner.RunSuites(randomizedRunners, r.commandFlags.KeepGoing, nil)
 			iteration++
 
 			if r.interruptHandler.WasInterrupted() {
@@ -85,8 +89,12 @@ func (r *SpecRunner) RunSpecs(args []string, additionalArgs []string) {
 			}
 		}
 	} else {
-		randomizedSuites := r.randomizeSuiteOrder(suites)
-		runResult, numSuites = r.suiteRunner.RunSuites(randomizedSuites, additionalArgs, r.commandFlags.KeepGoing, nil)
+		randomizedRunners := r.randomizeOrder(runners)
+		runResult, numSuites = r.suiteRunner.RunSuites(randomizedRunners, r.commandFlags.KeepGoing, nil)
+	}
+
+	for _, runner := range runners {
+		runner.CleanUp()
 	}
 
 	fmt.Printf("\nGinkgo ran %d %s in %s\n", numSuites, pluralizedWord("suite", "suites", numSuites), time.Since(t))
@@ -127,22 +135,22 @@ func (r *SpecRunner) UpdateSeed() {
 	}
 }
 
-func (r *SpecRunner) randomizeSuiteOrder(suites []testsuite.TestSuite) []testsuite.TestSuite {
+func (r *SpecRunner) randomizeOrder(runners []*testrunner.TestRunner) []*testrunner.TestRunner {
 	if !r.commandFlags.RandomizeSuites {
-		return suites
+		return runners
 	}
 
-	if len(suites) <= 1 {
-		return suites
+	if len(runners) <= 1 {
+		return runners
 	}
 
-	randomizedSuites := make([]testsuite.TestSuite, len(suites))
+	randomizedRunners := make([]*testrunner.TestRunner, len(runners))
 	randomizer := rand.New(rand.NewSource(config.GinkgoConfig.RandomSeed))
-	permutation := randomizer.Perm(len(randomizedSuites))
+	permutation := randomizer.Perm(len(runners))
 	for i, j := range permutation {
-		randomizedSuites[i] = suites[j]
+		randomizedRunners[i] = runners[j]
 	}
-	return randomizedSuites
+	return randomizedRunners
 }
 
 func orcMessage(iteration int) string {
@@ -170,8 +178,8 @@ func orcMessage(iteration int) string {
 			"I, Sisyphus",
 			"Insanity: doing the same thing over and over again and expecting different results. -Einstein",
 			"I guess Einstein never tried to churn butter",
-		}[iteration-10]
+		}[iteration-10] + "\n"
 	} else {
-		return "No, seriously... you can probably stop now."
+		return "No, seriously... you can probably stop now.\n"
 	}
 }
