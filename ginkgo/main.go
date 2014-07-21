@@ -114,7 +114,6 @@ import (
 	"fmt"
 	"os"
 	"os/exec"
-	"regexp"
 	"strings"
 
 	"github.com/onsi/ginkgo/config"
@@ -239,10 +238,17 @@ func findSuites(args []string, recurse bool, skipPackage string) ([]testsuite.Te
 
 	skippedPackages := []string{}
 	if skipPackage != "" {
-		re := regexp.MustCompile(skipPackage)
+		skipFilters := strings.Split(skipPackage, ",")
 		filteredSuites := []testsuite.TestSuite{}
 		for _, suite := range suites {
-			if re.Match([]byte(suite.PackageName)) {
+			skip := false
+			for _, skipFilter := range skipFilters {
+				if strings.Contains(suite.Path, skipFilter) {
+					skip = true
+					break
+				}
+			}
+			if skip {
 				skippedPackages = append(skippedPackages, suite.Path)
 			} else {
 				filteredSuites = append(filteredSuites, suite)

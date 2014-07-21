@@ -1,13 +1,13 @@
 package integration_test
 
 import (
+	"runtime"
+	"strings"
 	. "github.com/onsi/ginkgo"
 	"github.com/onsi/ginkgo/types"
 	. "github.com/onsi/gomega"
 	"github.com/onsi/gomega/gbytes"
 	"github.com/onsi/gomega/gexec"
-	"runtime"
-	"strings"
 )
 
 var _ = Describe("Running Specs", func() {
@@ -94,17 +94,20 @@ var _ = Describe("Running Specs", func() {
 		BeforeEach(func() {
 			pathToTest = tmpPath("ginkgo")
 			otherPathToTest := tmpPath("other")
+			focusedPathToTest := tmpPath("focused")
 			copyIn("passing_ginkgo_tests", pathToTest)
 			copyIn("more_ginkgo_tests", otherPathToTest)
+			copyIn("focused_fixture", focusedPathToTest)
 		})
 
-		It("should skip packages that match the regexp", func() {
-			session := startGinkgo(tmpDir, "--noColor", "--skipPackage=other", "-r")
+		It("should skip packages that match the list", func() {
+			session := startGinkgo(tmpDir, "--noColor", "--skipPackage=other,focused", "-r")
 			Eventually(session).Should(gexec.Exit(0))
 			output := string(session.Out.Contents())
 
 			Ω(output).Should(ContainSubstring("Passing_ginkgo_tests Suite"))
 			Ω(output).ShouldNot(ContainSubstring("More_ginkgo_tests Suite"))
+			Ω(output).ShouldNot(ContainSubstring("Focused_fixture Suite"))
 			Ω(output).Should(ContainSubstring("Test Suite Passed"))
 		})
 	})

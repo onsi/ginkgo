@@ -10,11 +10,15 @@ New Features:
 - Ginkgo now summarizes any spec failures that occured at the end of the test run. 
 - `ginkgo --randomizeSuites` will run tests *suites* in random order using the generated/passed-in seed.
 
+Improvements:
+
+- `ginkgo -skipPackage` now takes a comma-separated list of strings.  If the *relative path* to a package matches one of the entries in the comma-separated list, that package is skipped.
+- `ginkgo --untilItFails` no longer recompiles between attempts.
+
 Bug Fixes:
 
 - `ginkgo boostrap` and `ginkgo generate` no longer fail when dealing with `hyphen-separated-packages`.
 - parallel specs are now better distributed across nodes - fixed a crashing bug where (for example) distributing 11 tests across 7 nodes would panic
-- `ginkgo --untilItFails` no longer recompiles between attempts.
 
 ## 1.0.0 (5/24/2014)
 New Features:
