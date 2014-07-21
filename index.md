@@ -485,7 +485,7 @@ When Ginkgo detects that a passing test suite has a programmatically focused tes
 
 > You can unfocus programatically focused tests by running `ginkgo unfocus`.  This will strip the `F`s off of any `FDescribe`, `FContext`, and `FIt`s that your tests in the current directory may have.
 
-> If you want to skip entire packages (when running `ginkgo` recursively with the `-r` flag) you can pass a regular expression to `--skipPackage=REGEXP`.  Any packages with names matching this regexp will be skipped entirely.
+> If you want to skip entire packages (when running `ginkgo` recursively with the `-r` flag) you can pass a comma-separated list  to `--skipPackage=PACKAGES,TO,SKIP`.  Any packages with *paths* that contain one of the entries in this comma separated list will be skipped.
 
 ### Spec Permutation
 
@@ -686,9 +686,9 @@ Here are the flags that Ginkgo accepts:
     
     Set `-r` to have the `ginkgo` CLI recursively run all test suites under the target directories.  Useful for running all the tests across all your packages.
 
-- `-skipPackage=REGEXP`
+- `-skipPackage=PACKAGES,TO,SKIP`
 
-    When running with `-r` you can pass `-skipPackage` a regular expression.  Any packages with names that match the regular expression will not be run.
+    When running with `-r` you can pass `-skipPackage` a comma-separated list of entries.  Any packages with *paths* that contain one of the entries in this comma separated list will be skipped.
 
 **Running in parallel:**
 
