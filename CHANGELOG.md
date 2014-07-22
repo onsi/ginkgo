@@ -1,4 +1,4 @@
-## 1.1.0-beta (6/15/2014)
+## 1.1.0-beta (6/22/2014)
 New Features:
 
 - `ginkgo watch` now monitors packages *and their dependencies* for changes.  The depth of the dependency tree can be modified with the `-depth` flag.
@@ -14,6 +14,7 @@ Improvements:
 
 - `ginkgo -skipPackage` now takes a comma-separated list of strings.  If the *relative path* to a package matches one of the entries in the comma-separated list, that package is skipped.
 - `ginkgo --untilItFails` no longer recompiles between attempts.
+- Ginkgo now panics when a runnable node (`It`, `BeforeEach`, `JustBeforeEach`, `AfterEach`, `Measure`) is nested within another runnable node.  This is always a mistake.  Any test suites that panic because of this change should be fixed.
 
 Bug Fixes:
 

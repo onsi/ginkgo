@@ -269,6 +269,68 @@ var _ = Describe("Suite", func() {
 				Ω(fakeR.SpecSummaries[0].Failure.Location).Should(Equal(location))
 			})
 		})
+
+		Context("when runnable nodes are nested within other runnable nodes", func() {
+			Context("when an It is nested", func() {
+				BeforeEach(func() {
+					specSuite.PushItNode("top level it", func() {
+						specSuite.PushItNode("nested it", f("oops"), types.FlagTypeNone, codelocation.New(0), 0)
+					}, types.FlagTypeNone, codelocation.New(0), 0)
+				})
+
+				It("should fail", func() {
+					Ω(fakeT.didFail).Should(BeTrue())
+				})
+			})
+
+			Context("when a Measure is nested", func() {
+				BeforeEach(func() {
+					specSuite.PushItNode("top level it", func() {
+						specSuite.PushMeasureNode("nested measure", func(Benchmarker) {}, types.FlagTypeNone, codelocation.New(0), 10)
+					}, types.FlagTypeNone, codelocation.New(0), 0)
+				})
+
+				It("should fail", func() {
+					Ω(fakeT.didFail).Should(BeTrue())
+				})
+			})
+
+			Context("when a BeforeEach is nested", func() {
+				BeforeEach(func() {
+					specSuite.PushItNode("top level it", func() {
+						specSuite.PushBeforeEachNode(f("nested bef"), codelocation.New(0), 0)
+					}, types.FlagTypeNone, codelocation.New(0), 0)
+				})
+
+				It("should fail", func() {
+					Ω(fakeT.didFail).Should(BeTrue())
+				})
+			})
+
+			Context("when a JustBeforeEach is nested", func() {
+				BeforeEach(func() {
+					specSuite.PushItNode("top level it", func() {
+						specSuite.PushJustBeforeEachNode(f("nested jbef"), codelocation.New(0), 0)
+					}, types.FlagTypeNone, codelocation.New(0), 0)
+				})
+
+				It("should fail", func() {
+					Ω(fakeT.didFail).Should(BeTrue())
+				})
+			})
+
+			Context("when a AfterEach is nested", func() {
+				BeforeEach(func() {
+					specSuite.PushItNode("top level it", func() {
+						specSuite.PushAfterEachNode(f("nested aft"), codelocation.New(0), 0)
+					}, types.FlagTypeNone, codelocation.New(0), 0)
+				})
+
+				It("should fail", func() {
+					Ω(fakeT.didFail).Should(BeTrue())
+				})
+			})
+		})
 	})
 
 	Describe("BeforeSuite", func() {
