@@ -83,6 +83,11 @@ blockquote p {
     border: 1px solid #ddd;
 }
 
+.sidebar-section>ul {
+    max-height: 600px;
+    overflow: auto;
+}
+
 .sidebar-section h2 {
     margin-top: 0;
     margin-bottom: 8px;
