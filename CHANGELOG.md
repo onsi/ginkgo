@@ -1,4 +1,8 @@
-## 1.1.0-beta (6/22/2014)
+## 1.1.0 (8/2/2014)
+
+No changes, just dropping the beta.
+
+## 1.1.0-beta (7/22/2014)
 New Features:
 
 - `ginkgo watch` now monitors packages *and their dependencies* for changes.  The depth of the dependency tree can be modified with the `-depth` flag.
