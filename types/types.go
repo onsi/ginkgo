@@ -87,8 +87,9 @@ type SpecFailure struct {
 }
 
 type SpecMeasurement struct {
-	Name string
-	Info interface{}
+	Name  string
+	Info  interface{}
+	Order int
 
 	Results []float64
 

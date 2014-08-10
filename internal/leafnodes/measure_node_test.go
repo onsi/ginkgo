@@ -5,10 +5,10 @@ import (
 	. "github.com/onsi/ginkgo/internal/leafnodes"
 	. "github.com/onsi/gomega"
 
+	"time"
 	"github.com/onsi/ginkgo/internal/codelocation"
 	Failer "github.com/onsi/ginkgo/internal/failer"
 	"github.com/onsi/ginkgo/types"
-	"time"
 )
 
 var _ = Describe("Measure Nodes", func() {
@@ -44,6 +44,7 @@ var _ = Describe("Measure Nodes", func() {
 				Ω(report).Should(HaveLen(2))
 				Ω(report["foo"].Name).Should(Equal("foo"))
 				Ω(report["foo"].Info).Should(Equal("info!"))
+				Ω(report["foo"].Order).Should(Equal(0))
 				Ω(report["foo"].SmallestLabel).Should(Equal("Smallest"))
 				Ω(report["foo"].LargestLabel).Should(Equal(" Largest"))
 				Ω(report["foo"].AverageLabel).Should(Equal(" Average"))
@@ -57,9 +58,10 @@ var _ = Describe("Measure Nodes", func() {
 				Ω(report["bar"].Name).Should(Equal("bar"))
 				Ω(report["bar"].Info).Should(BeNil())
 				Ω(report["bar"].SmallestLabel).Should(Equal("Smallest"))
+				Ω(report["bar"].Order).Should(Equal(1))
 				Ω(report["bar"].LargestLabel).Should(Equal(" Largest"))
 				Ω(report["bar"].AverageLabel).Should(Equal(" Average"))
-				Ω(report["foo"].Units).Should(Equal(""))
+				Ω(report["bar"].Units).Should(Equal(""))
 				Ω(report["bar"].Results).Should(Equal([]float64{0.3, 0.1, 0.5, 0.7}))
 				Ω(report["bar"].Smallest).Should(BeNumerically("==", 0.1))
 				Ω(report["bar"].Largest).Should(BeNumerically("==", 0.7))

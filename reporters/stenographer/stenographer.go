@@ -437,16 +437,26 @@ func (s *consoleStenographer) printCodeLocationBlock(componentTexts []string, co
 	return indentation
 }
 
+func (s *consoleStenographer) orderedMeasurementKeys(measurements map[string]*types.SpecMeasurement) []string {
+	orderedKeys := make([]string, len(measurements))
+	for key, measurement := range measurements {
+		orderedKeys[measurement.Order] = key
+	}
+	return orderedKeys
+}
+
 func (s *consoleStenographer) measurementReport(spec *types.SpecSummary, succinct bool) string {
 	if len(spec.Measurements) == 0 {
 		return "Found no measurements"
 	}
 
 	message := []string{}
+	orderedKeys := s.orderedMeasurementKeys(spec.Measurements)
 
 	if succinct {
 		message = append(message, fmt.Sprintf("%s samples:", s.colorize(boldStyle, "%d", spec.NumberOfSamples)))
-		for _, measurement := range spec.Measurements {
+		for _, key := range orderedKeys {
+			measurement := spec.Measurements[key]
 			message = append(message, fmt.Sprintf("  %s - %s: %s%s, %s: %s%s ± %s%s, %s: %s%s",
 				s.colorize(boldStyle, "%s", measurement.Name),
 				measurement.SmallestLabel,
@@ -464,7 +474,8 @@ func (s *consoleStenographer) measurementReport(spec *types.SpecSummary, succinc
 		}
 	} else {
 		message = append(message, fmt.Sprintf("Ran %s samples:", s.colorize(boldStyle, "%d", spec.NumberOfSamples)))
-		for _, measurement := range spec.Measurements {
+		for _, key := range orderedKeys {
+			measurement := spec.Measurements[key]
 			info := ""
 			if measurement.Info != nil {
 				message = append(message, fmt.Sprintf("%v", measurement.Info))
