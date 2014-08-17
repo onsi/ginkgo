@@ -214,8 +214,8 @@ func (runner *SpecRunner) reportSpecWillRun(spec *spec.Spec) {
 
 func (runner *SpecRunner) reportSpecDidComplete(spec *spec.Spec) {
 	summary := spec.Summary(runner.suiteID)
-	for _, reporter := range runner.reporters {
-		reporter.SpecDidComplete(summary)
+	for i := len(runner.reporters) - 1; i >= 0; i-- {
+		runner.reporters[i].SpecDidComplete(summary)
 	}
 }
 

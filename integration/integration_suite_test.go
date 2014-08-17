@@ -24,10 +24,12 @@ func TestIntegration(t *testing.T) {
 	RunSpecs(t, "Integration Suite")
 }
 
-var _ = BeforeSuite(func() {
-	var err error
-	pathToGinkgo, err = gexec.Build("github.com/onsi/ginkgo/ginkgo")
+var _ = SynchronizedBeforeSuite(func() []byte {
+	pathToGinkgo, err := gexec.Build("github.com/onsi/ginkgo/ginkgo")
 	Ω(err).ShouldNot(HaveOccurred())
+	return []byte(pathToGinkgo)
+}, func(computedPathToGinkgo []byte) {
+	pathToGinkgo = string(computedPathToGinkgo)
 })
 
 var _ = BeforeEach(func() {
@@ -41,7 +43,7 @@ var _ = AfterEach(func() {
 	Ω(err).ShouldNot(HaveOccurred())
 })
 
-var _ = AfterSuite(func() {
+var _ = SynchronizedAfterSuite(func() {}, func() {
 	gexec.CleanupBuildArtifacts()
 })
 
