@@ -15,6 +15,9 @@ type FakeReporter struct {
 	SpecSummaries        []*types.SpecSummary
 	AfterSuiteSummary    *types.SetupSummary
 	EndSummary           *types.SuiteSummary
+
+	SpecWillRunStub     func(specSummary *types.SpecSummary)
+	SpecDidCompleteStub func(specSummary *types.SpecSummary)
 }
 
 func NewFakeReporter() *FakeReporter {
@@ -34,10 +37,16 @@ func (fakeR *FakeReporter) BeforeSuiteDidRun(setupSummary *types.SetupSummary) {
 }
 
 func (fakeR *FakeReporter) SpecWillRun(specSummary *types.SpecSummary) {
+	if fakeR.SpecWillRunStub != nil {
+		fakeR.SpecWillRunStub(specSummary)
+	}
 	fakeR.SpecWillRunSummaries = append(fakeR.SpecWillRunSummaries, specSummary)
 }
 
 func (fakeR *FakeReporter) SpecDidComplete(specSummary *types.SpecSummary) {
+	if fakeR.SpecDidCompleteStub != nil {
+		fakeR.SpecDidCompleteStub(specSummary)
+	}
 	fakeR.SpecSummaries = append(fakeR.SpecSummaries, specSummary)
 }
 
