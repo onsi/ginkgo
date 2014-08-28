@@ -1005,7 +1005,11 @@ Ginkgo doesn't have any have any explicit support for Shared Examples (also know
 
 ### Locally-scoped Shared Behaviors
 
-It is often the case that a number of `Context`s within a suite describe slightly different set ups that result in the roughly the same behavior.  Rather than repeat the `It`s for across these `Context`s you can pull out a function that lives within the same closure that `Context`s live in, that defines these shared `It`s.  For example:
+It is often the case that within a particular suite, there will be a number of different `Context`s that assert the exact same behavior, in that they have identical `It`s within them.  The only difference between these `Context`s is the set up done in their respective `BeforeEach`s.  Rather than repeat the `It`s for these `Context`s, here are two ways to extract the code and avoid repeating yourself.
+
+#### Pattern 1: Extract a function that defines the shared `It`s
+
+Here, we will pull out a function that lives within the same closure that `Context`s live in, that defines the `It`s that are common to those `Context`s.  For example:
 
     Describe("my api client", func() {
         var client APIClient
@@ -1020,6 +1024,16 @@ It is often the case that a number of `Context`s within a suite describe slightl
         })
 
         Describe("failure modes", func() {
+            AssertFailedBehavior := func() {
+                It("should not include JSON in the response", func() {
+                    Ω((<-response).JSON).Should(BeZero())
+                })
+
+                It("should not report success", func() {
+                    Ω((<-response).Success).Should(BeFalse())
+                })
+            }
+
             Context("when the server does not return a 200", func() {
                 BeforeEach(func() {
                     fakeServer.Respond(404)
@@ -1043,26 +1057,85 @@ It is often the case that a number of `Context`s within a suite describe slightl
 
                 AssertFailedBehavior()
             })
-
-            AssertFailedBehavior := func() {                
-                It("should not include JSON in the response", func() {
-                    Ω((<-response).JSON).Should(BeZero())
-                })
-
-                It("should not report success", func() {
-                    Ω((<-response).Success).Should(BeFalse())
-                })
-            }
         })
     })
 
 Note that the `AssertFailedBehavior` function is called within the body of the `Context` container block.  The `It`s defined by this function get added to the enclosing container.  Since the function shares the same closure scope we don't need to pass the `response` channel in.
 
+You can put as many `It`s as you wanted into the shared behavior `AssertFailedBehavior` above, and can even nest `It`s within `Context`s inside of `AssertFailedBehavior`.  Although it may not always be the best idea to DRY your test suites excessively, this pattern gives you the ability do so as you see fit.  One drawback of this approach, however, is that you cannot focus or pend a shared behavior group, or examples/contexts within the group.  In other words, you don't get `FAssertFailedBehavior` or `XAssertFailedBehavior` for free.
+
+#### Pattern 2: Extract functions that return closures, and pass the results to `It`s
+
+To understand this pattern, let's just redo the above example with this pattern:
+
+    Describe("my api client", func() {
+        var client APIClient
+        var fakeServer FakeServer
+        var response chan APIResponse
+
+        BeforeEach(func() {
+            response = make(chan APIResponse, 1)
+            fakeServer = NewFakeServer()
+            client = NewAPIClient(fakeServer)
+            client.Get("/some/endpoint", response)
+        })
+
+        Describe("failure modes", func() {
+            Context("when the server does not return a 200", func() {
+                AssertNoJSONInResponese := func() func() {
+                    return func() {
+                        Ω((<-response).JSON).Should(BeZero())
+                    }
+                }
+
+                AssertDoesNotReportSuccess := func() func() {
+                    return func() {
+                        Ω((<-response).Success).Should(BeFalse())
+                    }
+                }
+
+                BeforeEach(func() {
+                    fakeServer.Respond(404)
+                })
+
+                It("should not include JSON in the response", AssertNoJSONInResponse())
+                It("should not report success", AssertDoesNotReportSuccess())
+            })
+
+            Context("when the server returns unparseable JSON", func() {
+                BeforeEach(func() {
+                    fakeServer.Succeed("{I'm not JSON!")
+                })
+
+                It("should not include JSON in the response", AssertNoJSONInResponse())
+                It("should not report success", AssertDoesNotReportSuccess())
+            })
+
+            Context("when the request errors", func() {
+                BeforeEach(func() {
+                    fakeServer.Error(errors.New("oops!"))
+                })
+
+                It("should not include JSON in the response", AssertNoJSONInResponse())
+                It("should not report success", AssertDoesNotReportSuccess())
+            })
+        })
+    })
+
+Note that this solution is still very compact, especially because there are only two shared `It`s for each `Context`.  There is slightly more repetition here, but it's also slightly more explicit.  The main benefit of this pattern is you can focus and pend individual `It`s in individual `Context`s.
+
 ### Global Shared Behaviors
 
-The pattern outlined above works well when the shared behavior is intended to be used within a fixed scope.  If you want to build shared behavior that can be used across different test files (or even different packages) you'll need to tweak the pattern to make it possible to pass inputs in.  We can extend the example outlined above to illustrate how this might work:
+The patterns outlined above work well when the shared behavior is intended to be used within a fixed scope.  If you want to build shared behavior that can be used across different test files (or even different packages) you'll need to tweak the pattern to make it possible to pass inputs in.  We can extend both examples outlined above to illustrate how this might work:
+
+#### Pattern 1
 
     package sharedbehaviors
+
+	import (
+		. "github.com/onsi/ginkgo"
+		. "github.com/onsi/gomega"
+	)
 
     type FailedResponseBehaviorInputs struct {
         response chan APIResponse
@@ -1078,25 +1151,50 @@ The pattern outlined above works well when the shared behavior is intended to be
         })
     }
 
-Users of the shared behavior must generate and populate a `FailedResponseBehaviorInputs` and pass it in to `SharedFailedResponseBehavior()`.  Why do things this way?  Two reasons:
+#### Pattern 2
+
+    package sharedbehaviors
+
+	import (
+		. "github.com/onsi/ginkgo"
+		. "github.com/onsi/gomega"
+	)
+
+    type FailedResponseBehaviorInputs struct {
+        response chan APIResponse
+    }
+
+    func AssertNoJSONInResponese(inputs *FailedResponseBehaviorInputs) func() {
+        return func() {
+            Ω((<-(inputs.response)).JSON).Should(BeZero())
+        }
+    }
+
+    func AssertDoesNotReportSuccess(inputs *FailedResponseBehaviorInputs) func() {
+        return func() {
+            Ω((<-(inputs.response)).Success).Should(BeFalse())
+        }
+    }
+
+Users of the shared behavior must generate and populate a `FailedResponseBehaviorInputs` and pass it in to either `SharedFailedResponseBehavior` or `AssertNoJSONInResponese` and `AssertDoesNotReportSuccess`.  Why do things this way?  Two reasons:
 
 1. Having a stuct to encapsulate the input variables (like `FailedResponseBehaviorInputs`) allows you to clearly stipulate the contract between the the specs and the shared behavior.  The shared behavior *needs* these inputs in order to function correctly.
 
-2. More importantly, inputs like the `response` channel are generally created and/or set in `BeforeEach` blocks.  However the shared behavior function `SharedFailedResponseBehavior` must be called within a container block and will not have access to any variabels specified in a `BeforeEach` as the `BeforeEach` hasn't run yet.  To get around this, we instantiate a `FailedResponseBehaviorInputs` and pass a pointer to it to the `SharedFailedResponseBehavior` -- in the `BeforeEach` we manipulate the fields of the `FailedResponseBehaviorInputs`, ensuring that their values get communicated to the `It`s generated by the shared behavior.
+2. More importantly, inputs like the `response` channel are generally created and/or set in `BeforeEach` blocks.  However the shared behavior functions must be called within a container block and will not have access to any variables specified in a `BeforeEach` as the `BeforeEach` hasn't run yet.  To get around this, we instantiate a `FailedResponseBehaviorInputs` and pass a pointer to it to the shared behavior functions -- in the `BeforeEach` we manipulate the fields of the `FailedResponseBehaviorInputs`, ensuring that their values get communicated to the `It`s generated by the shared behavior.
 
-Here's what the calling test might look like:
+Here's what the calling test would look like after dot-importing the `sharedbehaviors` package (for brevity we'll combine patterns 1 and 2 in this example):
 
     Describe("my api client", func() {
         var client APIClient
         var fakeServer FakeServer
         var response chan APIResponse
-        sharedBehaviorInputs := FailedResponseBehaviorInputs{}
+        sharedInputs := FailedResponseBehaviorInputs{}
 
         BeforeEach(func() {
-            sharedBehaviorInputs.response = make(chan APIResponse, 1)
+            sharedInputs.response = make(chan APIResponse, 1)
             fakeServer = NewFakeServer()
             client = NewAPIClient(fakeServer)
-            client.Get("/some/endpoint", sharedBehaviorInputs.response)
+            client.Get("/some/endpoint", sharedInputs.response)
         })
 
         Describe("failure modes", func() {
@@ -1105,7 +1203,8 @@ Here's what the calling test might look like:
                     fakeServer.Respond(404)
                 })
 
-                SharedFailedResponseBehavior(&sharedBehaviorInputs)
+                // Pattern 1
+                SharedFailedResponseBehavior(&sharedInputs)
             })
 
             Context("when the server returns unparseable JSON", func() {
@@ -1113,15 +1212,9 @@ Here's what the calling test might look like:
                     fakeServer.Succeed("{I'm not JSON!")
                 })
 
-                SharedFailedResponseBehavior(&sharedBehaviorInputs)
-            })
-
-            Context("when the request errors", func() {
-                BeforeEach(func() {
-                    fakeServer.Error(errors.New("oops!"))
-                })
-
-                SharedFailedResponseBehavior(&sharedBehaviorInputs)
+                // Pattern 2
+                It("should not include JSON in the response", AssertNoJSONInResponse(&sharedInputs))
+                It("should not report success", AssertDoesNotReportSuccess(&sharedInputs))
             })
         })
     })
