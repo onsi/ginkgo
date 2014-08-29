@@ -21,3 +21,11 @@ func (writer *FakeGinkgoWriter) Truncate() {
 func (writer *FakeGinkgoWriter) DumpOut() {
 	writer.EventStream = append(writer.EventStream, "DUMP")
 }
+
+func (writer *FakeGinkgoWriter) DumpOutWithHeader(header string) {
+	writer.EventStream = append(writer.EventStream, "DUMP_WITH_HEADER: "+header)
+}
+
+func (writer *FakeGinkgoWriter) Write(data []byte) (n int, err error) {
+	return 0, nil
+}
