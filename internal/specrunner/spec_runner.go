@@ -144,8 +144,12 @@ func (runner *SpecRunner) registerForInterrupts() {
 	signal.Stop(c)
 	runner.markInterrupted()
 	go runner.registerForHardInterrupts()
+	fmt.Fprintln(os.Stderr, "\nReceived interrupt.  Emitting contents of GinkgoWriter...")
+	fmt.Fprintln(os.Stderr, "---------------------------------------------------------")
+	runner.writer.DumpOut()
 	if runner.afterSuiteNode != nil {
-		fmt.Fprintln(os.Stderr, "\nReceived interrupt.  Running AfterSuite...\n^C again to terminate immediately")
+		fmt.Fprintln(os.Stderr, "\n---------------------------------------------------------")
+		fmt.Fprintln(os.Stderr, "Running AfterSuite...\n^C again to terminate immediately")
 		runner.runAfterSuite()
 	}
 	runner.reportSuiteDidEnd(false)
