@@ -106,6 +106,78 @@ var _ = Describe("Container Node", func() {
 			})
 		})
 
+		Describe("Backpropagating Programmatic Focus", func() {
+			//This allows inner focused specs to override the focus of outer focussed
+			//specs and more closely maps to what a developer wants to happen
+			//when debugging a test suite
+
+			Context("when a parent is focused *and* an inner subject is focused", func() {
+				BeforeEach(func() {
+					container = New("description text", types.FlagTypeFocused, codeLocation)
+					itA = leafnodes.NewItNode("A", func() {}, types.FlagTypeNone, codelocation.New(0), 0, nil, 0)
+					container.PushSubjectNode(itA)
+
+					innerContainer = New("Orange", types.FlagTypeNone, codelocation.New(0))
+					container.PushContainerNode(innerContainer)
+					innerItA = leafnodes.NewItNode("inner A", func() {}, types.FlagTypeFocused, codelocation.New(0), 0, nil, 0)
+					innerContainer.PushSubjectNode(innerItA)
+				})
+
+				It("should unfocus the parent", func() {
+					container.BackPropagateProgrammaticFocus()
+
+					Ω(container.Flag()).Should(Equal(types.FlagTypeNone))
+					Ω(itA.Flag()).Should(Equal(types.FlagTypeNone))
+					Ω(innerContainer.Flag()).Should(Equal(types.FlagTypeNone))
+					Ω(innerItA.Flag()).Should(Equal(types.FlagTypeFocused))
+				})
+			})
+
+			Context("when a parent is focused *and* an inner container is focused", func() {
+				BeforeEach(func() {
+					container = New("description text", types.FlagTypeFocused, codeLocation)
+					itA = leafnodes.NewItNode("A", func() {}, types.FlagTypeNone, codelocation.New(0), 0, nil, 0)
+					container.PushSubjectNode(itA)
+
+					innerContainer = New("Orange", types.FlagTypeFocused, codelocation.New(0))
+					container.PushContainerNode(innerContainer)
+					innerItA = leafnodes.NewItNode("inner A", func() {}, types.FlagTypeNone, codelocation.New(0), 0, nil, 0)
+					innerContainer.PushSubjectNode(innerItA)
+				})
+
+				It("should unfocus the parent", func() {
+					container.BackPropagateProgrammaticFocus()
+
+					Ω(container.Flag()).Should(Equal(types.FlagTypeNone))
+					Ω(itA.Flag()).Should(Equal(types.FlagTypeNone))
+					Ω(innerContainer.Flag()).Should(Equal(types.FlagTypeFocused))
+					Ω(innerItA.Flag()).Should(Equal(types.FlagTypeNone))
+				})
+			})
+
+			Context("when a parent is pending and a child is focused", func() {
+				BeforeEach(func() {
+					container = New("description text", types.FlagTypeFocused, codeLocation)
+					itA = leafnodes.NewItNode("A", func() {}, types.FlagTypeNone, codelocation.New(0), 0, nil, 0)
+					container.PushSubjectNode(itA)
+
+					innerContainer = New("Orange", types.FlagTypePending, codelocation.New(0))
+					container.PushContainerNode(innerContainer)
+					innerItA = leafnodes.NewItNode("inner A", func() {}, types.FlagTypeFocused, codelocation.New(0), 0, nil, 0)
+					innerContainer.PushSubjectNode(innerItA)
+				})
+
+				It("should not do anything", func() {
+					container.BackPropagateProgrammaticFocus()
+
+					Ω(container.Flag()).Should(Equal(types.FlagTypeFocused))
+					Ω(itA.Flag()).Should(Equal(types.FlagTypeNone))
+					Ω(innerContainer.Flag()).Should(Equal(types.FlagTypePending))
+					Ω(innerItA.Flag()).Should(Equal(types.FlagTypeFocused))
+				})
+			})
+		})
+
 		Describe("Shuffling", func() {
 			var unshuffledCollation []CollatedNodes
 			BeforeEach(func() {

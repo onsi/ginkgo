@@ -53,6 +53,30 @@ func (container *ContainerNode) Shuffle(r *rand.Rand) {
 	container.subjectAndContainerNodes = shuffledNodes
 }
 
+func (node *ContainerNode) BackPropagateProgrammaticFocus() bool {
+	if node.flag == types.FlagTypePending {
+		return false
+	}
+
+	shouldUnfocus := false
+	for _, subjectOrContainerNode := range node.subjectAndContainerNodes {
+		if subjectOrContainerNode.containerNode != nil {
+			shouldUnfocus = subjectOrContainerNode.containerNode.BackPropagateProgrammaticFocus() || shouldUnfocus
+		} else {
+			shouldUnfocus = (subjectOrContainerNode.subjectNode.Flag() == types.FlagTypeFocused) || shouldUnfocus
+		}
+	}
+
+	if shouldUnfocus {
+		if node.flag == types.FlagTypeFocused {
+			node.flag = types.FlagTypeNone
+		}
+		return true
+	}
+
+	return node.flag == types.FlagTypeFocused
+}
+
 func (node *ContainerNode) Collate() []CollatedNodes {
 	return node.collate([]*ContainerNode{})
 }

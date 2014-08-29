@@ -222,12 +222,19 @@ var _ = Describe("Suite", func() {
 		Context("with a programatically focused spec", func() {
 			BeforeEach(func() {
 				specSuite.PushItNode("focused it", f("focused it"), types.FlagTypeFocused, codelocation.New(0), 0)
+
+				specSuite.PushContainerNode("focused container", func() {
+					specSuite.PushItNode("inner focused it", f("inner focused it"), types.FlagTypeFocused, codelocation.New(0), 0)
+					specSuite.PushItNode("inner unfocused it", f("inner unfocused it"), types.FlagTypeNone, codelocation.New(0), 0)
+				}, types.FlagTypeFocused, codelocation.New(0))
+
 			})
 
-			It("should only run the focused test", func() {
+			It("should only run the focused test, applying backpropagation to favor most deeply focused leaf nodes", func() {
 				Ω(runOrder).Should(Equal([]string{
 					"BeforeSuite",
 					"top BE", "top JBE", "focused it", "top AE",
+					"top BE", "top JBE", "inner focused it", "top AE",
 					"AfterSuite",
 				}))
 			})

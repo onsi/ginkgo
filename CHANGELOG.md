@@ -3,6 +3,18 @@
 Improvements:
 
 - Call reporters in reverse order when announcing spec completion -- allows custom reporters to emit output before the default reporter does.
+- Improved focus behavior.  Now, this:
+
+    ```golang
+    FDescribe("Some describe", func() {
+        It("A", func() {})
+
+        FIt("B", func() {})
+    })
+    ```
+
+  will run `B` but *not* `A`.  This tends to be a common usage pattern when in the thick of writing and debugging tests.
+
 
 ## 1.1.0 (8/2/2014)
 
