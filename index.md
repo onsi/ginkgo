@@ -479,6 +479,22 @@ It is often convenient, when developing to be able to run a subset of specs.  Gi
 
 When Ginkgo detects that a passing test suite has a programmatically focused test it causes the suite to exit with a non-zero status code.  This is to help detect erroneously committed focused tests on CI systems.  When passed a command-line focus/skip flag Ginkgo exits with status code 0 - if you want to focus tests on your CI system you should explicitly pass in a -focus or -skip flag.
 
+Nested programmatically focused specs follow a simple rule: if a leaf-node is marked focused, any of its ancestor nodes that are marked focus will be unfocused.  With this rule, sibling leaf nodes (regardless of relative-depth) that are focused will run regardless of the focus of a shared ancestor; and non-focused siblings will not run regardless of the focus of the shared ancestor or the relative depths of the siblings.  More simply:
+
+    FDescribe("outer describe", func() {
+        It("A", func() { ... })
+        It("B", func() { ... })
+    })
+
+will run both `It`s but
+
+    FDescribe("outer describe", func() {
+        It("A", func() { ... })
+        FIt("B", func() { ... })
+    })
+
+will only run `B`.  This behavior tends to map more closely to what the developer actually intends when iterating on a test suite.
+
 > The programatic approach and the `--focus=REGEXP`/`--skip=REGEXP` approach are mutually exclusive.  Using the command line flags will override the programmatic focus.
 
 > When using the command line flags you can specify one or both of `--focus` and `--skip`.  If both are specified the constraints will be `AND`ed together.
