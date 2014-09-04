@@ -14,6 +14,8 @@ Improvements:
     ```
 
   will run `B` but *not* `A`.  This tends to be a common usage pattern when in the thick of writing and debugging tests.
+- When `SIGINT` is received, Ginkgo will emit the contents of the `GinkgoWriter` before running the `AfterSuite`.  Useful for debugging stuck tests.
+- When `--progress` is set, Ginkgo will write test progress (in particular, Ginkgo will say when it is about to run a BeforeEach, AfterEach, It, etc...) to the `GinkgoWriter`.  This is useful for debugging stuck tests and tests that generate many logs.
 
 
 ## 1.1.0 (8/2/2014)

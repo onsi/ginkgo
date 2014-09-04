@@ -1,6 +1,8 @@
 package spec
 
 import (
+	"fmt"
+	"io"
 	"time"
 
 	"github.com/onsi/ginkgo/internal/containernode"
@@ -9,8 +11,9 @@ import (
 )
 
 type Spec struct {
-	subject leafnodes.SubjectNode
-	focused bool
+	subject          leafnodes.SubjectNode
+	focused          bool
+	announceProgress bool
 
 	containers []*containernode.ContainerNode
 
@@ -19,11 +22,12 @@ type Spec struct {
 	failure types.SpecFailure
 }
 
-func New(subject leafnodes.SubjectNode, containers []*containernode.ContainerNode) *Spec {
+func New(subject leafnodes.SubjectNode, containers []*containernode.ContainerNode, announceProgress bool) *Spec {
 	spec := &Spec{
-		subject:    subject,
-		containers: containers,
-		focused:    subject.Flag() == types.FlagTypeFocused,
+		subject:          subject,
+		containers:       containers,
+		focused:          subject.Flag() == types.FlagTypeFocused,
+		announceProgress: announceProgress,
 	}
 
 	spec.processFlag(subject.Flag())
@@ -104,14 +108,14 @@ func (spec *Spec) ConcatenatedString() string {
 	return s + spec.subject.Text()
 }
 
-func (spec *Spec) Run() {
+func (spec *Spec) Run(writer io.Writer) {
 	startTime := time.Now()
 	defer func() {
 		spec.runTime = time.Since(startTime)
 	}()
 
 	for sample := 0; sample < spec.subject.Samples(); sample++ {
-		spec.state, spec.failure = spec.runSample(sample)
+		spec.state, spec.failure = spec.runSample(sample, writer)
 
 		if spec.state != types.SpecStatePassed {
 			return
@@ -119,7 +123,7 @@ func (spec *Spec) Run() {
 	}
 }
 
-func (spec *Spec) runSample(sample int) (specState types.SpecState, specFailure types.SpecFailure) {
+func (spec *Spec) runSample(sample int, writer io.Writer) (specState types.SpecState, specFailure types.SpecFailure) {
 	specState = types.SpecStatePassed
 	specFailure = types.SpecFailure{}
 	innerMostContainerIndexToUnwind := -1
@@ -128,6 +132,7 @@ func (spec *Spec) runSample(sample int) (specState types.SpecState, specFailure 
 		for i := innerMostContainerIndexToUnwind; i >= 0; i-- {
 			container := spec.containers[i]
 			for _, afterEach := range container.SetupNodesOfType(types.SpecComponentTypeAfterEach) {
+				spec.announceSetupNode(writer, "AfterEach", container, afterEach)
 				afterEachState, afterEachFailure := afterEach.Run()
 				if afterEachState != types.SpecStatePassed && specState == types.SpecStatePassed {
 					specState = afterEachState
@@ -140,6 +145,7 @@ func (spec *Spec) runSample(sample int) (specState types.SpecState, specFailure 
 	for i, container := range spec.containers {
 		innerMostContainerIndexToUnwind = i
 		for _, beforeEach := range container.SetupNodesOfType(types.SpecComponentTypeBeforeEach) {
+			spec.announceSetupNode(writer, "BeforeEach", container, beforeEach)
 			specState, specFailure = beforeEach.Run()
 			if specState != types.SpecStatePassed {
 				return
@@ -149,6 +155,7 @@ func (spec *Spec) runSample(sample int) (specState types.SpecState, specFailure 
 
 	for _, container := range spec.containers {
 		for _, justBeforeEach := range container.SetupNodesOfType(types.SpecComponentTypeJustBeforeEach) {
+			spec.announceSetupNode(writer, "JustBeforeEach", container, justBeforeEach)
 			specState, specFailure = justBeforeEach.Run()
 			if specState != types.SpecStatePassed {
 				return
@@ -156,9 +163,31 @@ func (spec *Spec) runSample(sample int) (specState types.SpecState, specFailure 
 		}
 	}
 
+	spec.announceSubject(writer, spec.subject)
 	specState, specFailure = spec.subject.Run()
 
 	return
+}
+
+func (spec *Spec) announceSetupNode(writer io.Writer, nodeType string, container *containernode.ContainerNode, setupNode leafnodes.BasicNode) {
+	if spec.announceProgress {
+		s := fmt.Sprintf("[%s] %s\n  %s\n", nodeType, container.Text(), setupNode.CodeLocation().String())
+		writer.Write([]byte(s))
+	}
+}
+
+func (spec *Spec) announceSubject(writer io.Writer, subject leafnodes.SubjectNode) {
+	if spec.announceProgress {
+		nodeType := ""
+		switch subject.Type() {
+		case types.SpecComponentTypeIt:
+			nodeType = "It"
+		case types.SpecComponentTypeMeasure:
+			nodeType = "Measure"
+		}
+		s := fmt.Sprintf("[%s] %s\n  %s\n", nodeType, subject.Text(), subject.CodeLocation().String())
+		writer.Write([]byte(s))
+	}
 }
 
 func (spec *Spec) measurementsReport() map[string]*types.SpecMeasurement {

@@ -30,6 +30,7 @@ type GinkgoConfigType struct {
 	SkipMeasurements  bool
 	FailOnPending     bool
 	FailFast          bool
+	EmitSpecProgress  bool
 
 	ParallelNode  int
 	ParallelTotal int
@@ -66,6 +67,7 @@ func Flags(flagSet *flag.FlagSet, prefix string, includeParallelFlags bool) {
 	flagSet.BoolVar(&(GinkgoConfig.FailFast), prefix+"failFast", false, "If set, ginkgo will stop running a test suite after a failure occurs.")
 	flagSet.StringVar(&(GinkgoConfig.FocusString), prefix+"focus", "", "If set, ginkgo will only run specs that match this regular expression.")
 	flagSet.StringVar(&(GinkgoConfig.SkipString), prefix+"skip", "", "If set, ginkgo will only run specs that do not match this regular expression.")
+	flagSet.BoolVar(&(GinkgoConfig.EmitSpecProgress), prefix+"progress", false, "If set, ginkgo will emit progress information as each spec runs to the GinkgoWriter.")
 
 	if includeParallelFlags {
 		flagSet.IntVar(&(GinkgoConfig.ParallelNode), prefix+"parallel.node", 1, "This worker node's (one-indexed) node number.  For running specs in parallel.")
@@ -112,6 +114,10 @@ func BuildFlagArgs(prefix string, ginkgo GinkgoConfigType, reporter DefaultRepor
 
 	if ginkgo.SkipString != "" {
 		result = append(result, fmt.Sprintf("--%sskip=%s", prefix, ginkgo.SkipString))
+	}
+
+	if ginkgo.EmitSpecProgress {
+		result = append(result, fmt.Sprintf("--%sprogress", prefix))
 	}
 
 	if ginkgo.ParallelNode != 0 {

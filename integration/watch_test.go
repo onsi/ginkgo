@@ -5,6 +5,7 @@ import (
 	"os"
 	"path/filepath"
 	"time"
+
 	. "github.com/onsi/ginkgo"
 	. "github.com/onsi/gomega"
 	"github.com/onsi/gomega/gbytes"
@@ -40,7 +41,7 @@ var _ = Describe("Watch", func() {
 
 	startGinkgoWithGopath := func(args ...string) *gexec.Session {
 		cmd := ginkgoCommand(rootPath, args...)
-		cmd.Env = append([]string{"GOPATH=" + rootPath + ":" + os.Getenv("GOPATH")}, cmd.Env...)
+		cmd.Env = append([]string{"GOPATH=" + rootPath + ":" + os.Getenv("GOPATH")}, os.Environ()...)
 		session, err := gexec.Start(cmd, GinkgoWriter, GinkgoWriter)
 		Ω(err).ShouldNot(HaveOccurred())
 		return session

@@ -61,13 +61,13 @@ var _ = Describe("Spec Runner", func() {
 			}
 		}, flag, codelocation.New(0), 0, failer, 0)
 
-		return spec.New(subject, []*containernode.ContainerNode{})
+		return spec.New(subject, []*containernode.ContainerNode{}, false)
 	}
 
 	newSpecWithBody := func(text string, body interface{}) *spec.Spec {
 		subject := leafnodes.NewItNode(text, body, noneFlag, codelocation.New(0), 0, failer, 0)
 
-		return spec.New(subject, []*containernode.ContainerNode{})
+		return spec.New(subject, []*containernode.ContainerNode{}, false)
 	}
 
 	newRunner := func(config config.GinkgoConfigType, beforeSuiteNode leafnodes.SuiteNode, afterSuiteNode leafnodes.SuiteNode, specs ...*spec.Spec) *SpecRunner {

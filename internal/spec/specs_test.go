@@ -18,12 +18,12 @@ var _ = Describe("Specs", func() {
 
 	newSpec := func(text string, flag types.FlagType) *Spec {
 		subject := leafnodes.NewItNode(text, func() {}, flag, codelocation.New(0), 0, nil, 0)
-		return New(subject, []*containernode.ContainerNode{})
+		return New(subject, []*containernode.ContainerNode{}, false)
 	}
 
 	newMeasureSpec := func(text string, flag types.FlagType) *Spec {
 		subject := leafnodes.NewMeasureNode(text, func(Benchmarker) {}, flag, codelocation.New(0), 0, nil, 0)
-		return New(subject, []*containernode.ContainerNode{})
+		return New(subject, []*containernode.ContainerNode{}, false)
 	}
 
 	newSpecs := func(args ...interface{}) *Specs {
@@ -301,6 +301,5 @@ var _ = Describe("Specs", func() {
 				Ω(specsNode3.NumberOfOriginalSpecs()).Should(Equal(2))
 			})
 		})
-
 	})
 })

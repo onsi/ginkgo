@@ -67,7 +67,7 @@ func (suite *Suite) generateSpecs(description string, config config.GinkgoConfig
 	specsSlice := []*spec.Spec{}
 	suite.topLevelContainer.BackPropagateProgrammaticFocus()
 	for _, collatedNodes := range suite.topLevelContainer.Collate() {
-		specsSlice = append(specsSlice, spec.New(collatedNodes.Subject, collatedNodes.Containers))
+		specsSlice = append(specsSlice, spec.New(collatedNodes.Subject, collatedNodes.Containers, config.EmitSpecProgress))
 	}
 
 	specs := spec.NewSpecs(specsSlice)
