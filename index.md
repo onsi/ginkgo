@@ -197,6 +197,8 @@ More details about `Fail` and about using matcher libraries other than Gomega ca
 
 Ginkgo provides a globally available `io.Writer` called `GinkgoWriter` that you can write to.  `GinkgoWriter` aggregates input while a test is running and only dumps it to stdout if the test fails.  When running in verbose mode (`ginkgo -v` or `go test -ginkgo.v`) `GinkgoWriter` always immediately redirects its input to stdout.
 
+When a Ginkgo test suite is interrupted (via `^C`) Ginkgo will emit any content written to the `GinkgoWriter`.  This makes it easier to debug stuck tests.  This is particularly useful when paired with `--progress` which instruct Ginkgo to emit notifications to the `GinkgoWriter` as it runs through your `BeforeEach`es, `It`s, `AfterEach`es, etc...
+
 ---
 
 ##Structuring Your Specs
@@ -696,7 +698,7 @@ Of course, ginkgo takes a number of flags.  These must be specified *before* you
 
 Here are the flags that Ginkgo accepts:
 
-**Controlling which test suites run:a**
+**Controlling which test suites run:**
    
 - `-r`
     
@@ -720,7 +722,7 @@ Here are the flags that Ginkgo accepts:
 
     By default, when parallelizing a suite, the test runner aggregates data from each parallel node and produces coherent output as the tests run.  Setting `stream` to `true` will, instead, stream output from all parallel nodes in real-time, prepending each log line with the node # that emitted it.  This leads to incoherent (interleaved) output, but is useful when debugging flakey/hanging test suites.
 
-**Modifying output of the default reporter:**
+**Modifying output:**
 
 - `--noColor`
     
@@ -741,6 +743,10 @@ Here are the flags that Ginkgo accepts:
 - `--trace`
 
     If present, Ginkgo will print out full stack traces for each failure, not just the line number at which the failure occurs.
+    
+- `--progress`
+
+	If present, Ginkgo will emit the progress to the `GinkgoWriter` as it enters and runs each `BeforeEach`, `AfterEach`, `It`, etc... node.  This is useful for debugging stuck tests (e.g. where exactly is the test getting stuck?) and for making tests that emit many logs to the `GinkgoWriter` more readable (e.g. which logs were emitted in the `BeforeEach`?  Which were emitted by the `It`?).  Combine with `--v` to emit the `--progress` output to stdout.
 
 **Controlling randomization:**
 
