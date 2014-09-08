@@ -23,10 +23,6 @@ To discuss Ginkgo and get updates, join the [google group](https://groups.google
     - Run your tests in [random order](http://onsi.github.io/ginkgo/#spec-permutation), and then reuse random seeds to replicate the same order.
     - Break up your test suite into parallel processes for straightforward [test parallelization](http://onsi.github.io/ginkgo/#parallel-specs)
 
-- Built-in support for testing [asynchronicity](http://onsi.github.io/ginkgo/#asynchronous-tests)
-
-- Built-in support for [benchmarking](http://onsi.github.io/ginkgo/#benchmark-tests) your code.  Control the number of benchmark samples as you gather runtimes and other, arbitrary, bits of numerical information about your code. 
-
 - `ginkgo`: a command line interface with plenty of handy command line arguments for [running your tests](http://onsi.github.io/ginkgo/#running-tests) and [generating](http://onsi.github.io/ginkgo/#generators) test files.  Here are a few choice examples:
     - `ginkgo -nodes=N` runs your tests in `N` parallel processes and print out coherent output in realtime
     - `ginkgo -cover` runs your tests using Golang's code coverage tool
@@ -40,6 +36,12 @@ To discuss Ginkgo and get updates, join the [google group](https://groups.google
     The `ginkgo` CLI is convenient, but purely optional -- Ginkgo works just fine with `go test`
 
 - `ginkgo watch` [watches](https://onsi.github.io/ginkgo/#watching-for-changes) packages *and their dependencies* for changes, then reruns tests.  Run tests immediately as you develop!
+
+- Built-in support for testing [asynchronicity](http://onsi.github.io/ginkgo/#asynchronous-tests)
+
+- Built-in support for [benchmarking](http://onsi.github.io/ginkgo/#benchmark-tests) your code.  Control the number of benchmark samples as you gather runtimes and other, arbitrary, bits of numerical information about your code. 
+
+- [Completions for Sublime Text](https://github.com/onsi/ginkgo-sublime-completions): just use [Package Control](https://sublime.wbond.net/) to install `Ginkgo Completions`.
 
 - Straightforward support for third-party testing libraries such as [Gomock](https://code.google.com/p/gomock/) and [Testify](https://github.com/stretchr/testify).  Check out the [docs](http://onsi.github.io/ginkgo/#third-party-integrations) for details.
 
