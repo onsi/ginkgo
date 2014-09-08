@@ -199,6 +199,12 @@ Ginkgo provides a globally available `io.Writer` called `GinkgoWriter` that you 
 
 When a Ginkgo test suite is interrupted (via `^C`) Ginkgo will emit any content written to the `GinkgoWriter`.  This makes it easier to debug stuck tests.  This is particularly useful when paired with `--progress` which instruct Ginkgo to emit notifications to the `GinkgoWriter` as it runs through your `BeforeEach`es, `It`s, `AfterEach`es, etc...
 
+###IDE Support
+
+Ginkgo works best from the command-line, and [`ginkgo watch`](#watching-for-changes) makes it easy to rerun tests on the command line whenever changes are detected.
+
+There are a set of [completions](https://github.com/onsi/ginkgo-sublime-completions) available for [Sublime Text](http://www.sublimetext.com/): just use [Package Control](https://sublime.wbond.net/) to install `Ginkgo Completions`
+
 ---
 
 ##Structuring Your Specs
