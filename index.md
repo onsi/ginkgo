@@ -1132,7 +1132,7 @@ Here's what the calling test might look like:
 
 Ginkgo comes with a number of [flags](#running-tests) that you probably want to turn on when running in a Continuous Integration environment.  The following is recommended:
 
-    ginkgo -r --randomizeAllSpecs --randomizeSuites --failOnPending --cover --trace --race
+    ginkgo -r --randomizeAllSpecs --randomizeSuites --failOnPending --cover --trace --race --progress
 
 - `-r` will recursively find and run all spec suites in the current directory
 - `--randomizeAllSpecs` and `--randomizeSuites` will shuffle both the order in which specs within a suite run, and the order in which different suites run.  This can be *great* for identifying test pollution.  You can always rerun a given ordering later by passing the `--seed` flag a matching seed.
@@ -1140,6 +1140,7 @@ Ginkgo comes with a number of [flags](#running-tests) that you probably want to 
 - `--cover` generates `.coverprofile`s and coverage statistics for each test suite.
 - `--trace` prints out a full stack trace when failures occur.  This makes debugging based on CI logs easier.
 - `--race` runs the tests with the race detector turned on.
+- `--progress` emits test progress to the GinkgoWriter.  Makes identifying where failures occur a little easier.
 
 It is *not* recommended that you run tests in parallel on CI with `-p`.  Many CI systems run on multi-core machines that report very many (e.g. 32 nodes).  Parallelizing on such a high scale typically yields *longer* test run times (particularly since your tests are probably running inside some sort of cpu-share limited container: you don't actually have free reign of all 32 cores).  To run tests in parallel on CI you're probably better off providing an explicit number of parallel nodes with `-nodes`.
 
