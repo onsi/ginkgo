@@ -2,14 +2,16 @@ package reporters_test
 
 import (
 	"encoding/xml"
+	"io/ioutil"
+	"os"
+	"time"
+
 	. "github.com/onsi/ginkgo"
 	"github.com/onsi/ginkgo/config"
 	"github.com/onsi/ginkgo/internal/codelocation"
 	"github.com/onsi/ginkgo/reporters"
 	"github.com/onsi/ginkgo/types"
 	. "github.com/onsi/gomega"
-	"io/ioutil"
-	"time"
 )
 
 var _ = Describe("JUnit Reporter", func() {
@@ -28,13 +30,21 @@ var _ = Describe("JUnit Reporter", func() {
 	}
 
 	BeforeEach(func() {
-		outputFile = "/tmp/test.xml"
+		f, err := ioutil.TempFile("", "output")
+		Ω(err).ShouldNot(HaveOccurred())
+		f.Close()
+		outputFile = f.Name()
+
 		reporter = reporters.NewJUnitReporter(outputFile)
 
 		reporter.SpecSuiteWillBegin(config.GinkgoConfigType{}, &types.SuiteSummary{
 			SuiteDescription:           "My test suite",
 			NumberOfSpecsThatWillBeRun: 1,
 		})
+	})
+
+	AfterEach(func() {
+		os.RemoveAll(outputFile)
 	})
 
 	Describe("a passing test", func() {
