@@ -816,6 +816,10 @@ Here are the flags that Ginkgo accepts:
 
 ** Miscellaneous: **
 
+- `-dryRun`
+
+    If present, Ginkgo will walk your test suite and report output *without* actually running your tests.  This is best paried with `-v` to preview which tests will run.  Ther ordering of the tests honors the randomization strategy specified by `--seed` and `--randomizeAllSpecs`.
+
 - `-keepGoing`
 
     By default, when running multiple tests (with -r or a list of packages) Ginkgo will abort when a test fails.  To have Ginkgo run subsequent test suites after a failure you can set -keepGoing.
