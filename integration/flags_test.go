@@ -1,13 +1,14 @@
 package integration_test
 
 import (
+	"os"
+	"path/filepath"
+	"strings"
+
 	. "github.com/onsi/ginkgo"
 	"github.com/onsi/ginkgo/types"
 	. "github.com/onsi/gomega"
 	"github.com/onsi/gomega/gexec"
-	"os"
-	"path/filepath"
-	"strings"
 )
 
 var _ = Describe("Flags Specs", func() {
@@ -158,5 +159,18 @@ var _ = Describe("Flags Specs", func() {
 
 		Ω(output).Should(ContainSubstring("1 Failed"))
 		Ω(output).Should(ContainSubstring("15 Skipped"))
+	})
+
+	It("should perform a dry run when told to", func() {
+		pathToTest = tmpPath("fail")
+		copyIn("fail_fixture", pathToTest)
+		session := startGinkgo(pathToTest, "--dryRun", "-v")
+		Eventually(session).Should(gexec.Exit(0))
+		output := string(session.Out.Contents())
+
+		Ω(output).Should(ContainSubstring("synchronous failures"))
+		Ω(output).Should(ContainSubstring("16 Specs"))
+		Ω(output).Should(ContainSubstring("0 Passed"))
+		Ω(output).Should(ContainSubstring("0 Failed"))
 	})
 })
