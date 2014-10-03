@@ -346,8 +346,8 @@ func (t *TestRunner) combineCoverprofiles() {
 	}
 
 	lines := map[string]int{}
-
-	for _, coverProfile := range profiles {
+	lineOrder := []string{}
+	for i, coverProfile := range profiles {
 		for _, line := range strings.Split(string(coverProfile), "\n")[1:] {
 			if len(line) == 0 {
 				continue
@@ -356,12 +356,15 @@ func (t *TestRunner) combineCoverprofiles() {
 			count, _ := strconv.Atoi(components[len(components)-1])
 			prefix := strings.Join(components[0:len(components)-1], " ")
 			lines[prefix] += count
+			if i == 0 {
+				lineOrder = append(lineOrder, prefix)
+			}
 		}
 	}
 
 	output := []string{"mode: atomic"}
-	for line, count := range lines {
-		output = append(output, fmt.Sprintf("%s %d", line, count))
+	for _, line := range lineOrder {
+		output = append(output, fmt.Sprintf("%s %d", line, lines[line]))
 	}
 	finalOutput := strings.Join(output, "\n")
 	ioutil.WriteFile(filepath.Join(t.Suite.Path, fmt.Sprintf("%s.coverprofile", t.Suite.PackageName)), []byte(finalOutput), 0666)
