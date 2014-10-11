@@ -39,7 +39,7 @@ var _ = Describe("Verbose And Succinct Mode", func() {
 				Eventually(session).Should(gexec.Exit(0))
 				output := session.Out.Contents()
 
-				Ω(output).Should(ContainSubstring("] Passing_ginkgo_tests Suite - 3/3 specs ••• SUCCESS!"))
+				Ω(output).Should(ContainSubstring("] Passing_ginkgo_tests Suite - 4/4 specs •••• SUCCESS!"))
 				Ω(output).Should(ContainSubstring("] More_ginkgo_tests Suite - 2/2 specs •• SUCCESS!"))
 			})
 		})
@@ -65,6 +65,15 @@ var _ = Describe("Verbose And Succinct Mode", func() {
 				Ω(output).Should(ContainSubstring("Running Suite: More_ginkgo_tests Suite"))
 				Ω(output).Should(ContainSubstring("should proxy strings"))
 				Ω(output).Should(ContainSubstring("should always pass"))
+			})
+
+			It("should emit output from Bys", func() {
+				session := startGinkgo(pathToTest, "--noColor", "-v", pathToTest)
+				Eventually(session).Should(gexec.Exit(0))
+				output := session.Out.Contents()
+
+				Ω(output).Should(ContainSubstring("emitting one By"))
+				Ω(output).Should(ContainSubstring("emitting another By"))
 			})
 		})
 	})

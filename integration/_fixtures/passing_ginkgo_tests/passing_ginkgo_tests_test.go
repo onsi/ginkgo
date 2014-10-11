@@ -19,4 +19,12 @@ var _ = Describe("PassingGinkgoTests", func() {
 		Ω(StringIdentity("foo")).Should(Equal("foo"))
 		Ω(IntegerIdentity(3)).Should(Equal(3))
 	})
+
+	It("should be able to run Bys", func() {
+		By("emitting one By")
+		Ω(3).Should(Equal(3))
+
+		By("emitting another By")
+		Ω(4).Should(Equal(4))
+	})
 })
