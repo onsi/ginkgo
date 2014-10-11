@@ -228,6 +228,8 @@ You can add a single spec by placing an `It` block within a `Describe` or `Conte
         })
     })
 
+> `It`s may also be placed at the top-level though this is uncommon.
+
 ### Extracting Common Setup: `BeforeEach`
 You can remove duplication and share common setup across tests using `BeforeEach` blocks:
 
@@ -446,6 +448,53 @@ Both `BeforeSuite` and `AfterSuite` can be run asynchronously by passing a funct
 You are only allowed to define `BeforeSuite` and `AfterSuite` *once* in a test suite (you shouldn't need more than one!) 
 
 Finally, when running in parallel, each parallel process will run `BeforeSuite` and `AfterSuite` functions.  [Look here](#parallel-specs) for more on running tests in parallel.
+
+### Documenting Complex `It`s: `By`
+
+As a rule, you should try to keep your `It`s, `BeforeEach`es, etc. short and to the point.  Sometimes this is not possible, particularly when testing complex workflows in integration-style tests.  In these cases your test blocks begin to hide a narrative that is hard to glean by looking at code alone.  Ginkgo provides `by` to help in these situations.  Here's a hokey example:
+
+    var _ = Describe("Browsing the library", func() {
+        BeforeEach(func() {
+            By("Fetching a token and logging in")
+
+            authToken, err := authClient.GetToken("gopher", "literati")
+            Exepect(err).NotTo(HaveOccurred())
+
+            err := libraryClient.Login(authToken)
+            Exepect(err).NotTo(HaveOccurred())
+        })
+
+        It("should be a pleasant experience", func() {
+            By("Entering an aisle")
+
+            aisle, err := libraryClient.EnterAisle()
+            Expect(err).NotTo(HaveOccurred())
+            
+            By("Browsing for books")
+
+            books, err := aisle.GetBooks()            
+            Expect(err).NotTo(HaveOccurred())
+            Expect(books).To(HaveLen(7))
+
+            By("Finding a particular book")
+
+            book, err := books.FindByTitle("Les Miserables")
+            Expect(err).NotTo(HaveOccurred())
+            Expect(book.Title).To(Equal("Les Miserables"))
+
+            By("Check the book out")
+
+            err := libraryClient.CheckOut(book)
+            Expect(err).NotTo(HaveOccurred())
+            books, err := aisle.GetBooks()
+            Expect(books).To(HaveLen(6))
+            Expect(books).NotTo(ContainElement(book))
+        })        
+    })
+
+The string passed to `By` is emitted via the [`GinkgoWriter`](#logging-output).  If a test succeeds you won't see any output beyond Ginkgo's green dot.  If a test fails, however, you will see each step printed out up to the step immediately preceding the failure.  Running with `ginkgo -v` always emits all steps.
+
+`By` takes an optional function of type `func()`.  When passed such a function `By` will immediately call the function.  This allows you to organize your `It`s into groups of steps but is purely optional.  In practice the fact that each `By` function is a separate callback limits the usefulness of this approach.
 
 ---
 
