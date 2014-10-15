@@ -9,10 +9,10 @@ import (
 )
 
 type Notifier struct {
-	commandFlags *RunAndWatchCommandFlags
+	commandFlags *RunWatchAndBuildCommandFlags
 }
 
-func NewNotifier(commandFlags *RunAndWatchCommandFlags) *Notifier {
+func NewNotifier(commandFlags *RunWatchAndBuildCommandFlags) *Notifier {
 	return &Notifier{
 		commandFlags: commandFlags,
 	}

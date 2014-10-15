@@ -37,7 +37,7 @@ func BuildRunCommand() *Command {
 }
 
 type SpecRunner struct {
-	commandFlags     *RunAndWatchCommandFlags
+	commandFlags     *RunWatchAndBuildCommandFlags
 	notifier         *Notifier
 	interruptHandler *InterruptHandler
 	suiteRunner      *SuiteRunner
@@ -47,7 +47,7 @@ func (r *SpecRunner) RunSpecs(args []string, additionalArgs []string) {
 	r.commandFlags.computeNodes()
 	r.notifier.VerifyNotificationsAreAvailable()
 
-	suites, skippedPackages := findSuites(args, r.commandFlags.Recurse, r.commandFlags.SkipPackage)
+	suites, skippedPackages := findSuites(args, r.commandFlags.Recurse, r.commandFlags.SkipPackage, true)
 	if len(skippedPackages) > 0 {
 		fmt.Println("Will skip:")
 		for _, skippedPackage := range skippedPackages {

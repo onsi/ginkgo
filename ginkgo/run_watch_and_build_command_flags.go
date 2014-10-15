@@ -7,15 +7,17 @@ import (
 	"github.com/onsi/ginkgo/config"
 )
 
-type RunAndWatchCommandFlags struct {
+type RunWatchAndBuildCommandFlags struct {
+	Recurse     bool
+	Race        bool
+	Cover       bool
+	SkipPackage string
+	Tags        string
+
+	//for run and watch commands
 	NumCPU         int
 	ParallelStream bool
-	Recurse        bool
-	Race           bool
-	Cover          bool
 	Notify         bool
-	SkipPackage    string
-	Tags           string
 	AutoNodes      bool
 
 	//only for run command
@@ -29,23 +31,35 @@ type RunAndWatchCommandFlags struct {
 	FlagSet *flag.FlagSet
 }
 
-func NewRunCommandFlags(flagSet *flag.FlagSet) *RunAndWatchCommandFlags {
-	c := &RunAndWatchCommandFlags{
+const runMode = 1
+const watchMode = 2
+const buildMode = 3
+
+func NewRunCommandFlags(flagSet *flag.FlagSet) *RunWatchAndBuildCommandFlags {
+	c := &RunWatchAndBuildCommandFlags{
 		FlagSet: flagSet,
 	}
-	c.flags(false)
+	c.flags(runMode)
 	return c
 }
 
-func NewWatchCommandFlags(flagSet *flag.FlagSet) *RunAndWatchCommandFlags {
-	c := &RunAndWatchCommandFlags{
+func NewWatchCommandFlags(flagSet *flag.FlagSet) *RunWatchAndBuildCommandFlags {
+	c := &RunWatchAndBuildCommandFlags{
 		FlagSet: flagSet,
 	}
-	c.flags(true)
+	c.flags(watchMode)
 	return c
 }
 
-func (c *RunAndWatchCommandFlags) wasSet(flagName string) bool {
+func NewBuildCommandFlags(flagSet *flag.FlagSet) *RunWatchAndBuildCommandFlags {
+	c := &RunWatchAndBuildCommandFlags{
+		FlagSet: flagSet,
+	}
+	c.flags(buildMode)
+	return c
+}
+
+func (c *RunWatchAndBuildCommandFlags) wasSet(flagName string) bool {
 	wasSet := false
 	c.FlagSet.Visit(func(f *flag.Flag) {
 		if f.Name == flagName {
@@ -56,7 +70,7 @@ func (c *RunAndWatchCommandFlags) wasSet(flagName string) bool {
 	return wasSet
 }
 
-func (c *RunAndWatchCommandFlags) computeNodes() {
+func (c *RunWatchAndBuildCommandFlags) computeNodes() {
 	if c.wasSet("nodes") {
 		return
 	}
@@ -70,29 +84,33 @@ func (c *RunAndWatchCommandFlags) computeNodes() {
 	}
 }
 
-func (c *RunAndWatchCommandFlags) flags(forWatchCommand bool) {
+func (c *RunWatchAndBuildCommandFlags) flags(mode int) {
 	onWindows := (runtime.GOOS == "windows")
 	onOSX := (runtime.GOOS == "darwin")
 
-	config.Flags(c.FlagSet, "", false)
-
-	c.FlagSet.IntVar(&(c.NumCPU), "nodes", 1, "The number of parallel test nodes to run")
-	c.FlagSet.BoolVar(&(c.AutoNodes), "p", false, "Run in parallel with auto-detected number of nodes")
-	c.FlagSet.BoolVar(&(c.ParallelStream), "stream", onWindows, "stream parallel test output in real time: less coherent, but useful for debugging")
 	c.FlagSet.BoolVar(&(c.Recurse), "r", false, "Find and run test suites under the current directory recursively")
 	c.FlagSet.BoolVar(&(c.Race), "race", false, "Run tests with race detection enabled")
 	c.FlagSet.BoolVar(&(c.Cover), "cover", false, "Run tests with coverage analysis, will generate coverage profiles with the package name in the current directory")
 	c.FlagSet.StringVar(&(c.SkipPackage), "skipPackage", "", "A comma-separated list of package names to be skipped.  If any part of the package's path matches, that package is ignored.")
-	if onOSX {
-		c.FlagSet.BoolVar(&(c.Notify), "notify", false, "Send desktop notifications when a test run completes")
-	}
 	c.FlagSet.StringVar(&(c.Tags), "tags", "", "A list of build tags to consider satisfied during the build")
-	if !forWatchCommand {
+
+	if mode == runMode || mode == watchMode {
+		config.Flags(c.FlagSet, "", false)
+		c.FlagSet.IntVar(&(c.NumCPU), "nodes", 1, "The number of parallel test nodes to run")
+		c.FlagSet.BoolVar(&(c.AutoNodes), "p", false, "Run in parallel with auto-detected number of nodes")
+		c.FlagSet.BoolVar(&(c.ParallelStream), "stream", onWindows, "stream parallel test output in real time: less coherent, but useful for debugging")
+		if onOSX {
+			c.FlagSet.BoolVar(&(c.Notify), "notify", false, "Send desktop notifications when a test run completes")
+		}
+	}
+
+	if mode == runMode {
 		c.FlagSet.BoolVar(&(c.KeepGoing), "keepGoing", false, "When true, failures from earlier test suites do not prevent later test suites from running")
 		c.FlagSet.BoolVar(&(c.UntilItFails), "untilItFails", false, "When true, Ginkgo will keep rerunning tests until a failure occurs")
 		c.FlagSet.BoolVar(&(c.RandomizeSuites), "randomizeSuites", false, "When true, Ginkgo will randomize the order in which test suites run")
 	}
-	if forWatchCommand {
+
+	if mode == watchMode {
 		c.FlagSet.IntVar(&(c.Depth), "depth", 1, "Ginkgo will watch dependencies down to this depth in the dependency tree")
 	}
 }

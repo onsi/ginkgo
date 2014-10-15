@@ -19,6 +19,10 @@ Improvements:
 - Improved output when an error occurs in a setup or teardown block.
 - When `--dryRun` is set, Ginkgo will walk the spec tree and emit to its reporter *without* actually running anything.  Best paired with `-v` to understand which specs will run in which order.
 - Add `By` to help document long `It`s.  `By` simply writes to the `GinkgoWriter`.
+- Add support for precompiled tests:
+    - `ginkgo build <path-to-package>` will now compile the package, producing a file named `package.test`
+    - The compiled `package.test` file can be run directly.  This runs the tests in series.
+    - To run precompiled tests in parallel, you can run: `ginkgo -p package.test`
 
 ## 1.1.0 (8/2/2014)
 

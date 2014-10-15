@@ -50,6 +50,10 @@ func (t *TestRunner) Compile() error {
 		return nil
 	}
 
+	if t.Suite.Precompiled {
+		return nil
+	}
+
 	os.Remove(t.compiledArtifact())
 
 	args := []string{"test", "-c", "-i"}
@@ -127,6 +131,9 @@ func (t *TestRunner) Run() RunResult {
 }
 
 func (t *TestRunner) CleanUp() {
+	if t.Suite.Precompiled {
+		return
+	}
 	os.Remove(t.compiledArtifact())
 }
 

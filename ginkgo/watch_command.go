@@ -39,7 +39,7 @@ func BuildWatchCommand() *Command {
 }
 
 type SpecWatcher struct {
-	commandFlags     *RunAndWatchCommandFlags
+	commandFlags     *RunWatchAndBuildCommandFlags
 	notifier         *Notifier
 	interruptHandler *InterruptHandler
 	suiteRunner      *SuiteRunner
@@ -63,7 +63,7 @@ func (w *SpecWatcher) runnersForSuites(suites []testsuite.TestSuite, additionalA
 }
 
 func (w *SpecWatcher) WatchSuites(args []string, additionalArgs []string) {
-	suites, _ := findSuites(args, w.commandFlags.Recurse, w.commandFlags.SkipPackage)
+	suites, _ := findSuites(args, w.commandFlags.Recurse, w.commandFlags.SkipPackage, false)
 
 	if len(suites) == 0 {
 		complainAndQuit("Found no test suites")
@@ -93,7 +93,7 @@ func (w *SpecWatcher) WatchSuites(args []string, additionalArgs []string) {
 	for {
 		select {
 		case <-ticker.C:
-			suites, _ := findSuites(args, w.commandFlags.Recurse, w.commandFlags.SkipPackage)
+			suites, _ := findSuites(args, w.commandFlags.Recurse, w.commandFlags.SkipPackage, false)
 			delta, _ := deltaTracker.Delta(suites)
 
 			suitesToRun := []testsuite.TestSuite{}
