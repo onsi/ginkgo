@@ -895,6 +895,26 @@ For each monitored packaged, Ginkgo will also monitor that package's dependencie
 
 Passing the `-notify` flag on OS X will trigger desktop notifications when `ginkgo watch` triggers and completes a test run.
 
+### Precompiling Tests
+
+Ginkgo has strong support for writing integration-style acceptance tests.  These tests are useful tools to validate that (for example) a complex distributed system is functioning correctly.  It is often convenient to distribute these acceptance tests as standalone binaries.
+
+Ginkgo allows you to build such binaries with:
+
+    ginkgo build path/to/package
+
+This will produce a precompiled binary called `package.test`.  You can then invoke `package.test` directly to run the test suite.  Under the hood `ginkgo` is simply calling `go test -c` to compile the `package.test` binary.
+
+Calling `package.test` directly will run the tests in *series*.  To run the tests in parallel you'll need the `ginkgo` cli to orchestrate the parallel nodes.  You can run:
+
+    ginkgo -p path/to/package.test
+
+to do this.  Since the ginkgo CLI is a single binary you can provide a parallelizable (and therefore *fast*) set of integration-style acceptance tests simply by distributing two binaries.
+
+> The `build` subcommand accepts a subset of the flags that `ginkgo` and `ginkgo watch` take.  These flags are constrained to compile-time concerns such as `--cover` and `--race`.  You can learn more via `ginkgo help build`.
+
+> You can cross-compile and target different platforms using the standard `GOOS` and `GOARCH` environment variables.  So `GOOS=linux GOARCH=amd64 ginkgo build path/to/package` run on OS X will create a `package.test` binary that runs on linux.
+
 ### Generators
 
 - To bootstrap a Ginkgo test suite for the package in the current directory, run:
