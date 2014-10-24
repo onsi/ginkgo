@@ -24,6 +24,10 @@ Improvements:
     - The compiled `package.test` file can be run directly.  This runs the tests in series.
     - To run precompiled tests in parallel, you can run: `ginkgo -p package.test`
 
+Bug Fixes:
+
+- If --skipPackages is used and all packages are skipped, Ginkgo should exit 0.
+
 ## 1.1.0 (8/2/2014)
 
 No changes, just dropping the beta.

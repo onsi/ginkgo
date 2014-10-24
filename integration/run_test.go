@@ -111,6 +111,30 @@ var _ = Describe("Running Specs", func() {
 			Ω(output).ShouldNot(ContainSubstring("Focused_fixture Suite"))
 			Ω(output).Should(ContainSubstring("Test Suite Passed"))
 		})
+
+		Context("when all packages are skipped", func() {
+			It("should not run anything, but still exit 0", func() {
+				session := startGinkgo(tmpDir, "--noColor", "--skipPackage=other,focused,ginkgo", "-r")
+				Eventually(session).Should(gexec.Exit(0))
+				output := string(session.Out.Contents())
+
+				Ω(output).Should(ContainSubstring("All tests skipped!"))
+				Ω(output).ShouldNot(ContainSubstring("Passing_ginkgo_tests Suite"))
+				Ω(output).ShouldNot(ContainSubstring("More_ginkgo_tests Suite"))
+				Ω(output).ShouldNot(ContainSubstring("Focused_fixture Suite"))
+				Ω(output).ShouldNot(ContainSubstring("Test Suite Passed"))
+			})
+		})
+	})
+
+	Context("when there are no tests to run", func() {
+		It("should exit 1", func() {
+			session := startGinkgo(tmpDir, "--noColor", "--skipPackage=other,focused", "-r")
+			Eventually(session).Should(gexec.Exit(1))
+			output := string(session.Err.Contents())
+
+			Ω(output).Should(ContainSubstring("Found no test suites"))
+		})
 	})
 
 	Context("when told to randomizeSuites", func() {

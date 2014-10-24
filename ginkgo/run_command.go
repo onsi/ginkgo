@@ -54,6 +54,12 @@ func (r *SpecRunner) RunSpecs(args []string, additionalArgs []string) {
 			fmt.Println("  " + skippedPackage)
 		}
 	}
+
+	if len(skippedPackages) > 0 && len(suites) == 0 {
+		fmt.Println("All tests skipped!  Exiting...")
+		os.Exit(0)
+	}
+
 	if len(suites) == 0 {
 		complainAndQuit("Found no test suites")
 	}
