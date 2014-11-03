@@ -51,7 +51,7 @@ To discuss Ginkgo and get updates, join the [google group](https://groups.google
 
 ## [Gomega](http://github.com/onsi/gomega): Ginkgo's Preferred Matcher Library
 
-Ginkgo is best paired wiht Gomega.  Learn more about Gomega [here](http://onsi.github.io/gomega/)
+Ginkgo is best paired with Gomega.  Learn more about Gomega [here](http://onsi.github.io/gomega/)
 
 ## [Agouti](http://github.com/sclevine/agouti): A Golang Acceptance Testing Framework
 
