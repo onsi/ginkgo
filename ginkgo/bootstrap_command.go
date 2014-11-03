@@ -13,8 +13,9 @@ import (
 )
 
 func BuildBootstrapCommand() *Command {
-	var noDot bool
+	var agouti, noDot bool
 	flagSet := flag.NewFlagSet("bootstrap", flag.ExitOnError)
+	flagSet.BoolVar(&agouti, "agouti", false, "If set, bootstrap will generate a bootstrap file for writing Agouti tests")
 	flagSet.BoolVar(&noDot, "nodot", false, "If set, bootstrap will generate a bootstrap file that does not . import ginkgo and gomega")
 
 	return &Command{
@@ -26,7 +27,7 @@ func BuildBootstrapCommand() *Command {
 			"Accepts the following flags:",
 		},
 		Command: func(args []string, additionalArgs []string) {
-			generateBootstrap(noDot)
+			generateBootstrap(agouti, noDot)
 		},
 	}
 }
@@ -44,6 +45,41 @@ func Test{{.FormattedPackage}}(t *testing.T) {
 	RegisterFailHandler(Fail)
 	RunSpecs(t, "{{.FormattedPackage}} Suite")
 }
+`
+
+var agoutiBootstrapText = `package {{.Package}}_test
+
+import (
+	{{.GinkgoImport}}
+	{{.GomegaImport}}
+	. "github.com/sclevine/agouti/core"
+
+	"testing"
+)
+
+func Test{{.FormattedPackage}}(t *testing.T) {
+	RegisterFailHandler(Fail)
+	RunSpecs(t, "{{.FormattedPackage}} Suite")
+}
+
+var agoutiDriver WebDriver
+
+var _ = BeforeSuite(func() {
+	var err error
+
+	// Choose a WebDriver:
+
+	agoutiDriver, err = PhantomJS()
+	// agoutiDriver, err = Selenium()
+	// agoutiDriver, err = Chrome()
+
+	Expect(err).NotTo(HaveOccurred())
+	Expect(agoutiDriver.Start()).To(Succeed())
+})
+
+var _ = AfterSuite(func() {
+	agoutiDriver.Stop()
+})
 `
 
 type bootstrapData struct {
@@ -70,7 +106,7 @@ func fileExists(path string) bool {
 	return false
 }
 
-func generateBootstrap(noDot bool) {
+func generateBootstrap(agouti bool, noDot bool) {
 	packageName := getPackage()
 	formattedPackage := strings.Replace(strings.Title(strings.Replace(packageName, "_", " ", -1)), " ", "", -1)
 	data := bootstrapData{
@@ -100,7 +136,14 @@ func generateBootstrap(noDot bool) {
 	}
 	defer f.Close()
 
-	bootstrapTemplate, err := template.New("bootstrap").Parse(bootstrapText)
+	var templateText string
+	if agouti {
+		templateText = agoutiBootstrapText
+	} else {
+		templateText = bootstrapText
+	}
+
+	bootstrapTemplate, err := template.New("bootstrap").Parse(templateText)
 	if err != nil {
 		panic(err.Error())
 	}

@@ -1,14 +1,15 @@
 package integration_test
 
 import (
-	. "github.com/onsi/ginkgo"
-	"github.com/onsi/ginkgo/types"
-	. "github.com/onsi/gomega"
-	"github.com/onsi/gomega/gexec"
 	"io/ioutil"
 	"os"
 	"path/filepath"
 	"strings"
+
+	. "github.com/onsi/ginkgo"
+	"github.com/onsi/ginkgo/types"
+	. "github.com/onsi/gomega"
+	"github.com/onsi/gomega/gexec"
 )
 
 var _ = Describe("Subcommand", func() {
@@ -57,6 +58,26 @@ var _ = Describe("Subcommand", func() {
 
 			Ω(content).Should(ContainSubstring("\t" + `"github.com/onsi/ginkgo"`))
 			Ω(content).Should(ContainSubstring("\t" + `"github.com/onsi/gomega"`))
+		})
+
+		It("should generate an agouti bootstrap file when told to", func() {
+			pkgPath := tmpPath("foo")
+			os.Mkdir(pkgPath, 0777)
+			session := startGinkgo(pkgPath, "bootstrap", "--agouti")
+			Eventually(session).Should(gexec.Exit(0))
+			output := session.Out.Contents()
+
+			Ω(output).Should(ContainSubstring("foo_suite_test.go"))
+
+			content, err := ioutil.ReadFile(filepath.Join(pkgPath, "foo_suite_test.go"))
+			Ω(err).ShouldNot(HaveOccurred())
+			Ω(content).Should(ContainSubstring("func TestFoo(t *testing.T) {"))
+			Ω(content).Should(ContainSubstring("RegisterFailHandler"))
+			Ω(content).Should(ContainSubstring("RunSpecs"))
+
+			Ω(content).Should(ContainSubstring("\t" + `. "github.com/onsi/ginkgo"`))
+			Ω(content).Should(ContainSubstring("\t" + `. "github.com/onsi/gomega"`))
+			Ω(content).Should(ContainSubstring("\t" + `. "github.com/sclevine/agouti/core"`))
 		})
 	})
 
@@ -208,6 +229,24 @@ var _ = Describe("Subcommand", func() {
 				Ω(err).ShouldNot(HaveOccurred())
 				Ω(content).ShouldNot(ContainSubstring("\t" + `. "github.com/onsi/ginkgo"`))
 				Ω(content).ShouldNot(ContainSubstring("\t" + `. "github.com/onsi/gomega"`))
+			})
+		})
+
+		Context("with agouti", func() {
+			It("should generate an agouti test file", func() {
+				session := startGinkgo(pkgPath, "generate", "--agouti")
+				Eventually(session).Should(gexec.Exit(0))
+				output := session.Out.Contents()
+
+				Ω(output).Should(ContainSubstring("foo_bar_test.go"))
+
+				content, err := ioutil.ReadFile(filepath.Join(pkgPath, "foo_bar_test.go"))
+				Ω(err).ShouldNot(HaveOccurred())
+				Ω(content).Should(ContainSubstring("\t" + `. "github.com/onsi/ginkgo"`))
+				Ω(content).Should(ContainSubstring("\t" + `. "github.com/onsi/gomega"`))
+				Ω(content).Should(ContainSubstring("\t" + `. "github.com/sclevine/agouti/core"`))
+				Ω(content).Should(ContainSubstring("\t" + `. "github.com/sclevine/agouti/matchers"`))
+				Ω(content).Should(ContainSubstring("page, err = agoutiDriver.Page()"))
 			})
 		})
 	})

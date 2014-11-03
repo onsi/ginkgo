@@ -10,8 +10,9 @@ import (
 )
 
 func BuildGenerateCommand() *Command {
-	var noDot bool
+	var agouti, noDot bool
 	flagSet := flag.NewFlagSet("generate", flag.ExitOnError)
+	flagSet.BoolVar(&agouti, "agouti", false, "If set, generate will generate a test file for writing Agouti tests")
 	flagSet.BoolVar(&noDot, "nodot", false, "If set, generate will generate a test file that does not . import ginkgo and gomega")
 
 	return &Command{
@@ -24,7 +25,7 @@ func BuildGenerateCommand() *Command {
 			"Accepts the following flags:",
 		},
 		Command: func(args []string, additionalArgs []string) {
-			generateSpec(args, noDot)
+			generateSpec(args, agouti, noDot)
 		},
 	}
 }
@@ -43,6 +44,32 @@ var _ = Describe("{{.Subject}}", func() {
 })
 `
 
+var agoutiSpecText = `package {{.Package}}_test
+
+import (
+	. "{{.PackageImportPath}}"
+
+	{{if .IncludeImports}}. "github.com/onsi/ginkgo"{{end}}
+	{{if .IncludeImports}}. "github.com/onsi/gomega"{{end}}
+	. "github.com/sclevine/agouti/core"
+	. "github.com/sclevine/agouti/matchers"
+)
+
+var _ = Describe("{{.Subject}}", func() {
+	var page Page
+
+	BeforeEach(func() {
+		var err error
+		page, err = agoutiDriver.Page()
+		Expect(err).NotTo(HaveOccurred())
+	})
+
+	AfterEach(func() {
+		page.Destroy()
+	})
+})
+`
+
 type specData struct {
 	Package           string
 	Subject           string
@@ -50,9 +77,9 @@ type specData struct {
 	IncludeImports    bool
 }
 
-func generateSpec(args []string, noDot bool) {
+func generateSpec(args []string, agouti, noDot bool) {
 	if len(args) == 0 {
-		err := generateSpecForSubject("", noDot)
+		err := generateSpecForSubject("", agouti, noDot)
 		if err != nil {
 			fmt.Println(err.Error())
 			fmt.Println("")
@@ -64,7 +91,7 @@ func generateSpec(args []string, noDot bool) {
 
 	var failed bool
 	for _, arg := range args {
-		err := generateSpecForSubject(arg, noDot)
+		err := generateSpecForSubject(arg, agouti, noDot)
 		if err != nil {
 			failed = true
 			fmt.Println(err.Error())
@@ -76,7 +103,7 @@ func generateSpec(args []string, noDot bool) {
 	}
 }
 
-func generateSpecForSubject(subject string, noDot bool) error {
+func generateSpecForSubject(subject string, agouti, noDot bool) error {
 	packageName := getPackage()
 	if subject == "" {
 		subject = packageName
@@ -107,7 +134,14 @@ func generateSpecForSubject(subject string, noDot bool) error {
 	}
 	defer f.Close()
 
-	specTemplate, err := template.New("spec").Parse(specText)
+	var templateText string
+	if agouti {
+		templateText = agoutiSpecText
+	} else {
+		templateText = specText
+	}
+
+	specTemplate, err := template.New("spec").Parse(templateText)
 	if err != nil {
 		return err
 	}
