@@ -847,6 +847,10 @@ Here are the flags that Ginkgo accepts:
     
     Set `-tags` to pass in build tags down to the compilation step.
 
+- `-compilers`
+    
+    When compiling multiple test suites (e.g. with `ginkgo -r`) Ginkgo will use `runtime.NumCPU()` to determine the number of compile processes to spin up.  On some environments this is a bad idea.  You can specify th enumber of compilers manually with this flag.
+
 ** Failure behavior: **
 
 - `--failOnPending`
@@ -1325,7 +1329,9 @@ For Travis CI, you could use something like this:
       - go get -v -t ./...
       - export PATH=$PATH:$HOME/gopath/bin
 
-    script: ginkgo -r --randomizeAllSpecs --randomizeSuites --failOnPending --cover --trace --race
+    script: ginkgo -r --randomizeAllSpecs --randomizeSuites --failOnPending --cover --trace --race --compilers=2
+
+Note that we've added `--compilers=2` -- this resolves an issue where Travis kills the Ginkgo process early for being too greedy.  By default, Ginkgo will run `runtime.NumCPU()` compilers which, on Travis, can be as many as `32` compilers!  Similarly, if you want to run your tests in parallel on Travis, make sure to specify `--nodes=N` instead of `-p`.
 
 ---
 
