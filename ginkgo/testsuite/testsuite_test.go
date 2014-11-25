@@ -41,7 +41,7 @@ var _ = Describe("TestSuite", func() {
 		writeFile("/redherring", "big_test.jpg", "package ginkgo", 0666)
 
 		//non-ginkgo tests in a nested directory
-		writeFile("/proffessorplum", "proffessorplum_test.go", `import "testing"`, 0666)
+		writeFile("/professorplum", "professorplum_test.go", `import "testing"`, 0666)
 
 		//ginkgo tests in a nested directory
 		writeFile("/colonelmustard", "colonelmustard_test.go", `import "github.com/onsi/ginkgo"`, 0666)
@@ -128,11 +128,11 @@ var _ = Describe("TestSuite", func() {
 
 		Context("when there are non-ginkgo tests in the specified directory", func() {
 			It("should return an appropriately configured suite", func() {
-				suites := SuitesInDir(filepath.Join(tmpDir, "proffessorplum"), false)
+				suites := SuitesInDir(filepath.Join(tmpDir, "professorplum"), false)
 				Ω(suites).Should(HaveLen(1))
 
-				Ω(suites[0].Path).Should(Equal(relTmpDir + "/proffessorplum"))
-				Ω(suites[0].PackageName).Should(Equal("proffessorplum"))
+				Ω(suites[0].Path).Should(Equal(relTmpDir + "/professorplum"))
+				Ω(suites[0].PackageName).Should(Equal("professorplum"))
 				Ω(suites[0].IsGinkgo).Should(BeFalse())
 				Ω(suites[0].Precompiled).Should(BeFalse())
 			})
@@ -150,8 +150,8 @@ var _ = Describe("TestSuite", func() {
 					Precompiled: false,
 				}))
 				Ω(suites).Should(ContainElement(TestSuite{
-					Path:        relTmpDir + "/proffessorplum",
-					PackageName: "proffessorplum",
+					Path:        relTmpDir + "/professorplum",
+					PackageName: "professorplum",
 					IsGinkgo:    false,
 					Precompiled: false,
 				}))
