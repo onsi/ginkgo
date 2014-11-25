@@ -84,7 +84,7 @@ func (w *SpecWatcher) WatchSuites(args []string, additionalArgs []string) {
 
 	if len(suites) == 1 {
 		runners := w.runnersForSuites(suites, additionalArgs)
-		w.suiteRunner.RunSuites(runners, true, nil)
+		w.suiteRunner.RunSuites(runners, w.commandFlags.NumCompilers, true, nil)
 		runners[0].CleanUp()
 	}
 
@@ -124,7 +124,7 @@ func (w *SpecWatcher) WatchSuites(args []string, additionalArgs []string) {
 				w.UpdateSeed()
 				w.ComputeSuccinctMode(len(suitesToRun))
 				runners := w.runnersForSuites(suitesToRun, additionalArgs)
-				result, _ := w.suiteRunner.RunSuites(runners, true, func(suite testsuite.TestSuite) {
+				result, _ := w.suiteRunner.RunSuites(runners, w.commandFlags.NumCompilers, true, func(suite testsuite.TestSuite) {
 					deltaTracker.WillRun(suite)
 				})
 				for _, runner := range runners {
