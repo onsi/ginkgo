@@ -373,7 +373,7 @@ func (s *consoleStenographer) failureContext(failedComponentType types.SpecCompo
 func (s *consoleStenographer) printFailure(indentation int, state types.SpecState, failure types.SpecFailure, fullTrace bool) {
 	if state == types.SpecStatePanicked {
 		s.println(indentation, s.colorize(redColor+boldStyle, failure.Message))
-		s.println(indentation, s.colorize(redColor, "%v", failure.ForwardedPanic))
+		s.println(indentation, s.colorize(redColor, failure.ForwardedPanic))
 		s.println(indentation, failure.Location.String())
 		s.printNewLine()
 		s.println(indentation, s.colorize(redColor, "Full Stack Trace"))

@@ -37,7 +37,7 @@ var _ = Describe("Failer", func() {
 			Ω(failure).Should(Equal(types.SpecFailure{
 				Message:               "something failed",
 				Location:              codeLocationA,
-				ForwardedPanic:        nil,
+				ForwardedPanic:        "",
 				ComponentType:         types.SpecComponentTypeIt,
 				ComponentIndex:        3,
 				ComponentCodeLocation: codeLocationB,
@@ -69,7 +69,7 @@ var _ = Describe("Failer", func() {
 			Ω(failure).Should(Equal(types.SpecFailure{
 				Message:               "Timed out",
 				Location:              codeLocationA,
-				ForwardedPanic:        nil,
+				ForwardedPanic:        "",
 				ComponentType:         types.SpecComponentTypeIt,
 				ComponentIndex:        3,
 				ComponentCodeLocation: codeLocationB,
@@ -90,7 +90,7 @@ var _ = Describe("Failer", func() {
 			Ω(failure).Should(Equal(types.SpecFailure{
 				Message:               "something failed",
 				Location:              codeLocationA,
-				ForwardedPanic:        nil,
+				ForwardedPanic:        "",
 				ComponentType:         types.SpecComponentTypeIt,
 				ComponentIndex:        3,
 				ComponentCodeLocation: codeLocationB,
@@ -107,7 +107,7 @@ var _ = Describe("Failer", func() {
 			Ω(failure).Should(Equal(types.SpecFailure{
 				Message:               "yet another thing failed",
 				Location:              codeLocationA,
-				ForwardedPanic:        nil,
+				ForwardedPanic:        "",
 				ComponentType:         types.SpecComponentTypeIt,
 				ComponentIndex:        3,
 				ComponentCodeLocation: codeLocationB,

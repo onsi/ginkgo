@@ -72,7 +72,7 @@ func SynchronousSharedRunnerBehaviors(build func(body interface{}, timeout time.
 				Ω(failure).Should(Equal(types.SpecFailure{
 					Message:               "bam",
 					Location:              innerCodeLocation,
-					ForwardedPanic:        nil,
+					ForwardedPanic:        "",
 					ComponentIndex:        componentIndex,
 					ComponentType:         componentType,
 					ComponentCodeLocation: componentCodeLocation,
@@ -184,7 +184,7 @@ func AsynchronousSharedRunnerBehaviors(build func(body interface{}, timeout time
 				Ω(failure).Should(Equal(types.SpecFailure{
 					Message:               "bam",
 					Location:              innerCodeLocation,
-					ForwardedPanic:        nil,
+					ForwardedPanic:        "",
 					ComponentIndex:        componentIndex,
 					ComponentType:         componentType,
 					ComponentCodeLocation: componentCodeLocation,
@@ -214,7 +214,7 @@ func AsynchronousSharedRunnerBehaviors(build func(body interface{}, timeout time
 				Ω(failure).Should(Equal(types.SpecFailure{
 					Message:               "Timed out",
 					Location:              componentCodeLocation,
-					ForwardedPanic:        nil,
+					ForwardedPanic:        "",
 					ComponentIndex:        componentIndex,
 					ComponentType:         componentType,
 					ComponentCodeLocation: componentCodeLocation,

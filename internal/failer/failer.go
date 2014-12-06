@@ -1,8 +1,10 @@
 package failer
 
 import (
-	"github.com/onsi/ginkgo/types"
+	"fmt"
 	"sync"
+
+	"github.com/onsi/ginkgo/types"
 )
 
 type Failer struct {
@@ -27,7 +29,7 @@ func (f *Failer) Panic(location types.CodeLocation, forwardedPanic interface{}) 
 		f.failure = types.SpecFailure{
 			Message:        "Test Panicked",
 			Location:       location,
-			ForwardedPanic: forwardedPanic,
+			ForwardedPanic: fmt.Sprintf("%v", forwardedPanic),
 		}
 	}
 }
