@@ -1,4 +1,4 @@
-package convert_fixtures_test
+package tmp_test
 
 import (
 	. "github.com/onsi/ginkgo"
