@@ -93,15 +93,7 @@ func SynchronousSharedRunnerBehaviors(build func(body interface{}, timeout time.
 				Ω(didRun).Should(BeTrue())
 
 				Ω(outcome).Should(Equal(types.SpecStatePanicked))
-				innerCodeLocation.LineNumber++
-				Ω(failure).Should(Equal(types.SpecFailure{
-					Message:               "Test Panicked",
-					Location:              innerCodeLocation,
-					ForwardedPanic:        "ack!",
-					ComponentIndex:        componentIndex,
-					ComponentType:         componentType,
-					ComponentCodeLocation: componentCodeLocation,
-				}))
+				Ω(failure.ForwardedPanic).Should(Equal("ack!"))
 			})
 		})
 	})
@@ -235,15 +227,7 @@ func AsynchronousSharedRunnerBehaviors(build func(body interface{}, timeout time
 				Ω(didRun).Should(BeTrue())
 
 				Ω(outcome).Should(Equal(types.SpecStatePanicked))
-				innerCodeLocation.LineNumber++
-				Ω(failure).Should(Equal(types.SpecFailure{
-					Message:               "Test Panicked",
-					Location:              innerCodeLocation,
-					ForwardedPanic:        "ack!",
-					ComponentIndex:        componentIndex,
-					ComponentType:         componentType,
-					ComponentCodeLocation: componentCodeLocation,
-				}))
+				Ω(failure.ForwardedPanic).Should(Equal("ack!"))
 			})
 		})
 	})
