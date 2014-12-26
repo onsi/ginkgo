@@ -554,6 +554,8 @@ will only run `B`.  This behavior tends to map more closely to what the develope
 
 > The programatic approach and the `--focus=REGEXP`/`--skip=REGEXP` approach are mutually exclusive.  Using the command line flags will override the programmatic focus.
 
+> Focusing a container with no `It` or `Measure` leaf nodes has no effect.  Since there is nothing to run in the container, Ginkgo effectively ignores it.
+
 > When using the command line flags you can specify one or both of `--focus` and `--skip`.  If both are specified the constraints will be `AND`ed together.
 
 > You can unfocus programatically focused tests by running `ginkgo unfocus`.  This will strip the `F`s off of any `FDescribe`, `FContext`, and `FIt`s that your tests in the current directory may have.
