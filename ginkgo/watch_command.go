@@ -6,6 +6,7 @@ import (
 	"time"
 
 	"github.com/onsi/ginkgo/config"
+	"github.com/onsi/ginkgo/ginkgo/interrupthandler"
 	"github.com/onsi/ginkgo/ginkgo/testrunner"
 	"github.com/onsi/ginkgo/ginkgo/testsuite"
 	"github.com/onsi/ginkgo/ginkgo/watch"
@@ -13,7 +14,7 @@ import (
 
 func BuildWatchCommand() *Command {
 	commandFlags := NewWatchCommandFlags(flag.NewFlagSet("watch", flag.ExitOnError))
-	interruptHandler := NewInterruptHandler()
+	interruptHandler := interrupthandler.NewInterruptHandler()
 	notifier := NewNotifier(commandFlags)
 	watcher := &SpecWatcher{
 		commandFlags:     commandFlags,
@@ -41,7 +42,7 @@ func BuildWatchCommand() *Command {
 type SpecWatcher struct {
 	commandFlags     *RunWatchAndBuildCommandFlags
 	notifier         *Notifier
-	interruptHandler *InterruptHandler
+	interruptHandler *interrupthandler.InterruptHandler
 	suiteRunner      *SuiteRunner
 }
 

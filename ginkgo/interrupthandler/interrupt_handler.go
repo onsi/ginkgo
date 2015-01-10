@@ -1,4 +1,4 @@
-package main
+package interrupthandler
 
 import (
 	"os"
@@ -19,6 +19,7 @@ func NewInterruptHandler() *InterruptHandler {
 	}
 
 	go h.handleInterrupt()
+	SwallowSigQuit()
 
 	return h
 }

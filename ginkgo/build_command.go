@@ -6,12 +6,13 @@ import (
 	"os"
 	"path/filepath"
 
+	"github.com/onsi/ginkgo/ginkgo/interrupthandler"
 	"github.com/onsi/ginkgo/ginkgo/testrunner"
 )
 
 func BuildBuildCommand() *Command {
 	commandFlags := NewBuildCommandFlags(flag.NewFlagSet("build", flag.ExitOnError))
-	interruptHandler := NewInterruptHandler()
+	interruptHandler := interrupthandler.NewInterruptHandler()
 	builder := &SpecBuilder{
 		commandFlags:     commandFlags,
 		interruptHandler: interruptHandler,
@@ -31,7 +32,7 @@ func BuildBuildCommand() *Command {
 
 type SpecBuilder struct {
 	commandFlags     *RunWatchAndBuildCommandFlags
-	interruptHandler *InterruptHandler
+	interruptHandler *interrupthandler.InterruptHandler
 }
 
 func (r *SpecBuilder) BuildSpecs(args []string, additionalArgs []string) {
