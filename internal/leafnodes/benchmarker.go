@@ -26,8 +26,8 @@ func (b *benchmarker) Time(name string, body func(), info ...interface{}) (elaps
 	body()
 	elapsedTime = time.Since(t)
 
-    b.mu.Lock()
-    defer b.mu.Unlock()
+	b.mu.Lock()
+	defer b.mu.Unlock()
 	measurement := b.getMeasurement(name, "Fastest Time", "Slowest Time", "Average Time", "s", info...)
 	measurement.Results = append(measurement.Results, elapsedTime.Seconds())
 
