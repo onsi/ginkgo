@@ -17,33 +17,33 @@ type JsonReporter struct {
 }
 
 type JsonTestSuite struct {
-	SuiteName string
-	TestCases []JsonTestCase
-	Tests     int
-	Passed    int
-	Failures  *JsonFailure
-	Skipped   int
-	Time      float64
+	SuiteName string         `json:"suite_name"`
+	TestCases []JsonTestCase `json:"test_cases"`
+	Tests     int            `json:"tests"`
+	Passed    int            `json:"passed"`
+	Skipped   int            `json:"skipped"`
+	Failures  *JsonFailure   `json:"failures"`
+	Time      float64        `json:"total_time"`
 }
 
 type JsonFailure struct {
-	Number int
-	Names  []string
+	Number int      `json:"number"`
+	Names  []string `json:"names"`
 }
 
 type JsonTestCase struct {
-	TestName  string
-	SuiteName string
-	Passed    bool
-	Failed    *JsonFailedTest
-	Skipped   bool
-	Time      float64
+	TestName  string          `json:"test_name"`
+	SuiteName string          `json:"suite_name"`
+	Passed    bool            `json:"passed"`
+	Skipped   bool            `json:"skipped"`
+	Failed    *JsonFailedTest `json:"failed"`
+	Time      float64         `json:"time"`
 }
 
 type JsonFailedTest struct {
-	Type    string
-	Message string
-	Where   string
+	Type    string `json:"type"`
+	Message string `json:"error_message"`
+	Where   string `json:"error_line"`
 }
 
 //NewJsonReporter creates a new Json reporter.  The Json will be stored in the passed in filename.
@@ -55,7 +55,6 @@ func NewJsonReporter(filename string) *JsonReporter {
 
 func (reporter *JsonReporter) SpecSuiteWillBegin(config config.GinkgoConfigType, summary *types.SuiteSummary) {
 	reporter.suite = JsonTestSuite{
-		Tests:     summary.NumberOfTotalSpecs,
 		SuiteName: summary.SuiteDescription,
 		TestCases: []JsonTestCase{},
 		Failures:  &JsonFailure{},
@@ -64,9 +63,30 @@ func (reporter *JsonReporter) SpecSuiteWillBegin(config config.GinkgoConfigType,
 }
 
 func (reporter *JsonReporter) BeforeSuiteDidRun(setupSummary *types.SetupSummary) {
+	reporter.handleSetupSummary("BeforeSuite", setupSummary)
 }
 
 func (reporter *JsonReporter) AfterSuiteDidRun(setupSummary *types.SetupSummary) {
+	reporter.handleSetupSummary("AfterSuite", setupSummary)
+}
+
+func (reporter *JsonReporter) handleSetupSummary(name string, setupSummary *types.SetupSummary) {
+	if setupSummary.State != types.SpecStatePassed {
+		testCase := JsonTestCase{
+			TestName:  name,
+			SuiteName: reporter.testSuiteName,
+		}
+
+		testCase.Failed = &JsonFailedTest{
+			Type:    reporter.failureTypeForState(setupSummary.State),
+			Message: setupSummary.Failure.Message,
+			Where:   setupSummary.Failure.ComponentCodeLocation.String(),
+		}
+		testCase.Time = setupSummary.RunTime.Seconds()
+		reporter.suite.TestCases = append(reporter.suite.TestCases, testCase)
+
+		reporter.suite.Failures.Names = append(reporter.suite.Failures.Names, name)
+	}
 }
 
 func (reporter *JsonReporter) SpecWillRun(specSummary *types.SpecSummary) {
@@ -96,6 +116,7 @@ func (reporter *JsonReporter) SpecDidComplete(specSummary *types.SpecSummary) {
 }
 
 func (reporter *JsonReporter) SpecSuiteDidEnd(summary *types.SuiteSummary) {
+	reporter.suite.Tests = summary.NumberOfTotalSpecs
 	reporter.suite.Time = summary.RunTime.Seconds()
 	reporter.suite.Passed = summary.NumberOfPassedSpecs
 	reporter.suite.Failures.Number = summary.NumberOfFailedSpecs
@@ -105,11 +126,16 @@ func (reporter *JsonReporter) SpecSuiteDidEnd(summary *types.SuiteSummary) {
 		fmt.Printf("Failed to create Json report file: %s\n\t%s", reporter.filename, err.Error())
 	}
 	defer file.Close()
-	encoder := json.NewEncoder(file)
-	err = encoder.Encode(reporter.suite)
+	jsonBytes, err := json.MarshalIndent(reporter.suite, "", "  ")
 	if err != nil {
 		fmt.Printf("Failed to generate Json report\n\t%s", err.Error())
 	}
+
+	_, err1 := file.Write(jsonBytes)
+	if err1 != nil {
+		fmt.Printf("Failed to generate Json report\n\t%s", err.Error())
+	}
+
 }
 
 func (reporter *JsonReporter) failureTypeForState(state types.SpecState) string {
