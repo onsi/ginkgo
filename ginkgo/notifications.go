@@ -67,7 +67,7 @@ func (n *Notifier) RunCommand(suite testsuite.TestSuite, suitePassed bool) {
 	command := n.commandFlags.Command
 	if command != "" {
 
-		// Allow for some string replacement to pass some input to the command
+		// Allow for string replacement to pass input to the command
 		passed := "[FAIL]"
 		if suitePassed {
 			passed = "[PASS]"
