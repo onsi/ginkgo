@@ -4,6 +4,8 @@ import (
 	"fmt"
 	"os"
 	"os/exec"
+	"regexp"
+	"strings"
 
 	"github.com/onsi/ginkgo/ginkgo/testsuite"
 )
@@ -57,5 +59,29 @@ func (n *Notifier) SendNotification(title string, subtitle string) {
 
 	if n.commandFlags.Notify {
 		exec.Command("terminal-notifier", args...).Run()
+	}
+}
+
+func (n *Notifier) RunCommand(suite testsuite.TestSuite, suitePassed bool) {
+
+	command := n.commandFlags.Command
+	if command != "" {
+
+		// Allow for some string replacement to pass some input to the command
+		passed := "[FAIL]"
+		if suitePassed {
+			passed = "[PASS]"
+		}
+		command = strings.Replace(command, "(ginkgo-suite-passed)", passed, -1)
+		command = strings.Replace(command, "(ginkgo-suite-name)", suite.PackageName, -1)
+
+		// Must break command into parts
+		splitArgs := regexp.MustCompile(`'.+'|".+"|\S+`)
+		parts := splitArgs.FindAllString(command, -1)
+
+		err := exec.Command(parts[0], parts[1:]...).Run()
+		if err != nil {
+			n.SendNotification("Ginkgo [ERROR]", fmt.Sprintf(`After suite command "%s" failed`, n.commandFlags.Command))
+		}
 	}
 }

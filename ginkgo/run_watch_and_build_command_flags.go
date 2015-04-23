@@ -19,6 +19,7 @@ type RunWatchAndBuildCommandFlags struct {
 	NumCompilers   int
 	ParallelStream bool
 	Notify         bool
+	Command        string
 	AutoNodes      bool
 
 	//only for run command
@@ -104,6 +105,7 @@ func (c *RunWatchAndBuildCommandFlags) flags(mode int) {
 		if onOSX {
 			c.FlagSet.BoolVar(&(c.Notify), "notify", false, "Send desktop notifications when a test run completes")
 		}
+		c.FlagSet.StringVar(&(c.Command), "command", "", "Run a command when a test run completes")
 	}
 
 	if mode == runMode {
