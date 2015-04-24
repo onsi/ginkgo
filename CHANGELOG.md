@@ -1,5 +1,7 @@
 ## HEAD
 
+Ginkgo now requires Go 1.4+
+
 Improvements:
 
 - Call reporters in reverse order when announcing spec completion -- allows custom reporters to emit output before the default reporter does.
@@ -26,6 +28,7 @@ Improvements:
 - Support `bootstrap`ping and `generate`ing [Agouti](http://agouti.org) specs.
 - `ginkgo generate` and `ginkgo bootstrap` now honor the package name already defined in a given directory
 - The `ginkgo` CLI ignores `SIGQUIT`.  Prevents its stack dump from interlacing with the underlying test suite's stack dump.
+- The `ginkgo` CLI now compiles tests into a temporary directory instead of the package directory.  This necessitates upgrading to Go v1.4+.
 
 Bug Fixes:
 
