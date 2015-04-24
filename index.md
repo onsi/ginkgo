@@ -17,7 +17,7 @@ Just `go get` it:
 
 this fetches ginkgo and installs the `ginkgo` executable under `$GOPATH/bin` -- you'll want that on your `$PATH`.
 
-**Ginkgo is compatible with Golang v1.2+  Ubuntu users: apt-get currently installs v1.0 -- you'll need to upgrade!**
+**Ginkgo is compatible with Golang v1.4+  Ubuntu users: apt-get currently installs v1.0 -- you'll need to upgrade!**
 
 ---
 
@@ -909,7 +909,7 @@ Ginkgo allows you to build such binaries with:
 
     ginkgo build path/to/package
 
-This will produce a precompiled binary called `package.test`.  You can then invoke `package.test` directly to run the test suite.  Under the hood `ginkgo` is simply calling `go test -c` to compile the `package.test` binary.
+This will produce a precompiled binary called `package.test`.  You can then invoke `package.test` directly to run the test suite.  Under the hood `ginkgo` is simply calling `go test -c -o` to compile the `package.test` binary.
 
 Calling `package.test` directly will run the tests in *series*.  To run the tests in parallel you'll need the `ginkgo` cli to orchestrate the parallel nodes.  You can run:
 
@@ -1322,7 +1322,7 @@ For Travis CI, you could use something like this:
 
     language: go
     go:
-      - 1.1.2
+      - 1.4
       - tip
 
     install:
