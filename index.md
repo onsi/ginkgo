@@ -324,7 +324,7 @@ When nesting `Describe`/`Context` blocks the `BeforeEach` blocks for all the con
 
 > It is also a mistake to *initialize* a closure variable in a container block.  If one of your `It`s mutates that variable, subsequent `It`s will receive the mutated value.  This is a case of test pollution and can be hard to track down.  **Always initialize your variables in `BeforeEach` blocks.**
 
-If you'd like to get information, at runtime about the current test, you can use `CallGinkgoTestDescription()` from within any `It` or `BeforeEach`/`AfterEach`/`JustBeforeEach` block.  The `GinkgoTestDescription` returned by this call has a variety of information about the currently running test including the filename, line number, text in the `It` block, and text in the surrounding container blocks.
+If you'd like to get information, at runtime about the current test, you can use `CurrentGinkgoTestDescription()` from within any `It` or `BeforeEach`/`AfterEach`/`JustBeforeEach` block.  The `CurrentGinkgoTestDescription` returned by this call has a variety of information about the currently running test including the filename, line number, text in the `It` block, and text in the surrounding container blocks.
 
 ### Separating Creation and Configuration: `JustBeforeEach`
 
