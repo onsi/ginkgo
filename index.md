@@ -885,7 +885,7 @@ Here are the flags that Ginkgo accepts:
 
 - `-notify`
 
-    Set `-notify` to receive desktop notifications when a test suite completes.  This is especially useful with the `watch` subcommand.  Currently `-notify` is only supported on OS X.  You'll also need to `brew install terminal-notifier` to receive notifications.
+    Set `-notify` to receive desktop notifications when a test suite completes.  This is especially useful with the `watch` subcommand.  Currently `-notify` is only supported on OS X and Linux.  On OS X you'll need to `brew install terminal-notifier` to receive notifications, on Linux you'll need to download and install `notify-send`.
 
 - `--slowSpecThreshold=TIME_IN_SECONDS`
 
