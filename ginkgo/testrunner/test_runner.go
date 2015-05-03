@@ -267,20 +267,15 @@ func (t *TestRunner) runParallelGinkgoSuite() RunResult {
 		fmt.Println("")
 	case <-time.After(time.Second):
 		//the aggregator never got back to us!  something must have gone wrong
-		fmt.Println("")
-		fmt.Println("")
-		fmt.Println("   ----------------------------------------------------------- ")
-		fmt.Println("  |                                                           |")
-		fmt.Println("  |  Ginkgo timed out waiting for all parallel nodes to end!  |")
-		fmt.Println("  |  Here is some salvaged output:                            |")
-		fmt.Println("  |                                                           |")
-		fmt.Println("   ----------------------------------------------------------- ")
-		fmt.Println("")
-		fmt.Println("")
+		fmt.Println(`
+	 -------------------------------------------------------------------
+	|                                                                   |
+	|  Ginkgo timed out waiting for all parallel nodes to report back!  |
+	|                                                                   |
+	 -------------------------------------------------------------------
+`)
 
 		os.Stdout.Sync()
-
-		time.Sleep(time.Second)
 
 		for _, writer := range writers {
 			writer.Close()
