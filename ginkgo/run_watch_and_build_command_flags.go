@@ -11,6 +11,7 @@ type RunWatchAndBuildCommandFlags struct {
 	Recurse     bool
 	Race        bool
 	Cover       bool
+	CoverPkg    string
 	SkipPackage string
 	Tags        string
 

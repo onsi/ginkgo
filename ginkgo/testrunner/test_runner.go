@@ -31,11 +31,12 @@ type TestRunner struct {
 	parallelStream bool
 	race           bool
 	cover          bool
+	coverpkg       string
 	tags           string
 	additionalArgs []string
 }
 
-func New(suite testsuite.TestSuite, numCPU int, parallelStream bool, race bool, cover bool, tags string, additionalArgs []string) *TestRunner {
+func New(suite testsuite.TestSuite, numCPU int, parallelStream bool, race bool, cover bool, coverPkg string, tags string, additionalArgs []string) *TestRunner {
 	runner := &TestRunner{
 		Suite:          suite,
 		numCPU:         numCPU,
