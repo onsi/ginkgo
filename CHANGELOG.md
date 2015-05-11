@@ -1,4 +1,6 @@
-## HEAD
+## 1.2.0-beta
+
+Ginkgo now requires Go 1.4+
 
 Improvements:
 
@@ -26,6 +28,8 @@ Improvements:
 - Support `bootstrap`ping and `generate`ing [Agouti](http://agouti.org) specs.
 - `ginkgo generate` and `ginkgo bootstrap` now honor the package name already defined in a given directory
 - The `ginkgo` CLI ignores `SIGQUIT`.  Prevents its stack dump from interlacing with the underlying test suite's stack dump.
+- The `ginkgo` CLI now compiles tests into a temporary directory instead of the package directory.  This necessitates upgrading to Go v1.4+.
+- `ginkgo -notify` now works on Linux
 
 Bug Fixes:
 
@@ -34,6 +38,8 @@ Bug Fixes:
 - Fix incorrect failure message when a panic occurs during a parallel test run
 - Fixed an issue where a pending test within a focused context (or a focused test within a pending context) would skip all other tests.
 - Be more consistent about handling SIGTERM as well as SIGINT
+- When interupted while concurrently compiling test suites in the background, Ginkgo now cleans up the compiled artifacts.
+- Fixed a long standing bug where `ginkgo -p` would hang if a process spawned by one of the Ginkgo parallel nodes does not exit. (Hooray!)
 
 ## 1.1.0 (8/2/2014)
 

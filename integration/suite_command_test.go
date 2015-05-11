@@ -6,7 +6,7 @@ import (
 	"github.com/onsi/gomega/gexec"
 )
 
-var _ = FDescribe("Suite Command Specs", func() {
+var _ = Describe("Suite Command Specs", func() {
 	var pathToTest string
 
 	BeforeEach(func() {
