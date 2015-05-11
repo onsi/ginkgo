@@ -31,7 +31,7 @@ type TestRunner struct {
 	parallelStream bool
 	race           bool
 	cover          bool
-	coverpkg       string
+	coverPkg       string
 	tags           string
 	additionalArgs []string
 }
@@ -43,6 +43,7 @@ func New(suite testsuite.TestSuite, numCPU int, parallelStream bool, race bool, 
 		parallelStream: parallelStream,
 		race:           race,
 		cover:          cover,
+		coverPkg:       coverPkg,
 		tags:           tags,
 		additionalArgs: additionalArgs,
 	}
@@ -77,6 +78,9 @@ func (t *TestRunner) CompileTo(path string) error {
 	}
 	if t.cover {
 		args = append(args, "-cover", "-covermode=atomic")
+	}
+	if t.coverPkg != "" {
+		args = append(args, fmt.Sprintf("-coverpkg=%s", t.coverPkg))
 	}
 	if t.tags != "" {
 		args = append(args, fmt.Sprintf("-tags=%s", t.tags))
