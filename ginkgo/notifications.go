@@ -7,6 +7,7 @@ import (
 	"regexp"
 	"strings"
 
+	"github.com/onsi/ginkgo/config"
 	"github.com/onsi/ginkgo/ginkgo/testsuite"
 )
 
@@ -79,9 +80,22 @@ func (n *Notifier) RunCommand(suite testsuite.TestSuite, suitePassed bool) {
 		splitArgs := regexp.MustCompile(`'.+'|".+"|\S+`)
 		parts := splitArgs.FindAllString(command, -1)
 
-		err := exec.Command(parts[0], parts[1:]...).Run()
+		output, err := exec.Command(parts[0], parts[1:]...).CombinedOutput()
 		if err != nil {
+			fmt.Println("Post-suite command failed:")
+			if config.DefaultReporterConfig.NoColor {
+				fmt.Printf("\t%s\n", output)
+			} else {
+				fmt.Printf("\t%s%s%s\n", redColor, string(output), defaultStyle)
+			}
 			n.SendNotification("Ginkgo [ERROR]", fmt.Sprintf(`After suite command "%s" failed`, n.commandFlags.Command))
+		} else {
+			fmt.Println("Post-suite command succeeded:")
+			if config.DefaultReporterConfig.NoColor {
+				fmt.Printf("\t%s\n", output)
+			} else {
+				fmt.Printf("\t%s%s%s\n", greenColor, string(output), defaultStyle)
+			}
 		}
 	}
 }
