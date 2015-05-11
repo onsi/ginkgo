@@ -76,7 +76,7 @@ func (t *TestRunner) CompileTo(path string) error {
 	if t.race {
 		args = append(args, "-race")
 	}
-	if t.cover {
+	if t.cover || t.coverPkg != "" {
 		args = append(args, "-cover", "-covermode=atomic")
 	}
 	if t.coverPkg != "" {
