@@ -17,7 +17,7 @@ Just `go get` it:
 
 this fetches ginkgo and installs the `ginkgo` executable under `$GOPATH/bin` -- you'll want that on your `$PATH`.
 
-**Ginkgo is compatible with Golang v1.2+  Ubuntu users: apt-get currently installs v1.0 -- you'll need to upgrade!**
+**Ginkgo is compatible with Golang v1.4+  Ubuntu users: apt-get currently installs v1.0 -- you'll need to upgrade!**
 
 ---
 
@@ -324,7 +324,7 @@ When nesting `Describe`/`Context` blocks the `BeforeEach` blocks for all the con
 
 > It is also a mistake to *initialize* a closure variable in a container block.  If one of your `It`s mutates that variable, subsequent `It`s will receive the mutated value.  This is a case of test pollution and can be hard to track down.  **Always initialize your variables in `BeforeEach` blocks.**
 
-If you'd like to get information, at runtime about the current test, you can use `CallGinkgoTestDescription()` from within any `It` or `BeforeEach`/`AfterEach`/`JustBeforeEach` block.  The `GinkgoTestDescription` returned by this call has a variety of information about the currently running test including the filename, line number, text in the `It` block, and text in the surrounding container blocks.
+If you'd like to get information, at runtime about the current test, you can use `CurrentGinkgoTestDescription()` from within any `It` or `BeforeEach`/`AfterEach`/`JustBeforeEach` block.  The `CurrentGinkgoTestDescription` returned by this call has a variety of information about the currently running test including the filename, line number, text in the `It` block, and text in the surrounding container blocks.
 
 ### Separating Creation and Configuration: `JustBeforeEach`
 
@@ -889,7 +889,7 @@ Here are the flags that Ginkgo accepts:
 
 - `-notify`
 
-    Set `-notify` to receive desktop notifications when a test suite completes.  This is especially useful with the `watch` subcommand.  Currently `-notify` is supported on OS X and Linux (with notify-send).  You'll also need to `brew install terminal-notifier` to receive notifications on OS X.
+    Set `-notify` to receive desktop notifications when a test suite completes.  This is especially useful with the `watch` subcommand.  Currently `-notify` is only supported on OS X and Linux.  On OS X you'll need to `brew install terminal-notifier` to receive notifications, on Linux you'll need to download and install `notify-send`.
 
 - `--slowSpecThreshold=TIME_IN_SECONDS`
 
@@ -913,7 +913,7 @@ Ginkgo allows you to build such binaries with:
 
     ginkgo build path/to/package
 
-This will produce a precompiled binary called `package.test`.  You can then invoke `package.test` directly to run the test suite.  Under the hood `ginkgo` is simply calling `go test -c` to compile the `package.test` binary.
+This will produce a precompiled binary called `package.test`.  You can then invoke `package.test` directly to run the test suite.  Under the hood `ginkgo` is simply calling `go test -c -o` to compile the `package.test` binary.
 
 Calling `package.test` directly will run the tests in *series*.  To run the tests in parallel you'll need the `ginkgo` cli to orchestrate the parallel nodes.  You can run:
 
@@ -1326,7 +1326,7 @@ For Travis CI, you could use something like this:
 
     language: go
     go:
-      - 1.1.2
+      - 1.4
       - tip
 
     install:
