@@ -31,17 +31,19 @@ type TestRunner struct {
 	parallelStream bool
 	race           bool
 	cover          bool
+	coverPkg       string
 	tags           string
 	additionalArgs []string
 }
 
-func New(suite testsuite.TestSuite, numCPU int, parallelStream bool, race bool, cover bool, tags string, additionalArgs []string) *TestRunner {
+func New(suite testsuite.TestSuite, numCPU int, parallelStream bool, race bool, cover bool, coverPkg string, tags string, additionalArgs []string) *TestRunner {
 	runner := &TestRunner{
 		Suite:          suite,
 		numCPU:         numCPU,
 		parallelStream: parallelStream,
 		race:           race,
 		cover:          cover,
+		coverPkg:       coverPkg,
 		tags:           tags,
 		additionalArgs: additionalArgs,
 	}
@@ -74,8 +76,11 @@ func (t *TestRunner) CompileTo(path string) error {
 	if t.race {
 		args = append(args, "-race")
 	}
-	if t.cover {
+	if t.cover || t.coverPkg != "" {
 		args = append(args, "-cover", "-covermode=atomic")
+	}
+	if t.coverPkg != "" {
+		args = append(args, fmt.Sprintf("-coverpkg=%s", t.coverPkg))
 	}
 	if t.tags != "" {
 		args = append(args, fmt.Sprintf("-tags=%s", t.tags))
@@ -206,7 +211,7 @@ func (t *TestRunner) runAndStreamParallelGinkgoSuite() RunResult {
 
 	os.Stdout.Sync()
 
-	if t.cover {
+	if t.cover || t.coverPkg != "" {
 		t.combineCoverprofiles()
 	}
 
@@ -288,7 +293,7 @@ func (t *TestRunner) runParallelGinkgoSuite() RunResult {
 		os.Stdout.Sync()
 	}
 
-	if t.cover {
+	if t.cover || t.coverPkg != "" {
 		t.combineCoverprofiles()
 	}
 
@@ -297,7 +302,7 @@ func (t *TestRunner) runParallelGinkgoSuite() RunResult {
 
 func (t *TestRunner) cmd(ginkgoArgs []string, stream io.Writer, node int) *exec.Cmd {
 	args := []string{"--test.timeout=24h"}
-	if t.cover {
+	if t.cover || t.coverPkg != "" {
 		coverprofile := "--test.coverprofile=" + t.Suite.PackageName + ".coverprofile"
 		if t.numCPU > 1 {
 			coverprofile = fmt.Sprintf("%s.%d", coverprofile, node)
