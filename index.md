@@ -843,6 +843,10 @@ Here are the flags that Ginkgo accepts:
 
     Set `-cover` to have the `ginkgo` CLI run your tests with coverage analysis turned on (a Golang 1.2+ feature).  Ginkgo will generate coverage profiles under the current directory named `PACKAGE.coverprofile` for each set of package tests that is run.
 
+- `-coverpkg=PKG1,PKG2`
+
+    Like `-cover`, `-coverpkg` runs your tests with coverage analysis turned on.  However, `-coverpkg` allows you to specify the packages to run the analysis on.  This allows you to get coverage on packages outside of the current package, which is useful for integration tests.  Note that it will not run coverage on the current package by default, you always need to specify all packages you want coverage for. 
+
 ** Build flags: **
 
 - `-tags`
@@ -899,7 +903,7 @@ You can also run `ginkgo watch -r` to monitor all packages recursively.
 
 For each monitored packaged, Ginkgo will also monitor that package's dependencies and trigger the monitored package's test suite when a change in a dependency is detected.  By default, `ginkgo watch` monitors a package's immediate dependencies.  You can adjust this using the `-depth` flag.  Set `-depth` to `0` to disable monitoring dependencies and set `-depth` to something greater than `1` to monitor deeper down the dependency graph.
 
-Passing the `-notify` flag on OS X will trigger desktop notifications when `ginkgo watch` triggers and completes a test run.
+Passing the `-notify` flag on Linux or OS X will trigger desktop notifications when `ginkgo watch` triggers and completes a test run.
 
 ### Precompiling Tests
 
