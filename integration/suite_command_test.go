@@ -15,7 +15,7 @@ var _ = Describe("Suite Command Specs", func() {
 	})
 
 	It("Runs command after suite echoing out suite data, properly reporting suite name and passing status in successful command output", func() {
-		command := "-command=echo THIS IS A (ginkgo-suite-passed) TEST OF THE (ginkgo-suite-name) SYSTEM, THIS IS ONLY A TEST"
+		command := "-afterSuiteHook=echo THIS IS A (ginkgo-suite-passed) TEST OF THE (ginkgo-suite-name) SYSTEM, THIS IS ONLY A TEST"
 		expected := "THIS IS A [PASS] TEST OF THE suite_command SYSTEM, THIS IS ONLY A TEST"
 		session := startGinkgo(pathToTest, command)
 		Eventually(session).Should(gexec.Exit(0))
@@ -31,7 +31,7 @@ var _ = Describe("Suite Command Specs", func() {
 	})
 
 	It("Runs command after suite reporting that command failed", func() {
-		command := "-command=exit 1"
+		command := "-afterSuiteHook=exit 1"
 		session := startGinkgo(pathToTest, command)
 		Eventually(session).Should(gexec.Exit(0))
 		output := string(session.Out.Contents())
@@ -45,7 +45,7 @@ var _ = Describe("Suite Command Specs", func() {
 	})
 
 	It("Runs command after suite echoing out suite data, properly reporting suite name and failing status in successful command output", func() {
-		command := "-command=echo THIS IS A (ginkgo-suite-passed) TEST OF THE (ginkgo-suite-name) SYSTEM, THIS IS ONLY A TEST"
+		command := "-afterSuiteHook=echo THIS IS A (ginkgo-suite-passed) TEST OF THE (ginkgo-suite-name) SYSTEM, THIS IS ONLY A TEST"
 		expected := "THIS IS A [FAIL] TEST OF THE suite_command SYSTEM, THIS IS ONLY A TEST"
 		session := startGinkgo(pathToTest, "-failOnPending=true", command)
 		Eventually(session).Should(gexec.Exit(1))
