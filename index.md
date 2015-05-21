@@ -895,6 +895,10 @@ Here are the flags that Ginkgo accepts:
 
     By default, Ginkgo's default reporter will flag tests that take longer than 5 seconds to run -- this does not fail the suite, it simply notifies you of slow running specs.  You can change this threshold using this flag.
 
+- `--afterSuiteHook=HOOK_COMMAND`
+
+    Ginko has the ability to run a command hook after a suite test completes.  You simply give it the command to run and it will do string replacement to pass data into the command.  Example: --afterSuiteHook=”echo  (ginkgo-suite-name) suite tests have [(ginkgo-suite-passed)]”  This suite hook will replace (ginkgo-suite-name) and (ginkgo-suite-passed) with the suite name and pass/fail status respectively, then echo that to the terminal.
+
 ### Watching For Changes
 
 The Ginkgo CLI provides a `watch` subcommand that takes (almost) all the flags that the main `ginkgo` command takes.  With `ginkgo watch` ginkgo will monitor the package in the current directory and trigger tests when changes are detected.
