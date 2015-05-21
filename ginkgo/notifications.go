@@ -105,7 +105,7 @@ func (n *Notifier) SendNotification(title string, subtitle string) {
 
 func (n *Notifier) RunCommand(suite testsuite.TestSuite, suitePassed bool) {
 
-	command := n.commandFlags.Command
+	command := n.commandFlags.AfterSuiteHook
 	if command != "" {
 
 		// Allow for string replacement to pass input to the command
@@ -128,7 +128,7 @@ func (n *Notifier) RunCommand(suite testsuite.TestSuite, suitePassed bool) {
 			} else {
 				fmt.Printf("\t%s%s%s\n", redColor, string(output), defaultStyle)
 			}
-			n.SendNotification("Ginkgo [ERROR]", fmt.Sprintf(`After suite command "%s" failed`, n.commandFlags.Command))
+			n.SendNotification("Ginkgo [ERROR]", fmt.Sprintf(`After suite command "%s" failed`, n.commandFlags.AfterSuiteHook))
 		} else {
 			fmt.Println("Post-suite command succeeded:")
 			if config.DefaultReporterConfig.NoColor {
