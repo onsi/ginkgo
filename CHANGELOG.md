@@ -1,4 +1,4 @@
-## HEAD
+## 1.2.0 5/31/2015
 
 Improvements
 
