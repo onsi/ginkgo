@@ -28,7 +28,6 @@ var _ = Describe("DefaultReporter", func() {
 			NoColor:           false,
 			SlowSpecThreshold: 0.1,
 			NoisyPendings:     false,
-			NoisySkippings:    false,
 			Verbose:           true,
 			FullTrace:         true,
 		}
@@ -309,24 +308,6 @@ var _ = Describe("DefaultReporter", func() {
 
 				It("should announce the pending spec, noisily", func() {
 					Ω(stenographer.Calls()[0]).Should(Equal(call("AnnouncePendingSpec", spec, true)))
-				})
-			})
-		})
-
-		Context("in noisy skippings mode", func() {
-			BeforeEach(func() {
-				reporterConfig.Succinct = false
-				reporterConfig.NoisySkippings = true
-				reporter = reporters.NewDefaultReporter(reporterConfig, stenographer)
-			})
-
-			Context("When the spec is skipped", func() {
-				BeforeEach(func() {
-					spec.State = types.SpecStateSkipped
-				})
-
-				It("should announce the skipped spec, noisily", func() {
-					Ω(stenographer.Calls()[0]).Should(Equal(call("AnnounceSkippedSpec", spec, false, true)))
 				})
 			})
 		})

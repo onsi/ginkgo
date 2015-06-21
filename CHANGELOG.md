@@ -1,5 +1,9 @@
 ## HEAD
 
+Improvements:
+
+- `Skip(message)` can be used to skip the current test.
+
 Bug Fixes:
 
 - Ginkgo tests now fail when you `panic(nil)` (#167)

@@ -222,7 +222,7 @@ func buildDefaultReporter() Reporter {
 	}
 }
 
-//Skip notifies Ginkgo that the current spec was skipped.
+//Skip notifies Ginkgo that the current spec should be skipped.
 func Skip(message string, callerSkip ...int) {
 	skip := 0
 	if len(callerSkip) > 0 {
