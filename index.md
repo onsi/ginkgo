@@ -520,6 +520,18 @@ You can mark an individual spec or container as Pending.  This will prevent the 
 
 > By default, Ginkgo will not fail a suite for having pending specs.  You can pass the `--failOnPending` flag to reverse this behavior.
 
+Using the `P` and `X` prefixes marks specs as pending at compile time.  If you need to skip a spec at *runtime* (perhaps due to a constraint that can only be known at runtime) you may call `Skip` in your test:
+
+    It("should do something, if it can", func() {
+        if !someCondition {
+            Skip("special condition wasn't met")
+        }
+
+        //assertions go here
+    })
+
+Note that `Skip(...)` causes the closure to exit so there is no need to return.
+
 ### Focused Specs
 
 It is often convenient, when developing to be able to run a subset of specs.  Ginkgo has two mechanisms for allowing you to focus specs:
