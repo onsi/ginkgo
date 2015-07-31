@@ -35,7 +35,7 @@ type SpecSummary struct {
 }
 
 func (s SpecSummary) HasFailureState() bool {
-	return s.State == SpecStateTimedOut || s.State == SpecStatePanicked || s.State == SpecStateFailed
+	return IsFailureState(s.State)
 }
 
 func (s SpecSummary) TimedOut() bool {
@@ -114,6 +114,10 @@ const (
 	SpecStatePanicked
 	SpecStateTimedOut
 )
+
+func IsFailureState(state SpecState) bool {
+	return state == SpecStateTimedOut || state == SpecStatePanicked || state == SpecStateFailed
+}
 
 type SpecComponentType uint
 
