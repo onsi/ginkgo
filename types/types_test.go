@@ -38,7 +38,7 @@ var _ = Describe("Types", func() {
 	Describe("IsFailureState", func() {
 		It("knows when it is in a failure-like state", func() {
 			verifySpecSummary(func(summary SpecSummary) bool {
-				return IsFailureState(summary.State)
+				return summary.State.IsFailure()
 			}, SpecStateTimedOut, SpecStatePanicked, SpecStateFailed)
 		})
 	})

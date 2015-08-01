@@ -383,9 +383,9 @@ func (s *consoleStenographer) failureContext(failedComponentType types.SpecCompo
 }
 
 func (s *consoleStenographer) printSkip(indentation int, spec types.SpecFailure) {
-		s.println(indentation, s.colorize(cyanColor, spec.Message))
-		s.printNewLine()
-		s.println(indentation, spec.Location.String())
+	s.println(indentation, s.colorize(cyanColor, spec.Message))
+	s.printNewLine()
+	s.println(indentation, spec.Location.String())
 }
 
 func (s *consoleStenographer) printFailure(indentation int, state types.SpecState, failure types.SpecFailure, fullTrace bool) {
@@ -417,7 +417,7 @@ func (s *consoleStenographer) printSpecContext(componentTexts []string, componen
 	}
 
 	for i := startIndex; i < len(componentTexts); i++ {
-		if (types.IsFailureState(state) || state == types.SpecStateSkipped) && i == failedComponentIndex {
+		if (state.IsFailure() || state == types.SpecStateSkipped) && i == failedComponentIndex {
 			color := redColor
 			if state == types.SpecStateSkipped {
 				color = cyanColor
