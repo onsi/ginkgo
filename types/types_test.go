@@ -35,6 +35,14 @@ func verifySpecSummary(caller func(SpecSummary) bool, trueStates ...SpecState) {
 }
 
 var _ = Describe("Types", func() {
+	Describe("IsFailureState", func() {
+		It("knows when it is in a failure-like state", func() {
+			verifySpecSummary(func(summary SpecSummary) bool {
+				return summary.State.IsFailure()
+			}, SpecStateTimedOut, SpecStatePanicked, SpecStateFailed)
+		})
+	})
+
 	Describe("SpecSummary", func() {
 		It("knows when it is in a failure-like state", func() {
 			verifySpecSummary(func(summary SpecSummary) bool {

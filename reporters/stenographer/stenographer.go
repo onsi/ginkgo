@@ -197,7 +197,7 @@ func (s *consoleStenographer) announceSetupFailure(name string, summary *types.S
 
 	s.println(0, s.colorize(redColor+boldStyle, "%s [%.3f seconds]", message, summary.RunTime.Seconds()))
 
-	indentation := s.printCodeLocationBlock([]string{name}, []types.CodeLocation{summary.CodeLocation}, summary.ComponentType, 0, true, true)
+	indentation := s.printCodeLocationBlock([]string{name}, []types.CodeLocation{summary.CodeLocation}, summary.ComponentType, 0, summary.State, true)
 
 	s.printNewLine()
 	s.printFailure(indentation, summary.State, summary.Failure, fullTrace)
@@ -261,10 +261,10 @@ func (s *consoleStenographer) AnnounceSkippedSpec(spec *types.SpecSummary, succi
 		s.startBlock()
 		s.println(0, s.colorize(cyanColor+boldStyle, "S [SKIPPING]%s [%.3f seconds]", s.failureContext(spec.Failure.ComponentType), spec.RunTime.Seconds()))
 
-		indentation := s.printCodeLocationBlock(spec.ComponentTexts, spec.ComponentCodeLocations, spec.Failure.ComponentType, spec.Failure.ComponentIndex, true, succinct)
+		indentation := s.printCodeLocationBlock(spec.ComponentTexts, spec.ComponentCodeLocations, spec.Failure.ComponentType, spec.Failure.ComponentIndex, spec.State, succinct)
 
 		s.printNewLine()
-		s.printFailure(indentation, spec.State, spec.Failure, fullTrace)
+		s.printSkip(indentation, spec.Failure)
 		s.endBlock()
 	}
 }
@@ -311,7 +311,7 @@ func (s *consoleStenographer) SummarizeFailures(summaries []*types.SpecSummary) 
 			} else if summary.Failed() {
 				s.print(0, s.colorize(redColor+boldStyle, "[Fail] "))
 			}
-			s.printSpecContext(summary.ComponentTexts, summary.ComponentCodeLocations, summary.Failure.ComponentType, summary.Failure.ComponentIndex, true, true)
+			s.printSpecContext(summary.ComponentTexts, summary.ComponentCodeLocations, summary.Failure.ComponentType, summary.Failure.ComponentIndex, summary.State, true)
 			s.printNewLine()
 			s.println(0, s.colorize(lightGrayColor, summary.Failure.Location.String()))
 		}
@@ -344,7 +344,7 @@ func (s *consoleStenographer) printBlockWithMessage(header string, message strin
 	s.startBlock()
 	s.println(0, header)
 
-	indentation := s.printCodeLocationBlock(spec.ComponentTexts, spec.ComponentCodeLocations, types.SpecComponentTypeInvalid, 0, false, succinct)
+	indentation := s.printCodeLocationBlock(spec.ComponentTexts, spec.ComponentCodeLocations, types.SpecComponentTypeInvalid, 0, spec.State, succinct)
 
 	if message != "" {
 		s.printNewLine()
@@ -358,7 +358,7 @@ func (s *consoleStenographer) printSpecFailure(message string, spec *types.SpecS
 	s.startBlock()
 	s.println(0, s.colorize(redColor+boldStyle, "%s%s [%.3f seconds]", message, s.failureContext(spec.Failure.ComponentType), spec.RunTime.Seconds()))
 
-	indentation := s.printCodeLocationBlock(spec.ComponentTexts, spec.ComponentCodeLocations, spec.Failure.ComponentType, spec.Failure.ComponentIndex, true, succinct)
+	indentation := s.printCodeLocationBlock(spec.ComponentTexts, spec.ComponentCodeLocations, spec.Failure.ComponentType, spec.Failure.ComponentIndex, spec.State, succinct)
 
 	s.printNewLine()
 	s.printFailure(indentation, spec.State, spec.Failure, fullTrace)
@@ -382,6 +382,12 @@ func (s *consoleStenographer) failureContext(failedComponentType types.SpecCompo
 	return ""
 }
 
+func (s *consoleStenographer) printSkip(indentation int, spec types.SpecFailure) {
+	s.println(indentation, s.colorize(cyanColor, spec.Message))
+	s.printNewLine()
+	s.println(indentation, spec.Location.String())
+}
+
 func (s *consoleStenographer) printFailure(indentation int, state types.SpecState, failure types.SpecFailure, fullTrace bool) {
 	if state == types.SpecStatePanicked {
 		s.println(indentation, s.colorize(redColor+boldStyle, failure.Message))
@@ -402,7 +408,7 @@ func (s *consoleStenographer) printFailure(indentation int, state types.SpecStat
 	}
 }
 
-func (s *consoleStenographer) printSpecContext(componentTexts []string, componentCodeLocations []types.CodeLocation, failedComponentType types.SpecComponentType, failedComponentIndex int, failure bool, succinct bool) int {
+func (s *consoleStenographer) printSpecContext(componentTexts []string, componentCodeLocations []types.CodeLocation, failedComponentType types.SpecComponentType, failedComponentIndex int, state types.SpecState, succinct bool) int {
 	startIndex := 1
 	indentation := 0
 
@@ -411,7 +417,11 @@ func (s *consoleStenographer) printSpecContext(componentTexts []string, componen
 	}
 
 	for i := startIndex; i < len(componentTexts); i++ {
-		if failure && i == failedComponentIndex {
+		if (state.IsFailure() || state == types.SpecStateSkipped) && i == failedComponentIndex {
+			color := redColor
+			if state == types.SpecStateSkipped {
+				color = cyanColor
+			}
 			blockType := ""
 			switch failedComponentType {
 			case types.SpecComponentTypeBeforeSuite:
@@ -430,9 +440,9 @@ func (s *consoleStenographer) printSpecContext(componentTexts []string, componen
 				blockType = "Measurement"
 			}
 			if succinct {
-				s.print(0, s.colorize(redColor+boldStyle, "[%s] %s ", blockType, componentTexts[i]))
+				s.print(0, s.colorize(color+boldStyle, "[%s] %s ", blockType, componentTexts[i]))
 			} else {
-				s.println(indentation, s.colorize(redColor+boldStyle, "%s [%s]", componentTexts[i], blockType))
+				s.println(indentation, s.colorize(color+boldStyle, "%s [%s]", componentTexts[i], blockType))
 				s.println(indentation, s.colorize(grayColor, "%s", componentCodeLocations[i]))
 			}
 		} else {
@@ -449,8 +459,8 @@ func (s *consoleStenographer) printSpecContext(componentTexts []string, componen
 	return indentation
 }
 
-func (s *consoleStenographer) printCodeLocationBlock(componentTexts []string, componentCodeLocations []types.CodeLocation, failedComponentType types.SpecComponentType, failedComponentIndex int, failure bool, succinct bool) int {
-	indentation := s.printSpecContext(componentTexts, componentCodeLocations, failedComponentType, failedComponentIndex, failure, succinct)
+func (s *consoleStenographer) printCodeLocationBlock(componentTexts []string, componentCodeLocations []types.CodeLocation, failedComponentType types.SpecComponentType, failedComponentIndex int, state types.SpecState, succinct bool) int {
+	indentation := s.printSpecContext(componentTexts, componentCodeLocations, failedComponentType, failedComponentIndex, state, succinct)
 
 	if succinct {
 		if len(componentTexts) > 0 {
