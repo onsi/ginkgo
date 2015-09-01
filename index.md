@@ -520,6 +520,18 @@ You can mark an individual spec or container as Pending.  This will prevent the 
 
 > By default, Ginkgo will not fail a suite for having pending specs.  You can pass the `--failOnPending` flag to reverse this behavior.
 
+Using the `P` and `X` prefixes marks specs as pending at compile time.  If you need to skip a spec at *runtime* (perhaps due to a constraint that can only be known at runtime) you may call `Skip` in your test:
+
+    It("should do something, if it can", func() {
+        if !someCondition {
+            Skip("special condition wasn't met")
+        }
+
+        //assertions go here
+    })
+
+Note that `Skip(...)` causes the closure to exit so there is no need to return.
+
 ### Focused Specs
 
 It is often convenient, when developing to be able to run a subset of specs.  Ginkgo has two mechanisms for allowing you to focus specs:
@@ -843,6 +855,10 @@ Here are the flags that Ginkgo accepts:
 
     Set `-cover` to have the `ginkgo` CLI run your tests with coverage analysis turned on (a Golang 1.2+ feature).  Ginkgo will generate coverage profiles under the current directory named `PACKAGE.coverprofile` for each set of package tests that is run.
 
+- `-coverpkg=PKG1,PKG2`
+
+    Like `-cover`, `-coverpkg` runs your tests with coverage analysis turned on.  However, `-coverpkg` allows you to specify the packages to run the analysis on.  This allows you to get coverage on packages outside of the current package, which is useful for integration tests.  Note that it will not run coverage on the current package by default, you always need to specify all packages you want coverage for. 
+
 ** Build flags: **
 
 - `-tags`
@@ -891,6 +907,10 @@ Here are the flags that Ginkgo accepts:
 
     By default, Ginkgo's default reporter will flag tests that take longer than 5 seconds to run -- this does not fail the suite, it simply notifies you of slow running specs.  You can change this threshold using this flag.
 
+- `--afterSuiteHook=HOOK_COMMAND`
+
+    Ginko has the ability to run a command hook after a suite test completes.  You simply give it the command to run and it will do string replacement to pass data into the command.  Example: --afterSuiteHook=”echo  (ginkgo-suite-name) suite tests have [(ginkgo-suite-passed)]”  This suite hook will replace (ginkgo-suite-name) and (ginkgo-suite-passed) with the suite name and pass/fail status respectively, then echo that to the terminal.
+
 ### Watching For Changes
 
 The Ginkgo CLI provides a `watch` subcommand that takes (almost) all the flags that the main `ginkgo` command takes.  With `ginkgo watch` ginkgo will monitor the package in the current directory and trigger tests when changes are detected.
@@ -899,7 +919,7 @@ You can also run `ginkgo watch -r` to monitor all packages recursively.
 
 For each monitored packaged, Ginkgo will also monitor that package's dependencies and trigger the monitored package's test suite when a change in a dependency is detected.  By default, `ginkgo watch` monitors a package's immediate dependencies.  You can adjust this using the `-depth` flag.  Set `-depth` to `0` to disable monitoring dependencies and set `-depth` to something greater than `1` to monitor deeper down the dependency graph.
 
-Passing the `-notify` flag on OS X will trigger desktop notifications when `ginkgo watch` triggers and completes a test run.
+Passing the `-notify` flag on Linux or OS X will trigger desktop notifications when `ginkgo watch` triggers and completes a test run.
 
 ### Precompiling Tests
 
