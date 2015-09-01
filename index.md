@@ -1337,6 +1337,127 @@ Note that we've added `--compilers=2` -- this resolves an issue where Travis kil
 
 ---
 
+## Extensions
+
+Ginkgo ships with extensions to the core DSL.  These can be (optionally) dot imported to augment Ginkgo's default DSL.
+
+Currently there is only one extension: the table extension.
+
+### Table Driven Tests
+
+The [table](https://http://godoc.org/github.com/onsi/ginkgo/extensions/table) provides an expressive DSL for writing table driven tests.
+
+While it's easy to roll your own table driven tests using simple data structures and a for loop, this layer of DSL makes it particularly easy to write and manage table driven tests.
+
+For example:
+
+    package table_test
+
+    import (
+        . "github.com/onsi/ginkgo/extensions/table"
+
+        . "github.com/onsi/ginkgo"
+        . "github.com/onsi/gomega"
+    )
+
+    var _ = Describe("Math", func() {
+        DescribeTable("the > inequality",
+            func(x int, y int, expected bool) {
+                Expect(x > y).To(Equal(expected))
+            },
+            Entry("x > y", 1, 0, true),
+            Entry("x == y", 0, 0, false),
+            Entry("x < y", 0, 1, false),
+        )
+    })
+
+> In this example we dot import the table extension.  This isn't strictly necessary but makes the DSL easier to interact with.
+
+Let's break this down `DescribeTable` takes a description, a function to run for each test case, and a set of table entries.
+
+The function you pass in to `DescribeTable` can accept arbitrary arguments.  The parameters passed in to the individual `Entry` calls will be passed in to the function (type mismatches will result in a runtime panic).
+
+The indiviudal `Entry` calls construct a `TableEntry` that is passed into `DescribeTable`.  A `TableEntry` consists of a description (the first call to `Entry`) and an arbitrary set of parameters to be passed into the function registered with `DescribeTable`.
+
+It's important to understand the life-cycle of the table.  The `table` package is a thin wrapper around Ginkgo's DSL.  `DescribeTable` generates a single Ginkgo `Describe`, within this `Describe` each `Entry` generates a Ginkgo `It`.  This all happens *before* the tests run (at "testing tree construction time").  The result is that the table expands into a number of `It`s (one for each `Entry`) that are subject to all of Ginkgo's test-running semantics: `It`s can be randomized and parallelized across multiple nodes.
+
+To be clear, the above test is *exactly* equivalent to:
+
+    package table_test
+
+    import (
+        . "github.com/onsi/ginkgo"
+        . "github.com/onsi/gomega"
+    )
+
+    var _ = Describe("Math", func() {
+        Describe("the > inequality",
+            It("x > y", func() {
+                expect(1 > 0).To(Equal(true))
+            })
+
+            It("x == y", func() {
+                expect(0 > 0).To(Equal(false))
+            })
+
+            It("x < y", func() {
+                expect(0 > 1).To(Equal(false))
+            })
+        )
+    })
+
+#### Focusing and Pending Tables and Entries
+
+Here's the cool part.  Entire tables can be focused or marked pending by simply swapping out `DescribeTable` with `FDescribeTable` (to focus) or `PDescribeTable` (to mark pending).
+
+Similarly, individual entries can be focused/pended out with `FEntry` and `PEntry`.  This is particularly useful when debugging tests.
+
+#### Managing Complex Parmaeters
+
+While passing arbitrary parameters to `Entry` is convenient it can make the test cases difficult to parse at a glance.  For more complex tables it may make more sense to define a new type and pass it around instead.  For example:
+
+    package table_test
+
+    import (
+        . "github.com/onsi/ginkgo/extensions/table"
+
+        . "github.com/onsi/ginkgo"
+        . "github.com/onsi/gomega"
+    )
+
+    var _ = Describe("Substring matching", func() {
+        type SubstringCase struct {
+            String string
+            Substring   string
+            Count          int
+        }
+
+        DescribeTable("counting substring matches",
+            func(c SubstringCase) {
+                Ω(strings.Count(c.String, c.Substring)).Should(BeNumerically("==", c.Count))
+            },
+            Entry("with no matching substring", SubstringCase{
+                String: "the sixth sheikh's sixth sheep's sick",
+                Substring:   "emir",
+                Count:          0,
+            }),
+            Entry("with one matching substring", SubstringCase{
+                String: "the sixth sheikh's sixth sheep's sick",
+                Substring:   "sheep",
+                Count:          1,
+            }),
+            Entry("with many matching substring", SubstringCase{
+                String: "the sixth sheikh's sixth sheep's sick",
+                Substring:   "si",
+                Count:          3,
+            }),
+        )
+    })
+
+Note that this pattern uses the same DSL, it's simply a way to manage the parameters flowing between the `Entry` cases and the callback registered with `DescribeTable`.
+
+---
+
 ## Writing Custom Reporters
 
 While Ginkgo's default reporter offers a comprehensive set of features, Ginkgo makes it easy to write and run multiple custom reporters at once.  There are many usecases for this - you might implement a custom reporter to support a special output format for your CI setup, or you might implement a custom reporter to [aggregate data](#measuring-time) from Ginkgo's `Measure` nodes and produce HTML or CSV reports (or even plots!)
