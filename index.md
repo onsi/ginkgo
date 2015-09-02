@@ -1432,7 +1432,7 @@ Here's the cool part.  Entire tables can be focused or marked pending by simply 
 
 Similarly, individual entries can be focused/pended out with `FEntry` and `PEntry`.  This is particularly useful when debugging tests.
 
-#### Managing Complex Parmaeters
+#### Managing Complex Parameters
 
 While passing arbitrary parameters to `Entry` is convenient it can make the test cases difficult to parse at a glance.  For more complex tables it may make more sense to define a new type and pass it around instead.  For example:
 
