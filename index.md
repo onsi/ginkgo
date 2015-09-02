@@ -1391,7 +1391,7 @@ For example:
         )
     })
 
-> In this example we dot import the table extension.  This isn't strictly necessary but makes the DSL easier to interact with.
+> In this example we don't import the table extension.  This isn't strictly necessary but makes the DSL easier to interact with.
 
 Let's break this down `DescribeTable` takes a description, a function to run for each test case, and a set of table entries.
 
