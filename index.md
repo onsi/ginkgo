@@ -1365,7 +1365,7 @@ Currently there is only one extension: the table extension.
 
 ### Table Driven Tests
 
-The [table](https://http://godoc.org/github.com/onsi/ginkgo/extensions/table) provides an expressive DSL for writing table driven tests.
+The [table](https://godoc.org/github.com/onsi/ginkgo/extensions/table) provides an expressive DSL for writing table driven tests.
 
 While it's easy to roll your own table driven tests using simple data structures and a for loop, this layer of DSL makes it particularly easy to write and manage table driven tests.
 
