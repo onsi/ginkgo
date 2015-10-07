@@ -110,7 +110,9 @@ func (t *TestRunner) CompileTo(path string) error {
 				// We cannot move the file, perhaps because the source and destination
 				// are on different partitions. We can copy the file, however.
 				err = copyFile(compiledFile, path)
-				return fmt.Errorf("Failed to copy compiled file: %s", err)
+				if err != nil {
+					return fmt.Errorf("Failed to copy compiled file: %s", err)
+				}
 			}
 		} else {
 			return fmt.Errorf("Failed to compile %s: output file %q could not be found", t.Suite.PackageName, path)
