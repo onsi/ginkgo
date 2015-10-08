@@ -113,10 +113,6 @@ func (t *TestRunner) CompileTo(path string) error {
 				if err != nil {
 					return fmt.Errorf("Failed to copy compiled file: %s", err)
 				}
-				err = os.Chmod(path, os.ModePerm)
-				if err != nil {
-					return fmt.Errorf("Failed to set permissions on compiled file: %s", err)
-				}
 			}
 		} else {
 			return fmt.Errorf("Failed to compile %s: output file %q could not be found", t.Suite.PackageName, path)
@@ -138,6 +134,12 @@ func fileExists(path string) bool {
 // destination file exists, all it's contents will be replaced by the contents
 // of the source file.
 func copyFile(src, dst string) error {
+	srcInfo, err := os.Stat(src)
+	if err != nil {
+		return err
+	}
+	mode := srcInfo.Mode()
+
 	in, err := os.Open(src)
 	if err != nil {
 		return err
@@ -163,7 +165,11 @@ func copyFile(src, dst string) error {
 	}
 
 	err = out.Sync()
-	return err
+	if err != nil {
+		return err
+	}
+
+	return out.Chmod(mode)
 }
 
 /*
