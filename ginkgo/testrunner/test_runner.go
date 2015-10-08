@@ -113,6 +113,10 @@ func (t *TestRunner) CompileTo(path string) error {
 				if err != nil {
 					return fmt.Errorf("Failed to copy compiled file: %s", err)
 				}
+				err = os.Chmod(compiledFile, os.ModePerm)
+				if err != nil {
+					return fmt.Errorf("Failed to set permissions on compiled file: %s", err)
+				}
 			}
 		} else {
 			return fmt.Errorf("Failed to compile %s: output file %q could not be found", t.Suite.PackageName, path)
