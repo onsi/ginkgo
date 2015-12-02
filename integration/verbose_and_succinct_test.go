@@ -1,6 +1,9 @@
 package integration_test
 
 import (
+	"regexp"
+	"runtime"
+
 	. "github.com/onsi/ginkgo"
 	. "github.com/onsi/gomega"
 	"github.com/onsi/gomega/gexec"
@@ -9,6 +12,13 @@ import (
 var _ = Describe("Verbose And Succinct Mode", func() {
 	var pathToTest string
 	var otherPathToTest string
+
+	isWindows := (runtime.GOOS == "windows")
+	denoter := "•"
+
+	if isWindows {
+		denoter = "+"
+	}
 
 	Context("when running one package", func() {
 		BeforeEach(func() {
@@ -39,8 +49,8 @@ var _ = Describe("Verbose And Succinct Mode", func() {
 				Eventually(session).Should(gexec.Exit(0))
 				output := session.Out.Contents()
 
-				Ω(output).Should(ContainSubstring("] Passing_ginkgo_tests Suite - 4/4 specs •••• SUCCESS!"))
-				Ω(output).Should(ContainSubstring("] More_ginkgo_tests Suite - 2/2 specs •• SUCCESS!"))
+				Ω(output).Should(MatchRegexp(`\] Passing_ginkgo_tests Suite - 4/4 specs [%s]{4} SUCCESS!`, regexp.QuoteMeta(denoter)))
+				Ω(output).Should(MatchRegexp(`\] More_ginkgo_tests Suite - 2/2 specs [%s]{2} SUCCESS!`, regexp.QuoteMeta(denoter)))
 			})
 		})
 

@@ -64,9 +64,11 @@ func copyIn(fixture string, destination string) {
 
 		src, err := os.Open(path)
 		Ω(err).ShouldNot(HaveOccurred())
+		defer src.Close()
 
 		dst, err := os.Create(filepath.Join(destination, base))
 		Ω(err).ShouldNot(HaveOccurred())
+		defer dst.Close()
 
 		_, err = io.Copy(dst, src)
 		Ω(err).ShouldNot(HaveOccurred())
