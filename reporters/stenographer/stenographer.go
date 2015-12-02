@@ -8,6 +8,7 @@ package stenographer
 
 import (
 	"fmt"
+	"runtime"
 	"strings"
 
 	"github.com/onsi/ginkgo/types"
@@ -60,7 +61,7 @@ type Stenographer interface {
 
 func New(color bool) Stenographer {
 	denoter := "•"
-	if !color {
+	if runtime.GOOS == "windows" {
 		denoter = "+"
 	}
 	return &consoleStenographer{
@@ -276,15 +277,15 @@ func (s *consoleStenographer) AnnounceSkippedSpec(spec *types.SpecSummary, succi
 }
 
 func (s *consoleStenographer) AnnounceSpecTimedOut(spec *types.SpecSummary, succinct bool, fullTrace bool) {
-	s.printSpecFailure(s.denoter+"... Timeout", spec, succinct, fullTrace)
+	s.printSpecFailure(fmt.Sprintf("%s... Timeout", s.denoter), spec, succinct, fullTrace)
 }
 
 func (s *consoleStenographer) AnnounceSpecPanicked(spec *types.SpecSummary, succinct bool, fullTrace bool) {
-	s.printSpecFailure(s.denoter+"! Panic", spec, succinct, fullTrace)
+	s.printSpecFailure(fmt.Sprintf("%s! Panic", s.denoter), spec, succinct, fullTrace)
 }
 
 func (s *consoleStenographer) AnnounceSpecFailed(spec *types.SpecSummary, succinct bool, fullTrace bool) {
-	s.printSpecFailure(s.denoter+" Failure", spec, succinct, fullTrace)
+	s.printSpecFailure(fmt.Sprintf("%s Failure", s.denoter), spec, succinct, fullTrace)
 }
 
 func (s *consoleStenographer) SummarizeFailures(summaries []*types.SpecSummary) {
