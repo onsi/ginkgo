@@ -1528,7 +1528,7 @@ For example, to get testify working:
     )
 
     var _ = Describe(func("foo") {
-        It("should testify to its correctness", func)({
+        It("should testify to its correctness", func(){
             assert.Equal(GinkgoT(), foo{}.Name(), "foo")
         })
     })
