@@ -4,6 +4,7 @@ import (
 	"errors"
 	"io/ioutil"
 	"os"
+	"path"
 	"path/filepath"
 	"regexp"
 	"strings"
@@ -47,6 +48,12 @@ func PrecompiledTestSuite(path string) (TestSuite, error) {
 
 func SuitesInDir(dir string, recurse bool) []TestSuite {
 	suites := []TestSuite{}
+
+	_, skipVendor := os.LookupEnv("GO15VENDOREXPERIMENT")
+	if skipVendor && path.Base(dir) == "vendor" {
+		return suites
+	}
+
 	files, _ := ioutil.ReadDir(dir)
 	re := regexp.MustCompile(`_test\.go$`)
 	for _, file := range files {
