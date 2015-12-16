@@ -24,18 +24,13 @@ var _ = Describe("TestSuite", func() {
 	}
 
 	var origVendor string
-	var origHadVendor bool
 
 	BeforeSuite(func() {
-		origVendor, origHadVendor = os.LookupEnv("GO15VENDOREXPERIMENT")
+		origVendor = os.Getenv("GO15VENDOREXPERIMENT")
 	})
 
 	AfterSuite(func() {
-		if origHadVendor {
-			os.Setenv("GO15VENDOREXPERIMENT", origVendor)
-		} else {
-			os.Unsetenv("GO15VENDOREXPERIMENT")
-		}
+		os.Setenv("GO15VENDOREXPERIMENT", origVendor)
 	})
 
 	BeforeEach(func() {
@@ -158,11 +153,11 @@ var _ = Describe("TestSuite", func() {
 
 		Context("given GO15VENDOREXPERIMENT", func() {
 			BeforeEach(func() {
-				os.Setenv("GO15VENDOREXPERIMENT", "")
+				os.Setenv("GO15VENDOREXPERIMENT", "1")
 			})
 
 			AfterEach(func() {
-				os.Unsetenv("GO15VENDOREXPERIMENT")
+				os.Setenv("GO15VENDOREXPERIMENT", "")
 			})
 
 			It("should skip vendor dirs", func() {

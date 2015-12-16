@@ -49,8 +49,11 @@ func PrecompiledTestSuite(path string) (TestSuite, error) {
 func SuitesInDir(dir string, recurse bool) []TestSuite {
 	suites := []TestSuite{}
 
-	_, skipVendor := os.LookupEnv("GO15VENDOREXPERIMENT")
-	if skipVendor && path.Base(dir) == "vendor" {
+	// "This change will only be enabled if the go command is run with
+	// GO15VENDOREXPERIMENT=1 in its environment."
+	// c.f. the vendor-experiment proposal https://goo.gl/2ucMeC
+	vendorExperiment := os.Getenv("GO15VENDOREXPERIMENT")
+	if (vendorExperiment == "1") && path.Base(dir) == "vendor" {
 		return suites
 	}
 
