@@ -30,7 +30,7 @@ func BuildGenerateCommand() *Command {
 	}
 }
 
-var specText = `package {{.Package}}_test
+var specText = `package {{.Package}}
 
 import (
 	. "{{.PackageImportPath}}"
