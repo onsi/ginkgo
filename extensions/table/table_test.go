@@ -54,4 +54,11 @@ var _ = Describe("Table", func() {
 		Entry("when false", false),
 		Entry("when malformed", 2),
 	)
+
+	DescribeTable("an untyped nil as an entry",
+		func(x interface{}) {
+			Expect(x).To(BeNil())
+		},
+		Entry("nil", nil),
+	)
 })
