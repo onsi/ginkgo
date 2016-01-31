@@ -142,8 +142,8 @@ Let's break this down:
 
 - Ginkgo makes extensive use of closures to allow you to build descriptive test suites.
 - You should make use of `Describe` and `Context` containers to expressively organize the behavior of your code.
-- You can use `BeforeEach` to set up state for your specs.  You use `It`/`Specify` to specify a single spec. `It` and `Specify` have identical behavior. 
-- In order to share state between a `BeforeEach` and an `It`/`Specify` you use closure variables, typically defined at the top of the most relevant `Describe` or `Context` container.
+- You can use `BeforeEach` to set up state for your specs.  You use `It` to specify a single spec.
+- In order to share state between a `BeforeEach` and an `It` you use closure variables, typically defined at the top of the most relevant `Describe` or `Context` container.
 - We use Gomega's `Expect` syntax to make expectations on the `CategoryByLength()` method.
 
 Assuming a `Book` model with this behavior, running the tests will yield:
@@ -197,7 +197,7 @@ More details about `Fail` and about using matcher libraries other than Gomega ca
 
 Ginkgo provides a globally available `io.Writer` called `GinkgoWriter` that you can write to.  `GinkgoWriter` aggregates input while a test is running and only dumps it to stdout if the test fails.  When running in verbose mode (`ginkgo -v` or `go test -ginkgo.v`) `GinkgoWriter` always immediately redirects its input to stdout.
 
-When a Ginkgo test suite is interrupted (via `^C`) Ginkgo will emit any content written to the `GinkgoWriter`.  This makes it easier to debug stuck tests.  This is particularly useful when paired with `--progress` which instruct Ginkgo to emit notifications to the `GinkgoWriter` as it runs through your `BeforeEach`es, `It`s/`Specify`s, `AfterEach`es, etc...
+When a Ginkgo test suite is interrupted (via `^C`) Ginkgo will emit any content written to the `GinkgoWriter`.  This makes it easier to debug stuck tests.  This is particularly useful when paired with `--progress` which instruct Ginkgo to emit notifications to the `GinkgoWriter` as it runs through your `BeforeEach`es, `It`s, `AfterEach`es, etc...
 
 ###IDE Support
 
@@ -209,10 +209,10 @@ There are a set of [completions](https://github.com/onsi/ginkgo-sublime-completi
 
 ##Structuring Your Specs
 
-Ginkgo makes it easy to write expressive specs that describe the behavior of your code in an organized manner.  You use `Describe` and `Context` containers to organize your `It`/`Specify` specs and you use `BeforeEach` and `AfterEach` to build up and tear down common set up amongst your tests.
+Ginkgo makes it easy to write expressive specs that describe the behavior of your code in an organized manner.  You use `Describe` and `Context` containers to organize your `It` specs and you use `BeforeEach` and `AfterEach` to build up and tear down common set up amongst your tests.
 
-### Individual Specs: `It` and `Specify`
-You can add a single spec by placing an `It` or `Specify` block within a `Describe` or `Context` container block:
+### Individual Specs: `It`
+You can add a single spec by placing an `It` block within a `Describe` or `Context` container block:
 
     var _ = Describe("Book", func() {
         It("can be loaded from JSON", func() {
@@ -228,9 +228,11 @@ You can add a single spec by placing an `It` or `Specify` block within a `Descri
         })
     })
 
-`It` and `Specify` behave the same and either be used interchangeably. Use whichever makes your specs more readable.
+> `It`s may also be placed at the top-level though this is uncommon.
 
-> `It`s and `Specify`s may also be placed at the top-level though this is uncommon.
+#### The `Specify` Alias
+
+In order to ensure that your specs read naturally, the `Specify`, `PSpecify`, `XSpecify`, and `FSpecify` blocks are available as aliases to use in situations where the corresponding `It` alternatives do not seem to read as natural language. `Specify` blocks behave identically to `It` blocks and can be used wherever `It` blocks (and `PIt`, `XIt`, and `FIt` blocks) are used.
 
 ### Extracting Common Setup: `BeforeEach`
 You can remove duplication and share common setup across tests using `BeforeEach` blocks:
@@ -245,7 +247,7 @@ You can remove duplication and share common setup across tests using `BeforeEach
                 "pages":1488
             }`)
         })
-        
+
         It("can be loaded from JSON", func() {
             Expect(book.Title).To(Equal("Les Miserables"))
             Expect(book.Author).To(Equal("Victor Hugo"))
@@ -301,16 +303,16 @@ Ginkgo allows you to expressively organize the specs in your suite using `Descri
                     }`)
                 })
 
-                Specify("the zero-value for the book should be returned", func() {
+                It("should return the zero-value for the book", func() {
                     Expect(book).To(BeZero())
                 })
 
-                Specify("an error should occur", func() {
+                It("should error", func() {
                     Expect(err).To(HaveOccurred())
                 })
             })
         })
-        
+
         Describe("Extracting the author's last name", func() {
             It("should correctly identify and return the last name", func() {
                 Expect(book.AuthorLastName()).To(Equal("Hugo"))
@@ -320,19 +322,19 @@ Ginkgo allows you to expressively organize the specs in your suite using `Descri
 
 You use `Describe` blocks to describe the individual behaviors of your code and `Context` blocks to excercise those behaviors under different circumstances.  In this example we `Describe` loading a book from JSON and specify two `Context`s: when the JSON parses succesfully and when the JSON fails to parse.  Semantic differences aside, the two container types have identical behavior.
 
-When nesting `Describe`/`Context` blocks the `BeforeEach` blocks for all the container nodes surrounding an `It`/`Specify` are run from outermost to innermost when the `It`/`Specify` is executed.  The same is true for `AfterEach` block thoug they run from innermost to outermost.  Note: the `BeforeEach` and `AfterEach` blocks run for **each** `It`/`Specify` block.  This ensures a pristine state for each spec.
+When nesting `Describe`/`Context` blocks the `BeforeEach` blocks for all the container nodes surrounding an `It` are run from outermost to innermost when the `It` is executed.  The same is true for `AfterEach` block thoug they run from innermost to outermost.  Note: the `BeforeEach` and `AfterEach` blocks run for **each** `It` block.  This ensures a pristine state for each spec.
 
-> In general, the only code within a container block should be an `It`/`Specify` block or a `BeforeEach`/`JustBeforeEach`/`AfterEach` block, or closure variable declarations.  It is generally a mistake to make an assertion in a container block.
+> In general, the only code within a container block should be an `It` block or a `BeforeEach`/`JustBeforeEach`/`AfterEach` block, or closure variable declarations.  It is generally a mistake to make an assertion in a container block.
 
-> It is also a mistake to *initialize* a closure variable in a container block.  If one of your `It`s or `Specify`s mutates that variable, subsequent `It`s/`Specify`s will receive the mutated value.  This is a case of test pollution and can be hard to track down.  **Always initialize your variables in `BeforeEach` blocks.**
+> It is also a mistake to *initialize* a closure variable in a container block.  If one of your `It`s mutates that variable, subsequent `It`s will receive the mutated value.  This is a case of test pollution and can be hard to track down.  **Always initialize your variables in `BeforeEach` blocks.**
 
-If you'd like to get information, at runtime about the current test, you can use `CurrentGinkgoTestDescription()` from within any `It`/`Specify` or `BeforeEach`/`AfterEach`/`JustBeforeEach` block.  The `CurrentGinkgoTestDescription` returned by this call has a variety of information about the currently running test including the filename, line number, text in the `It`/`Specify` block, and text in the surrounding container blocks.
+If you'd like to get information, at runtime about the current test, you can use `CurrentGinkgoTestDescription()` from within any `It` or `BeforeEach`/`AfterEach`/`JustBeforeEach` block.  The `CurrentGinkgoTestDescription` returned by this call has a variety of information about the currently running test including the filename, line number, text in the `It` block, and text in the surrounding container blocks.
 
 ### Separating Creation and Configuration: `JustBeforeEach`
 
 The above example illustrates a common antipattern in BDD-style testing.  Our top level `BeforeEach` creates a new book using valid JSON, but a lower level `Context` excercises the case where a book is created with *invalid* JSON.  This causes us to recreate and override the original book.  Thankfully, with Ginkgo's `JustBeforeEach` blocks, this code duplication is unnecessary.
 
-`JustBeforeEach` blocks are guaranteed to be run *after* all the `BeforeEach` blocks have run and *just before* the `It`/`Specify` block has run.  We can use this fact to clean up the Book specs:
+`JustBeforeEach` blocks are guaranteed to be run *after* all the `BeforeEach` blocks have run and *just before* the `It` block has run.  We can use this fact to clean up the Book specs:
 
     var _ = Describe("Book", func() {
         var (
@@ -375,16 +377,16 @@ The above example illustrates a common antipattern in BDD-style testing.  Our to
                     }`
                 })
 
-                Specify("the zero-value for the book should be returned", func() {
+                It("should return the zero-value for the book", func() {
                     Expect(book).To(BeZero())
                 })
 
-                Specify("an error should occur", func() {
+                It("should error", func() {
                     Expect(err).To(HaveOccurred())
                 })
             })
         })
-        
+
         Describe("Extracting the author's last name", func() {
             It("should correctly identify and return the last name", func() {
                 Expect(book.AuthorLastName()).To(Equal("Hugo"))
@@ -392,7 +394,7 @@ The above example illustrates a common antipattern in BDD-style testing.  Our to
         })
     })
 
-Now the actual book creation only occurs once for every `It`/`Specify`, and the failing JSON context can simply assign invalid json to the `json` variable in a `BeforeEach`.
+Now the actual book creation only occurs once for every `It`, and the failing JSON context can simply assign invalid json to the `json` variable in a `BeforeEach`.
 
 Abstractly, `JustBeforeEach` allows you to decouple **creation** from **configuration**.  Creation occurs in the `JustBeforeEach` using configuration specified and modified by a chain of `BeforeEach`s.
 
@@ -447,13 +449,13 @@ The `AfterSuite` function is run after all the specs have run, regardless of whe
 
 Both `BeforeSuite` and `AfterSuite` can be run asynchronously by passing a function that takes a `Done` parameter.
 
-You are only allowed to define `BeforeSuite` and `AfterSuite` *once* in a test suite (you shouldn't need more than one!) 
+You are only allowed to define `BeforeSuite` and `AfterSuite` *once* in a test suite (you shouldn't need more than one!)
 
 Finally, when running in parallel, each parallel process will run `BeforeSuite` and `AfterSuite` functions.  [Look here](#parallel-specs) for more on running tests in parallel.
 
-### Documenting Complex `It`s and `Specify`s: `By`
+### Documenting Complex `It`s: `By`
 
-As a rule, you should try to keep your `It`s and `Specify`s, `BeforeEach`es, etc. short and to the point.  Sometimes this is not possible, particularly when testing complex workflows in integration-style tests.  In these cases your test blocks begin to hide a narrative that is hard to glean by looking at code alone.  Ginkgo provides `by` to help in these situations.  Here's a hokey example:
+As a rule, you should try to keep your `It`s, `BeforeEach`es, etc. short and to the point.  Sometimes this is not possible, particularly when testing complex workflows in integration-style tests.  In these cases your test blocks begin to hide a narrative that is hard to glean by looking at code alone.  Ginkgo provides `by` to help in these situations.  Here's a hokey example:
 
     var _ = Describe("Browsing the library", func() {
         BeforeEach(func() {
@@ -471,10 +473,10 @@ As a rule, you should try to keep your `It`s and `Specify`s, `BeforeEach`es, etc
 
             aisle, err := libraryClient.EnterAisle()
             Expect(err).NotTo(HaveOccurred())
-            
+
             By("Browsing for books")
 
-            books, err := aisle.GetBooks()            
+            books, err := aisle.GetBooks()
             Expect(err).NotTo(HaveOccurred())
             Expect(books).To(HaveLen(7))
 
@@ -491,12 +493,12 @@ As a rule, you should try to keep your `It`s and `Specify`s, `BeforeEach`es, etc
             books, err := aisle.GetBooks()
             Expect(books).To(HaveLen(6))
             Expect(books).NotTo(ContainElement(book))
-        })        
+        })
     })
 
 The string passed to `By` is emitted via the [`GinkgoWriter`](#logging-output).  If a test succeeds you won't see any output beyond Ginkgo's green dot.  If a test fails, however, you will see each step printed out up to the step immediately preceding the failure.  Running with `ginkgo -v` always emits all steps.
 
-`By` takes an optional function of type `func()`.  When passed such a function `By` will immediately call the function.  This allows you to organize your `It`s and `Specify`s into groups of steps but is purely optional.  In practice the fact that each `By` function is a separate callback limits the usefulness of this approach.
+`By` takes an optional function of type `func()`.  When passed such a function `By` will immediately call the function.  This allows you to organize your `It`s into groups of steps but is purely optional.  In practice the fact that each `By` function is a separate callback limits the usefulness of this approach.
 
 ---
 
@@ -504,21 +506,19 @@ The string passed to `By` is emitted via the [`GinkgoWriter`](#logging-output). 
 
 ### Pending Specs
 
-You can mark an individual spec or container as Pending.  This will prevent the spec (or specs within the container) from running.  You do this by adding a `P` or an `X` in front of your `Describe`, `Context`, `It`, `Specify`, and `Measure`:
+You can mark an individual spec or container as Pending.  This will prevent the spec (or specs within the container) from running.  You do this by adding a `P` or an `X` in front of your `Describe`, `Context`, `It`, and `Measure`:
 
     PDescribe("some behavior", func() { ... })
     PContext("some scenario", func() { ... })
     PIt("some assertion")
-    PSpecify("some assertion")
     PMeasure("some measurement")
 
     XDescribe("some behavior", func() { ... })
     XContext("some scenario", func() { ... })
     XIt("some assertion")
-    XSpecify("some assertion")
     XMeasure("some measurement")
 
-> You don't need to remove the `func() { ... }` when you mark an `It`, `Specify`, or `Measure` as pending.  Ginkgo will happily ignore any arguments after the string.
+> You don't need to remove the `func() { ... }` when you mark an `It` or `Measure` as pending.  Ginkgo will happily ignore any arguments after the string.
 
 > By default, Ginkgo will print out a description for each pending spec.  You can suppress this by setting the `--noisyPendings=false` flag.
 
@@ -540,12 +540,11 @@ Note that `Skip(...)` causes the closure to exit so there is no need to return.
 
 It is often convenient, when developing to be able to run a subset of specs.  Ginkgo has two mechanisms for allowing you to focus specs:
 
-1. You can focus individual specs or whole containers of specs *programatically* by adding an `F` in front of your `Describe`, `Context`, `It`, and `Specify`:
+1. You can focus individual specs or whole containers of specs *programatically* by adding an `F` in front of your `Describe`, `Context`, and `It`:
 
         FDescribe("some behavior", func() { ... })
         FContext("some scenario", func() { ... })
         FIt("some assertion", func() { ... })
-        FSpecify("some assertion", func() { ... })
 
     doing so instructs Ginkgo to only run those specs.  To run all specs, you'll need to go back and remove all the `F`s.
 
@@ -557,23 +556,21 @@ Nested programmatically focused specs follow a simple rule: if a leaf-node is ma
 
     FDescribe("outer describe", func() {
         It("A", func() { ... })
-        Specify("B", func() { ... })
-        It("C", func() { ... })
+        It("B", func() { ... })
     })
 
-will run all of the `It` and `Specify` examples, but
+will run both `It`s but
 
     FDescribe("outer describe", func() {
         It("A", func() { ... })
-        Specify("B", func() { ... })
-        FIt("C", func() { ... })
+        FIt("B", func() { ... })
     })
 
-will only run the `C` `It`.  This behavior tends to map more closely to what the developer actually intends when iterating on a test suite.
+will only run `B`.  This behavior tends to map more closely to what the developer actually intends when iterating on a test suite.
 
 > The programatic approach and the `--focus=REGEXP`/`--skip=REGEXP` approach are mutually exclusive.  Using the command line flags will override the programmatic focus.
 
-> Focusing a container with no `It`, `Specify`, or `Measure` leaf nodes has no effect.  Since there is nothing to run in the container, Ginkgo effectively ignores it.
+> Focusing a container with no `It` or `Measure` leaf nodes has no effect.  Since there is nothing to run in the container, Ginkgo effectively ignores it.
 
 > When using the command line flags you can specify one or both of `--focus` and `--skip`.  If both are specified the constraints will be `AND`ed together.
 
@@ -726,7 +723,7 @@ Consider this example:
 
 This test will block until a response is received over the channel `c`.  A deadlock or timeout is a common failure mode for tests like this, a common pattern in such situations is to add a select statement at the bottom of the function and include a `<-time.After(X)` channel to specify a timeout.
 
-Ginkgo has this pattern built in.  The `body` functions in all non-container blocks (`It`s, `Specify`s, `BeforeEach`es, `AfterEach`es, `JustBeforeEach`es, and `Benchmark`s) can take an optional `done Done` argument:
+Ginkgo has this pattern built in.  The `body` functions in all non-container blocks (`It`s, `BeforeEach`es, `AfterEach`es, `JustBeforeEach`es, and `Benchmark`s) can take an optional `done Done` argument:
 
     It("should post to the channel, eventually", func(done Done) {
         c := make(chan string, 0)
@@ -775,9 +772,9 @@ Of course, ginkgo takes a number of flags.  These must be specified *before* you
 Here are the flags that Ginkgo accepts:
 
 **Controlling which test suites run:**
-   
+
 - `-r`
-    
+
     Set `-r` to have the `ginkgo` CLI recursively run all test suites under the target directories.  Useful for running all the tests across all your packages.
 
 - `-skipPackage=PACKAGES,TO,SKIP`
@@ -801,11 +798,11 @@ Here are the flags that Ginkgo accepts:
 **Modifying output:**
 
 - `--noColor`
-    
+
     If provided, Ginkgo's default reporter will not print out in color.
 
 - `--succinct`
-    
+
     Succinct silences much of Ginkgo's more verbose output.  Test suites that succeed basically get printed out on just one line!  Succinct is turned off, by default, when running tests for one package.  It is turned on by default when Ginkgo runs multiple test packages.
 
 - `--v`
@@ -819,10 +816,10 @@ Here are the flags that Ginkgo accepts:
 - `--trace`
 
     If present, Ginkgo will print out full stack traces for each failure, not just the line number at which the failure occurs.
-    
+
 - `--progress`
 
-	If present, Ginkgo will emit the progress to the `GinkgoWriter` as it enters and runs each `BeforeEach`, `AfterEach`, `It`, `Specify`, etc... node.  This is useful for debugging stuck tests (e.g. where exactly is the test getting stuck?) and for making tests that emit many logs to the `GinkgoWriter` more readable (e.g. which logs were emitted in the `BeforeEach`?  Which were emitted by the `It` or `Specify`?).  Combine with `--v` to emit the `--progress` output to stdout.
+	If present, Ginkgo will emit the progress to the `GinkgoWriter` as it enters and runs each `BeforeEach`, `AfterEach`, `It`, etc... node.  This is useful for debugging stuck tests (e.g. where exactly is the test getting stuck?) and for making tests that emit many logs to the `GinkgoWriter` more readable (e.g. which logs were emitted in the `BeforeEach`?  Which were emitted by the `It`?).  Combine with `--v` to emit the `--progress` output to stdout.
 
 **Controlling randomization:**
 
@@ -845,7 +842,7 @@ Here are the flags that Ginkgo accepts:
     If present, Ginkgo will skip any `Measure` specs you've defined.
 
 - `--focus=REGEXP`
-    
+
     If provided, Ginkgo will only run specs with descriptions that match the regular expression REGEXP.
 
 - `--skip=REGEXP`
@@ -855,7 +852,7 @@ Here are the flags that Ginkgo accepts:
 **Running the race detector and code coverage tools:**
 
 - `-race`
-    
+
     Set `-race` to have the `ginkgo` CLI run your tests with the race detector on.
 
 - `-cover`
@@ -864,16 +861,16 @@ Here are the flags that Ginkgo accepts:
 
 - `-coverpkg=PKG1,PKG2`
 
-    Like `-cover`, `-coverpkg` runs your tests with coverage analysis turned on.  However, `-coverpkg` allows you to specify the packages to run the analysis on.  This allows you to get coverage on packages outside of the current package, which is useful for integration tests.  Note that it will not run coverage on the current package by default, you always need to specify all packages you want coverage for. 
+    Like `-cover`, `-coverpkg` runs your tests with coverage analysis turned on.  However, `-coverpkg` allows you to specify the packages to run the analysis on.  This allows you to get coverage on packages outside of the current package, which is useful for integration tests.  Note that it will not run coverage on the current package by default, you always need to specify all packages you want coverage for.
 
 ** Build flags: **
 
 - `-tags`
-    
+
     Set `-tags` to pass in build tags down to the compilation step.
 
 - `-compilers`
-    
+
     When compiling multiple test suites (e.g. with `ginkgo -r`) Ginkgo will use `runtime.NumCPU()` to determine the number of compile processes to spin up.  On some environments this is a bad idea.  You can specify th enumber of compilers manually with this flag.
 
 ** Failure behavior: **
@@ -903,7 +900,7 @@ Here are the flags that Ginkgo accepts:
     By default, when running multiple tests (with -r or a list of packages) Ginkgo will abort when a test fails.  To have Ginkgo run subsequent test suites after a failure you can set -keepGoing.
 
 - `-untilItFails`
-    
+
     If set to `true`, Ginkgo will keep running your tests until a failure occurs.  This can be useful to help suss out race conditions or flakey tests.  It's best to run this with `--randomizeAllSpecs` and --randomizeSuites` to permute test order between iterations.
 
 - `-notify`
@@ -970,7 +967,7 @@ By default, these generators will dot-import both Ginkgo and Gomega.  To avoid d
 
 Ginkgo and Gomega provide a DSL and, by default, the `ginkgo bootstrap` and `ginkgo generate` commands import both packages into the top-level namespace using dot imports.
 
-There are certain, rare, cases where you need to avoid this.  For example, your code may define methods with names that conflict with the methods defined in Ginkgo and/or Gomega.  In such cases you can either import your code into its own namespace (i.e. drop the `.` in front of your package import).  Or, you can drop the `.` in front of Ginkgo and/or Gomega.  The latter comes at the cost of constantly having to preface your `Describe`s and `It`s/`Specify`s with `ginkgo.` and your `Expect`s and `ContainSubstring`s with `gomega.`.
+There are certain, rare, cases where you need to avoid this.  For example, your code may define methods with names that conflict with the methods defined in Ginkgo and/or Gomega.  In such cases you can either import your code into its own namespace (i.e. drop the `.` in front of your package import).  Or, you can drop the `.` in front of Ginkgo and/or Gomega.  The latter comes at the cost of constantly having to preface your `Describe`s and `It`s with `ginkgo.` and your `Expect`s and `ContainSubstring`s with `gomega.`.
 
 There is a *third* option that the ginkgo CLI provides, however.  If you need to (or simply want to!) avoid dot imports you can:
 
@@ -993,23 +990,22 @@ This will create a bootstrap file that *explicitly* imports all the exported ide
     var Describe = ginkgo.Describe
     var Context = ginkgo.Context
     var It = ginkgo.It
-    var Specify = ginkgo.Specify
     // etc...
 
-This allows you to write tests using `Describe`, `Context`, `It`, and `Specify` without dot imports and without the `ginkgo.` prefix.  Crucially, it also allows you to redefine any conflicting identifiers (or even cook up your own semantics!).  For example:
+This allows you to write tests using `Describe`, `Context`, and `It` without dot imports and without the `ginkgo.` prefix.  Crucially, it also allows you to redefine any conflicting identifiers (or even cook up your own semantics!).  For example:
 
     var _ = ginkgo.Describe
     var When = ginkgo.Context
-    var Then = ginkgo.It // or ginkgo.Specify
+    var Then = ginkgo.It
 
-This will avoid importing `Describe` and will rename `Context` to `When` and `It` (or `Specify`) to `Then`.
+This will avoid importing `Describe` and will rename `Context` to `When` and `It` to `Then`.
 
 As new matchers are added to Gomega you may need to update the set of imports identifiers.  You can do this by entering the directory containing your bootstrap file and running:
 
     ginkgo nodot
 
 this will update the imports, preserving any renames that you've provided.
- 
+
 ###Converting Existing Tests
 
 If you have an existing XUnit test suite that you'd like to convert to a Ginkgo suite, you can use the `ginkgo convert` command:
@@ -1044,14 +1040,14 @@ Also: `ginkgo convert` will **overwrite** your existing test files, so make sure
 
 ## Benchmark Tests
 
-Ginkgo allows you to measure the performance of your code using `Measure` blocks.   `Measure` blocks can go wherever an `It` or `Specify` block can go -- each `Measure` generates a new spec.  The closure function passed to `Measure` must take a `Benchmarker` argument.  The `Benchmarker` is used to measure runtimes and record arbitrary numerical values.  You must also pass `Measure` an integer after your closure function, this represents the number of samples of your code `Measure` will perform.
+Ginkgo allows you to measure the performance of your code using `Measure` blocks.   `Measure` blocks can go wherever an `It` block can go -- each `Measure` generates a new spec.  The closure function passed to `Measure` must take a `Benchmarker` argument.  The `Benchmarker` is used to measure runtimes and record arbitrary numerical values.  You must also pass `Measure` an integer after your closure function, this represents the number of samples of your code `Measure` will perform.
 
 For example:
 
     Measure("it should do something hard efficiently", func(b Benchmarker) {
         runtime := b.Time("runtime", func() {
             output := SomethingHard()
-            Expect(output).To(Equal(17))            
+            Expect(output).To(Equal(17))
         })
 
         Ω(runtime.Seconds()).Should(BeNumerically("<", 0.2), "SomethingHard() shouldn't take too long.")
@@ -1070,7 +1066,7 @@ will run the closure function 10 times, aggregating data for "runtime" and "disk
           Fastest Time: 0.01s
           Slowest Time: 0.08s
           Average Time: 0.05s ± 0.02s
-        
+
         disk usage (in MB):
           Smallest: 3.0
            Largest: 5.2
@@ -1078,7 +1074,7 @@ will run the closure function 10 times, aggregating data for "runtime" and "disk
 
 With `Measure` you can write expressive, exploratory, specs to measure the performance of various parts of your code (or external components, if you use Ginkgo to write integration tests).  As you collect your data, you can leave the `Measure` specs in place to monitor performance and fail the suite should components start growing slow and bloated.
 
-`Measure`s can live alongside `It`s and `Specify`s within a test suite.  If you want to run just the `It`s and `Specify`s you can pass the `--skipMeasurements` flag to `ginkgo`.
+`Measure`s can live alongside `It`s within a test suite.  If you want to run just the `It`s you can pass the `--skipMeasurements` flag to `ginkgo`.
 
 > You can also mark `Measure`s as pending with `PMeasure` and `XMeasure` or focus them with `FMeasure`.
 
@@ -1112,11 +1108,11 @@ Ginkgo doesn't have any have any explicit support for Shared Examples (also know
 
 ### Locally-scoped Shared Behaviors
 
-It is often the case that within a particular suite, there will be a number of different `Context`s that assert the exact same behavior, in that they have identical `It`s or `Specify`s within them.  The only difference between these `Context`s is the set up done in their respective `BeforeEach`s.  Rather than repeat the `It`s/`Specify`s for these `Context`s, here are two ways to extract the code and avoid repeating yourself.
+It is often the case that within a particular suite, there will be a number of different `Context`s that assert the exact same behavior, in that they have identical `It`s within them.  The only difference between these `Context`s is the set up done in their respective `BeforeEach`s.  Rather than repeat the `It`s for these `Context`s, here are two ways to extract the code and avoid repeating yourself.
 
-#### Pattern 1: Extract a function that defines the shared `It`s and `Specify`s
+#### Pattern 1: Extract a function that defines the shared `It`s
 
-Here, we will pull out a function that lives within the same closure that `Context`s live in, that defines the `It`s and `Specify`s that are common to those `Context`s.  For example:
+Here, we will pull out a function that lives within the same closure that `Context`s live in, that defines the `It`s that are common to those `Context`s.  For example:
 
     Describe("my api client", func() {
         var client APIClient
@@ -1154,7 +1150,7 @@ Here, we will pull out a function that lives within the same closure that `Conte
                     fakeServer.Succeed("{I'm not JSON!")
                 })
 
-                AssertFailedBehavior()                
+                AssertFailedBehavior()
             })
 
             Context("when the request errors", func() {
@@ -1169,9 +1165,9 @@ Here, we will pull out a function that lives within the same closure that `Conte
 
 Note that the `AssertFailedBehavior` function is called within the body of the `Context` container block.  The `It`s defined by this function get added to the enclosing container.  Since the function shares the same closure scope we don't need to pass the `response` channel in.
 
-You could put as many `It`s and `Specify`s as you want into the shared behavior `AssertFailedBehavior` above, and can even nest `It`s and `Specify`s within `Context`s inside of `AssertFailedBehavior`.  Although it may not always be the best idea to DRY your test suites excessively, this pattern gives you the ability do so as you see fit.  One drawback of this approach, however, is that you cannot focus or pend a shared behavior group, or examples/contexts within the group.  In other words, you don't get `FAssertFailedBehavior` or `XAssertFailedBehavior` for free.
+You can put as many `It`s as you wanted into the shared behavior `AssertFailedBehavior` above, and can even nest `It`s within `Context`s inside of `AssertFailedBehavior`.  Although it may not always be the best idea to DRY your test suites excessively, this pattern gives you the ability do so as you see fit.  One drawback of this approach, however, is that you cannot focus or pend a shared behavior group, or examples/contexts within the group.  In other words, you don't get `FAssertFailedBehavior` or `XAssertFailedBehavior` for free.
 
-#### Pattern 2: Extract functions that return closures, and pass the results to `It`s or `Specify`s
+#### Pattern 2: Extract functions that return closures, and pass the results to `It`s
 
 To understand this pattern, let's just redo the above example with this pattern:
 
@@ -1229,7 +1225,7 @@ To understand this pattern, let's just redo the above example with this pattern:
         })
     })
 
-Note that this solution is still very compact, especially because there are only two shared `It`s for each `Context`.  There is slightly more repetition here, but it's also slightly more explicit.  The main benefit of this pattern is you can focus and pend individual `It`s and `Specify`s in individual `Context`s.
+Note that this solution is still very compact, especially because there are only two shared `It`s for each `Context`.  There is slightly more repetition here, but it's also slightly more explicit.  The main benefit of this pattern is you can focus and pend individual `It`s in individual `Context`s.
 
 ### Global Shared Behaviors
 
