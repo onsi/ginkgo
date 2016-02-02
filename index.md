@@ -230,6 +230,21 @@ You can add a single spec by placing an `It` block within a `Describe` or `Conte
 
 > `It`s may also be placed at the top-level though this is uncommon.
 
+#### The `Specify` Alias
+
+In order to ensure that your specs read naturally, the `Specify`, `PSpecify`, `XSpecify`, and `FSpecify` blocks are available as aliases to use in situations where the corresponding `It` alternatives do not seem to read as natural language. `Specify` blocks behave identically to `It` blocks and can be used wherever `It` blocks (and `PIt`, `XIt`, and `FIt` blocks) are used.
+
+An example of a good substitution of `Specify` for `It` would be the following:
+
+    Describe("The foobar service", func() {
+      Context("when calling Foo()", func() {
+        Context("when no ID is provided", func() {
+          Specify("an ErrNoID error is returned", func() {
+          })
+        })
+      })
+    })
+
 ### Extracting Common Setup: `BeforeEach`
 You can remove duplication and share common setup across tests using `BeforeEach` blocks:
 
