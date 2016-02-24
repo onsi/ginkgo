@@ -1195,19 +1195,18 @@ To understand this pattern, let's just redo the above example with this pattern:
         })
 
         Describe("failure modes", func() {
+            AssertNoJSONInResponse := func() func() {
+                return func() {
+                    Ω((<-response).JSON).Should(BeZero())
+                }
+            }
+
+            AssertDoesNotReportSuccess := func() func() {
+                return func() {
+                    Ω((<-response).Success).Should(BeFalse())
+                }
+            }
             Context("when the server does not return a 200", func() {
-                AssertNoJSONInResponese := func() func() {
-                    return func() {
-                        Ω((<-response).JSON).Should(BeZero())
-                    }
-                }
-
-                AssertDoesNotReportSuccess := func() func() {
-                    return func() {
-                        Ω((<-response).Success).Should(BeFalse())
-                    }
-                }
-
                 BeforeEach(func() {
                     fakeServer.Respond(404)
                 })
