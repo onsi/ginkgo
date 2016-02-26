@@ -8,7 +8,7 @@ These docs are written assuming you'll be using Gomega with Ginkgo.  They also a
 
 ---
 
-##Getting Ginkgo
+## Getting Ginkgo
 
 Just `go get` it:
 
@@ -21,12 +21,12 @@ this fetches ginkgo and installs the `ginkgo` executable under `$GOPATH/bin` -- 
 
 ---
 
-##Getting Started: Writing Your First Test
+## Getting Started: Writing Your First Test
 Ginkgo hooks into Go's existing `testing` infrastructure.  This allows you to run a Ginkgo suite using `go test`.
 
 > This also means that Ginkgo tests can live alongside traditional Golang `testing` tests.  Both `go test` and `ginkgo` will run all the tests in your suite.
 
-###Bootstrapping a Suite
+### Bootstrapping a Suite
 To write Ginkgo tests for a package you must first bootstrap a Ginkgo test suite.  Say you have a package named `books`:
 
     $ cd path/to/books
@@ -76,7 +76,7 @@ At this point you can run your suite:
     PASS
     ok      books   0.019s
 
-###Adding Specs to a Suite
+### Adding Specs to a Suite
 An empty test suite is not very interesting.  While you can start to add tests directly into `books_suite_test.go` you'll probably prefer to separate your tests into separate files (especially for packages with multiple files).  Let's add a test file for our `book.go` model:
 
     $ ginkgo generate book
@@ -167,7 +167,7 @@ Assuming a `Book` model with this behavior, running the tests will yield:
 
 Success!
 
-###Marking Specs as Failed
+### Marking Specs as Failed
 
 While you typically want to use a matcher library, like [Gomega](https://github.com/onsi/gomega), to make assertions in your specs, Ginkgo provides a simple, global, `Fail` function that allows you to mark a spec as failed.  Just call:
 
@@ -193,13 +193,13 @@ Now, if `doSomething()` returns false, Gomega will call `Fail` which will panic 
 
 More details about `Fail` and about using matcher libraries other than Gomega can be found in the [Using Other Matcher Libraries](#using-other-matcher-libraries) section.
 
-###Logging Output
+### Logging Output
 
 Ginkgo provides a globally available `io.Writer` called `GinkgoWriter` that you can write to.  `GinkgoWriter` aggregates input while a test is running and only dumps it to stdout if the test fails.  When running in verbose mode (`ginkgo -v` or `go test -ginkgo.v`) `GinkgoWriter` always immediately redirects its input to stdout.
 
 When a Ginkgo test suite is interrupted (via `^C`) Ginkgo will emit any content written to the `GinkgoWriter`.  This makes it easier to debug stuck tests.  This is particularly useful when paired with `--progress` which instruct Ginkgo to emit notifications to the `GinkgoWriter` as it runs through your `BeforeEach`es, `It`s, `AfterEach`es, etc...
 
-###IDE Support
+### IDE Support
 
 Ginkgo works best from the command-line, and [`ginkgo watch`](#watching-for-changes) makes it easy to rerun tests on the command line whenever changes are detected.
 
@@ -207,7 +207,7 @@ There are a set of [completions](https://github.com/onsi/ginkgo-sublime-completi
 
 ---
 
-##Structuring Your Specs
+## Structuring Your Specs
 
 Ginkgo makes it easy to write expressive specs that describe the behavior of your code in an organized manner.  You use `Describe` and `Context` containers to organize your `It` specs and you use `BeforeEach` and `AfterEach` to build up and tear down common set up amongst your tests.
 
@@ -974,7 +974,7 @@ By default, these generators will dot-import both Ginkgo and Gomega.  To avoid d
 
 > Note that you don't have to use either of these generators.  They're just convenient helpers to get you up and running quickly.
 
-###Avoiding Dot Imports
+### Avoiding Dot Imports
 
 Ginkgo and Gomega provide a DSL and, by default, the `ginkgo bootstrap` and `ginkgo generate` commands import both packages into the top-level namespace using dot imports.
 
@@ -1017,7 +1017,7 @@ As new matchers are added to Gomega you may need to update the set of imports id
 
 this will update the imports, preserving any renames that you've provided.
  
-###Converting Existing Tests
+### Converting Existing Tests
 
 If you have an existing XUnit test suite that you'd like to convert to a Ginkgo suite, you can use the `ginkgo convert` command:
 
