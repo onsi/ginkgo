@@ -8,9 +8,11 @@ package stenographer
 
 import (
 	"fmt"
+	"io"
 	"runtime"
 	"strings"
 
+	"github.com/mattn/go-colorable"
 	"github.com/onsi/ginkgo/types"
 )
 
@@ -68,6 +70,8 @@ func New(color bool) Stenographer {
 		color:       color,
 		denoter:     denoter,
 		cursorState: cursorStateTop,
+
+		w: colorable.NewColorableStdout(),
 	}
 }
 
@@ -75,6 +79,8 @@ type consoleStenographer struct {
 	color       bool
 	denoter     string
 	cursorState cursorStateType
+
+	w io.Writer
 }
 
 var alternatingColors = []string{defaultStyle, grayColor}
