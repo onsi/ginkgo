@@ -110,6 +110,14 @@ Finally, @shageman has [put together](https://github.com/shageman/gotestit) a co
 
 Go explore!
 
+## Contributing and Building
+
+To build ginkgo, you need godeps installed.  Follow the build idioms shown in https://github.com/tools/godep, for example:
+
+Running `godep go test` inside any of the testable directories will run the ginkgo unit tests for you.
+
+Likewise you can use the godep wrapper to build and run ginkgo against the correct dependencies the same as you would any other project.
+
 ## License
 
 Ginkgo is MIT-Licensed
