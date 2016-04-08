@@ -12,5 +12,5 @@ import (
 // c.f. the vendor-experiment proposal https://goo.gl/2ucMeC
 func vendorExperimentCheck(dir string) bool {
 	vendorExperiment := os.Getenv("GO15VENDOREXPERIMENT")
-	return (vendorExperiment == "1") && path.Base(dir) == "vendor"
+	return vendorExperiment == "1" && path.Base(dir) == "vendor"
 }
