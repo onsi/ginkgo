@@ -173,4 +173,26 @@ var _ = Describe("Flags Specs", func() {
 		Ω(output).Should(ContainSubstring("0 Passed"))
 		Ω(output).Should(ContainSubstring("0 Failed"))
 	})
+
+	regextest := func(regexOption string, skipOrFocus string) string {
+		pathToTest = tmpPath("passing")
+		copyIn("passing_ginkgo_tests", pathToTest)
+		session := startGinkgo(pathToTest, regexOption, "--dryRun", "-v", skipOrFocus)
+		Eventually(session).Should(gexec.Exit(0))
+		return string(session.Out.Contents())
+	}
+
+	It("regexScansFilePath (enabled) should skip and focus on file names", func() {
+		output := regextest("-regexScansFilePath=true", "-skip=/passing/") // everything gets skipped (nothing runs)
+		Ω(output).Should(ContainSubstring("0 of 4 Specs"))
+		output = regextest("-regexScansFilePath=true", "-focus=/passing/") // everything gets focused (everything runs)
+		Ω(output).Should(ContainSubstring("4 of 4 Specs"))
+	})
+
+	It("regexScansFilePath (disabled) should not effect normal filtering", func() {
+		output := regextest("-regexScansFilePath=false", "-skip=/passing/") // nothing gets skipped (everything runs)
+		Ω(output).Should(ContainSubstring("4 of 4 Specs"))
+		output = regextest("-regexScansFilePath=false", "-focus=/passing/") // nothing gets focused (nothing runs)
+		Ω(output).Should(ContainSubstring("0 of 4 Specs"))
+	})
 })
