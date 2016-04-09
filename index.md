@@ -561,6 +561,8 @@ It is often convenient, when developing to be able to run a subset of specs.  Gi
 
 2. You can pass in a regular expression with the `--focus=REGEXP` and/or `--skip=REGEXP` flags.  Ginkgo will only run specs that match the focus regular expression and don't match the skip regular expression.
 
+3. In cases where specs dont provide enough hierarchichal distinction between groups of tests, directories can be included in the matching of `focus` and `skip`, via the `--regexScansFilePath` option.  That is, if the original code location for a test is `test/a/b/c/my_test.go`, one can combine `--focus=/b/` along with `--regexScansFilePath=true` to focus on tests including the path `/b/`.  This feature is useful for filtering tests in binary artifacts along the lines of the original directory where those tests were created - but ideally your specs should be organized in such a way as to minimize the need for using this feature.
+
 When Ginkgo detects that a passing test suite has a programmatically focused test it causes the suite to exit with a non-zero status code.  This is to help detect erroneously committed focused tests on CI systems.  When passed a command-line focus/skip flag Ginkgo exits with status code 0 - if you want to focus tests on your CI system you should explicitly pass in a -focus or -skip flag.
 
 Nested programmatically focused specs follow a simple rule: if a leaf-node is marked focused, any of its ancestor nodes that are marked focus will be unfocused.  With this rule, sibling leaf nodes (regardless of relative-depth) that are focused will run regardless of the focus of a shared ancestor; and non-focused siblings will not run regardless of the focus of the shared ancestor or the relative depths of the siblings.  More simply:
