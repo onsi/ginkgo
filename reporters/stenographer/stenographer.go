@@ -12,7 +12,7 @@ import (
 	"runtime"
 	"strings"
 
-	"github.com/mattn/go-colorable"
+	"github.com/onsi/ginkgo/reporters/stenographer/support/go-colorable"
 	"github.com/onsi/ginkgo/types"
 )
 
