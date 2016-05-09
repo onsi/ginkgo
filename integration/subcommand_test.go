@@ -359,6 +359,7 @@ var _ = Describe("Subcommand", func() {
 			Ω(output).Should(ContainSubstring("-succinct"))
 			Ω(output).Should(ContainSubstring("-nodes"))
 			Ω(output).Should(ContainSubstring("ginkgo generate"))
+			Ω(output).Should(ContainSubstring("ginkgo help <COMMAND>"))
 		})
 	})
 })
