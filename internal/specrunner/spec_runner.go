@@ -137,20 +137,19 @@ func (runner *SpecRunner) runSpecs() bool {
 		if skipRemainingSpecs {
 			spec.Skip()
 		}
-		runner.reportSpecWillRun(spec.Summary(runner.suiteID))
 
 		if !spec.Skipped() && !spec.Pending() {
-			runner.runningSpec = spec
-			spec.Run(runner.writer)
-			runner.runningSpec = nil
-			if spec.Failed() {
+			if passed := runner.runSpec(spec); !passed {
 				suiteFailed = true
 			}
 		} else if spec.Pending() && runner.config.FailOnPending {
+			runner.reportSpecWillRun(spec.Summary(runner.suiteID))
 			suiteFailed = true
+			runner.reportSpecDidComplete(spec.Summary(runner.suiteID), spec.Failed())
+		} else {
+			runner.reportSpecWillRun(spec.Summary(runner.suiteID))
+			runner.reportSpecDidComplete(spec.Summary(runner.suiteID), spec.Failed())
 		}
-
-		runner.reportSpecDidComplete(spec.Summary(runner.suiteID), spec.Failed())
 
 		if spec.Failed() && runner.config.FailFast {
 			skipRemainingSpecs = true
@@ -158,6 +157,38 @@ func (runner *SpecRunner) runSpecs() bool {
 	}
 
 	return !suiteFailed
+}
+
+func (runner *SpecRunner) runSpec(spec *spec.Spec) (passed bool) {
+	maxAttempts := 1
+	if runner.config.FlakeAttempts > 0 {
+		// uninitialized configs count as 1
+		maxAttempts = runner.config.FlakeAttempts
+	}
+	passesRequired := 1
+	if runner.config.FlakePassesRequired > 0 {
+		passesRequired = runner.config.FlakePassesRequired
+	}
+
+	passCount := 0
+	for i := 0; i < maxAttempts; i++ {
+		runner.reportSpecWillRun(spec.Summary(runner.suiteID))
+		runner.runningSpec = spec
+		spec.Run(runner.writer)
+		runner.runningSpec = nil
+		runner.reportSpecDidComplete(spec.Summary(runner.suiteID), spec.Failed())
+		if !spec.Failed() {
+			passCount++
+		}
+		if passCount >= passesRequired {
+			return true
+		}
+		if i+passesRequired-passCount >= maxAttempts {
+			// not possible to get enough passes
+			break
+		}
+	}
+	return false
 }
 
 func (runner *SpecRunner) CurrentSpecSummary() (*types.SpecSummary, bool) {

@@ -23,16 +23,18 @@ import (
 const VERSION = "1.2.0"
 
 type GinkgoConfigType struct {
-	RandomSeed         int64
-	RandomizeAllSpecs  bool
-	RegexScansFilePath bool
-	FocusString        string
-	SkipString         string
-	SkipMeasurements   bool
-	FailOnPending      bool
-	FailFast           bool
-	EmitSpecProgress   bool
-	DryRun             bool
+	RandomSeed          int64
+	RandomizeAllSpecs   bool
+	RegexScansFilePath  bool
+	FocusString         string
+	SkipString          string
+	SkipMeasurements    bool
+	FailOnPending       bool
+	FailFast            bool
+	FlakeAttempts       int
+	FlakePassesRequired int
+	EmitSpecProgress    bool
+	DryRun              bool
 
 	ParallelNode  int
 	ParallelTotal int
@@ -74,6 +76,9 @@ func Flags(flagSet *flag.FlagSet, prefix string, includeParallelFlags bool) {
 	flagSet.StringVar(&(GinkgoConfig.SkipString), prefix+"skip", "", "If set, ginkgo will only run specs that do not match this regular expression.")
 
 	flagSet.BoolVar(&(GinkgoConfig.RegexScansFilePath), prefix+"regexScansFilePath", false, "If set, ginkgo regex matching also will look at the file path (code location).")
+
+	flagSet.IntVar(&(GinkgoConfig.FlakeAttempts), prefix+"flakeAttempts", 1, "Make up to this many attempts to run each spec.")
+	flagSet.IntVar(&(GinkgoConfig.FlakePassesRequired), prefix+"flakePassesRequired", 1, "Each test must pass this many times to be considered non-flaky.")
 
 	flagSet.BoolVar(&(GinkgoConfig.EmitSpecProgress), prefix+"progress", false, "If set, ginkgo will emit progress information as each spec runs to the GinkgoWriter.")
 
