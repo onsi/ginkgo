@@ -79,4 +79,12 @@ var _ = Describe("Testing various flags", func() {
 			Ω(true).Should(Equal(false))
 		})
 	})
+
+	Describe("a flaky test", func() {
+		runs := 0
+		It("should only pass the second time it's run", func() {
+			runs++
+			Ω(runs).Should(BeNumerically("==", 2))
+		})
+	})
 })

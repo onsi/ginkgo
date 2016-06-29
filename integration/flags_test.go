@@ -32,7 +32,7 @@ var _ = Describe("Flags Specs", func() {
 		Ω(output).Should(ContainSubstring("10 Passed"))
 		Ω(output).Should(ContainSubstring("0 Failed"))
 		Ω(output).Should(ContainSubstring("1 Pending"))
-		Ω(output).Should(ContainSubstring("2 Skipped"))
+		Ω(output).Should(ContainSubstring("3 Skipped"))
 		Ω(output).Should(ContainSubstring("[PENDING]"))
 		Ω(output).Should(ContainSubstring("marshmallow"))
 		Ω(output).Should(ContainSubstring("chocolate"))
@@ -82,11 +82,11 @@ var _ = Describe("Flags Specs", func() {
 		Ω(output).Should(ContainSubstring("3 Passed"))
 		Ω(output).Should(ContainSubstring("0 Failed"))
 		Ω(output).Should(ContainSubstring("0 Pending"))
-		Ω(output).Should(ContainSubstring("10 Skipped"))
+		Ω(output).Should(ContainSubstring("11 Skipped"))
 	})
 
 	It("should override the programmatic focus when told to skip", func() {
-		session := startGinkgo(pathToTest, "--noColor", "--skip=marshmallow|failing")
+		session := startGinkgo(pathToTest, "--noColor", "--skip=marshmallow|failing|flaky")
 		Eventually(session).Should(gexec.Exit(0))
 		output := string(session.Out.Contents())
 
@@ -96,7 +96,7 @@ var _ = Describe("Flags Specs", func() {
 		Ω(output).Should(ContainSubstring("10 Passed"))
 		Ω(output).Should(ContainSubstring("0 Failed"))
 		Ω(output).Should(ContainSubstring("1 Pending"))
-		Ω(output).Should(ContainSubstring("2 Skipped"))
+		Ω(output).Should(ContainSubstring("3 Skipped"))
 	})
 
 	It("should run the race detector when told to", func() {
@@ -108,7 +108,7 @@ var _ = Describe("Flags Specs", func() {
 	})
 
 	It("should randomize tests when told to", func() {
-		session := startGinkgo(pathToTest, "--noColor", "--randomizeAllSpecs", "--seed=21")
+		session := startGinkgo(pathToTest, "--noColor", "--randomizeAllSpecs", "--seed=23")
 		Eventually(session).Should(gexec.Exit(types.GINKGO_FOCUS_EXIT_CODE))
 		output := string(session.Out.Contents())
 
@@ -122,7 +122,7 @@ var _ = Describe("Flags Specs", func() {
 		output := string(session.Out.Contents())
 
 		Ω(output).ShouldNot(ContainSubstring("Ran 3 samples:"), "has a measurement")
-		Ω(output).Should(ContainSubstring("3 Skipped"))
+		Ω(output).Should(ContainSubstring("4 Skipped"))
 	})
 
 	It("should watch for slow specs", func() {
@@ -159,6 +159,23 @@ var _ = Describe("Flags Specs", func() {
 
 		Ω(output).Should(ContainSubstring("1 Failed"))
 		Ω(output).Should(ContainSubstring("15 Skipped"))
+	})
+
+	Context("with a flaky test", func() {
+		It("should normally fail", func() {
+			session := startGinkgo(pathToTest, "--focus=flaky")
+			Eventually(session).Should(gexec.Exit(1))
+		})
+
+		It("should pass if retries are requested", func() {
+			session := startGinkgo(pathToTest, "--focus=flaky --flakeAttempts=2")
+			Eventually(session).Should(gexec.Exit(0))
+		})
+
+		It("should fail if not enough passes are observed", func() {
+			session := startGinkgo(pathToTest, "--focus=flaky --flakeAttempts=15 --flakePassesRequired=2")
+			Eventually(session).Should(gexec.Exit(0))
+		})
 	})
 
 	It("should perform a dry run when told to", func() {
