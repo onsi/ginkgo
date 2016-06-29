@@ -133,6 +133,14 @@ func BuildFlagArgs(prefix string, ginkgo GinkgoConfigType, reporter DefaultRepor
 		result = append(result, fmt.Sprintf("--%sskip=%s", prefix, ginkgo.SkipString))
 	}
 
+	if ginkgo.FlakeAttempts > 1 {
+		result = append(result, fmt.Sprintf("--%sflakeAttempts=%d", prefix, ginkgo.FlakeAttempts))
+	}
+
+	if ginkgo.FlakePassesRequired > 1 {
+		result = append(result, fmt.Sprintf("--%sflakePassesRequired=%d", prefix, ginkgo.FlakePassesRequired))
+	}
+
 	if ginkgo.EmitSpecProgress {
 		result = append(result, fmt.Sprintf("--%sprogress", prefix))
 	}
