@@ -165,12 +165,7 @@ func (runner *SpecRunner) runSpec(spec *spec.Spec) (passed bool) {
 		// uninitialized configs count as 1
 		maxAttempts = runner.config.FlakeAttempts
 	}
-	passesRequired := 1
-	if runner.config.FlakePassesRequired > 0 {
-		passesRequired = runner.config.FlakePassesRequired
-	}
 
-	passCount := 0
 	for i := 0; i < maxAttempts; i++ {
 		runner.reportSpecWillRun(spec.Summary(runner.suiteID))
 		runner.runningSpec = spec
@@ -178,14 +173,7 @@ func (runner *SpecRunner) runSpec(spec *spec.Spec) (passed bool) {
 		runner.runningSpec = nil
 		runner.reportSpecDidComplete(spec.Summary(runner.suiteID), spec.Failed())
 		if !spec.Failed() {
-			passCount++
-		}
-		if passCount >= passesRequired {
 			return true
-		}
-		if i+passesRequired-passCount >= maxAttempts {
-			// not possible to get enough passes
-			break
 		}
 	}
 	return false

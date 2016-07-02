@@ -70,7 +70,7 @@ var _ = Describe("Spec Runner", func() {
 			writer.AddEvent(text)
 			thingsThatRan = append(thingsThatRan, text)
 			runs++
-			if runs <= failures {
+			if runs < failures {
 				failer.Fail(text, codelocation.New(0))
 			}
 		}, flag, codelocation.New(0), 0, failer, 0)
@@ -323,14 +323,13 @@ var _ = Describe("Spec Runner", func() {
 		BeforeEach(func() {
 			failedSpecFlag = noneFlag
 			conf = config.GinkgoConfigType{
-				RandomSeed:          17,
-				FlakeAttempts:       5,
-				FlakePassesRequired: 2,
+				RandomSeed:    17,
+				FlakeAttempts: 5,
 			}
 		})
 
 		It("should skip skipped/pending tests", func() {
-			Ω(thingsThatRan).Should(Equal([]string{"BefSuite", "spec A", "spec A", "flaky spec", "flaky spec", "flaky spec", "flaky spec", "flaky spec", "failed spec", "failed spec", "failed spec", "failed spec", "spec B", "spec B", "AftSuite"}))
+			Ω(thingsThatRan).Should(Equal([]string{"BefSuite", "spec A", "flaky spec", "flaky spec", "flaky spec", "failed spec", "failed spec", "failed spec", "failed spec", "failed spec", "spec B", "AftSuite"}))
 		})
 
 		It("should report to any attached reporters", func() {

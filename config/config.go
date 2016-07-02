@@ -23,18 +23,17 @@ import (
 const VERSION = "1.2.0"
 
 type GinkgoConfigType struct {
-	RandomSeed          int64
-	RandomizeAllSpecs   bool
-	RegexScansFilePath  bool
-	FocusString         string
-	SkipString          string
-	SkipMeasurements    bool
-	FailOnPending       bool
-	FailFast            bool
-	FlakeAttempts       int
-	FlakePassesRequired int
-	EmitSpecProgress    bool
-	DryRun              bool
+	RandomSeed         int64
+	RandomizeAllSpecs  bool
+	RegexScansFilePath bool
+	FocusString        string
+	SkipString         string
+	SkipMeasurements   bool
+	FailOnPending      bool
+	FailFast           bool
+	FlakeAttempts      int
+	EmitSpecProgress   bool
+	DryRun             bool
 
 	ParallelNode  int
 	ParallelTotal int
@@ -78,7 +77,6 @@ func Flags(flagSet *flag.FlagSet, prefix string, includeParallelFlags bool) {
 	flagSet.BoolVar(&(GinkgoConfig.RegexScansFilePath), prefix+"regexScansFilePath", false, "If set, ginkgo regex matching also will look at the file path (code location).")
 
 	flagSet.IntVar(&(GinkgoConfig.FlakeAttempts), prefix+"flakeAttempts", 1, "Make up to this many attempts to run each spec.")
-	flagSet.IntVar(&(GinkgoConfig.FlakePassesRequired), prefix+"flakePassesRequired", 1, "Each test must pass this many times to be considered non-flaky.")
 
 	flagSet.BoolVar(&(GinkgoConfig.EmitSpecProgress), prefix+"progress", false, "If set, ginkgo will emit progress information as each spec runs to the GinkgoWriter.")
 
@@ -135,10 +133,6 @@ func BuildFlagArgs(prefix string, ginkgo GinkgoConfigType, reporter DefaultRepor
 
 	if ginkgo.FlakeAttempts > 1 {
 		result = append(result, fmt.Sprintf("--%sflakeAttempts=%d", prefix, ginkgo.FlakeAttempts))
-	}
-
-	if ginkgo.FlakePassesRequired > 1 {
-		result = append(result, fmt.Sprintf("--%sflakePassesRequired=%d", prefix, ginkgo.FlakePassesRequired))
 	}
 
 	if ginkgo.EmitSpecProgress {

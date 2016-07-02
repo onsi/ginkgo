@@ -171,11 +171,6 @@ var _ = Describe("Flags Specs", func() {
 			session := startGinkgo(pathToTest, "--focus=flaky --flakeAttempts=2")
 			Eventually(session).Should(gexec.Exit(0))
 		})
-
-		It("should fail if not enough passes are observed", func() {
-			session := startGinkgo(pathToTest, "--focus=flaky --flakeAttempts=15 --flakePassesRequired=2")
-			Eventually(session).Should(gexec.Exit(0))
-		})
 	})
 
 	It("should perform a dry run when told to", func() {
