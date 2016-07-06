@@ -372,6 +372,7 @@ var _ = Describe("Spec Runner", func() {
 			Ω(reporter1.EndSummary.NumberOfSkippedSpecs).Should(Equal(1))
 			Ω(reporter1.EndSummary.NumberOfPassedSpecs).Should(Equal(3))
 			Ω(reporter1.EndSummary.NumberOfFailedSpecs).Should(Equal(1))
+			Ω(reporter1.EndSummary.NumberOfFlakedSpecs).Should(Equal(1))
 		})
 
 		Context("when nothing fails", func() {
@@ -381,6 +382,7 @@ var _ = Describe("Spec Runner", func() {
 
 			It("the suite should pass even with flakes", func() {
 				Ω(reporter1.EndSummary.SuiteSucceeded).Should(BeTrue())
+				Ω(reporter1.EndSummary.NumberOfFlakedSpecs).Should(Equal(1))
 			})
 		})
 

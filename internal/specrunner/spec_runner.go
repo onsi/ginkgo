@@ -319,6 +319,10 @@ func (runner *SpecRunner) summary(success bool) *types.SuiteSummary {
 		return ex.Passed()
 	})
 
+	numberOfFlakedSpecs := runner.countSpecsSatisfying(func(ex *spec.Spec) bool {
+		return ex.Flaked()
+	})
+
 	numberOfFailedSpecs := runner.countSpecsSatisfying(func(ex *spec.Spec) bool {
 		return ex.Failed()
 	})
@@ -339,5 +343,6 @@ func (runner *SpecRunner) summary(success bool) *types.SuiteSummary {
 		NumberOfSkippedSpecs:               numberOfSkippedSpecs,
 		NumberOfPassedSpecs:                numberOfPassedSpecs,
 		NumberOfFailedSpecs:                numberOfFailedSpecs,
+		NumberOfFlakedSpecs:                numberOfFlakedSpecs,
 	}
 }

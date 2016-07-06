@@ -16,7 +16,10 @@ type SuiteSummary struct {
 	NumberOfSkippedSpecs               int
 	NumberOfPassedSpecs                int
 	NumberOfFailedSpecs                int
-	RunTime                            time.Duration
+	// Flaked specs are those that failed initially, but then passed on a
+	// subsequent try.
+	NumberOfFlakedSpecs int
+	RunTime             time.Duration
 }
 
 type SpecSummary struct {
