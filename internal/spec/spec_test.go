@@ -201,6 +201,22 @@ var _ = Describe("Spec", func() {
 		})
 	})
 
+	Describe("FailuresFileEntry", func() {
+		It("should return a correctly populated FailuresFileEntry", func() {
+			spec := New(newItWithBody("failing it", func() {
+				failer.Fail("bam", codeLocation)
+			}), containers(), false)
+			spec.Run(buffer)
+
+			Ω(spec.Failed()).Should(BeTrue())
+			entry := spec.FailuresFileEntry()
+
+			Ω(entry.Description).Should(Equal(spec.ConcatenatedString()))
+			Ω(entry.Location).Should(Equal(codeLocation.String()))
+			Ω(entry.SpecFailure.Message).Should(Equal("bam"))
+		})
+	})
+
 	Describe("Concatenated string", func() {
 		It("should concatenate the texts of the containers and the subject", func() {
 			spec := New(

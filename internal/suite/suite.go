@@ -1,6 +1,7 @@
 package suite
 
 import (
+	"fmt"
 	"math/rand"
 	"time"
 
@@ -52,7 +53,11 @@ func (suite *Suite) Run(t ginkgoTestingT, description string, reporters []report
 
 	r := rand.New(rand.NewSource(config.RandomSeed))
 	suite.topLevelContainer.Shuffle(r)
-	specs := suite.generateSpecs(description, config)
+	specs, err := suite.generateSpecs(description, config)
+	if err != nil {
+		panic(fmt.Sprintf("couldn't generate specs: %s", err.Error()))
+	}
+
 	suite.runner = specrunner.New(description, suite.beforeSuiteNode, specs, suite.afterSuiteNode, reporters, writer, config)
 
 	suite.running = true
@@ -60,10 +65,15 @@ func (suite *Suite) Run(t ginkgoTestingT, description string, reporters []report
 	if !success {
 		t.Fail()
 	}
+
+	if config.WriteFailuresFile != "" {
+		specs.WriteFailuresFile(config.WriteFailuresFile)
+	}
+
 	return success, specs.HasProgrammaticFocus()
 }
 
-func (suite *Suite) generateSpecs(description string, config config.GinkgoConfigType) *spec.Specs {
+func (suite *Suite) generateSpecs(description string, config config.GinkgoConfigType) (*spec.Specs, error) {
 	specsSlice := []*spec.Spec{}
 	suite.topLevelContainer.BackPropagateProgrammaticFocus()
 	for _, collatedNodes := range suite.topLevelContainer.Collate() {
@@ -77,7 +87,10 @@ func (suite *Suite) generateSpecs(description string, config config.GinkgoConfig
 		specs.Shuffle(rand.New(rand.NewSource(config.RandomSeed)))
 	}
 
-	specs.ApplyFocus(description, config.FocusString, config.SkipString)
+	err := specs.ApplyFocus(description, config.FocusString, config.SkipString, config.RunFailuresFile)
+	if err != nil {
+		return nil, err
+	}
 
 	if config.SkipMeasurements {
 		specs.SkipMeasurements()
@@ -86,7 +99,7 @@ func (suite *Suite) generateSpecs(description string, config config.GinkgoConfig
 	if config.ParallelTotal > 1 {
 		specs.TrimForParallelization(config.ParallelTotal, config.ParallelNode)
 	}
-	return specs
+	return specs, nil
 }
 
 func (suite *Suite) CurrentRunningSpecSummary() (*types.SpecSummary, bool) {

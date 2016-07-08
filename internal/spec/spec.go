@@ -99,6 +99,14 @@ func (spec *Spec) Summary(suiteID string) *types.SpecSummary {
 	}
 }
 
+func (spec *Spec) FailuresFileEntry() types.FailuresFileEntry {
+	return types.FailuresFileEntry{
+		Description: spec.ConcatenatedString(),
+		Location:    spec.subject.CodeLocation().String(),
+		SpecFailure: spec.failure,
+	}
+}
+
 func (spec *Spec) ConcatenatedString() string {
 	s := ""
 	for _, container := range spec.containers {

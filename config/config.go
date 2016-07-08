@@ -34,6 +34,9 @@ type GinkgoConfigType struct {
 	EmitSpecProgress   bool
 	DryRun             bool
 
+	WriteFailuresFile string
+	RunFailuresFile   string
+
 	ParallelNode  int
 	ParallelTotal int
 	SyncHost      string
@@ -69,6 +72,9 @@ func Flags(flagSet *flag.FlagSet, prefix string, includeParallelFlags bool) {
 	flagSet.BoolVar(&(GinkgoConfig.FailFast), prefix+"failFast", false, "If set, ginkgo will stop running a test suite after a failure occurs.")
 
 	flagSet.BoolVar(&(GinkgoConfig.DryRun), prefix+"dryRun", false, "If set, ginkgo will walk the test hierarchy without actually running anything.  Best paired with -v.")
+
+	flagSet.StringVar(&(GinkgoConfig.WriteFailuresFile), prefix+"writeFailuresFile", "", "If set, ginkgo will write a list of failed tests to the passed-in filename.  This can then be passed to -runWriteFailuresFile to rerun failures.  If all tests pass, no file is written.")
+	flagSet.StringVar(&(GinkgoConfig.RunFailuresFile), prefix+"runFailuresFile", "", "If set, ginkgo will only run tests in the passed in file.")
 
 	flagSet.StringVar(&(GinkgoConfig.FocusString), prefix+"focus", "", "If set, ginkgo will only run specs that match this regular expression.")
 	flagSet.StringVar(&(GinkgoConfig.SkipString), prefix+"skip", "", "If set, ginkgo will only run specs that do not match this regular expression.")
@@ -118,6 +124,14 @@ func BuildFlagArgs(prefix string, ginkgo GinkgoConfigType, reporter DefaultRepor
 
 	if ginkgo.DryRun {
 		result = append(result, fmt.Sprintf("--%sdryRun", prefix))
+	}
+
+	if ginkgo.WriteFailuresFile != "" {
+		result = append(result, fmt.Sprintf("--%swriteFailuresFile=%s", prefix, ginkgo.WriteFailuresFile))
+	}
+
+	if ginkgo.RunFailuresFile != "" {
+		result = append(result, fmt.Sprintf("--%srunFailuresFile=%s", prefix, ginkgo.RunFailuresFile))
 	}
 
 	if ginkgo.FocusString != "" {

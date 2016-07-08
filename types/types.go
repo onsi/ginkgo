@@ -141,3 +141,9 @@ const (
 	FlagTypeFocused
 	FlagTypePending
 )
+
+type FailuresFileEntry struct {
+	Description string      `json:"desription"`
+	Location    string      `json:"location"`
+	SpecFailure SpecFailure `json:"spec_failure"`
+}

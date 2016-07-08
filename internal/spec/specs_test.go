@@ -1,7 +1,12 @@
 package spec_test
 
 import (
+	"encoding/json"
+	"fmt"
+	"io/ioutil"
 	"math/rand"
+	"os"
+	"time"
 
 	. "github.com/onsi/ginkgo"
 	. "github.com/onsi/ginkgo/internal/spec"
@@ -9,6 +14,7 @@ import (
 
 	"github.com/onsi/ginkgo/internal/codelocation"
 	"github.com/onsi/ginkgo/internal/containernode"
+	Failer "github.com/onsi/ginkgo/internal/failer"
 	"github.com/onsi/ginkgo/internal/leafnodes"
 	"github.com/onsi/ginkgo/types"
 )
@@ -17,7 +23,20 @@ var _ = Describe("Specs", func() {
 	var specs *Specs
 
 	newSpec := func(text string, flag types.FlagType) *Spec {
-		subject := leafnodes.NewItNode(text, func() {}, flag, codelocation.New(0), 0, nil, 0)
+		subject := leafnodes.NewItNode(text, func() {}, flag, codelocation.New(0), 0, Failer.New(), 0)
+		return New(subject, []*containernode.ContainerNode{}, false)
+	}
+
+	newSpecWithCodeLocation := func(text string, flag types.FlagType, codeLocation types.CodeLocation) *Spec {
+		subject := leafnodes.NewItNode(text, func() {}, flag, codeLocation, 0, Failer.New(), 0)
+		return New(subject, []*containernode.ContainerNode{}, false)
+	}
+
+	newFailingSpec := func(text string) *Spec {
+		failer := Failer.New()
+		subject := leafnodes.NewItNode(text, func() {
+			failer.Fail("bam", codelocation.New(0))
+		}, types.FlagTypeNone, codelocation.New(0), 0, failer, 0)
 		return New(subject, []*containernode.ContainerNode{}, false)
 	}
 
@@ -30,6 +49,14 @@ var _ = Describe("Specs", func() {
 		specs := []*Spec{}
 		for index := 0; index < len(args)-1; index += 2 {
 			specs = append(specs, newSpec(args[index].(string), args[index+1].(types.FlagType)))
+		}
+		return NewSpecs(specs)
+	}
+
+	newSpecsWithCodeLocations := func(args ...interface{}) *Specs {
+		specs := []*Spec{}
+		for index := 0; index < len(args)-1; index += 3 {
+			specs = append(specs, newSpecWithCodeLocation(args[index].(string), args[index+1].(types.FlagType), args[index+2].(types.CodeLocation)))
 		}
 		return NewSpecs(specs)
 	}
@@ -111,7 +138,7 @@ var _ = Describe("Specs", func() {
 	Describe("with no programmatic focus", func() {
 		BeforeEach(func() {
 			specs = newSpecs("A1", noneFlag, "A2", noneFlag, "B1", noneFlag, "B2", pendingFlag)
-			specs.ApplyFocus("", "", "")
+			specs.ApplyFocus("", "", "", "")
 		})
 
 		It("should not report as having programmatic specs", func() {
@@ -120,15 +147,26 @@ var _ = Describe("Specs", func() {
 	})
 
 	Describe("Applying focus/skip", func() {
-		var description, focusString, skipString string
+		var description, focusString, skipString, runFailuresFile string
+		var A1CodeLocation, A2CodeLocation, B1CodeLocation, B2CodeLocation types.CodeLocation
+		var focusErr error
 
 		BeforeEach(func() {
-			description, focusString, skipString = "", "", ""
+			description, focusString, skipString, runFailuresFile = "", "", "", ""
+			A1CodeLocation = codelocation.New(0)
+			A2CodeLocation = codelocation.New(0)
+			B1CodeLocation = codelocation.New(0)
+			B2CodeLocation = codelocation.New(0)
 		})
 
 		JustBeforeEach(func() {
-			specs = newSpecs("A1", focusedFlag, "A2", noneFlag, "B1", focusedFlag, "B2", pendingFlag)
-			specs.ApplyFocus(description, focusString, skipString)
+			specs = newSpecsWithCodeLocations(
+				"A1", focusedFlag, A1CodeLocation,
+				"A2", noneFlag, A2CodeLocation,
+				"B1", focusedFlag, B1CodeLocation,
+				"B2", pendingFlag, B2CodeLocation,
+			)
+			focusErr = specs.ApplyFocus(description, focusString, skipString, runFailuresFile)
 		})
 
 		Context("with neither a focus string nor a skip string", func() {
@@ -229,6 +267,53 @@ var _ = Describe("Specs", func() {
 				Ω(specs.HasProgrammaticFocus()).Should(BeFalse())
 			})
 		})
+
+		Context("with a RunFailuresFile", func() {
+			BeforeEach(func() {
+				focusString = "1"
+				skipString = "B"
+				runFailuresFile = fmt.Sprintf("failures-file-%d-%d", GinkgoParallelNode(), time.Now().UnixNano())
+			})
+
+			AfterEach(func() {
+				os.Remove(runFailuresFile)
+				Ω(runFailuresFile).ShouldNot(BeAnExistingFile())
+			})
+
+			Context("that is populated", func() {
+				BeforeEach(func() {
+					encoded, err := json.Marshal([]types.FailuresFileEntry{
+						{Location: A1CodeLocation.String()},
+						{Location: A2CodeLocation.String()},
+					})
+					Ω(err).ShouldNot(HaveOccurred())
+
+					ioutil.WriteFile(runFailuresFile, encoded, 0666)
+				})
+
+				It("should ignore the focus and skip strings and only run the tests in the RunFailuresFile", func() {
+					Ω(willRunTexts(specs)).Should(Equal([]string{"A1", "A2"}))
+					Ω(skippedTexts(specs)).Should(Equal([]string{"B1", "B2"}))
+					Ω(pendingTexts(specs)).Should(BeEmpty())
+				})
+			})
+
+			Context("that is missing", func() {
+				It("should return an error", func() {
+					Ω(focusErr).Should(HaveOccurred())
+				})
+			})
+
+			Context("that is busted", func() {
+				BeforeEach(func() {
+					ioutil.WriteFile(runFailuresFile, []byte("ß"), 0666)
+				})
+
+				It("should return an error", func() {
+					Ω(focusErr).Should(HaveOccurred())
+				})
+			})
+		})
 	})
 
 	Describe("With a focused spec within a pending context and a pending spec within a focused context", func() {
@@ -251,7 +336,7 @@ var _ = Describe("Specs", func() {
 				pendingInFocused,
 				focusedInPending,
 			})
-			specs.ApplyFocus("", "", "")
+			specs.ApplyFocus("", "", "", "")
 		})
 
 		It("should not have a programmatic focus and should run all tests", func() {
@@ -329,6 +414,75 @@ var _ = Describe("Specs", func() {
 				Ω(specsNode1.NumberOfOriginalSpecs()).Should(Equal(2))
 				Ω(specsNode2.NumberOfOriginalSpecs()).Should(Equal(2))
 				Ω(specsNode3.NumberOfOriginalSpecs()).Should(Equal(2))
+			})
+		})
+	})
+
+	Describe("WriteFailuresFile", func() {
+		var fileName string
+		var specs *Specs
+
+		BeforeEach(func() {
+			fileName = fmt.Sprintf("failures-file-%d-%d", GinkgoParallelNode(), time.Now().UnixNano())
+		})
+
+		AfterEach(func() {
+			os.Remove(fileName)
+			Ω(fileName).ShouldNot(BeAnExistingFile())
+		})
+
+		Context("when there are failed specs", func() {
+			BeforeEach(func() {
+				s := []*Spec{
+					newSpec("I pass", types.FlagTypeNone),
+					newFailingSpec("I fail"),
+					newSpec("I pass too", types.FlagTypeNone),
+					newFailingSpec("I fail too"),
+				}
+
+				for _, spec := range s {
+					spec.Run(ioutil.Discard)
+				}
+
+				specs = NewSpecs(s)
+			})
+
+			It("writes a file with the passed in name", func() {
+				specs.WriteFailuresFile(fileName)
+
+				Ω(fileName).Should(BeAnExistingFile())
+				data, err := ioutil.ReadFile(fileName)
+				Ω(err).ShouldNot(HaveOccurred())
+
+				entries := []types.FailuresFileEntry{}
+				Ω(json.Unmarshal(data, &entries)).Should(Succeed())
+
+				Ω(entries).Should(HaveLen(2))
+				t := func(entry types.FailuresFileEntry) string {
+					return entry.Description
+				}
+				Ω(entries).Should(ContainElement(WithTransform(t, Equal("I fail"))))
+				Ω(entries).Should(ContainElement(WithTransform(t, Equal("I fail too"))))
+			})
+		})
+
+		Context("when there are no failed specs", func() {
+			BeforeEach(func() {
+				s := []*Spec{
+					newSpec("I pass", types.FlagTypeNone),
+					newSpec("I pass too", types.FlagTypeNone),
+				}
+
+				for _, spec := range s {
+					spec.Run(ioutil.Discard)
+				}
+
+				specs = NewSpecs(s)
+			})
+
+			It("writes no file", func() {
+				specs.WriteFailuresFile(fileName)
+				Ω(fileName).ShouldNot(BeAnExistingFile())
 			})
 		})
 	})

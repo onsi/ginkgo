@@ -2,6 +2,7 @@ package testrunner
 
 import (
 	"bytes"
+	"encoding/json"
 	"fmt"
 	"io"
 	"io/ioutil"
@@ -243,10 +244,15 @@ func (t *TestRunner) runAndStreamParallelGinkgoSuite() RunResult {
 	server.Start()
 	defer server.Close()
 
+	writeFailuresFile := config.GinkgoConfig.WriteFailuresFile
+
 	for cpu := 0; cpu < t.numCPU; cpu++ {
 		config.GinkgoConfig.ParallelNode = cpu + 1
 		config.GinkgoConfig.ParallelTotal = t.numCPU
 		config.GinkgoConfig.SyncHost = server.Address()
+		if writeFailuresFile != "" {
+			config.GinkgoConfig.WriteFailuresFile = fmt.Sprintf("%d-%s", cpu, config.GinkgoConfig.WriteFailuresFile)
+		}
 
 		ginkgoArgs := config.BuildFlagArgs("ginkgo", config.GinkgoConfig, config.DefaultReporterConfig)
 
@@ -280,6 +286,10 @@ func (t *TestRunner) runAndStreamParallelGinkgoSuite() RunResult {
 		t.combineCoverprofiles()
 	}
 
+	if writeFailuresFile != "" {
+		t.combineWriteFailuresFiles(writeFailuresFile)
+	}
+
 	return res
 }
 
@@ -300,11 +310,16 @@ func (t *TestRunner) runParallelGinkgoSuite() RunResult {
 	server.Start()
 	defer server.Close()
 
+	writeFailuresFile := config.GinkgoConfig.WriteFailuresFile
+
 	for cpu := 0; cpu < t.numCPU; cpu++ {
 		config.GinkgoConfig.ParallelNode = cpu + 1
 		config.GinkgoConfig.ParallelTotal = t.numCPU
 		config.GinkgoConfig.SyncHost = server.Address()
 		config.GinkgoConfig.StreamHost = server.Address()
+		if writeFailuresFile != "" {
+			config.GinkgoConfig.WriteFailuresFile = fmt.Sprintf("%d-%s", cpu, writeFailuresFile)
+		}
 
 		ginkgoArgs := config.BuildFlagArgs("ginkgo", config.GinkgoConfig, config.DefaultReporterConfig)
 
@@ -360,6 +375,10 @@ func (t *TestRunner) runParallelGinkgoSuite() RunResult {
 
 	if t.cover || t.coverPkg != "" {
 		t.combineCoverprofiles()
+	}
+
+	if writeFailuresFile != "" {
+		t.combineWriteFailuresFiles(writeFailuresFile)
 	}
 
 	return res
@@ -455,4 +474,21 @@ func (t *TestRunner) combineCoverprofiles() {
 	}
 	finalOutput := strings.Join(output, "\n")
 	ioutil.WriteFile(filepath.Join(t.Suite.Path, fmt.Sprintf("%s.coverprofile", t.Suite.PackageName)), []byte(finalOutput), 0666)
+}
+
+func (t *TestRunner) combineWriteFailuresFiles(writeFailuresFile string) {
+	failureEntries := []types.FailuresFileEntry{}
+	for cpu := 0; cpu < t.numCPU; cpu++ {
+		file := fmt.Sprintf("%d-%s", cpu, writeFailuresFile)
+		data, _ := ioutil.ReadFile(file)
+		entries := []types.FailuresFileEntry{}
+		json.Unmarshal(data, &entries)
+		failureEntries = append(failureEntries, entries...)
+		os.Remove(file)
+	}
+
+	if len(failureEntries) != 0 {
+		data, _ := json.Marshal(failureEntries)
+		ioutil.WriteFile(writeFailuresFile, data, 0666)
+	}
 }

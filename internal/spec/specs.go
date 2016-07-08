@@ -1,9 +1,14 @@
 package spec
 
 import (
+	"encoding/json"
+	"fmt"
+	"io/ioutil"
 	"math/rand"
 	"regexp"
 	"sort"
+
+	"github.com/onsi/ginkgo/types"
 )
 
 type Specs struct {
@@ -42,12 +47,18 @@ func (e *Specs) Shuffle(r *rand.Rand) {
 	e.specs = shuffledSpecs
 }
 
-func (e *Specs) ApplyFocus(description string, focusString string, skipString string) {
-	if focusString == "" && skipString == "" {
-		e.applyProgrammaticFocus()
-	} else {
-		e.applyRegExpFocusAndSkip(description, focusString, skipString)
+func (e *Specs) ApplyFocus(description string, focusString string, skipString string, runFailuresFile string) error {
+	if runFailuresFile != "" {
+		return e.applyRunFailuresFileFocus(runFailuresFile)
 	}
+
+	if focusString != "" || skipString != "" {
+		e.applyRegExpFocusAndSkip(description, focusString, skipString)
+		return nil
+	}
+
+	e.applyProgrammaticFocus()
+	return nil
 }
 
 func (e *Specs) applyProgrammaticFocus() {
@@ -106,6 +117,36 @@ func (e *Specs) applyRegExpFocusAndSkip(description string, focusString string, 
 	}
 }
 
+func (e *Specs) applyRunFailuresFileFocus(runFailuresFile string) error {
+	encoded, err := ioutil.ReadFile(runFailuresFile)
+	if err != nil {
+		return fmt.Errorf("Failed to read runFailuresFile: %s", err.Error())
+	}
+
+	entries := []types.FailuresFileEntry{}
+	err = json.Unmarshal(encoded, &entries)
+	if err != nil {
+		return fmt.Errorf("Failed to decode runFailuresFile: %s", err.Error())
+	}
+
+	for _, spec := range e.specs {
+		matches := false
+
+		for _, entry := range entries {
+			if spec.subject.CodeLocation().String() == entry.Location {
+				matches = true
+				break
+			}
+		}
+
+		if !matches {
+			spec.Skip()
+		}
+	}
+
+	return nil
+}
+
 func (e *Specs) SkipMeasurements() {
 	for _, spec := range e.specs {
 		if spec.IsMeasurement() {
@@ -121,6 +162,28 @@ func (e *Specs) TrimForParallelization(total int, node int) {
 	} else {
 		e.specs = e.specs[startIndex : startIndex+count]
 	}
+}
+
+func (e *Specs) WriteFailuresFile(file string) error {
+	entries := []types.FailuresFileEntry{}
+
+	for _, spec := range e.specs {
+		if spec.Failed() {
+			entries = append(entries, spec.FailuresFileEntry())
+		}
+	}
+
+	if len(entries) == 0 {
+		return nil
+	}
+
+	encoded, err := json.Marshal(entries)
+
+	if err != nil {
+		return err
+	}
+
+	return ioutil.WriteFile(file, encoded, 0666)
 }
 
 //sort.Interface
