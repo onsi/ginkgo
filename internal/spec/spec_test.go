@@ -558,6 +558,7 @@ var _ = Describe("Spec", func() {
 		BeforeEach(func() {
 			spec = New(leafnodes.NewMeasureNode("measure node", func(b Benchmarker) {
 				b.RecordValue("a value", 7, "some info")
+				b.RecordValueWithPrecision("another value", 8, "ns", 5, "more info")
 			}, noneFlag, codeLocation, 4, failer, 0), containers(), false)
 			spec.Run(buffer)
 			Ω(spec.Passed()).Should(BeTrue())
@@ -574,11 +575,18 @@ var _ = Describe("Spec", func() {
 
 		It("should have the measurements report", func() {
 			Ω(summary.Measurements).Should(HaveKey("a value"))
-
 			report := summary.Measurements["a value"]
 			Ω(report.Name).Should(Equal("a value"))
 			Ω(report.Info).Should(Equal("some info"))
 			Ω(report.Results).Should(Equal([]float64{7, 7, 7, 7}))
+
+			Ω(summary.Measurements).Should(HaveKey("another value"))
+			report = summary.Measurements["another value"]
+			Ω(report.Name).Should(Equal("another value"))
+			Ω(report.Info).Should(Equal("more info"))
+			Ω(report.Results).Should(Equal([]float64{8, 8, 8, 8}))
+			Ω(report.Units).Should(Equal("ns"))
+			Ω(report.Precision).Should(Equal(5))
 		})
 	})
 
