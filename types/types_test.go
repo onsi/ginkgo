@@ -86,4 +86,14 @@ var _ = Describe("Types", func() {
 			}, SpecStateSkipped)
 		})
 	})
+
+	Describe("SpecMeasurement", func() {
+		It("knows how to format values when the precision is 0", func() {
+			Ω(SpecMeasurement{}.PrecisionFmt()).Should(Equal("%f"))
+		})
+
+		It("knows how to format the values when the precision is 3", func() {
+			Ω(SpecMeasurement{Precision: 3}.PrecisionFmt()).Should(Equal("%.3f"))
+		})
+	})
 })

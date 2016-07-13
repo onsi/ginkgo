@@ -1,6 +1,9 @@
 package types
 
-import "time"
+import (
+	"strconv"
+	"time"
+)
 
 const GINKGO_FOCUS_EXIT_CODE = 197
 
@@ -100,6 +103,17 @@ type SpecMeasurement struct {
 	LargestLabel  string
 	AverageLabel  string
 	Units         string
+	Precision     int
+}
+
+func (s SpecMeasurement) PrecisionFmt() string {
+	if s.Precision == 0 {
+		return "%f"
+	}
+
+	str := strconv.Itoa(s.Precision)
+
+	return "%." + str + "f"
 }
 
 type SpecState uint
