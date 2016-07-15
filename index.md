@@ -776,7 +776,12 @@ To pass arguments/custom flags down to your test suite:
 
     $ ginkgo -- <PASS-THROUGHS>
 
-Note: the `--` is important!  Only arguments following `--` will be passed to your suite.
+Note: the `--` is important!  Only arguments following `--` will be passed to your suite. To parse arguments/custom flags in your test suite, declare a variable and initialize it at the package-level:
+
+    var myFlag string
+    func init() {
+        flag.StringVar(&myFlag, "myFlag", "defaultvalue", "myFlag is used to control my behavior")
+    }
 
 Of course, ginkgo takes a number of flags.  These must be specified *before* you specify the packages to run.  Here's a summary of the call syntax:
 
