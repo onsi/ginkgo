@@ -64,6 +64,20 @@ var _ = Describe("Spec Runner", func() {
 		return spec.New(subject, []*containernode.ContainerNode{}, false)
 	}
 
+	newFlakySpec := func(text string, flag types.FlagType, failures int) *spec.Spec {
+		runs := 0
+		subject := leafnodes.NewItNode(text, func() {
+			writer.AddEvent(text)
+			thingsThatRan = append(thingsThatRan, text)
+			runs++
+			if runs < failures {
+				failer.Fail(text, codelocation.New(0))
+			}
+		}, flag, codelocation.New(0), 0, failer, 0)
+
+		return spec.New(subject, []*containernode.ContainerNode{}, false)
+	}
+
 	newSpecWithBody := func(text string, body interface{}) *spec.Spec {
 		subject := leafnodes.NewItNode(text, body, noneFlag, codelocation.New(0), 0, failer, 0)
 
@@ -268,6 +282,163 @@ var _ = Describe("Spec Runner", func() {
 
 			Ω(reporter1.SpecSummaries).Should(HaveLen(3))
 			Ω(reporter1.SpecSummaries[2].ComponentTexts[0]).Should(Equal("RUN"))
+		})
+	})
+
+	Describe("Running and Reporting when there's flakes", func() {
+		var specA, pendingSpec, flakySpec, failedSpec, specB, skippedSpec *spec.Spec
+		var willRunCalls, didCompleteCalls []string
+		var conf config.GinkgoConfigType
+		var failedSpecFlag = noneFlag
+
+		JustBeforeEach(func() {
+			willRunCalls = []string{}
+			didCompleteCalls = []string{}
+			specA = newSpec("spec A", noneFlag, false)
+			pendingSpec = newSpec("pending spec", pendingFlag, false)
+			flakySpec = newFlakySpec("flaky spec", noneFlag, 3)
+			failedSpec = newSpec("failed spec", failedSpecFlag, true)
+			specB = newSpec("spec B", noneFlag, false)
+			skippedSpec = newSpec("skipped spec", noneFlag, false)
+			skippedSpec.Skip()
+
+			reporter1.SpecWillRunStub = func(specSummary *types.SpecSummary) {
+				willRunCalls = append(willRunCalls, "Reporter1")
+			}
+			reporter2.SpecWillRunStub = func(specSummary *types.SpecSummary) {
+				willRunCalls = append(willRunCalls, "Reporter2")
+			}
+
+			reporter1.SpecDidCompleteStub = func(specSummary *types.SpecSummary) {
+				didCompleteCalls = append(didCompleteCalls, "Reporter1")
+			}
+			reporter2.SpecDidCompleteStub = func(specSummary *types.SpecSummary) {
+				didCompleteCalls = append(didCompleteCalls, "Reporter2")
+			}
+
+			runner = newRunner(conf, newBefSuite("BefSuite", false), newAftSuite("AftSuite", false), specA, pendingSpec, flakySpec, failedSpec, specB, skippedSpec)
+			runner.Run()
+		})
+
+		BeforeEach(func() {
+			failedSpecFlag = noneFlag
+			conf = config.GinkgoConfigType{
+				RandomSeed:    17,
+				FlakeAttempts: 5,
+			}
+		})
+
+		It("should skip skipped/pending tests", func() {
+			Ω(thingsThatRan).Should(Equal([]string{"BefSuite", "spec A", "flaky spec", "flaky spec", "flaky spec", "failed spec", "failed spec", "failed spec", "failed spec", "failed spec", "spec B", "AftSuite"}))
+		})
+
+		It("should report to any attached reporters", func() {
+			Ω(reporter1.Config).Should(Equal(reporter2.Config))
+			Ω(reporter1.BeforeSuiteSummary).Should(Equal(reporter2.BeforeSuiteSummary))
+			Ω(reporter1.BeginSummary).Should(Equal(reporter2.BeginSummary))
+			Ω(reporter1.SpecWillRunSummaries).Should(Equal(reporter2.SpecWillRunSummaries))
+			Ω(reporter1.SpecSummaries).Should(Equal(reporter2.SpecSummaries))
+			Ω(reporter1.AfterSuiteSummary).Should(Equal(reporter2.AfterSuiteSummary))
+			Ω(reporter1.EndSummary).Should(Equal(reporter2.EndSummary))
+		})
+
+		It("should report that a spec did end in reverse order", func() {
+			Ω(willRunCalls[0:4]).Should(Equal([]string{"Reporter1", "Reporter2", "Reporter1", "Reporter2"}))
+			Ω(didCompleteCalls[0:4]).Should(Equal([]string{"Reporter2", "Reporter1", "Reporter2", "Reporter1"}))
+		})
+
+		It("should report the passed in config", func() {
+			Ω(reporter1.Config.RandomSeed).Should(BeNumerically("==", 17))
+		})
+
+		It("should report the beginning of the suite", func() {
+			Ω(reporter1.BeginSummary.SuiteDescription).Should(Equal("description"))
+			Ω(reporter1.BeginSummary.SuiteID).Should(MatchRegexp("[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}"))
+			Ω(reporter1.BeginSummary.NumberOfSpecsBeforeParallelization).Should(Equal(6))
+			Ω(reporter1.BeginSummary.NumberOfTotalSpecs).Should(Equal(6))
+			Ω(reporter1.BeginSummary.NumberOfSpecsThatWillBeRun).Should(Equal(4))
+			Ω(reporter1.BeginSummary.NumberOfPendingSpecs).Should(Equal(1))
+			Ω(reporter1.BeginSummary.NumberOfSkippedSpecs).Should(Equal(1))
+		})
+
+		It("should report the end of the suite", func() {
+			Ω(reporter1.EndSummary.SuiteDescription).Should(Equal("description"))
+			Ω(reporter1.EndSummary.SuiteSucceeded).Should(BeFalse())
+			Ω(reporter1.EndSummary.SuiteID).Should(MatchRegexp("[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}"))
+			Ω(reporter1.EndSummary.NumberOfSpecsBeforeParallelization).Should(Equal(6))
+			Ω(reporter1.EndSummary.NumberOfTotalSpecs).Should(Equal(6))
+			Ω(reporter1.EndSummary.NumberOfSpecsThatWillBeRun).Should(Equal(4))
+			Ω(reporter1.EndSummary.NumberOfPendingSpecs).Should(Equal(1))
+			Ω(reporter1.EndSummary.NumberOfSkippedSpecs).Should(Equal(1))
+			Ω(reporter1.EndSummary.NumberOfPassedSpecs).Should(Equal(3))
+			Ω(reporter1.EndSummary.NumberOfFailedSpecs).Should(Equal(1))
+			Ω(reporter1.EndSummary.NumberOfFlakedSpecs).Should(Equal(1))
+		})
+
+		Context("when nothing fails", func() {
+			BeforeEach(func() {
+				failedSpecFlag = pendingFlag
+			})
+
+			It("the suite should pass even with flakes", func() {
+				Ω(reporter1.EndSummary.SuiteSucceeded).Should(BeTrue())
+				Ω(reporter1.EndSummary.NumberOfFlakedSpecs).Should(Equal(1))
+			})
+		})
+
+		Context("when told to perform a dry run", func() {
+			BeforeEach(func() {
+				conf.DryRun = true
+			})
+
+			It("should report to the reporters", func() {
+				Ω(reporter1.Config).Should(Equal(reporter2.Config))
+				Ω(reporter1.BeforeSuiteSummary).Should(Equal(reporter2.BeforeSuiteSummary))
+				Ω(reporter1.BeginSummary).Should(Equal(reporter2.BeginSummary))
+				Ω(reporter1.SpecWillRunSummaries).Should(Equal(reporter2.SpecWillRunSummaries))
+				Ω(reporter1.SpecSummaries).Should(Equal(reporter2.SpecSummaries))
+				Ω(reporter1.AfterSuiteSummary).Should(Equal(reporter2.AfterSuiteSummary))
+				Ω(reporter1.EndSummary).Should(Equal(reporter2.EndSummary))
+			})
+
+			It("should not actually run anything", func() {
+				Ω(thingsThatRan).Should(BeEmpty())
+			})
+
+			It("report before and after suites as passed", func() {
+				Ω(reporter1.BeforeSuiteSummary.State).Should(Equal(types.SpecStatePassed))
+				Ω(reporter1.AfterSuiteSummary.State).Should(Equal(types.SpecStatePassed))
+			})
+
+			It("should report specs as passed", func() {
+				summaries := reporter1.SpecSummaries
+				Ω(summaries).Should(HaveLen(6))
+				Ω(summaries[0].ComponentTexts).Should(ContainElement("spec A"))
+				Ω(summaries[0].State).Should(Equal(types.SpecStatePassed))
+				Ω(summaries[1].ComponentTexts).Should(ContainElement("pending spec"))
+				Ω(summaries[1].State).Should(Equal(types.SpecStatePending))
+				Ω(summaries[2].ComponentTexts).Should(ContainElement("flaky spec"))
+				Ω(summaries[2].State).Should(Equal(types.SpecStatePassed))
+				Ω(summaries[3].ComponentTexts).Should(ContainElement("failed spec"))
+				Ω(summaries[3].State).Should(Equal(types.SpecStatePassed))
+				Ω(summaries[4].ComponentTexts).Should(ContainElement("spec B"))
+				Ω(summaries[4].State).Should(Equal(types.SpecStatePassed))
+				Ω(summaries[5].ComponentTexts).Should(ContainElement("skipped spec"))
+				Ω(summaries[5].State).Should(Equal(types.SpecStateSkipped))
+			})
+
+			It("should report the end of the suite", func() {
+				Ω(reporter1.EndSummary.SuiteDescription).Should(Equal("description"))
+				Ω(reporter1.EndSummary.SuiteSucceeded).Should(BeTrue())
+				Ω(reporter1.EndSummary.SuiteID).Should(MatchRegexp("[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}"))
+				Ω(reporter1.EndSummary.NumberOfSpecsBeforeParallelization).Should(Equal(6))
+				Ω(reporter1.EndSummary.NumberOfTotalSpecs).Should(Equal(6))
+				Ω(reporter1.EndSummary.NumberOfSpecsThatWillBeRun).Should(Equal(4))
+				Ω(reporter1.EndSummary.NumberOfPendingSpecs).Should(Equal(1))
+				Ω(reporter1.EndSummary.NumberOfSkippedSpecs).Should(Equal(1))
+				Ω(reporter1.EndSummary.NumberOfPassedSpecs).Should(Equal(0))
+				Ω(reporter1.EndSummary.NumberOfFailedSpecs).Should(Equal(0))
+			})
 		})
 	})
 
