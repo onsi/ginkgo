@@ -881,7 +881,7 @@ Here are the flags that Ginkgo accepts:
 
     Like `-cover`, `-coverpkg` runs your tests with coverage analysis turned on.  However, `-coverpkg` allows you to specify the packages to run the analysis on.  This allows you to get coverage on packages outside of the current package, which is useful for integration tests.  Note that it will not run coverage on the current package by default, you always need to specify all packages you want coverage for. 
 
-** Build flags: **
+**Build flags:**
 
 - `-tags`
     
@@ -891,7 +891,7 @@ Here are the flags that Ginkgo accepts:
     
     When compiling multiple test suites (e.g. with `ginkgo -r`) Ginkgo will use `runtime.NumCPU()` to determine the number of compile processes to spin up.  On some environments this is a bad idea.  You can specify th enumber of compilers manually with this flag.
 
-** Failure behavior: **
+**Failure behavior:**
 
 - `--failOnPending`
 
@@ -901,13 +901,13 @@ Here are the flags that Ginkgo accepts:
 
     If present, Ginkgo will stop the suite right after the first spec failure.  When set during parallel tests, a failure on one node does *not* stop other nodes from running - only the node that failed will stop running.
 
-** Watch flags: **
+**Watch flags:**
 
 - `--depth=DEPTH`
 
     When watching packages, Ginkgo also watches those package's dependencies for changes.  The default value for `--depth` is `1` meaning that only the immediate dependencies of a package are monitored.  You can adjust this up to monitor dependencies-of-dependencies, or set it to `0` to only monitor the package itself, not its dependencies.
 
-** Flaky test mitigation: **
+**Flaky test mitigation:**
 
 - `--flakeAttempts=ATTEMPTS`
 
@@ -920,7 +920,7 @@ Here are the flags that Ginkgo accepts:
 
     This flag is dangerous! Don't be tempted to use it to cover up bad tests!
 
-** Miscellaneous: **
+**Miscellaneous:**
 
 - `-dryRun`
 
