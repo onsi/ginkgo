@@ -907,6 +907,19 @@ Here are the flags that Ginkgo accepts:
 
     When watching packages, Ginkgo also watches those package's dependencies for changes.  The default value for `--depth` is `1` meaning that only the immediate dependencies of a package are monitored.  You can adjust this up to monitor dependencies-of-dependencies, or set it to `0` to only monitor the package itself, not its dependencies.
 
+** Flaky test mitigation: **
+
+- `--flakeAttempts=ATTEMPTS`
+
+    If a test fails, Gingko can rerun it immediately. Set this flag to a value
+    greater than 1 to enable retries. As long as one of the retries succeeds,
+    Ginkgo will not consider the test suite to have been failed. The individual
+    failed runs will still be reported in the output; the JUnit output, for
+    example, will claim 0 failures (since the suite passed) but will still
+    contain any failing runs for a test that both passed and failed.
+
+    This flag is dangerous! Don't be tempted to use it to cover up bad tests!
+
 ** Miscellaneous: **
 
 - `-dryRun`
