@@ -1,4 +1,4 @@
-// +build go1.6
+// +build !go1.5
 
 package testsuite
 
@@ -7,7 +7,7 @@ import (
 	"path"
 )
 
-// in 1.6 the vendor directory became the default go behaviour, so now
+// in 1.6+ the vendor directory became the default go behaviour, so now
 // check if its disabled.
 func vendorExperimentCheck(dir string) bool {
 	vendorExperiment := os.Getenv("GO15VENDOREXPERIMENT")
