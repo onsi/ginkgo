@@ -1,4 +1,4 @@
-// +build go1.6
+// +build !go1.5
 
 package testsuite_test
 
