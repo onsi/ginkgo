@@ -1,4 +1,4 @@
-// +build !go1.5
+// +build go1.6
 
 package testsuite
 
@@ -11,5 +11,8 @@ import (
 // check if its disabled.
 func vendorExperimentCheck(dir string) bool {
 	vendorExperiment := os.Getenv("GO15VENDOREXPERIMENT")
-	return vendorExperiment != "0" && path.Base(dir) == "vendor"
+	if vendorExperiment == "" || vendorExperiment == "1" {
+		return path.Base(dir) == "vendor"
+	}
+	return vendorExperiment != "0"
 }
