@@ -7,6 +7,7 @@ import (
 	. "github.com/onsi/ginkgo/integration/_fixtures/flags_tests"
 	. "github.com/onsi/gomega"
 	"time"
+	remapped "math"
 )
 
 var customFlag string
@@ -23,6 +24,10 @@ var _ = Describe("Testing various flags", func() {
 
 		It("should honor -cover", func() {
 			Ω(Tested()).Should(Equal("tested"))
+		})
+
+		It("should allow gcflags", func() {
+			fmt.Printf("NaN returns %T\n", remapped.NaN())
 		})
 
 		PIt("should honor -failOnPending and -noisyPendings")

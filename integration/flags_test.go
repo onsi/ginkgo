@@ -29,7 +29,7 @@ var _ = Describe("Flags Specs", func() {
 		output := string(session.Out.Contents())
 
 		Ω(output).Should(ContainSubstring("Ran 3 samples:"), "has a measurement")
-		Ω(output).Should(ContainSubstring("10 Passed"))
+		Ω(output).Should(ContainSubstring("11 Passed"))
 		Ω(output).Should(ContainSubstring("0 Failed"))
 		Ω(output).Should(ContainSubstring("1 Pending"))
 		Ω(output).Should(ContainSubstring("3 Skipped"))
@@ -82,7 +82,7 @@ var _ = Describe("Flags Specs", func() {
 		Ω(output).Should(ContainSubstring("3 Passed"))
 		Ω(output).Should(ContainSubstring("0 Failed"))
 		Ω(output).Should(ContainSubstring("0 Pending"))
-		Ω(output).Should(ContainSubstring("11 Skipped"))
+		Ω(output).Should(ContainSubstring("12 Skipped"))
 	})
 
 	It("should override the programmatic focus when told to skip", func() {
@@ -93,7 +93,7 @@ var _ = Describe("Flags Specs", func() {
 		Ω(output).ShouldNot(ContainSubstring("marshmallow"))
 		Ω(output).Should(ContainSubstring("chocolate"))
 		Ω(output).Should(ContainSubstring("smores"))
-		Ω(output).Should(ContainSubstring("10 Passed"))
+		Ω(output).Should(ContainSubstring("11 Passed"))
 		Ω(output).Should(ContainSubstring("0 Failed"))
 		Ω(output).Should(ContainSubstring("1 Pending"))
 		Ω(output).Should(ContainSubstring("3 Skipped"))
@@ -108,7 +108,7 @@ var _ = Describe("Flags Specs", func() {
 	})
 
 	It("should randomize tests when told to", func() {
-		session := startGinkgo(pathToTest, "--noColor", "--randomizeAllSpecs", "--seed=23")
+		session := startGinkgo(pathToTest, "--noColor", "--randomizeAllSpecs", "--seed=17")
 		Eventually(session).Should(gexec.Exit(types.GINKGO_FOCUS_EXIT_CODE))
 		output := string(session.Out.Contents())
 
@@ -206,5 +206,11 @@ var _ = Describe("Flags Specs", func() {
 		Ω(output).Should(ContainSubstring("4 of 4 Specs"))
 		output = regextest("-regexScansFilePath=false", "-focus=/passing/") // nothing gets focused (nothing runs)
 		Ω(output).Should(ContainSubstring("0 of 4 Specs"))
+	})
+	It("should honor compiler flags", func() {
+		session := startGinkgo(pathToTest, "-gcflags=-importmap 'math=math/cmplx'")
+		Eventually(session).Should(gexec.Exit(types.GINKGO_FOCUS_EXIT_CODE))
+		output := string(session.Out.Contents())
+		Ω(output).Should(ContainSubstring("NaN returns complex128"))
 	})
 })
