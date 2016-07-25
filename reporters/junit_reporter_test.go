@@ -98,6 +98,7 @@ var _ = Describe("JUnit Reporter", func() {
 				Failure: types.SpecFailure{
 					Message:               "failed to setup",
 					ComponentCodeLocation: codelocation.New(0),
+					Location:              codelocation.New(2),
 				},
 			}
 			reporter.BeforeSuiteDidRun(beforeSuite)
@@ -120,6 +121,7 @@ var _ = Describe("JUnit Reporter", func() {
 			Ω(output.TestCases[0].FailureMessage.Type).Should(Equal("Failure"))
 			Ω(output.TestCases[0].FailureMessage.Message).Should(ContainSubstring("failed to setup"))
 			Ω(output.TestCases[0].FailureMessage.Message).Should(ContainSubstring(beforeSuite.Failure.ComponentCodeLocation.String()))
+			Ω(output.TestCases[0].FailureMessage.Message).Should(ContainSubstring(beforeSuite.Failure.Location.String()))
 			Ω(output.TestCases[0].Skipped).Should(BeNil())
 		})
 	})
@@ -134,6 +136,7 @@ var _ = Describe("JUnit Reporter", func() {
 				Failure: types.SpecFailure{
 					Message:               "failed to setup",
 					ComponentCodeLocation: codelocation.New(0),
+					Location:              codelocation.New(2),
 				},
 			}
 			reporter.AfterSuiteDidRun(afterSuite)
@@ -156,6 +159,7 @@ var _ = Describe("JUnit Reporter", func() {
 			Ω(output.TestCases[0].FailureMessage.Type).Should(Equal("Failure"))
 			Ω(output.TestCases[0].FailureMessage.Message).Should(ContainSubstring("failed to setup"))
 			Ω(output.TestCases[0].FailureMessage.Message).Should(ContainSubstring(afterSuite.Failure.ComponentCodeLocation.String()))
+			Ω(output.TestCases[0].FailureMessage.Message).Should(ContainSubstring(afterSuite.Failure.Location.String()))
 			Ω(output.TestCases[0].Skipped).Should(BeNil())
 		})
 	})
@@ -180,6 +184,7 @@ var _ = Describe("JUnit Reporter", func() {
 					RunTime:        5 * time.Second,
 					Failure: types.SpecFailure{
 						ComponentCodeLocation: codelocation.New(0),
+						Location:              codelocation.New(2),
 						Message:               "I failed",
 					},
 				}
@@ -203,6 +208,7 @@ var _ = Describe("JUnit Reporter", func() {
 				Ω(output.TestCases[0].FailureMessage.Type).Should(Equal(specStateCase.message))
 				Ω(output.TestCases[0].FailureMessage.Message).Should(ContainSubstring("I failed"))
 				Ω(output.TestCases[0].FailureMessage.Message).Should(ContainSubstring(spec.Failure.ComponentCodeLocation.String()))
+				Ω(output.TestCases[0].FailureMessage.Message).Should(ContainSubstring(spec.Failure.Location.String()))
 				Ω(output.TestCases[0].Skipped).Should(BeNil())
 			})
 		})
