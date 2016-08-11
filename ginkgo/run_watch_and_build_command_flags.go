@@ -110,6 +110,7 @@ func (c *RunWatchAndBuildCommandFlags) flags(mode int) {
 	c.FlagSet.StringVar(&(c.SkipPackage), "skipPackage", "", "A comma-separated list of package names to be skipped.  If any part of the package's path matches, that package is ignored.")
 	c.FlagSet.StringVar(c.optSlot("tags"), "tags", "", "A list of build tags to consider satisfied during the build")
 	c.FlagSet.StringVar(c.optSlot("gcFlags"), "gcflags", "", "Arguments to pass on each go tool compile invocation.")
+	c.FlagSet.StringVar(c.optSlot("covermode"), "covermode", "", "Set the mode for coverage analysis.")
 
 	if mode == runMode || mode == watchMode {
 		config.Flags(c.FlagSet, "", false)

@@ -73,8 +73,12 @@ func (t *TestRunner) CompileTo(path string) error {
 	if *t.goFlags["race"] {
 		args = append(args, "-race")
 	}
-	if *t.goFlags["cover"] || *t.goOpts["coverPkg"] != "" {
-		args = append(args, "-cover", "-covermode=atomic")
+	if *t.goOpts["covermode"] != "" {
+		args = append(args, "-cover", fmt.Sprintf("-covermode=%s", *t.goOpts["covermode"]))
+	} else {
+		if *t.goFlags["cover"] || *t.goOpts["coverPkg"] != "" {
+			args = append(args, "-cover", "-covermode=atomic")
+		}
 	}
 	if *t.goOpts["coverPkg"] != "" {
 		args = append(args, fmt.Sprintf("-coverpkg=%s", *t.goOpts["coverPkg"]))
@@ -276,7 +280,7 @@ func (t *TestRunner) runAndStreamParallelGinkgoSuite() RunResult {
 
 	os.Stdout.Sync()
 
-	if *t.goFlags["cover"] || *t.goOpts["coverPkg"] != "" {
+	if *t.goFlags["cover"] || *t.goOpts["coverPkg"] != "" || *t.goOpts["covermode"] != "" {
 		t.combineCoverprofiles()
 	}
 
@@ -358,7 +362,7 @@ func (t *TestRunner) runParallelGinkgoSuite() RunResult {
 		os.Stdout.Sync()
 	}
 
-	if *t.goFlags["cover"] || *t.goOpts["coverPkg"] != "" {
+	if *t.goFlags["cover"] || *t.goOpts["coverPkg"] != "" || *t.goOpts["covermode"] != "" {
 		t.combineCoverprofiles()
 	}
 
@@ -367,7 +371,7 @@ func (t *TestRunner) runParallelGinkgoSuite() RunResult {
 
 func (t *TestRunner) cmd(ginkgoArgs []string, stream io.Writer, node int) *exec.Cmd {
 	args := []string{"--test.timeout=24h"}
-	if *t.goFlags["cover"] || *t.goOpts["coverPkg"] != "" {
+	if *t.goFlags["cover"] || *t.goOpts["coverPkg"] != "" || *t.goOpts["covermode"] != "" {
 		coverprofile := "--test.coverprofile=" + t.Suite.PackageName + ".coverprofile"
 		if t.numCPU > 1 {
 			coverprofile = fmt.Sprintf("%s.%d", coverprofile, node)
