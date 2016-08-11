@@ -9,12 +9,9 @@ import (
 
 type RunWatchAndBuildCommandFlags struct {
 	Recurse     bool
-	Race        bool
-	Cover       bool
-	CoverPkg    string
 	SkipPackage string
-	Tags        string
-	GCFlags     string
+	GoFlags     map[string]*bool
+	GoOpts      map[string]*string
 
 	//for run and watch commands
 	NumCPU         int
@@ -88,16 +85,31 @@ func (c *RunWatchAndBuildCommandFlags) computeNodes() {
 	}
 }
 
+func (c *RunWatchAndBuildCommandFlags) flagSlot(slot string) *bool {
+	var flag bool
+	c.GoFlags[slot] = &flag
+	return &flag
+}
+
+func (c *RunWatchAndBuildCommandFlags) optSlot(slot string) *string {
+	var opt string
+	c.GoOpts[slot] = &opt
+	return &opt
+}
+
 func (c *RunWatchAndBuildCommandFlags) flags(mode int) {
+	c.GoFlags = make(map[string]*bool)
+	c.GoOpts = make(map[string]*string)
+
 	onWindows := (runtime.GOOS == "windows")
 
 	c.FlagSet.BoolVar(&(c.Recurse), "r", false, "Find and run test suites under the current directory recursively")
-	c.FlagSet.BoolVar(&(c.Race), "race", false, "Run tests with race detection enabled")
-	c.FlagSet.BoolVar(&(c.Cover), "cover", false, "Run tests with coverage analysis, will generate coverage profiles with the package name in the current directory")
-	c.FlagSet.StringVar(&(c.CoverPkg), "coverpkg", "", "Run tests with coverage on the given external modules")
+	c.FlagSet.BoolVar(c.flagSlot("race"), "race", false, "Run tests with race detection enabled")
+	c.FlagSet.BoolVar(c.flagSlot("cover"), "cover", false, "Run tests with coverage analysis, will generate coverage profiles with the package name in the current directory")
+	c.FlagSet.StringVar(c.optSlot("coverPkg"), "coverpkg", "", "Run tests with coverage on the given external modules")
 	c.FlagSet.StringVar(&(c.SkipPackage), "skipPackage", "", "A comma-separated list of package names to be skipped.  If any part of the package's path matches, that package is ignored.")
-	c.FlagSet.StringVar(&(c.Tags), "tags", "", "A list of build tags to consider satisfied during the build")
-	c.FlagSet.StringVar(&(c.GCFlags), "gcflags", "", "Arguments to pass on each go tool compile invocation.")
+	c.FlagSet.StringVar(c.optSlot("tags"), "tags", "", "A list of build tags to consider satisfied during the build")
+	c.FlagSet.StringVar(c.optSlot("gcFlags"), "gcflags", "", "Arguments to pass on each go tool compile invocation.")
 
 	if mode == runMode || mode == watchMode {
 		config.Flags(c.FlagSet, "", false)
