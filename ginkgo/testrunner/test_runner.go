@@ -29,17 +29,15 @@ type TestRunner struct {
 
 	numCPU         int
 	parallelStream bool
-	goFlags        map[string]*bool
-	goOpts         map[string]*string
+	goOpts         map[string]interface{}
 	additionalArgs []string
 }
 
-func New(suite testsuite.TestSuite, numCPU int, parallelStream bool, goFlags map[string]*bool, goOpts map[string]*string, additionalArgs []string) *TestRunner {
+func New(suite testsuite.TestSuite, numCPU int, parallelStream bool, goOpts map[string]interface{}, additionalArgs []string) *TestRunner {
 	runner := &TestRunner{
 		Suite:          suite,
 		numCPU:         numCPU,
 		parallelStream: parallelStream,
-		goFlags:        goFlags,
 		goOpts:         goOpts,
 		additionalArgs: additionalArgs,
 	}
@@ -59,6 +57,70 @@ func (t *TestRunner) Compile() error {
 	return t.CompileTo(t.compilationTargetPath)
 }
 
+func (t *TestRunner) BuildArgs(path string) []string {
+	args := []string{"test", "-c", "-i", "-o", path, t.Suite.Path}
+
+	if *t.goOpts["covermode"].(*string) != "" {
+		args = append(args, "-cover", fmt.Sprintf("-covermode=%s", *t.goOpts["covermode"].(*string)))
+	} else {
+		if *t.goOpts["cover"].(*bool) || *t.goOpts["coverPkg"].(*string) != "" {
+			args = append(args, "-cover", "-covermode=atomic")
+		}
+	}
+
+	boolOpts := []string{
+		"a",
+		"n",
+		"msan",
+		"race",
+		"x",
+		"work",
+		"linkshared",
+	}
+
+	for _, opt := range boolOpts {
+		if s, found := t.goOpts[opt].(*bool); found && *s {
+			args = append(args, fmt.Sprintf("-%s", opt))
+		}
+	}
+
+	intOpts := []string{
+		"memprofilerate",
+		"blockprofilerate",
+	}
+
+	for _, opt := range intOpts {
+		if s, found := t.goOpts[opt].(*int); found {
+			args = append(args, fmt.Sprintf("-%s=%d", opt, *s))
+		}
+	}
+
+	stringOpts := []string{
+		"asmflags",
+		"buildmode",
+		"compiler",
+		"gccgoflags",
+		"installsuffix",
+		"ldflags",
+		"pkgdir",
+		"toolexec",
+		"coverprofile",
+		"cpuprofile",
+		"memprofile",
+		"outputdir",
+		"coverPkg",
+		"tags",
+		"gcflags",
+	}
+
+	for _, opt := range stringOpts {
+		if s, found := t.goOpts[opt].(*string); found && *s != "" {
+			args = append(args, fmt.Sprintf("-%s=%s", opt, *s))
+		}
+	}
+	return args
+}
+
 func (t *TestRunner) CompileTo(path string) error {
 	if t.compiled {
 		return nil
@@ -68,28 +130,7 @@ func (t *TestRunner) CompileTo(path string) error {
 		return nil
 	}
 
-	args := []string{"test", "-c", "-i", "-o", path, t.Suite.Path}
-
-	if *t.goFlags["race"] {
-		args = append(args, "-race")
-	}
-	if *t.goOpts["covermode"] != "" {
-		args = append(args, "-cover", fmt.Sprintf("-covermode=%s", *t.goOpts["covermode"]))
-	} else {
-		if *t.goFlags["cover"] || *t.goOpts["coverPkg"] != "" {
-			args = append(args, "-cover", "-covermode=atomic")
-		}
-	}
-	if *t.goOpts["coverPkg"] != "" {
-		args = append(args, fmt.Sprintf("-coverpkg=%s", *t.goOpts["coverPkg"]))
-	}
-	if *t.goOpts["tags"] != "" {
-		args = append(args, fmt.Sprintf("-tags=%s", *t.goOpts["tags"]))
-	}
-	if *t.goOpts["gcFlags"] != "" {
-		args = append(args, fmt.Sprintf("-gcflags=%s", *t.goOpts["gcFlags"]))
-	}
-
+	args := t.BuildArgs(path)
 	cmd := exec.Command("go", args...)
 
 	output, err := cmd.CombinedOutput()
@@ -280,7 +321,7 @@ func (t *TestRunner) runAndStreamParallelGinkgoSuite() RunResult {
 
 	os.Stdout.Sync()
 
-	if *t.goFlags["cover"] || *t.goOpts["coverPkg"] != "" || *t.goOpts["covermode"] != "" {
+	if *t.goOpts["cover"].(*bool) || *t.goOpts["coverPkg"].(*string) != "" || *t.goOpts["covermode"].(*string) != "" {
 		t.combineCoverprofiles()
 	}
 
@@ -362,7 +403,7 @@ func (t *TestRunner) runParallelGinkgoSuite() RunResult {
 		os.Stdout.Sync()
 	}
 
-	if *t.goFlags["cover"] || *t.goOpts["coverPkg"] != "" || *t.goOpts["covermode"] != "" {
+	if *t.goOpts["cover"].(*bool) || *t.goOpts["coverPkg"].(*string) != "" || *t.goOpts["covermode"].(*string) != "" {
 		t.combineCoverprofiles()
 	}
 
@@ -371,7 +412,7 @@ func (t *TestRunner) runParallelGinkgoSuite() RunResult {
 
 func (t *TestRunner) cmd(ginkgoArgs []string, stream io.Writer, node int) *exec.Cmd {
 	args := []string{"--test.timeout=24h"}
-	if *t.goFlags["cover"] || *t.goOpts["coverPkg"] != "" || *t.goOpts["covermode"] != "" {
+	if *t.goOpts["cover"].(*bool) || *t.goOpts["coverPkg"].(*string) != "" || *t.goOpts["covermode"].(*string) != "" {
 		coverprofile := "--test.coverprofile=" + t.Suite.PackageName + ".coverprofile"
 		if t.numCPU > 1 {
 			coverprofile = fmt.Sprintf("%s.%d", coverprofile, node)
