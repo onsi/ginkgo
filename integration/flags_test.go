@@ -1,6 +1,7 @@
 package integration_test
 
 import (
+	"io/ioutil"
 	"os"
 	"path/filepath"
 	"strings"
@@ -212,5 +213,19 @@ var _ = Describe("Flags Specs", func() {
 		Eventually(session).Should(gexec.Exit(types.GINKGO_FOCUS_EXIT_CODE))
 		output := string(session.Out.Contents())
 		Ω(output).Should(ContainSubstring("NaN returns complex128"))
+	})
+
+	It("should honor covermode flag", func() {
+		session := startGinkgo(pathToTest, "--noColor", "--covermode=count", "--focus=the focused set")
+		Eventually(session).Should(gexec.Exit(0))
+		output := string(session.Out.Contents())
+		Ω(output).Should(ContainSubstring("coverage: "))
+
+		coverageFile := filepath.Join(pathToTest, "flags.coverprofile")
+		_, err := os.Stat(coverageFile)
+		Ω(err).ShouldNot(HaveOccurred())
+		contents, err := ioutil.ReadFile(coverageFile)
+		Ω(err).ShouldNot(HaveOccurred())
+		Ω(contents).Should(ContainSubstring("mode: count"))
 	})
 })
