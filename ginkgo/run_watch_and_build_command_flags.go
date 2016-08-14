@@ -110,7 +110,7 @@ func (c *RunWatchAndBuildCommandFlags) flags(mode int) {
 	c.FlagSet.BoolVar(&(c.Recurse), "r", false, "Find and run test suites under the current directory recursively.")
 	c.FlagSet.BoolVar(c.boolSlot("race"), "race", false, "Run tests with race detection enabled.")
 	c.FlagSet.BoolVar(c.boolSlot("cover"), "cover", false, "Run tests with coverage analysis, will generate coverage profiles with the package name in the current directory.")
-	c.FlagSet.StringVar(c.stringSlot("coverPkg"), "coverpkg", "", "Run tests with coverage on the given external modules.")
+	c.FlagSet.StringVar(c.stringSlot("coverpkg"), "coverpkg", "", "Run tests with coverage on the given external modules.")
 	c.FlagSet.StringVar(&(c.SkipPackage), "skipPackage", "", "A comma-separated list of package names to be skipped.  If any part of the package's path matches, that package is ignored.")
 	c.FlagSet.StringVar(c.stringSlot("tags"), "tags", "", "A list of build tags to consider satisfied during the build.")
 	c.FlagSet.StringVar(c.stringSlot("gcflags"), "gcflags", "", "Arguments to pass on each go tool compile invocation.")

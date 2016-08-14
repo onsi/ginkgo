@@ -28,7 +28,7 @@ var _ = Describe("TestRunner", func() {
 			"pkgdir":           strAddr("b"),
 			"gcflags":          strAddr("c"),
 			"covermode":        strAddr(""),
-			"coverPkg":         strAddr(""),
+			"coverpkg":         strAddr(""),
 			"cover":            boolAddr(false),
 			"blockprofilerate": intAddr(100),
 		}
