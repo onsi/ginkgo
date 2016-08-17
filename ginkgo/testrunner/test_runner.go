@@ -229,6 +229,7 @@ fixCompilationOutput..... rewrites the output to fix the paths.
 yeah......
 */
 func fixCompilationOutput(output string, relToPath string) string {
+	relToPath = filepath.Join(relToPath)
 	re := regexp.MustCompile(`^(\S.*\.go)\:\d+\:`)
 	lines := strings.Split(output, "\n")
 	for i, line := range lines {
@@ -238,8 +239,10 @@ func fixCompilationOutput(output string, relToPath string) string {
 		}
 
 		path := line[indices[2]:indices[3]]
-		path = filepath.Join(relToPath, path)
-		lines[i] = path + line[indices[3]:]
+		if filepath.Dir(path) != relToPath {
+			path = filepath.Join(relToPath, path)
+			lines[i] = path + line[indices[3]:]
+		}
 	}
 	return strings.Join(lines, "\n")
 }
