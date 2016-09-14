@@ -337,7 +337,7 @@ func (t *TestRunner) runParallelGinkgoSuite() RunResult {
 	writers := make([]*logWriter, t.numCPU)
 	reports := make([]*bytes.Buffer, t.numCPU)
 
-	stenographer := stenographer.New(!config.DefaultReporterConfig.NoColor)
+	stenographer := stenographer.New(!config.DefaultReporterConfig.NoColor, config.GinkgoConfig.FlakeAttempts > 1)
 	aggregator := remote.NewAggregator(t.numCPU, result, config.DefaultReporterConfig, stenographer)
 
 	server, err := remote.NewServer(t.numCPU)
