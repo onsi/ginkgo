@@ -218,7 +218,7 @@ func RunSpecsWithCustomReporters(t GinkgoTestingT, description string, specRepor
 func buildDefaultReporter() Reporter {
 	remoteReportingServer := config.GinkgoConfig.StreamHost
 	if remoteReportingServer == "" {
-		stenographer := stenographer.New(!config.DefaultReporterConfig.NoColor)
+		stenographer := stenographer.New(!config.DefaultReporterConfig.NoColor, config.GinkgoConfig.FlakeAttempts > 1)
 		return reporters.NewDefaultReporter(config.DefaultReporterConfig, stenographer)
 	} else {
 		return remote.NewForwardingReporter(remoteReportingServer, &http.Client{}, remote.NewOutputInterceptor())

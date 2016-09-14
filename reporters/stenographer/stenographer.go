@@ -59,15 +59,16 @@ type Stenographer interface {
 	SummarizeFailures(summaries []*types.SpecSummary)
 }
 
-func New(color bool) Stenographer {
+func New(color bool, enableFlakes bool) Stenographer {
 	denoter := "•"
 	if runtime.GOOS == "windows" {
 		denoter = "+"
 	}
 	return &consoleStenographer{
-		color:       color,
-		denoter:     denoter,
-		cursorState: cursorStateTop,
+		color:        color,
+		denoter:      denoter,
+		cursorState:  cursorStateTop,
+		enableFlakes: enableFlakes,
 	}
 }
 
@@ -75,6 +76,8 @@ type consoleStenographer struct {
 	color       bool
 	denoter     string
 	cursorState cursorStateType
+	// Whether to print flake counts.
+	enableFlakes bool
 }
 
 var alternatingColors = []string{defaultStyle, grayColor}
@@ -153,11 +156,16 @@ func (s *consoleStenographer) AnnounceSpecRunCompletion(summary *types.SuiteSumm
 		status = s.colorize(boldStyle+redColor, "FAIL!")
 	}
 
+	flakes := ""
+	if s.enableFlakes {
+		flakes = " | " + s.colorize(yellowColor+boldStyle, "%d Flaked", summary.NumberOfFlakedSpecs)
+	}
+
 	s.print(0,
 		"%s -- %s | %s | %s | %s ",
 		status,
 		s.colorize(greenColor+boldStyle, "%d Passed", summary.NumberOfPassedSpecs),
-		s.colorize(redColor+boldStyle, "%d Failed", summary.NumberOfFailedSpecs),
+		s.colorize(redColor+boldStyle, "%d Failed", summary.NumberOfFailedSpecs)+flakes,
 		s.colorize(yellowColor+boldStyle, "%d Pending", summary.NumberOfPendingSpecs),
 		s.colorize(cyanColor+boldStyle, "%d Skipped", summary.NumberOfSkippedSpecs),
 	)
