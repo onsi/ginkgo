@@ -68,6 +68,14 @@ type GinkgoTestingT interface {
 	Fail()
 }
 
+//GinkgoRandomSeed returns the seed used to randomize spec execution order.  It is
+//useful for seeding your own pseudorandom number generators (PRNGs) to ensure
+//consistent executions from run to run, where your tests contain variability (for
+//example, when selecting random test data).
+func GinkgoRandomSeed() int64 {
+	return config.GinkgoConfig.RandomSeed
+}
+
 //GinkgoParallelNode returns the parallel node number for the current ginkgo process
 //The node number is 1-indexed
 func GinkgoParallelNode() int {
