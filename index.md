@@ -2,7 +2,7 @@
 layout: default
 title: Ginkgo
 ---
-[Ginkgo](http://github.com/onsi/ginkgo) is a BDD-style Golang testing framework built to help you efficiently write expressive and comprehensive tests.  It is best paired with the [Gomega](http://github.com/onsi/gomega) matcher library but is designed to be matcher-agnostic.  
+[Ginkgo](http://github.com/onsi/ginkgo) is a BDD-style Golang testing framework built to help you efficiently write expressive and comprehensive tests.  It is best paired with the [Gomega](http://github.com/onsi/gomega) matcher library but is designed to be matcher-agnostic.
 
 These docs are written assuming you'll be using Gomega with Ginkgo.  They also assume you know your way around Go and have a good mental model for how Go organizes packages under `$GOPATH`.
 
@@ -34,19 +34,20 @@ To write Ginkgo tests for a package you must first bootstrap a Ginkgo test suite
 
 This will generate a file named `books_suite_test.go` containing:
 
-    package books_test
+```go
+package books_test
 
-    import (
-        . "github.com/onsi/ginkgo"
-        . "github.com/onsi/gomega"
+import (
+    . "github.com/onsi/ginkgo"
+    . "github.com/onsi/gomega"
+    "testing"
+)
 
-        "testing"
-    )
-
-    func TestBooks(t *testing.T) {
-        RegisterFailHandler(Fail)
-        RunSpecs(t, "Books Suite")
-    }
+func TestBooks(t *testing.T) {
+    RegisterFailHandler(Fail)
+    RunSpecs(t, "Books Suite")
+}
+```
 
 Let's break this down:
 
@@ -83,17 +84,19 @@ An empty test suite is not very interesting.  While you can start to add tests d
 
 This will generate a file named `book_test.go` containing:
 
-    package books_test
+```go
+package books_test
 
-    import (
-        . "/path/to/books"
-        . "github.com/onsi/ginkgo"
-        . "github.com/onsi/gomega"
-    )
+import (
+    . "/path/to/books"
+    . "github.com/onsi/ginkgo"
+    . "github.com/onsi/gomega"
+)
 
-    var _ = Describe("Book", func() {
+var _ = Describe("Book", func() {
 
-    })
+})
+```
 
 Let's break this down:
 
@@ -103,46 +106,48 @@ Let's break this down:
 
 The function in the `Describe` will contain our specs.  Let's add a few now to test loading books from JSON:
 
-    var _ = Describe("Book", func() {
-        var (
-            longBook  Book
-            shortBook Book
-        )
+```go
+var _ = Describe("Book", func() {
+    var (
+        longBook  Book
+        shortBook Book
+    )
 
-        BeforeEach(func() {
-            longBook = Book{
-                Title:  "Les Miserables",
-                Author: "Victor Hugo",
-                Pages:  1488,
-            }
+    BeforeEach(func() {
+        longBook = Book{
+            Title:  "Les Miserables",
+            Author: "Victor Hugo",
+            Pages:  1488,
+        }
 
-            shortBook = Book{
-                Title:  "Fox In Socks",
-                Author: "Dr. Seuss",
-                Pages:  24,
-            }
+        shortBook = Book{
+            Title:  "Fox In Socks",
+            Author: "Dr. Seuss",
+            Pages:  24,
+        }
+    })
+
+    Describe("Categorizing book length", func() {
+        Context("With more than 300 pages", func() {
+            It("should be a novel", func() {
+                Expect(longBook.CategoryByLength()).To(Equal("NOVEL"))
+            })
         })
 
-        Describe("Categorizing book length", func() {
-            Context("With more than 300 pages", func() {
-                It("should be a novel", func() {
-                    Expect(longBook.CategoryByLength()).To(Equal("NOVEL"))
-                })
-            })
-
-            Context("With fewer than 300 pages", func() {
-                It("should be a short story", func() {
-                    Expect(shortBook.CategoryByLength()).To(Equal("SHORT STORY"))
-                })
+        Context("With fewer than 300 pages", func() {
+            It("should be a short story", func() {
+                Expect(shortBook.CategoryByLength()).To(Equal("SHORT STORY"))
             })
         })
     })
+})
+```
 
 Let's break this down:
 
 - Ginkgo makes extensive use of closures to allow you to build descriptive test suites.
 - You should make use of `Describe` and `Context` containers to expressively organize the behavior of your code.
-- You can use `BeforeEach` to set up state for your specs.  You use `It` to specify a single spec.  
+- You can use `BeforeEach` to set up state for your specs.  You use `It` to specify a single spec.
 - In order to share state between a `BeforeEach` and an `It` you use closure variables, typically defined at the top of the most relevant `Describe` or `Context` container.
 - We use Gomega's `Expect` syntax to make expectations on the `CategoryByLength()` method.
 
@@ -171,7 +176,9 @@ Success!
 
 While you typically want to use a matcher library, like [Gomega](https://github.com/onsi/gomega), to make assertions in your specs, Ginkgo provides a simple, global, `Fail` function that allows you to mark a spec as failed.  Just call:
 
-    Fail("Failure reason")
+```go
+Fail("Failure reason")
+```
 
 and Ginkgo will take care of the rest.
 
@@ -179,15 +186,17 @@ and Ginkgo will take care of the rest.
 
 However, if your test launches a *goroutine* that calls `Fail` (or, equivalently, invokes a failing Gomega assertion), there's no way for Ginkgo to rescue the panic that `Fail` invokes.  This will cause the test suite to panic and no subsequent tests will run.  To get around this you must rescue the panic using `GinkgoRecover`.  Here's an example:
 
-    It("panics in a goroutine", func(done Done) {
-        go func() {
-            defer GinkgoRecover()
+```go
+It("panics in a goroutine", func(done Done) {
+    go func() {
+        defer GinkgoRecover()
 
-            Ω(doSomething()).Should(BeTrue())
+        Ω(doSomething()).Should(BeTrue())
 
-            close(done)
-        }()
-    })
+        close(done)
+    }()
+})
+```
 
 Now, if `doSomething()` returns false, Gomega will call `Fail` which will panic but the `defer`red `GinkgoRecover()` will recover said panic and prevent the test suite from exploding.
 
@@ -214,19 +223,21 @@ Ginkgo makes it easy to write expressive specs that describe the behavior of you
 ### Individual Specs: `It`
 You can add a single spec by placing an `It` block within a `Describe` or `Context` container block:
 
-    var _ = Describe("Book", func() {
-        It("can be loaded from JSON", func() {
-            book := NewBookFromJSON(`{
-                "title":"Les Miserables",
-                "author":"Victor Hugo",
-                "pages":1488
-            }`)
+```go
+var _ = Describe("Book", func() {
+    It("can be loaded from JSON", func() {
+        book := NewBookFromJSON(`{
+            "title":"Les Miserables",
+            "author":"Victor Hugo",
+            "pages":1488
+        }`)
 
-            Expect(book.Title).To(Equal("Les Miserables"))
-            Expect(book.Author).To(Equal("Victor Hugo"))
-            Expect(book.Pages).To(Equal(1488))
-        })
+        Expect(book.Title).To(Equal("Les Miserables"))
+        Expect(book.Author).To(Equal("Victor Hugo"))
+        Expect(book.Pages).To(Equal(1488))
     })
+})
+```
 
 > `It`s may also be placed at the top-level though this is uncommon.
 
@@ -236,39 +247,43 @@ In order to ensure that your specs read naturally, the `Specify`, `PSpecify`, `X
 
 An example of a good substitution of `Specify` for `It` would be the following:
 
-    Describe("The foobar service", func() {
-      Context("when calling Foo()", func() {
-        Context("when no ID is provided", func() {
-          Specify("an ErrNoID error is returned", func() {
-          })
-        })
+```go
+Describe("The foobar service", func() {
+  Context("when calling Foo()", func() {
+    Context("when no ID is provided", func() {
+      Specify("an ErrNoID error is returned", func() {
       })
     })
+  })
+})
+```
 
 ### Extracting Common Setup: `BeforeEach`
 You can remove duplication and share common setup across tests using `BeforeEach` blocks:
 
-    var _ = Describe("Book", func() {
-        var book Book
+```go
+var _ = Describe("Book", func() {
+    var book Book
 
-        BeforeEach(func() {
-            book = NewBookFromJSON(`{
-                "title":"Les Miserables",
-                "author":"Victor Hugo",
-                "pages":1488
-            }`)
-        })
-        
-        It("can be loaded from JSON", func() {
-            Expect(book.Title).To(Equal("Les Miserables"))
-            Expect(book.Author).To(Equal("Victor Hugo"))
-            Expect(book.Pages).To(Equal(1488))
-        })
-
-        It("can extract the author's last name", func() {
-            Expect(book.AuthorLastName()).To(Equal("Hugo"))
-        })
+    BeforeEach(func() {
+        book = NewBookFromJSON(`{
+            "title":"Les Miserables",
+            "author":"Victor Hugo",
+            "pages":1488
+        }`)
     })
+
+    It("can be loaded from JSON", func() {
+        Expect(book.Title).To(Equal("Les Miserables"))
+        Expect(book.Author).To(Equal("Victor Hugo"))
+        Expect(book.Pages).To(Equal(1488))
+    })
+
+    It("can extract the author's last name", func() {
+        Expect(book.AuthorLastName()).To(Equal("Hugo"))
+    })
+})
+```
 
 The `BeforeEach` is run before each spec thereby ensuring that each spec has a pristine copy of the state.  Common state is shared using closure variables (`var book Book` in this case).  You can also perform clean up in `AfterEach` blocks.
 
@@ -278,58 +293,60 @@ It is also common to place assertions within `BeforeEach` and `AfterEach` blocks
 
 Ginkgo allows you to expressively organize the specs in your suite using `Describe` and `Context` containers:
 
-    var _ = Describe("Book", func() {
-        var (
-            book Book
-            err error
-        )
+```go
+var _ = Describe("Book", func() {
+    var (
+        book Book
+        err error
+    )
 
-        BeforeEach(func() {
-            book, err = NewBookFromJSON(`{
-                "title":"Les Miserables",
-                "author":"Victor Hugo",
-                "pages":1488
-            }`)
-        })
+    BeforeEach(func() {
+        book, err = NewBookFromJSON(`{
+            "title":"Les Miserables",
+            "author":"Victor Hugo",
+            "pages":1488
+        }`)
+    })
 
-        Describe("loading from JSON", func() {
-            Context("when the JSON parses succesfully", func() {
-                It("should populate the fields correctly", func() {
-                    Expect(book.Title).To(Equal("Les Miserables"))
-                    Expect(book.Author).To(Equal("Victor Hugo"))
-                    Expect(book.Pages).To(Equal(1488))
-                })
-
-                It("should not error", func() {
-                    Expect(err).NotTo(HaveOccurred())
-                })
+    Describe("loading from JSON", func() {
+        Context("when the JSON parses succesfully", func() {
+            It("should populate the fields correctly", func() {
+                Expect(book.Title).To(Equal("Les Miserables"))
+                Expect(book.Author).To(Equal("Victor Hugo"))
+                Expect(book.Pages).To(Equal(1488))
             })
 
-            Context("when the JSON fails to parse", func() {
-                BeforeEach(func() {
-                    book, err = NewBookFromJSON(`{
-                        "title":"Les Miserables",
-                        "author":"Victor Hugo",
-                        "pages":1488oops
-                    }`)
-                })
-
-                It("should return the zero-value for the book", func() {
-                    Expect(book).To(BeZero())
-                })
-
-                It("should error", func() {
-                    Expect(err).To(HaveOccurred())
-                })
+            It("should not error", func() {
+                Expect(err).NotTo(HaveOccurred())
             })
         })
-        
-        Describe("Extracting the author's last name", func() {
-            It("should correctly identify and return the last name", func() {
-                Expect(book.AuthorLastName()).To(Equal("Hugo"))
+
+        Context("when the JSON fails to parse", func() {
+            BeforeEach(func() {
+                book, err = NewBookFromJSON(`{
+                    "title":"Les Miserables",
+                    "author":"Victor Hugo",
+                    "pages":1488oops
+                }`)
+            })
+
+            It("should return the zero-value for the book", func() {
+                Expect(book).To(BeZero())
+            })
+
+            It("should error", func() {
+                Expect(err).To(HaveOccurred())
             })
         })
     })
+
+    Describe("Extracting the author's last name", func() {
+        It("should correctly identify and return the last name", func() {
+            Expect(book.AuthorLastName()).To(Equal("Hugo"))
+        })
+    })
+})
+```
 
 You use `Describe` blocks to describe the individual behaviors of your code and `Context` blocks to excercise those behaviors under different circumstances.  In this example we `Describe` loading a book from JSON and specify two `Context`s: when the JSON parses succesfully and when the JSON fails to parse.  Semantic differences aside, the two container types have identical behavior.
 
@@ -347,63 +364,65 @@ The above example illustrates a common antipattern in BDD-style testing.  Our to
 
 `JustBeforeEach` blocks are guaranteed to be run *after* all the `BeforeEach` blocks have run and *just before* the `It` block has run.  We can use this fact to clean up the Book specs:
 
-    var _ = Describe("Book", func() {
-        var (
-            book Book
-            err error
-            json string
-        )
+```go
+var _ = Describe("Book", func() {
+    var (
+        book Book
+        err error
+        json string
+    )
 
-        BeforeEach(func() {
-            json = `{
-                "title":"Les Miserables",
-                "author":"Victor Hugo",
-                "pages":1488
-            }`
-        })
+    BeforeEach(func() {
+        json = `{
+            "title":"Les Miserables",
+            "author":"Victor Hugo",
+            "pages":1488
+        }`
+    })
 
-        JustBeforeEach(func() {
-            book, err = NewBookFromJSON(json)
-        })
+    JustBeforeEach(func() {
+        book, err = NewBookFromJSON(json)
+    })
 
-        Describe("loading from JSON", func() {
-            Context("when the JSON parses succesfully", func() {
-                It("should populate the fields correctly", func() {
-                    Expect(book.Title).To(Equal("Les Miserables"))
-                    Expect(book.Author).To(Equal("Victor Hugo"))
-                    Expect(book.Pages).To(Equal(1488))
-                })
-
-                It("should not error", func() {
-                    Expect(err).NotTo(HaveOccurred())
-                })
+    Describe("loading from JSON", func() {
+        Context("when the JSON parses succesfully", func() {
+            It("should populate the fields correctly", func() {
+                Expect(book.Title).To(Equal("Les Miserables"))
+                Expect(book.Author).To(Equal("Victor Hugo"))
+                Expect(book.Pages).To(Equal(1488))
             })
 
-            Context("when the JSON fails to parse", func() {
-                BeforeEach(func() {
-                    json = `{
-                        "title":"Les Miserables",
-                        "author":"Victor Hugo",
-                        "pages":1488oops
-                    }`
-                })
-
-                It("should return the zero-value for the book", func() {
-                    Expect(book).To(BeZero())
-                })
-
-                It("should error", func() {
-                    Expect(err).To(HaveOccurred())
-                })
+            It("should not error", func() {
+                Expect(err).NotTo(HaveOccurred())
             })
         })
-        
-        Describe("Extracting the author's last name", func() {
-            It("should correctly identify and return the last name", func() {
-                Expect(book.AuthorLastName()).To(Equal("Hugo"))
+
+        Context("when the JSON fails to parse", func() {
+            BeforeEach(func() {
+                json = `{
+                    "title":"Les Miserables",
+                    "author":"Victor Hugo",
+                    "pages":1488oops
+                }`
+            })
+
+            It("should return the zero-value for the book", func() {
+                Expect(book).To(BeZero())
+            })
+
+            It("should error", func() {
+                Expect(err).To(HaveOccurred())
             })
         })
     })
+
+    Describe("Extracting the author's last name", func() {
+        It("should correctly identify and return the last name", func() {
+            Expect(book.AuthorLastName()).To(Equal("Hugo"))
+        })
+    })
+})
+```
 
 Now the actual book creation only occurs once for every `It`, and the failing JSON context can simply assign invalid json to the `json` variable in a `BeforeEach`.
 
@@ -419,40 +438,42 @@ Sometimes you want to run some set up code once before the entire test suite and
 
 Ginkgo provides `BeforeSuite` and `AfterSuite` to accomplish this.  You typically define these at the top-level in the bootstrap file.  For example, say you need to set up an external database:
 
-    package books_test
+```go
+package books_test
 
-    import (
-        . "github.com/onsi/ginkgo"
-        . "github.com/onsi/gomega"
+import (
+    . "github.com/onsi/ginkgo"
+    . "github.com/onsi/gomega"
 
-        "your/db"
+    "your/db"
 
-        "testing"
-    )
+    "testing"
+)
 
-    var dbRunner *db.Runner
-    var dbClient *db.Client
+var dbRunner *db.Runner
+var dbClient *db.Client
 
-    func TestBooks(t *testing.T) {
-        RegisterFailHandler(Fail)
+func TestBooks(t *testing.T) {
+    RegisterFailHandler(Fail)
 
-        RunSpecs(t, "Books Suite")
-    }
+    RunSpecs(t, "Books Suite")
+}
 
-    var _ = BeforeSuite(func() {
-        dbRunner = db.NewRunner()
-        err := dbRunner.Start()
-        Expect(err).NotTo(HaveOccurred())
+var _ = BeforeSuite(func() {
+    dbRunner = db.NewRunner()
+    err := dbRunner.Start()
+    Expect(err).NotTo(HaveOccurred())
 
-        dbClient = db.NewClient()
-        err = dbClient.Connect(dbRunner.Address())
-        Expect(err).NotTo(HaveOccurred())
-    })
+    dbClient = db.NewClient()
+    err = dbClient.Connect(dbRunner.Address())
+    Expect(err).NotTo(HaveOccurred())
+})
 
-    var _ = AfterSuite(func() {
-        dbClient.Cleanup()
-        dbRunner.Stop()
-    })
+var _ = AfterSuite(func() {
+    dbClient.Cleanup()
+    dbRunner.Stop()
+})
+```
 
 The `BeforeSuite` function is run before any specs are run.  If a failure occurs in the `BeforeSuite` then none of the specs are run and the test suite ends.
 
@@ -460,7 +481,7 @@ The `AfterSuite` function is run after all the specs have run, regardless of whe
 
 Both `BeforeSuite` and `AfterSuite` can be run asynchronously by passing a function that takes a `Done` parameter.
 
-You are only allowed to define `BeforeSuite` and `AfterSuite` *once* in a test suite (you shouldn't need more than one!) 
+You are only allowed to define `BeforeSuite` and `AfterSuite` *once* in a test suite (you shouldn't need more than one!)
 
 Finally, when running in parallel, each parallel process will run `BeforeSuite` and `AfterSuite` functions.  [Look here](#parallel-specs) for more on running tests in parallel.
 
@@ -468,44 +489,46 @@ Finally, when running in parallel, each parallel process will run `BeforeSuite` 
 
 As a rule, you should try to keep your `It`s, `BeforeEach`es, etc. short and to the point.  Sometimes this is not possible, particularly when testing complex workflows in integration-style tests.  In these cases your test blocks begin to hide a narrative that is hard to glean by looking at code alone.  Ginkgo provides `by` to help in these situations.  Here's a hokey example:
 
-    var _ = Describe("Browsing the library", func() {
-        BeforeEach(func() {
-            By("Fetching a token and logging in")
+```go
+var _ = Describe("Browsing the library", func() {
+    BeforeEach(func() {
+        By("Fetching a token and logging in")
 
-            authToken, err := authClient.GetToken("gopher", "literati")
-            Exepect(err).NotTo(HaveOccurred())
+        authToken, err := authClient.GetToken("gopher", "literati")
+        Exepect(err).NotTo(HaveOccurred())
 
-            err := libraryClient.Login(authToken)
-            Exepect(err).NotTo(HaveOccurred())
-        })
-
-        It("should be a pleasant experience", func() {
-            By("Entering an aisle")
-
-            aisle, err := libraryClient.EnterAisle()
-            Expect(err).NotTo(HaveOccurred())
-            
-            By("Browsing for books")
-
-            books, err := aisle.GetBooks()            
-            Expect(err).NotTo(HaveOccurred())
-            Expect(books).To(HaveLen(7))
-
-            By("Finding a particular book")
-
-            book, err := books.FindByTitle("Les Miserables")
-            Expect(err).NotTo(HaveOccurred())
-            Expect(book.Title).To(Equal("Les Miserables"))
-
-            By("Check the book out")
-
-            err := libraryClient.CheckOut(book)
-            Expect(err).NotTo(HaveOccurred())
-            books, err := aisle.GetBooks()
-            Expect(books).To(HaveLen(6))
-            Expect(books).NotTo(ContainElement(book))
-        })        
+        err := libraryClient.Login(authToken)
+        Exepect(err).NotTo(HaveOccurred())
     })
+
+    It("should be a pleasant experience", func() {
+        By("Entering an aisle")
+
+        aisle, err := libraryClient.EnterAisle()
+        Expect(err).NotTo(HaveOccurred())
+
+        By("Browsing for books")
+
+        books, err := aisle.GetBooks()
+        Expect(err).NotTo(HaveOccurred())
+        Expect(books).To(HaveLen(7))
+
+        By("Finding a particular book")
+
+        book, err := books.FindByTitle("Les Miserables")
+        Expect(err).NotTo(HaveOccurred())
+        Expect(book.Title).To(Equal("Les Miserables"))
+
+        By("Check the book out")
+
+        err := libraryClient.CheckOut(book)
+        Expect(err).NotTo(HaveOccurred())
+        books, err := aisle.GetBooks()
+        Expect(books).To(HaveLen(6))
+        Expect(books).NotTo(ContainElement(book))
+    })
+})
+```
 
 The string passed to `By` is emitted via the [`GinkgoWriter`](#logging-output).  If a test succeeds you won't see any output beyond Ginkgo's green dot.  If a test fails, however, you will see each step printed out up to the step immediately preceding the failure.  Running with `ginkgo -v` always emits all steps.
 
@@ -519,15 +542,17 @@ The string passed to `By` is emitted via the [`GinkgoWriter`](#logging-output). 
 
 You can mark an individual spec or container as Pending.  This will prevent the spec (or specs within the container) from running.  You do this by adding a `P` or an `X` in front of your `Describe`, `Context`, `It`, and `Measure`:
 
-    PDescribe("some behavior", func() { ... })
-    PContext("some scenario", func() { ... })
-    PIt("some assertion")
-    PMeasure("some measurement")
+```go
+PDescribe("some behavior", func() { ... })
+PContext("some scenario", func() { ... })
+PIt("some assertion")
+PMeasure("some measurement")
 
-    XDescribe("some behavior", func() { ... })
-    XContext("some scenario", func() { ... })
-    XIt("some assertion")
-    XMeasure("some measurement")
+XDescribe("some behavior", func() { ... })
+XContext("some scenario", func() { ... })
+XIt("some assertion")
+XMeasure("some measurement")
+```
 
 > You don't need to remove the `func() { ... }` when you mark an `It` or `Measure` as pending.  Ginkgo will happily ignore any arguments after the string.
 
@@ -537,13 +562,15 @@ You can mark an individual spec or container as Pending.  This will prevent the 
 
 Using the `P` and `X` prefixes marks specs as pending at compile time.  If you need to skip a spec at *runtime* (perhaps due to a constraint that can only be known at runtime) you may call `Skip` in your test:
 
-    It("should do something, if it can", func() {
-        if !someCondition {
-            Skip("special condition wasn't met")
-        }
+```go
+It("should do something, if it can", func() {
+    if !someCondition {
+        Skip("special condition wasn't met")
+    }
 
-        //assertions go here
-    })
+    // assertions go here
+})
+```
 
 Note that `Skip(...)` causes the closure to exit so there is no need to return.
 
@@ -552,10 +579,11 @@ Note that `Skip(...)` causes the closure to exit so there is no need to return.
 It is often convenient, when developing to be able to run a subset of specs.  Ginkgo has two mechanisms for allowing you to focus specs:
 
 1. You can focus individual specs or whole containers of specs *programatically* by adding an `F` in front of your `Describe`, `Context`, and `It`:
-
-        FDescribe("some behavior", func() { ... })
-        FContext("some scenario", func() { ... })
-        FIt("some assertion", func() { ... })
+    ```go
+    FDescribe("some behavior", func() { ... })
+    FContext("some scenario", func() { ... })
+    FIt("some assertion", func() { ... })
+    ```
 
     doing so instructs Ginkgo to only run those specs.  To run all specs, you'll need to go back and remove all the `F`s.
 
@@ -567,17 +595,21 @@ When Ginkgo detects that a passing test suite has a programmatically focused tes
 
 Nested programmatically focused specs follow a simple rule: if a leaf-node is marked focused, any of its ancestor nodes that are marked focus will be unfocused.  With this rule, sibling leaf nodes (regardless of relative-depth) that are focused will run regardless of the focus of a shared ancestor; and non-focused siblings will not run regardless of the focus of the shared ancestor or the relative depths of the siblings.  More simply:
 
-    FDescribe("outer describe", func() {
-        It("A", func() { ... })
-        It("B", func() { ... })
-    })
+```go
+FDescribe("outer describe", func() {
+    It("A", func() { ... })
+    It("B", func() { ... })
+})
+```
 
 will run both `It`s but
 
-    FDescribe("outer describe", func() {
-        It("A", func() { ... })
-        FIt("B", func() { ... })
-    })
+```go
+FDescribe("outer describe", func() {
+    It("A", func() { ... })
+    FIt("B", func() { ... })
+})
+```
 
 will only run `B`.  This behavior tends to map more closely to what the developer actually intends when iterating on a test suite.
 
@@ -635,44 +667,46 @@ When run with the `-stream` flag the test runner simply pipes the output from ea
 
 If your tests spin up or connect to external processes you'll need to make sure that those connections are safe in a parallel context.  One way to ensure this would be, for example, to spin up a separate instance of an external resource for each Ginkgo process.  For example, let's say your tests spin up and hit a database.  You could bring up a different database server bound to a different port for each of your parallel processes:
 
-    package books_test
+```go
+package books_test
 
-    import (
-        . "github.com/onsi/ginkgo"
-        . "github.com/onsi/gomega"
-        "github.com/onsi/ginkgo/config"
+import (
+    . "github.com/onsi/ginkgo"
+    . "github.com/onsi/gomega"
+    "github.com/onsi/ginkgo/config"
 
-        "your/db"
+    "your/db"
 
-        "testing"
-    )
+    "testing"
+)
 
-    var dbRunner *db.Runner
-    var dbClient *db.Client
+var dbRunner *db.Runner
+var dbClient *db.Client
 
 
-    func TestBooks(t *testing.T) {
-        RegisterFailHandler(Fail)
+func TestBooks(t *testing.T) {
+    RegisterFailHandler(Fail)
 
-        RunSpecs(t, "Books Suite")
-    }
+    RunSpecs(t, "Books Suite")
+}
 
-    var _ = BeforeSuite(func() {
-        port := 4000 + config.GinkgoConfig.ParallelNode
+var _ = BeforeSuite(func() {
+    port := 4000 + config.GinkgoConfig.ParallelNode
 
-        dbRunner = db.NewRunner()
-        err := dbRunner.Start(port)
-        Expect(err).NotTo(HaveOccurred())
+    dbRunner = db.NewRunner()
+    err := dbRunner.Start(port)
+    Expect(err).NotTo(HaveOccurred())
 
-        dbClient = db.NewClient()
-        err = dbClient.Connect(dbRunner.Address())
-        Expect(err).NotTo(HaveOccurred())
-    })
+    dbClient = db.NewClient()
+    err = dbClient.Connect(dbRunner.Address())
+    Expect(err).NotTo(HaveOccurred())
+})
 
-    var _ = AfterSuite(func() {
-        dbClient.Cleanup()
-        dbRunner.Stop()
-    })
+var _ = AfterSuite(func() {
+    dbClient.Cleanup()
+    dbRunner.Stop()
+})
+```
 
 
 The `github.com/onsi/ginkgo/config` package provides your suite with access to the command line configuration parameters passed into Ginkgo.  The `config.GinkgoConfig.ParallelNode` parameter is the index for the current node (starts with `1`, goes up to `N`).  Similarly `config.GinkgoConfig.ParallelTotal` is the total number of nodes running in parallel.
@@ -687,31 +721,35 @@ The idea here is simple.  With `SynchronizedBeforeSuite` Ginkgo gives you a way 
 
 Here's what our earlier database example looks like using `SynchronizedBeforeSuite`:
 
-    var _ = SynchronizedBeforeSuite(func() []byte {
-        port := 4000 + config.GinkgoConfig.ParallelNode
+```go
+var _ = SynchronizedBeforeSuite(func() []byte {
+    port := 4000 + config.GinkgoConfig.ParallelNode
 
-        dbRunner = db.NewRunner()
-        err := dbRunner.Start(port)
-        Expect(err).NotTo(HaveOccurred())
+    dbRunner = db.NewRunner()
+    err := dbRunner.Start(port)
+    Expect(err).NotTo(HaveOccurred())
 
-        return []byte(dbRunner.Address())
-    }, func(data []byte) {
-        dbAddress := string(data)
+    return []byte(dbRunner.Address())
+}, func(data []byte) {
+    dbAddress := string(data)
 
-        dbClient = db.NewClient()
-        err = dbClient.Connect(dbAddress)
-        Expect(err).NotTo(HaveOccurred())
-    })
+    dbClient = db.NewClient()
+    err = dbClient.Connect(dbAddress)
+    Expect(err).NotTo(HaveOccurred())
+})
+```
 
 `SynchronizedBeforeSuite` must be passed two functions.  The first must return `[]byte` and the second must accept `[]byte`.  When running with multiple nodes the *first* function is only run on node 1.  When this function completes, all nodes (including node 1) proceed to run the *second* function and will receive the data returned by the first function.  In this example, we use this data-passing mechanism to forward the database's address (set up on node 1) to all nodes.
 
 To clean up correctly, you should use `SynchronizedAfterSuite`.  Continuing our example:
 
-    var _ = SynchronizedAfterSuite(func() {
-        dbClient.Cleanup()
-    }, func() {
-        dbRunner.Stop()
-    })
+```go
+var _ = SynchronizedAfterSuite(func() {
+    dbClient.Cleanup()
+}, func() {
+    dbRunner.Stop()
+})
+```
 
 With `SynchronizedAfterSuite` the *first* function is run on *all* nodes (including node 1).  The *second* function is only run on node 1.  Moreover, the second function is only run when all other nodes have finished running.  This is important, since node 1 is responsible for setting up and tearing down the singleton resources it must wait for the other nodes to end before tearing down the resources they depend on.
 
@@ -727,24 +765,27 @@ Go does concurrency well.  Ginkgo provides support for testing asynchronicity ef
 
 Consider this example:
 
-    It("should post to the channel, eventually", func() {
-        c := make(chan string, 0)
+```go
+It("should post to the channel, eventually", func() {
+    c := make(chan string, 0)
 
-        go DoSomething(c)
-        Expect(<-c).To(ContainSubstring("Done!"))
-    })
-
+    go DoSomething(c)
+    Expect(<-c).To(ContainSubstring("Done!"))
+})
+```
 This test will block until a response is received over the channel `c`.  A deadlock or timeout is a common failure mode for tests like this, a common pattern in such situations is to add a select statement at the bottom of the function and include a `<-time.After(X)` channel to specify a timeout.
 
 Ginkgo has this pattern built in.  The `body` functions in all non-container blocks (`It`s, `BeforeEach`es, `AfterEach`es, `JustBeforeEach`es, and `Benchmark`s) can take an optional `done Done` argument:
 
-    It("should post to the channel, eventually", func(done Done) {
-        c := make(chan string, 0)
+```go
+It("should post to the channel, eventually", func(done Done) {
+    c := make(chan string, 0)
 
-        go DoSomething(c)
-        Expect(<-c).To(ContainSubstring("Done!"))
-        close(done)
-    }, 0.2)
+    go DoSomething(c)
+    Expect(<-c).To(ContainSubstring("Done!"))
+    close(done)
+}, 0.2)
+```
 
 `Done` is a `chan interface{}`.  When Ginkgo detects that the `done Done` argument has been requested it runs the `body` function as a goroutine, wrapping it with the necessary logic to apply a timeout assertion.  You must either close the `done` channel, or send something (anything) to it to tell Ginkgo that your test has ended.  If your test doesn't end after a timeout period, Ginkgo will fail the test and move on the next one.
 
@@ -778,10 +819,12 @@ To pass arguments/custom flags down to your test suite:
 
 Note: the `--` is important!  Only arguments following `--` will be passed to your suite. To parse arguments/custom flags in your test suite, declare a variable and initialize it at the package-level:
 
-    var myFlag string
-    func init() {
-        flag.StringVar(&myFlag, "myFlag", "defaultvalue", "myFlag is used to control my behavior")
-    }
+```go
+var myFlag string
+func init() {
+    flag.StringVar(&myFlag, "myFlag", "defaultvalue", "myFlag is used to control my behavior")
+}
+```
 
 Of course, ginkgo takes a number of flags.  These must be specified *before* you specify the packages to run.  Here's a summary of the call syntax:
 
@@ -790,9 +833,9 @@ Of course, ginkgo takes a number of flags.  These must be specified *before* you
 Here are the flags that Ginkgo accepts:
 
 **Controlling which test suites run:**
-   
+
 - `-r`
-    
+
     Set `-r` to have the `ginkgo` CLI recursively run all test suites under the target directories.  Useful for running all the tests across all your packages.
 
 - `-skipPackage=PACKAGES,TO,SKIP`
@@ -816,11 +859,11 @@ Here are the flags that Ginkgo accepts:
 **Modifying output:**
 
 - `--noColor`
-    
+
     If provided, Ginkgo's default reporter will not print out in color.
 
 - `--succinct`
-    
+
     Succinct silences much of Ginkgo's more verbose output.  Test suites that succeed basically get printed out on just one line!  Succinct is turned off, by default, when running tests for one package.  It is turned on by default when Ginkgo runs multiple test packages.
 
 - `--v`
@@ -834,10 +877,10 @@ Here are the flags that Ginkgo accepts:
 - `--trace`
 
     If present, Ginkgo will print out full stack traces for each failure, not just the line number at which the failure occurs.
-    
+
 - `--progress`
 
-	If present, Ginkgo will emit the progress to the `GinkgoWriter` as it enters and runs each `BeforeEach`, `AfterEach`, `It`, etc... node.  This is useful for debugging stuck tests (e.g. where exactly is the test getting stuck?) and for making tests that emit many logs to the `GinkgoWriter` more readable (e.g. which logs were emitted in the `BeforeEach`?  Which were emitted by the `It`?).  Combine with `--v` to emit the `--progress` output to stdout.
+    If present, Ginkgo will emit the progress to the `GinkgoWriter` as it enters and runs each `BeforeEach`, `AfterEach`, `It`, etc... node.  This is useful for debugging stuck tests (e.g. where exactly is the test getting stuck?) and for making tests that emit many logs to the `GinkgoWriter` more readable (e.g. which logs were emitted in the `BeforeEach`?  Which were emitted by the `It`?).  Combine with `--v` to emit the `--progress` output to stdout.
 
 **Controlling randomization:**
 
@@ -860,7 +903,7 @@ Here are the flags that Ginkgo accepts:
     If present, Ginkgo will skip any `Measure` specs you've defined.
 
 - `--focus=REGEXP`
-    
+
     If provided, Ginkgo will only run specs with descriptions that match the regular expression REGEXP.
 
 - `--skip=REGEXP`
@@ -870,7 +913,7 @@ Here are the flags that Ginkgo accepts:
 **Running the race detector and code coverage tools:**
 
 - `-race`
-    
+
     Set `-race` to have the `ginkgo` CLI run your tests with the race detector on.
 
 - `-cover`
@@ -879,16 +922,16 @@ Here are the flags that Ginkgo accepts:
 
 - `-coverpkg=PKG1,PKG2`
 
-    Like `-cover`, `-coverpkg` runs your tests with coverage analysis turned on.  However, `-coverpkg` allows you to specify the packages to run the analysis on.  This allows you to get coverage on packages outside of the current package, which is useful for integration tests.  Note that it will not run coverage on the current package by default, you always need to specify all packages you want coverage for. 
+    Like `-cover`, `-coverpkg` runs your tests with coverage analysis turned on.  However, `-coverpkg` allows you to specify the packages to run the analysis on.  This allows you to get coverage on packages outside of the current package, which is useful for integration tests.  Note that it will not run coverage on the current package by default, you always need to specify all packages you want coverage for.
 
 **Build flags:**
 
 - `-tags`
-    
+
     Set `-tags` to pass in build tags down to the compilation step.
 
 - `-compilers`
-    
+
     When compiling multiple test suites (e.g. with `ginkgo -r`) Ginkgo will use `runtime.NumCPU()` to determine the number of compile processes to spin up.  On some environments this is a bad idea.  You can specify th enumber of compilers manually with this flag.
 
 **Failure behavior:**
@@ -931,7 +974,7 @@ Here are the flags that Ginkgo accepts:
     By default, when running multiple tests (with -r or a list of packages) Ginkgo will abort when a test fails.  To have Ginkgo run subsequent test suites after a failure you can set -keepGoing.
 
 - `-untilItFails`
-    
+
     If set to `true`, Ginkgo will keep running your tests until a failure occurs.  This can be useful to help suss out race conditions or flakey tests.  It's best to run this with `--randomizeAllSpecs` and --randomizeSuites` to permute test order between iterations.
 
 - `-notify`
@@ -1010,24 +1053,28 @@ and
 
 This will create a bootstrap file that *explicitly* imports all the exported identifiers in Ginkgo and Gomega into the top level namespace.  This happens at the bottom of your bootstrap file and generates code that looks something like:
 
-    import (
-        github.com/onsi/ginkgo
-        ...
-    )
-
+```go
+import (
+    github.com/onsi/ginkgo
     ...
+)
 
-    // Declarations for Ginkgo DSL
-    var Describe = ginkgo.Describe
-    var Context = ginkgo.Context
-    var It = ginkgo.It
-    // etc...
+...
+
+// Declarations for Ginkgo DSL
+var Describe = ginkgo.Describe
+var Context = ginkgo.Context
+var It = ginkgo.It
+// etc...
+```
 
 This allows you to write tests using `Describe`, `Context`, and `It` without dot imports and without the `ginkgo.` prefix.  Crucially, it also allows you to redefine any conflicting identifiers (or even cook up your own semantics!).  For example:
 
-    var _ = ginkgo.Describe
-    var When = ginkgo.Context
-    var Then = ginkgo.It
+```go
+var _ = ginkgo.Describe
+var When = ginkgo.Context
+var Then = ginkgo.It
+```
 
 This will avoid importing `Describe` and will rename `Context` to `When` and `It` to `Then`.
 
@@ -1036,7 +1083,7 @@ As new matchers are added to Gomega you may need to update the set of imports id
     ginkgo nodot
 
 this will update the imports, preserving any renames that you've provided.
- 
+
 ### Converting Existing Tests
 
 If you have an existing XUnit test suite that you'd like to convert to a Ginkgo suite, you can use the `ginkgo convert` command:
@@ -1075,16 +1122,18 @@ Ginkgo allows you to measure the performance of your code using `Measure` blocks
 
 For example:
 
-    Measure("it should do something hard efficiently", func(b Benchmarker) {
-        runtime := b.Time("runtime", func() {
-            output := SomethingHard()
-            Expect(output).To(Equal(17))            
-        })
+```go
+Measure("it should do something hard efficiently", func(b Benchmarker) {
+    runtime := b.Time("runtime", func() {
+        output := SomethingHard()
+        Expect(output).To(Equal(17))
+    })
 
-        Ω(runtime.Seconds()).Should(BeNumerically("<", 0.2), "SomethingHard() shouldn't take too long.")
+    Ω(runtime.Seconds()).Should(BeNumerically("<", 0.2), "SomethingHard() shouldn't take too long.")
 
-        b.RecordValue("disk usage (in MB)", HowMuchDiskSpaceDidYouUse())
-    }, 10)
+    b.RecordValue("disk usage (in MB)", HowMuchDiskSpaceDidYouUse())
+}, 10)
+```
 
 will run the closure function 10 times, aggregating data for "runtime" and "disk usage".  Ginkgo's reporter will then print out a summary of each of these metrics containing some simple statistics:
 
@@ -1097,7 +1146,7 @@ will run the closure function 10 times, aggregating data for "runtime" and "disk
           Fastest Time: 0.01s
           Slowest Time: 0.08s
           Average Time: 0.05s ± 0.02s
-        
+
         disk usage (in MB):
           Smallest: 3.0
            Largest: 5.2
@@ -1113,7 +1162,9 @@ With `Measure` you can write expressive, exploratory, specs to measure the perfo
 
 The `Benchmarker` passed into your closure function provides the
 
-    Time(name string, body func(), info ...Interface{}) time.Duration
+```go
+Time(name string, body func(), info ...Interface{}) time.Duration
+```
 
  method.  `Time` runs the passed in `body` function and records, and returns, its runtime.  The resulting measurements for each sample are aggregated and some simple statistics are computed.  These stats appear in the spec output under the `name` you pass in.  Note that `name` must be unique within the scope of the `Measure` node.
 
@@ -1125,7 +1176,9 @@ The `Benchmarker` passed into your closure function provides the
 
 The `Benchmarker` also provides the
 
-    RecordValue(name string, value float64, info ...Interface{})
+```go
+RecordValue(name string, value float64, info ...Interface{})
+```
 
 method.  `RecordValue` allows you to record arbitrary numerical data.  These results are aggregated and some simple statistics are computed.  These stats appear in the spec output under the `name` you pass in.  Note that `name` must be unique within the scope of the `Measure` node.
 
@@ -1145,54 +1198,56 @@ It is often the case that within a particular suite, there will be a number of d
 
 Here, we will pull out a function that lives within the same closure that `Context`s live in, that defines the `It`s that are common to those `Context`s.  For example:
 
-    Describe("my api client", func() {
-        var client APIClient
-        var fakeServer FakeServer
-        var response chan APIResponse
+```go
+Describe("my api client", func() {
+    var client APIClient
+    var fakeServer FakeServer
+    var response chan APIResponse
 
-        BeforeEach(func() {
-            response = make(chan APIResponse, 1)
-            fakeServer = NewFakeServer()
-            client = NewAPIClient(fakeServer)
-            client.Get("/some/endpoint", response)
+    BeforeEach(func() {
+        response = make(chan APIResponse, 1)
+        fakeServer = NewFakeServer()
+        client = NewAPIClient(fakeServer)
+        client.Get("/some/endpoint", response)
+    })
+
+    Describe("failure modes", func() {
+        AssertFailedBehavior := func() {
+            It("should not include JSON in the response", func() {
+                Ω((<-response).JSON).Should(BeZero())
+            })
+
+            It("should not report success", func() {
+                Ω((<-response).Success).Should(BeFalse())
+            })
+        }
+
+        Context("when the server does not return a 200", func() {
+            BeforeEach(func() {
+                fakeServer.Respond(404)
+            })
+
+            AssertFailedBehavior()
         })
 
-        Describe("failure modes", func() {
-            AssertFailedBehavior := func() {
-                It("should not include JSON in the response", func() {
-                    Ω((<-response).JSON).Should(BeZero())
-                })
-
-                It("should not report success", func() {
-                    Ω((<-response).Success).Should(BeFalse())
-                })
-            }
-
-            Context("when the server does not return a 200", func() {
-                BeforeEach(func() {
-                    fakeServer.Respond(404)
-                })
-
-                AssertFailedBehavior()
+        Context("when the server returns unparseable JSON", func() {
+            BeforeEach(func() {
+                fakeServer.Succeed("{I'm not JSON!")
             })
 
-            Context("when the server returns unparseable JSON", func() {
-                BeforeEach(func() {
-                    fakeServer.Succeed("{I'm not JSON!")
-                })
+            AssertFailedBehavior()
+        })
 
-                AssertFailedBehavior()                
+        Context("when the request errors", func() {
+            BeforeEach(func() {
+                fakeServer.Error(errors.New("oops!"))
             })
 
-            Context("when the request errors", func() {
-                BeforeEach(func() {
-                    fakeServer.Error(errors.New("oops!"))
-                })
-
-                AssertFailedBehavior()
-            })
+            AssertFailedBehavior()
         })
     })
+})
+```
 
 Note that the `AssertFailedBehavior` function is called within the body of the `Context` container block.  The `It`s defined by this function get added to the enclosing container.  Since the function shares the same closure scope we don't need to pass the `response` channel in.
 
@@ -1202,58 +1257,60 @@ You can put as many `It`s as you wanted into the shared behavior `AssertFailedBe
 
 To understand this pattern, let's just redo the above example with this pattern:
 
-    Describe("my api client", func() {
-        var client APIClient
-        var fakeServer FakeServer
-        var response chan APIResponse
+```go
+Describe("my api client", func() {
+    var client APIClient
+    var fakeServer FakeServer
+    var response chan APIResponse
 
-        BeforeEach(func() {
-            response = make(chan APIResponse, 1)
-            fakeServer = NewFakeServer()
-            client = NewAPIClient(fakeServer)
-            client.Get("/some/endpoint", response)
+    BeforeEach(func() {
+        response = make(chan APIResponse, 1)
+        fakeServer = NewFakeServer()
+        client = NewAPIClient(fakeServer)
+        client.Get("/some/endpoint", response)
+    })
+
+    Describe("failure modes", func() {
+        AssertNoJSONInResponse := func() func() {
+            return func() {
+                Ω((<-response).JSON).Should(BeZero())
+            }
+        }
+
+        AssertDoesNotReportSuccess := func() func() {
+            return func() {
+                Ω((<-response).Success).Should(BeFalse())
+            }
+        }
+        Context("when the server does not return a 200", func() {
+            BeforeEach(func() {
+                fakeServer.Respond(404)
+            })
+
+            It("should not include JSON in the response", AssertNoJSONInResponse())
+            It("should not report success", AssertDoesNotReportSuccess())
         })
 
-        Describe("failure modes", func() {
-            AssertNoJSONInResponse := func() func() {
-                return func() {
-                    Ω((<-response).JSON).Should(BeZero())
-                }
-            }
-
-            AssertDoesNotReportSuccess := func() func() {
-                return func() {
-                    Ω((<-response).Success).Should(BeFalse())
-                }
-            }
-            Context("when the server does not return a 200", func() {
-                BeforeEach(func() {
-                    fakeServer.Respond(404)
-                })
-
-                It("should not include JSON in the response", AssertNoJSONInResponse())
-                It("should not report success", AssertDoesNotReportSuccess())
+        Context("when the server returns unparseable JSON", func() {
+            BeforeEach(func() {
+                fakeServer.Succeed("{I'm not JSON!")
             })
 
-            Context("when the server returns unparseable JSON", func() {
-                BeforeEach(func() {
-                    fakeServer.Succeed("{I'm not JSON!")
-                })
+            It("should not include JSON in the response", AssertNoJSONInResponse())
+            It("should not report success", AssertDoesNotReportSuccess())
+        })
 
-                It("should not include JSON in the response", AssertNoJSONInResponse())
-                It("should not report success", AssertDoesNotReportSuccess())
+        Context("when the request errors", func() {
+            BeforeEach(func() {
+                fakeServer.Error(errors.New("oops!"))
             })
 
-            Context("when the request errors", func() {
-                BeforeEach(func() {
-                    fakeServer.Error(errors.New("oops!"))
-                })
-
-                It("should not include JSON in the response", AssertNoJSONInResponse())
-                It("should not report success", AssertDoesNotReportSuccess())
-            })
+            It("should not include JSON in the response", AssertNoJSONInResponse())
+            It("should not report success", AssertDoesNotReportSuccess())
         })
     })
+})
+```
 
 Note that this solution is still very compact, especially because there are only two shared `It`s for each `Context`.  There is slightly more repetition here, but it's also slightly more explicit.  The main benefit of this pattern is you can focus and pend individual `It`s in individual `Context`s.
 
@@ -1263,51 +1320,55 @@ The patterns outlined above work well when the shared behavior is intended to be
 
 #### Pattern 1
 
-    package sharedbehaviors
+```go
+package sharedbehaviors
 
-	import (
-		. "github.com/onsi/ginkgo"
-		. "github.com/onsi/gomega"
-	)
+import (
+    . "github.com/onsi/ginkgo"
+    . "github.com/onsi/gomega"
+)
 
-    type FailedResponseBehaviorInputs struct {
-        response chan APIResponse
-    }
+type FailedResponseBehaviorInputs struct {
+    response chan APIResponse
+}
 
-    func SharedFailedResponseBehavior(inputs *FailedResponseBehaviorInputs) {                
-        It("should not include JSON in the response", func() {
-            Ω((<-(inputs.response)).JSON).Should(BeZero())
-        })
+func SharedFailedResponseBehavior(inputs *FailedResponseBehaviorInputs) {
+    It("should not include JSON in the response", func() {
+        Ω((<-(inputs.response)).JSON).Should(BeZero())
+    })
 
-        It("should not report success", func() {
-            Ω((<-(inputs.response)).Success).Should(BeFalse())
-        })
-    }
+    It("should not report success", func() {
+        Ω((<-(inputs.response)).Success).Should(BeFalse())
+    })
+}
+```
 
 #### Pattern 2
 
-    package sharedbehaviors
+```go
+package sharedbehaviors
 
-	import (
-		. "github.com/onsi/ginkgo"
-		. "github.com/onsi/gomega"
-	)
+import (
+    . "github.com/onsi/ginkgo"
+    . "github.com/onsi/gomega"
+)
 
-    type FailedResponseBehaviorInputs struct {
-        response chan APIResponse
+type FailedResponseBehaviorInputs struct {
+    response chan APIResponse
+}
+
+func AssertNoJSONInResponese(inputs *FailedResponseBehaviorInputs) func() {
+    return func() {
+        Ω((<-(inputs.response)).JSON).Should(BeZero())
     }
+}
 
-    func AssertNoJSONInResponese(inputs *FailedResponseBehaviorInputs) func() {
-        return func() {
-            Ω((<-(inputs.response)).JSON).Should(BeZero())
-        }
+func AssertDoesNotReportSuccess(inputs *FailedResponseBehaviorInputs) func() {
+    return func() {
+        Ω((<-(inputs.response)).Success).Should(BeFalse())
     }
-
-    func AssertDoesNotReportSuccess(inputs *FailedResponseBehaviorInputs) func() {
-        return func() {
-            Ω((<-(inputs.response)).Success).Should(BeFalse())
-        }
-    }
+}
+```
 
 Users of the shared behavior must generate and populate a `FailedResponseBehaviorInputs` and pass it in to either `SharedFailedResponseBehavior` or `AssertNoJSONInResponese` and `AssertDoesNotReportSuccess`.  Why do things this way?  Two reasons:
 
@@ -1317,40 +1378,42 @@ Users of the shared behavior must generate and populate a `FailedResponseBehavio
 
 Here's what the calling test would look like after dot-importing the `sharedbehaviors` package (for brevity we'll combine patterns 1 and 2 in this example):
 
-    Describe("my api client", func() {
-        var client APIClient
-        var fakeServer FakeServer
-        var response chan APIResponse
-        sharedInputs := FailedResponseBehaviorInputs{}
+```go
+Describe("my api client", func() {
+    var client APIClient
+    var fakeServer FakeServer
+    var response chan APIResponse
+    sharedInputs := FailedResponseBehaviorInputs{}
 
-        BeforeEach(func() {
-            sharedInputs.response = make(chan APIResponse, 1)
-            fakeServer = NewFakeServer()
-            client = NewAPIClient(fakeServer)
-            client.Get("/some/endpoint", sharedInputs.response)
+    BeforeEach(func() {
+        sharedInputs.response = make(chan APIResponse, 1)
+        fakeServer = NewFakeServer()
+        client = NewAPIClient(fakeServer)
+        client.Get("/some/endpoint", sharedInputs.response)
+    })
+
+    Describe("failure modes", func() {
+        Context("when the server does not return a 200", func() {
+            BeforeEach(func() {
+                fakeServer.Respond(404)
+            })
+
+            // Pattern 1
+            SharedFailedResponseBehavior(&sharedInputs)
         })
 
-        Describe("failure modes", func() {
-            Context("when the server does not return a 200", func() {
-                BeforeEach(func() {
-                    fakeServer.Respond(404)
-                })
-
-                // Pattern 1
-                SharedFailedResponseBehavior(&sharedInputs)
+        Context("when the server returns unparseable JSON", func() {
+            BeforeEach(func() {
+                fakeServer.Succeed("{I'm not JSON!")
             })
 
-            Context("when the server returns unparseable JSON", func() {
-                BeforeEach(func() {
-                    fakeServer.Succeed("{I'm not JSON!")
-                })
-
-                // Pattern 2
-                It("should not include JSON in the response", AssertNoJSONInResponse(&sharedInputs))
-                It("should not report success", AssertDoesNotReportSuccess(&sharedInputs))
-            })
+            // Pattern 2
+            It("should not include JSON in the response", AssertNoJSONInResponse(&sharedInputs))
+            It("should not report success", AssertDoesNotReportSuccess(&sharedInputs))
         })
     })
+})
+```
 
 ---
 
@@ -1376,14 +1439,14 @@ For Travis CI, you could use something like this:
 
     language: go
     go:
-      - 1.4
-      - tip
+        - 1.4
+        - tip
 
     install:
-      - go get -v github.com/onsi/ginkgo/ginkgo
-      - go get -v github.com/onsi/gomega
-      - go get -v -t ./...
-      - export PATH=$PATH:$HOME/gopath/bin
+        - go get -v github.com/onsi/ginkgo/ginkgo
+        - go get -v github.com/onsi/gomega
+        - go get -v -t ./...
+        - export PATH=$PATH:$HOME/gopath/bin
 
     script: ginkgo -r --randomizeAllSpecs --randomizeSuites --failOnPending --cover --trace --race --compilers=2
 
@@ -1405,25 +1468,27 @@ While it's easy to roll your own table driven tests using simple data structures
 
 For example:
 
-    package table_test
+```go
+package table_test
 
-    import (
-        . "github.com/onsi/ginkgo/extensions/table"
+import (
+    . "github.com/onsi/ginkgo/extensions/table"
 
-        . "github.com/onsi/ginkgo"
-        . "github.com/onsi/gomega"
+    . "github.com/onsi/ginkgo"
+    . "github.com/onsi/gomega"
+)
+
+var _ = Describe("Math", func() {
+    DescribeTable("the > inequality",
+        func(x int, y int, expected bool) {
+            Expect(x > y).To(Equal(expected))
+        },
+        Entry("x > y", 1, 0, true),
+        Entry("x == y", 0, 0, false),
+        Entry("x < y", 0, 1, false),
     )
-
-    var _ = Describe("Math", func() {
-        DescribeTable("the > inequality",
-            func(x int, y int, expected bool) {
-                Expect(x > y).To(Equal(expected))
-            },
-            Entry("x > y", 1, 0, true),
-            Entry("x == y", 0, 0, false),
-            Entry("x < y", 0, 1, false),
-        )
-    })
+})
+```
 
 > In this example we dot import the table extension.  This isn't strictly necessary but makes the DSL easier to interact with.
 
@@ -1437,28 +1502,30 @@ It's important to understand the life-cycle of the table.  The `table` package i
 
 To be clear, the above test is *exactly* equivalent to:
 
-    package table_test
+```go
+package table_test
 
-    import (
-        . "github.com/onsi/ginkgo"
-        . "github.com/onsi/gomega"
+import (
+    . "github.com/onsi/ginkgo"
+    . "github.com/onsi/gomega"
+)
+
+var _ = Describe("Math", func() {
+    Describe("the > inequality",
+        It("x > y", func() {
+            expect(1 > 0).To(Equal(true))
+        })
+
+        It("x == y", func() {
+            expect(0 > 0).To(Equal(false))
+        })
+
+        It("x < y", func() {
+            expect(0 > 1).To(Equal(false))
+        })
     )
-
-    var _ = Describe("Math", func() {
-        Describe("the > inequality",
-            It("x > y", func() {
-                expect(1 > 0).To(Equal(true))
-            })
-
-            It("x == y", func() {
-                expect(0 > 0).To(Equal(false))
-            })
-
-            It("x < y", func() {
-                expect(0 > 1).To(Equal(false))
-            })
-        )
-    })
+})
+```
 
 #### Focusing and Pending Tables and Entries
 
@@ -1470,43 +1537,45 @@ Similarly, individual entries can be focused/pended out with `FEntry` and `PEntr
 
 While passing arbitrary parameters to `Entry` is convenient it can make the test cases difficult to parse at a glance.  For more complex tables it may make more sense to define a new type and pass it around instead.  For example:
 
-    package table_test
+```go
+package table_test
 
-    import (
-        . "github.com/onsi/ginkgo/extensions/table"
+import (
+    . "github.com/onsi/ginkgo/extensions/table"
 
-        . "github.com/onsi/ginkgo"
-        . "github.com/onsi/gomega"
+    . "github.com/onsi/ginkgo"
+    . "github.com/onsi/gomega"
+)
+
+var _ = Describe("Substring matching", func() {
+    type SubstringCase struct {
+        String string
+        Substring   string
+        Count          int
+    }
+
+    DescribeTable("counting substring matches",
+        func(c SubstringCase) {
+            Ω(strings.Count(c.String, c.Substring)).Should(BeNumerically("==", c.Count))
+        },
+        Entry("with no matching substring", SubstringCase{
+            String: "the sixth sheikh's sixth sheep's sick",
+            Substring:   "emir",
+            Count:          0,
+        }),
+        Entry("with one matching substring", SubstringCase{
+            String: "the sixth sheikh's sixth sheep's sick",
+            Substring:   "sheep",
+            Count:          1,
+        }),
+        Entry("with many matching substring", SubstringCase{
+            String: "the sixth sheikh's sixth sheep's sick",
+            Substring:   "si",
+            Count:          3,
+        }),
     )
-
-    var _ = Describe("Substring matching", func() {
-        type SubstringCase struct {
-            String string
-            Substring   string
-            Count          int
-        }
-
-        DescribeTable("counting substring matches",
-            func(c SubstringCase) {
-                Ω(strings.Count(c.String, c.Substring)).Should(BeNumerically("==", c.Count))
-            },
-            Entry("with no matching substring", SubstringCase{
-                String: "the sixth sheikh's sixth sheep's sick",
-                Substring:   "emir",
-                Count:          0,
-            }),
-            Entry("with one matching substring", SubstringCase{
-                String: "the sixth sheikh's sixth sheep's sick",
-                Substring:   "sheep",
-                Count:          1,
-            }),
-            Entry("with many matching substring", SubstringCase{
-                String: "the sixth sheikh's sixth sheep's sick",
-                Substring:   "si",
-                Count:          3,
-            }),
-        )
-    })
+})
+```
 
 Note that this pattern uses the same DSL, it's simply a way to manage the parameters flowing between the `Entry` cases and the callback registered with `DescribeTable`.
 
@@ -1518,24 +1587,30 @@ While Ginkgo's default reporter offers a comprehensive set of features, Ginkgo m
 
 In Ginkgo a reporter must satisfy the `Reporter` interface:
 
-    type Reporter interface {
-        SpecSuiteWillBegin(config config.GinkgoConfigType, summary *types.SuiteSummary)
-        BeforeSuiteDidRun(setupSummary *types.SetupSummary)
-        SpecWillRun(specSummary *types.SpecSummary)
-        SpecDidComplete(specSummary *types.SpecSummary)
-        AfterSuiteDidRun(setupSummary *types.SetupSummary)
-        SpecSuiteDidEnd(summary *types.SuiteSummary)
-    }
+```go
+type Reporter interface {
+    SpecSuiteWillBegin(config config.GinkgoConfigType, summary *types.SuiteSummary)
+    BeforeSuiteDidRun(setupSummary *types.SetupSummary)
+    SpecWillRun(specSummary *types.SpecSummary)
+    SpecDidComplete(specSummary *types.SpecSummary)
+    AfterSuiteDidRun(setupSummary *types.SetupSummary)
+    SpecSuiteDidEnd(summary *types.SuiteSummary)
+}
+```
 
 The method names should be self-explanatory.  Be sure to dig into the `SuiteSummary` and `SpecSummary` objects to get a sense of what data is available to your reporter.  If you're writing a custom reporter to ingest benchmarking data generated by `Measure` nodes you'll want to look at the `ExampleMeasurement` struct that is provided by `ExampleSummary.Measurements`.
 
-Once you've created your custom reporter you may pass an instance of it to Ginkgo by replacing the `RunSpecs` command in your test suite bootstrap with either: 
+Once you've created your custom reporter you may pass an instance of it to Ginkgo by replacing the `RunSpecs` command in your test suite bootstrap with either:
 
-    RunSpecsWithDefaultAndCustomReporters(t *testing.T, description string, reporters []Reporter)
+```go
+RunSpecsWithDefaultAndCustomReporters(t *testing.T, description string, reporters []Reporter)
+```
 
 or
 
-    RunSpecsWithCustomReporters(t *testing.T, description string, reporters []Reporter)
+```go
+RunSpecsWithCustomReporters(t *testing.T, description string, reporters []Reporter)
+```
 
 `RunSpecsWithDefaultAndCustomReporters` will run your custom reporters alongside Ginkgo's default reporter.  `RunSpecsWithCustomReporters` will only run the custom reporters you pass in.
 
@@ -1553,19 +1628,21 @@ It is, typically, not difficult to replace `*testing.T` in such libraries with a
 
 For example, to get testify working:
 
-    package foo_test
+```go
+package foo_test
 
-    import (
-        . "github.com/onsi/ginkgo"
+import (
+    . "github.com/onsi/ginkgo"
 
-        "github.com/stretchr/testify/assert"
-    )
+    "github.com/stretchr/testify/assert"
+)
 
-    var _ = Describe(func("foo") {
-        It("should testify to its correctness", func(){
-            assert.Equal(GinkgoT(), foo{}.Name(), "foo")
-        })
+var _ = Describe(func("foo") {
+    It("should testify to its correctness", func(){
+        assert.Equal(GinkgoT(), foo{}.Name(), "foo")
     })
+})
+```
 
 > Note that passing the `*testing.T` from Ginkgo's bootstrap `Test...()` function will cause the suite to abort as soon as the first failure is encountered.  Don't do this.  You need to communicate failure to Ginkgo's single (global) `Fail` function
 
@@ -1575,35 +1652,37 @@ Ginkgo does not provide a mocking/stubbing framework.  It's the author's opinion
 
 With that said, it is relatively straightforward to use a mocking framework such as [Gomock](https://code.google.com/p/gomock/).  `GinkgoT()` implements Gomock's `TestReporter` interface.  Here's how you use it (for example):
 
-    import (
-      "code.google.com/p/gomock/gomock"
+```go
+import (
+    "code.google.com/p/gomock/gomock"
 
-      . github.com/onsi/ginkgo
-      . github.com/onsi/gomega
+    . github.com/onsi/ginkgo
+    . github.com/onsi/gomega
+)
+
+var _ = Describe("Consumer", func() {
+    var (
+        mockCtrl *gomock.Controller
+        mockThing *mockthing.MockThing
+        consumer *Consumer
     )
 
-    var _ = Describe("Consumer", func() {
-        var (
-            mockCtrl *gomock.Controller
-            mockThing *mockthing.MockThing
-            consumer *Consumer
-        )
-
-        BeforeEach(func() {
-            mockCtrl = gomock.NewController(GinkgoT())
-            mockThing = mockthing.NewMockThing(mockCtrl)
-            consumer = NewConsumer(mockThing)
-        })
-
-        AfterEach(func() {
-            mockCtrl.Finish()
-        })
-
-        It("should consume things", func() {
-            mockThing.EXPECT().OmNom()
-            consumer.Consume()
-        })
+    BeforeEach(func() {
+        mockCtrl = gomock.NewController(GinkgoT())
+        mockThing = mockthing.NewMockThing(mockCtrl)
+        consumer = NewConsumer(mockThing)
     })
+
+    AfterEach(func() {
+        mockCtrl.Finish()
+    })
+
+    It("should consume things", func() {
+        mockThing.EXPECT().OmNom()
+        consumer.Consume()
+    })
+})
+```
 
 When using Gomock you may want to run `ginkgo` with the `-trace` flag to print out stack traces for failures which will help you trace down where, in your code, invalid calls occured.
 
@@ -1611,21 +1690,23 @@ When using Gomock you may want to run `ginkgo` with the `-trace` flag to print o
 
 Ginkgo provides a [custom reporter](#writing-custom-reporters) for generating JUnit compatible XML output.  Here's a sample bootstrap file that instantiates a JUnit reporter and passes it to the test runner:
 
-    package foo_test
+```go
+package foo_test
 
-    import (
-        . "github.com/onsi/ginkgo"
-        . "github.com/onsi/gomega"
+import (
+    . "github.com/onsi/ginkgo"
+    . "github.com/onsi/gomega"
 
-        "github.com/onsi/ginkgo/reporters"
-        "testing"
-    )
+    "github.com/onsi/ginkgo/reporters"
+    "testing"
+)
 
-    func TestFoo(t *testing.T) {
-        RegisterFailHandler(Fail)
-        junitReporter := reporters.NewJUnitReporter("junit.xml")
-        RunSpecsWithDefaultAndCustomReporters(t, "Foo Suite", []Reporter{junitReporter})
-    }    
+func TestFoo(t *testing.T) {
+    RegisterFailHandler(Fail)
+    junitReporter := reporters.NewJUnitReporter("junit.xml")
+    RunSpecsWithDefaultAndCustomReporters(t, "Foo Suite", []Reporter{junitReporter})
+}
+```
 
 This will generate a file name "junit.xml" in the directory containing your test.  This xml file is compatible with the latest version of the Jenkins JUnit plugin.
 
