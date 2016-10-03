@@ -643,7 +643,7 @@ To run a Ginkgo suite in parallel you *must* use the `ginkgo` CLI.  Simply pass 
 
     ginkgo -p
 
-this will automatically detect the optimal number of test nodes to spawn (see the note below.
+this will automatically detect the optimal number of test nodes to spawn (see the note below).
 
 To specify the number of nodes to spawn, use `-nodes`:
 
