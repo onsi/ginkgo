@@ -399,4 +399,10 @@ var _ = Describe("Suite", func() {
 			}).Should(Panic())
 		})
 	})
+
+	Describe("GinkgoRandomSeed", func() {
+		It("returns the current config's random seed", func() {
+			Ω(GinkgoRandomSeed()).Should(Equal(config.GinkgoConfig.RandomSeed))
+		})
+	})
 })
