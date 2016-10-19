@@ -85,10 +85,16 @@ var _ = Describe("Subcommand", func() {
 
 		It("should generate a bootstrap file using a template when told to", func() {
 			templateFile := filepath.Join(pkgPath, ".bootstrap")
-			ioutil.WriteFile(templateFile, []byte(`
-			package {{.Package}}
-			Ginkgo: {{.GinkgoImport}}
-			Gomega: {{.GomegaImport}}
+			ioutil.WriteFile(templateFile, []byte(`package {{.Package}}
+
+			import (
+				{{.GinkgoImport}}
+				{{.GomegaImport}}
+
+				"testing"
+				"binary"
+			)
+
 			func Test{{.FormattedName}}(t *testing.T) {
 				// This is a {{.Package}} test
 			}`), 0666)
@@ -101,8 +107,9 @@ var _ = Describe("Subcommand", func() {
 			content, err := ioutil.ReadFile(filepath.Join(pkgPath, "foo_suite_test.go"))
 			Ω(err).ShouldNot(HaveOccurred())
 			Ω(content).Should(ContainSubstring("package foo_test"))
-			Ω(content).Should(ContainSubstring(`Ginkgo: . "github.com/onsi/ginkgo"`))
-			Ω(content).Should(ContainSubstring(`Gomega: . "github.com/onsi/gomega"`))
+			Ω(content).Should(ContainSubstring(`. "github.com/onsi/ginkgo"`))
+			Ω(content).Should(ContainSubstring(`. "github.com/onsi/gomega"`))
+			Ω(content).Should(ContainSubstring(`"binary"`))
 			Ω(content).Should(ContainSubstring("// This is a foo_test test"))
 		})
 	})
