@@ -58,7 +58,7 @@ func (t *TestRunner) Compile() error {
 }
 
 func (t *TestRunner) BuildArgs(path string) []string {
-	args := []string{"test", "-c", "-o", path, t.Suite.Path}
+	args := []string{"test", "-c", "-i", "-o", path, t.Suite.Path}
 
 	if *t.goOpts["covermode"].(*string) != "" {
 		args = append(args, "-cover", fmt.Sprintf("-covermode=%s", *t.goOpts["covermode"].(*string)))
@@ -216,7 +216,7 @@ func copyFile(src, dst string) error {
 }
 
 /*
-go test -c spits package.test out into the cwd. there's no way to change this.
+go test -c -i spits package.test out into the cwd. there's no way to change this.
 
 to make sure it doesn't generate conflicting .test files in the cwd, Compile() must switch the cwd to the test package.
 
