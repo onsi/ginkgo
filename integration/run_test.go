@@ -238,6 +238,9 @@ var _ = Describe("Running Specs", func() {
 				output := string(session.Out.Contents())
 
 				nodes := runtime.NumCPU()
+				if nodes == 1 {
+					Skip("Can't test parallel testings with 1 CPU")
+				}
 				if nodes > 4 {
 					nodes = nodes - 1
 				}
