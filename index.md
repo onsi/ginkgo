@@ -975,7 +975,7 @@ Here are the flags that Ginkgo accepts:
 
 - `-untilItFails`
 
-    If set to `true`, Ginkgo will keep running your tests until a failure occurs.  This can be useful to help suss out race conditions or flakey tests.  It's best to run this with `--randomizeAllSpecs` and --randomizeSuites` to permute test order between iterations.
+    If set to `true`, Ginkgo will keep running your tests until a failure occurs.  This can be useful to help suss out race conditions or flakey tests.  It's best to run this with `--randomizeAllSpecs` and `--randomizeSuites` to permute test order between iterations.
 
 - `-notify`
 
