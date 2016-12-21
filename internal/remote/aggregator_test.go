@@ -235,9 +235,11 @@ var _ = Describe("Aggregator", func() {
 				suiteSummary1.SuiteSucceeded = true
 				suiteSummary1.NumberOfPassedSpecs = 15
 				suiteSummary1.NumberOfFailedSpecs = 0
+				suiteSummary1.NumberOfFlakedSpecs = 3
 				suiteSummary2.SuiteSucceeded = false
 				suiteSummary2.NumberOfPassedSpecs = 5
 				suiteSummary2.NumberOfFailedSpecs = 3
+				suiteSummary2.NumberOfFlakedSpecs = 4
 
 				aggregator.SpecSuiteDidEnd(suiteSummary2)
 				aggregator.SpecSuiteDidEnd(suiteSummary1)
@@ -256,6 +258,7 @@ var _ = Describe("Aggregator", func() {
 				Ω(compositeSummary.NumberOfFailedSpecs).Should(Equal(3))
 				Ω(compositeSummary.NumberOfPendingSpecs).Should(Equal(3))
 				Ω(compositeSummary.NumberOfSkippedSpecs).Should(Equal(4))
+				Ω(compositeSummary.NumberOfFlakedSpecs).Should(Equal(7))
 				Ω(compositeSummary.RunTime.Seconds()).Should(BeNumerically(">", 0.2))
 			})
 		})
