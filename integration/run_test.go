@@ -278,15 +278,29 @@ var _ = Describe("Running Specs", func() {
 		})
 
 		Context("when all the tests pass", func() {
-			It("should run all the tests (in succinct mode) and succeed", func() {
-				session := startGinkgo(tmpDir, "--noColor", "-r")
-				Eventually(session).Should(gexec.Exit(0))
-				output := string(session.Out.Contents())
+			Context("with the -r flag", func() {
+				It("should run all the tests (in succinct mode) and succeed", func() {
+					session := startGinkgo(tmpDir, "--noColor", "-r", ".")
+					Eventually(session).Should(gexec.Exit(0))
+					output := string(session.Out.Contents())
 
-				outputLines := strings.Split(output, "\n")
-				Ω(outputLines[0]).Should(MatchRegexp(`\[\d+\] Passing_ginkgo_tests Suite - 4/4 specs [%s]{4} SUCCESS! \d+(\.\d+)?[muµ]s PASS`, regexp.QuoteMeta(denoter)))
-				Ω(outputLines[1]).Should(MatchRegexp(`\[\d+\] More_ginkgo_tests Suite - 2/2 specs [%s]{2} SUCCESS! \d+(\.\d+)?[muµ]s PASS`, regexp.QuoteMeta(denoter)))
-				Ω(output).Should(ContainSubstring("Test Suite Passed"))
+					outputLines := strings.Split(output, "\n")
+					Ω(outputLines[0]).Should(MatchRegexp(`\[\d+\] Passing_ginkgo_tests Suite - 4/4 specs [%s]{4} SUCCESS! \d+(\.\d+)?[muµ]s PASS`, regexp.QuoteMeta(denoter)))
+					Ω(outputLines[1]).Should(MatchRegexp(`\[\d+\] More_ginkgo_tests Suite - 2/2 specs [%s]{2} SUCCESS! \d+(\.\d+)?[muµ]s PASS`, regexp.QuoteMeta(denoter)))
+					Ω(output).Should(ContainSubstring("Test Suite Passed"))
+				})
+			})
+			Context("with a trailing /...", func() {
+				It("should run all the tests (in succinct mode) and succeed", func() {
+					session := startGinkgo(tmpDir, "--noColor", "./...")
+					Eventually(session).Should(gexec.Exit(0))
+					output := string(session.Out.Contents())
+
+					outputLines := strings.Split(output, "\n")
+					Ω(outputLines[0]).Should(MatchRegexp(`\[\d+\] Passing_ginkgo_tests Suite - 4/4 specs [%s]{4} SUCCESS! \d+(\.\d+)?[muµ]s PASS`, regexp.QuoteMeta(denoter)))
+					Ω(outputLines[1]).Should(MatchRegexp(`\[\d+\] More_ginkgo_tests Suite - 2/2 specs [%s]{2} SUCCESS! \d+(\.\d+)?[muµ]s PASS`, regexp.QuoteMeta(denoter)))
+					Ω(output).Should(ContainSubstring("Test Suite Passed"))
+				})
 			})
 		})
 
