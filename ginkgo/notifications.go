@@ -123,18 +123,18 @@ func (n *Notifier) RunCommand(suite testsuite.TestSuite, suitePassed bool) {
 		output, err := exec.Command(parts[0], parts[1:]...).CombinedOutput()
 		if err != nil {
 			fmt.Println("Post-suite command failed:")
-			if config.DefaultReporterConfig.NoColor {
-				fmt.Printf("\t%s\n", output)
-			} else {
+			if config.DefaultReporterConfig.ColorizeOutput() {
 				fmt.Printf("\t%s%s%s\n", redColor, string(output), defaultStyle)
+			} else {
+				fmt.Printf("\t%s\n", output)
 			}
 			n.SendNotification("Ginkgo [ERROR]", fmt.Sprintf(`After suite command "%s" failed`, n.commandFlags.AfterSuiteHook))
 		} else {
 			fmt.Println("Post-suite command succeeded:")
-			if config.DefaultReporterConfig.NoColor {
-				fmt.Printf("\t%s\n", output)
-			} else {
+			if config.DefaultReporterConfig.ColorizeOutput() {
 				fmt.Printf("\t%s%s%s\n", greenColor, string(output), defaultStyle)
+			} else {
+				fmt.Printf("\t%s\n", output)
 			}
 		}
 	}
