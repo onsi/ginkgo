@@ -24,9 +24,8 @@ var _ = Describe("DefaultReporter", func() {
 
 	BeforeEach(func() {
 		stenographer = st.NewFakeStenographer()
-		colorize := true
 		reporterConfig = config.DefaultReporterConfigType{
-			Colorize:          &colorize,
+			NoColor:           false,
 			SlowSpecThreshold: 0.1,
 			NoisyPendings:     false,
 			Verbose:           true,

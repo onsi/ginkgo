@@ -164,10 +164,10 @@ func (r *SuiteRunner) listFailedSuites(suitesThatFailed []testsuite.TestSuite) {
 	packageNameFormatter := fmt.Sprintf("%%%ds", maxPackageNameLength)
 
 	for _, suite := range suitesThatFailed {
-		if config.DefaultReporterConfig.ColorizeOutput() {
-			fmt.Fprintf(colorable.NewColorableStdout(), "\t%s"+packageNameFormatter+"%s %s%s%s\n", redColor, suite.PackageName, defaultStyle, lightGrayColor, suite.Path, defaultStyle)
-		} else {
+		if config.DefaultReporterConfig.NoColor {
 			fmt.Printf("\t"+packageNameFormatter+" %s\n", suite.PackageName, suite.Path)
+		} else {
+			fmt.Fprintf(colorable.NewColorableStdout(), "\t%s"+packageNameFormatter+"%s %s%s%s\n", redColor, suite.PackageName, defaultStyle, lightGrayColor, suite.Path, defaultStyle)
 		}
 	}
 }

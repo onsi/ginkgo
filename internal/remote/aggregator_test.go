@@ -32,9 +32,8 @@ var _ = Describe("Aggregator", func() {
 	)
 
 	BeforeEach(func() {
-		colorize := true
 		reporterConfig = config.DefaultReporterConfigType{
-			Colorize:          &colorize,
+			NoColor:           false,
 			SlowSpecThreshold: 0.1,
 			NoisyPendings:     true,
 			Succinct:          false,
