@@ -187,8 +187,8 @@ func BuildFlagArgs(prefix string, ginkgo GinkgoConfigType, reporter DefaultRepor
 		result = append(result, fmt.Sprintf("--%sregexScansFilePath", prefix))
 	}
 
-	if reporter.ColorizeOutput() {
-		result = append(result, fmt.Sprintf("--%scolor", prefix))
+	if ! reporter.ColorizeOutput() {
+		result = append(result, fmt.Sprintf("--%snoColor", prefix))
 	}
 
 	if reporter.SlowSpecThreshold > 0 {
