@@ -226,7 +226,7 @@ func RunSpecsWithCustomReporters(t GinkgoTestingT, description string, specRepor
 func buildDefaultReporter() Reporter {
 	remoteReportingServer := config.GinkgoConfig.StreamHost
 	if remoteReportingServer == "" {
-		stenographer := stenographer.New(config.DefaultReporterConfig.ColorizeOutput(), config.GinkgoConfig.FlakeAttempts > 1)
+		stenographer := stenographer.New(!config.DefaultReporterConfig.NoColor, config.GinkgoConfig.FlakeAttempts > 1)
 		return reporters.NewDefaultReporter(config.DefaultReporterConfig, stenographer)
 	} else {
 		return remote.NewForwardingReporter(remoteReportingServer, &http.Client{}, remote.NewOutputInterceptor())
@@ -388,9 +388,9 @@ func XSpecify(text string, is ...interface{}) bool {
 //By allows you to document such flows.  By must be called within a runnable node (It, BeforeEach, Measure, etc...)
 //By will simply log the passed in text to the GinkgoWriter.  If By is handed a function it will immediately run the function.
 func By(text string, callbacks ...func()) {
-	preamble := "STEP"
-	if config.DefaultReporterConfig.ColorizeOutput() {
-		preamble = "\x1b[1mSTEP\x1b[0m"
+	preamble := "\x1b[1mSTEP\x1b[0m"
+	if config.DefaultReporterConfig.NoColor {
+		preamble = "STEP"
 	}
 	fmt.Fprintln(GinkgoWriter, preamble+": "+text)
 	if len(callbacks) == 1 {

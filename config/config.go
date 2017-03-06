@@ -15,11 +15,9 @@ package config
 
 import (
 	"flag"
-	"fmt"
 	"time"
-	"os"
 
-	"golang.org/x/crypto/ssh/terminal"
+	"fmt"
 )
 
 const VERSION = "1.2.0"
@@ -46,37 +44,12 @@ type GinkgoConfigType struct {
 var GinkgoConfig = GinkgoConfigType{}
 
 type DefaultReporterConfigType struct {
+	NoColor           bool
 	SlowSpecThreshold float64
 	NoisyPendings     bool
 	Succinct          bool
 	Verbose           bool
 	FullTrace         bool
-
-	color   bool
-	noColor bool
-
-	// Colorize caches whether or not we want to colorize output
-	Colorize *bool
-}
-
-// ColorizeOutput determines if output should be colorized. The user
-// can specify they want color (--color) or not (--noColor). Further-
-// more, we detect if the output to which we are printing is a TTY.
-// If the output is a TTY, the default is to use color but a user can
-// still request no color; if the output is not a TTY, the default is
-// to not use color but the user can still request it.
-func (c *DefaultReporterConfigType) ColorizeOutput() bool {
-	if c.Colorize == nil {
-		var colorize bool
-		if terminal.IsTerminal(int(os.Stdout.Fd())) {
-			colorize = !c.noColor
-		} else {
-			colorize = c.color
-		}
-		c.Colorize = &colorize
-	}
-
-	return *c.Colorize
 }
 
 var DefaultReporterConfig = DefaultReporterConfigType{}
@@ -114,8 +87,7 @@ func Flags(flagSet *flag.FlagSet, prefix string, includeParallelFlags bool) {
 		flagSet.StringVar(&(GinkgoConfig.StreamHost), prefix+"parallel.streamhost", "", "The address for the server that the running nodes should stream data to.")
 	}
 
-	flagSet.BoolVar(&(DefaultReporterConfig.color), prefix+"color", false, "If set, enable color output in default reporter even when not printing to a TTY.")
-	flagSet.BoolVar(&(DefaultReporterConfig.noColor), prefix+"noColor", false, "If set, suppress color output in default reporter.")
+	flagSet.BoolVar(&(DefaultReporterConfig.NoColor), prefix+"noColor", false, "If set, suppress color output in default reporter.")
 	flagSet.Float64Var(&(DefaultReporterConfig.SlowSpecThreshold), prefix+"slowSpecThreshold", 5.0, "(in seconds) Specs that take longer to run than this threshold are flagged as slow by the default reporter.")
 	flagSet.BoolVar(&(DefaultReporterConfig.NoisyPendings), prefix+"noisyPendings", true, "If set, default reporter will shout about pending tests.")
 	flagSet.BoolVar(&(DefaultReporterConfig.Verbose), prefix+"v", false, "If set, default reporter print out all specs as they begin.")
@@ -187,8 +159,8 @@ func BuildFlagArgs(prefix string, ginkgo GinkgoConfigType, reporter DefaultRepor
 		result = append(result, fmt.Sprintf("--%sregexScansFilePath", prefix))
 	}
 
-	if reporter.ColorizeOutput() {
-		result = append(result, fmt.Sprintf("--%scolor", prefix))
+	if reporter.NoColor {
+		result = append(result, fmt.Sprintf("--%snoColor", prefix))
 	}
 
 	if reporter.SlowSpecThreshold > 0 {
