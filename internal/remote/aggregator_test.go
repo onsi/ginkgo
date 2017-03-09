@@ -4,11 +4,12 @@ import (
 	. "github.com/onsi/ginkgo"
 	. "github.com/onsi/gomega"
 
+	"time"
+
 	"github.com/onsi/ginkgo/config"
 	. "github.com/onsi/ginkgo/internal/remote"
 	st "github.com/onsi/ginkgo/reporters/stenographer"
 	"github.com/onsi/ginkgo/types"
-	"time"
 )
 
 var _ = Describe("Aggregator", func() {
@@ -135,7 +136,7 @@ var _ = Describe("Aggregator", func() {
 			It("should announce the beginning of the suite", func() {
 				Ω(stenographer.Calls()).Should(HaveLen(3))
 				Ω(stenographer.Calls()[0]).Should(Equal(call("AnnounceSuite", suiteDescription, ginkgoConfig1.RandomSeed, true, false)))
-				Ω(stenographer.Calls()[1]).Should(Equal(call("AnnounceNumberOfSpecs", 23, 30, false)))
+				Ω(stenographer.Calls()[1]).Should(Equal(call("AnnounceTotalNumberOfSpecs", 30, false)))
 				Ω(stenographer.Calls()[2]).Should(Equal(call("AnnounceAggregatedParallelRun", 2, false)))
 			})
 		})

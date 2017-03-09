@@ -31,22 +31,21 @@ var _ = Describe("Coverage Specs", func() {
 		Ω(err).ShouldNot(HaveOccurred())
 
 		Ω(parallelCoverProfileOutput).Should(Equal(serialCoverProfileOutput))
-	})
 
-	It("runs coverage analysis on external packages in series and in parallel", func() {
-		session := startGinkgo("./_fixtures/coverage_fixture", "-coverpkg=github.com/onsi/ginkgo/integration/_fixtures/coverage_fixture,github.com/onsi/ginkgo/integration/_fixtures/coverage_fixture/external_coverage_fixture")
+		By("handling external packages")
+		session = startGinkgo("./_fixtures/coverage_fixture", "-coverpkg=github.com/onsi/ginkgo/integration/_fixtures/coverage_fixture,github.com/onsi/ginkgo/integration/_fixtures/coverage_fixture/external_coverage_fixture")
 		Eventually(session).Should(gexec.Exit(0))
-		output := session.Out.Contents()
+		output = session.Out.Contents()
 		Ω(output).Should(ContainSubstring("coverage: 71.4% of statements in github.com/onsi/ginkgo/integration/_fixtures/coverage_fixture, github.com/onsi/ginkgo/integration/_fixtures/coverage_fixture/external_coverage_fixture"))
 
-		serialCoverProfileOutput, err := exec.Command("go", "tool", "cover", "-func=./_fixtures/coverage_fixture/coverage_fixture.coverprofile").CombinedOutput()
+		serialCoverProfileOutput, err = exec.Command("go", "tool", "cover", "-func=./_fixtures/coverage_fixture/coverage_fixture.coverprofile").CombinedOutput()
 		Ω(err).ShouldNot(HaveOccurred())
 
 		os.RemoveAll("./_fixtures/coverage_fixture/coverage_fixture.coverprofile")
 
 		Eventually(startGinkgo("./_fixtures/coverage_fixture", "-coverpkg=github.com/onsi/ginkgo/integration/_fixtures/coverage_fixture,github.com/onsi/ginkgo/integration/_fixtures/coverage_fixture/external_coverage_fixture", "-nodes=4")).Should(gexec.Exit(0))
 
-		parallelCoverProfileOutput, err := exec.Command("go", "tool", "cover", "-func=./_fixtures/coverage_fixture/coverage_fixture.coverprofile").CombinedOutput()
+		parallelCoverProfileOutput, err = exec.Command("go", "tool", "cover", "-func=./_fixtures/coverage_fixture/coverage_fixture.coverprofile").CombinedOutput()
 		Ω(err).ShouldNot(HaveOccurred())
 
 		Ω(parallelCoverProfileOutput).Should(Equal(serialCoverProfileOutput))
