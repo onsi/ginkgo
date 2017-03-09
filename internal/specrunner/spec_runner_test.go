@@ -2,6 +2,7 @@ package specrunner_test
 
 import (
 	. "github.com/onsi/ginkgo"
+	"github.com/onsi/ginkgo/internal/spec_iterator"
 	. "github.com/onsi/ginkgo/internal/specrunner"
 	"github.com/onsi/ginkgo/types"
 	. "github.com/onsi/gomega"
@@ -85,7 +86,8 @@ var _ = Describe("Spec Runner", func() {
 	}
 
 	newRunner := func(config config.GinkgoConfigType, beforeSuiteNode leafnodes.SuiteNode, afterSuiteNode leafnodes.SuiteNode, specs ...*spec.Spec) *SpecRunner {
-		return New("description", beforeSuiteNode, spec.NewSpecs(specs), afterSuiteNode, []reporters.Reporter{reporter1, reporter2}, writer, config)
+		iterator := spec_iterator.NewSerialIterator(specs)
+		return New("description", beforeSuiteNode, iterator, afterSuiteNode, []reporters.Reporter{reporter1, reporter2}, writer, config)
 	}
 
 	BeforeEach(func() {
@@ -164,8 +166,8 @@ var _ = Describe("Spec Runner", func() {
 			Ω(reporter1.BeginSummary.NumberOfSpecsBeforeParallelization).Should(Equal(6))
 			Ω(reporter1.BeginSummary.NumberOfTotalSpecs).Should(Equal(6))
 			Ω(reporter1.BeginSummary.NumberOfSpecsThatWillBeRun).Should(Equal(3))
-			Ω(reporter1.BeginSummary.NumberOfPendingSpecs).Should(Equal(2))
-			Ω(reporter1.BeginSummary.NumberOfSkippedSpecs).Should(Equal(1))
+			Ω(reporter1.BeginSummary.NumberOfPendingSpecs).Should(Equal(-1))
+			Ω(reporter1.BeginSummary.NumberOfSkippedSpecs).Should(Equal(-1))
 		})
 
 		It("should report the end of the suite", func() {
@@ -357,8 +359,8 @@ var _ = Describe("Spec Runner", func() {
 			Ω(reporter1.BeginSummary.NumberOfSpecsBeforeParallelization).Should(Equal(6))
 			Ω(reporter1.BeginSummary.NumberOfTotalSpecs).Should(Equal(6))
 			Ω(reporter1.BeginSummary.NumberOfSpecsThatWillBeRun).Should(Equal(4))
-			Ω(reporter1.BeginSummary.NumberOfPendingSpecs).Should(Equal(1))
-			Ω(reporter1.BeginSummary.NumberOfSkippedSpecs).Should(Equal(1))
+			Ω(reporter1.BeginSummary.NumberOfPendingSpecs).Should(Equal(-1))
+			Ω(reporter1.BeginSummary.NumberOfSkippedSpecs).Should(Equal(-1))
 		})
 
 		It("should report the end of the suite", func() {
@@ -754,24 +756,6 @@ var _ = Describe("Spec Runner", func() {
 			summary, ok := runner.CurrentSpecSummary()
 			Ω(summary).Should(BeNil())
 			Ω(ok).Should(BeFalse())
-		})
-	})
-
-	Context("When running tests in parallel", func() {
-		It("reports the correct number of specs before parallelization", func() {
-			specs := spec.NewSpecs([]*spec.Spec{
-				newSpec("A", noneFlag, false),
-				newSpec("B", pendingFlag, false),
-				newSpec("C", noneFlag, false),
-			})
-			specs.TrimForParallelization(2, 1)
-			runner = New("description", nil, specs, nil, []reporters.Reporter{reporter1, reporter2}, writer, config.GinkgoConfigType{})
-			runner.Run()
-
-			Ω(reporter1.EndSummary.NumberOfSpecsBeforeParallelization).Should(Equal(3))
-			Ω(reporter1.EndSummary.NumberOfTotalSpecs).Should(Equal(2))
-			Ω(reporter1.EndSummary.NumberOfSpecsThatWillBeRun).Should(Equal(1))
-			Ω(reporter1.EndSummary.NumberOfPendingSpecs).Should(Equal(1))
 		})
 	})
 
