@@ -637,7 +637,7 @@ When running multiple spec suites Ginkgo defaults to running the suites in the o
 
 ### Parallel Specs
 
-Ginkgo has support for running specs in parallel.  It does this by spawning separate `go test` processes and dividing the specs evenly among these processes.  This is important for a BDD test framework, as the shared context of the closures does not parallelize well in-process.
+Ginkgo has support for running specs in parallel.  It does this by spawning separate `go test` processes and serving specs to each process off of a shared queue.  This is important for a BDD test framework, as the shared context of the closures does not parallelize well in-process.
 
 To run a Ginkgo suite in parallel you *must* use the `ginkgo` CLI.  Simply pass in the `-p` flag:
 
@@ -942,7 +942,7 @@ Here are the flags that Ginkgo accepts:
 
 - `--failFast`
 
-    If present, Ginkgo will stop the suite right after the first spec failure.  When set during parallel tests, a failure on one node does *not* stop other nodes from running - only the node that failed will stop running.
+    If present, Ginkgo will stop the suite right after the first spec failure.
 
 **Watch flags:**
 
