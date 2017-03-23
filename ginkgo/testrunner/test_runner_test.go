@@ -38,7 +38,6 @@ var _ = Describe("TestRunner", func() {
 		Ω(args).Should(Equal([]string{
 			"test",
 			"-c",
-			"-i",
 			"-o",
 			".",
 			"",

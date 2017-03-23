@@ -58,7 +58,7 @@ func (t *TestRunner) Compile() error {
 }
 
 func (t *TestRunner) BuildArgs(path string) []string {
-	args := []string{"test", "-c", "-i", "-o", path, t.Suite.Path}
+	args := []string{"test", "-c", "-o", path, t.Suite.Path}
 
 	if *t.goOpts["covermode"].(*string) != "" {
 		args = append(args, "-cover", fmt.Sprintf("-covermode=%s", *t.goOpts["covermode"].(*string)))
