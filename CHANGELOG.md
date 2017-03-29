@@ -1,10 +1,16 @@
-## HEAD
+## 1.3.0 3/28/2017
 
 Improvements:
 
+- Significantly improved parallel test distribution.  Now instead of pre-sharding test cases across workers (which can result in idle workers and poor test performance) Ginkgo uses a shared queue to keep all workers busy until all tests are complete.  This improves test-time performance and consistency.
 - `Skip(message)` can be used to skip the current test.
 - Added `extensions/table` - a Ginkgo DSL for [Table Driven Tests](http://onsi.github.io/ginkgo/#table-driven-tests)
 - Add `GinkgoRandomSeed()` - shorthand for `config.GinkgoConfig.RandomSeed`
+- Support for retrying flaky tests with `--flakeAttempts`
+- `ginkgo ./...` now recurses as you'd expect
+- Added `Specify` a synonym for `It`
+- Support colorise on Windows
+- Broader support for various go compilation flags in the `ginkgo` CLI
 
 Bug Fixes:
 
