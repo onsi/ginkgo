@@ -392,7 +392,7 @@ func (t *TestRunner) runParallelGinkgoSuite() RunResult {
 	|                                                                   |
 	 -------------------------------------------------------------------
 `)
-
+		fmt.Println(t.Suite.PackageName, "timed out. path:", t.Suite.Path)
 		os.Stdout.Sync()
 
 		for _, writer := range writers {
