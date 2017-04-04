@@ -43,7 +43,6 @@ var _ = Describe("TestSuite", func() {
 		cwd, err := os.Getwd()
 		Ω(err).ShouldNot(HaveOccurred())
 		relTmpDir, err = filepath.Rel(cwd, tmpDir)
-		relTmpDir = "./" + relTmpDir
 		Ω(err).ShouldNot(HaveOccurred())
 
 		//go files in the root directory (no tests)
@@ -130,14 +129,30 @@ var _ = Describe("TestSuite", func() {
 		})
 
 		Context("when there are ginkgo tests in the specified directory", func() {
-			It("should return an appropriately configured suite", func() {
-				suites := SuitesInDir(filepath.Join(tmpDir, "colonelmustard"), false)
-				Ω(suites).Should(HaveLen(1))
+			Context("and the directory is a child of the current working directory", func() {
+				It("should return an appropriately configured suite", func() {
+					cwd, err := os.Getwd()
+					Ω(err).ShouldNot(HaveOccurred())
+					suites := SuitesInDir(filepath.Join(cwd, "_fixture_suite"), false)
+					Ω(suites).Should(HaveLen(1))
 
-				Ω(suites[0].Path).Should(Equal(relTmpDir + "/colonelmustard"))
-				Ω(suites[0].PackageName).Should(Equal("colonelmustard"))
-				Ω(suites[0].IsGinkgo).Should(BeTrue())
-				Ω(suites[0].Precompiled).Should(BeFalse())
+					Ω(suites[0].Path).Should(Equal("./_fixture_suite"))
+					Ω(suites[0].PackageName).Should(Equal("_fixture_suite"))
+					Ω(suites[0].IsGinkgo).Should(BeTrue())
+					Ω(suites[0].Precompiled).Should(BeFalse())
+				})
+			})
+
+			Context("and the directory is outside the current working directory", func() {
+				It("should return an appropriately configured suite", func() {
+					suites := SuitesInDir(filepath.Join(tmpDir, "colonelmustard"), false)
+					Ω(suites).Should(HaveLen(1))
+
+					Ω(suites[0].Path).Should(Equal(relTmpDir + "/colonelmustard"))
+					Ω(suites[0].PackageName).Should(Equal("colonelmustard"))
+					Ω(suites[0].IsGinkgo).Should(BeTrue())
+					Ω(suites[0].Precompiled).Should(BeFalse())
+				})
 			})
 		})
 

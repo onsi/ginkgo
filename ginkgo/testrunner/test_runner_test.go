@@ -1,11 +1,12 @@
 package testrunner_test
 
 import (
+	"testing"
+
 	. "github.com/onsi/ginkgo"
 	"github.com/onsi/ginkgo/ginkgo/testrunner"
 	"github.com/onsi/ginkgo/ginkgo/testsuite"
 	. "github.com/onsi/gomega"
-	"testing"
 )
 
 func strAddr(s string) interface{} {
@@ -22,7 +23,6 @@ func intAddr(s int) interface{} {
 
 var _ = Describe("TestRunner", func() {
 	It("should pass through go opts", func() {
-		//var opts map[string]interface{}
 		opts := map[string]interface{}{
 			"asmflags":         strAddr("a"),
 			"pkgdir":           strAddr("b"),
@@ -38,7 +38,6 @@ var _ = Describe("TestRunner", func() {
 		Ω(args).Should(Equal([]string{
 			"test",
 			"-c",
-			"-i",
 			"-o",
 			".",
 			"",
