@@ -244,7 +244,7 @@ var _ = Describe("Running Specs", func() {
 				if nodes > 4 {
 					nodes = nodes - 1
 				}
-				Ω(output).Should(MatchRegexp(`\[\d+\] Passing_ginkgo_tests Suite - 4 specs - %d nodes [%s]{4} SUCCESS! \d+(\.\d+)?[muµ]s`, nodes, regexp.QuoteMeta(denoter)))
+				Ω(output).Should(MatchRegexp(`\[\d+\] Passing_ginkgo_tests Suite - 4 specs - %d nodes [%s]{4} SUCCESS! \d+(\.\d+)?[muµ]?s`, nodes, regexp.QuoteMeta(denoter)))
 				Ω(output).Should(ContainSubstring("Test Suite Passed"))
 			})
 		})
