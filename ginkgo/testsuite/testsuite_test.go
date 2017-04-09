@@ -43,7 +43,6 @@ var _ = Describe("TestSuite", func() {
 		cwd, err := os.Getwd()
 		Ω(err).ShouldNot(HaveOccurred())
 		relTmpDir, err = filepath.Rel(cwd, tmpDir)
-		relTmpDir = "./" + relTmpDir
 		Ω(err).ShouldNot(HaveOccurred())
 
 		//go files in the root directory (no tests)
