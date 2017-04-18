@@ -31,6 +31,7 @@ type TestRunner struct {
 	parallelStream bool
 	goOpts         map[string]interface{}
 	additionalArgs []string
+	stderr         *bytes.Buffer
 }
 
 func New(suite testsuite.TestSuite, numCPU int, parallelStream bool, goOpts map[string]interface{}, additionalArgs []string) *TestRunner {
@@ -40,6 +41,7 @@ func New(suite testsuite.TestSuite, numCPU int, parallelStream bool, goOpts map[
 		parallelStream: parallelStream,
 		goOpts:         goOpts,
 		additionalArgs: additionalArgs,
+		stderr:         new(bytes.Buffer),
 	}
 
 	if !suite.Precompiled {
@@ -434,7 +436,7 @@ func (t *TestRunner) cmd(ginkgoArgs []string, stream io.Writer, node int) *exec.
 	cmd := exec.Command(path, args...)
 
 	cmd.Dir = t.Suite.Path
-	cmd.Stderr = stream
+	cmd.Stderr = io.MultiWriter(stream, t.stderr)
 	cmd.Stdout = stream
 
 	return cmd
@@ -456,9 +458,15 @@ func (t *TestRunner) run(cmd *exec.Cmd, completions chan RunResult) RunResult {
 	}
 
 	cmd.Wait()
+
 	exitStatus := cmd.ProcessState.Sys().(syscall.WaitStatus).ExitStatus()
 	res.Passed = (exitStatus == 0) || (exitStatus == types.GINKGO_FOCUS_EXIT_CODE)
 	res.HasProgrammaticFocus = (exitStatus == types.GINKGO_FOCUS_EXIT_CODE)
+
+	if strings.Contains(t.stderr.String(), "warning: no tests to run") {
+		res.Passed = false
+		fmt.Fprintf(os.Stderr, `Found no test suites, did you forget to run "ginkgo bootstrap"?`)
+	}
 
 	return res
 }

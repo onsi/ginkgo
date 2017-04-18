@@ -146,6 +146,21 @@ var _ = Describe("Running Specs", func() {
 		})
 	})
 
+	Context("when there are test files but `go test` reports there are no tests to run", func() {
+		BeforeEach(func() {
+			pathToTest = tmpPath("ginkgo")
+			copyIn("no_test_fn", pathToTest)
+		})
+
+		It("suggests running ginkgo bootstrap", func() {
+			session := startGinkgo(tmpDir, "--noColor", "--skipPackage=other,focused", "-r")
+			Eventually(session).Should(gexec.Exit(1))
+			output := string(session.Err.Contents())
+
+			Ω(output).Should(ContainSubstring(`Found no test suites, did you forget to run "ginkgo bootstrap"?`))
+		})
+	})
+
 	Context("when told to randomizeSuites", func() {
 		BeforeEach(func() {
 			pathToTest = tmpPath("ginkgo")
