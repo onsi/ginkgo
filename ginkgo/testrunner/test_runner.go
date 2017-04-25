@@ -464,7 +464,6 @@ func (t *TestRunner) run(cmd *exec.Cmd, completions chan RunResult) RunResult {
 	res.HasProgrammaticFocus = (exitStatus == types.GINKGO_FOCUS_EXIT_CODE)
 
 	if strings.Contains(t.stderr.String(), "warning: no tests to run") {
-		res.Passed = false
 		fmt.Fprintf(os.Stderr, `Found no test suites, did you forget to run "ginkgo bootstrap"?`)
 	}
 
