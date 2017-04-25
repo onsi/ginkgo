@@ -154,7 +154,7 @@ var _ = Describe("Running Specs", func() {
 
 		It("suggests running ginkgo bootstrap", func() {
 			session := startGinkgo(tmpDir, "--noColor", "--skipPackage=other,focused", "-r")
-			Eventually(session).Should(gexec.Exit(1))
+			Eventually(session).Should(gexec.Exit(0))
 			output := string(session.Err.Contents())
 
 			Ω(output).Should(ContainSubstring(`Found no test suites, did you forget to run "ginkgo bootstrap"?`))
