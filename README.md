@@ -63,7 +63,7 @@ You'll need Golang v1.3+ (Ubuntu users: you probably have Golang v1.0 -- you'll 
 
 ```bash
 
-go get github.com/onsi/ginkgo/ginkgo  # installs the ginkgo CLI
+go get github.com/onsi/ginkgo         # installs the ginkgo CLI
 go get github.com/onsi/gomega         # fetches the matcher library
 
 cd path/to/package/you/want/to/test
