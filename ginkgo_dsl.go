@@ -30,6 +30,8 @@ import (
 	"github.com/onsi/ginkgo/reporters"
 	"github.com/onsi/ginkgo/reporters/stenographer"
 	"github.com/onsi/ginkgo/types"
+
+	. "github.com/onsi/gomega"
 )
 
 const GINKGO_VERSION = config.VERSION
@@ -560,7 +562,9 @@ func AfterEach(body interface{}, timeout ...float64) bool {
 	return true
 }
 
+// Var-args are only supported to implement polymorphic behaviour for default args.
 func parseTimeout(timeout ...float64) time.Duration {
+	Expect(len(timeout)).To(BeNumerically("<=", 1))
 	if len(timeout) == 0 {
 		return time.Duration(defaultTimeout * int64(time.Second))
 	} else {
