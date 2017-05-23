@@ -171,7 +171,7 @@ func orcMessage(iteration int) string {
 			"Still good...",
 			"I think your tests are fine....",
 			"Yep, still passing",
-			"Here we go again...",
+			"Oh boy, here I go testin' again!",
 			"Even the gophers are getting bored",
 			"Did you try -race?",
 			"Maybe you should stop now?",
