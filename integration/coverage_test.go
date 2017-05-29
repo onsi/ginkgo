@@ -50,4 +50,18 @@ var _ = Describe("Coverage Specs", func() {
 
 		Ω(parallelCoverProfileOutput).Should(Equal(serialCoverProfileOutput))
 	})
+
+	It("validates coverprofile sets custom profile name", func() {
+		session := startGinkgo("./_fixtures/coverage_fixture", "-cover", "-coverprofile=coverage.txt")
+
+		Eventually(session).Should(gexec.Exit(0))
+
+		// Check that the correct file was created
+		_, err := os.Stat("./_fixtures/coverage_fixture/coverage.txt")
+
+		Ω(err).ShouldNot(HaveOccurred())
+
+		// Cleanup
+		os.RemoveAll("./_fixtures/coverage_fixture/coverage.txt")
+	})
 })

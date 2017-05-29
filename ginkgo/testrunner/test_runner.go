@@ -415,14 +415,30 @@ func (t *TestRunner) runParallelGinkgoSuite() RunResult {
 	return res
 }
 
+const CoverProfileSuffix = ".coverprofile"
+
 func (t *TestRunner) cmd(ginkgoArgs []string, stream io.Writer, node int) *exec.Cmd {
 	args := []string{"--test.timeout=24h"}
-	if *t.goOpts["cover"].(*bool) || *t.goOpts["coverpkg"].(*string) != "" || *t.goOpts["covermode"].(*string) != "" {
-		coverprofile := "--test.coverprofile=" + t.Suite.PackageName + ".coverprofile"
-		if t.numCPU > 1 {
-			coverprofile = fmt.Sprintf("%s.%d", coverprofile, node)
+
+	coverMode := *t.goOpts["covermode"].(*string)
+	coverPackage := *t.goOpts["coverpkg"].(*string)
+	cover := *t.goOpts["cover"].(*bool)
+	coverProfile := *t.goOpts["coverprofile"].(*string)
+
+	if cover || coverPackage != "" || coverMode != "" {
+		testCoverProfile := "--test.coverprofile="
+
+		// Set default name for coverage results
+		if coverProfile == "" {
+			testCoverProfile += t.Suite.PackageName + CoverProfileSuffix
+		} else {
+			testCoverProfile += coverProfile
 		}
-		args = append(args, coverprofile)
+
+		if t.numCPU > 1 {
+			testCoverProfile = fmt.Sprintf("%s.%d", testCoverProfile, node)
+		}
+		args = append(args, testCoverProfile)
 	}
 
 	args = append(args, ginkgoArgs...)
@@ -473,7 +489,7 @@ func (t *TestRunner) run(cmd *exec.Cmd, completions chan RunResult) RunResult {
 func (t *TestRunner) combineCoverprofiles() {
 	profiles := []string{}
 	for cpu := 1; cpu <= t.numCPU; cpu++ {
-		coverFile := fmt.Sprintf("%s.coverprofile.%d", t.Suite.PackageName, cpu)
+		coverFile := fmt.Sprintf("%s%s.%d", t.Suite.PackageName, CoverProfileSuffix, cpu)
 		coverFile = filepath.Join(t.Suite.Path, coverFile)
 		coverProfile, err := ioutil.ReadFile(coverFile)
 		os.Remove(coverFile)
@@ -509,5 +525,5 @@ func (t *TestRunner) combineCoverprofiles() {
 		output = append(output, fmt.Sprintf("%s %d", line, lines[line]))
 	}
 	finalOutput := strings.Join(output, "\n")
-	ioutil.WriteFile(filepath.Join(t.Suite.Path, fmt.Sprintf("%s.coverprofile", t.Suite.PackageName)), []byte(finalOutput), 0666)
+	ioutil.WriteFile(filepath.Join(t.Suite.Path, fmt.Sprintf("%s%s", t.Suite.PackageName, CoverProfileSuffix)), []byte(finalOutput), 0666)
 }
