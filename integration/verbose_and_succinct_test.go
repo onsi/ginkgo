@@ -1,11 +1,14 @@
 package integration_test
 
 import (
+	"os/exec"
 	"regexp"
 	"runtime"
+	"syscall"
 
 	. "github.com/onsi/ginkgo"
 	. "github.com/onsi/gomega"
+	"github.com/onsi/gomega/gbytes"
 	"github.com/onsi/gomega/gexec"
 )
 
@@ -84,6 +87,30 @@ var _ = Describe("Verbose And Succinct Mode", func() {
 
 				Ω(output).Should(ContainSubstring("emitting one By"))
 				Ω(output).Should(ContainSubstring("emitting another By"))
+			})
+		})
+
+		Context("with verbose mode triggered by SIGUSR1", func() {
+			It("emits output to the GinkgoWriter after it is signalled", func() {
+				pathToTest = tmpPath("hanging")
+				copyIn("hanging_suite", pathToTest)
+				cmd := exec.Command("go", "test", "-c")
+				cmd.Dir = pathToTest
+				session, err := gexec.Start(cmd, GinkgoWriter, GinkgoWriter)
+				Ω(err).ShouldNot(HaveOccurred())
+				Eventually(session).Should(gexec.Exit(0))
+
+				cmd = exec.Command("./hanging.test", "--test.v=true", "--ginkgo.noColor")
+				cmd.Dir = pathToTest
+				session, err = gexec.Start(cmd, GinkgoWriter, GinkgoWriter)
+				Ω(err).ShouldNot(HaveOccurred())
+
+				Eventually(session).Should(gbytes.Say("Sleeping..."))
+				session.Signal(syscall.SIGUSR1)
+				Eventually(session).Should(gbytes.Say("Received SIGUSR1"))
+				Eventually(session).Should(gbytes.Say("Just beginning"))
+				session.Interrupt()
+				Eventually(session, 1000).Should(gexec.Exit(1))
 			})
 		})
 	})

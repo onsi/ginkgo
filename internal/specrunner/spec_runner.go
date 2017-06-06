@@ -57,6 +57,7 @@ func (runner *SpecRunner) Run() bool {
 
 	runner.reportSuiteWillBegin()
 	go runner.registerForInterrupts()
+	go runner.registerForVerboseSignal()
 
 	suitePassed := runner.runBeforeSuite()
 
@@ -235,6 +236,18 @@ Received interrupt.  Running AfterSuite...
 	}
 	runner.reportSuiteDidEnd(false)
 	os.Exit(1)
+}
+
+func (runner *SpecRunner) registerForVerboseSignal() {
+	c := make(chan os.Signal, 1)
+	signal.Notify(c, os.Interrupt, syscall.SIGUSR1)
+
+	<-c
+	signal.Stop(c)
+	runner.writer.DumpOutWithHeader(`
+Received SIGUSR1.  Emitting contents of GinkgoWriter...
+---------------------------------------------------------
+`)
 }
 
 func (runner *SpecRunner) registerForHardInterrupts() {
