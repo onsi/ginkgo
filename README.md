@@ -4,7 +4,7 @@
 
 Jump to the [docs](http://onsi.github.io/ginkgo/) to learn more.  To start rolling your Ginkgo tests *now* [keep reading](#set-me-up)!
 
-To discuss Ginkgo and get updates, join the [google group](https://groups.google.com/d/forum/ginkgo-and-gomega).
+If you have a question, comment, bug report, feature request, etc. please open a GitHub issue.
 
 ## Feature List
 
