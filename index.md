@@ -950,6 +950,10 @@ Here are the flags that Ginkgo accepts:
 
     When watching packages, Ginkgo also watches those package's dependencies for changes.  The default value for `--depth` is `1` meaning that only the immediate dependencies of a package are monitored.  You can adjust this up to monitor dependencies-of-dependencies, or set it to `0` to only monitor the package itself, not its dependencies.
 
+- `--watchRegExp=WATCH_REG_EXP`
+
+    When watching packages, Ginkgo only monitors files matching the watch regular expression for changes.  The default value is `\.go$` meaning only go files are watched for changes.
+
 **Flaky test mitigation:**
 
 - `--flakeAttempts=ATTEMPTS`
