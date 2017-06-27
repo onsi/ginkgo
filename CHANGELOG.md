@@ -1,6 +1,7 @@
 ## HEAD
 
 - `ginkgo` now provides a hint if you accidentally forget to run `ginkgo bootstrap` to generate a `*_suite_test.go` file that actually invokes the Ginkgo test runner. [#345](https://github.com/onsi/ginkgo/pull/345)
+- thanks to improvements in `go test -c` `ginkgo` no longer needs to fix Go's compilation output to ensure compilation errors are expressed relative to the CWD. [#357]
 
 ## 1.3.0 3/28/2017
 
