@@ -26,7 +26,8 @@ type RunWatchAndBuildCommandFlags struct {
 	RandomizeSuites bool
 
 	//only for watch command
-	Depth int
+	Depth       int
+	WatchRegExp string
 
 	FlagSet *flag.FlagSet
 }
@@ -156,5 +157,6 @@ func (c *RunWatchAndBuildCommandFlags) flags(mode int) {
 
 	if mode == watchMode {
 		c.FlagSet.IntVar(&(c.Depth), "depth", 1, "Ginkgo will watch dependencies down to this depth in the dependency tree")
+		c.FlagSet.StringVar(&(c.WatchRegExp), "watchRegExp", `\.go$`, "Files matching this regular expression will be watched for changes")
 	}
 }

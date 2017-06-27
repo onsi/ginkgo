@@ -60,6 +60,10 @@ var _ = Describe("Watch", func() {
 		modifyFile(filepath.Join(rootPath, "src", "github.com", "onsi", pkgToModify, pkgToModify+".go"))
 	}
 
+	modifyJSON := func(pkgToModify string) {
+		modifyFile(filepath.Join(rootPath, "src", "github.com", "onsi", pkgToModify, pkgToModify+".json"))
+	}
+
 	modifyTest := func(pkgToModify string) {
 		modifyFile(filepath.Join(rootPath, "src", "github.com", "onsi", pkgToModify, pkgToModify+"_test.go"))
 	}
@@ -204,6 +208,38 @@ var _ = Describe("Watch", func() {
 			Eventually(session).Should(gbytes.Say("Detected changes in"))
 			Eventually(session).Should(gbytes.Say("C Suite"))
 			Consistently(session).ShouldNot(gbytes.Say("A Suite|B Suite"))
+		})
+	})
+
+	Describe("adjusting the watch regular expression", func() {
+		Describe("the default regular expression", func() {
+			It("should only trigger when go files are changed", func() {
+				session = startGinkgoWithGopath("watch", "-succinct", "-r", "-depth=2")
+				Eventually(session).Should(gbytes.Say("Identified 3 test suites"))
+				Eventually(session).Should(gbytes.Say(`A \[2 dependencies\]`))
+				Eventually(session).Should(gbytes.Say(`B \[1 dependency\]`))
+				Eventually(session).Should(gbytes.Say(`C \[0 dependencies\]`))
+
+				modifyJSON("C")
+				Consistently(session).ShouldNot(gbytes.Say("Detected changes in"))
+				Consistently(session).ShouldNot(gbytes.Say("A Suite|B Suite|C Suite"))
+			})
+		})
+
+		Describe("modifying the regular expression", func() {
+			It("should trigger if the regexp matches", func() {
+				session = startGinkgoWithGopath("watch", "-succinct", "-r", "-depth=2", `-watchRegExp=\.json$`)
+				Eventually(session).Should(gbytes.Say("Identified 3 test suites"))
+				Eventually(session).Should(gbytes.Say(`A \[2 dependencies\]`))
+				Eventually(session).Should(gbytes.Say(`B \[1 dependency\]`))
+				Eventually(session).Should(gbytes.Say(`C \[0 dependencies\]`))
+
+				modifyJSON("C")
+				Eventually(session).Should(gbytes.Say("Detected changes in"))
+				Eventually(session).Should(gbytes.Say("C Suite"))
+				Eventually(session).Should(gbytes.Say("B Suite"))
+				Eventually(session).Should(gbytes.Say("A Suite"))
+			})
 		})
 	})
 
