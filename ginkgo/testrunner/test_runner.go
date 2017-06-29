@@ -143,6 +143,10 @@ func (t *TestRunner) CompileTo(path string) error {
 		return fmt.Errorf("Failed to compile %s", t.Suite.PackageName)
 	}
 
+	if len(output) > 0 {
+		fmt.Println(string(output))
+	}
+
 	if fileExists(path) == false {
 		compiledFile := t.Suite.PackageName + ".test"
 		if fileExists(compiledFile) {
