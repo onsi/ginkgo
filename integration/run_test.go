@@ -159,6 +159,14 @@ var _ = Describe("Running Specs", func() {
 
 			Ω(output).Should(ContainSubstring(`Found no test suites, did you forget to run "ginkgo bootstrap"?`))
 		})
+
+		It("fails if told to requireSuite", func() {
+			session := startGinkgo(tmpDir, "--noColor", "--skipPackage=other,focused", "-r", "-requireSuite")
+			Eventually(session).Should(gexec.Exit(1))
+			output := string(session.Err.Contents())
+
+			Ω(output).Should(ContainSubstring(`Found no test suites, did you forget to run "ginkgo bootstrap"?`))
+		})
 	})
 
 	Context("when told to randomizeSuites", func() {
