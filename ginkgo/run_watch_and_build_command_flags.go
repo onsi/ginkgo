@@ -136,6 +136,7 @@ func (c *RunWatchAndBuildCommandFlags) flags(mode int) {
 	c.FlagSet.StringVar(c.stringSlot("memprofile"), "memprofile", "", "Write a memory profile to the specified file after all tests have passed.")
 	c.FlagSet.IntVar(c.intSlot("memprofilerate"), "memprofilerate", 0, "Enable more precise (and expensive) memory profiles by setting runtime.MemProfileRate.")
 	c.FlagSet.StringVar(c.stringSlot("outputdir"), "outputdir", "", "Place output files from profiling in the specified directory.")
+	c.FlagSet.BoolVar(c.boolSlot("requireSuite"), "requireSuite", false, "Fail if there are ginkgo tests in a directory but no test suite (missing RunSpecs)")
 
 	if mode == runMode || mode == watchMode {
 		config.Flags(c.FlagSet, "", false)
