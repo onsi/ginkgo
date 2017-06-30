@@ -993,6 +993,10 @@ Here are the flags that Ginkgo accepts:
 
     Ginko has the ability to run a command hook after a suite test completes.  You simply give it the command to run and it will do string replacement to pass data into the command.  Example: --afterSuiteHook=”echo  (ginkgo-suite-name) suite tests have [(ginkgo-suite-passed)]”  This suite hook will replace (ginkgo-suite-name) and (ginkgo-suite-passed) with the suite name and pass/fail status respectively, then echo that to the terminal.
 
+- `-requireSuite`
+
+    If you create a package with Ginkgo test files, but forget to run `ginkgo bootstrap` your tests will never run and the suite will always pass. Ginkgo does notify with the message `Found no test suites, did you forget to run "ginkgo bootstrap"?` but doesn't fail. This flag causes Ginkgo to mark the suite as failed if there are test files but nothing that references `RunSpecs.`
+
 ### Watching For Changes
 
 The Ginkgo CLI provides a `watch` subcommand that takes (almost) all the flags that the main `ginkgo` command takes.  With `ginkgo watch` ginkgo will monitor the package in the current directory and trigger tests when changes are detected.
