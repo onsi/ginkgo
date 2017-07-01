@@ -2,3 +2,4 @@
 TODO
 tmp/**/*
 *.coverprofile
+.vscode

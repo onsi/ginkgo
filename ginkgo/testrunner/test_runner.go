@@ -28,18 +28,20 @@ type TestRunner struct {
 
 	numCPU         int
 	parallelStream bool
+	timeout        time.Duration
 	goOpts         map[string]interface{}
 	additionalArgs []string
 	stderr         *bytes.Buffer
 }
 
-func New(suite testsuite.TestSuite, numCPU int, parallelStream bool, goOpts map[string]interface{}, additionalArgs []string) *TestRunner {
+func New(suite testsuite.TestSuite, numCPU int, parallelStream bool, timeout time.Duration, goOpts map[string]interface{}, additionalArgs []string) *TestRunner {
 	runner := &TestRunner{
 		Suite:          suite,
 		numCPU:         numCPU,
 		parallelStream: parallelStream,
 		goOpts:         goOpts,
 		additionalArgs: additionalArgs,
+		timeout:        timeout,
 		stderr:         new(bytes.Buffer),
 	}
 
@@ -386,7 +388,7 @@ func (t *TestRunner) runParallelGinkgoSuite() RunResult {
 }
 
 func (t *TestRunner) cmd(ginkgoArgs []string, stream io.Writer, node int) *exec.Cmd {
-	args := []string{"--test.timeout=24h"}
+	args := []string{"--test.timeout=" + t.timeout.String()}
 	if *t.goOpts["cover"].(*bool) || *t.goOpts["coverpkg"].(*string) != "" || *t.goOpts["covermode"].(*string) != "" {
 		coverprofile := "--test.coverprofile=" + t.Suite.PackageName + ".coverprofile"
 		if t.numCPU > 1 {

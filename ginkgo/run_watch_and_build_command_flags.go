@@ -4,6 +4,8 @@ import (
 	"flag"
 	"runtime"
 
+	"time"
+
 	"github.com/onsi/ginkgo/config"
 )
 
@@ -19,6 +21,7 @@ type RunWatchAndBuildCommandFlags struct {
 	Notify         bool
 	AfterSuiteHook string
 	AutoNodes      bool
+	Timeout        time.Duration
 
 	//only for run command
 	KeepGoing       bool
@@ -148,6 +151,7 @@ func (c *RunWatchAndBuildCommandFlags) flags(mode int) {
 			c.FlagSet.BoolVar(&(c.Notify), "notify", false, "Send desktop notifications when a test run completes")
 		}
 		c.FlagSet.StringVar(&(c.AfterSuiteHook), "afterSuiteHook", "", "Run a command when a suite test run completes")
+		c.FlagSet.DurationVar(&(c.Timeout), "timeout", 24*time.Hour, "Suite fails if it does not complete within the specified timeout")
 	}
 
 	if mode == runMode {
