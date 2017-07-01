@@ -989,6 +989,10 @@ Here are the flags that Ginkgo accepts:
 
     By default, Ginkgo's default reporter will flag tests that take longer than 5 seconds to run -- this does not fail the suite, it simply notifies you of slow running specs.  You can change this threshold using this flag.
 
+- `-timeout=DURATION`
+
+    Ginkgo will fail the test suite if it takes longer than `DURATION` to run.  The default value is 24 hours.
+
 - `--afterSuiteHook=HOOK_COMMAND`
 
     Ginko has the ability to run a command hook after a suite test completes.  You simply give it the command to run and it will do string replacement to pass data into the command.  Example: --afterSuiteHook=”echo  (ginkgo-suite-name) suite tests have [(ginkgo-suite-passed)]”  This suite hook will replace (ginkgo-suite-name) and (ginkgo-suite-passed) with the suite name and pass/fail status respectively, then echo that to the terminal.
