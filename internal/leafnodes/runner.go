@@ -2,11 +2,13 @@ package leafnodes
 
 import (
 	"fmt"
+	"reflect"
+	"time"
+
+	"github.com/onsi/ginkgo/config"
 	"github.com/onsi/ginkgo/internal/codelocation"
 	"github.com/onsi/ginkgo/internal/failer"
 	"github.com/onsi/ginkgo/types"
-	"reflect"
-	"time"
 )
 
 type runner struct {
@@ -59,9 +61,19 @@ func newRunner(body interface{}, codeLocation types.CodeLocation, timeout time.D
 func (r *runner) run() (outcome types.SpecState, failure types.SpecFailure) {
 	if r.isAsync {
 		return r.runAsync()
-	} else {
-		return r.runSync()
 	}
+
+	// The flag's value is only available after init(), which is called after the newRunner is called.
+	// So, we have to do this check here :/
+	if config.GinkgoConfig.AllAsync {
+		r.asyncFunc = func(done chan<- interface{}) {
+			r.syncFunc()
+			close(done)
+		}
+		return r.runAsync()
+	}
+
+	return r.runSync()
 }
 
 func (r *runner) runAsync() (outcome types.SpecState, failure types.SpecFailure) {

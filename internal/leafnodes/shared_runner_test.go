@@ -2,6 +2,7 @@ package leafnodes_test
 
 import (
 	. "github.com/onsi/ginkgo"
+	"github.com/onsi/ginkgo/config"
 	. "github.com/onsi/ginkgo/internal/leafnodes"
 	. "github.com/onsi/gomega"
 
@@ -113,6 +114,38 @@ func SynchronousSharedRunnerBehaviors(build func(body interface{}, timeout time.
 			})
 		})
 
+		Context("when allAsync is set", func() {
+			var guard chan struct{}
+
+			BeforeEach(func() {
+				config.GinkgoConfig.AllAsync = true
+				guard = make(chan struct{})
+				outcome, failure = build(func( /* no 'done' parameter */ ) {
+					didRun = true
+					time.Sleep(20 * time.Millisecond)
+					close(guard)
+				}, 10*time.Millisecond, failer, componentCodeLocation).Run()
+			})
+
+			AfterEach(func() {
+				config.GinkgoConfig.AllAsync = false
+			})
+
+			It("behaves as an async function and times out", func() {
+				<-guard
+				Ω(didRun).Should(BeTrue())
+
+				Ω(outcome).Should(Equal(types.SpecStateTimedOut))
+				Ω(failure).Should(Equal(types.SpecFailure{
+					Message:               "Timed out",
+					Location:              componentCodeLocation,
+					ForwardedPanic:        "",
+					ComponentIndex:        componentIndex,
+					ComponentType:         componentType,
+					ComponentCodeLocation: componentCodeLocation,
+				}))
+			})
+		})
 	})
 }
 

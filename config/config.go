@@ -34,6 +34,7 @@ type GinkgoConfigType struct {
 	FlakeAttempts      int
 	EmitSpecProgress   bool
 	DryRun             bool
+	AllAsync           bool
 
 	ParallelNode  int
 	ParallelTotal int
@@ -79,6 +80,8 @@ func Flags(flagSet *flag.FlagSet, prefix string, includeParallelFlags bool) {
 	flagSet.IntVar(&(GinkgoConfig.FlakeAttempts), prefix+"flakeAttempts", 1, "Make up to this many attempts to run each spec. Please note that if any of the attempts succeed, the suite will not be failed. But any failures will still be recorded.")
 
 	flagSet.BoolVar(&(GinkgoConfig.EmitSpecProgress), prefix+"progress", false, "If set, ginkgo will emit progress information as each spec runs to the GinkgoWriter.")
+
+	flagSet.BoolVar(&(GinkgoConfig.AllAsync), prefix+"allAsync", false, "Run all tests as async (as if they had a chan Done as argument), so that they will always timeout.")
 
 	if includeParallelFlags {
 		flagSet.IntVar(&(GinkgoConfig.ParallelNode), prefix+"parallel.node", 1, "This worker node's (one-indexed) node number.  For running specs in parallel.")
@@ -157,6 +160,10 @@ func BuildFlagArgs(prefix string, ginkgo GinkgoConfigType, reporter DefaultRepor
 
 	if ginkgo.RegexScansFilePath {
 		result = append(result, fmt.Sprintf("--%sregexScansFilePath", prefix))
+	}
+
+	if ginkgo.AllAsync {
+		result = append(result, fmt.Sprintf("--%sallAsync", prefix))
 	}
 
 	if reporter.NoColor {

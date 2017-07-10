@@ -419,4 +419,21 @@ var _ = Describe("Running Specs", func() {
 			Ω(randomSeeds[0]).ShouldNot(Equal(randomSeeds[2]))
 		})
 	})
+
+	Context("when --allAsync is set", func() {
+		BeforeEach(func() {
+			copyIn("all_async_timeout_tests", tmpDir)
+		})
+
+		It("should pass without --allAsync", func() {
+			session := startGinkgo(tmpDir)
+			Eventually(session).Should(gexec.Exit(0))
+		})
+
+		It("should fail with timeout", func() {
+			session := startGinkgo(tmpDir, "--allAsync")
+			Eventually(session).Should(gexec.Exit(1))
+			Ω(session).Should(gbytes.Say("Timeout"))
+		})
+	})
 })
