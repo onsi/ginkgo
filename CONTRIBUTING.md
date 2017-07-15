@@ -1,7 +1,5 @@
 # Contributing to Ginkgo
 
-# Contributing to Ginkgo
-
 Your contributions to Ginkgo are essential for its long-term maintenance and improvement.  To make a contribution:
 
 - Please **open an issue first** - describe what problem you are trying to solve and give the community a forum for input and feedback ahead of investing time in writing code!
