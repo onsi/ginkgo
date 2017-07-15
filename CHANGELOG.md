@@ -6,6 +6,7 @@
 - `ginkgo` now always emits compilation output.  Previously, only failed compilation output was printed out. [#277]
 - `ginkgo -requireSuite` now fails the test run if there are `*_test.go` files but `go test` fails to detect any tests.  Typically this means you forgot to run `ginkgo bootstrap` to generate a suite file. [#344]
 - `ginkgo -timeout=DURATION` allows you to adjust the timeout for the entire test suite (default is 24 hours) [#248]
+- `ginkgo --allAsync` runs all tests as if they were async tests (with a `Done` parameter), which will make them timeout after the default timeout (1s) or the configured timeout.
 
 ## 1.3.0 3/28/2017
 
