@@ -2,7 +2,7 @@ package second_package_test
 
 import (
 	. "github.com/onsi/ginkgo"
-	. "github.com/onsi/ginkgo/integration/_fixtures/coverage_fixture"
+	. "github.com/onsi/ginkgo/integration/_fixtures/combined_coverage_fixture/second_package"
 	. "github.com/onsi/gomega"
 )
 
