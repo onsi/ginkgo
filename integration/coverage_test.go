@@ -18,7 +18,7 @@ var _ = Describe("Coverage Specs", func() {
 		session := startGinkgo("./_fixtures/coverage_fixture", "-cover")
 		Eventually(session).Should(gexec.Exit(0))
 		output := session.Out.Contents()
-		Ω(output).Should(ContainSubstring("coverage: 80.0% of statements"))
+		Ω(string(output)).Should(ContainSubstring("coverage: 80.0% of statements"))
 
 		serialCoverProfileOutput, err := exec.Command("go", "tool", "cover", "-func=./_fixtures/coverage_fixture/coverage_fixture.coverprofile").CombinedOutput()
 		Ω(err).ShouldNot(HaveOccurred())
