@@ -8,7 +8,6 @@ import (
 	"os"
 	"os/exec"
 	"path/filepath"
-	"regexp"
 	"strconv"
 	"strings"
 	"syscall"
@@ -16,7 +15,6 @@ import (
 
 	"github.com/onsi/ginkgo/config"
 	"github.com/onsi/ginkgo/ginkgo/testsuite"
-	"github.com/onsi/ginkgo/internal/remote"
 	"github.com/onsi/ginkgo/reporters/stenographer"
 	"github.com/onsi/ginkgo/types"
 )
@@ -29,18 +27,20 @@ type TestRunner struct {
 
 	numCPU         int
 	parallelStream bool
+	timeout        time.Duration
 	goOpts         map[string]interface{}
 	additionalArgs []string
 	stderr         *bytes.Buffer
 }
 
-func New(suite testsuite.TestSuite, numCPU int, parallelStream bool, goOpts map[string]interface{}, additionalArgs []string) *TestRunner {
+func New(suite testsuite.TestSuite, numCPU int, parallelStream bool, timeout time.Duration, goOpts map[string]interface{}, additionalArgs []string) *TestRunner {
 	runner := &TestRunner{
 		Suite:          suite,
 		numCPU:         numCPU,
 		parallelStream: parallelStream,
 		goOpts:         goOpts,
 		additionalArgs: additionalArgs,
+		timeout:        timeout,
 		stderr:         new(bytes.Buffer),
 	}
 
@@ -138,11 +138,14 @@ func (t *TestRunner) CompileTo(path string) error {
 	output, err := cmd.CombinedOutput()
 
 	if err != nil {
-		fixedOutput := fixCompilationOutput(string(output), t.Suite.Path)
 		if len(output) > 0 {
-			return fmt.Errorf("Failed to compile %s:\n\n%s", t.Suite.PackageName, fixedOutput)
+			return fmt.Errorf("Failed to compile %s:\n\n%s", t.Suite.PackageName, output)
 		}
 		return fmt.Errorf("Failed to compile %s", t.Suite.PackageName)
+	}
+
+	if len(output) > 0 {
+		fmt.Println(string(output))
 	}
 
 	if fileExists(path) == false {
@@ -215,38 +218,6 @@ func copyFile(src, dst string) error {
 	}
 
 	return out.Chmod(mode)
-}
-
-/*
-go test -c -i spits package.test out into the cwd. there's no way to change this.
-
-to make sure it doesn't generate conflicting .test files in the cwd, Compile() must switch the cwd to the test package.
-
-unfortunately, this causes go test's compile output to be expressed *relative to the test package* instead of the cwd.
-
-this makes it hard to reason about what failed, and also prevents iterm's Cmd+click from working.
-
-fixCompilationOutput..... rewrites the output to fix the paths.
-
-yeah......
-*/
-func fixCompilationOutput(output string, relToPath string) string {
-	relToPath = filepath.Join(relToPath)
-	re := regexp.MustCompile(`^(\S.*\.go)\:\d+\:`)
-	lines := strings.Split(output, "\n")
-	for i, line := range lines {
-		indices := re.FindStringSubmatchIndex(line)
-		if len(indices) == 0 {
-			continue
-		}
-
-		path := line[indices[2]:indices[3]]
-		if filepath.Dir(path) != relToPath {
-			path = filepath.Join(relToPath, path)
-			lines[i] = path + line[indices[3]:]
-		}
-	}
-	return strings.Join(lines, "\n")
 }
 
 func (t *TestRunner) Run() RunResult {
@@ -418,7 +389,7 @@ func (t *TestRunner) runParallelGinkgoSuite() RunResult {
 const CoverProfileSuffix = ".coverprofile"
 
 func (t *TestRunner) cmd(ginkgoArgs []string, stream io.Writer, node int) *exec.Cmd {
-	args := []string{"--test.timeout=24h"}
+	args := []string{"--test.timeout=" + t.timeout.String()}
 
 	coverMode := *t.goOpts["covermode"].(*string)
 	coverPackage := *t.goOpts["coverpkg"].(*string)
@@ -480,6 +451,9 @@ func (t *TestRunner) run(cmd *exec.Cmd, completions chan RunResult) RunResult {
 	res.HasProgrammaticFocus = (exitStatus == types.GINKGO_FOCUS_EXIT_CODE)
 
 	if strings.Contains(t.stderr.String(), "warning: no tests to run") {
+		if *t.goOpts["requireSuite"].(*bool) {
+			res.Passed = false
+		}
 		fmt.Fprintf(os.Stderr, `Found no test suites, did you forget to run "ginkgo bootstrap"?`)
 	}
 
@@ -525,5 +499,6 @@ func (t *TestRunner) combineCoverprofiles() {
 		output = append(output, fmt.Sprintf("%s %d", line, lines[line]))
 	}
 	finalOutput := strings.Join(output, "\n")
-	ioutil.WriteFile(filepath.Join(t.Suite.Path, fmt.Sprintf("%s%s", t.Suite.PackageName, CoverProfileSuffix)), []byte(finalOutput), 0666)
+	ioutil.WriteFile(filepath.Join(t.Suite.Path, fmt.Sprintf("%s%s", t.Suite.PackageName, CoverProfileSuffix)),
+		[]byte(finalOutput), 0666)
 }

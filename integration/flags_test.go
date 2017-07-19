@@ -63,6 +63,11 @@ var _ = Describe("Flags Specs", func() {
 		Eventually(session).Should(gexec.Exit(1))
 	})
 
+	It("should fail if the test suite takes longer than the timeout", func() {
+		session := startGinkgo(pathToTest, "--noColor", "--timeout=1ms")
+		Eventually(session).Should(gexec.Exit(1))
+	})
+
 	It("should not print out pendings when --noisyPendings=false", func() {
 		session := startGinkgo(pathToTest, "--noColor", "--noisyPendings=false")
 		Eventually(session).Should(gexec.Exit(types.GINKGO_FOCUS_EXIT_CODE))
