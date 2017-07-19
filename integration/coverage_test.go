@@ -7,6 +7,7 @@ import (
 	. "github.com/onsi/ginkgo"
 	. "github.com/onsi/gomega"
 	"github.com/onsi/gomega/gexec"
+	"fmt"
 )
 
 var _ = Describe("Coverage Specs", func() {
@@ -63,5 +64,23 @@ var _ = Describe("Coverage Specs", func() {
 
 		// Cleanup
 		os.RemoveAll("./_fixtures/coverage_fixture/coverage.txt")
+	})
+
+	It("Works in recursive mode", func() {
+		session := startGinkgo("./_fixtures/combined_coverage_fixture", "-r", "-cover", "-coverprofile=coverage.txt")
+
+		Eventually(session).Should(gexec.Exit(0))
+
+		packages := []string{"first_package", "second_package"}
+
+		for _, p := range packages {
+			coverFile := fmt.Sprintf("./_fixtures/combined_coverage_fixture/%s/coverage.txt", p)
+			_, err := os.Stat(coverFile)
+
+			Ω(err).ShouldNot(HaveOccurred())
+
+			// Cleanup
+			os.RemoveAll(coverFile)
+		}
 	})
 })
