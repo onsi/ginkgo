@@ -15,6 +15,7 @@ import (
 
 	"github.com/onsi/ginkgo/config"
 	"github.com/onsi/ginkgo/ginkgo/testsuite"
+	"github.com/onsi/ginkgo/internal/remote"
 	"github.com/onsi/ginkgo/reporters/stenographer"
 	"github.com/onsi/ginkgo/types"
 )
@@ -462,8 +463,17 @@ func (t *TestRunner) run(cmd *exec.Cmd, completions chan RunResult) RunResult {
 
 func (t *TestRunner) combineCoverprofiles() {
 	profiles := []string{}
+
+	coverProfile := *t.goOpts["coverprofile"].(*string)
+
 	for cpu := 1; cpu <= t.numCPU; cpu++ {
-		coverFile := fmt.Sprintf("%s%s.%d", t.Suite.PackageName, CoverProfileSuffix, cpu)
+		var coverFile string
+		if coverProfile == "" {
+			coverFile = fmt.Sprintf("%s%s.%d", t.Suite.PackageName, CoverProfileSuffix, cpu)
+		} else {
+			coverFile = fmt.Sprintf("%s.%d", coverProfile, cpu)
+		}
+
 		coverFile = filepath.Join(t.Suite.Path, coverFile)
 		coverProfile, err := ioutil.ReadFile(coverFile)
 		os.Remove(coverFile)
