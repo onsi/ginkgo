@@ -99,16 +99,28 @@ var _ = Describe("Coverage Specs", func() {
 	})
 
 	It("Appends coverages if output dir and coverprofile were set", func() {
-		session := startGinkgo("./_fixtures/combined_coverage_fixture",
-			"-outputdir=./_fixtures/combined_coverage_fixture", "-r", "-cover", "-coverprofile=coverage.txt")
+		session := startGinkgo("./_fixtures/combined_coverage_fixture", "-outputdir=./", "-r", "-cover", "-coverprofile=coverage.txt")
 
 		Eventually(session).Should(gexec.Exit(0))
 
-		_, err := os.Stat("./_fixtures/coverage_fixture/coverage.txt")
+		_, err := os.Stat("./_fixtures/combined_coverage_fixture/coverage.txt")
 
 		Ω(err).ShouldNot(HaveOccurred())
 
 		// Cleanup
-		os.RemoveAll("./_fixtures/coverage_fixture/coverage.txt")
+		os.RemoveAll("./_fixtures/combined_coverage_fixture/coverage.txt")
+	})
+
+	It("Creates directories in path if they don't exist", func() {
+		session := startGinkgo("./_fixtures/combined_coverage_fixture", "-outputdir=./all/profiles/here", "-r", "-cover", "-coverprofile=coverage.txt")
+
+		defer os.RemoveAll("./_fixtures/combined_coverage_fixture/all")
+		defer os.RemoveAll("./_fixtures/combined_coverage_fixture/coverage.txt")
+
+		Eventually(session).Should(gexec.Exit(0))
+
+		_, err := os.Stat("./_fixtures/combined_coverage_fixture/all/profiles/here/coverage.txt")
+
+		Ω(err).ShouldNot(HaveOccurred())
 	})
 })

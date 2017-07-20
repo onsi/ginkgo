@@ -32,6 +32,8 @@ type TestRunner struct {
 	goOpts         map[string]interface{}
 	additionalArgs []string
 	stderr         *bytes.Buffer
+
+	CoverageFile string
 }
 
 func New(suite testsuite.TestSuite, numCPU int, parallelStream bool, timeout time.Duration, goOpts map[string]interface{}, additionalArgs []string) *TestRunner {
@@ -398,12 +400,17 @@ func (t *TestRunner) cmd(ginkgoArgs []string, stream io.Writer, node int) *exec.
 
 		testCoverProfile := "--test.coverprofile="
 
+		coverageFile := ""
 		// Set default name for coverage results
 		if coverProfile == "" {
-			testCoverProfile += t.Suite.PackageName + CoverProfileSuffix
+			coverageFile = t.Suite.PackageName + CoverProfileSuffix
 		} else {
-			testCoverProfile += coverProfile
+			coverageFile = coverProfile
 		}
+
+		testCoverProfile += coverageFile
+
+		t.CoverageFile = filepath.Join(t.Suite.Path, coverageFile)
 
 		if t.numCPU > 1 {
 			testCoverProfile = fmt.Sprintf("%s.%d", testCoverProfile, node)
@@ -540,6 +547,8 @@ func (t *TestRunner) combineCoverprofiles() {
 		finalFilename = fmt.Sprintf("%s%s", t.Suite.PackageName, CoverProfileSuffix)
 	}
 
-	ioutil.WriteFile(filepath.Join(t.Suite.Path, finalFilename),
-		[]byte(finalOutput), 0666)
+	coverageFilepath := filepath.Join(t.Suite.Path, finalFilename)
+	ioutil.WriteFile(coverageFilepath, []byte(finalOutput), 0666)
+
+	t.CoverageFile = coverageFilepath
 }
