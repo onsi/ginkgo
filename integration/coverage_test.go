@@ -4,10 +4,10 @@ import (
 	"os"
 	"os/exec"
 
+	"fmt"
 	. "github.com/onsi/ginkgo"
 	. "github.com/onsi/gomega"
 	"github.com/onsi/gomega/gexec"
-	"fmt"
 )
 
 var _ = Describe("Coverage Specs", func() {
@@ -96,5 +96,19 @@ var _ = Describe("Coverage Specs", func() {
 
 		// Cleanup
 		os.RemoveAll(coverFile)
+	})
+
+	It("Appends coverages if output dir and coverprofile were set", func() {
+		session := startGinkgo("./_fixtures/combined_coverage_fixture",
+			"-outputdir=./_fixtures/combined_coverage_fixture", "-r", "-cover", "-coverprofile=coverage.txt")
+
+		Eventually(session).Should(gexec.Exit(0))
+
+		_, err := os.Stat("./_fixtures/coverage_fixture/coverage.txt")
+
+		Ω(err).ShouldNot(HaveOccurred())
+
+		// Cleanup
+		os.RemoveAll("./_fixtures/coverage_fixture/coverage.txt")
 	})
 })
