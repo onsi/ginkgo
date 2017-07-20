@@ -63,10 +63,10 @@ func (t *TestRunner) Compile() error {
 func (t *TestRunner) BuildArgs(path string) []string {
 	args := []string{"test", "-c", "-i", "-o", path, t.Suite.Path}
 
-	if *t.goOpts["covermode"].(*string) != "" {
-		args = append(args, "-cover", fmt.Sprintf("-covermode=%s", *t.goOpts["covermode"].(*string)))
+	if t.getCoverMode() != "" {
+		args = append(args, "-cover", fmt.Sprintf("-covermode=%s", t.getCoverMode()))
 	} else {
-		if *t.goOpts["cover"].(*bool) || *t.goOpts["coverpkg"].(*string) != "" {
+		if t.shouldCover() || t.getCoverPackage() != "" {
 			args = append(args, "-cover", "-covermode=atomic")
 		}
 	}
@@ -298,7 +298,7 @@ func (t *TestRunner) runAndStreamParallelGinkgoSuite() RunResult {
 
 	os.Stdout.Sync()
 
-	if *t.goOpts["cover"].(*bool) || *t.goOpts["coverpkg"].(*string) != "" || *t.goOpts["covermode"].(*string) != "" {
+	if t.shouldCombineCoverprofiles() {
 		t.combineCoverprofiles()
 	}
 
@@ -380,7 +380,7 @@ func (t *TestRunner) runParallelGinkgoSuite() RunResult {
 		os.Stdout.Sync()
 	}
 
-	if *t.goOpts["cover"].(*bool) || *t.goOpts["coverpkg"].(*string) != "" || *t.goOpts["covermode"].(*string) != "" {
+	if t.shouldCombineCoverprofiles() {
 		t.combineCoverprofiles()
 	}
 
@@ -392,12 +392,10 @@ const CoverProfileSuffix = ".coverprofile"
 func (t *TestRunner) cmd(ginkgoArgs []string, stream io.Writer, node int) *exec.Cmd {
 	args := []string{"--test.timeout=" + t.timeout.String()}
 
-	coverMode := *t.goOpts["covermode"].(*string)
-	coverPackage := *t.goOpts["coverpkg"].(*string)
-	cover := *t.goOpts["cover"].(*bool)
-	coverProfile := *t.goOpts["coverprofile"].(*string)
+	coverProfile := t.getCoverProfile()
 
-	if cover || coverPackage != "" || coverMode != "" {
+	if t.shouldCombineCoverprofiles() {
+
 		testCoverProfile := "--test.coverprofile="
 
 		// Set default name for coverage results
@@ -430,6 +428,30 @@ func (t *TestRunner) cmd(ginkgoArgs []string, stream io.Writer, node int) *exec.
 	return cmd
 }
 
+func (t *TestRunner) shouldCover() bool {
+	return *t.goOpts["cover"].(*bool)
+}
+
+func (t *TestRunner) shouldRequireSuite() bool {
+	return *t.goOpts["requireSuite"].(*bool)
+}
+
+func (t *TestRunner) getCoverProfile() string {
+	return *t.goOpts["coverprofile"].(*string)
+}
+
+func (t *TestRunner) getCoverPackage() string {
+	return *t.goOpts["coverpkg"].(*string)
+}
+
+func (t *TestRunner) getCoverMode() string {
+	return *t.goOpts["covermode"].(*string)
+}
+
+func (t *TestRunner) shouldCombineCoverprofiles() bool {
+	return t.shouldCover() || t.getCoverPackage() != "" || t.getCoverMode() != ""
+}
+
 func (t *TestRunner) run(cmd *exec.Cmd, completions chan RunResult) RunResult {
 	var res RunResult
 
@@ -452,7 +474,7 @@ func (t *TestRunner) run(cmd *exec.Cmd, completions chan RunResult) RunResult {
 	res.HasProgrammaticFocus = (exitStatus == types.GINKGO_FOCUS_EXIT_CODE)
 
 	if strings.Contains(t.stderr.String(), "warning: no tests to run") {
-		if *t.goOpts["requireSuite"].(*bool) {
+		if t.shouldRequireSuite() {
 			res.Passed = false
 		}
 		fmt.Fprintf(os.Stderr, `Found no test suites, did you forget to run "ginkgo bootstrap"?`)
@@ -464,7 +486,7 @@ func (t *TestRunner) run(cmd *exec.Cmd, completions chan RunResult) RunResult {
 func (t *TestRunner) combineCoverprofiles() {
 	profiles := []string{}
 
-	coverProfile := *t.goOpts["coverprofile"].(*string)
+	coverProfile := t.getCoverProfile()
 
 	for cpu := 1; cpu <= t.numCPU; cpu++ {
 		var coverFile string
