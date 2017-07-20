@@ -83,4 +83,18 @@ var _ = Describe("Coverage Specs", func() {
 			os.RemoveAll(coverFile)
 		}
 	})
+
+	It("Works in parallel mode", func() {
+		session := startGinkgo("./_fixtures/coverage_fixture", "-p", "-cover", "-coverprofile=coverage.txt")
+
+		Eventually(session).Should(gexec.Exit(0))
+
+		coverFile := "./_fixtures/coverage_fixture/coverage.txt"
+		_, err := os.Stat(coverFile)
+
+		Ω(err).ShouldNot(HaveOccurred())
+
+		// Cleanup
+		os.RemoveAll(coverFile)
+	})
 })

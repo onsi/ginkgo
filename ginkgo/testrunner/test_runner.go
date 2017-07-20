@@ -509,6 +509,15 @@ func (t *TestRunner) combineCoverprofiles() {
 		output = append(output, fmt.Sprintf("%s %d", line, lines[line]))
 	}
 	finalOutput := strings.Join(output, "\n")
-	ioutil.WriteFile(filepath.Join(t.Suite.Path, fmt.Sprintf("%s%s", t.Suite.PackageName, CoverProfileSuffix)),
+
+	finalFilename := ""
+
+	if coverProfile != "" {
+		finalFilename = coverProfile
+	} else {
+		finalFilename = fmt.Sprintf("%s%s", t.Suite.PackageName, CoverProfileSuffix)
+	}
+
+	ioutil.WriteFile(filepath.Join(t.Suite.Path, finalFilename),
 		[]byte(finalOutput), 0666)
 }
