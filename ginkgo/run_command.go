@@ -138,10 +138,12 @@ func (r *SpecRunner) RunSpecs(args []string, additionalArgs []string) {
 // Moves all generated profiles to specified directory
 func (r *SpecRunner) moveCoverprofiles(runners []*testrunner.TestRunner) {
 	for _, runner := range runners {
-		err := os.Rename(runner.CoverageFile, r.getOutputDir())
+		_, filename := filepath.Split(runner.CoverageFile)
+		err := os.Rename(runner.CoverageFile, filepath.Join(r.getOutputDir(), filename))
 
 		if err != nil {
 			fmt.Printf("Unable to move coverprofile %s, %v\n", runner.CoverageFile, err)
+			return
 		}
 	}
 }

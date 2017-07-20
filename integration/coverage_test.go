@@ -123,4 +123,29 @@ var _ = Describe("Coverage Specs", func() {
 
 		Ω(err).ShouldNot(HaveOccurred())
 	})
+
+	It("Moves coverages if only output dir was set", func() {
+		session := startGinkgo("./_fixtures/combined_coverage_fixture", "-outputdir=./", "-r", "-cover")
+
+		Eventually(session).Should(gexec.Exit(0))
+
+		packages := []string{"first_package", "second_package"}
+
+		for _, p := range packages {
+			coverFile := fmt.Sprintf("./_fixtures/combined_coverage_fixture/%s.coverprofile", p)
+
+			// Cleanup
+			defer func (f string) {
+				os.RemoveAll(f)
+			} (coverFile)
+
+			defer func (f string) {
+				os.RemoveAll(fmt.Sprintf("./_fixtures/combined_coverage_fixture/%s/coverage.txt", f))
+			} (p)
+
+			_, err := os.Stat(coverFile)
+
+			Ω(err).ShouldNot(HaveOccurred())
+		}
+	})
 })
