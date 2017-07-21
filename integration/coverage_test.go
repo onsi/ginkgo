@@ -4,10 +4,10 @@ import (
 	"os"
 	"os/exec"
 
+	"fmt"
 	. "github.com/onsi/ginkgo"
 	. "github.com/onsi/gomega"
 	"github.com/onsi/gomega/gexec"
-	"fmt"
 )
 
 var _ = Describe("Coverage Specs", func() {
@@ -96,5 +96,56 @@ var _ = Describe("Coverage Specs", func() {
 
 		// Cleanup
 		os.RemoveAll(coverFile)
+	})
+
+	It("Appends coverages if output dir and coverprofile were set", func() {
+		session := startGinkgo("./_fixtures/combined_coverage_fixture", "-outputdir=./", "-r", "-cover", "-coverprofile=coverage.txt")
+
+		Eventually(session).Should(gexec.Exit(0))
+
+		_, err := os.Stat("./_fixtures/combined_coverage_fixture/coverage.txt")
+
+		Ω(err).ShouldNot(HaveOccurred())
+
+		// Cleanup
+		os.RemoveAll("./_fixtures/combined_coverage_fixture/coverage.txt")
+	})
+
+	It("Creates directories in path if they don't exist", func() {
+		session := startGinkgo("./_fixtures/combined_coverage_fixture", "-outputdir=./all/profiles/here", "-r", "-cover", "-coverprofile=coverage.txt")
+
+		defer os.RemoveAll("./_fixtures/combined_coverage_fixture/all")
+		defer os.RemoveAll("./_fixtures/combined_coverage_fixture/coverage.txt")
+
+		Eventually(session).Should(gexec.Exit(0))
+
+		_, err := os.Stat("./_fixtures/combined_coverage_fixture/all/profiles/here/coverage.txt")
+
+		Ω(err).ShouldNot(HaveOccurred())
+	})
+
+	It("Moves coverages if only output dir was set", func() {
+		session := startGinkgo("./_fixtures/combined_coverage_fixture", "-outputdir=./", "-r", "-cover")
+
+		Eventually(session).Should(gexec.Exit(0))
+
+		packages := []string{"first_package", "second_package"}
+
+		for _, p := range packages {
+			coverFile := fmt.Sprintf("./_fixtures/combined_coverage_fixture/%s.coverprofile", p)
+
+			// Cleanup
+			defer func (f string) {
+				os.RemoveAll(f)
+			} (coverFile)
+
+			defer func (f string) {
+				os.RemoveAll(fmt.Sprintf("./_fixtures/combined_coverage_fixture/%s/coverage.txt", f))
+			} (p)
+
+			_, err := os.Stat(coverFile)
+
+			Ω(err).ShouldNot(HaveOccurred())
+		}
 	})
 })
