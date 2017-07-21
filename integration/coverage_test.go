@@ -7,6 +7,7 @@ import (
 	. "github.com/onsi/ginkgo"
 	. "github.com/onsi/gomega"
 	"github.com/onsi/gomega/gexec"
+	"fmt"
 )
 
 var _ = Describe("Coverage Specs", func() {
@@ -18,7 +19,7 @@ var _ = Describe("Coverage Specs", func() {
 		session := startGinkgo("./_fixtures/coverage_fixture", "-cover")
 		Eventually(session).Should(gexec.Exit(0))
 		output := session.Out.Contents()
-		Ω(output).Should(ContainSubstring("coverage: 80.0% of statements"))
+		Ω(string(output)).Should(ContainSubstring("coverage: 80.0% of statements"))
 
 		serialCoverProfileOutput, err := exec.Command("go", "tool", "cover", "-func=./_fixtures/coverage_fixture/coverage_fixture.coverprofile").CombinedOutput()
 		Ω(err).ShouldNot(HaveOccurred())
@@ -49,5 +50,51 @@ var _ = Describe("Coverage Specs", func() {
 		Ω(err).ShouldNot(HaveOccurred())
 
 		Ω(parallelCoverProfileOutput).Should(Equal(serialCoverProfileOutput))
+	})
+
+	It("validates coverprofile sets custom profile name", func() {
+		session := startGinkgo("./_fixtures/coverage_fixture", "-cover", "-coverprofile=coverage.txt")
+
+		Eventually(session).Should(gexec.Exit(0))
+
+		// Check that the correct file was created
+		_, err := os.Stat("./_fixtures/coverage_fixture/coverage.txt")
+
+		Ω(err).ShouldNot(HaveOccurred())
+
+		// Cleanup
+		os.RemoveAll("./_fixtures/coverage_fixture/coverage.txt")
+	})
+
+	It("Works in recursive mode", func() {
+		session := startGinkgo("./_fixtures/combined_coverage_fixture", "-r", "-cover", "-coverprofile=coverage.txt")
+
+		Eventually(session).Should(gexec.Exit(0))
+
+		packages := []string{"first_package", "second_package"}
+
+		for _, p := range packages {
+			coverFile := fmt.Sprintf("./_fixtures/combined_coverage_fixture/%s/coverage.txt", p)
+			_, err := os.Stat(coverFile)
+
+			Ω(err).ShouldNot(HaveOccurred())
+
+			// Cleanup
+			os.RemoveAll(coverFile)
+		}
+	})
+
+	It("Works in parallel mode", func() {
+		session := startGinkgo("./_fixtures/coverage_fixture", "-p", "-cover", "-coverprofile=coverage.txt")
+
+		Eventually(session).Should(gexec.Exit(0))
+
+		coverFile := "./_fixtures/coverage_fixture/coverage.txt"
+		_, err := os.Stat(coverFile)
+
+		Ω(err).ShouldNot(HaveOccurred())
+
+		// Cleanup
+		os.RemoveAll(coverFile)
 	})
 })
