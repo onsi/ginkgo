@@ -214,6 +214,8 @@ Ginkgo works best from the command-line, and [`ginkgo watch`](#watching-for-chan
 
 There are a set of [completions](https://github.com/onsi/ginkgo-sublime-completions) available for [Sublime Text](http://www.sublimetext.com/) (just use [Package Control](https://sublime.wbond.net/) to install `Ginkgo Completions`) and for [VSCode](https://code.visualstudio.com/) (use the extensions installer and install vscode-ginkgo).
 
+IDE authors can set the `GINKGO_EDITOR_INTEGRATION` environment variable to any non-empty value to enable coverage to be displayed for focused specs. By default, Ginkgo will fail with a non-zero exit code if specs are focused to ensure they do not pass in CI.
+
 ---
 
 ## Structuring Your Specs
