@@ -3,7 +3,6 @@ package integration_test
 import (
 	"os"
 	"os/exec"
-
 	"bufio"
 	"fmt"
 	. "github.com/onsi/ginkgo"
@@ -137,13 +136,13 @@ var _ = Describe("Coverage Specs", func() {
 			coverFile := fmt.Sprintf("./_fixtures/combined_coverage_fixture/%s.coverprofile", p)
 
 			// Cleanup
-			defer func(f string) {
+			defer func (f string) {
 				os.RemoveAll(f)
-			}(coverFile)
+			} (coverFile)
 
-			defer func(f string) {
+			defer func (f string) {
 				os.RemoveAll(fmt.Sprintf("./_fixtures/combined_coverage_fixture/%s/coverage.txt", f))
-			}(p)
+			} (p)
 
 			_, err := os.Stat(coverFile)
 
