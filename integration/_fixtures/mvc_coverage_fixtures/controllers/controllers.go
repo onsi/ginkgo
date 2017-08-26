@@ -9,10 +9,10 @@ type MvcController struct{}
 
 func (m *MvcController) Get() (string, error) {
 
-	someMap := map[int]int{}
+	someMap := map[string]string{}
 
 	for i := 1; i < 10; i++ {
-		someMap[i] = i
+		someMap[strconv.Itoa(i)] = strconv.Itoa(i)
 	}
 
 	b, err := json.Marshal(someMap)
