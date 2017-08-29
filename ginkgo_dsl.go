@@ -216,7 +216,7 @@ func RunSpecsWithCustomReporters(t GinkgoTestingT, description string, specRepor
 		reporters[i] = reporter
 	}
 	passed, hasFocusedTests := globalSuite.Run(t, description, reporters, writer, config.GinkgoConfig)
-	if passed && hasFocusedTests {
+	if passed && hasFocusedTests && strings.TrimSpace(os.Getenv("GINKGO_EDITOR_INTEGRATION")) == "" {
 		fmt.Println("PASS | FOCUSED")
 		os.Exit(types.GINKGO_FOCUS_EXIT_CODE)
 	}
