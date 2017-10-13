@@ -149,7 +149,8 @@ type GinkgoTestDescription struct {
 	FileName   string
 	LineNumber int
 
-	Failed bool
+	Failed   bool
+	Duration time.Duration
 }
 
 //CurrentGinkgoTestDescripton returns information about the current running test.
@@ -169,6 +170,7 @@ func CurrentGinkgoTestDescription() GinkgoTestDescription {
 		FileName:       subjectCodeLocation.FileName,
 		LineNumber:     subjectCodeLocation.LineNumber,
 		Failed:         summary.HasFailureState(),
+		Duration:       summary.RunTime,
 	}
 }
 

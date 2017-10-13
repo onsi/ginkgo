@@ -121,6 +121,7 @@ var _ = Describe("Suite", func() {
 			Ω(description.LineNumber).Should(BeNumerically(">", 50))
 			Ω(description.LineNumber).Should(BeNumerically("<", 150))
 			Ω(description.Failed).Should(BeFalse())
+			Ω(description.Duration).Should(BeNumerically(">", 0))
 		})
 
 		Measure("should run measurements", func(b Benchmarker) {

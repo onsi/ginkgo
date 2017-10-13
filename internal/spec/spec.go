@@ -19,6 +19,7 @@ type Spec struct {
 
 	state            types.SpecState
 	runTime          time.Duration
+	startTime        time.Time
 	failure          types.SpecFailure
 	previousFailures bool
 }
@@ -97,7 +98,7 @@ func (spec *Spec) Summary(suiteID string) *types.SpecSummary {
 		ComponentTexts:         componentTexts,
 		ComponentCodeLocations: componentCodeLocations,
 		State:        spec.state,
-		RunTime:      spec.runTime,
+		RunTime:      time.Since(spec.startTime),
 		Failure:      spec.failure,
 		Measurements: spec.measurementsReport(),
 		SuiteID:      suiteID,
@@ -118,9 +119,9 @@ func (spec *Spec) Run(writer io.Writer) {
 		spec.previousFailures = true
 	}
 
-	startTime := time.Now()
+	spec.startTime = time.Now()
 	defer func() {
-		spec.runTime = time.Since(startTime)
+		spec.runTime = time.Since(spec.startTime)
 	}()
 
 	for sample := 0; sample < spec.subject.Samples(); sample++ {
