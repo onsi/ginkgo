@@ -574,6 +574,8 @@ It("should do something, if it can", func() {
 })
 ```
 
+> By default, Ginkgo will print out a description for each skipped spec.  You can suppress this by setting the `--noisySkippings=false` flag.
+
 Note that `Skip(...)` causes the closure to exit so there is no need to return.
 
 ### Focused Specs
@@ -874,7 +876,11 @@ Here are the flags that Ginkgo accepts:
 
 - `--noisyPendings=false`
 
-    By default, Ginkgo's default reporter will provide detailed output for pending specs.  You can set --noisyPendings=false to supress this behavior.
+    By default, Ginkgo's default reporter will provide detailed output for pending specs.  You can set --noisyPendings=false to suppress this behavior.
+
+- `--noisySkippings=false`
+
+    By default, Ginkgo's default reporter will provide detailed output for skipped specs.  You can set --noisySkippings=false to suppress this behavior.
 
 - `--trace`
 
