@@ -431,6 +431,7 @@ func (t *TestRunner) cmd(ginkgoArgs []string, stream io.Writer, node int) *exec.
 	cmd.Dir = t.Suite.Path
 	cmd.Stderr = io.MultiWriter(stream, t.stderr)
 	cmd.Stdout = stream
+	cmd.Stdin = os.Stdin
 
 	return cmd
 }
