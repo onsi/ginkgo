@@ -1536,15 +1536,15 @@ import (
 var _ = Describe("Math", func() {
     Describe("the > inequality",
         It("x > y", func() {
-            expect(1 > 0).To(Equal(true))
+            Expect(1 > 0).To(Equal(true))
         })
 
         It("x == y", func() {
-            expect(0 > 0).To(Equal(false))
+            Expect(0 > 0).To(Equal(false))
         })
 
         It("x < y", func() {
-            expect(0 > 1).To(Equal(false))
+            Expect(0 > 1).To(Equal(false))
         })
     )
 })
@@ -1572,9 +1572,9 @@ import (
 
 var _ = Describe("Substring matching", func() {
     type SubstringCase struct {
-        String string
-        Substring   string
-        Count          int
+        String    string
+        Substring string
+        Count     int
     }
 
     DescribeTable("counting substring matches",
@@ -1582,19 +1582,19 @@ var _ = Describe("Substring matching", func() {
             Ω(strings.Count(c.String, c.Substring)).Should(BeNumerically("==", c.Count))
         },
         Entry("with no matching substring", SubstringCase{
-            String: "the sixth sheikh's sixth sheep's sick",
-            Substring:   "emir",
-            Count:          0,
+            String:    "the sixth sheikh's sixth sheep's sick",
+            Substring: "emir",
+            Count:     0,
         }),
         Entry("with one matching substring", SubstringCase{
-            String: "the sixth sheikh's sixth sheep's sick",
-            Substring:   "sheep",
-            Count:          1,
+            String:    "the sixth sheikh's sixth sheep's sick",
+            Substring: "sheep",
+            Count:     1,
         }),
         Entry("with many matching substring", SubstringCase{
-            String: "the sixth sheikh's sixth sheep's sick",
-            Substring:   "si",
-            Count:          3,
+            String:    "the sixth sheikh's sixth sheep's sick",
+            Substring: "si",
+            Count:     3,
         }),
     )
 })
