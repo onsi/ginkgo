@@ -180,7 +180,6 @@ func AsynchronousSharedRunnerBehaviors(build func(body interface{}, timeout time
 					failer.Fail("bam", innerCodeLocation)
 					time.Sleep(20 * time.Millisecond)
 					panic("doesn't matter")
-					close(done)
 				}, 10*time.Millisecond, failer, componentCodeLocation).Run()
 			})
 
@@ -209,7 +208,6 @@ func AsynchronousSharedRunnerBehaviors(build func(body interface{}, timeout time
 					time.Sleep(20 * time.Millisecond)
 					close(guard)
 					panic("doesn't matter")
-					close(done)
 				}, 10*time.Millisecond, failer, componentCodeLocation).Run()
 			})
 
