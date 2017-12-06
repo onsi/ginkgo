@@ -135,19 +135,19 @@ var _ = Describe("SynchronizedAfterSuiteNode", func() {
 					func(writer http.ResponseWriter, request *http.Request) {
 						ranThing("Request1")
 					},
-					ghttp.RespondWithJSONEncoded(200, types.RemoteAfterSuiteData{false}),
+					ghttp.RespondWithJSONEncoded(200, types.RemoteAfterSuiteData{CanRun: false}),
 				), ghttp.CombineHandlers(
 					ghttp.VerifyRequest("GET", "/RemoteAfterSuiteData"),
 					func(writer http.ResponseWriter, request *http.Request) {
 						ranThing("Request2")
 					},
-					ghttp.RespondWithJSONEncoded(200, types.RemoteAfterSuiteData{false}),
+					ghttp.RespondWithJSONEncoded(200, types.RemoteAfterSuiteData{CanRun: false}),
 				), ghttp.CombineHandlers(
 					ghttp.VerifyRequest("GET", "/RemoteAfterSuiteData"),
 					func(writer http.ResponseWriter, request *http.Request) {
 						ranThing("Request3")
 					},
-					ghttp.RespondWithJSONEncoded(200, types.RemoteAfterSuiteData{true}),
+					ghttp.RespondWithJSONEncoded(200, types.RemoteAfterSuiteData{CanRun: true}),
 				))
 
 				node = newNode(func() {

@@ -110,8 +110,6 @@ func (node *synchronizedBeforeSuiteNode) waitForA(syncHost string) (types.SpecSt
 
 		time.Sleep(50 * time.Millisecond)
 	}
-
-	return types.SpecStateFailed, failure("Shouldn't get here!")
 }
 
 func (node *synchronizedBeforeSuiteNode) Passed() bool {
