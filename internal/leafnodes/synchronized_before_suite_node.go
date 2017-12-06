@@ -3,12 +3,13 @@ package leafnodes
 import (
 	"bytes"
 	"encoding/json"
-	"github.com/onsi/ginkgo/internal/failer"
-	"github.com/onsi/ginkgo/types"
 	"io/ioutil"
 	"net/http"
 	"reflect"
 	"time"
+
+	"github.com/onsi/ginkgo/internal/failer"
+	"github.com/onsi/ginkgo/types"
 )
 
 type synchronizedBeforeSuiteNode struct {
