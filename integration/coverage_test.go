@@ -3,12 +3,13 @@ package integration_test
 import (
 	"os"
 	"os/exec"
-
+	"bufio"
 	"fmt"
 
 	. "github.com/onsi/ginkgo"
 	. "github.com/onsi/gomega"
 	"github.com/onsi/gomega/gexec"
+	"strings"
 )
 
 var _ = Describe("Coverage Specs", func() {
@@ -149,4 +150,48 @@ var _ = Describe("Coverage Specs", func() {
 			Ω(err).ShouldNot(HaveOccurred())
 		}
 	})
+
+	It("Covers MVC style frameworks", func() {
+
+		packages := []string{"github.com/onsi/ginkgo/integration/_fixtures/mvc_coverage_fixtures/controllers",
+			"github.com/onsi/ginkgo/integration/_fixtures/mvc_coverage_fixtures/models"}
+
+		coverFile := "./_fixtures/mvc_coverage_fixtures/coverage.txt"
+
+		defer os.RemoveAll(coverFile)
+		defer os.RemoveAll("./_fixtures/mvc_coverage_fixtures/controllers/coverage.txt")
+		defer os.RemoveAll("./_fixtures/mvc_coverage_fixtures/tests/coverage.txt")
+
+		session := startGinkgo("./_fixtures/mvc_coverage_fixtures",
+			"-outputdir=./", "-r", "-cover", "-coverprofile=coverage.txt",
+			"-coverpkg="+strings.Join(packages, ","))
+
+		Eventually(session).Should(gexec.Exit(0))
+
+		_, err := os.Stat(coverFile)
+
+		Ω(err).ShouldNot(HaveOccurred())
+
+		Ω(lineCount(coverFile)).Should(Equal(8))
+	})
 })
+
+// lineCount counts the lines of coverage file
+func lineCount(filePath string) int {
+	file, err := os.Open(filePath)
+
+	if err != nil {
+		fmt.Errorf("%v", err)
+		return 0
+	}
+
+	defer file.Close()
+
+	scanner := bufio.NewScanner(file)
+	count := 0
+	for scanner.Scan() {
+		count++
+	}
+
+	return count
+}
