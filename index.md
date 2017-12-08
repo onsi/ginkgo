@@ -928,10 +928,20 @@ Here are the flags that Ginkgo accepts:
 
     Set `-cover` to have the `ginkgo` CLI run your tests with coverage analysis turned on (a Golang 1.2+ feature).  Ginkgo will generate coverage profiles under the current directory named `PACKAGE.coverprofile` for each set of package tests that is run.
 
-- `-coverpkg=PKG1,PKG2`
+- `-coverpkg=<PKG1>,<PKG2>`
 
     Like `-cover`, `-coverpkg` runs your tests with coverage analysis turned on.  However, `-coverpkg` allows you to specify the packages to run the analysis on.  This allows you to get coverage on packages outside of the current package, which is useful for integration tests.  Note that it will not run coverage on the current package by default, you always need to specify all packages you want coverage for.
+    The package name should be fully resolved, eg `github.com/onsi/ginkgo/reporters/stenographer`
 
+- `-coverprofile=<FILENAME>`
+
+    Renames coverage results file to a provided filename
+    
+- `-outputdir=<DIRECTORY>`
+   
+    Moves coverage results to a specified directory <br />
+    When combined with `-coverprofile` will also append them together
+    
 **Build flags:**
 
 - `-tags`
