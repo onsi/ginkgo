@@ -13,11 +13,22 @@ These docs are written assuming you'll be using Gomega with Ginkgo.  They also a
 Just `go get` it:
 
     $ go get github.com/onsi/ginkgo/ginkgo
-    $ go get github.com/onsi/gomega
+    $ go get github.com/onsi/gomega/...
 
-this fetches ginkgo and installs the `ginkgo` executable under `$GOPATH/bin` -- you'll want that on your `$PATH`.
+This fetches ginkgo and installs the `ginkgo` executable under `$GOPATH/bin` -- you'll want that on your `$PATH`.
 
 **Ginkgo is compatible with Golang v1.4+  Ubuntu users: apt-get currently installs v1.0 -- you'll need to upgrade!**
+
+The above commands also install the entire gomega library. If you want to fetch only the packages needed by your tests, import the packages you need and use `go get -t`. 
+
+For example, import the gomega package in your test code:
+
+    import "github.com/onsi/gomega"
+
+Use `go get -t` to retrieve the packages referenced in your test code:
+
+    $ cd /path/to/my/app
+    $ go get -t ./...
 
 ---
 
