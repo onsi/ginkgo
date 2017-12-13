@@ -61,7 +61,7 @@ Agouti allows you run WebDriver integration tests.  Learn more about Agouti [her
 
 ## Set Me Up!
 
-You'll need Go v1.6+. Follow the [installation instructions](https://golang.org/doc/install) if you don't have it installed.
+You'll need the Go command-line tools. Ginkgo is tested with Go 1.6+, but preferably you should get the latest. Follow the [installation instructions](https://golang.org/doc/install) if you don't have it installed.
 
 ```bash
 
