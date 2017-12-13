@@ -17,7 +17,7 @@ Just `go get` it:
 
 this fetches ginkgo and installs the `ginkgo` executable under `$GOPATH/bin` -- you'll want that on your `$PATH`.
 
-**Ginkgo is compatible with Go v1.6+**
+**Ginkgo is tested against Go v1.6 and newer**
 To install Go, follow the [installation instructions](https://golang.org/doc/install)
 
 ---
