@@ -2,7 +2,7 @@
 layout: default
 title: Ginkgo
 ---
-[Ginkgo](http://github.com/onsi/ginkgo) is a BDD-style Golang testing framework built to help you efficiently write expressive and comprehensive tests.  It is best paired with the [Gomega](http://github.com/onsi/gomega) matcher library but is designed to be matcher-agnostic.
+[Ginkgo](http://github.com/onsi/ginkgo) is a BDD-style Go testing framework built to help you efficiently write expressive and comprehensive tests.  It is best paired with the [Gomega](http://github.com/onsi/gomega) matcher library but is designed to be matcher-agnostic.
 
 These docs are written assuming you'll be using Gomega with Ginkgo.  They also assume you know your way around Go and have a good mental model for how Go organizes packages under `$GOPATH`.
 
@@ -17,7 +17,8 @@ Just `go get` it:
 
 This fetches ginkgo and installs the `ginkgo` executable under `$GOPATH/bin` -- you'll want that on your `$PATH`.
 
-**Ginkgo is compatible with Golang v1.4+  Ubuntu users: apt-get currently installs v1.0 -- you'll need to upgrade!**
+**Ginkgo is tested against Go v1.6 and newer**
+To install Go, follow the [installation instructions](https://golang.org/doc/install)
 
 The above commands also install the entire gomega library. If you want to fetch only the packages needed by your tests, import the packages you need and use `go get -t`. 
 
@@ -35,7 +36,7 @@ Use `go get -t` to retrieve the packages referenced in your test code:
 ## Getting Started: Writing Your First Test
 Ginkgo hooks into Go's existing `testing` infrastructure.  This allows you to run a Ginkgo suite using `go test`.
 
-> This also means that Ginkgo tests can live alongside traditional Golang `testing` tests.  Both `go test` and `ginkgo` will run all the tests in your suite.
+> This also means that Ginkgo tests can live alongside traditional Go `testing` tests.  Both `go test` and `ginkgo` will run all the tests in your suite.
 
 ### Bootstrapping a Suite
 To write Ginkgo tests for a package you must first bootstrap a Ginkgo test suite.  Say you have a package named `books`:
@@ -937,7 +938,7 @@ Here are the flags that Ginkgo accepts:
 
 - `-cover`
 
-    Set `-cover` to have the `ginkgo` CLI run your tests with coverage analysis turned on (a Golang 1.2+ feature).  Ginkgo will generate coverage profiles under the current directory named `PACKAGE.coverprofile` for each set of package tests that is run.
+    Set `-cover` to have the `ginkgo` CLI run your tests with coverage analysis turned on (a Go 1.2+ feature).  Ginkgo will generate coverage profiles under the current directory named `PACKAGE.coverprofile` for each set of package tests that is run.
 
 - `-coverpkg=<PKG1>,<PKG2>`
 
@@ -1480,7 +1481,7 @@ For Travis CI, you could use something like this:
 
     language: go
     go:
-        - 1.4
+        - 1.9
         - tip
 
     install:
