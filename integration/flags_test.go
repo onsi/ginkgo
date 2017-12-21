@@ -164,7 +164,7 @@ var _ = Describe("Flags Specs", func() {
 		output := string(session.Out.Contents())
 
 		Ω(output).Should(ContainSubstring("1 Failed"))
-		Ω(output).Should(ContainSubstring("15 Skipped"))
+		Ω(output).Should(ContainSubstring("16 Skipped"))
 	})
 
 	Context("with a flaky test", func() {
@@ -187,7 +187,7 @@ var _ = Describe("Flags Specs", func() {
 		output := string(session.Out.Contents())
 
 		Ω(output).Should(ContainSubstring("synchronous failures"))
-		Ω(output).Should(ContainSubstring("16 Specs"))
+		Ω(output).Should(ContainSubstring("17 Specs"))
 		Ω(output).Should(ContainSubstring("0 Passed"))
 		Ω(output).Should(ContainSubstring("0 Failed"))
 	})

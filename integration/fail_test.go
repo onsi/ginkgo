@@ -43,6 +43,11 @@ var _ = Describe("Failing Specs", func() {
 		Ω(output).Should(ContainSubstring("a measure FAIL failure"))
 		Ω(output).Should(MatchRegexp(`Test Panicked\n\s+a measure panic`))
 
-		Ω(output).Should(ContainSubstring("0 Passed | 16 Failed"))
+		Ω(output).Should(ContainSubstring("a top level specify"))
+		Ω(output).ShouldNot(ContainSubstring("ginkgo_dsl.go"))
+		Ω(output).Should(ContainSubstring("fail_fixture_test.go:101"))
+		Ω(output).Should(ContainSubstring("fail_fixture_test.go:102"))
+
+		Ω(output).Should(ContainSubstring("0 Passed | 17 Failed"))
 	})
 })
