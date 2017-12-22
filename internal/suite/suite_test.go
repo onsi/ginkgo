@@ -153,6 +153,19 @@ var _ = Describe("Suite", func() {
 				"AfterSuite",
 			}))
 		})
+		Context("When afterEach info is needed", func() {
+			AfterEach(func() {
+				description := CurrentGinkgoTestDescription()
+				Ω(description.IsMeasurement).Should(BeFalse())
+				Ω(description.FileName).Should(ContainSubstring("suite_test.go"))
+				Ω(description.Failed).Should(BeFalse())
+				Ω(description.Duration).Should(BeNumerically(">", 0))
+			})
+
+			It("provides information about the current test", func() {
+				Ω(true).To(BeTrue())
+			})
+		})
 
 		Context("when told to randomize all specs", func() {
 			BeforeEach(func() {

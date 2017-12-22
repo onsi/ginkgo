@@ -92,13 +92,18 @@ func (spec *Spec) Summary(suiteID string) *types.SpecSummary {
 	componentTexts[len(spec.containers)] = spec.subject.Text()
 	componentCodeLocations[len(spec.containers)] = spec.subject.CodeLocation()
 
+	runTime := spec.runTime
+	if runTime == 0 {
+		runTime = time.Since(spec.startTime)
+	}
+
 	return &types.SpecSummary{
 		IsMeasurement:          spec.IsMeasurement(),
 		NumberOfSamples:        spec.subject.Samples(),
 		ComponentTexts:         componentTexts,
 		ComponentCodeLocations: componentCodeLocations,
 		State:        spec.state,
-		RunTime:      time.Since(spec.startTime),
+		RunTime:      runTime,
 		Failure:      spec.failure,
 		Measurements: spec.measurementsReport(),
 		SuiteID:      suiteID,
