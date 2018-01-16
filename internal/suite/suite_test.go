@@ -153,7 +153,7 @@ var _ = Describe("Suite", func() {
 				"AfterSuite",
 			}))
 		})
-		Context("When afterEach info is needed", func() {
+		Context("when in an AfterEach block", func() {
 			AfterEach(func() {
 				description := CurrentGinkgoTestDescription()
 				Ω(description.IsMeasurement).Should(BeFalse())
@@ -162,7 +162,7 @@ var _ = Describe("Suite", func() {
 				Ω(description.Duration).Should(BeNumerically(">", 0))
 			})
 
-			It("provides information about the current test", func() {
+			It("still provides information about the current test", func() {
 				Ω(true).To(BeTrue())
 			})
 		})
