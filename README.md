@@ -11,9 +11,9 @@ If you have a question, comment, bug report, feature request, etc. please open a
 - Ginkgo uses Go's `testing` package and can live alongside your existing `testing` tests.  It's easy to [bootstrap](http://onsi.github.io/ginkgo/#bootstrapping-a-suite) and start writing your [first tests](http://onsi.github.io/ginkgo/#adding-specs-to-a-suite)
 
 - Structure your BDD-style tests expressively:
-    - Nestable [`Describe` and `Context` container blocks](http://onsi.github.io/ginkgo/#organizing-specs-with-containers-describe-and-context)
+    - Nestable [`Describe`, `Context` and `When` container blocks](http://onsi.github.io/ginkgo/#organizing-specs-with-containers-describe-and-context)
     - [`BeforeEach` and `AfterEach` blocks](http://onsi.github.io/ginkgo/#extracting-common-setup-beforeeach) for setup and teardown
-    - [`It` blocks](http://onsi.github.io/ginkgo/#individual-specs-) that hold your assertions
+    - [`It` and `Specify` blocks](http://onsi.github.io/ginkgo/#individual-specs-) that hold your assertions
     - [`JustBeforeEach` blocks](http://onsi.github.io/ginkgo/#separating-creation-and-configuration-justbeforeeach) that separate creation from configuration (also known as the subject action pattern).
     - [`BeforeSuite` and `AfterSuite` blocks](http://onsi.github.io/ginkgo/#global-setup-and-teardown-beforesuite-and-aftersuite) to prep for and cleanup after a suite.
 

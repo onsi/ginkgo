@@ -306,7 +306,7 @@ func XDescribe(text string, body func()) bool {
 //Context blocks allow you to organize your specs.  A Context block can contain any number of
 //BeforeEach, AfterEach, JustBeforeEach, It, and Measurement blocks.
 //
-//In addition you can nest Describe, Context and When blocks.  Describe and Context blocks are functionally
+//In addition you can nest Describe, Context and When blocks.  Describe, Context and When blocks are functionally
 //equivalent.  The difference is purely semantic -- you typical Describe the behavior of an object
 //or method and, within that Describe, outline a number of Contexts and Whens.
 func Context(text string, body func()) bool {
