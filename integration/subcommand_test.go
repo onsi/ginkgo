@@ -354,7 +354,7 @@ var _ = Describe("Subcommand", func() {
 			Eventually(session).Should(gexec.Exit(types.GINKGO_FOCUS_EXIT_CODE))
 			output := session.Out.Contents()
 
-			Ω(string(output)).Should(ContainSubstring("7 Passed"))
+			Ω(string(output)).Should(ContainSubstring("8 Passed"))
 			Ω(string(output)).Should(ContainSubstring("5 Skipped"))
 
 			session = startGinkgo(pathToTest, "blur")
@@ -363,7 +363,7 @@ var _ = Describe("Subcommand", func() {
 			session = startGinkgo(pathToTest, "--noColor")
 			Eventually(session).Should(gexec.Exit(0))
 			output = session.Out.Contents()
-			Ω(string(output)).Should(ContainSubstring("12 Passed"))
+			Ω(string(output)).Should(ContainSubstring("13 Passed"))
 			Ω(string(output)).Should(ContainSubstring("0 Skipped"))
 		})
 	})
