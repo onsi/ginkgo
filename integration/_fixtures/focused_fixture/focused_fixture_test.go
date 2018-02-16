@@ -22,6 +22,10 @@ var _ = Describe("FocusedFixture", func() {
 
 	})
 
+	FSpecify("focused", func() {
+
+	})
+
 	FMeasure("focused", func(b Benchmarker) {
 
 	}, 2)
