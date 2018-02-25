@@ -16,7 +16,7 @@ var _ = Describe("ginkgo build", func() {
 
 	BeforeEach(func() {
 		pathToTest = tmpPath("passing_ginkgo_tests")
-		copyIn("passing_ginkgo_tests", pathToTest)
+		copyIn(fixturePath("passing_ginkgo_tests"), pathToTest, false)
 		session := startGinkgo(pathToTest, "build")
 		Eventually(session).Should(gexec.Exit(0))
 		output := string(session.Out.Contents())

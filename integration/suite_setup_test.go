@@ -14,7 +14,7 @@ var _ = Describe("SuiteSetup", func() {
 	Context("when the BeforeSuite and AfterSuite pass", func() {
 		BeforeEach(func() {
 			pathToTest = tmpPath("suite_setup")
-			copyIn("passing_suite_setup", pathToTest)
+			copyIn(fixturePath("passing_suite_setup"), pathToTest, false)
 		})
 
 		It("should run the BeforeSuite once, then run all the tests", func() {
@@ -39,7 +39,7 @@ var _ = Describe("SuiteSetup", func() {
 	Context("when the BeforeSuite fails", func() {
 		BeforeEach(func() {
 			pathToTest = tmpPath("suite_setup")
-			copyIn("failing_before_suite", pathToTest)
+			copyIn(fixturePath("failing_before_suite"), pathToTest, false)
 		})
 
 		It("should run the BeforeSuite once, none of the tests, but it should run the AfterSuite", func() {
@@ -68,7 +68,7 @@ var _ = Describe("SuiteSetup", func() {
 	Context("when the AfterSuite fails", func() {
 		BeforeEach(func() {
 			pathToTest = tmpPath("suite_setup")
-			copyIn("failing_after_suite", pathToTest)
+			copyIn(fixturePath("failing_after_suite"), pathToTest, false)
 		})
 
 		It("should run the BeforeSuite once, none of the tests, but it should run the AfterSuite", func() {
@@ -97,7 +97,7 @@ var _ = Describe("SuiteSetup", func() {
 	Context("With passing synchronized before and after suites", func() {
 		BeforeEach(func() {
 			pathToTest = tmpPath("suite_setup")
-			copyIn("synchronized_setup_tests", pathToTest)
+			copyIn(fixturePath("synchronized_setup_tests"), pathToTest, false)
 		})
 
 		Context("when run with one node", func() {
@@ -163,7 +163,7 @@ var _ = Describe("SuiteSetup", func() {
 	Context("With a failing synchronized before suite", func() {
 		BeforeEach(func() {
 			pathToTest = tmpPath("suite_setup")
-			copyIn("exiting_synchronized_setup_tests", pathToTest)
+			copyIn(fixturePath("exiting_synchronized_setup_tests"), pathToTest, false)
 		})
 
 		It("should fail and let the user know that node 1 disappeared prematurely", func() {

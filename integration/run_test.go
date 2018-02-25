@@ -27,7 +27,7 @@ var _ = Describe("Running Specs", func() {
 	Context("when pointed at the current directory", func() {
 		BeforeEach(func() {
 			pathToTest = tmpPath("ginkgo")
-			copyIn("passing_ginkgo_tests", pathToTest)
+			copyIn(fixturePath("passing_ginkgo_tests"), pathToTest, false)
 		})
 
 		It("should run the tests in the working directory", func() {
@@ -45,7 +45,7 @@ var _ = Describe("Running Specs", func() {
 	Context("when passed an explicit package to run", func() {
 		BeforeEach(func() {
 			pathToTest = tmpPath("ginkgo")
-			copyIn("passing_ginkgo_tests", pathToTest)
+			copyIn(fixturePath("passing_ginkgo_tests"), pathToTest, false)
 		})
 
 		It("should run the ginkgo style tests", func() {
@@ -64,8 +64,8 @@ var _ = Describe("Running Specs", func() {
 		BeforeEach(func() {
 			pathToTest = tmpPath("ginkgo")
 			otherPathToTest := tmpPath("other")
-			copyIn("passing_ginkgo_tests", pathToTest)
-			copyIn("more_ginkgo_tests", otherPathToTest)
+			copyIn(fixturePath("passing_ginkgo_tests"), pathToTest, false)
+			copyIn(fixturePath("more_ginkgo_tests"), otherPathToTest, false)
 		})
 
 		It("should run the ginkgo style tests", func() {
@@ -84,9 +84,9 @@ var _ = Describe("Running Specs", func() {
 			pathToTest = tmpPath("ginkgo")
 			otherPathToTest := tmpPath("other")
 			focusedPathToTest := tmpPath("focused")
-			copyIn("passing_ginkgo_tests", pathToTest)
-			copyIn("more_ginkgo_tests", otherPathToTest)
-			copyIn("focused_fixture", focusedPathToTest)
+			copyIn(fixturePath("passing_ginkgo_tests"), pathToTest, false)
+			copyIn(fixturePath("more_ginkgo_tests"), otherPathToTest, false)
+			copyIn(fixturePath("focused_fixture"), focusedPathToTest, false)
 		})
 
 		It("should exit with a status code of 2 and explain why", func() {
@@ -124,9 +124,9 @@ var _ = Describe("Running Specs", func() {
 			pathToTest = tmpPath("ginkgo")
 			otherPathToTest := tmpPath("other")
 			focusedPathToTest := tmpPath("focused")
-			copyIn("passing_ginkgo_tests", pathToTest)
-			copyIn("more_ginkgo_tests", otherPathToTest)
-			copyIn("focused_fixture", focusedPathToTest)
+			copyIn(fixturePath("passing_ginkgo_tests"), pathToTest, false)
+			copyIn(fixturePath("more_ginkgo_tests"), otherPathToTest, false)
+			copyIn(fixturePath("focused_fixture"), focusedPathToTest, false)
 		})
 
 		It("should skip packages that match the list", func() {
@@ -168,7 +168,7 @@ var _ = Describe("Running Specs", func() {
 	Context("when there are test files but `go test` reports there are no tests to run", func() {
 		BeforeEach(func() {
 			pathToTest = tmpPath("ginkgo")
-			copyIn("no_test_fn", pathToTest)
+			copyIn(fixturePath("no_test_fn"), pathToTest, false)
 		})
 
 		It("suggests running ginkgo bootstrap", func() {
@@ -192,8 +192,8 @@ var _ = Describe("Running Specs", func() {
 		BeforeEach(func() {
 			pathToTest = tmpPath("ginkgo")
 			otherPathToTest := tmpPath("other")
-			copyIn("passing_ginkgo_tests", pathToTest)
-			copyIn("more_ginkgo_tests", otherPathToTest)
+			copyIn(fixturePath("passing_ginkgo_tests"), pathToTest, false)
+			copyIn(fixturePath("more_ginkgo_tests"), otherPathToTest, false)
 		})
 
 		It("should skip packages that match the regexp", func() {
@@ -214,7 +214,7 @@ var _ = Describe("Running Specs", func() {
 	Context("when pointed at a package with xunit style tests", func() {
 		BeforeEach(func() {
 			pathToTest = tmpPath("xunit")
-			copyIn("xunit_tests", pathToTest)
+			copyIn(fixturePath("xunit_tests"), pathToTest, false)
 		})
 
 		It("should run the xunit style tests", func() {
@@ -230,7 +230,7 @@ var _ = Describe("Running Specs", func() {
 	Context("when pointed at a package with no tests", func() {
 		BeforeEach(func() {
 			pathToTest = tmpPath("no_tests")
-			copyIn("no_tests", pathToTest)
+			copyIn(fixturePath("no_tests"), pathToTest, false)
 		})
 
 		It("should fail", func() {
@@ -244,7 +244,7 @@ var _ = Describe("Running Specs", func() {
 	Context("when pointed at a package that fails to compile", func() {
 		BeforeEach(func() {
 			pathToTest = tmpPath("does_not_compile")
-			copyIn("does_not_compile", pathToTest)
+			copyIn(fixturePath("does_not_compile"), pathToTest, false)
 		})
 
 		It("should fail", func() {
@@ -259,7 +259,7 @@ var _ = Describe("Running Specs", func() {
 	Context("when running in parallel", func() {
 		BeforeEach(func() {
 			pathToTest = tmpPath("ginkgo")
-			copyIn("passing_ginkgo_tests", pathToTest)
+			copyIn(fixturePath("passing_ginkgo_tests"), pathToTest, false)
 		})
 
 		Context("with a specific number of -nodes", func() {
@@ -295,7 +295,7 @@ var _ = Describe("Running Specs", func() {
 	Context("when streaming in parallel", func() {
 		BeforeEach(func() {
 			pathToTest = tmpPath("ginkgo")
-			copyIn("passing_ginkgo_tests", pathToTest)
+			copyIn(fixturePath("passing_ginkgo_tests"), pathToTest, false)
 		})
 
 		It("should print output in realtime", func() {
@@ -315,8 +315,8 @@ var _ = Describe("Running Specs", func() {
 		BeforeEach(func() {
 			passingTest := tmpPath("A")
 			otherPassingTest := tmpPath("E")
-			copyIn("passing_ginkgo_tests", passingTest)
-			copyIn("more_ginkgo_tests", otherPassingTest)
+			copyIn(fixturePath("passing_ginkgo_tests"), passingTest, false)
+			copyIn(fixturePath("more_ginkgo_tests"), otherPassingTest, false)
 		})
 
 		Context("when all the tests pass", func() {
@@ -349,7 +349,7 @@ var _ = Describe("Running Specs", func() {
 		Context("when one of the packages has a failing tests", func() {
 			BeforeEach(func() {
 				failingTest := tmpPath("C")
-				copyIn("failing_ginkgo_tests", failingTest)
+				copyIn(fixturePath("failing_ginkgo_tests"), failingTest, false)
 			})
 
 			It("should fail and stop running tests", func() {
@@ -372,7 +372,7 @@ var _ = Describe("Running Specs", func() {
 		Context("when one of the packages fails to compile", func() {
 			BeforeEach(func() {
 				doesNotCompileTest := tmpPath("C")
-				copyIn("does_not_compile", doesNotCompileTest)
+				copyIn(fixturePath("does_not_compile"), doesNotCompileTest, false)
 			})
 
 			It("should fail and stop running tests", func() {
@@ -391,10 +391,10 @@ var _ = Describe("Running Specs", func() {
 		Context("when either is the case, but the keepGoing flag is set", func() {
 			BeforeEach(func() {
 				doesNotCompileTest := tmpPath("B")
-				copyIn("does_not_compile", doesNotCompileTest)
+				copyIn(fixturePath("does_not_compile"), doesNotCompileTest, false)
 
 				failingTest := tmpPath("C")
-				copyIn("failing_ginkgo_tests", failingTest)
+				copyIn(fixturePath("failing_ginkgo_tests"), failingTest, false)
 			})
 
 			It("should soldier on", func() {
@@ -415,7 +415,7 @@ var _ = Describe("Running Specs", func() {
 
 	Context("when told to keep going --untilItFails", func() {
 		BeforeEach(func() {
-			copyIn("eventually_failing", tmpDir)
+			copyIn(fixturePath("eventually_failing"), tmpDir, false)
 		})
 
 		It("should keep rerunning the tests, until a failure occurs", func() {

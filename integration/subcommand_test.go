@@ -348,7 +348,7 @@ var _ = Describe("Subcommand", func() {
 	Describe("ginkgo blur", func() {
 		It("should unfocus tests", func() {
 			pathToTest := tmpPath("focused")
-			copyIn("focused_fixture", pathToTest)
+			copyIn(fixturePath("focused_fixture"), pathToTest, false)
 
 			session := startGinkgo(pathToTest, "--noColor")
 			Eventually(session).Should(gexec.Exit(types.GINKGO_FOCUS_EXIT_CODE))
