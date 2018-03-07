@@ -235,6 +235,13 @@ var _ = Describe("Spec Runner", func() {
 				Ω(reporter1.EndSummary.NumberOfPassedSpecs).Should(Equal(0))
 				Ω(reporter1.EndSummary.NumberOfFailedSpecs).Should(Equal(0))
 			})
+
+			It("should not report a slow test", func() {
+				summaries := reporter1.SpecSummaries
+				for _, s := range summaries {
+					Expect(s.RunTime).To(BeZero())
+				}
+			})
 		})
 	})
 
