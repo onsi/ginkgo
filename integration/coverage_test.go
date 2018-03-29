@@ -112,17 +112,12 @@ var _ = Describe("Coverage Specs", func() {
 		os.RemoveAll("./_fixtures/combined_coverage_fixture/coverage.txt")
 	})
 
-	It("Creates directories in path if they don't exist", func() {
+	It("Fails with an error if output dir and coverprofile were set, but the output dir did not exist", func() {
 		session := startGinkgo("./_fixtures/combined_coverage_fixture", "-outputdir=./all/profiles/here", "-r", "-cover", "-coverprofile=coverage.txt")
 
-		defer os.RemoveAll("./_fixtures/combined_coverage_fixture/all")
-		defer os.RemoveAll("./_fixtures/combined_coverage_fixture/coverage.txt")
-
-		Eventually(session).Should(gexec.Exit(0))
-
-		_, err := os.Stat("./_fixtures/combined_coverage_fixture/all/profiles/here/coverage.txt")
-
-		Ω(err).ShouldNot(HaveOccurred())
+		Eventually(session).Should(gexec.Exit(1))
+		output := session.Out.Contents()
+		Ω(string(output)).Should(ContainSubstring("Unable to create combined profile, outputdir does not exist: ./all/profiles/here"))
 	})
 
 	It("Moves coverages if only output dir was set", func() {
