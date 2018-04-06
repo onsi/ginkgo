@@ -1,6 +1,7 @@
 ## HEAD
 
 - When using custom reporters register the custom reporters *before* the default reporter.  This allows users to see the output of any print statements in their customer reporters. [#365]
+- When running a test and calculating the coverage using the `-coverprofile` and `-outputdir` flags, Ginkgo fails with an error if the directory does not exist. This is due to an [issue in go 1.10](https://github.com/golang/go/issues/24588) [#446]
 
 ## 1.4.0 7/16/2017
 
