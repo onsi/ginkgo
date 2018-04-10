@@ -120,13 +120,13 @@ var _ = Describe("Measure Nodes", func() {
 			BeforeEach(func() {
 				measure = NewMeasureNode("the measurement", func(b Benchmarker) {
 					b.Time("foo", func() {
-						time.Sleep(100 * time.Millisecond)
+						time.Sleep(200 * time.Millisecond)
 					}, "info!")
 					b.Time("foo", func() {
-						time.Sleep(200 * time.Millisecond)
+						time.Sleep(300 * time.Millisecond)
 					})
 					b.Time("foo", func() {
-						time.Sleep(170 * time.Millisecond)
+						time.Sleep(250 * time.Millisecond)
 					})
 				}, types.FlagTypeFocused, codelocation.New(0), 1, Failer.New(), 3)
 				Ω(measure.Run()).Should(Equal(types.SpecStatePassed))
@@ -142,13 +142,13 @@ var _ = Describe("Measure Nodes", func() {
 				Ω(report["foo"].AverageLabel).Should(Equal("Average Time"))
 				Ω(report["foo"].Units).Should(Equal("s"))
 				Ω(report["foo"].Results).Should(HaveLen(3))
-				Ω(report["foo"].Results[0]).Should(BeNumerically("~", 0.1, 0.01))
-				Ω(report["foo"].Results[1]).Should(BeNumerically("~", 0.2, 0.01))
-				Ω(report["foo"].Results[2]).Should(BeNumerically("~", 0.17, 0.01))
-				Ω(report["foo"].Smallest).Should(BeNumerically("~", 0.1, 0.01))
-				Ω(report["foo"].Largest).Should(BeNumerically("~", 0.2, 0.01))
-				Ω(report["foo"].Average).Should(BeNumerically("~", 0.16, 0.01))
-				Ω(report["foo"].StdDeviation).Should(BeNumerically("~", 0.04, 0.01))
+				Ω(report["foo"].Results[0]).Should(BeNumerically("~", 0.2, 0.06))
+				Ω(report["foo"].Results[1]).Should(BeNumerically("~", 0.3, 0.06))
+				Ω(report["foo"].Results[2]).Should(BeNumerically("~", 0.25, 0.06))
+				Ω(report["foo"].Smallest).Should(BeNumerically("~", 0.2, 0.06))
+				Ω(report["foo"].Largest).Should(BeNumerically("~", 0.3, 0.06))
+				Ω(report["foo"].Average).Should(BeNumerically("~", 0.25, 0.06))
+				Ω(report["foo"].StdDeviation).Should(BeNumerically("~", 0.07, 0.04))
 			})
 		})
 	})
