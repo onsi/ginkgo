@@ -1,115 +1,124 @@
 package integration_test
 
 import (
-	"os"
 	"os/exec"
 
 	"fmt"
 
 	. "github.com/onsi/ginkgo"
 	. "github.com/onsi/gomega"
+	"github.com/onsi/gomega/gbytes"
 	"github.com/onsi/gomega/gexec"
 )
 
 var _ = Describe("Coverage Specs", func() {
-	AfterEach(func() {
-		os.RemoveAll("./_fixtures/coverage_fixture/coverage_fixture.coverprofile")
-	})
+	Context("when it runs coverage analysis in series and in parallel", func() {
+		AfterEach(func() {
+			removeSuccessfully("./_fixtures/coverage_fixture/coverage_fixture.coverprofile")
+		})
+		It("works", func() {
+			session := startGinkgo("./_fixtures/coverage_fixture", "-cover")
+			Eventually(session).Should(gexec.Exit(0))
 
-	It("runs coverage analysis in series and in parallel", func() {
-		session := startGinkgo("./_fixtures/coverage_fixture", "-cover")
-		Eventually(session).Should(gexec.Exit(0))
-		output := session.Out.Contents()
-		Ω(string(output)).Should(ContainSubstring("coverage: 80.0% of statements"))
+			Ω(session.Out).Should(gbytes.Say(("coverage: 80.0% of statements")))
 
-		serialCoverProfileOutput, err := exec.Command("go", "tool", "cover", "-func=./_fixtures/coverage_fixture/coverage_fixture.coverprofile").CombinedOutput()
-		Ω(err).ShouldNot(HaveOccurred())
-
-		os.RemoveAll("./_fixtures/coverage_fixture/coverage_fixture.coverprofile")
-
-		Eventually(startGinkgo("./_fixtures/coverage_fixture", "-cover", "-nodes=4")).Should(gexec.Exit(0))
-
-		parallelCoverProfileOutput, err := exec.Command("go", "tool", "cover", "-func=./_fixtures/coverage_fixture/coverage_fixture.coverprofile").CombinedOutput()
-		Ω(err).ShouldNot(HaveOccurred())
-
-		Ω(parallelCoverProfileOutput).Should(Equal(serialCoverProfileOutput))
-
-		By("handling external packages")
-		session = startGinkgo("./_fixtures/coverage_fixture", "-coverpkg=github.com/onsi/ginkgo/integration/_fixtures/coverage_fixture,github.com/onsi/ginkgo/integration/_fixtures/coverage_fixture/external_coverage_fixture")
-		Eventually(session).Should(gexec.Exit(0))
-		output = session.Out.Contents()
-		Ω(output).Should(ContainSubstring("coverage: 71.4% of statements in github.com/onsi/ginkgo/integration/_fixtures/coverage_fixture, github.com/onsi/ginkgo/integration/_fixtures/coverage_fixture/external_coverage_fixture"))
-
-		serialCoverProfileOutput, err = exec.Command("go", "tool", "cover", "-func=./_fixtures/coverage_fixture/coverage_fixture.coverprofile").CombinedOutput()
-		Ω(err).ShouldNot(HaveOccurred())
-
-		os.RemoveAll("./_fixtures/coverage_fixture/coverage_fixture.coverprofile")
-
-		Eventually(startGinkgo("./_fixtures/coverage_fixture", "-coverpkg=github.com/onsi/ginkgo/integration/_fixtures/coverage_fixture,github.com/onsi/ginkgo/integration/_fixtures/coverage_fixture/external_coverage_fixture", "-nodes=4")).Should(gexec.Exit(0))
-
-		parallelCoverProfileOutput, err = exec.Command("go", "tool", "cover", "-func=./_fixtures/coverage_fixture/coverage_fixture.coverprofile").CombinedOutput()
-		Ω(err).ShouldNot(HaveOccurred())
-
-		Ω(parallelCoverProfileOutput).Should(Equal(serialCoverProfileOutput))
-	})
-
-	It("validates coverprofile sets custom profile name", func() {
-		session := startGinkgo("./_fixtures/coverage_fixture", "-cover", "-coverprofile=coverage.txt")
-
-		Eventually(session).Should(gexec.Exit(0))
-
-		// Check that the correct file was created
-		_, err := os.Stat("./_fixtures/coverage_fixture/coverage.txt")
-
-		Ω(err).ShouldNot(HaveOccurred())
-
-		// Cleanup
-		os.RemoveAll("./_fixtures/coverage_fixture/coverage.txt")
-	})
-
-	It("Works in recursive mode", func() {
-		session := startGinkgo("./_fixtures/combined_coverage_fixture", "-r", "-cover", "-coverprofile=coverage.txt")
-
-		Eventually(session).Should(gexec.Exit(0))
-
-		packages := []string{"first_package", "second_package"}
-
-		for _, p := range packages {
-			coverFile := fmt.Sprintf("./_fixtures/combined_coverage_fixture/%s/coverage.txt", p)
-			_, err := os.Stat(coverFile)
-
+			coverFile := "./_fixtures/coverage_fixture/coverage_fixture.coverprofile"
+			serialCoverProfileOutput, err := exec.Command("go", "tool", "cover", fmt.Sprintf("-func=%s", coverFile)).CombinedOutput()
 			Ω(err).ShouldNot(HaveOccurred())
 
-			// Cleanup
-			os.RemoveAll(coverFile)
-		}
+			removeSuccessfully(coverFile)
+
+			Eventually(startGinkgo("./_fixtures/coverage_fixture", "-cover", "-nodes=4")).Should(gexec.Exit(0))
+
+			parallelCoverProfileOutput, err := exec.Command("go", "tool", "cover", fmt.Sprintf("-func=%s", coverFile)).CombinedOutput()
+			Ω(err).ShouldNot(HaveOccurred())
+
+			Ω(parallelCoverProfileOutput).Should(Equal(serialCoverProfileOutput))
+
+			By("handling external packages", func() {
+				session = startGinkgo("./_fixtures/coverage_fixture", "-coverpkg=github.com/onsi/ginkgo/integration/_fixtures/coverage_fixture,github.com/onsi/ginkgo/integration/_fixtures/coverage_fixture/external_coverage_fixture")
+				Eventually(session).Should(gexec.Exit(0))
+
+				Ω(session.Out).Should(gbytes.Say("coverage: 71.4% of statements in github.com/onsi/ginkgo/integration/_fixtures/coverage_fixture, github.com/onsi/ginkgo/integration/_fixtures/coverage_fixture/external_coverage_fixture"))
+
+				serialCoverProfileOutput, err = exec.Command("go", "tool", "cover", fmt.Sprintf("-func=%s", coverFile)).CombinedOutput()
+				Ω(err).ShouldNot(HaveOccurred())
+
+				removeSuccessfully("./_fixtures/coverage_fixture/coverage_fixture.coverprofile")
+
+				Eventually(startGinkgo("./_fixtures/coverage_fixture", "-coverpkg=github.com/onsi/ginkgo/integration/_fixtures/coverage_fixture,github.com/onsi/ginkgo/integration/_fixtures/coverage_fixture/external_coverage_fixture", "-nodes=4")).Should(gexec.Exit(0))
+
+				parallelCoverProfileOutput, err = exec.Command("go", "tool", "cover", fmt.Sprintf("-func=%s", coverFile)).CombinedOutput()
+				Ω(err).ShouldNot(HaveOccurred())
+
+				Ω(parallelCoverProfileOutput).Should(Equal(serialCoverProfileOutput))
+			})
+		})
 	})
 
-	It("Works in parallel mode", func() {
-		session := startGinkgo("./_fixtures/coverage_fixture", "-p", "-cover", "-coverprofile=coverage.txt")
+	Context("when a custom profile name is specified", func() {
+		AfterEach(func() {
+			removeSuccessfully("./_fixtures/coverage_fixture/coverage.txt")
+		})
 
-		Eventually(session).Should(gexec.Exit(0))
+		It("generates cover profiles with the specified name", func() {
+			session := startGinkgo("./_fixtures/coverage_fixture", "-cover", "-coverprofile=coverage.txt")
+			Eventually(session).Should(gexec.Exit(0))
 
-		coverFile := "./_fixtures/coverage_fixture/coverage.txt"
-		_, err := os.Stat(coverFile)
-
-		Ω(err).ShouldNot(HaveOccurred())
-
-		// Cleanup
-		os.RemoveAll(coverFile)
+			Ω("./_fixtures/coverage_fixture/coverage.txt").Should(BeARegularFile())
+		})
 	})
 
-	It("Appends coverages if output dir and coverprofile were set", func() {
-		session := startGinkgo("./_fixtures/combined_coverage_fixture", "-outputdir=./", "-r", "-cover", "-coverprofile=coverage.txt")
+	Context("when run in recursive mode", func() {
+		AfterEach(func() {
+			removeSuccessfully("./_fixtures/combined_coverage_fixture/coverage-recursive.txt")
+			removeSuccessfully("./_fixtures/combined_coverage_fixture/first_package/coverage-recursive.txt")
+			removeSuccessfully("./_fixtures/combined_coverage_fixture/second_package/coverage-recursive.txt")
+		})
 
-		Eventually(session).Should(gexec.Exit(0))
+		It("generates a coverage file per package", func() {
+			session := startGinkgo("./_fixtures/combined_coverage_fixture", "-r", "-cover", "-coverprofile=coverage-recursive.txt")
+			Eventually(session).Should(gexec.Exit(0))
 
-		_, err := os.Stat("./_fixtures/combined_coverage_fixture/coverage.txt")
+			Ω("./_fixtures/combined_coverage_fixture/first_package/coverage-recursive.txt").Should(BeARegularFile())
+			Ω("./_fixtures/combined_coverage_fixture/second_package/coverage-recursive.txt").Should(BeARegularFile())
+		})
+	})
 
-		Ω(err).ShouldNot(HaveOccurred())
+	Context("when run in parallel mode", func() {
+		AfterEach(func() {
+			removeSuccessfully("./_fixtures/coverage_fixture/coverage-parallel.txt")
+		})
 
-		// Cleanup
-		os.RemoveAll("./_fixtures/combined_coverage_fixture/coverage.txt")
+		It("works", func() {
+			session := startGinkgo("./_fixtures/coverage_fixture", "-p", "-cover", "-coverprofile=coverage-parallel.txt")
+
+			Eventually(session).Should(gexec.Exit(0))
+
+			Ω("./_fixtures/coverage_fixture/coverage-parallel.txt").Should(BeARegularFile())
+		})
+	})
+
+	Context("when run in recursive mode specifying a coverprofile", func() {
+		AfterEach(func() {
+			removeSuccessfully("./_fixtures/combined_coverage_fixture/coverprofile-recursive.txt")
+			removeSuccessfully("./_fixtures/combined_coverage_fixture/first_package/coverprofile-recursive.txt")
+			removeSuccessfully("./_fixtures/combined_coverage_fixture/second_package/coverprofile-recursive.txt")
+		})
+
+		It("combines the coverages", func() {
+			session := startGinkgo("./_fixtures/combined_coverage_fixture", "-outputdir=./", "-r", "-cover", "-coverprofile=coverprofile-recursive.txt")
+			Eventually(session).Should(gexec.Exit(0))
+
+			By("generating a combined coverage file", func() {
+				Ω("./_fixtures/combined_coverage_fixture/coverprofile-recursive.txt").Should(BeARegularFile())
+			})
+
+			By("also generating the single package coverage files", func() {
+				Ω("./_fixtures/combined_coverage_fixture/first_package/coverprofile-recursive.txt").Should(BeARegularFile())
+				Ω("./_fixtures/combined_coverage_fixture/second_package/coverprofile-recursive.txt").Should(BeARegularFile())
+			})
+		})
 	})
 
 	It("Fails with an error if output dir and coverprofile were set, but the output dir did not exist", func() {
@@ -120,28 +129,19 @@ var _ = Describe("Coverage Specs", func() {
 		Ω(string(output)).Should(ContainSubstring("Unable to create combined profile, outputdir does not exist: ./all/profiles/here"))
 	})
 
-	It("Moves coverages if only output dir was set", func() {
-		session := startGinkgo("./_fixtures/combined_coverage_fixture", "-outputdir=./", "-r", "-cover")
+	Context("when only output dir was set", func() {
+		AfterEach(func() {
+			removeSuccessfully("./_fixtures/combined_coverage_fixture/first_package.coverprofile")
+			removeSuccessfully("./_fixtures/combined_coverage_fixture/first_package/coverage.txt")
+			removeSuccessfully("./_fixtures/combined_coverage_fixture/second_package.coverprofile")
+			removeSuccessfully("./_fixtures/combined_coverage_fixture/second_package/coverage.txt")
+		})
+		It("moves coverages", func() {
+			session := startGinkgo("./_fixtures/combined_coverage_fixture", "-outputdir=./", "-r", "-cover")
+			Eventually(session).Should(gexec.Exit(0))
 
-		Eventually(session).Should(gexec.Exit(0))
-
-		packages := []string{"first_package", "second_package"}
-
-		for _, p := range packages {
-			coverFile := fmt.Sprintf("./_fixtures/combined_coverage_fixture/%s.coverprofile", p)
-
-			// Cleanup
-			defer func(f string) {
-				os.RemoveAll(f)
-			}(coverFile)
-
-			defer func(f string) {
-				os.RemoveAll(fmt.Sprintf("./_fixtures/combined_coverage_fixture/%s/coverage.txt", f))
-			}(p)
-
-			_, err := os.Stat(coverFile)
-
-			Ω(err).ShouldNot(HaveOccurred())
-		}
+			Ω("./_fixtures/combined_coverage_fixture/first_package.coverprofile").Should(BeARegularFile())
+			Ω("./_fixtures/combined_coverage_fixture/second_package.coverprofile").Should(BeARegularFile())
+		})
 	})
 })
