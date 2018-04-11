@@ -89,3 +89,8 @@ func startGinkgo(dir string, args ...string) *gexec.Session {
 	Ω(err).ShouldNot(HaveOccurred())
 	return session
 }
+
+func removeSuccessfully(path string) {
+	err := os.RemoveAll(path)
+	Expect(err).NotTo(HaveOccurred())
+}
