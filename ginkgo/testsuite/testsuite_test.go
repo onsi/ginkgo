@@ -51,6 +51,10 @@ var _ = Describe("TestSuite", func() {
 		//non-go files in a nested directory
 		writeFile("/redherring", "big_test.jpg", "package ginkgo", 0666)
 
+		//ginkgo tests in ignored go files
+		writeFile("/ignored", ".ignore_dot_test.go", `import "github.com/onsi/ginkgo"`, 0666)
+		writeFile("/ignored", "_ignore_underscore_test.go", `import "github.com/onsi/ginkgo"`, 0666)
+
 		//non-ginkgo tests in a nested directory
 		writeFile("/professorplum", "professorplum_test.go", `import "testing"`, 0666)
 
@@ -137,6 +141,13 @@ var _ = Describe("TestSuite", func() {
 				Ω(suites[0].PackageName).Should(Equal("colonelmustard"))
 				Ω(suites[0].IsGinkgo).Should(BeTrue())
 				Ω(suites[0].Precompiled).Should(BeFalse())
+			})
+		})
+
+		Context("when there are ginkgo tests that are ignored by go in the specified directory ", func() {
+			It("should come up empty", func() {
+				suites := SuitesInDir(filepath.Join(tmpDir, "ignored"), false)
+				Ω(suites).Should(BeEmpty())
 			})
 		})
 
