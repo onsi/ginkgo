@@ -24,6 +24,7 @@ type SuiteSummary struct {
 	SuiteDescription string
 	SuiteSucceeded   bool
 	SuiteID          string
+	GinkgoNode       int
 
 	NumberOfSpecsBeforeParallelization int
 	NumberOfTotalSpecs                 int
@@ -51,6 +52,13 @@ type SpecSummary struct {
 
 	CapturedOutput string
 	SuiteID        string
+	GinkgoNode     int
+}
+
+type ParallelSpecDebugOutput struct {
+	GinkgoNode         int
+	CapturedOutput     string
+	GinkgoWriterOutput string
 }
 
 func (s SpecSummary) HasFailureState() bool {
@@ -91,6 +99,7 @@ type SetupSummary struct {
 
 	CapturedOutput string
 	SuiteID        string
+	GinkgoNode     int
 }
 
 type SpecFailure struct {

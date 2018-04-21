@@ -33,7 +33,7 @@ var _ = Describe("TestRunner", func() {
 			"cover":            boolAddr(false),
 			"blockprofilerate": intAddr(100),
 		}
-		tr := testrunner.New(testsuite.TestSuite{}, 1, false, 0, opts, []string{})
+		tr := testrunner.New(testsuite.TestSuite{}, 1, false, false, 0, opts, []string{})
 
 		args := tr.BuildArgs(".")
 		Ω(args).Should(Equal([]string{

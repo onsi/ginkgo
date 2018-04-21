@@ -10,6 +10,8 @@ where N is the number of nodes you desire.
 package remote
 
 import (
+	"encoding/json"
+	"sync"
 	"time"
 
 	"github.com/onsi/ginkgo/config"
@@ -22,27 +24,53 @@ type configAndSuite struct {
 	summary *types.SuiteSummary
 }
 
+type currentRunningSpec struct {
+	Spec               *types.SpecSummary `json:"spec"`
+	StartTime          time.Time          `json:"startTime"`
+	CapturedOutput     string             `json:"output"`
+	GinkgoWriterOutput string             `json:"ginkgoWriterOutput"`
+}
+
+type nodeStatus struct {
+	Node      int                 `json:"node"`
+	IsRunning bool                `json:"isRunning"`
+	StartTime time.Time           `json:"startTime"`
+	Spec      *currentRunningSpec `json:"spec"`
+}
+
+func (node *nodeStatus) startSpec(specSummary *types.SpecSummary) {
+	node.Spec = &currentRunningSpec{
+		Spec:      specSummary,
+		StartTime: time.Now(),
+	}
+}
+
+func (node *nodeStatus) updateSpecDebugOutput(debugOutput *types.ParallelSpecDebugOutput) {
+	if node.Spec != nil {
+		node.Spec.CapturedOutput = debugOutput.CapturedOutput
+		node.Spec.GinkgoWriterOutput = debugOutput.GinkgoWriterOutput
+	}
+}
+
+func (node *nodeStatus) lastSpecIsDone() {
+	node.Spec = nil
+}
+
 type Aggregator struct {
 	nodeCount    int
 	config       config.DefaultReporterConfigType
 	stenographer stenographer.Stenographer
 	result       chan bool
 
-	suiteBeginnings           chan configAndSuite
 	aggregatedSuiteBeginnings []configAndSuite
+	aggregatedBeforeSuites    []*types.SetupSummary
+	aggregatedAfterSuites     []*types.SetupSummary
+	completedSpecs            []*types.SpecSummary
+	aggregatedSuiteEndings    []*types.SuiteSummary
+	specs                     []*types.SpecSummary
+	nodeStatus                map[int]*nodeStatus
 
-	beforeSuites           chan *types.SetupSummary
-	aggregatedBeforeSuites []*types.SetupSummary
-
-	afterSuites           chan *types.SetupSummary
-	aggregatedAfterSuites []*types.SetupSummary
-
-	specCompletions chan *types.SpecSummary
-	completedSpecs  []*types.SpecSummary
-
-	suiteEndings           chan *types.SuiteSummary
-	aggregatedSuiteEndings []*types.SuiteSummary
-	specs                  []*types.SpecSummary
+	lock *sync.Mutex
 
 	startTime time.Time
 }
@@ -54,66 +82,26 @@ func NewAggregator(nodeCount int, result chan bool, config config.DefaultReporte
 		config:       config,
 		stenographer: stenographer,
 
-		suiteBeginnings: make(chan configAndSuite, 0),
-		beforeSuites:    make(chan *types.SetupSummary, 0),
-		afterSuites:     make(chan *types.SetupSummary, 0),
-		specCompletions: make(chan *types.SpecSummary, 0),
-		suiteEndings:    make(chan *types.SuiteSummary, 0),
+		nodeStatus: map[int]*nodeStatus{},
+		lock:       &sync.Mutex{},
 	}
-
-	go aggregator.mux()
 
 	return aggregator
 }
 
 func (aggregator *Aggregator) SpecSuiteWillBegin(config config.GinkgoConfigType, summary *types.SuiteSummary) {
-	aggregator.suiteBeginnings <- configAndSuite{config, summary}
-}
+	aggregator.lock.Lock()
+	defer aggregator.lock.Unlock()
 
-func (aggregator *Aggregator) BeforeSuiteDidRun(setupSummary *types.SetupSummary) {
-	aggregator.beforeSuites <- setupSummary
-}
-
-func (aggregator *Aggregator) AfterSuiteDidRun(setupSummary *types.SetupSummary) {
-	aggregator.afterSuites <- setupSummary
-}
-
-func (aggregator *Aggregator) SpecWillRun(specSummary *types.SpecSummary) {
-	//noop
-}
-
-func (aggregator *Aggregator) SpecDidComplete(specSummary *types.SpecSummary) {
-	aggregator.specCompletions <- specSummary
-}
-
-func (aggregator *Aggregator) SpecSuiteDidEnd(summary *types.SuiteSummary) {
-	aggregator.suiteEndings <- summary
-}
-
-func (aggregator *Aggregator) mux() {
-loop:
-	for {
-		select {
-		case configAndSuite := <-aggregator.suiteBeginnings:
-			aggregator.registerSuiteBeginning(configAndSuite)
-		case setupSummary := <-aggregator.beforeSuites:
-			aggregator.registerBeforeSuite(setupSummary)
-		case setupSummary := <-aggregator.afterSuites:
-			aggregator.registerAfterSuite(setupSummary)
-		case specSummary := <-aggregator.specCompletions:
-			aggregator.registerSpecCompletion(specSummary)
-		case suite := <-aggregator.suiteEndings:
-			finished, passed := aggregator.registerSuiteEnding(suite)
-			if finished {
-				aggregator.result <- passed
-				break loop
-			}
-		}
+	aggregator.nodeStatus[summary.GinkgoNode] = &nodeStatus{
+		Node:      summary.GinkgoNode,
+		IsRunning: true,
+		StartTime: time.Now(),
 	}
-}
 
-func (aggregator *Aggregator) registerSuiteBeginning(configAndSuite configAndSuite) {
-	aggregator.aggregatedSuiteBeginnings = append(aggregator.aggregatedSuiteBeginnings, configAndSuite)
+	cs := configAndSuite{config, summary}
+
+	aggregator.aggregatedSuiteBeginnings = append(aggregator.aggregatedSuiteBeginnings, cs)
 
 	if len(aggregator.aggregatedSuiteBeginnings) == 1 {
 		aggregator.startTime = time.Now()
@@ -123,32 +111,102 @@ func (aggregator *Aggregator) registerSuiteBeginning(configAndSuite configAndSui
 		return
 	}
 
-	aggregator.stenographer.AnnounceSuite(configAndSuite.summary.SuiteDescription, configAndSuite.config.RandomSeed, configAndSuite.config.RandomizeAllSpecs, aggregator.config.Succinct)
+	aggregator.stenographer.AnnounceSuite(cs.summary.SuiteDescription, cs.config.RandomSeed, cs.config.RandomizeAllSpecs, aggregator.config.Succinct)
 
 	totalNumberOfSpecs := 0
 	if len(aggregator.aggregatedSuiteBeginnings) > 0 {
-		totalNumberOfSpecs = configAndSuite.summary.NumberOfSpecsBeforeParallelization
+		totalNumberOfSpecs = cs.summary.NumberOfSpecsBeforeParallelization
 	}
 
 	aggregator.stenographer.AnnounceTotalNumberOfSpecs(totalNumberOfSpecs, aggregator.config.Succinct)
 	aggregator.stenographer.AnnounceAggregatedParallelRun(aggregator.nodeCount, aggregator.config.Succinct)
 	aggregator.flushCompletedSpecs()
+
 }
 
-func (aggregator *Aggregator) registerBeforeSuite(setupSummary *types.SetupSummary) {
+func (aggregator *Aggregator) BeforeSuiteDidRun(setupSummary *types.SetupSummary) {
+	aggregator.lock.Lock()
+	defer aggregator.lock.Unlock()
+
 	aggregator.aggregatedBeforeSuites = append(aggregator.aggregatedBeforeSuites, setupSummary)
 	aggregator.flushCompletedSpecs()
 }
 
-func (aggregator *Aggregator) registerAfterSuite(setupSummary *types.SetupSummary) {
+func (aggregator *Aggregator) AfterSuiteDidRun(setupSummary *types.SetupSummary) {
+	aggregator.lock.Lock()
+	defer aggregator.lock.Unlock()
+
 	aggregator.aggregatedAfterSuites = append(aggregator.aggregatedAfterSuites, setupSummary)
 	aggregator.flushCompletedSpecs()
 }
 
-func (aggregator *Aggregator) registerSpecCompletion(specSummary *types.SpecSummary) {
+func (aggregator *Aggregator) SpecWillRun(specSummary *types.SpecSummary) {
+	aggregator.lock.Lock()
+	defer aggregator.lock.Unlock()
+
+	aggregator.nodeStatus[specSummary.GinkgoNode].startSpec(specSummary)
+}
+
+func (aggregator *Aggregator) UpdateSpecDebugOutput(debugOutput *types.ParallelSpecDebugOutput) {
+	aggregator.lock.Lock()
+	defer aggregator.lock.Unlock()
+
+	aggregator.nodeStatus[debugOutput.GinkgoNode].updateSpecDebugOutput(debugOutput)
+}
+
+func (aggregator *Aggregator) SpecDidComplete(specSummary *types.SpecSummary) {
+	aggregator.lock.Lock()
+	defer aggregator.lock.Unlock()
+
+	aggregator.nodeStatus[specSummary.GinkgoNode].lastSpecIsDone()
+
 	aggregator.completedSpecs = append(aggregator.completedSpecs, specSummary)
 	aggregator.specs = append(aggregator.specs, specSummary)
 	aggregator.flushCompletedSpecs()
+}
+
+func (aggregator *Aggregator) SpecSuiteDidEnd(summary *types.SuiteSummary) {
+	aggregator.lock.Lock()
+	defer aggregator.lock.Unlock()
+
+	aggregator.nodeStatus[summary.GinkgoNode].IsRunning = false
+
+	aggregator.aggregatedSuiteEndings = append(aggregator.aggregatedSuiteEndings, summary)
+	if len(aggregator.aggregatedSuiteEndings) < aggregator.nodeCount {
+		return
+	}
+
+	aggregatedSuiteSummary := &types.SuiteSummary{}
+	aggregatedSuiteSummary.SuiteSucceeded = true
+
+	for _, suiteSummary := range aggregator.aggregatedSuiteEndings {
+		if suiteSummary.SuiteSucceeded == false {
+			aggregatedSuiteSummary.SuiteSucceeded = false
+		}
+
+		aggregatedSuiteSummary.NumberOfSpecsThatWillBeRun += suiteSummary.NumberOfSpecsThatWillBeRun
+		aggregatedSuiteSummary.NumberOfTotalSpecs += suiteSummary.NumberOfTotalSpecs
+		aggregatedSuiteSummary.NumberOfPassedSpecs += suiteSummary.NumberOfPassedSpecs
+		aggregatedSuiteSummary.NumberOfFailedSpecs += suiteSummary.NumberOfFailedSpecs
+		aggregatedSuiteSummary.NumberOfPendingSpecs += suiteSummary.NumberOfPendingSpecs
+		aggregatedSuiteSummary.NumberOfSkippedSpecs += suiteSummary.NumberOfSkippedSpecs
+		aggregatedSuiteSummary.NumberOfFlakedSpecs += suiteSummary.NumberOfFlakedSpecs
+	}
+
+	aggregatedSuiteSummary.RunTime = time.Since(aggregator.startTime)
+
+	aggregator.stenographer.SummarizeFailures(aggregator.specs)
+	aggregator.stenographer.AnnounceSpecRunCompletion(aggregatedSuiteSummary, aggregator.config.Succinct)
+
+	aggregator.result <- aggregatedSuiteSummary.SuiteSucceeded
+}
+
+func (aggregator *Aggregator) DebugReport() []byte {
+	aggregator.lock.Lock()
+	defer aggregator.lock.Unlock()
+
+	encoded, _ := json.Marshal(aggregator.nodeStatus)
+	return encoded
 }
 
 func (aggregator *Aggregator) flushCompletedSpecs() {
@@ -215,35 +273,4 @@ func (aggregator *Aggregator) announceSpec(specSummary *types.SpecSummary) {
 	case types.SpecStateFailed:
 		aggregator.stenographer.AnnounceSpecFailed(specSummary, aggregator.config.Succinct, aggregator.config.FullTrace)
 	}
-}
-
-func (aggregator *Aggregator) registerSuiteEnding(suite *types.SuiteSummary) (finished bool, passed bool) {
-	aggregator.aggregatedSuiteEndings = append(aggregator.aggregatedSuiteEndings, suite)
-	if len(aggregator.aggregatedSuiteEndings) < aggregator.nodeCount {
-		return false, false
-	}
-
-	aggregatedSuiteSummary := &types.SuiteSummary{}
-	aggregatedSuiteSummary.SuiteSucceeded = true
-
-	for _, suiteSummary := range aggregator.aggregatedSuiteEndings {
-		if suiteSummary.SuiteSucceeded == false {
-			aggregatedSuiteSummary.SuiteSucceeded = false
-		}
-
-		aggregatedSuiteSummary.NumberOfSpecsThatWillBeRun += suiteSummary.NumberOfSpecsThatWillBeRun
-		aggregatedSuiteSummary.NumberOfTotalSpecs += suiteSummary.NumberOfTotalSpecs
-		aggregatedSuiteSummary.NumberOfPassedSpecs += suiteSummary.NumberOfPassedSpecs
-		aggregatedSuiteSummary.NumberOfFailedSpecs += suiteSummary.NumberOfFailedSpecs
-		aggregatedSuiteSummary.NumberOfPendingSpecs += suiteSummary.NumberOfPendingSpecs
-		aggregatedSuiteSummary.NumberOfSkippedSpecs += suiteSummary.NumberOfSkippedSpecs
-		aggregatedSuiteSummary.NumberOfFlakedSpecs += suiteSummary.NumberOfFlakedSpecs
-	}
-
-	aggregatedSuiteSummary.RunTime = time.Since(aggregator.startTime)
-
-	aggregator.stenographer.SummarizeFailures(aggregator.specs)
-	aggregator.stenographer.AnnounceSpecRunCompletion(aggregatedSuiteSummary, aggregator.config.Succinct)
-
-	return true, aggregatedSuiteSummary.SuiteSucceeded
 }

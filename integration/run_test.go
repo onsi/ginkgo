@@ -2,6 +2,8 @@ package integration_test
 
 import (
 	"fmt"
+	"io/ioutil"
+	"net/http"
 	"os"
 	"regexp"
 	"runtime"
@@ -257,12 +259,12 @@ var _ = Describe("Running Specs", func() {
 	})
 
 	Context("when running in parallel", func() {
-		BeforeEach(func() {
-			pathToTest = tmpPath("ginkgo")
-			copyIn("passing_ginkgo_tests", pathToTest)
-		})
-
 		Context("with a specific number of -nodes", func() {
+			BeforeEach(func() {
+				pathToTest = tmpPath("ginkgo")
+				copyIn("passing_ginkgo_tests", pathToTest)
+			})
+
 			It("should use the specified number of nodes", func() {
 				session := startGinkgo(pathToTest, "--noColor", "-succinct", "-nodes=2")
 				Eventually(session).Should(gexec.Exit(0))
@@ -274,6 +276,11 @@ var _ = Describe("Running Specs", func() {
 		})
 
 		Context("with -p", func() {
+			BeforeEach(func() {
+				pathToTest = tmpPath("ginkgo")
+				copyIn("passing_ginkgo_tests", pathToTest)
+			})
+
 			It("it should autocompute the number of nodes", func() {
 				session := startGinkgo(pathToTest, "--noColor", "-succinct", "-p")
 				Eventually(session).Should(gexec.Exit(0))
@@ -288,6 +295,34 @@ var _ = Describe("Running Specs", func() {
 				}
 				Ω(output).Should(MatchRegexp(`\[\d+\] Passing_ginkgo_tests Suite - 4 specs - %d nodes [%s]{4} SUCCESS! \d+(\.\d+)?[muµ]?s`, nodes, regexp.QuoteMeta(denoter)))
 				Ω(output).Should(ContainSubstring("Test Suite Passed"))
+			})
+		})
+
+		Context("with -showDebugAddress", func() {
+			BeforeEach(func() {
+				pathToTest = tmpPath("slow")
+				copyIn("slow_parallel_test", pathToTest)
+			})
+
+			It("enables the user to debug the suite", func() {
+				session := startGinkgo(pathToTest, "--noColor", "-nodes=2", "-showDebugAddress")
+				Eventually(session).Should(gbytes.Say("Debug URL:"))
+				re := regexp.MustCompile(`Debug URL:\s+(http://127.0.0.1:\d*/debug)`)
+				url := re.FindStringSubmatch(string(session.Out.Contents()))[1]
+
+				getDebugInfo := func() string {
+					resp, err := http.Get(url)
+					Ω(err).ShouldNot(HaveOccurred())
+					content, err := ioutil.ReadAll(resp.Body)
+					Ω(err).ShouldNot(HaveOccurred())
+					resp.Body.Close()
+					return string(content)
+				}
+
+				Eventually(getDebugInfo).Should(ContainSubstring("Slow Test is Hanging Out"), "Debug endpoint captures GinkgoWriter output while the test is running")
+				Eventually(getDebugInfo).Should(ContainSubstring("Slow Test is Sleeping..."), "Debug endpoint captures output while the test is running")
+
+				Eventually(session).Should(gexec.Exit(0))
 			})
 		})
 	})

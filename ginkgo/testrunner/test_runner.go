@@ -26,25 +26,27 @@ type TestRunner struct {
 	compiled              bool
 	compilationTargetPath string
 
-	numCPU         int
-	parallelStream bool
-	timeout        time.Duration
-	goOpts         map[string]interface{}
-	additionalArgs []string
-	stderr         *bytes.Buffer
+	numCPU           int
+	parallelStream   bool
+	timeout          time.Duration
+	goOpts           map[string]interface{}
+	additionalArgs   []string
+	stderr           *bytes.Buffer
+	showDebugAddress bool
 
 	CoverageFile string
 }
 
-func New(suite testsuite.TestSuite, numCPU int, parallelStream bool, timeout time.Duration, goOpts map[string]interface{}, additionalArgs []string) *TestRunner {
+func New(suite testsuite.TestSuite, numCPU int, parallelStream bool, showDebugAddress bool, timeout time.Duration, goOpts map[string]interface{}, additionalArgs []string) *TestRunner {
 	runner := &TestRunner{
-		Suite:          suite,
-		numCPU:         numCPU,
-		parallelStream: parallelStream,
-		goOpts:         goOpts,
-		additionalArgs: additionalArgs,
-		timeout:        timeout,
-		stderr:         new(bytes.Buffer),
+		Suite:            suite,
+		numCPU:           numCPU,
+		parallelStream:   parallelStream,
+		showDebugAddress: showDebugAddress,
+		goOpts:           goOpts,
+		additionalArgs:   additionalArgs,
+		timeout:          timeout,
+		stderr:           new(bytes.Buffer),
 	}
 
 	if !suite.Precompiled {
@@ -259,7 +261,7 @@ func (t *TestRunner) runAndStreamParallelGinkgoSuite() RunResult {
 	completions := make(chan RunResult)
 	writers := make([]*logWriter, t.numCPU)
 
-	server, err := remote.NewServer(t.numCPU)
+	server, err := remote.NewServer(t.numCPU, nil)
 	if err != nil {
 		panic("Failed to start parallel spec server")
 	}
@@ -308,7 +310,7 @@ func (t *TestRunner) runAndStreamParallelGinkgoSuite() RunResult {
 }
 
 func (t *TestRunner) runParallelGinkgoSuite() RunResult {
-	result := make(chan bool)
+	result := make(chan bool, 1)
 	completions := make(chan RunResult)
 	writers := make([]*logWriter, t.numCPU)
 	reports := make([]*bytes.Buffer, t.numCPU)
@@ -316,11 +318,15 @@ func (t *TestRunner) runParallelGinkgoSuite() RunResult {
 	stenographer := stenographer.New(!config.DefaultReporterConfig.NoColor, config.GinkgoConfig.FlakeAttempts > 1)
 	aggregator := remote.NewAggregator(t.numCPU, result, config.DefaultReporterConfig, stenographer)
 
-	server, err := remote.NewServer(t.numCPU)
+	server, err := remote.NewServer(t.numCPU, aggregator)
 	if err != nil {
 		panic("Failed to start parallel spec server")
 	}
-	server.RegisterReporters(aggregator)
+
+	if t.showDebugAddress {
+		fmt.Println(t.Suite.PackageName, "Debug URL: ", server.Address()+"/debug")
+	}
+
 	server.Start()
 	defer server.Close()
 
@@ -342,6 +348,13 @@ func (t *TestRunner) runParallelGinkgoSuite() RunResult {
 				return true
 			}
 			return !cmd.ProcessState.Exited()
+		})
+
+		server.RegisterSignalDebug(cpu+1, func() {
+			if cmd.Process == nil {
+				return
+			}
+			cmd.Process.Signal(syscall.SIGUSR1)
 		})
 
 		go t.run(cmd, completions)

@@ -1,5 +1,8 @@
 ## HEAD
 
+- Running parallel tests with `-showDebugAddress` now prints out a Debug URL when the test begins.  http GETting from this URL returns a JSON payload that describes the currently running spec for each parallel node.  This payload will include any output the spec has emitted (either to stdout or the GinkgoWriter).
+
+The intent behind `-showDebugAddress` is to enable users to debug parallel test suites that are hanging.  We recommend enabling `-showDebugAddress` in your CI setup.
 - When using custom reporters register the custom reporters *before* the default reporter.  This allows users to see the output of any print statements in their customer reporters. [#365]
 - When running a test and calculating the coverage using the `-coverprofile` and `-outputdir` flags, Ginkgo fails with an error if the directory does not exist. This is due to an [issue in go 1.10](https://github.com/golang/go/issues/24588) [#446]
 
