@@ -13,11 +13,11 @@ import (
 	"net"
 	"net/http"
 	"sync"
+	"time"
 
 	"github.com/onsi/ginkgo/internal/spec_iterator"
 
 	"github.com/onsi/ginkgo/config"
-	"github.com/onsi/ginkgo/reporters"
 	"github.com/onsi/ginkgo/types"
 )
 
@@ -27,8 +27,9 @@ It then forwards that communication to attached reporters.
 */
 type Server struct {
 	listener        net.Listener
-	reporters       []reporters.Reporter
+	aggregator      *Aggregator
 	alives          []func() bool
+	signalDebug     []func()
 	lock            *sync.Mutex
 	beforeSuiteData types.RemoteBeforeSuiteData
 	parallelTotal   int
@@ -36,15 +37,17 @@ type Server struct {
 }
 
 //Create a new server, automatically selecting a port
-func NewServer(parallelTotal int) (*Server, error) {
+func NewServer(parallelTotal int, aggregator *Aggregator) (*Server, error) {
 	listener, err := net.Listen("tcp", "127.0.0.1:0")
 	if err != nil {
 		return nil, err
 	}
 	return &Server{
+		aggregator:      aggregator,
 		listener:        listener,
 		lock:            &sync.Mutex{},
 		alives:          make([]func() bool, parallelTotal),
+		signalDebug:     make([]func(), parallelTotal),
 		beforeSuiteData: types.RemoteBeforeSuiteData{Data: nil, State: types.RemoteBeforeSuiteStatePending},
 		parallelTotal:   parallelTotal,
 	}, nil
@@ -57,10 +60,12 @@ func (server *Server) Start() {
 	httpServer.Handler = mux
 
 	//streaming endpoints
+	mux.HandleFunc("/debug", server.debug)
 	mux.HandleFunc("/SpecSuiteWillBegin", server.specSuiteWillBegin)
 	mux.HandleFunc("/BeforeSuiteDidRun", server.beforeSuiteDidRun)
 	mux.HandleFunc("/AfterSuiteDidRun", server.afterSuiteDidRun)
 	mux.HandleFunc("/SpecWillRun", server.specWillRun)
+	mux.HandleFunc("/UpdateSpecDebugOutput", server.updateSpecDebugOutput)
 	mux.HandleFunc("/SpecDidComplete", server.specDidComplete)
 	mux.HandleFunc("/SpecSuiteDidEnd", server.specSuiteDidEnd)
 
@@ -94,8 +99,23 @@ func (server *Server) readAll(request *http.Request) []byte {
 	return body
 }
 
-func (server *Server) RegisterReporters(reporters ...reporters.Reporter) {
-	server.reporters = reporters
+func (server *Server) RegisterSignalDebug(node int, debug func()) {
+	server.lock.Lock()
+	defer server.lock.Unlock()
+	server.signalDebug[node-1] = debug
+}
+
+func (server *Server) debug(writer http.ResponseWriter, request *http.Request) {
+	server.lock.Lock()
+	for cpu := 1; cpu <= server.parallelTotal; cpu++ {
+		server.signalDebug[cpu-1]()
+	}
+	server.lock.Unlock()
+
+	//Give nodes a chance to report back
+	time.Sleep(time.Second)
+
+	writer.Write(server.aggregator.DebugReport())
 }
 
 func (server *Server) specSuiteWillBegin(writer http.ResponseWriter, request *http.Request) {
@@ -108,8 +128,8 @@ func (server *Server) specSuiteWillBegin(writer http.ResponseWriter, request *ht
 
 	json.Unmarshal(body, &data)
 
-	for _, reporter := range server.reporters {
-		reporter.SpecSuiteWillBegin(data.Config, data.Summary)
+	if server.aggregator != nil {
+		server.aggregator.SpecSuiteWillBegin(data.Config, data.Summary)
 	}
 }
 
@@ -118,8 +138,8 @@ func (server *Server) beforeSuiteDidRun(writer http.ResponseWriter, request *htt
 	var setupSummary *types.SetupSummary
 	json.Unmarshal(body, &setupSummary)
 
-	for _, reporter := range server.reporters {
-		reporter.BeforeSuiteDidRun(setupSummary)
+	if server.aggregator != nil {
+		server.aggregator.BeforeSuiteDidRun(setupSummary)
 	}
 }
 
@@ -128,8 +148,8 @@ func (server *Server) afterSuiteDidRun(writer http.ResponseWriter, request *http
 	var setupSummary *types.SetupSummary
 	json.Unmarshal(body, &setupSummary)
 
-	for _, reporter := range server.reporters {
-		reporter.AfterSuiteDidRun(setupSummary)
+	if server.aggregator != nil {
+		server.aggregator.AfterSuiteDidRun(setupSummary)
 	}
 }
 
@@ -138,8 +158,18 @@ func (server *Server) specWillRun(writer http.ResponseWriter, request *http.Requ
 	var specSummary *types.SpecSummary
 	json.Unmarshal(body, &specSummary)
 
-	for _, reporter := range server.reporters {
-		reporter.SpecWillRun(specSummary)
+	if server.aggregator != nil {
+		server.aggregator.SpecWillRun(specSummary)
+	}
+}
+
+func (server *Server) updateSpecDebugOutput(writer http.ResponseWriter, request *http.Request) {
+	body := server.readAll(request)
+	var debugOutput *types.ParallelSpecDebugOutput
+	json.Unmarshal(body, &debugOutput)
+
+	if server.aggregator != nil {
+		server.aggregator.UpdateSpecDebugOutput(debugOutput)
 	}
 }
 
@@ -148,8 +178,8 @@ func (server *Server) specDidComplete(writer http.ResponseWriter, request *http.
 	var specSummary *types.SpecSummary
 	json.Unmarshal(body, &specSummary)
 
-	for _, reporter := range server.reporters {
-		reporter.SpecDidComplete(specSummary)
+	if server.aggregator != nil {
+		server.aggregator.SpecDidComplete(specSummary)
 	}
 }
 
@@ -158,8 +188,8 @@ func (server *Server) specSuiteDidEnd(writer http.ResponseWriter, request *http.
 	var suiteSummary *types.SuiteSummary
 	json.Unmarshal(body, &suiteSummary)
 
-	for _, reporter := range server.reporters {
-		reporter.SpecSuiteDidEnd(suiteSummary)
+	if server.aggregator != nil {
+		server.aggregator.SpecSuiteDidEnd(suiteSummary)
 	}
 }
 

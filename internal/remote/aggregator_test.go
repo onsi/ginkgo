@@ -66,6 +66,7 @@ var _ = Describe("Aggregator", func() {
 
 		suiteSummary1 = &types.SuiteSummary{
 			SuiteDescription: suiteDescription,
+			GinkgoNode:       1,
 
 			NumberOfSpecsBeforeParallelization: 30,
 			NumberOfTotalSpecs:                 17,
@@ -76,6 +77,7 @@ var _ = Describe("Aggregator", func() {
 
 		suiteSummary2 = &types.SuiteSummary{
 			SuiteDescription: suiteDescription,
+			GinkgoNode:       2,
 
 			NumberOfSpecsBeforeParallelization: 30,
 			NumberOfTotalSpecs:                 13,
@@ -97,6 +99,7 @@ var _ = Describe("Aggregator", func() {
 		specSummary = &types.SpecSummary{
 			State:          types.SpecStatePassed,
 			CapturedOutput: "SpecOutput",
+			GinkgoNode:     1,
 		}
 	})
 
@@ -145,8 +148,10 @@ var _ = Describe("Aggregator", func() {
 	Describe("Announcing specs and before suites", func() {
 		Context("when the parallel-suites have not all started", func() {
 			BeforeEach(func() {
+				aggregator.SpecSuiteWillBegin(ginkgoConfig1, suiteSummary1)
 				aggregator.BeforeSuiteDidRun(beforeSummary)
 				aggregator.AfterSuiteDidRun(afterSummary)
+				aggregator.SpecWillRun(specSummary)
 				aggregator.SpecDidComplete(specSummary)
 			})
 
@@ -156,7 +161,7 @@ var _ = Describe("Aggregator", func() {
 
 			Context("when the parallel-suites subsequently start", func() {
 				BeforeEach(func() {
-					beginSuite()
+					aggregator.SpecSuiteWillBegin(ginkgoConfig2, suiteSummary2)
 				})
 
 				It("should announce the specs, the before suites and the after suites", func() {
@@ -179,6 +184,7 @@ var _ = Describe("Aggregator", func() {
 			Context("When a spec completes", func() {
 				BeforeEach(func() {
 					aggregator.BeforeSuiteDidRun(beforeSummary)
+					aggregator.SpecWillRun(specSummary)
 					aggregator.SpecDidComplete(specSummary)
 					aggregator.AfterSuiteDidRun(afterSummary)
 					Eventually(func() interface{} {

@@ -231,7 +231,7 @@ func buildDefaultReporter() Reporter {
 		stenographer := stenographer.New(!config.DefaultReporterConfig.NoColor, config.GinkgoConfig.FlakeAttempts > 1)
 		return reporters.NewDefaultReporter(config.DefaultReporterConfig, stenographer)
 	} else {
-		return remote.NewForwardingReporter(remoteReportingServer, &http.Client{}, remote.NewOutputInterceptor())
+		return remote.NewForwardingReporter(remoteReportingServer, &http.Client{}, remote.NewOutputInterceptor(), config.GinkgoConfig.ParallelNode, GinkgoWriter.(*writer.Writer))
 	}
 }
 

@@ -15,13 +15,14 @@ type RunWatchAndBuildCommandFlags struct {
 	GoOpts      map[string]interface{}
 
 	//for run and watch commands
-	NumCPU         int
-	NumCompilers   int
-	ParallelStream bool
-	Notify         bool
-	AfterSuiteHook string
-	AutoNodes      bool
-	Timeout        time.Duration
+	NumCPU                   int
+	NumCompilers             int
+	ParallelStream           bool
+	ShowParallelDebugAddress bool
+	Notify                   bool
+	AfterSuiteHook           string
+	AutoNodes                bool
+	Timeout                  time.Duration
 
 	//only for run command
 	KeepGoing       bool
@@ -147,6 +148,7 @@ func (c *RunWatchAndBuildCommandFlags) flags(mode int) {
 		c.FlagSet.IntVar(&(c.NumCompilers), "compilers", 0, "The number of concurrent compilations to run (0 will autodetect)")
 		c.FlagSet.BoolVar(&(c.AutoNodes), "p", false, "Run in parallel with auto-detected number of nodes")
 		c.FlagSet.BoolVar(&(c.ParallelStream), "stream", onWindows, "stream parallel test output in real time: less coherent, but useful for debugging")
+		c.FlagSet.BoolVar(&(c.ShowParallelDebugAddress), "showDebugAddress", false, "show parallel test debug address")
 		if !onWindows {
 			c.FlagSet.BoolVar(&(c.Notify), "notify", false, "Send desktop notifications when a test run completes")
 		}

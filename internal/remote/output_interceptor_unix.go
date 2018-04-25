@@ -40,6 +40,15 @@ func (interceptor *outputInterceptor) StartInterceptingOutput() error {
 	return nil
 }
 
+func (interceptor *outputInterceptor) Output() (string, error) {
+	if !interceptor.intercepting {
+		return "", errors.New("Not intercepting output!")
+	}
+
+	output, err := ioutil.ReadFile(interceptor.redirectFile.Name())
+	return string(output), err
+}
+
 func (interceptor *outputInterceptor) StopInterceptingAndReturnOutput() (string, error) {
 	if !interceptor.intercepting {
 		return "", errors.New("Not intercepting output!")

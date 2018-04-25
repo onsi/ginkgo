@@ -5,6 +5,11 @@ import (
 	"encoding/json"
 	"io"
 	"net/http"
+	"os"
+	"os/signal"
+	"syscall"
+
+	"github.com/onsi/ginkgo/internal/writer"
 
 	"github.com/onsi/ginkgo/config"
 	"github.com/onsi/ginkgo/types"
@@ -30,14 +35,36 @@ type ForwardingReporter struct {
 	serverHost        string
 	poster            Poster
 	outputInterceptor OutputInterceptor
+	ginkgoNode        int
 }
 
-func NewForwardingReporter(serverHost string, poster Poster, outputInterceptor OutputInterceptor) *ForwardingReporter {
-	return &ForwardingReporter{
+func NewForwardingReporter(serverHost string, poster Poster, outputInterceptor OutputInterceptor, ginkgoNode int, ginkgoWriter *writer.Writer) *ForwardingReporter {
+	c := make(chan os.Signal, 1)
+	signal.Notify(c, syscall.SIGUSR1)
+
+	reporter := &ForwardingReporter{
 		serverHost:        serverHost,
 		poster:            poster,
 		outputInterceptor: outputInterceptor,
+		ginkgoNode:        ginkgoNode,
 	}
+
+	go func() {
+		for {
+			<-c
+			capturedOutput, _ := outputInterceptor.Output()
+
+			debugOutput := types.ParallelSpecDebugOutput{
+				GinkgoNode:         ginkgoNode,
+				CapturedOutput:     capturedOutput,
+				GinkgoWriterOutput: string(ginkgoWriter.Bytes()),
+			}
+
+			reporter.post("/UpdateSpecDebugOutput", debugOutput)
+		}
+	}()
+
+	return reporter
 }
 
 func (reporter *ForwardingReporter) post(path string, data interface{}) {
@@ -47,6 +74,7 @@ func (reporter *ForwardingReporter) post(path string, data interface{}) {
 }
 
 func (reporter *ForwardingReporter) SpecSuiteWillBegin(conf config.GinkgoConfigType, summary *types.SuiteSummary) {
+	summary.GinkgoNode = reporter.ginkgoNode
 	data := struct {
 		Config  config.GinkgoConfigType `json:"config"`
 		Summary *types.SuiteSummary     `json:"suite-summary"`
@@ -62,17 +90,20 @@ func (reporter *ForwardingReporter) SpecSuiteWillBegin(conf config.GinkgoConfigT
 func (reporter *ForwardingReporter) BeforeSuiteDidRun(setupSummary *types.SetupSummary) {
 	output, _ := reporter.outputInterceptor.StopInterceptingAndReturnOutput()
 	reporter.outputInterceptor.StartInterceptingOutput()
+	setupSummary.GinkgoNode = reporter.ginkgoNode
 	setupSummary.CapturedOutput = output
 	reporter.post("/BeforeSuiteDidRun", setupSummary)
 }
 
 func (reporter *ForwardingReporter) SpecWillRun(specSummary *types.SpecSummary) {
+	specSummary.GinkgoNode = reporter.ginkgoNode
 	reporter.post("/SpecWillRun", specSummary)
 }
 
 func (reporter *ForwardingReporter) SpecDidComplete(specSummary *types.SpecSummary) {
 	output, _ := reporter.outputInterceptor.StopInterceptingAndReturnOutput()
 	reporter.outputInterceptor.StartInterceptingOutput()
+	specSummary.GinkgoNode = reporter.ginkgoNode
 	specSummary.CapturedOutput = output
 	reporter.post("/SpecDidComplete", specSummary)
 }
@@ -80,11 +111,13 @@ func (reporter *ForwardingReporter) SpecDidComplete(specSummary *types.SpecSumma
 func (reporter *ForwardingReporter) AfterSuiteDidRun(setupSummary *types.SetupSummary) {
 	output, _ := reporter.outputInterceptor.StopInterceptingAndReturnOutput()
 	reporter.outputInterceptor.StartInterceptingOutput()
+	setupSummary.GinkgoNode = reporter.ginkgoNode
 	setupSummary.CapturedOutput = output
 	reporter.post("/AfterSuiteDidRun", setupSummary)
 }
 
 func (reporter *ForwardingReporter) SpecSuiteDidEnd(summary *types.SuiteSummary) {
 	reporter.outputInterceptor.StopInterceptingAndReturnOutput()
+	summary.GinkgoNode = reporter.ginkgoNode
 	reporter.post("/SpecSuiteDidEnd", summary)
 }

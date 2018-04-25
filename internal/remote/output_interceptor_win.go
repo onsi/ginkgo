@@ -2,9 +2,7 @@
 
 package remote
 
-import (
-	"errors"
-)
+import "errors"
 
 func NewOutputInterceptor() OutputInterceptor {
 	return &outputInterceptor{}
@@ -29,5 +27,9 @@ func (interceptor *outputInterceptor) StopInterceptingAndReturnOutput() (string,
 	// not working on windows...
 	interceptor.intercepting = false
 
+	return "", nil
+}
+
+func (interceptor *outputInterceptor) Output() (string, error) {
 	return "", nil
 }
