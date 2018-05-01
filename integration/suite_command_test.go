@@ -11,7 +11,7 @@ var _ = Describe("Suite Command Specs", func() {
 
 	BeforeEach(func() {
 		pathToTest = tmpPath("suite_command")
-		copyIn("suite_command_tests", pathToTest)
+		copyIn(fixturePath("suite_command_tests"), pathToTest, false)
 	})
 
 	It("Runs command after suite echoing out suite data, properly reporting suite name and passing status in successful command output", func() {

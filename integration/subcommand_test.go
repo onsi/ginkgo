@@ -348,7 +348,8 @@ var _ = Describe("Subcommand", func() {
 	Describe("ginkgo blur", func() {
 		It("should unfocus tests", func() {
 			pathToTest := tmpPath("focused")
-			copyIn("focused_fixture", pathToTest)
+			fixture := fixturePath("focused_fixture")
+			copyIn(fixture, pathToTest, false)
 
 			session := startGinkgo(pathToTest, "--noColor")
 			Eventually(session).Should(gexec.Exit(types.GINKGO_FOCUS_EXIT_CODE))
@@ -359,12 +360,35 @@ var _ = Describe("Subcommand", func() {
 
 			session = startGinkgo(pathToTest, "blur")
 			Eventually(session).Should(gexec.Exit(0))
+			output = session.Out.Contents()
+			Ω(string(output)).ShouldNot(ContainSubstring("expected 'package'"))
 
 			session = startGinkgo(pathToTest, "--noColor")
 			Eventually(session).Should(gexec.Exit(0))
 			output = session.Out.Contents()
 			Ω(string(output)).Should(ContainSubstring("13 Passed"))
 			Ω(string(output)).Should(ContainSubstring("0 Skipped"))
+
+			Expect(sameFile(filepath.Join(pathToTest, "README.md"), filepath.Join(fixture, "README.md"))).To(BeTrue())
+		})
+
+		It("should ignore the 'vendor' folder", func() {
+			pathToTest := tmpPath("focused_fixture_with_vendor")
+			copyIn(fixturePath("focused_fixture_with_vendor"), pathToTest, true)
+
+			session := startGinkgo(pathToTest, "blur")
+			Eventually(session).Should(gexec.Exit(0))
+
+			session = startGinkgo(pathToTest, "--noColor")
+			Eventually(session).Should(gexec.Exit(0))
+			output := session.Out.Contents()
+			Expect(string(output)).To(ContainSubstring("13 Passed"))
+			Expect(string(output)).To(ContainSubstring("0 Skipped"))
+
+			vendorPath := fixturePath("focused_fixture_with_vendor/vendor")
+			otherVendorPath := filepath.Join(pathToTest, "vendor")
+
+			Expect(sameFolder(vendorPath, otherVendorPath)).To(BeTrue())
 		})
 	})
 
