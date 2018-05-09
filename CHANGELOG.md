@@ -12,7 +12,6 @@
 - When using custom reporters register the custom reporters *before* the default reporter.  This allows users to see the output of any print statements in their customer reporters. (#365) [8382b23]
 - When running a test and calculating the coverage using the `-coverprofile` and `-outputdir` flags, Ginkgo fails with an error if the directory does not exist. This is due to an [issue in go 1.10](https://github.com/golang/go/issues/24588) (#446) [b36a6e0]
 - `unfocus` command ignores vendor folder (#459) [e5e551c, c556e43, a3b6351, 9a820dd]
-- copyIn helper function accepts flag to copy recursively [5b0165e]
 - Ignore packages whose tests are all ignored by go (#456) [7430ca7, 6d8be98]
 - Increase the threshold when checking time measuments (#455) [2f714bf, 68f622c]
 - Fix race condition in coverage tests (#423) [a5a8ff7, ab9c08b]
@@ -33,8 +32,6 @@
 - Prevent data race error when Recording a benchmark value from multiple go routines (#390) [c0c4881, 7a241e9]
 - Replace GOPATH in Environment [4b883f0]
 
-### Maintenance
-- Build with go 1.9 in CI (#404) [70ee229, 2b59a7a]
 
 ## 1.4.0 7/16/2017
 
