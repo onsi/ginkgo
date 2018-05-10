@@ -23,7 +23,6 @@
 - Added Duration on GinkgoTestDescription (#383) [5f49dad, 528417e, 0747408, 329d7ed]
 - Fix Ginkgo stack trace on failure for Specify (#415) [b977ede, 65ca40e, 6c46eb8]
 - Update README with Go 1.6+, Golang -> Go (#409) [17f6b97, bc14b66, 20d1598]
-- Remove unused variable (#400) [f151c44, cb73bd0]
 - Use fmt.Errorf instead of errors.New(fmt.Sprintf (#401) [a299f56, 44e2eaa]
 - Imports in generated code should follow conventions (#398) [0bec0b0, e8536d8]
 - Prevent data race error when Recording a benchmark value from multiple go routines (#390) [c0c4881, 7a241e9]
