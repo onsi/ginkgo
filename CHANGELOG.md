@@ -1,4 +1,4 @@
-## HEAD
+## 1.5.0 5/10/2018
 
 ### New Features
 - Supports go v1.10 (#443, #446, #451) [e873237, 468e89e, e37dbfe, a37f4c0, c0b857d, bca5260, 4177ca8]
