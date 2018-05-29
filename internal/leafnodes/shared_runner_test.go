@@ -199,21 +199,18 @@ func AsynchronousSharedRunnerBehaviors(build func(body interface{}, timeout time
 			})
 		})
 
-		Context("when the function times out", func() {
+		Context("when the function doesn't close the done channel in time", func() {
 			var guard chan struct{}
 
 			BeforeEach(func() {
 				guard = make(chan struct{})
 				outcome, failure = build(func(done Done) {
 					didRun = true
-					time.Sleep(20 * time.Millisecond)
 					close(guard)
-					defer close(done)
-					panic("doesn't matter")
 				}, 10*time.Millisecond, failer, componentCodeLocation).Run()
 			})
 
-			It("should return the timeout", func() {
+			It("should return a timeout", func() {
 				<-guard
 				Ω(didRun).Should(BeTrue())
 
