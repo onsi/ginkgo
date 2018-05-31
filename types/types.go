@@ -146,6 +146,7 @@ const (
 	SpecComponentTypeAfterSuite
 	SpecComponentTypeBeforeEach
 	SpecComponentTypeJustBeforeEach
+	SpecComponentTypeJustAfterEach
 	SpecComponentTypeAfterEach
 	SpecComponentTypeIt
 	SpecComponentTypeMeasure
