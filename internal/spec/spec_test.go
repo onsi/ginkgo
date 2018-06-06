@@ -67,6 +67,10 @@ var _ = Describe("Spec", func() {
 		return leafnodes.NewJustBeforeEachNode(newBody(text, fail), codeLocation, 0, failer, 0)
 	}
 
+	newJusAft := func(text string, fail bool) leafnodes.BasicNode {
+		return leafnodes.NewJustAfterEachNode(newBody(text, fail), codeLocation, 0, failer, 0)
+	}
+
 	newContainer := func(text string, flag types.FlagType, setupNodes ...leafnodes.BasicNode) *containernode.ContainerNode {
 		c := containernode.New(text, flag, codeLocation)
 		for _, node := range setupNodes {
@@ -279,6 +283,8 @@ var _ = Describe("Spec", func() {
 							newBef("outer bef B", failingNodes["outer bef B"]),
 							newJusBef("outer jusbef A", failingNodes["outer jusbef A"]),
 							newJusBef("outer jusbef B", failingNodes["outer jusbef B"]),
+							newJusAft("outer jusaft A", failingNodes["outer jusaft A"]),
+							newJusAft("outer jusaft B", failingNodes["outer jusaft B"]),
 							newAft("outer aft A", failingNodes["outer aft A"]),
 							newAft("outer aft B", failingNodes["outer aft B"]),
 						),
@@ -287,6 +293,8 @@ var _ = Describe("Spec", func() {
 							newBef("inner bef B", failingNodes["inner bef B"]),
 							newJusBef("inner jusbef A", failingNodes["inner jusbef A"]),
 							newJusBef("inner jusbef B", failingNodes["inner jusbef B"]),
+							newJusAft("inner jusaft A", failingNodes["inner jusaft A"]),
+							newJusAft("inner jusaft B", failingNodes["inner jusaft B"]),
 							newAft("inner aft A", failingNodes["inner aft A"]),
 							newAft("inner aft B", failingNodes["inner aft B"]),
 						),
@@ -310,6 +318,10 @@ var _ = Describe("Spec", func() {
 						"inner jusbef A",
 						"inner jusbef B",
 						"it node",
+						"inner jusaft A",
+						"inner jusaft B",
+						"outer jusaft A",
+						"outer jusaft B",
 						"inner aft A",
 						"inner aft B",
 						"outer aft A",
@@ -336,6 +348,10 @@ var _ = Describe("Spec", func() {
 						"inner jusbef A",
 						"inner jusbef B",
 						"it node",
+						"inner jusaft A",
+						"inner jusaft B",
+						"outer jusaft A",
+						"outer jusaft B",
 						"inner aft A",
 						"inner aft B",
 						"outer aft A",
@@ -357,6 +373,10 @@ var _ = Describe("Spec", func() {
 						"outer bef A",
 						"outer bef B",
 						"inner bef A",
+						"inner jusaft A",
+						"inner jusaft B",
+						"outer jusaft A",
+						"outer jusaft B",
 						"inner aft A",
 						"inner aft B",
 						"outer aft A",
@@ -377,6 +397,8 @@ var _ = Describe("Spec", func() {
 					Ω(nodesThatRan).Should(Equal([]string{
 						"outer bef A",
 						"outer bef B",
+						"outer jusaft A",
+						"outer jusaft B",
 						"outer aft A",
 						"outer aft B",
 					}))
@@ -402,6 +424,10 @@ var _ = Describe("Spec", func() {
 						"inner jusbef A",
 						"inner jusbef B",
 						"it node",
+						"inner jusaft A",
+						"inner jusaft B",
+						"outer jusaft A",
+						"outer jusaft B",
 						"inner aft A",
 						"inner aft B",
 						"outer aft A",
@@ -426,12 +452,47 @@ var _ = Describe("Spec", func() {
 						"inner bef B",
 						"outer jusbef A",
 						"outer jusbef B",
+						"inner jusaft A",
+						"inner jusaft B",
+						"outer jusaft A",
+						"outer jusaft B",
 						"inner aft A",
 						"inner aft B",
 						"outer aft A",
 						"outer aft B",
 					}))
 					Ω(spec.Summary("").Failure.Message).Should(Equal("outer jusbef B"))
+				})
+			})
+
+			Context("when a just after each fails", func() {
+				BeforeEach(func() {
+					failingNodes["outer jusaft A"] = true
+				})
+
+				It("should run all other afters, but mark the test as failed", func() {
+					Ω(spec.Passed()).Should(BeFalse())
+					Ω(spec.Failed()).Should(BeTrue())
+					Ω(nodesThatRan).Should(Equal([]string{
+						"outer bef A",
+						"outer bef B",
+						"inner bef A",
+						"inner bef B",
+						"outer jusbef A",
+						"outer jusbef B",
+						"inner jusbef A",
+						"inner jusbef B",
+						"it node",
+						"inner jusaft A",
+						"inner jusaft B",
+						"outer jusaft A",
+						"outer jusaft B",
+						"inner aft A",
+						"inner aft B",
+						"outer aft A",
+						"outer aft B",
+					}))
+					Ω(spec.Summary("").Failure.Message).Should(Equal("outer jusaft A"))
 				})
 			})
 
@@ -454,6 +515,10 @@ var _ = Describe("Spec", func() {
 						"inner jusbef A",
 						"inner jusbef B",
 						"it node",
+						"inner jusaft A",
+						"inner jusaft B",
+						"outer jusaft A",
+						"outer jusaft B",
 						"inner aft A",
 						"inner aft B",
 						"outer aft A",
@@ -474,6 +539,7 @@ var _ = Describe("Spec", func() {
 						newContainer("container", noneFlag,
 							newBef("bef A", false),
 							newJusBef("jusbef A", false),
+							newJusAft("jusaft A", false),
 							newAft("aft A", false),
 						),
 					),
@@ -487,14 +553,17 @@ var _ = Describe("Spec", func() {
 					"bef A",
 					"jusbef A",
 					"measure node",
+					"jusaft A",
 					"aft A",
 					"bef A",
 					"jusbef A",
 					"measure node",
+					"jusaft A",
 					"aft A",
 					"bef A",
 					"jusbef A",
 					"measure node",
+					"jusaft A",
 					"aft A",
 				}))
 			})
@@ -508,6 +577,7 @@ var _ = Describe("Spec", func() {
 						newContainer("container", noneFlag,
 							newBef("bef A", false),
 							newJusBef("jusbef A", false),
+							newJusAft("jusaft A", false),
 							newAft("aft A", false),
 						),
 					),
@@ -521,6 +591,7 @@ var _ = Describe("Spec", func() {
 					"bef A",
 					"jusbef A",
 					"measure node",
+					"jusaft A",
 					"aft A",
 				}))
 			})
@@ -628,11 +699,13 @@ var _ = Describe("Spec", func() {
 					newContainer("outer container", noneFlag,
 						newBef("outer bef A", false),
 						newJusBef("outer jusbef A", false),
+						newJusAft("outer jusaft A", false),
 						newAft("outer aft A", false),
 					),
 					newContainer("inner container", noneFlag,
 						newBef("inner bef A", false),
 						newJusBef("inner jusbef A", false),
+						newJusAft("inner jusaft A", false),
 						newAft("inner aft A", false),
 					),
 				),
@@ -645,11 +718,13 @@ var _ = Describe("Spec", func() {
 			Ω(buffer).Should(gbytes.Say(`\[JustBeforeEach\] outer container`))
 			Ω(buffer).Should(gbytes.Say(`\[JustBeforeEach\] inner container`))
 			Ω(buffer).Should(gbytes.Say(`\[It\] it node`))
+			Ω(buffer).Should(gbytes.Say(`\[JustAfterEach\] inner container`))
+			Ω(buffer).Should(gbytes.Say(`\[JustAfterEach\] outer container`))
 			Ω(buffer).Should(gbytes.Say(`\[AfterEach\] inner container`))
 			Ω(buffer).Should(gbytes.Say(`\[AfterEach\] outer container`))
 		})
 
-		It("should emit progress to the writer as it runs Befores, JustBefores, Afters, and Measures", func() {
+		It("should emit progress to the writer as it runs Befores, JustBefores, JustAfters, Afters, and Measures", func() {
 			spec = New(
 				newMeasure("measure node", noneFlag, false, 2),
 				containers(),
