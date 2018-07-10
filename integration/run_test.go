@@ -2,6 +2,7 @@ package integration_test
 
 import (
 	"fmt"
+	"io/ioutil"
 	"os"
 	"regexp"
 	"runtime"
@@ -288,6 +289,47 @@ var _ = Describe("Running Specs", func() {
 				}
 				Ω(output).Should(MatchRegexp(`\[\d+\] Passing_ginkgo_tests Suite - 4 specs - %d nodes [%s]{4} SUCCESS! \d+(\.\d+)?[muµ]?s`, nodes, regexp.QuoteMeta(denoter)))
 				Ω(output).Should(ContainSubstring("Test Suite Passed"))
+			})
+		})
+	})
+
+	Context("when running in parallel with -debug", func() {
+		BeforeEach(func() {
+			pathToTest = tmpPath("ginkgo")
+			copyIn(fixturePath("debug_parallel_fixture"), pathToTest, false)
+		})
+
+		Context("without -v", func() {
+			It("should emit node output to files on disk", func() {
+				session := startGinkgo(pathToTest, "--nodes=2", "--debug")
+				Eventually(session).Should(gexec.Exit(0))
+
+				f0, err := ioutil.ReadFile(pathToTest + "/ginkgo-node-1.log")
+				Ω(err).ShouldNot(HaveOccurred())
+				f1, err := ioutil.ReadFile(pathToTest + "/ginkgo-node-2.log")
+				Ω(err).ShouldNot(HaveOccurred())
+				content := string(append(f0, f1...))
+
+				for i := 0; i < 10; i += 1 {
+					Ω(content).Should(ContainSubstring("StdOut %d\n", i))
+					Ω(content).Should(ContainSubstring("GinkgoWriter %d\n", i))
+				}
+			})
+		})
+
+		Context("without -v", func() {
+			It("should emit node output to files on disk, without duplicating the GinkgoWriter output", func() {
+				session := startGinkgo(pathToTest, "--nodes=2", "--debug", "-v")
+				Eventually(session).Should(gexec.Exit(0))
+
+				f0, err := ioutil.ReadFile(pathToTest + "/ginkgo-node-1.log")
+				Ω(err).ShouldNot(HaveOccurred())
+				f1, err := ioutil.ReadFile(pathToTest + "/ginkgo-node-2.log")
+				Ω(err).ShouldNot(HaveOccurred())
+				content := string(append(f0, f1...))
+
+				out := strings.Split(content, "GinkgoWriter 2")
+				Ω(out).Should(HaveLen(2))
 			})
 		})
 	})
