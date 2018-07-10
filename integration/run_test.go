@@ -296,7 +296,7 @@ var _ = Describe("Running Specs", func() {
 	Context("when running in parallel with -debug", func() {
 		BeforeEach(func() {
 			pathToTest = tmpPath("ginkgo")
-			copyIn("debug_parallel_fixture", pathToTest)
+			copyIn(fixturePath("debug_parallel_fixture"), pathToTest, false)
 		})
 
 		Context("without -v", func() {
