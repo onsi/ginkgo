@@ -152,26 +152,36 @@ func (t *TestRunner) CompileTo(path string) error {
 		fmt.Println(string(output))
 	}
 
-	if fileExists(path) == false {
-		compiledFile := t.Suite.PackageName + ".test"
-		if fileExists(compiledFile) {
-			// seems like we are on an old go version that does not support the -o flag on go test
-			// move the compiled test file to the desired location by hand
-			err = os.Rename(compiledFile, path)
-			if err != nil {
-				// We cannot move the file, perhaps because the source and destination
-				// are on different partitions. We can copy the file, however.
-				err = copyFile(compiledFile, path)
-				if err != nil {
-					return fmt.Errorf("Failed to copy compiled file: %s", err)
-				}
-			}
-		} else {
-			return fmt.Errorf("Failed to compile %s: output file %q could not be found", t.Suite.PackageName, path)
-		}
+	if err := t.normaliseTestFilePath(path); err != nil {
+		return err
 	}
 
 	t.compiled = true
+
+	return nil
+}
+
+func (t *TestRunner) normaliseTestFilePath(path string) error {
+	if fileExists(path) {
+		return nil
+	}
+
+	compiledFile := t.Suite.PackageName + ".test"
+	if !fileExists(compiledFile) {
+		return nil
+	}
+
+	// seems like we are on an old go version that does not support the -o flag on go test
+	// move the compiled test file to the desired location by hand
+	if err := os.Rename(compiledFile, path); err == nil {
+		return nil
+	}
+
+	// We cannot move the file, perhaps because the source and destination
+	// are on different partitions. We can copy the file, however.
+	if err := copyFile(compiledFile, path); err != nil {
+		return fmt.Errorf("Failed to copy compiled file: %s", err)
+	}
 
 	return nil
 }
