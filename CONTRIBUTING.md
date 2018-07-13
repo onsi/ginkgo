@@ -16,16 +16,18 @@ Thanks for supporting Ginkgo!
 Fork the repo, then:
 
 ```
-git clone git@github.com:<NAME>/ginkgo.git $GO_PATH/src/github.com/<NAME>/ginkgo`
+go get https://github.com/onsi/ginkgo
 go get github.com/onsi/gomega/...
+cd $GOPATH/onsi/ginkgo
+git remote add fork git@github.com:<NAME>/ginkgo.git
 
-./before_pr.sh # replace imports to test internal packages
 ginkgo -r -p   # ensure tests are green
 go vet ./...   # ensure linter is happy
 ```
 
 ## Making the PR
+ - go to a new branch `git checkout -b my-feature`
  - make your changes
  - run tests and linter again (see above)
- - undo changes from `./before_pr.sh` via `git checkout .`
+ - `git push fork`
  - open PR 🎉
