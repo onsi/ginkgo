@@ -118,6 +118,4 @@ Ginkgo is MIT-Licensed
 
 ## Contributing
 
-Since Ginkgo tests also internal packages, when you fork, you'll have to replace imports with your repository.<br />
-Use `before_pr.sh` for that<br />
-After you finished your changes and before you push your pull request, use `after_pr.sh` to revert those changes
+See [CONTRIBUTING.md](CONTRIBUTING.md)
