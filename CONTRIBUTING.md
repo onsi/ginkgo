@@ -16,9 +16,9 @@ Thanks for supporting Ginkgo!
 Fork the repo, then:
 
 ```
-go get https://github.com/onsi/ginkgo
+go get github.com/onsi/ginkgo
 go get github.com/onsi/gomega/...
-cd $GOPATH/onsi/ginkgo
+cd $GOPATH/src/github.com/onsi/ginkgo
 git remote add fork git@github.com:<NAME>/ginkgo.git
 
 ginkgo -r -p   # ensure tests are green
