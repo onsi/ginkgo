@@ -252,7 +252,17 @@ func (t *TestRunner) runSerialGinkgoSuite() RunResult {
 }
 
 func (t *TestRunner) runGoTestSuite() RunResult {
-	return t.run(t.cmd([]string{"-test.v"}, os.Stdout, 1), nil)
+	args := make([]string, 0)
+	if config.DefaultReporterConfig.Verbose {
+		args = append(args, "-test.v")
+	}
+	result := t.run(t.cmd(args, os.Stdout, 1), nil)
+	keyword := "ok"
+	if !result.Passed {
+		keyword = "FAIL"
+	}
+	fmt.Printf("%s %s\n", keyword, t.Suite.Path)
+	return result
 }
 
 func (t *TestRunner) runAndStreamParallelGinkgoSuite() RunResult {
