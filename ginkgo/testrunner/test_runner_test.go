@@ -36,10 +36,13 @@ var _ = Describe("TestRunner", func() {
 		tr := testrunner.New(testsuite.TestSuite{}, 1, false, 0, opts, []string{})
 
 		args := tr.BuildArgs(".")
+		// Remove the "-i" argument; This is discarded in Golang 1.10+.
+		if args[2] == "-i" {
+			args = append(args[0:2], args[3:]...)
+		}
 		Ω(args).Should(Equal([]string{
 			"test",
 			"-c",
-			"-i",
 			"-o",
 			".",
 			"",
