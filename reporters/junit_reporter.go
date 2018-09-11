@@ -122,6 +122,11 @@ func (reporter *JUnitReporter) SpecDidComplete(specSummary *types.SpecSummary) {
 			Type:    reporter.failureTypeForState(specSummary.State),
 			Message: failureMessage(specSummary.Failure),
 		}
+		if specSummary.State == types.SpecStatePanicked {
+			testCase.FailureMessage.Message += fmt.Sprintf("\n\nPanic: %s\n\nFull stack:\n%s",
+				specSummary.Failure.ForwardedPanic,
+				specSummary.Failure.Location.FullStackTrace)
+		}
 		testCase.SystemOut = specSummary.CapturedOutput
 	}
 	if specSummary.State == types.SpecStateSkipped || specSummary.State == types.SpecStatePending {
