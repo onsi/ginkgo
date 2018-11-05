@@ -366,11 +366,11 @@ You use `Describe` blocks to describe the individual behaviors of your code and 
 
 When nesting `Describe`/`Context` blocks the `BeforeEach` blocks for all the container nodes surrounding an `It` are run from outermost to innermost when the `It` is executed.  The same is true for `AfterEach` block though they run from innermost to outermost.  Note: the `BeforeEach` and `AfterEach` blocks run for **each** `It` block.  This ensures a pristine state for each spec.
 
-> In general, the only code within a container block should be an `It` block or a `BeforeEach`/`JustBeforeEach`/`AfterEach` block, or closure variable declarations.  It is generally a mistake to make an assertion in a container block.
+> In general, the only code within a container block should be an `It` block or a `BeforeEach`/`JustBeforeEach`/`JustAfterEach`/`AfterEach` block, or closure variable declarations.  It is generally a mistake to make an assertion in a container block.
 
 > It is also a mistake to *initialize* a closure variable in a container block.  If one of your `It`s mutates that variable, subsequent `It`s will receive the mutated value.  This is a case of test pollution and can be hard to track down.  **Always initialize your variables in `BeforeEach` blocks.**
 
-If you'd like to get information, at runtime about the current test, you can use `CurrentGinkgoTestDescription()` from within any `It` or `BeforeEach`/`AfterEach`/`JustBeforeEach` block.  The `CurrentGinkgoTestDescription` returned by this call has a variety of information about the currently running test including the filename, line number, text in the `It` block, and text in the surrounding container blocks.
+If you'd like to get information, at runtime about the current test, you can use `CurrentGinkgoTestDescription()` from within any `It` or `BeforeEach`/`JustBeforeEach`/`JustAfterEach`/`AfterEach` block.  The `CurrentGinkgoTestDescription` returned by this call has a variety of information about the currently running test including the filename, line number, text in the `It` block, and text in the surrounding container blocks.
 
 ### Separating Creation and Configuration: `JustBeforeEach`
 
@@ -445,6 +445,25 @@ Abstractly, `JustBeforeEach` allows you to decouple **creation** from **configur
 > You can have multiple `JustBeforeEach`es at different levels of nesting.  Ginkgo will first run all the `BeforeEach`es from the outside in, then it will run the `JustBeforeEach`es from the outside in.  While powerful, this can lead to confusing test suites -- so use nested `JustBeforeEach`es judiciously.
 >
 > Some parting words: `JustBeforeEach` is a powerful tool that can be easily abused.  Use it well.
+
+### Separating Diagnostics Collection and Teardown: `JustAfterEach`
+
+It is sometimes useful to have some code which is executed just after each `It` block, but **before** Teardown (which might destroy useful state) - for example to to perform diagnostic operations if the test failed.
+
+We can use this in the example above to check if the test failed and if so output the actual book:
+
+```go
+    JustAfterEach(func() {
+        if CurrentGinkgoTestDescription().Failed {
+            fmt.Printf("Collecting diags just after failed test in %s\n", CurrentGinkgoTestDescription().TestText)
+            fmt.Printf("Actual book was %v\n", book)
+        }
+    })
+```
+
+> You can have multiple `JustAfterEach`es at different levels of nesting.  Ginkgo will first run all the `JustAfterEach`es from the inside out, then it will run the `AfterEach`es from the inside out.  While powerful, this can lead to confusing test suites -- so use nested `JustAfterEach`es judiciously.
+>
+> Like `JustBeforeEach`, `JustAfterEach` is a powerful tool that can be easily abused.  Use it well.
 
 ### Global Setup and Teardown: `BeforeSuite` and `AfterSuite`
 
@@ -791,7 +810,7 @@ It("should post to the channel, eventually", func() {
 ```
 This test will block until a response is received over the channel `c`.  A deadlock or timeout is a common failure mode for tests like this, a common pattern in such situations is to add a select statement at the bottom of the function and include a `<-time.After(X)` channel to specify a timeout.
 
-Ginkgo has this pattern built in.  The `body` functions in all non-container blocks (`It`s, `BeforeEach`es, `AfterEach`es, `JustBeforeEach`es, and `Benchmark`s) can take an optional `done Done` argument:
+Ginkgo has this pattern built in.  The `body` functions in all non-container blocks (`It`s, `BeforeEach`es, `AfterEach`es, `JustBeforeEach`es, `JustAfterEach`es, and `Benchmark`s) can take an optional `done Done` argument:
 
 ```go
 It("should post to the channel, eventually", func(done Done) {
