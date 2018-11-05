@@ -37,4 +37,12 @@ var _ = Describe("Setup Nodes", func() {
 			Ω(justBeforeEach.CodeLocation()).Should(Equal(codeLocation))
 		})
 	})
+	Describe("JustAfterEachNodes", func() {
+		It("should report the correct type and code location", func() {
+			codeLocation := codelocation.New(0)
+			justAfterEach := NewJustAfterEachNode(func() {}, codeLocation, 0, nil, 3)
+			Ω(justAfterEach.Type()).Should(Equal(types.SpecComponentTypeJustAfterEach))
+			Ω(justAfterEach.CodeLocation()).Should(Equal(codeLocation))
+		})
+	})
 })
