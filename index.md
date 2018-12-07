@@ -1020,7 +1020,7 @@ Here are the flags that Ginkgo accepts:
 
 - `-dryRun`
 
-    If present, Ginkgo will walk your test suite and report output *without* actually running your tests.  This is best paried with `-v` to preview which tests will run.  Ther ordering of the tests honors the randomization strategy specified by `--seed` and `--randomizeAllSpecs`.
+    If present, Ginkgo will walk your test suite and report output *without* actually running your tests.  This is best paired with `-v` to preview which tests will run.  Ther ordering of the tests honors the randomization strategy specified by `--seed` and `--randomizeAllSpecs`.
 
 - `-keepGoing`
 
