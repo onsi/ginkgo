@@ -5,6 +5,7 @@ import (
 	"fmt"
 	"math/rand"
 	"os"
+	"regexp"
 	"strings"
 	"time"
 
@@ -171,8 +172,15 @@ func (r *SpecRunner) combineCoverprofiles(runners []*testrunner.TestRunner) erro
 		return nil // non-fatal error
 	}
 
-	for _, runner := range runners {
+	modeRegex := regexp.MustCompile(`^mode: .*\n`)
+	for index, runner := range runners {
 		contents, err := ioutil.ReadFile(runner.CoverageFile)
+
+		// remove the cover mode line from every file
+		// except the first one
+		if index > 0 {
+			contents = modeRegex.ReplaceAll(contents, []byte{})
+		}
 
 		if err != nil {
 			fmt.Printf("Unable to read coverage file %s to combine, %v\n", runner.CoverageFile, err)
