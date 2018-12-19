@@ -164,8 +164,11 @@ func (r *SpecRunner) combineCoverprofiles(runners []*testrunner.TestRunner) erro
 
 	fmt.Println("path is " + path)
 
-	combined, err := os.OpenFile(filepath.Join(path, r.getCoverprofile()),
-		os.O_APPEND|os.O_WRONLY|os.O_CREATE, 0666)
+	combined, err := os.OpenFile(
+		filepath.Join(path, r.getCoverprofile()),
+		os.O_WRONLY|os.O_CREATE,
+		0666,
+	)
 
 	if err != nil {
 		fmt.Printf("Unable to create combined profile, %v\n", err)
