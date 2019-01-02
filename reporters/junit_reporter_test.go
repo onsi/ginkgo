@@ -4,6 +4,7 @@ import (
 	"encoding/xml"
 	"io/ioutil"
 	"os"
+	"path/filepath"
 	"time"
 
 	. "github.com/onsi/ginkgo"
@@ -255,4 +256,21 @@ var _ = Describe("JUnit Reporter", func() {
 			})
 		})
 	}
+
+	When("output directory doesn't exist", func() {
+		It("should create before open file", func() {
+			dir, err := ioutil.TempDir("", "not-exist")
+			Expect(err).ShouldNot(HaveOccurred())
+			defer os.RemoveAll(dir)
+
+			output := filepath.Join(dir, "not", "exist", "report.xml")
+			reporter := reporters.NewJUnitReporter(output)
+			reporter.SpecSuiteDidEnd(&types.SuiteSummary{
+				NumberOfSpecsThatWillBeRun: 1,
+				NumberOfFailedSpecs:        0,
+				RunTime:                    testSuiteTime,
+			})
+			Ω(output).Should(BeAnExistingFile())
+		})
+	})
 })
