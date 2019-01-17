@@ -6,6 +6,8 @@ title: Ginkgo
 
 These docs are written assuming you'll be using Gomega with Ginkgo.  They also assume you know your way around Go and have a good mental model for how Go organizes packages under `$GOPATH`.
 
+---
+
 ## Support Policy
 
 Ginkgo provides support for versions of Go that are noted by the [Go release policy](https://golang.org/doc/devel/release.html#policy) i.e. N and N-1 major versions.
