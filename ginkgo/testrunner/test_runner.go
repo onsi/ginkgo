@@ -120,6 +120,7 @@ func (t *TestRunner) BuildArgs(path string) []string {
 		"tags",
 		"gcflags",
 		"vet",
+		"mod",
 	}
 
 	for _, opt := range stringOpts {

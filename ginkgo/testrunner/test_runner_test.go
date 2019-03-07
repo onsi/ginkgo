@@ -33,6 +33,7 @@ var _ = Describe("TestRunner", func() {
 			"cover":            boolAddr(false),
 			"blockprofilerate": intAddr(100),
 			"vet":              strAddr("off"),
+			"mod":              strAddr("vendor"),
 		}
 		tr := testrunner.New(testsuite.TestSuite{}, 1, false, 0, opts, []string{})
 
@@ -52,6 +53,7 @@ var _ = Describe("TestRunner", func() {
 			"-pkgdir=b",
 			"-gcflags=c",
 			"-vet=off",
+			"-mod=vendor",
 		}))
 	})
 })
