@@ -24,6 +24,7 @@ import (
 type TestRunner struct {
 	Suite testsuite.TestSuite
 
+	noTestFiles           bool
 	compiled              bool
 	compilationTargetPath string
 
@@ -156,6 +157,11 @@ func (t *TestRunner) CompileTo(path string) error {
 		fmt.Println(string(output))
 	}
 
+	if bytes.Contains(output, []byte("[no test files]")) {
+		t.noTestFiles = true
+		return nil
+	}
+
 	if fileExists(path) == false {
 		compiledFile := t.Suite.PackageName + ".test"
 		if fileExists(compiledFile) {
@@ -229,6 +235,9 @@ func copyFile(src, dst string) error {
 }
 
 func (t *TestRunner) Run() RunResult {
+	if t.noTestFiles {
+		return PassingRunResult()
+	}
 	if t.Suite.IsGinkgo {
 		if t.numCPU > 1 {
 			if t.parallelStream {
