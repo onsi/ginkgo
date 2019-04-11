@@ -69,6 +69,13 @@ type GinkgoTestingT interface {
 	Fail()
 }
 
+// NewCustomWriter returns custom GinkoWriter with specified io.Writer
+// It can be used to intercept GinkoWriter output and orchestrate based on the requirements.
+// To take effect it should be initiated before RunSpecs statements being called
+func InitCustomWriter(outWriter io.Writer) {
+	GinkgoWriter = writer.New(outWriter)
+}
+
 //GinkgoRandomSeed returns the seed used to randomize spec execution order.  It is
 //useful for seeding your own pseudorandom number generators (PRNGs) to ensure
 //consistent executions from run to run, where your tests contain variability (for
