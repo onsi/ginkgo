@@ -1255,7 +1255,7 @@ The optional `info` parameter can be used to pass structured data to a custom re
 
 ## Shared Example Patterns
 
-Ginkgo doesn't have any have any explicit support for Shared Examples (also known as Shared Behaviors) but there are a few patterns that you can use to reuse tests across your suite.
+Ginkgo doesn't have any explicit support for Shared Examples (also known as Shared Behaviors) but there are a few patterns that you can use to reuse tests across your suite.
 
 ### Locally-scoped Shared Behaviors
 
