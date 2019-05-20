@@ -421,7 +421,7 @@ var _ = Describe("Subcommand", func() {
 		It("should print out usage information", func() {
 			session := startGinkgo("", "help")
 			Eventually(session).Should(gexec.Exit(0))
-			output := string(session.Err.Contents())
+			output := string(session.Out.Contents())
 
 			Ω(output).Should(MatchRegexp(`Ginkgo Version \d+\.\d+\.\d+`))
 			Ω(output).Should(ContainSubstring("ginkgo watch"))
