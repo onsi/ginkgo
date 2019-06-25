@@ -74,3 +74,6 @@ func (t *ginkgoTestingTProxy) SkipNow() {
 func (t *ginkgoTestingTProxy) Skipped() bool {
 	return false
 }
+
+func (t *ginkgoTestingTProxy) Helper() {
+}

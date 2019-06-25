@@ -120,6 +120,7 @@ type GinkgoTInterface interface {
 	Skipf(format string, args ...interface{})
 	SkipNow()
 	Skipped() bool
+	Helper()
 }
 
 //Custom Ginkgo test reporters must implement the Reporter interface.
