@@ -720,6 +720,7 @@ var _ = Describe("Spec Runner", func() {
 				"R1.WillRun",
 				"R2.WillRun",
 				"A",
+				"BYTES",
 				"R2.DidComplete",
 				"R1.DidComplete",
 				"TRUNCATE",
@@ -734,6 +735,7 @@ var _ = Describe("Spec Runner", func() {
 				"R1.WillRun",
 				"R2.WillRun",
 				"C",
+				"BYTES",
 				"R2.DidComplete",
 				"R1.DidComplete",
 			}))
