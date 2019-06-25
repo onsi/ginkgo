@@ -283,7 +283,7 @@ func GinkgoRecover() {
 //BeforeEach, AfterEach, JustBeforeEach, It, and Measurement blocks.
 //
 //In addition you can nest Describe, Context and When blocks.  Describe, Context and When blocks are functionally
-//equivalent.  The difference is purely semantic -- you typical Describe the behavior of an object
+//equivalent.  The difference is purely semantic -- you typically Describe the behavior of an object
 //or method and, within that Describe, outline a number of Contexts and Whens.
 func Describe(text string, body func()) bool {
 	globalSuite.PushContainerNode(text, body, types.FlagTypeNone, codelocation.New(1))
