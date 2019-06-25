@@ -16,8 +16,8 @@ import (
 
 var _ = Describe("JUnit Reporter", func() {
 	var (
-		outputFile string
-		reporter   Reporter
+		outputFile 		string
+		reporter   		*reporters.JUnitReporter
 	)
 	testSuiteTime := 12456999 * time.Microsecond
 	reportedSuiteTime := 12.456
@@ -61,8 +61,12 @@ var _ = Describe("JUnit Reporter", func() {
 			}
 			reporter.AfterSuiteDidRun(afterSuite)
 
+			// Set the ReportPassed config flag, in order to show captured output when tests have passed.
+			reporter.ReporterConfig.ReportPassed = true
+
 			spec := &types.SpecSummary{
 				ComponentTexts: []string{"[Top Level]", "A", "B", "C"},
+				CapturedOutput: "Test scenario...",
 				State:          types.SpecStatePassed,
 				RunTime:        5 * time.Second,
 			}
@@ -89,6 +93,7 @@ var _ = Describe("JUnit Reporter", func() {
 			Ω(output.TestCases[0].FailureMessage).Should(BeNil())
 			Ω(output.TestCases[0].Skipped).Should(BeNil())
 			Ω(output.TestCases[0].Time).Should(Equal(5.0))
+			Ω(output.TestCases[0].PassedMessage.Message).Should(ContainSubstring("Test scenario"))
 		})
 	})
 
