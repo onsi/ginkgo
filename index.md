@@ -919,6 +919,10 @@ Here are the flags that Ginkgo accepts:
 
     By default, Ginkgo's default reporter will provide detailed output for skipped specs.  You can set --noisySkippings=false to suppress this behavior.
 
+- `--reportPassed`
+
+    If present, Ginkgo's default reporter will print detailed output for passed specs.
+
 - `--trace`
 
     If present, Ginkgo will print out full stack traces for each failure, not just the line number at which the failure occurs.
