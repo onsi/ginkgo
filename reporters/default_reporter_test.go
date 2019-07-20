@@ -36,9 +36,7 @@ var _ = Describe("DefaultReporter", func() {
 		reporter = reporters.NewDefaultReporter(reporterConfig, stenographer)
 	})
 
-	call := func(method string, args ...interface{}) st.FakeStenographerCall {
-		return st.NewFakeStenographerCall(method, args...)
-	}
+	call := st.NewFakeStenographerCall
 
 	Describe("SpecSuiteWillBegin", func() {
 		BeforeEach(func() {
