@@ -523,7 +523,7 @@ func (t *TestRunner) combineCoverprofiles() {
 	lines := map[string]int{}
 	lineOrder := []string{}
 	for i, coverProfile := range profiles {
-		for _, line := range strings.Split(string(coverProfile), "\n")[1:] {
+		for _, line := range strings.Split(coverProfile, "\n")[1:] {
 			if len(line) == 0 {
 				continue
 			}
