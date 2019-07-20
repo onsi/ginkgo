@@ -14,9 +14,9 @@ import (
 )
 
 type DefaultReporter struct {
-	config        	config.DefaultReporterConfigType
-	stenographer  	stenographer.Stenographer
-	specSummaries 	[]*types.SpecSummary
+	config        config.DefaultReporterConfigType
+	stenographer  stenographer.Stenographer
+	specSummaries []*types.SpecSummary
 }
 
 func NewDefaultReporter(config config.DefaultReporterConfigType, stenographer stenographer.Stenographer) *DefaultReporter {

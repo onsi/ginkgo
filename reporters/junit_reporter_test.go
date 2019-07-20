@@ -16,8 +16,8 @@ import (
 
 var _ = Describe("JUnit Reporter", func() {
 	var (
-		outputFile 		string
-		reporter   		*reporters.JUnitReporter
+		outputFile string
+		reporter   *reporters.JUnitReporter
 	)
 	testSuiteTime := 12456999 * time.Microsecond
 	reportedSuiteTime := 12.456
