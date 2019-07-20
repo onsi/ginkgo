@@ -59,7 +59,7 @@ var DefaultReporterConfig = DefaultReporterConfigType{}
 
 func processPrefix(prefix string) string {
 	if prefix != "" {
-		prefix = prefix + "."
+		prefix += "."
 	}
 	return prefix
 }

@@ -100,9 +100,7 @@ var _ = Describe("Aggregator", func() {
 		}
 	})
 
-	call := func(method string, args ...interface{}) st.FakeStenographerCall {
-		return st.NewFakeStenographerCall(method, args...)
-	}
+	call := st.NewFakeStenographerCall
 
 	beginSuite := func() {
 		stenographer.Reset()
