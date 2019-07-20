@@ -98,7 +98,7 @@ var _ = Describe("Suite", func() {
 		})
 
 		It("provides the config and suite description to the reporter", func() {
-			Ω(fakeR.Config.RandomSeed).Should(Equal(int64(randomSeed)))
+			Ω(fakeR.Config.RandomSeed).Should(Equal(randomSeed))
 			Ω(fakeR.Config.RandomizeAllSpecs).Should(Equal(randomizeAllSpecs))
 			Ω(fakeR.BeginSummary.SuiteDescription).Should(Equal("suite description"))
 		})
