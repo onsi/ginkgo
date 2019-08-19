@@ -5,11 +5,15 @@ go:
   - 1.12.x
   - tip
 
+os:
+  - linux
+  - osx
+  - windows
+
 install:
   - go get -v -t ./...
   - go get golang.org/x/tools/cmd/cover
   - go get github.com/onsi/gomega
   - go install github.com/onsi/ginkgo/ginkgo
-  - export PATH=$PATH:$HOME/gopath/bin
 
 script: $HOME/gopath/bin/ginkgo -r --randomizeAllSpecs --randomizeSuites --race --trace && go vet
