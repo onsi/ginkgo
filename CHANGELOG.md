@@ -1,3 +1,18 @@
+## 1.9.0
+
+## Features
+- Option to print output into report, when tests have passed [0545415]
+
+## Fixes
+- Fixed typos in comments [0ecbc58]
+- gofmt code [a7f8bfb]
+- Simplify code [7454d00]
+- Simplify concatenation, incrementation and function assignment [4825557]
+- Avoid unnecessary conversions [9d9403c]
+- JUnit: include more detailed information about panic [19cca4b]
+- Print help to stdout when the user asks for help [4cb7441]
+
+
 ## 1.8.0
 
 ### New Features
