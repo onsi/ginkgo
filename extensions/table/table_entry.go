@@ -22,12 +22,14 @@ func (t TableEntry) generateIt(itBody reflect.Value) {
 		return
 	}
 
-	values := []reflect.Value{}
+	values := make([]reflect.Value, 0)
+	itBodyType := itBody.Type()
+
 	for i, param := range t.Parameters {
 		var value reflect.Value
 
 		if param == nil {
-			inType := itBody.Type().In(i)
+			inType := itBodyType.In(i)
 			value = reflect.Zero(inType)
 		} else {
 			value = reflect.ValueOf(param)
@@ -36,14 +38,34 @@ func (t TableEntry) generateIt(itBody reflect.Value) {
 		values = append(values, value)
 	}
 
-	body := func() {
-		itBody.Call(values)
+	var (
+		body    interface{}
+		timeout []float64
+	)
+
+	if itBodyType.NumIn() >= 1 && itBodyType.In(0).Kind() == reflect.Chan &&
+		itBodyType.In(0).Elem().Kind() == reflect.Interface {
+
+		lenValues := len(values)
+		if lenValues > 0 && values[lenValues-1].Kind() == reflect.Float64 {
+			timeout = append(timeout, values[lenValues-1].Interface().(float64))
+			values = values[:lenValues-1]
+		}
+
+		body = func(done chan<- interface{}) {
+			values = append([]reflect.Value{reflect.ValueOf(done)}, values...)
+			itBody.Call(values)
+		}
+	} else {
+		body = func() {
+			itBody.Call(values)
+		}
 	}
 
 	if t.Focused {
-		ginkgo.FIt(t.Description, body)
+		ginkgo.FIt(t.Description, body, timeout...)
 	} else {
-		ginkgo.It(t.Description, body)
+		ginkgo.It(t.Description, body, timeout...)
 	}
 }
 
