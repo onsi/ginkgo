@@ -13,6 +13,7 @@ import (
 	"fmt"
 	"math"
 	"os"
+	"path/filepath"
 	"strings"
 
 	"github.com/onsi/ginkgo/config"
@@ -141,6 +142,9 @@ func (reporter *JUnitReporter) SpecSuiteDidEnd(summary *types.SuiteSummary) {
 	reporter.suite.Time = math.Trunc(summary.RunTime.Seconds()*1000) / 1000
 	reporter.suite.Failures = summary.NumberOfFailedSpecs
 	reporter.suite.Errors = 0
+	if err := os.MkdirAll(filepath.Dir(reporter.filename), 0755); err != nil {
+		fmt.Printf("Failed to create JUnit report file: %s\n\t%s", reporter.filename, err.Error())
+	}
 	file, err := os.Create(reporter.filename)
 	if err != nil {
 		fmt.Printf("Failed to create JUnit report file: %s\n\t%s", reporter.filename, err.Error())
