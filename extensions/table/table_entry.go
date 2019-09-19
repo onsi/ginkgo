@@ -23,7 +23,7 @@ func (t TableEntry) generateIt(itBody reflect.Value) {
 	}
 
 	values := make([]reflect.Value, len(t.Parameters))
-	var iBodyType = itBody.Type()
+	iBodyType := itBody.Type()
 	for i, param := range t.Parameters {
 		if param == nil {
 			inType := iBodyType.In(i)
