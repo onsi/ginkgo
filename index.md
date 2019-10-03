@@ -923,6 +923,10 @@ Here are the flags that Ginkgo accepts:
 
     If present, Ginkgo's default reporter will print detailed output for passed specs.
 
+- `--reportFile=<file path>`
+
+    Create report output file in specified path (relative or absolute). It will also override a pre-defined path of `ginkgo.Reporter`, and parent directories will be created, if not exist.
+
 - `--trace`
 
     If present, Ginkgo will print out full stack traces for each failure, not just the line number at which the failure occurs.
