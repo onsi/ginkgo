@@ -20,7 +20,7 @@ import (
 	"fmt"
 )
 
-const VERSION = "1.10.2"
+const VERSION = "1.10.3"
 
 type GinkgoConfigType struct {
 	RandomSeed         int64
