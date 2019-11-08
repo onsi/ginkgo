@@ -62,11 +62,11 @@ var _ = Describe("TeamCity Reporter", func() {
 		It("should record the test as passing", func() {
 			actual := buffer.String()
 			expected :=
-				"##teamcity[testSuiteStarted name='Foo|'s test suite']" +
-					"##teamcity[testStarted name='A B C']" +
-					"##teamcity[testPassed name='A B C' details='Test scenario...']" +
-					"##teamcity[testFinished name='A B C' duration='5000']" +
-					"##teamcity[testSuiteFinished name='Foo|'s test suite']"
+				"##teamcity[testSuiteStarted name='Foo|'s test suite']\n" +
+					"##teamcity[testStarted name='A B C']\n" +
+					"##teamcity[testPassed name='A B C' details='Test scenario...']\n" +
+					"##teamcity[testFinished name='A B C' duration='5000']\n" +
+					"##teamcity[testSuiteFinished name='Foo|'s test suite']\n"
 			Ω(actual).Should(Equal(expected))
 		})
 	})
@@ -95,11 +95,11 @@ var _ = Describe("TeamCity Reporter", func() {
 		It("should record the test as having failed", func() {
 			actual := buffer.String()
 			expected := fmt.Sprintf(
-				"##teamcity[testSuiteStarted name='Foo|'s test suite']"+
-					"##teamcity[testStarted name='BeforeSuite']"+
-					"##teamcity[testFailed name='BeforeSuite' message='%s' details='failed to setup|n']"+
-					"##teamcity[testFinished name='BeforeSuite' duration='3000']"+
-					"##teamcity[testSuiteFinished name='Foo|'s test suite']", beforeSuite.Failure.ComponentCodeLocation.String(),
+				"##teamcity[testSuiteStarted name='Foo|'s test suite']\n"+
+					"##teamcity[testStarted name='BeforeSuite']\n"+
+					"##teamcity[testFailed name='BeforeSuite' message='%s' details='failed to setup|n']\n"+
+					"##teamcity[testFinished name='BeforeSuite' duration='3000']\n"+
+					"##teamcity[testSuiteFinished name='Foo|'s test suite']\n", beforeSuite.Failure.ComponentCodeLocation.String(),
 			)
 			Ω(actual).Should(Equal(expected))
 		})
@@ -129,11 +129,11 @@ var _ = Describe("TeamCity Reporter", func() {
 		It("should record the test as having failed", func() {
 			actual := buffer.String()
 			expected := fmt.Sprintf(
-				"##teamcity[testSuiteStarted name='Foo|'s test suite']"+
-					"##teamcity[testStarted name='AfterSuite']"+
-					"##teamcity[testFailed name='AfterSuite' message='%s' details='failed to setup|n']"+
-					"##teamcity[testFinished name='AfterSuite' duration='3000']"+
-					"##teamcity[testSuiteFinished name='Foo|'s test suite']", afterSuite.Failure.ComponentCodeLocation.String(),
+				"##teamcity[testSuiteStarted name='Foo|'s test suite']\n"+
+					"##teamcity[testStarted name='AfterSuite']\n"+
+					"##teamcity[testFailed name='AfterSuite' message='%s' details='failed to setup|n']\n"+
+					"##teamcity[testFinished name='AfterSuite' duration='3000']\n"+
+					"##teamcity[testSuiteFinished name='Foo|'s test suite']\n", afterSuite.Failure.ComponentCodeLocation.String(),
 			)
 			Ω(actual).Should(Equal(expected))
 		})
@@ -174,11 +174,11 @@ var _ = Describe("TeamCity Reporter", func() {
 			It("should record test as failing", func() {
 				actual := buffer.String()
 				expected :=
-					fmt.Sprintf("##teamcity[testSuiteStarted name='Foo|'s test suite']"+
-						"##teamcity[testStarted name='A B C']"+
-						"##teamcity[testFailed name='A B C' message='%s' details='I failed']"+
-						"##teamcity[testFinished name='A B C' duration='5000']"+
-						"##teamcity[testSuiteFinished name='Foo|'s test suite']", spec.Failure.ComponentCodeLocation.String())
+					fmt.Sprintf("##teamcity[testSuiteStarted name='Foo|'s test suite']\n"+
+						"##teamcity[testStarted name='A B C']\n"+
+						"##teamcity[testFailed name='A B C' message='%s' details='I failed']\n"+
+						"##teamcity[testFinished name='A B C' duration='5000']\n"+
+						"##teamcity[testSuiteFinished name='Foo|'s test suite']\n", spec.Failure.ComponentCodeLocation.String())
 				Ω(actual).Should(Equal(expected))
 			})
 		})
@@ -207,11 +207,11 @@ var _ = Describe("TeamCity Reporter", func() {
 			It("should record test as ignored", func() {
 				actual := buffer.String()
 				expected :=
-					"##teamcity[testSuiteStarted name='Foo|'s test suite']" +
-						"##teamcity[testStarted name='A B C']" +
-						"##teamcity[testIgnored name='A B C']" +
-						"##teamcity[testFinished name='A B C' duration='5000']" +
-						"##teamcity[testSuiteFinished name='Foo|'s test suite']"
+					"##teamcity[testSuiteStarted name='Foo|'s test suite']\n" +
+						"##teamcity[testStarted name='A B C']\n" +
+						"##teamcity[testIgnored name='A B C']\n" +
+						"##teamcity[testFinished name='A B C' duration='5000']\n" +
+						"##teamcity[testSuiteFinished name='Foo|'s test suite']\n"
 				Ω(actual).Should(Equal(expected))
 			})
 		})
