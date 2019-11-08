@@ -81,6 +81,7 @@ var _ = Describe("TeamCity Reporter", func() {
 				Failure: types.SpecFailure{
 					Message:               "failed to setup\n",
 					ComponentCodeLocation: codelocation.New(0),
+					Location:              codelocation.New(2),
 				},
 			}
 			reporter.BeforeSuiteDidRun(beforeSuite)
@@ -97,9 +98,11 @@ var _ = Describe("TeamCity Reporter", func() {
 			expected := fmt.Sprintf(
 				"##teamcity[testSuiteStarted name='Foo|'s test suite']\n"+
 					"##teamcity[testStarted name='BeforeSuite']\n"+
-					"##teamcity[testFailed name='BeforeSuite' message='%s' details='failed to setup|n']\n"+
+					"##teamcity[testFailed name='BeforeSuite' message='%s' details='failed to setup|n|n%s']\n"+
 					"##teamcity[testFinished name='BeforeSuite' duration='3000']\n"+
-					"##teamcity[testSuiteFinished name='Foo|'s test suite']\n", beforeSuite.Failure.ComponentCodeLocation.String(),
+					"##teamcity[testSuiteFinished name='Foo|'s test suite']\n",
+				beforeSuite.Failure.ComponentCodeLocation.String(),
+				beforeSuite.Failure.Location.String(),
 			)
 			Ω(actual).Should(Equal(expected))
 		})
@@ -115,6 +118,7 @@ var _ = Describe("TeamCity Reporter", func() {
 				Failure: types.SpecFailure{
 					Message:               "failed to setup\n",
 					ComponentCodeLocation: codelocation.New(0),
+					Location:              codelocation.New(2),
 				},
 			}
 			reporter.AfterSuiteDidRun(afterSuite)
@@ -131,9 +135,11 @@ var _ = Describe("TeamCity Reporter", func() {
 			expected := fmt.Sprintf(
 				"##teamcity[testSuiteStarted name='Foo|'s test suite']\n"+
 					"##teamcity[testStarted name='AfterSuite']\n"+
-					"##teamcity[testFailed name='AfterSuite' message='%s' details='failed to setup|n']\n"+
+					"##teamcity[testFailed name='AfterSuite' message='%s' details='failed to setup|n|n%s']\n"+
 					"##teamcity[testFinished name='AfterSuite' duration='3000']\n"+
-					"##teamcity[testSuiteFinished name='Foo|'s test suite']\n", afterSuite.Failure.ComponentCodeLocation.String(),
+					"##teamcity[testSuiteFinished name='Foo|'s test suite']\n",
+				afterSuite.Failure.ComponentCodeLocation.String(),
+				afterSuite.Failure.Location.String(),
 			)
 			Ω(actual).Should(Equal(expected))
 		})
@@ -158,6 +164,7 @@ var _ = Describe("TeamCity Reporter", func() {
 					RunTime:        5 * time.Second,
 					Failure: types.SpecFailure{
 						ComponentCodeLocation: codelocation.New(0),
+						Location:              codelocation.New(2),
 						Message:               "I failed",
 					},
 				}
@@ -176,9 +183,12 @@ var _ = Describe("TeamCity Reporter", func() {
 				expected :=
 					fmt.Sprintf("##teamcity[testSuiteStarted name='Foo|'s test suite']\n"+
 						"##teamcity[testStarted name='A B C']\n"+
-						"##teamcity[testFailed name='A B C' message='%s' details='I failed']\n"+
+						"##teamcity[testFailed name='A B C' message='%s' details='I failed|n%s']\n"+
 						"##teamcity[testFinished name='A B C' duration='5000']\n"+
-						"##teamcity[testSuiteFinished name='Foo|'s test suite']\n", spec.Failure.ComponentCodeLocation.String())
+						"##teamcity[testSuiteFinished name='Foo|'s test suite']\n",
+						spec.Failure.ComponentCodeLocation.String(),
+						spec.Failure.Location.String(),
+					)
 				Ω(actual).Should(Equal(expected))
 			})
 		})

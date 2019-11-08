@@ -50,8 +50,8 @@ func (reporter *TeamCityReporter) handleSetupSummary(name string, setupSummary *
 	if setupSummary.State != types.SpecStatePassed {
 		testName := escape(name)
 		fmt.Fprintf(reporter.writer, "%s[testStarted name='%s']\n", messageId, testName)
-		message := escape(setupSummary.Failure.ComponentCodeLocation.String())
-		details := escape(setupSummary.Failure.Message)
+		message := reporter.failureMessage(setupSummary.Failure)
+		details := reporter.failureDetails(setupSummary.Failure)
 		fmt.Fprintf(reporter.writer, "%s[testFailed name='%s' message='%s' details='%s']\n", messageId, testName, message, details)
 		durationInMilliseconds := setupSummary.RunTime.Seconds() * 1000
 		fmt.Fprintf(reporter.writer, "%s[testFinished name='%s' duration='%v']\n", messageId, testName, durationInMilliseconds)
@@ -71,8 +71,8 @@ func (reporter *TeamCityReporter) SpecDidComplete(specSummary *types.SpecSummary
 		fmt.Fprintf(reporter.writer, "%s[testPassed name='%s' details='%s']\n", messageId, testName, details)
 	}
 	if specSummary.State == types.SpecStateFailed || specSummary.State == types.SpecStateTimedOut || specSummary.State == types.SpecStatePanicked {
-		message := escape(specSummary.Failure.ComponentCodeLocation.String())
-		details := escape(specSummary.Failure.Message)
+		message := reporter.failureMessage(specSummary.Failure)
+		details := reporter.failureDetails(specSummary.Failure)
 		fmt.Fprintf(reporter.writer, "%s[testFailed name='%s' message='%s' details='%s']\n", messageId, testName, message, details)
 	}
 	if specSummary.State == types.SpecStateSkipped || specSummary.State == types.SpecStatePending {
@@ -85,6 +85,14 @@ func (reporter *TeamCityReporter) SpecDidComplete(specSummary *types.SpecSummary
 
 func (reporter *TeamCityReporter) SpecSuiteDidEnd(summary *types.SuiteSummary) {
 	fmt.Fprintf(reporter.writer, "%s[testSuiteFinished name='%s']\n", messageId, reporter.testSuiteName)
+}
+
+func (reporter *TeamCityReporter) failureMessage(failure types.SpecFailure) string {
+	return escape(failure.ComponentCodeLocation.String())
+}
+
+func (reporter *TeamCityReporter) failureDetails(failure types.SpecFailure) string {
+	return escape(fmt.Sprintf("%s\n%s", failure.Message, failure.Location.String()))
 }
 
 func escape(output string) string {
