@@ -229,17 +229,22 @@ func copyFile(src, dst string) error {
 }
 
 func (t *TestRunner) Run() RunResult {
-	if t.Suite.IsGinkgo {
+	fmt.Println(">>>>>> TS IS GINKGO:", t.Suite.IsGinkgo)
+	if t.Suite.IsGinkgo || t.numCPU > 1 {
 		if t.numCPU > 1 {
 			if t.parallelStream {
+				fmt.Println(">>>>>> PARALLEL STREAM", t.Suite.IsGinkgo)
 				return t.runAndStreamParallelGinkgoSuite()
 			} else {
+				fmt.Println(">>>>>>>>>>>> PARALLEL EXECUTION STARTED")
 				return t.runParallelGinkgoSuite()
 			}
 		} else {
+			fmt.Println(">>>>>> SERIAL EXECUTION")
 			return t.runSerialGinkgoSuite()
 		}
 	} else {
+		fmt.Println(">>> DEFAULT GO TEST EXECUTION")
 		return t.runGoTestSuite()
 	}
 }

@@ -74,6 +74,7 @@ func (r *SpecRunner) RunSpecs(args []string, additionalArgs []string) {
 
 	t := time.Now()
 
+	fmt.Println("COMMAND --> r.commandFlags.NumCPU  -- ", r.commandFlags.NumCPU)
 	runners := []*testrunner.TestRunner{}
 	for _, suite := range suites {
 		runners = append(runners, testrunner.New(suite, r.commandFlags.NumCPU, r.commandFlags.ParallelStream, r.commandFlags.Timeout, r.commandFlags.GoOpts, additionalArgs))
