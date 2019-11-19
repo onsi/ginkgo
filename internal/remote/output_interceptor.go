@@ -22,11 +22,10 @@ func NewOutputInterceptor() OutputInterceptor {
 }
 
 type outputInterceptor struct {
-	readPipe     *os.File
-	writePipe    *os.File
-	streamTarget *os.File
-	intercepting bool
-	tailer       io.Reader
+	streamTarget   *os.File
+	combinedReader io.Reader
+	intercepting   bool
+	tailer         io.Reader
 }
 
 func (interceptor *outputInterceptor) StartInterceptingOutput() error {
@@ -34,15 +33,10 @@ func (interceptor *outputInterceptor) StartInterceptingOutput() error {
 		return errors.New("Already intercepting output!")
 	}
 	interceptor.intercepting = true
+	interceptor.combinedReader = io.MultiReader(os.Stdout, os.Stderr)
 
 	if interceptor.streamTarget != nil {
-		r, w, err := os.Pipe()
-		if err != nil {
-			return err
-		}
-		interceptor.readPipe = r
-		interceptor.writePipe = w
-		interceptor.tailer = io.TeeReader(r, w)
+		interceptor.tailer = io.TeeReader(interceptor.combinedReader, interceptor.streamTarget)
 	}
 
 	return nil
@@ -53,9 +47,7 @@ func (interceptor *outputInterceptor) StopInterceptingAndReturnOutput() (string,
 		return "", errors.New("Not intercepting output!")
 	}
 
-	output, err := ioutil.ReadAll(interceptor.tailer)
-	interceptor.writePipe.Close()
-	interceptor.readPipe.Close()
+	output, err := ioutil.ReadAll(interceptor.combinedReader)
 
 	interceptor.intercepting = false
 
