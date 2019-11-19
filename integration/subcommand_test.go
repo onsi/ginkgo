@@ -360,6 +360,46 @@ var _ = Describe("Subcommand", func() {
 		})
 	})
 
+	Describe("Go module and sginkgo bootstrap/generate", func() {
+		var (
+			pkgPath     string
+			savedGoPath string
+		)
+
+		BeforeEach(func() {
+			pkgPath = tmpPath("myamazingmodule")
+			os.Mkdir(pkgPath, 0777)
+			Expect(ioutil.WriteFile(filepath.Join(pkgPath, "go.mod"), []byte("module fake.com/me/myamazingmodule\n"), 0777)).To(Succeed())
+			savedGoPath = os.Getenv("GOPATH")
+			Expect(os.Setenv("GOPATH", "")).To(Succeed())
+			Expect(os.Setenv("GO111MODULE", "on")).To(Succeed()) // needed pre-Go 1.13
+		})
+
+		AfterEach(func() {
+			Expect(os.Setenv("GOPATH", savedGoPath)).To(Succeed())
+			Expect(os.Setenv("GO111MODULE", "")).To(Succeed())
+		})
+
+		It("generates correctly named bootstrap and generate files with the module name", func() {
+			session := startGinkgo(pkgPath, "bootstrap")
+			Eventually(session).Should(gexec.Exit(0))
+
+			content, err := ioutil.ReadFile(filepath.Join(pkgPath, "myamazingmodule_suite_test.go"))
+			Expect(err).NotTo(HaveOccurred())
+			Expect(content).To(ContainSubstring("package myamazingmodule_test"), string(content))
+			Expect(content).To(ContainSubstring("Myamazingmodule Suite"), string(content))
+
+			session = startGinkgo(pkgPath, "generate")
+			Eventually(session).Should(gexec.Exit(0))
+
+			content, err = ioutil.ReadFile(filepath.Join(pkgPath, "myamazingmodule_test.go"))
+			Expect(err).NotTo(HaveOccurred())
+			Expect(content).To(ContainSubstring("package myamazingmodule_test"), string(content))
+			Expect(content).To(ContainSubstring("fake.com/me/myamazingmodule"), string(content))
+			Expect(content).To(ContainSubstring("Myamazingmodule"), string(content))
+		})
+	})
+
 	Describe("ginkgo blur", func() {
 		It("should unfocus tests", func() {
 			pathToTest := tmpPath("focused")
