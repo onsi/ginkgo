@@ -1,7 +1,6 @@
 package remote
 
 import (
-	"bytes"
 	"errors"
 	"io"
 	"io/ioutil"
@@ -19,46 +18,45 @@ type OutputInterceptor interface {
 }
 
 func NewOutputInterceptor() OutputInterceptor {
-	return &outputInterceptor{buffer: &bytes.Buffer{}}
+	return &outputInterceptor{}
 }
 
 type outputInterceptor struct {
-	origStdout     *os.File
-	origStderr     *os.File
-	readSources    [2]io.ReadCloser // stores the reader pipes form os.Pipe() for closure.
-	streamTarget   *os.File
-	combinedReader io.Reader
-	intercepting   bool
-	tailer         io.Reader
-	buffer         *bytes.Buffer
+	redirectFile *os.File
+	streamTarget *os.File
+	intercepting bool
+	tailer       io.Reader
 }
 
 func (interceptor *outputInterceptor) StartInterceptingOutput() error {
 	if interceptor.intercepting {
 		return errors.New("Already intercepting output!")
 	}
-	interceptor.origStdout = os.Stdout
-	interceptor.origStderr = os.Stderr
-	stdoutRead, stdoutWrite, err := os.Pipe()
-	if err != nil {
-		return err
-	}
-	stderrRead, stderrWrite, err := os.Pipe()
-	if err != nil {
-		return err
-	}
-
-	os.Stdout = stdoutWrite
-	os.Stderr = stderrWrite
-
 	interceptor.intercepting = true
 
-	interceptor.readSources = [2]io.ReadCloser{stderrRead, stderrRead}
-	interceptor.combinedReader = io.TeeReader(io.MultiReader(stderrRead, stdoutRead), interceptor.buffer)
+	var err error
+	interceptor.redirectFile, err = ioutil.TempFile("", "ginkgo-output")
+	if err != nil {
+		return err
+	}
 
-	// if interceptor.streamTarget != nil {
-	// 	interceptor.tailer = io.TeeReader(interceptor.combinedReader, interceptor.streamTarget)
-	// }
+	// Call a function in ./syscall_dup_*.go
+	// If building for plan9, use Dup. If building for Windows, use SetStdHandle. If building everything
+	// other than linux_arm64 or plan9 or Windows, use a "normal" syscall.Dup2(oldfd, newfd) call.
+	// If building for linux_arm64 (which doesn't have syscall.Dup2), call syscall.Dup3(oldfd, newfd, 0).
+	// They are nearly identical, see: http://linux.die.net/man/2/dup3
+	if err := syscallDup(int(interceptor.redirectFile.Fd()), 1); err != nil {
+		os.Remove(interceptor.redirectFile.Name())
+		return err
+	}
+	if err := syscallDup(int(interceptor.redirectFile.Fd()), 2); err != nil {
+		os.Remove(interceptor.redirectFile.Name())
+		return err
+	}
+
+	if interceptor.streamTarget != nil {
+		interceptor.tailer = io.TeeReader(interceptor.redirectFile, interceptor.streamTarget)
+	}
 
 	return nil
 }
@@ -68,27 +66,20 @@ func (interceptor *outputInterceptor) StopInterceptingAndReturnOutput() (string,
 		return "", errors.New("Not intercepting output!")
 	}
 
-	output, err := ioutil.ReadAll(interceptor.buffer)
-
-	currStdout := os.Stdout
-	currStdout.Close()
-	currStderr := os.Stderr
-	currStderr.Close()
-
-	os.Stdout = interceptor.origStdout
-	os.Stderr = interceptor.origStderr
-
-	for _, r := range interceptor.readSources {
-		if closerErr := r.Close(); closerErr != nil {
-			err = closerErr
-		}
-	}
+	interceptor.redirectFile.Close()
+	output, err := ioutil.ReadFile(interceptor.redirectFile.Name())
+	//os.Remove(interceptor.redirectFile.Name())
 
 	interceptor.intercepting = false
 
-	// if interceptor.streamTarget != nil {
-	// 	interceptor.streamTarget.Sync()
-	// }
+	if interceptor.streamTarget != nil {
+		// reading the redirectFile causes the io.TeeReader to write to streamTarget,
+		// so we just need to sync.
+		er := interceptor.streamTarget.Sync()
+		if er != nil {
+			err = er
+		}
+	}
 
 	return string(output), err
 }
