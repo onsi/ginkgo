@@ -1,8 +1,8 @@
 package remote
 
 import (
+	"bufio"
 	"errors"
-	"io"
 	"io/ioutil"
 	"os"
 )
@@ -21,11 +21,16 @@ func NewOutputInterceptor() OutputInterceptor {
 	return &outputInterceptor{}
 }
 
+type tailing struct {
+	src         *os.File
+	dest        *os.File
+	doneTailing chan bool
+}
+
 type outputInterceptor struct {
 	redirectFile *os.File
-	streamTarget *os.File
 	intercepting bool
-	tailer       io.Reader
+	tail         *tailing
 }
 
 func (interceptor *outputInterceptor) StartInterceptingOutput() error {
@@ -40,6 +45,13 @@ func (interceptor *outputInterceptor) StartInterceptingOutput() error {
 		return err
 	}
 
+	defer func() {
+		if err != nil {
+			// in all of our scenarios, if we're exiting with an error
+			// the redirectFile shouldn't stay.
+			os.Remove(interceptor.redirectFile.Name())
+		}
+	}()
 	// Call a function in ./syscall_dup_*.go
 	// If building for plan9, use Dup. If building for Windows, use SetStdHandle. If building everything
 	// other than linux_arm64 or plan9 or Windows, use a "normal" syscall.Dup2(oldfd, newfd) call.
@@ -54,8 +66,30 @@ func (interceptor *outputInterceptor) StartInterceptingOutput() error {
 		return err
 	}
 
-	if interceptor.streamTarget != nil {
-		interceptor.tailer = io.TeeReader(interceptor.redirectFile, interceptor.streamTarget)
+	if interceptor.tail != nil {
+		interceptor.tail.src, err = os.Open(interceptor.redirectFile.Name())
+		if err != nil {
+			return err
+		}
+		scanner := bufio.NewScanner(interceptor.tail.src)
+		interceptor.tail.doneTailing = make(chan bool)
+		go func() {
+			for {
+				select {
+				case <-interceptor.tail.doneTailing:
+					// drain the scanner into the streamed-to file
+					for scanner.Scan() {
+						interceptor.tail.dest.WriteString(scanner.Text() + "\n")
+					}
+					interceptor.tail.src.Close()
+					return
+				default:
+					if scanner.Scan() {
+						interceptor.tail.dest.WriteString(scanner.Text() + "\n")
+					}
+				}
+			}
+		}()
 	}
 
 	return nil
@@ -68,14 +102,15 @@ func (interceptor *outputInterceptor) StopInterceptingAndReturnOutput() (string,
 
 	interceptor.redirectFile.Close()
 	output, err := ioutil.ReadFile(interceptor.redirectFile.Name())
-	//os.Remove(interceptor.redirectFile.Name())
+	os.Remove(interceptor.redirectFile.Name())
 
 	interceptor.intercepting = false
 
-	if interceptor.streamTarget != nil {
+	if interceptor.tail != nil {
 		// reading the redirectFile causes the io.TeeReader to write to streamTarget,
 		// so we just need to sync.
-		er := interceptor.streamTarget.Sync()
+		close(interceptor.tail.doneTailing)
+		er := interceptor.tail.dest.Sync()
 		if er != nil {
 			err = er
 		}
@@ -85,5 +120,7 @@ func (interceptor *outputInterceptor) StopInterceptingAndReturnOutput() (string,
 }
 
 func (interceptor *outputInterceptor) StreamTo(out *os.File) {
-	interceptor.streamTarget = out
+	interceptor.tail = &tailing{
+		dest: out,
+	}
 }
