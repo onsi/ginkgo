@@ -4,9 +4,6 @@ go:
   - 1.13.x
   - tip
 
-env:
-  - GO111MODULE=on
-
 cache:
   directories:
     - $HOME/.cache/go-build
@@ -16,8 +13,7 @@ cache:
 go_import_path: github.com/onsi/ginkgo
 
 install:
-  - go build ./...
-  - go install github.com/onsi/ginkgo/ginkgo
+  - GO111MODULE="on" go install github.com/onsi/ginkgo/ginkgo
   - export PATH=$PATH:$HOME/gopath/bin
 
 script:
