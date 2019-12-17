@@ -6,14 +6,16 @@ go:
 
 cache:
   directories:
-    - $HOME/.cache/go-build
     - $GOPATH/pkg/mod
 
 # allow internal package imports, necessary for forked repositories
 go_import_path: github.com/onsi/ginkgo
 
 install:
-  - GO111MODULE="on" go install github.com/onsi/ginkgo/ginkgo
+  - GO111MODULE="off" go get -v -t ./...
+  - GO111MODULE="off" go get golang.org/x/tools/cmd/cover
+  - GO111MODULE="off" go get github.com/onsi/gomega
+  - GO111MODULE="off" go install github.com/onsi/ginkgo/ginkgo
   - export PATH=$PATH:$HOME/gopath/bin
 
 script:
