@@ -16,7 +16,8 @@ import (
 )
 
 var _ = Describe("Running Specs", func() {
-	var pathToTest string
+	// Provide a default, else a BeforeEach with an accidental redeclaration (`:=`) will cause the integration test suite to recurse infinitely.
+	pathToTest := "invalid_path"
 
 	isWindows := (runtime.GOOS == "windows")
 	denoter := "•"
@@ -350,6 +351,41 @@ var _ = Describe("Running Specs", func() {
 			Ω(output).Should(ContainSubstring(`[1] SUCCESS!`))
 			Ω(output).Should(ContainSubstring(`[2] SUCCESS!`))
 			Ω(output).Should(ContainSubstring("Test Suite Passed"))
+		})
+	})
+
+	Context("when pointed at a packages with a failing table test", func() {
+		BeforeEach(func() {
+			pathToTest = tmpPath("failing_table_tests")
+			copyIn(fixturePath("failing_table_tests"), pathToTest, false)
+		})
+
+		FIt("should identify the failing entry", func() {
+			session := startGinkgo(pathToTest, "--noColor")
+			Eventually(session).Should(gexec.Exit(1))
+			output := string(session.Out.Contents())
+
+			Ω(output).Should(ContainSubstring("Test Suite Failed"))
+			Ω(output).Should(ContainSubstring(fmt.Sprintf("%s Failure", denoter)))
+
+			Ω(output).Should(ContainSubstring("Summarizing 1 Failure:"))
+			Ω(output).Should(ContainSubstring("[Fail] FailingTableTests a failing entry [It] failing"))
+
+			// The table
+			Ω(output).Should(
+				ContainSubstring("failing_table_tests/failing_table_tests_test.go:11"),
+				"point to the failing table")
+			Ω(output).ShouldNot(MatchRegexp(`github.com/onsi/ginkgo/extensions/table/table.go:\[\d+\]`))
+
+			// The entry
+			Ω(output).Should(
+				ContainSubstring("failing_table_tests/failing_table_tests_test.go:14"),
+				"point to the failing entry")
+			Ω(output).ShouldNot(MatchRegexp(`github.com/onsi/ginkgo/extensions/table/table_entry.go:\[\d+\]`))
+
+			Ω(output).Should(
+				ContainSubstring("failing_table_tests/failing_table_tests_test.go:12"),
+				"point to the failing assertion")
 		})
 	})
 

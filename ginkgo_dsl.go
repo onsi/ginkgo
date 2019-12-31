@@ -615,6 +615,22 @@ func AfterEach(body interface{}, timeout ...float64) bool {
 	return true
 }
 
+//ExplicitItNode adds a fully-specified It node to the global context.  This function is largely only
+//useful for meta-programming or adding on to the Ginkgo DSL, when writing normal test cases it's best
+//to use one of the others.
+func ExplicitItNode(text string, body interface{}, flag types.FlagType, codeLocation types.CodeLocation, timeout time.Duration) bool {
+	globalSuite.PushItNode(text, body, flag, codeLocation, timeout)
+	return true
+}
+
+//ExplicitContainerNode adds a fully-specified Container node to the global context.  This function is
+//largely only useful for meta-programming or adding on to the Ginkgo DSL, when writing normal test
+//cases it's best to use one of the others.
+func ExplicitContainerNode(text string, body func(), flag types.FlagType, codeLocation types.CodeLocation) bool {
+	globalSuite.PushContainerNode(text, body, flag, codeLocation)
+	return true
+}
+
 func parseTimeout(timeout ...float64) time.Duration {
 	if len(timeout) == 0 {
 		return time.Duration(defaultTimeout * int64(time.Second))

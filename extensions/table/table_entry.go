@@ -4,6 +4,8 @@ import (
 	"reflect"
 
 	"github.com/onsi/ginkgo"
+	"github.com/onsi/ginkgo/internal/codelocation"
+	"github.com/onsi/ginkgo/types"
 )
 
 /*
@@ -12,13 +14,15 @@ TableEntry represents an entry in a table test.  You generally use the `Entry` c
 type TableEntry struct {
 	Description string
 	Parameters  []interface{}
-	Pending     bool
-	Focused     bool
+	Flag        types.FlagType
+
+	// TODO: what if this isn't set?
+	codeLocation types.CodeLocation
 }
 
 func (t TableEntry) generateIt(itBody reflect.Value) {
-	if t.Pending {
-		ginkgo.PIt(t.Description)
+	if t.Flag == types.FlagTypePending {
+		ginkgo.ExplicitItNode(t.Description, func() {}, types.FlagTypePending, t.codeLocation, 0)
 		return
 	}
 
@@ -33,15 +37,9 @@ func (t TableEntry) generateIt(itBody reflect.Value) {
 		}
 	}
 
-	body := func() {
+	ginkgo.ExplicitItNode(t.Description, func() {
 		itBody.Call(values)
-	}
-
-	if t.Focused {
-		ginkgo.FIt(t.Description, body)
-	} else {
-		ginkgo.It(t.Description, body)
-	}
+	}, t.Flag, t.codeLocation, 0)
 }
 
 /*
@@ -53,26 +51,26 @@ Subsequent parameters are saved off and sent to the callback passed in to `Descr
 Each Entry ends up generating an individual Ginkgo It.
 */
 func Entry(description string, parameters ...interface{}) TableEntry {
-	return TableEntry{description, parameters, false, false}
+	return TableEntry{description, parameters, types.FlagTypeNone, codelocation.New(1)}
 }
 
 /*
 You can focus a particular entry with FEntry.  This is equivalent to FIt.
 */
 func FEntry(description string, parameters ...interface{}) TableEntry {
-	return TableEntry{description, parameters, false, true}
+	return TableEntry{description, parameters, types.FlagTypeFocused, codelocation.New(1)}
 }
 
 /*
 You can mark a particular entry as pending with PEntry.  This is equivalent to PIt.
 */
 func PEntry(description string, parameters ...interface{}) TableEntry {
-	return TableEntry{description, parameters, true, false}
+	return TableEntry{description, parameters, types.FlagTypePending, codelocation.New(1)}
 }
 
 /*
 You can mark a particular entry as pending with XEntry.  This is equivalent to XIt.
 */
 func XEntry(description string, parameters ...interface{}) TableEntry {
-	return TableEntry{description, parameters, true, false}
+	return TableEntry{description, parameters, types.FlagTypePending, codelocation.New(1)}
 }
