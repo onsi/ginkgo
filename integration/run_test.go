@@ -360,7 +360,7 @@ var _ = Describe("Running Specs", func() {
 			copyIn(fixturePath("failing_table_tests"), pathToTest, false)
 		})
 
-		FIt("should identify the failing entry", func() {
+		It("should identify the failing entry", func() {
 			session := startGinkgo(pathToTest, "--noColor")
 			Eventually(session).Should(gexec.Exit(1))
 			output := string(session.Out.Contents())
