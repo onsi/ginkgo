@@ -6,6 +6,7 @@ import (
 	"os"
 	"os/exec"
 	"path/filepath"
+	"runtime"
 
 	. "github.com/onsi/ginkgo"
 	. "github.com/onsi/gomega"
@@ -126,4 +127,16 @@ func startGinkgo(dir string, args ...string) *gexec.Session {
 func removeSuccessfully(path string) {
 	err := os.RemoveAll(path)
 	Expect(err).NotTo(HaveOccurred())
+}
+
+func raceDetectorSupported() bool {
+	// https://github.com/golang/go/blob/1a370950/src/cmd/internal/sys/supported.go#L12
+	switch runtime.GOOS {
+	case "linux":
+		return runtime.GOARCH == "amd64" || runtime.GOARCH == "ppc64le" || runtime.GOARCH == "arm64"
+	case "darwin", "freebsd", "netbsd", "windows":
+		return runtime.GOARCH == "amd64"
+	default:
+		return false
+	}
 }

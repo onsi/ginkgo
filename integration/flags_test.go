@@ -106,6 +106,9 @@ var _ = Describe("Flags Specs", func() {
 	})
 
 	It("should run the race detector when told to", func() {
+		if !raceDetectorSupported() {
+			Skip("race detection is not supported")
+		}
 		session := startGinkgo(pathToTest, "--noColor", "--race")
 		Eventually(session).Should(gexec.Exit(types.GINKGO_FOCUS_EXIT_CODE))
 		output := string(session.Out.Contents())
