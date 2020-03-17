@@ -2,7 +2,7 @@
 layout: default
 title: Ginkgo
 ---
-[Ginkgo](http://github.com/onsi/ginkgo) is a BDD-style Go testing framework built to help you efficiently write expressive and comprehensive tests.  It is best paired with the [Gomega](http://github.com/onsi/gomega) matcher library but is designed to be matcher-agnostic.
+[Ginkgo](https://github.com/onsi/ginkgo) is a Go testing framework built to help you efficiently write expressive and comprehensive tests using [Behavior-Driven Development](https://en.wikipedia.org/wiki/Behavior-driven_development) ("BDD") style.  It is best paired with the [Gomega](https://github.com/onsi/gomega) matcher library but is designed to be matcher-agnostic.
 
 These docs are written assuming you'll be using Gomega with Ginkgo.  They also assume you know your way around Go and have a good mental model for how Go organizes packages under `$GOPATH`.
 
@@ -230,7 +230,7 @@ When a Ginkgo test suite is interrupted (via `^C`) Ginkgo will emit any content 
 
 Ginkgo works best from the command-line, and [`ginkgo watch`](#watching-for-changes) makes it easy to rerun tests on the command line whenever changes are detected.
 
-There are a set of [completions](https://github.com/onsi/ginkgo-sublime-completions) available for [Sublime Text](http://www.sublimetext.com/) (just use [Package Control](https://sublime.wbond.net/) to install `Ginkgo Completions`) and for [VSCode](https://code.visualstudio.com/) (use the extensions installer and install vscode-ginkgo).
+There are a set of [completions](https://github.com/onsi/ginkgo-sublime-completions) available for [Sublime Text](https://www.sublimetext.com/) (just use [Package Control](https://sublime.wbond.net/) to install `Ginkgo Completions`) and for [VSCode](https://code.visualstudio.com/) (use the extensions installer and install vscode-ginkgo).
 
 IDE authors can set the `GINKGO_EDITOR_INTEGRATION` environment variable to any non-empty value to enable coverage to be displayed for focused specs. By default, Ginkgo will fail with a non-zero exit code if specs are focused to ensure they do not pass in CI.
 
@@ -1169,7 +1169,7 @@ This will generate a Ginkgo bootstrap file and convert any `TestX...(t *testing.
 
 Also: `ginkgo convert` will **overwrite** your existing test files, so make sure you don't have any uncommitted changes before trying `ginkgo convert`!
 
-`ginkgo convert` is the brainchild of [Tim Jarratt](http://github.com/tjarratt)
+`ginkgo convert` is the brainchild of [Tim Jarratt](https://github.com/tjarratt)
 
 ### Other Subcommands
 
