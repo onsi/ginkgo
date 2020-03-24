@@ -22,7 +22,7 @@ import (
  */
 func rewriteTestsInFile(pathToFile string) {
 	fileSet := token.NewFileSet()
-	rootNode, err := parser.ParseFile(fileSet, pathToFile, nil, 0)
+	rootNode, err := parser.ParseFile(fileSet, pathToFile, nil, parser.ParseComments)
 	if err != nil {
 		panic(fmt.Sprintf("Error parsing test file '%s':\n%s\n", pathToFile, err.Error()))
 	}
