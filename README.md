@@ -13,7 +13,7 @@ If you have a question, comment, bug report, feature request, etc. please open a
 - Ginkgo allows you to write tests in Go using expressive [Behavior-Driven Development](https://en.wikipedia.org/wiki/Behavior-driven_development) ("BDD") style:
     - Nestable [`Describe`, `Context` and `When` container blocks](https://onsi.github.io/ginkgo/#organizing-specs-with-containers-describe-and-context)
     - [`BeforeEach` and `AfterEach` blocks](https://onsi.github.io/ginkgo/#extracting-common-setup-beforeeach) for setup and teardown
-    - [`It` and `Specify` blocks](https://onsi.github.io/ginkgo/#individual-specs-) that hold your assertions
+    - [`It` and `Specify` blocks](https://onsi.github.io/ginkgo/#individual-specs-it) that hold your assertions
     - [`JustBeforeEach` blocks](https://onsi.github.io/ginkgo/#separating-creation-and-configuration-justbeforeeach) that separate creation from configuration (also known as the subject action pattern).
     - [`BeforeSuite` and `AfterSuite` blocks](https://onsi.github.io/ginkgo/#global-setup-and-teardown-beforesuite-and-aftersuite) to prep for and cleanup after a suite.
 
