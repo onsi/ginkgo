@@ -160,7 +160,7 @@ var _ = Describe("Aggregator", func() {
 				It("should announce the specs, the before suites and the after suites", func() {
 					Eventually(func() interface{} {
 						return stenographer.Calls()
-					}).Should(ContainElement(call("AnnounceSuccesfulSpec", specSummary)))
+					}).Should(ContainElement(call("AnnounceSuccessfulSpec", specSummary)))
 
 					Ω(stenographer.Calls()).Should(ContainElement(call("AnnounceCapturedOutput", beforeSummary.CapturedOutput)))
 					Ω(stenographer.Calls()).Should(ContainElement(call("AnnounceCapturedOutput", afterSummary.CapturedOutput)))
@@ -197,7 +197,7 @@ var _ = Describe("Aggregator", func() {
 				})
 
 				It("should announce completion", func() {
-					Ω(stenographer.Calls()[3]).Should(Equal(call("AnnounceSuccesfulSpec", specSummary)))
+					Ω(stenographer.Calls()[3]).Should(Equal(call("AnnounceSuccessfulSpec", specSummary)))
 				})
 
 				It("should announce the captured output of the AfterSuite", func() {

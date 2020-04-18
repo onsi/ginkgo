@@ -47,7 +47,7 @@ func SynchronousSharedRunnerBehaviors(build func(body interface{}, timeout time.
 				}, 0, failer, componentCodeLocation).Run()
 			})
 
-			It("should have a succesful outcome", func() {
+			It("should have a successful outcome", func() {
 				Ω(didRun).Should(BeTrue())
 
 				Ω(outcome).Should(Equal(types.SpecStatePassed))
@@ -166,7 +166,7 @@ func AsynchronousSharedRunnerBehaviors(build func(body interface{}, timeout time
 				}, timeoutDuration, failer, componentCodeLocation).Run()
 			})
 
-			It("should have a succesful outcome", func() {
+			It("should have a successful outcome", func() {
 				Ω(didRun).Should(BeTrue())
 				Ω(outcome).Should(Equal(types.SpecStatePassed))
 				Ω(failure).Should(BeZero())

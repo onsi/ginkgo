@@ -221,7 +221,7 @@ var _ = Describe("DefaultReporter", func() {
 				})
 
 				It("should announce the measurement", func() {
-					Ω(stenographer.Calls()[0]).Should(Equal(call("AnnounceSuccesfulMeasurement", spec, false)))
+					Ω(stenographer.Calls()[0]).Should(Equal(call("AnnounceSuccessfulMeasurement", spec, false)))
 				})
 			})
 
@@ -231,13 +231,13 @@ var _ = Describe("DefaultReporter", func() {
 				})
 
 				It("should announce that it was slow", func() {
-					Ω(stenographer.Calls()[0]).Should(Equal(call("AnnounceSuccesfulSlowSpec", spec, false)))
+					Ω(stenographer.Calls()[0]).Should(Equal(call("AnnounceSuccessfulSlowSpec", spec, false)))
 				})
 			})
 
 			Context("When the spec is successful", func() {
 				It("should announce the successful spec", func() {
-					Ω(stenographer.Calls()[0]).Should(Equal(call("AnnounceSuccesfulSpec", spec)))
+					Ω(stenographer.Calls()[0]).Should(Equal(call("AnnounceSuccessfulSpec", spec)))
 				})
 
 				Context("When ReportPassed flag is set", func() {
@@ -357,7 +357,7 @@ var _ = Describe("DefaultReporter", func() {
 					})
 
 					It("should announce the measurement", func() {
-						Ω(stenographer.Calls()[0]).Should(Equal(call("AnnounceSuccesfulMeasurement", spec, true)))
+						Ω(stenographer.Calls()[0]).Should(Equal(call("AnnounceSuccessfulMeasurement", spec, true)))
 					})
 				})
 
@@ -367,13 +367,13 @@ var _ = Describe("DefaultReporter", func() {
 					})
 
 					It("should announce that it was slow", func() {
-						Ω(stenographer.Calls()[0]).Should(Equal(call("AnnounceSuccesfulSlowSpec", spec, true)))
+						Ω(stenographer.Calls()[0]).Should(Equal(call("AnnounceSuccessfulSlowSpec", spec, true)))
 					})
 				})
 
 				Context("When the spec is successful", func() {
 					It("should announce the successful spec", func() {
-						Ω(stenographer.Calls()[0]).Should(Equal(call("AnnounceSuccesfulSpec", spec)))
+						Ω(stenographer.Calls()[0]).Should(Equal(call("AnnounceSuccessfulSpec", spec)))
 					})
 
 					Context("When ReportPassed flag is set", func() {
