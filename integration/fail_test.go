@@ -52,7 +52,11 @@ var _ = Describe("Failing Specs", func() {
 
 		Ω(output).ShouldNot(ContainSubstring("table.go"))
 		Ω(output).Should(MatchRegexp(`a top level DescribeTable\n.*fail_fixture_test\.go:106`))
+		Ω(output).ShouldNot(ContainSubstring("table_entry.go"))
+		Ω(output).Should(MatchRegexp(`a TableEntry constructed by Entry \[It\]\n.*fail_fixture_test\.go:110`))
+		// a directly constructed TableEntry's location should default to the surrounding DescribeTable location
+		Ω(output).Should(MatchRegexp(`a directly constructed TableEntry \[It\]\n.*fail_fixture_test\.go:106`))
 
-		Ω(output).Should(ContainSubstring("0 Passed | 18 Failed"))
+		Ω(output).Should(ContainSubstring("0 Passed | 19 Failed"))
 	})
 })

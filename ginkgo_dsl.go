@@ -45,7 +45,9 @@ To circumvent this, you should call
 
 at the top of the goroutine that caused this panic.
 `
-const defaultTimeout = 1
+
+//The default timeout for all Ginkgo DSL functions that accept a timeout parameter
+const DefaultTimeout = time.Duration(1 * time.Second)
 
 func init() {
 	config.Flags(flag.CommandLine, "ginkgo", true)
@@ -611,7 +613,7 @@ func AfterEach(body interface{}, timeout ...float64) bool {
 
 func parseTimeout(timeout ...float64) time.Duration {
 	if len(timeout) == 0 {
-		return time.Duration(defaultTimeout * int64(time.Second))
+		return DefaultTimeout
 	} else {
 		return time.Duration(timeout[0] * float64(time.Second))
 	}
