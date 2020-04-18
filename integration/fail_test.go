@@ -51,11 +51,13 @@ var _ = Describe("Failing Specs", func() {
 		Ω(output).Should(ContainSubstring("fail_fixture_test.go:103"))
 
 		Ω(output).ShouldNot(ContainSubstring("table.go"))
-		Ω(output).Should(MatchRegexp(`a top level DescribeTable\n.*fail_fixture_test\.go:106`))
+		Ω(output).Should(MatchRegexp(`a top level DescribeTable\n.*fail_fixture_test\.go:106`),
+			"the output of a failing DescribeTable should include its file path and line number")
 		Ω(output).ShouldNot(ContainSubstring("table_entry.go"))
-		Ω(output).Should(MatchRegexp(`a TableEntry constructed by Entry \[It\]\n.*fail_fixture_test\.go:110`))
-		// a directly constructed TableEntry's location should default to the surrounding DescribeTable location
-		Ω(output).Should(MatchRegexp(`a directly constructed TableEntry \[It\]\n.*fail_fixture_test\.go:106`))
+		Ω(output).Should(MatchRegexp(`a TableEntry constructed by Entry \[It\]\n.*fail_fixture_test\.go:110`),
+			"the output of a failing Entry should include its file path and line number")
+		Ω(output).Should(MatchRegexp(`a directly constructed TableEntry \[It\]\n.*fail_fixture_test\.go:106`),
+			"the output of a failing TableEntry should include the surrounding DescribeTable's file path and line number")
 
 		Ω(output).Should(ContainSubstring("0 Passed | 19 Failed"))
 	})
