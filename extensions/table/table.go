@@ -12,7 +12,9 @@ import (
 	"fmt"
 	"reflect"
 
-	"github.com/onsi/ginkgo"
+	"github.com/onsi/ginkgo/internal/codelocation"
+	"github.com/onsi/ginkgo/internal/singleton"
+	"github.com/onsi/ginkgo/types"
 )
 
 /*
@@ -76,23 +78,17 @@ func describeTable(description string, itBody interface{}, entries []TableEntry,
 		panic(fmt.Sprintf("DescribeTable expects a function, got %#v", itBody))
 	}
 
+	body := func() {
+		for _, entry := range entries {
+			entry.generateIt(itBodyValue)
+		}
+	}
+
 	if pending {
-		ginkgo.PDescribe(description, func() {
-			for _, entry := range entries {
-				entry.generateIt(itBodyValue)
-			}
-		})
+		singleton.GlobalSuite.PushContainerNode(description, body, types.FlagTypePending, codelocation.New(2))
 	} else if focused {
-		ginkgo.FDescribe(description, func() {
-			for _, entry := range entries {
-				entry.generateIt(itBodyValue)
-			}
-		})
+		singleton.GlobalSuite.PushContainerNode(description, body, types.FlagTypeFocused, codelocation.New(2))
 	} else {
-		ginkgo.Describe(description, func() {
-			for _, entry := range entries {
-				entry.generateIt(itBodyValue)
-			}
-		})
+		singleton.GlobalSuite.PushContainerNode(description, body, types.FlagTypeNone, codelocation.New(2))
 	}
 }
