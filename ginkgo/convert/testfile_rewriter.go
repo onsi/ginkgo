@@ -56,11 +56,12 @@ func rewriteTestsInFile(pathToFile string) {
 	}
 
 	fileInfo, err := os.Stat(pathToFile)
+
 	if err != nil {
 		panic(fmt.Sprintf("Error stat'ing file: %s\n", pathToFile))
 	}
 
-	ioutil.WriteFile(pathToFile, buffer.Bytes(), fileInfo.Mode())
+	err = ioutil.WriteFile(pathToFile, buffer.Bytes(), fileInfo.Mode())
 }
 
 /*
