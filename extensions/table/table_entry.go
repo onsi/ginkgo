@@ -3,9 +3,8 @@ package table
 import (
 	"reflect"
 
-	"github.com/onsi/ginkgo"
 	"github.com/onsi/ginkgo/internal/codelocation"
-	"github.com/onsi/ginkgo/internal/singleton"
+	"github.com/onsi/ginkgo/internal/global"
 	"github.com/onsi/ginkgo/types"
 )
 
@@ -28,7 +27,7 @@ func (t TableEntry) generateIt(itBody reflect.Value) {
 	}
 
 	if t.Pending {
-		singleton.GlobalSuite.PushItNode(t.Description, func() {}, types.FlagTypePending, t.codeLocation, 0)
+		global.Suite.PushItNode(t.Description, func() {}, types.FlagTypePending, t.codeLocation, 0)
 		return
 	}
 
@@ -48,9 +47,9 @@ func (t TableEntry) generateIt(itBody reflect.Value) {
 	}
 
 	if t.Focused {
-		singleton.GlobalSuite.PushItNode(t.Description, body, types.FlagTypeFocused, t.codeLocation, ginkgo.DefaultTimeout)
+		global.Suite.PushItNode(t.Description, body, types.FlagTypeFocused, t.codeLocation, global.DefaultTimeout)
 	} else {
-		singleton.GlobalSuite.PushItNode(t.Description, body, types.FlagTypeNone, t.codeLocation, ginkgo.DefaultTimeout)
+		global.Suite.PushItNode(t.Description, body, types.FlagTypeNone, t.codeLocation, global.DefaultTimeout)
 	}
 }
 

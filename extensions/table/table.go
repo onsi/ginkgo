@@ -13,7 +13,7 @@ import (
 	"reflect"
 
 	"github.com/onsi/ginkgo/internal/codelocation"
-	"github.com/onsi/ginkgo/internal/singleton"
+	"github.com/onsi/ginkgo/internal/global"
 	"github.com/onsi/ginkgo/types"
 )
 
@@ -44,7 +44,7 @@ It's important to understand that the `Describe`s and `It`s are generated at eva
 Individual Entries can be focused (with FEntry) or marked pending (with PEntry or XEntry).  In addition, the entire table can be focused or marked pending with FDescribeTable and PDescribeTable/XDescribeTable.
 */
 func DescribeTable(description string, itBody interface{}, entries ...TableEntry) bool {
-	describeTable(description, itBody, entries, false, false)
+	describeTable(description, itBody, entries, types.FlagTypeNone)
 	return true
 }
 
@@ -52,7 +52,7 @@ func DescribeTable(description string, itBody interface{}, entries ...TableEntry
 You can focus a table with `FDescribeTable`.  This is equivalent to `FDescribe`.
 */
 func FDescribeTable(description string, itBody interface{}, entries ...TableEntry) bool {
-	describeTable(description, itBody, entries, false, true)
+	describeTable(description, itBody, entries, types.FlagTypeFocused)
 	return true
 }
 
@@ -60,7 +60,7 @@ func FDescribeTable(description string, itBody interface{}, entries ...TableEntr
 You can mark a table as pending with `PDescribeTable`.  This is equivalent to `PDescribe`.
 */
 func PDescribeTable(description string, itBody interface{}, entries ...TableEntry) bool {
-	describeTable(description, itBody, entries, true, false)
+	describeTable(description, itBody, entries, types.FlagTypePending)
 	return true
 }
 
@@ -68,27 +68,24 @@ func PDescribeTable(description string, itBody interface{}, entries ...TableEntr
 You can mark a table as pending with `XDescribeTable`.  This is equivalent to `XDescribe`.
 */
 func XDescribeTable(description string, itBody interface{}, entries ...TableEntry) bool {
-	describeTable(description, itBody, entries, true, false)
+	describeTable(description, itBody, entries, types.FlagTypePending)
 	return true
 }
 
-func describeTable(description string, itBody interface{}, entries []TableEntry, pending bool, focused bool) {
+func describeTable(description string, itBody interface{}, entries []TableEntry, flag types.FlagType) {
 	itBodyValue := reflect.ValueOf(itBody)
 	if itBodyValue.Kind() != reflect.Func {
 		panic(fmt.Sprintf("DescribeTable expects a function, got %#v", itBody))
 	}
 
-	body := func() {
-		for _, entry := range entries {
-			entry.generateIt(itBodyValue)
-		}
-	}
-
-	if pending {
-		singleton.GlobalSuite.PushContainerNode(description, body, types.FlagTypePending, codelocation.New(2))
-	} else if focused {
-		singleton.GlobalSuite.PushContainerNode(description, body, types.FlagTypeFocused, codelocation.New(2))
-	} else {
-		singleton.GlobalSuite.PushContainerNode(description, body, types.FlagTypeNone, codelocation.New(2))
-	}
+	global.Suite.PushContainerNode(
+		description,
+		func() {
+			for _, entry := range entries {
+				entry.generateIt(itBodyValue)
+			}
+		},
+		flag,
+		codelocation.New(2),
+	)
 }
