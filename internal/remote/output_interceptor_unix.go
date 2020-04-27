@@ -7,7 +7,7 @@ import (
 	"io/ioutil"
 	"os"
 
-	"github.com/hpcloud/tail"
+	"github.com/nxadm/tail"
 	"golang.org/x/sys/unix"
 )
 
