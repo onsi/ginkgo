@@ -51,11 +51,17 @@ const defaultTimeout = 1
 var globalSuite *suite.Suite
 var globalFailer *failer.Failer
 
+var instance = 0
+
 func init() {
-	config.Flags(flag.CommandLine, "ginkgo", true)
-	GinkgoWriter = writer.New(os.Stdout)
-	globalFailer = failer.New()
-	globalSuite = suite.New(globalFailer)
+	if instance == 0 {
+		config.Flags(flag.CommandLine, "ginkgo", true)
+		GinkgoWriter = writer.New(os.Stdout)
+		globalFailer = failer.New()
+		globalSuite = suite.New(globalFailer)
+	}
+	config.Flags(flag.CommandLine, fmt.Sprintf("ginkgo%d", instance), true)
+	instance++
 }
 
 //GinkgoWriter implements an io.Writer
