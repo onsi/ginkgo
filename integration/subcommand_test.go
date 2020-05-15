@@ -404,25 +404,25 @@ var _ = Describe("Subcommand", func() {
 		It("should unfocus tests", func() {
 			pathToTest := tmpPath("focused")
 			fixture := fixturePath("focused_fixture")
-			copyIn(fixture, pathToTest, false)
+			copyIn(fixture, pathToTest, true)
 
-			session := startGinkgo(pathToTest, "--noColor")
+			session := startGinkgo(pathToTest, "--noColor", "-r")
 			Eventually(session).Should(gexec.Exit(types.GINKGO_FOCUS_EXIT_CODE))
 			output := session.Out.Contents()
 
-			Ω(string(output)).Should(ContainSubstring("8 Passed"))
-			Ω(string(output)).Should(ContainSubstring("5 Skipped"))
+			Ω(string(output)).Should(ContainSubstring("Detected Programmatic Focus"))
 
 			session = startGinkgo(pathToTest, "blur")
 			Eventually(session).Should(gexec.Exit(0))
 			output = session.Out.Contents()
 			Ω(string(output)).ShouldNot(ContainSubstring("expected 'package'"))
 
-			session = startGinkgo(pathToTest, "--noColor")
+			session = startGinkgo(pathToTest, "--noColor", "-r")
 			Eventually(session).Should(gexec.Exit(0))
 			output = session.Out.Contents()
-			Ω(string(output)).Should(ContainSubstring("13 Passed"))
-			Ω(string(output)).Should(ContainSubstring("0 Skipped"))
+			Ω(string(output)).Should(ContainSubstring("Ginkgo ran 2 suites"))
+			Ω(string(output)).Should(ContainSubstring("Test Suite Passed"))
+			Ω(string(output)).ShouldNot(ContainSubstring("Detected Programmatic Focus"))
 
 			Expect(sameFile(filepath.Join(pathToTest, "README.md"), filepath.Join(fixture, "README.md"))).To(BeTrue())
 		})
