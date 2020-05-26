@@ -6,6 +6,22 @@ Jump to the [docs](https://onsi.github.io/ginkgo/) to learn more.  To start roll
 
 If you have a question, comment, bug report, feature request, etc. please open a GitHub issue.
 
+## TLDR
+Ginkgo builds on Go's `testing` package, allowing expressive [Behavior-Driven Development](https://en.wikipedia.org/wiki/Behavior-driven_development) ("BDD") style tests.
+It is typically (and optionally) paired with the [Gomega](https://github.com/onsi/gomega) matcher library.
+
+```go
+Describe("the strings package", func() {
+  Context("strings.Contains()", func() {
+    When("the string contains the substring in the middle", func() {
+      It("returns `true`", func() {
+        Expect(strings.Contains("Ginkgo is awesome", "is")).To(BeTrue())
+      })
+    })
+  })
+})
+```
+
 ## Feature List
 
 - Ginkgo uses Go's `testing` package and can live alongside your existing `testing` tests.  It's easy to [bootstrap](https://onsi.github.io/ginkgo/#bootstrapping-a-suite) and start writing your [first tests](https://onsi.github.io/ginkgo/#adding-specs-to-a-suite)
