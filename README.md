@@ -4,7 +4,7 @@
 
 Jump to the [docs](https://onsi.github.io/ginkgo/) to learn more.  To start rolling your Ginkgo tests *now* [keep reading](#set-me-up)!
 
-If you have a question, comment, bug report, feature request, etc. please open a GitHub issue.
+If you have a question, comment, bug report, feature request, etc. please open a GitHub issue, or visit the [Ginkgo Slack channel](https://app.slack.com/client/T029RQSE6/CQQ50BBNW).
 
 ## Feature List
 
