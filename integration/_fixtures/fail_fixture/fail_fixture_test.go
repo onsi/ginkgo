@@ -2,23 +2,24 @@ package fail_fixture_test
 
 import (
 	. "github.com/onsi/ginkgo"
+	. "github.com/onsi/ginkgo/extensions/table"
 	. "github.com/onsi/gomega"
 )
 
 var _ = It("handles top level failures", func() {
-	Ω("a top level failure on line 9").Should(Equal("nope"))
+	Ω("a top level failure on line 10").Should(Equal("nope"))
 	println("NEVER SEE THIS")
 })
 
 var _ = It("handles async top level failures", func(done Done) {
-	Fail("an async top level failure on line 14")
+	Fail("an async top level failure on line 15")
 	println("NEVER SEE THIS")
 }, 0.1)
 
 var _ = It("FAIL in a goroutine", func(done Done) {
 	go func() {
 		defer GinkgoRecover()
-		Fail("a top level goroutine failure on line 21")
+		Fail("a top level goroutine failure on line 22")
 		println("NEVER SEE THIS")
 	}()
 }, 0.1)
@@ -101,3 +102,16 @@ var _ = Describe("Excercising different failure modes", func() {
 var _ = Specify("a top level specify", func() {
 	Fail("fail the test")
 })
+
+var _ = DescribeTable("a top level DescribeTable",
+	func(x, y int) {
+		Expect(x).To(Equal(y))
+	},
+	Entry("a TableEntry constructed by Entry", 2, 3),
+	TableEntry{
+		Description: "a directly constructed TableEntry",
+		Parameters:  []interface{}{2, 3},
+		Pending:     false,
+		Focused:     false,
+	},
+)
