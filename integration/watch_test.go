@@ -1,6 +1,7 @@
 package integration_test
 
 import (
+	"go/build"
 	"io/ioutil"
 	"os"
 	"path/filepath"
@@ -41,7 +42,7 @@ var _ = Describe("Watch", func() {
 
 	startGinkgoWithGopath := func(args ...string) *gexec.Session {
 		cmd := ginkgoCommand(rootPath, args...)
-		os.Setenv("GOPATH", rootPath+":"+os.Getenv("GOPATH"))
+		os.Setenv("GOPATH", rootPath+":"+build.Default.GOPATH)
 		session, err := gexec.Start(cmd, GinkgoWriter, GinkgoWriter)
 		Ω(err).ShouldNot(HaveOccurred())
 		return session
