@@ -26,7 +26,7 @@ func TestIntegration(t *testing.T) {
 }
 
 var _ = SynchronizedBeforeSuite(func() []byte {
-	pathToGinkgo, err := gexec.Build("github.com/onsi/ginkgo/ginkgo")
+	pathToGinkgo, err := gexec.Build("../ginkgo")
 	Ω(err).ShouldNot(HaveOccurred())
 	return []byte(pathToGinkgo)
 }, func(computedPathToGinkgo []byte) {
