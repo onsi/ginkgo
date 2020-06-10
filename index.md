@@ -106,7 +106,7 @@ This will generate a file named `book_test.go` containing:
 package books_test
 
 import (
-    . "/path/to/books"
+    "/path/to/books"
     . "github.com/onsi/ginkgo"
     . "github.com/onsi/gomega"
 )
