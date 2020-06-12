@@ -1,6 +1,6 @@
 package A
 
-import "github.com/onsi/B"
+import "$ROOT_PATH$/B"
 
 func DoIt() string {
 	return B.DoIt()

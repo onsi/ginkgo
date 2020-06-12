@@ -1,7 +1,7 @@
 package B_test
 
 import (
-	. "github.com/onsi/ginkgo/integration/_fixtures/watch_fixtures/B"
+	. "$ROOT_PATH$/B"
 
 	. "github.com/onsi/ginkgo"
 	. "github.com/onsi/gomega"

@@ -1,6 +1,7 @@
 package integration_test
 
 import (
+	"fmt"
 	"io"
 	"io/ioutil"
 	"os"
@@ -34,8 +35,8 @@ var _ = SynchronizedBeforeSuite(func() []byte {
 })
 
 var _ = BeforeEach(func() {
-	var err error
-	tmpDir, err = ioutil.TempDir("", "ginkgo-run")
+	tmpDir = fmt.Sprintf("./ginko-run-%d", GinkgoParallelNode())
+	err := os.Mkdir(tmpDir, 0700)
 	Ω(err).ShouldNot(HaveOccurred())
 })
 
@@ -45,6 +46,7 @@ var _ = AfterEach(func() {
 })
 
 var _ = SynchronizedAfterSuite(func() {}, func() {
+	os.RemoveAll(tmpDir)
 	gexec.CleanupBuildArtifacts()
 })
 

@@ -18,6 +18,7 @@ var _ = Describe("Coverage Specs", func() {
 		AfterEach(func() {
 			removeSuccessfully("./_fixtures/coverage_fixture/coverage_fixture.coverprofile")
 		})
+
 		It("works", func() {
 			session := startGinkgo("./_fixtures/coverage_fixture", "-cover")
 			Eventually(session).Should(gexec.Exit(0))

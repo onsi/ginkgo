@@ -98,7 +98,7 @@ var _ = Describe("Subcommand", func() {
 			func Test{{.FormattedName}}(t *testing.T) {
 				// This is a {{.Package}} test
 			}`), 0666)
-			session := startGinkgo(pkgPath, "bootstrap", "--template", templateFile)
+			session := startGinkgo(pkgPath, "bootstrap", "--template", ".bootstrap")
 			Eventually(session).Should(gexec.Exit(0))
 			output := session.Out.Contents()
 
@@ -311,7 +311,7 @@ var _ = Describe("Subcommand", func() {
 	Describe("ginkgo bootstrap/generate", func() {
 		var pkgPath string
 		BeforeEach(func() {
-			pkgPath = tmpPath("some crazy-thing")
+			pkgPath = tmpPath("some-crazy-thing")
 			os.Mkdir(pkgPath, 0777)
 		})
 

@@ -50,7 +50,7 @@ var _ = Describe("Running Specs", func() {
 		})
 
 		It("should run the ginkgo style tests", func() {
-			session := startGinkgo(tmpDir, "--noColor", pathToTest)
+			session := startGinkgo(tmpDir, "--noColor", "ginkgo")
 			Eventually(session).Should(gexec.Exit(0))
 			output := string(session.Out.Contents())
 

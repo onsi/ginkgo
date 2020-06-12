@@ -1,7 +1,7 @@
 package C_test
 
 import (
-	. "github.com/onsi/ginkgo/integration/_fixtures/watch_fixtures/C"
+	. "$ROOT_PATH$/C"
 
 	. "github.com/onsi/ginkgo"
 	. "github.com/onsi/gomega"
