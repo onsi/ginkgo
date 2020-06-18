@@ -307,6 +307,9 @@ var _ = Describe("JUnit Reporter", func() {
 					ComponentTexts: []string{"[Top Level]", "A", "B", "C"},
 					State:          specStateCase,
 					RunTime:        5 * time.Second,
+					Failure: types.SpecFailure{
+						Message: "skipped reason",
+					},
 				}
 				reporter.SpecWillRun(spec)
 				reporter.SpecDidComplete(spec)
@@ -325,7 +328,7 @@ var _ = Describe("JUnit Reporter", func() {
 				Expect(output.Time).To(Equal(reportedSuiteTime))
 				Expect(output.Errors).To(Equal(0))
 				Expect(output.TestCases[0].Name).To(Equal("A B C"))
-				Expect(output.TestCases[0].Skipped).ToNot(BeNil())
+				Expect(output.TestCases[0].Skipped.Message).To(ContainSubstring("skipped reason"))
 			})
 		})
 	}
