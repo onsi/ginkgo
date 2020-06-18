@@ -56,8 +56,6 @@ var _ = Describe("Failing Specs", func() {
 		Ω(output).ShouldNot(ContainSubstring("table_entry.go"))
 		Ω(output).Should(MatchRegexp(`a TableEntry constructed by Entry \[It\]\n.*fail_fixture_test\.go:110`),
 			"the output of a failing Entry should include its file path and line number")
-		Ω(output).Should(MatchRegexp(`a directly constructed TableEntry \[It\]\n.*fail_fixture_test\.go:106`),
-			"the output of a failing TableEntry should include the surrounding DescribeTable's file path and line number")
 
 		Ω(output).Should(ContainSubstring("0 Passed | 19 Failed"))
 	})
