@@ -61,13 +61,8 @@ blockquote {
     margin: 20px;
     border-left:none;
     background-color: rgba(245,245,245,0.7);
-    opacity:0.6;
     border-radius:5px;
     border: 1px solid #cccccc
-}
-
-blockquote:hover {
-    opacity:1.0;
 }
 
 blockquote p {
@@ -156,12 +151,7 @@ blockquote p {
 }
 
 .sidebar-section>ul>li>ul>li>a {
-    opacity:0.5;
     padding:4px 5px;
-}
-
-.sidebar-section>ul>li>ul>li.active>a {
-    opacity:1.0;
 }
 
 .content {
