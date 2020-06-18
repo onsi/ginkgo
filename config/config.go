@@ -1,7 +1,7 @@
 /*
 Ginkgo accepts a number of configuration options.
 
-These are documented [here](http://onsi.github.io/ginkgo/#the_ginkgo_cli)
+These are documented [here](http://onsi.github.io/ginkgo/#the-ginkgo-cli)
 
 You can also learn more via
 
