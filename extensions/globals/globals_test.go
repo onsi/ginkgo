@@ -3,41 +3,24 @@ package globals_test
 import (
 	"testing"
 
-	. "github.com/onsi/ginkgo"
 	"github.com/onsi/ginkgo/extensions/globals"
-	. "github.com/onsi/gomega"
+	"github.com/onsi/ginkgo/internal/global"
 )
 
 func TestGlobals(t *testing.T) {
-	RegisterFailHandler(Fail)
+	global.InitializeGlobals()
+	oldSuite := global.Suite
+	if oldSuite == nil {
+		t.Error("global.Suite was nil")
+	}
 
-	// define some vars to store how many times a test has been run
-	var (
-		testI  = 0
-		testII = 0
-	)
-
-	// Define a simple gingko test I
-	var _ = Describe("ginkgo test I", func() {
-		It("build tests I", func() {
-			testI++
-			Ω(testI).Should(Equal(1))
-		})
-	})
-
-	RunSpecs(t, "Test Runner Suite I")
-
-	// reset the global state of ginkgo. test I should now be removed, and it
-	// won't run twice.
 	globals.Reset()
+	newSuite := global.Suite
+	if newSuite == nil {
+		t.Error("new global.Suite was nil")
+	}
 
-	// Define a simple gingko test II
-	var _ = Describe("ginkgo test II", func() {
-		It("build tests II", func() {
-			testII++
-			Ω(testII).Should(Equal(1))
-		})
-	})
-
-	RunSpecs(t, "Test Runner Suite II")
+	if oldSuite == newSuite {
+		t.Error("got the same suite but expected it to be different!")
+	}
 }
