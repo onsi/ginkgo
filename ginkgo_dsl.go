@@ -18,6 +18,7 @@ import (
 	"net/http"
 	"os"
 	"strings"
+	"testing"
 	"time"
 
 	"github.com/onsi/ginkgo/config"
@@ -191,6 +192,8 @@ type Benchmarker interface {
 //
 //	ginkgo bootstrap
 func RunSpecs(t GinkgoTestingT, description string) bool {
+	config.DefaultReporterConfig.Verbose = config.DefaultReporterConfig.Verbose || testing.Verbose()
+
 	specReporters := []Reporter{buildDefaultReporter()}
 	if config.DefaultReporterConfig.ReportFile != "" {
 		reportFile := config.DefaultReporterConfig.ReportFile
