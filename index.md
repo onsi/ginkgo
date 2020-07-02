@@ -800,6 +800,334 @@ Finally, all of these function can be passed an additional `Done` parameter to r
 
 ---
 
+## Understanding Ginkgo's Lifecycle
+
+Users of Ginkgo sometimes get tripped up by Ginkgo's lifecycle.  This section provides a mental model to help you reason about what code runs when.
+
+Ginkgo endeavors to carefully control the order in which specs run and provides seamless support for running a given test suite in parallel across [multiple processes](#parallel-specs).  To accomplish this, Ginkgo needs to know a suite's entire testing tree (i.e. the nested set of `Describe`s, `Context`s, `BeforeEach`es, `It`s, etc.) **up front**.  Ginkgo uses this tree to construct an ordered, ([deterministically randomized](#spec-permutation)), list of tests to run.
+
+This means that all the tests must be defined _before_ Ginkgo can run the suite.  Once the suite is running it is an error to attempt to define a new test (e.g. calling `It` within an existing `It` block).
+
+Of course, it is still possible (in fact, common) to dynamically generate test suites based on configuration.  However you must generate these tests _at the right time_ in the Ginkgo lifecycle.  This nuance sometimes trips users up.
+
+Let's look at a typical Ginkgo test suite.  What follows is a test suite for a `books` package that spans multiple files:
+
+
+```go
+// books_suite_test.go
+
+package books_test
+
+import (
+    . "github.com/onsi/ginkgo"
+    . "github.com/onsi/gomega"
+
+    "github.com/onsi/books"
+
+    "testing"
+)
+
+func TestBooks(t *testing.T) {     // L1
+    RegisterFailHandler(Fail)      // L2
+    RunSpecs(t, "Books Suite")     // L3
+}                                  // L4
+```
+
+```go
+// reading_test.go
+
+package books_test
+
+import (
+    . "github.com/onsi/ginkgo"
+    . "github.com/onsi/gomega"
+
+    "github.com/onsi/books"
+
+    "testing"
+)
+
+var _ = Describe("When reading a book", func() {                        // L5
+    var book *books.Book                                                // L6
+
+    BeforeEach(func() {                                                 // L7
+        book = books.New("The Chronicles of Narnia", 300)               // L8
+        Expect(book.CurrentPage()).To(Equal(1))                         // L9
+        Expect(book.NumPages()).To(Equal(300))                          // L10
+    })                                                                  // L11
+
+    It("should increment the page number", func() {                     // L12
+        err := book.Read(3)                                             // L13
+        Expect(err).NotTo(HaveOccurred())                               // L14
+        Expect(book.CurrentPage()).To(Equal(4))                         // L15
+    })                                                                  // L16
+
+    Context("when the reader finishes the book", func() {               // L17
+        It("should not allow them to read more pages", func() {         // L18
+            err := book.Read(300)                                       // L19
+            Expect(err).NotTo(HaveOccurred())                           // L20
+            Expect(book.IsFinished()).To(BeTrue())                      // L21
+            err = book.Read(1)                                          // L22
+            Expect(err).To(HaveOccurred())                              // L23
+        })                                                              // L24
+    })                                                                  // L25
+})                                                                      // L26
+```
+
+```go
+// isbn_test.go
+
+package books_test
+
+import (
+    . "github.com/onsi/ginkgo"
+    . "github.com/onsi/gomega"
+
+    "github.com/onsi/books"
+
+    "testing"
+)
+
+var _ = Describe("Looking up ISBN numbers", func() {                                                   // L27
+    Context("When the book can be found", func() {                                                     // L28
+        It("returns the correct ISBN number", func() {                                                 // L29
+            Expect(books.ISBNFor("The Chronicles of Narnia", "C.S. Lewis")).To(Equal("9780060598242")) // L30
+        })                                                                                             // L31
+    })                                                                                                 // L32
+
+    Context("When the book can't be found", func() {                                                   // L33
+        It("returns an error", func() {                                                                // L34
+            isbn, err := books.ISBNFor("The Chronicles of Blarnia", "C.S. Lewis")                      // L35
+            Expect(isbn).To(BeZero())                                                                  // L36
+            Expect(err).To(HaveOccurred())                                                             // L37
+        })                                                                                             // L38
+    })                                                                                                 // L39
+})                                                                                                     // L40
+```
+
+Here's what happens when this test is run via the `ginkgo` cli, in order:
+
+1. `ginkgo` runs `go test -c` to compile the test binary
+2. `ginkgo` launches the test binary (this is equivalent to simply running `go test` but gives Ginkgo the ability to launch multiple test processes without paying the cost of repeat compilation)
+3. The test binary loads into memory and all top-level functions are defined and invoked.  Specifically, that means:
+    1. The `TestBooks` function is defined (Line `L1`)
+    2. The `Describe` at `L5` is invoked and passed in the string "When reading a book", and the anonymous function that contains the tests nested in this describe.
+    3. The `Describe` at `L27` is invoked and passed in the string "Looking up ISBN numbers", and the anonymous function that contains the tests nested in this describe.
+
+    Note that the anonymous functions passed into the `Describe`s are *not* invoked at this time.  At this point, Ginkgo simply knows that there are two top-level containers in this suite.
+4. The `go test` runtime starts running tests by invoking `TestBooks()` (`L1`)
+5. Ginkgo's `Fail` handler is registered with `gomega` via `RegisterFailHandler` (`L2`) - this is necessary because `ginkgo` and `gomega` are not tightly coupled and alternative matcher libraries can be used with Ginkgo.
+6. `RunSpecs` is called (`L3`).  This does a number of things:
+    
+    **Test Tree Construction Phase**:
+    1. Ginkgo iterates through every top-level container(i.e. the two `Describe`s at `L5` and `L27`) and invokes their anonymous functions.
+    2. When the function at `L5` is invoked it:
+        - Defines a closure variable named `book` (`L6`)
+        - Registers a `BeforeEach` passing it an anonymous function (`L7`).  This function is registered and saved as part of the testing tree and **is not run yet**.
+        - Registers an `It` with a description and anonymous function. (`L12`).  This function is registered and saved as part of the testing tree and **is not run yet**.
+        - Adds a nested `Context` (`L17`).  The anonymous function passed into the `Context` is **immediately** invoked to continue building the tree.  This registers the `It` at line `L18`.
+        - At this point the anonymous function at `L5` exists **and is never called again**.
+    3. The function for the next top-level describe at `L27` is also invoked, and behaves similarly.
+    4. At this point all top-level containers have been invoked and the testing tree looks like:
+        ```
+        [
+          ["When Reading A Book", BeforeEach, It "should increment the page number"],
+          ["When Reading A Book", BeforeEach, "When the reader finishes the book", It "should not allow them to read more pages"],          
+          ["Looking up ISBN numbers", "When the book can be found", It "returns the correct ISBN number"],
+          ["Looking up ISBN numbers", "When the book can't be found", It "returns an error"],
+        ]
+        ```
+        Here, the `BeforeEach` and `It` nodes in the tree all contain references to their respective anonymous functions.  Note that there are four tests, each corresponding to one of the four `It`s defined in the test.
+
+    Having constructed the testing tree, Ginkgo can now randomize it deterministically based on the random seed.  This simply amounts to shuffling the list of tests shown above.
+
+    **Test Tree Invocation Phase**:
+    To run the tests, Ginkgo now simply walks the shuffled testing tree.  Invoking the anonymous functions attached to any registered `BeforeEach` and `It` in order.  For example, when running the test defined at `L18` Ginkgo will first invoke the anonymous function passed into the `BeforeEach` at `L7` and then the anonymous function passed into the `It` at `L18`.
+
+    > Note, again, that the parent closure defined at `L5` is _not_ reinvoked.  The functions passed into `Describe`s and `Context`s are _only_ invoked during the **Tree Construction Phase**
+
+    > It is an error to define new `It`s, `BeforeEach`es, etc. during the Test Tree Invocation Phase.
+
+7. `RunSpecs` keeps track of running tests and test failures, updating any attached reporters as the test runs.  When the test completes `RunSpecs` exits and the `TestBooks` function exits.
+
+
+That was a lot of detail but it all boils down to a fairly simple flow.  To summarize:
+
+There are two phases during a Ginkgo test run.
+
+In the **Test Tree Construction Phase** the anonymous functions passed into any containers (i.e. `Describe`s and `Context`s) are invoked.  These functions define closure variables and call child nodes (`It`s, `BeforeEach`es, and `AfterEach`es etc.) to definte the testing tree.  The anonymous functions passed into child nodes are **not** called during the Test Tree Construction Phase. Once constructed the tree is randomized.
+
+In the **Test Tree Invocation Phase** the child node functions are invoked in the correct order.  Note that the container functions are not invoked during this phase.
+
+### Avoiding test pollution
+
+Because the anonymous functions passed into container functions are _not_ reinvoked during the Test Tree Invocation Phase you should not rely on variable initializations in container functions to be called repeatedly.  You *must*, instead, reinitialize any variables that can be mutated by tests in your `BeforeEach` functions.
+
+Consider, for example, this variation of the `"When reading a book"` `Describe` container defined in `L5` above:
+
+```
+var _ = Describe("When reading a book", func() {                                        //L1'
+    var book *books.Book                                                                //L2'
+    book = books.New("The Chronicles of Narnia", 300) // create book in parent closure  //L3'
+
+    It("should increment the page number", func() {                                     //L4'
+        err := book.Read(3)                                                             //L5'
+        Expect(err).NotTo(HaveOccurred())                                               //L6'
+        Expect(book.CurrentPage()).To(Equal(4))                                         //L7'
+    })                                                                                  //L8'
+
+    Context("when the reader finishes the book", func() {                               //L9'
+        It("should not allow them to read more pages", func() {                         //L10'
+            err := book.Read(300)                                                       //L11'
+            Expect(err).NotTo(HaveOccurred())                                           //L12'
+            Expect(book.IsFinished()).To(BeTrue())                                      //L13'
+            err = book.Read(1)                                                          //L14'
+            Expect(err).To(HaveOccurred())                                              //L15'
+        })                                                                              //L16'
+    })                                                                                  //L17'
+})                                                                                      //L18'
+```
+
+In this variation not only is the book variable shared between both `It`s.  The exact same book instance is shared between both `It`s.  This will lead to confusing test pollution behavior that will vary depending on which order the `It`s are called in.  For example, if the `"should not allow them to read more pages"` test (`L10'`)is invoked first, then the book will already be finished (`L13'`)when the `"should increment the page number"` (`L4'`) test is called resulting in an aberrant test failure.
+
+The correct solution to test pollution like this is to always initialize variables in `BeforeEach` blocks.  This ensures test state is clean between each test run.
+
+### Do not make assertions in container node functions
+
+A related, common, error is to make assertions in the anonymous functions passed into container node.  Assertions must _only_ be made in the functions of child nodes as only those functions run during the Test Tree Invocation Phase.
+
+So, avoid code like this:
+
+```
+var _ = Describe("When reading a book", func() {
+    var book *books.Book
+    book = books.New("The Chronicles of Narnia", 300)
+    Expect(book.CurrentPage()).To(Equal(1))
+    Expect(book.NumPages()).To(Equal(300))     
+
+    It("...")
+})
+```
+
+If those assertions fail, they will do so during the Test Tree Construction Phase - not the Test Tree Invocation Phase when Ginkgo is tracking and reporting failures.  Instead, initialize variables and make correctness assertions like these inside a `BeforeEach` block.
+
+### Patterns for dynamically generating tests
+
+A common pattern (and one closely related to the [shared example patterns outlined below](#shared-example-patterns)) is to dynamically generate a test suite based on external input (e.g. a file or an environment variable).
+
+Imagine, for example, a file named `isbn.json` that includes a set of known ISBN lookups:
+
+```json
+// isbn.json
+[
+  {"title": "The Chronicles of Narnia", "author": "C.S. Lewis", "isbn": "9780060598242"},
+  {"title": "Ender's Game", "author": "Orson Scott Card", "isbn": "9780765378484"},  
+  {"title": "Ender's Game", "author": "Victor Hugo", "isbn": "9780140444308"},  
+]
+```
+
+You might want to generate a collection of tests, one for each book.  A recommended pattern for this is:
+
+```go
+// isbn_test.go
+
+package books_test
+
+import (
+    . "github.com/onsi/ginkgo"
+    . "github.com/onsi/gomega"
+
+    "github.com/onsi/books"
+
+    "testing"
+)
+
+var _ = Describe("Looking up ISBN numbers", func() {
+    testConfigData := loadTestISBNs("isbn.json")           
+
+    Context("When the book can be found", func() {
+        for _, d := range testConfigData {
+            d := d //necessary to ensure the correct value is passed to the closure
+            It("returns the correct ISBN number for " + d.Title, func() {                                                
+                Expect(books.ISBNFor(d.Title, d.Author)).To(Equal(d.ISBN))
+            })                                                                                            
+        }
+    })                                                                                                
+})                                                                                                    
+```
+
+Here `data` is defined and initialized with the contents of the `isbn.json` file during the Test Tree Construction Phase and is then used to define a set of `It`s.
+
+If you have test configuration data like this that you want to share across multiple top-level `Describes` or test files you can either load it in each `Describe` (as shown here) or load it once into a globally shared variable.  The recommended pattern for the latter is to load such variables just prior to the invocation of `RunSpecs`:
+
+
+```go
+// books_suite_test.go
+
+package books_test
+
+import (
+    . "github.com/onsi/ginkgo"
+    . "github.com/onsi/gomega"
+
+    "github.com/onsi/books"
+
+    "testing"
+)
+
+var testConfigData TestConfigData
+
+func TestBooks(t *testing.T) {
+    RegisterFailHandler(Fail) 
+    testConfigData = loadTestISBNs("isbn.json")
+    RunSpecs(t, "Books Suite")
+}                             
+```
+
+Here, the `testConfigData` can be referenced in any subsequent `Describe` or `Context` closure and is guaranteed to be initialized as the Test Tree Construction Phase does not begin until `RunSpecs` is invoked.
+
+If you must make an assertion on the `testConfigData` you can do so in a `BeforeSuite` as follows:
+
+```go
+func TestBooks(t *testing.T) {
+    RegisterFailHandler(Fail) 
+    testConfigData = loadTestISBNs("isbn.json")
+    RunSpecs(t, "Books Suite")
+}
+
+var _ = BeforeSuite(func() {
+    Expect(testConfigData).NotTo(BeEmpty())
+})
+```                           
+
+This works because `BeforeSuite` functions run during the Test Tree Invocation phase and only run once.
+
+Lastly - the most common mistake folks encounter when dynamically generating tests is to set up test configuration data in a node that only runs during the Test Tree Invocation Phase.  For example:
+
+```go
+
+var _ = Describe("Looking up ISBN numbers", func() {
+    var testConfigData TestConfigData
+
+    BeforeEach(func() {
+        testConfigData = loadTestISBNs("isbn.json") // WRONG!
+    })
+
+    Context("When the book can be found", func() {
+        for _, d := range testConfigData {
+            d := d //necessary to ensure the correct value is passed to the closure
+            It("returns the correct ISBN number for " + d.Title, func() {                                                
+                Expect(books.ISBNFor(d.Title, d.Author)).To(Equal(d.ISBN))
+            })                                                                                            
+        }
+    })                                                                                                
+})  
+```
+
+This will generate zero tests as `testConfigData` will be zero during the Test Tree Construction Phase.
+
+---
+
 ## Asynchronous Tests
 
 Go does concurrency well.  Ginkgo provides support for testing asynchronicity effectively.
@@ -1604,6 +1932,8 @@ var _ = Describe("Math", func() {
     )
 })
 ```
+
+You should be aware of the Ginkgo test lifecycle - particularly around [dynamically generating tests](#patterns-for-dynamically-generating-tests) - when using `DescribeTable`.
 
 #### Focusing and Pending Tables and Entries
 
