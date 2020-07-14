@@ -33,7 +33,7 @@ func unfocusSpecs([]string, []string) {
 
 	goFiles := make(chan string)
 	go func() {
-		unfocusDir(goFiles, ".")
+		listDirectory(goFiles, ".")
 		close(goFiles)
 	}()
 
@@ -53,7 +53,7 @@ func unfocusSpecs([]string, []string) {
 	wg.Wait()
 }
 
-func unfocusDir(goFiles chan string, path string) {
+func listDirectory(goFiles chan string, path string) {
 	files, err := ioutil.ReadDir(path)
 	if err != nil {
 		fmt.Println(err.Error())
@@ -63,7 +63,7 @@ func unfocusDir(goFiles chan string, path string) {
 	for _, f := range files {
 		switch {
 		case f.IsDir() && shouldProcessDir(f.Name()):
-			unfocusDir(goFiles, filepath.Join(path, f.Name()))
+			listDirectory(goFiles, filepath.Join(path, f.Name()))
 		case !f.IsDir() && shouldProcessFile(f.Name()):
 			goFiles <- filepath.Join(path, f.Name())
 		}

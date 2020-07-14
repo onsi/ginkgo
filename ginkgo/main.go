@@ -170,6 +170,7 @@ func init() {
 	Commands = append(Commands, BuildNodotCommand())
 	Commands = append(Commands, BuildConvertCommand())
 	Commands = append(Commands, BuildUnfocusCommand())
+	Commands = append(Commands, BuildMigrateCommand())
 	Commands = append(Commands, BuildVersionCommand())
 	Commands = append(Commands, BuildHelpCommand())
 }
