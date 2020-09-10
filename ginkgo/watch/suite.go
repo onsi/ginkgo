@@ -5,18 +5,18 @@ import (
 	"math"
 	"time"
 
-	"github.com/onsi/ginkgo/ginkgo/testsuite"
+	"github.com/onsi/ginkgo/ginkgo/internal"
 )
 
 type Suite struct {
-	Suite        testsuite.TestSuite
+	Suite        internal.TestSuite
 	RunTime      time.Time
 	Dependencies Dependencies
 
 	sharedPackageHashes *PackageHashes
 }
 
-func NewSuite(suite testsuite.TestSuite, maxDepth int, sharedPackageHashes *PackageHashes) (*Suite, error) {
+func NewSuite(suite internal.TestSuite, maxDepth int, sharedPackageHashes *PackageHashes) (*Suite, error) {
 	deps, err := NewDependencies(suite.Path, maxDepth)
 	if err != nil {
 		return nil, err

@@ -2,9 +2,14 @@ package formatter
 
 import (
 	"fmt"
+	"os"
 	"regexp"
 	"strings"
 )
+
+// ColorableStdOut and ColorableStdErr enable color output support on Windows
+var ColorableStdOut = newColorable(os.Stdout)
+var ColorableStdErr = newColorable(os.Stderr)
 
 const COLS = 80
 

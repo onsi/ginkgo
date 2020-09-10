@@ -1,38 +1,25 @@
 package types
 
 import (
-	"os"
 	"strconv"
-	"strings"
-	"unicode"
+	"time"
 
-	"github.com/onsi/ginkgo/config"
 	"github.com/onsi/ginkgo/formatter"
 )
 
 type Deprecation struct {
 	Message string
 	DocLink string
-	Version string
 }
 
 type deprecations struct{}
 
 var Deprecations = deprecations{}
 
-func (d deprecations) CustomReporter() Deprecation {
+func (d deprecations) V1Report() Deprecation {
 	return Deprecation{
-		Message: "You are using a custom reporter.  Support for custom reporters will likely be removed in V2.  Most users were using them to generate junit or teamcity reports and this functionality will be merged into the core reporter.  In addition, Ginkgo 2.0 will support emitting a JSON-formatted report that users can then manipulate to generate custom reports.\n\n{{red}}{{bold}}If this change will be impactful to you please leave a comment on {{cyan}}{{underline}}https://github.com/onsi/ginkgo/issues/711{{/}}",
-		DocLink: "removed-custom-reporters",
-		Version: "1.16.0",
-	}
-}
-
-func (d deprecations) V1Reporter() Deprecation {
-	return Deprecation{
-		Message: "You are using a V1 Ginkgo Reporter.  Please update your custom reporter to the new V2 Reporter interface.",
+		Message: "You are susing a V1 Ginkgo Reporter.  Please update your custom reporter to the new V2 Reporter interface.",
 		DocLink: "changed-reporter-interface",
-		Version: "1.16.0",
 	}
 }
 
@@ -40,7 +27,6 @@ func (d deprecations) Async() Deprecation {
 	return Deprecation{
 		Message: "You are passing a Done channel to a test node to test asynchronous behavior.  This is deprecated in Ginkgo V2.  Your test will run synchronously and the timeout will be ignored.",
 		DocLink: "removed-async-testing",
-		Version: "1.16.0",
 	}
 }
 
@@ -48,15 +34,6 @@ func (d deprecations) Measure() Deprecation {
 	return Deprecation{
 		Message: "Measure is deprecated and will be removed in Ginkgo V2.  Please migrate to gomega/gmeasure.",
 		DocLink: "removed-measure",
-		Version: "1.16.3",
-	}
-}
-
-func (d deprecations) ParallelNode() Deprecation {
-	return Deprecation{
-		Message: "GinkgoParallelNode is deprecated and will be removed in Ginkgo V2.  Please use GinkgoParallelProcess instead.",
-		DocLink: "renamed-ginkgoparallelnode",
-		Version: "1.16.5",
 	}
 }
 
@@ -64,16 +41,9 @@ func (d deprecations) Convert() Deprecation {
 	return Deprecation{
 		Message: "The convert command is deprecated in Ginkgo V2",
 		DocLink: "removed-ginkgo-convert",
-		Version: "1.16.0",
 	}
 }
 
-func (d deprecations) Blur() Deprecation {
-	return Deprecation{
-		Message: "The blur command is deprecated in Ginkgo V2.  Use 'ginkgo unfocus' instead.",
-		Version: "1.16.0",
-	}
-}
 
 type DeprecationTracker struct {
 	deprecations map[Deprecation][]CodeLocation
@@ -86,15 +56,6 @@ func NewDeprecationTracker() *DeprecationTracker {
 }
 
 func (d *DeprecationTracker) TrackDeprecation(deprecation Deprecation, cl ...CodeLocation) {
-	ackVersion := os.Getenv("ACK_GINKGO_DEPRECATIONS")
-	if deprecation.Version != "" && ackVersion != "" {
-		ack := ParseSemVer(ackVersion)
-		version := ParseSemVer(deprecation.Version)
-		if ack.GreaterThanOrEqualTo(version) {
-			return
-		}
-	}
-
 	if len(cl) == 1 {
 		d.deprecations[deprecation] = append(d.deprecations[deprecation], cl[0])
 	} else {
@@ -107,54 +68,170 @@ func (d *DeprecationTracker) DidTrackDeprecations() bool {
 }
 
 func (d *DeprecationTracker) DeprecationsReport() string {
-	out := formatter.F("\n{{light-yellow}}You're using deprecated Ginkgo functionality:{{/}}\n")
+	out := formatter.F("{{light-yellow}}You're using deprecated Ginkgo functionality:{{/}}\n")
 	out += formatter.F("{{light-yellow}}============================================={{/}}\n")
-	out += formatter.F("{{bold}}{{green}}Ginkgo 2.0{{/}} is under active development and will introduce several new features, improvements, and a small handful of breaking changes.\n")
-	out += formatter.F("A release candidate for 2.0 is now available and 2.0 should GA in Fall 2021.  {{bold}}Please give the RC a try and send us feedback!{{/}}\n")
-	out += formatter.F("  - To learn more, view the migration guide at {{cyan}}{{underline}}https://github.com/onsi/ginkgo/blob/ver2/docs/MIGRATING_TO_V2.md{{/}}\n")
-	out += formatter.F("  - For instructions on using the Release Candidate visit {{cyan}}{{underline}}https://github.com/onsi/ginkgo/blob/ver2/docs/MIGRATING_TO_V2.md#using-the-beta{{/}}\n")
-	out += formatter.F("  - To comment, chime in at {{cyan}}{{underline}}https://github.com/onsi/ginkgo/issues/711{{/}}\n\n")
-
 	for deprecation, locations := range d.deprecations {
 		out += formatter.Fi(1, "{{yellow}}"+deprecation.Message+"{{/}}\n")
 		if deprecation.DocLink != "" {
-			out += formatter.Fi(1, "{{bold}}Learn more at:{{/}} {{cyan}}{{underline}}https://github.com/onsi/ginkgo/blob/ver2/docs/MIGRATING_TO_V2.md#%s{{/}}\n", deprecation.DocLink)
+			out += formatter.Fi(1, "{{bold}}Learn more at:{{/}} {{cyan}}{{underline}}https://github.com/onsi/ginkgo/blob/v2/docs/MIGRATING_TO_V2.md#%s{{/}}\n", deprecation.DocLink)
 		}
 		for _, location := range locations {
 			out += formatter.Fi(2, "{{gray}}%s{{/}}\n", location)
 		}
 	}
-	out += formatter.F("\n{{gray}}To silence deprecations that can be silenced set the following environment variable:{{/}}\n")
-	out += formatter.Fi(1, "{{gray}}ACK_GINKGO_DEPRECATIONS=%s{{/}}\n", config.VERSION)
 	return out
 }
 
-type SemVer struct {
-	Major int
-	Minor int
-	Patch int
+/*
+	A set of deprecations to make the transition from v1 to v2 easier for users who have written custom reporters.
+*/
+
+type SetupSummary = DeprecatedSetupSummary
+type SpecSummary = DeprecatedSpecSummary
+type SpecMeasurement = DeprecatedSpecMeasurement
+type SpecComponentType = NodeType
+type SpecFailure = DeprecatedSpecFailure
+
+var (
+	SpecComponentTypeInvalid                 = NodeTypeInvalid
+	SpecComponentTypeContainer               = NodeTypeContainer
+	SpecComponentTypeIt                      = NodeTypeIt
+	SpecComponentTypeBeforeEach              = NodeTypeBeforeEach
+	SpecComponentTypeJustBeforeEach          = NodeTypeJustBeforeEach
+	SpecComponentTypeAfterEach               = NodeTypeAfterEach
+	SpecComponentTypeJustAfterEach           = NodeTypeJustAfterEach
+	SpecComponentTypeBeforeSuite             = NodeTypeBeforeSuite
+	SpecComponentTypeSynchronizedBeforeSuite = NodeTypeSynchronizedBeforeSuite
+	SpecComponentTypeAfterSuite              = NodeTypeAfterSuite
+	SpecComponentTypeSynchronizedAfterSuite  = NodeTypeSynchronizedAfterSuite
+)
+
+type DeprecatedSetupSummary struct {
+	ComponentType SpecComponentType
+	CodeLocation  CodeLocation
+
+	State   SpecState
+	RunTime time.Duration
+	Failure SpecFailure
+
+	CapturedOutput string
+	SuiteID        string
 }
 
-func (s SemVer) GreaterThanOrEqualTo(o SemVer) bool {
-	return (s.Major > o.Major) ||
-		(s.Major == o.Major && s.Minor > o.Minor) ||
-		(s.Major == o.Major && s.Minor == o.Minor && s.Patch >= o.Patch)
+func DeprecatedSetupSummaryFromSummary(summary Summary) *DeprecatedSetupSummary {
+	return &DeprecatedSetupSummary{
+		ComponentType:  summary.LeafNodeType,
+		CodeLocation:   summary.LeafNodeLocation,
+		State:          summary.State,
+		RunTime:        summary.RunTime,
+		Failure:        deprecatedSpecFailureFromFailure(summary.Failure),
+		CapturedOutput: summary.CombinedOutput(),
+	}
 }
 
-func ParseSemVer(semver string) SemVer {
-	out := SemVer{}
-	semver = strings.TrimFunc(semver, func(r rune) bool {
-		return !(unicode.IsNumber(r) || r == '.')
-	})
-	components := strings.Split(semver, ".")
-	if len(components) > 0 {
-		out.Major, _ = strconv.Atoi(components[0])
+type DeprecatedSpecSummary struct {
+	ComponentTexts         []string
+	ComponentCodeLocations []CodeLocation
+
+	State           SpecState
+	RunTime         time.Duration
+	Failure         SpecFailure
+	IsMeasurement   bool
+	NumberOfSamples int
+	Measurements    map[string]*DeprecatedSpecMeasurement
+
+	CapturedOutput string
+	SuiteID        string
+}
+
+func DeprecatedSpecSummaryFromSummary(summary Summary) *DeprecatedSpecSummary {
+	return &DeprecatedSpecSummary{
+		ComponentTexts:         summary.NodeTexts,
+		ComponentCodeLocations: summary.NodeLocations,
+		State:                  summary.State,
+		RunTime:                summary.RunTime,
+		Failure:                deprecatedSpecFailureFromFailure(summary.Failure),
+		IsMeasurement:          false,
+		NumberOfSamples:        0,
+		Measurements:           map[string]*DeprecatedSpecMeasurement{},
+		CapturedOutput:         summary.CombinedOutput(),
 	}
-	if len(components) > 1 {
-		out.Minor, _ = strconv.Atoi(components[1])
+}
+
+func (s DeprecatedSpecSummary) HasFailureState() bool {
+	return s.State.Is(SpecStateFailureStates...)
+}
+
+func (s DeprecatedSpecSummary) TimedOut() bool {
+	return false
+}
+
+func (s DeprecatedSpecSummary) Panicked() bool {
+	return s.State == SpecStatePanicked
+}
+
+func (s DeprecatedSpecSummary) Failed() bool {
+	return s.State == SpecStateFailed
+}
+
+func (s DeprecatedSpecSummary) Passed() bool {
+	return s.State == SpecStatePassed
+}
+
+func (s DeprecatedSpecSummary) Skipped() bool {
+	return s.State == SpecStateSkipped
+}
+
+func (s DeprecatedSpecSummary) Pending() bool {
+	return s.State == SpecStatePending
+}
+
+type DeprecatedSpecFailure struct {
+	Message        string
+	Location       CodeLocation
+	ForwardedPanic string
+
+	ComponentIndex        int
+	ComponentType         SpecComponentType
+	ComponentCodeLocation CodeLocation
+}
+
+func deprecatedSpecFailureFromFailure(failure Failure) SpecFailure {
+	return SpecFailure{
+		Message:               failure.Message,
+		Location:              failure.Location,
+		ForwardedPanic:        failure.ForwardedPanic,
+		ComponentIndex:        failure.NodeIndex,
+		ComponentType:         failure.NodeType,
+		ComponentCodeLocation: failure.Location,
 	}
-	if len(components) > 2 {
-		out.Patch, _ = strconv.Atoi(components[2])
+}
+
+type DeprecatedSpecMeasurement struct {
+	Name  string
+	Info  interface{}
+	Order int
+
+	Results []float64
+
+	Smallest     float64
+	Largest      float64
+	Average      float64
+	StdDeviation float64
+
+	SmallestLabel string
+	LargestLabel  string
+	AverageLabel  string
+	Units         string
+	Precision     int
+}
+
+func (s DeprecatedSpecMeasurement) PrecisionFmt() string {
+	if s.Precision == 0 {
+		return "%f"
 	}
-	return out
+
+	str := strconv.Itoa(s.Precision)
+
+	return "%." + str + "f"
 }

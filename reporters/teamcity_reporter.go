@@ -18,7 +18,7 @@ import (
 )
 
 const (
-	messageId = "##teamcity"
+	teamcityMessageId = "##teamcity"
 )
 
 type TeamCityReporter struct {
@@ -33,69 +33,58 @@ func NewTeamCityReporter(writer io.Writer) *TeamCityReporter {
 	}
 }
 
-func (reporter *TeamCityReporter) SpecSuiteWillBegin(config config.GinkgoConfigType, summary *types.SuiteSummary) {
-	reporter.testSuiteName = escape(summary.SuiteDescription)
-	fmt.Fprintf(reporter.writer, "%s[testSuiteStarted name='%s']\n", messageId, reporter.testSuiteName)
+func (reporter *TeamCityReporter) SpecSuiteWillBegin(conf config.GinkgoConfigType, summary types.SuiteSummary) {
+	reporter.testSuiteName = reporter.escape(summary.SuiteDescription)
+	reporter.ReporterConfig = config.DefaultReporterConfig
+
+	fmt.Fprintf(reporter.writer, "%s[testSuiteStarted name='%s']\n", teamcityMessageId, reporter.testSuiteName)
 }
 
-func (reporter *TeamCityReporter) BeforeSuiteDidRun(setupSummary *types.SetupSummary) {
-	reporter.handleSetupSummary("BeforeSuite", setupSummary)
-}
-
-func (reporter *TeamCityReporter) AfterSuiteDidRun(setupSummary *types.SetupSummary) {
-	reporter.handleSetupSummary("AfterSuite", setupSummary)
-}
-
-func (reporter *TeamCityReporter) handleSetupSummary(name string, setupSummary *types.SetupSummary) {
-	if setupSummary.State != types.SpecStatePassed {
-		testName := escape(name)
-		fmt.Fprintf(reporter.writer, "%s[testStarted name='%s']\n", messageId, testName)
-		message := reporter.failureMessage(setupSummary.Failure)
-		details := reporter.failureDetails(setupSummary.Failure)
-		fmt.Fprintf(reporter.writer, "%s[testFailed name='%s' message='%s' details='%s']\n", messageId, testName, message, details)
-		durationInMilliseconds := setupSummary.RunTime.Seconds() * 1000
-		fmt.Fprintf(reporter.writer, "%s[testFinished name='%s' duration='%v']\n", messageId, testName, durationInMilliseconds)
+func (reporter *TeamCityReporter) testNameFor(summary types.Summary) string {
+	if summary.LeafNodeType.Is(types.NodeTypesForSuiteSetup...) {
+		return reporter.escape(summary.LeafNodeType.String())
+	} else {
+		return reporter.escape(strings.Join(summary.NodeTexts, " "))
 	}
 }
 
-func (reporter *TeamCityReporter) SpecWillRun(specSummary *types.SpecSummary) {
-	testName := escape(strings.Join(specSummary.ComponentTexts[1:], " "))
-	fmt.Fprintf(reporter.writer, "%s[testStarted name='%s']\n", messageId, testName)
+func (reporter *TeamCityReporter) WillRun(summary types.Summary) {
+	fmt.Fprintf(reporter.writer, "%s[testStarted name='%s']\n", teamcityMessageId, reporter.testNameFor(summary))
 }
 
-func (reporter *TeamCityReporter) SpecDidComplete(specSummary *types.SpecSummary) {
-	testName := escape(strings.Join(specSummary.ComponentTexts[1:], " "))
+func (reporter *TeamCityReporter) DidRun(summary types.Summary) {
+	testName := reporter.testNameFor(summary)
 
-	if reporter.ReporterConfig.ReportPassed && specSummary.State == types.SpecStatePassed {
-		details := escape(specSummary.CapturedOutput)
-		fmt.Fprintf(reporter.writer, "%s[testPassed name='%s' details='%s']\n", messageId, testName, details)
+	if reporter.ReporterConfig.ReportPassed && summary.State == types.SpecStatePassed {
+		details := reporter.escape(summary.CombinedOutput())
+		fmt.Fprintf(reporter.writer, "%s[testPassed name='%s' details='%s']\n", teamcityMessageId, testName, details)
 	}
-	if specSummary.State == types.SpecStateFailed || specSummary.State == types.SpecStateTimedOut || specSummary.State == types.SpecStatePanicked {
-		message := reporter.failureMessage(specSummary.Failure)
-		details := reporter.failureDetails(specSummary.Failure)
-		fmt.Fprintf(reporter.writer, "%s[testFailed name='%s' message='%s' details='%s']\n", messageId, testName, message, details)
+	if summary.State.Is(types.SpecStateFailureStates...) {
+		message := reporter.failureMessage(summary.Failure)
+		details := reporter.failureDetails(summary.Failure)
+		fmt.Fprintf(reporter.writer, "%s[testFailed name='%s' message='%s' details='%s']\n", teamcityMessageId, testName, message, details)
 	}
-	if specSummary.State == types.SpecStateSkipped || specSummary.State == types.SpecStatePending {
-		fmt.Fprintf(reporter.writer, "%s[testIgnored name='%s']\n", messageId, testName)
+	if summary.State == types.SpecStateSkipped || summary.State == types.SpecStatePending {
+		fmt.Fprintf(reporter.writer, "%s[testIgnored name='%s']\n", teamcityMessageId, testName)
 	}
 
-	durationInMilliseconds := specSummary.RunTime.Seconds() * 1000
-	fmt.Fprintf(reporter.writer, "%s[testFinished name='%s' duration='%v']\n", messageId, testName, durationInMilliseconds)
+	durationInMilliseconds := summary.RunTime.Seconds() * 1000
+	fmt.Fprintf(reporter.writer, "%s[testFinished name='%s' duration='%v']\n", teamcityMessageId, testName, durationInMilliseconds)
 }
 
-func (reporter *TeamCityReporter) SpecSuiteDidEnd(summary *types.SuiteSummary) {
-	fmt.Fprintf(reporter.writer, "%s[testSuiteFinished name='%s']\n", messageId, reporter.testSuiteName)
+func (reporter *TeamCityReporter) SpecSuiteDidEnd(summary types.SuiteSummary) {
+	fmt.Fprintf(reporter.writer, "%s[testSuiteFinished name='%s']\n", teamcityMessageId, reporter.testSuiteName)
 }
 
-func (reporter *TeamCityReporter) failureMessage(failure types.SpecFailure) string {
-	return escape(failure.ComponentCodeLocation.String())
+func (reporter *TeamCityReporter) failureMessage(failure types.Failure) string {
+	return reporter.escape(failure.NodeType.String())
 }
 
-func (reporter *TeamCityReporter) failureDetails(failure types.SpecFailure) string {
-	return escape(fmt.Sprintf("%s\n%s", failure.Message, failure.Location.String()))
+func (reporter *TeamCityReporter) failureDetails(failure types.Failure) string {
+	return reporter.escape(fmt.Sprintf("%s\n%s", failure.Message, failure.Location.String()))
 }
 
-func escape(output string) string {
+func (reporter *TeamCityReporter) escape(output string) string {
 	output = strings.Replace(output, "|", "||", -1)
 	output = strings.Replace(output, "'", "|'", -1)
 	output = strings.Replace(output, "\n", "|n", -1)
