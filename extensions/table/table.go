@@ -12,7 +12,7 @@ import (
 	"fmt"
 	"reflect"
 
-	"github.com/onsi/ginkgo/internal/codelocation"
+	"github.com/onsi/ginkgo/internal"
 	"github.com/onsi/ginkgo/internal/global"
 	"github.com/onsi/ginkgo/types"
 )
@@ -63,7 +63,7 @@ For example:
 	)
 */
 func DescribeTable(description string, itBody interface{}, entries ...TableEntry) bool {
-	describeTable(description, itBody, entries, types.FlagTypeNone)
+	describeTable(description, itBody, entries, false, false)
 	return true
 }
 
@@ -71,7 +71,7 @@ func DescribeTable(description string, itBody interface{}, entries ...TableEntry
 You can focus a table with `FDescribeTable`.  This is equivalent to `FDescribe`.
 */
 func FDescribeTable(description string, itBody interface{}, entries ...TableEntry) bool {
-	describeTable(description, itBody, entries, types.FlagTypeFocused)
+	describeTable(description, itBody, entries, true, false)
 	return true
 }
 
@@ -79,7 +79,7 @@ func FDescribeTable(description string, itBody interface{}, entries ...TableEntr
 You can mark a table as pending with `PDescribeTable`.  This is equivalent to `PDescribe`.
 */
 func PDescribeTable(description string, itBody interface{}, entries ...TableEntry) bool {
-	describeTable(description, itBody, entries, types.FlagTypePending)
+	describeTable(description, itBody, entries, false, true)
 	return true
 }
 
@@ -87,24 +87,19 @@ func PDescribeTable(description string, itBody interface{}, entries ...TableEntr
 You can mark a table as pending with `XDescribeTable`.  This is equivalent to `XDescribe`.
 */
 func XDescribeTable(description string, itBody interface{}, entries ...TableEntry) bool {
-	describeTable(description, itBody, entries, types.FlagTypePending)
+	describeTable(description, itBody, entries, false, true)
 	return true
 }
 
-func describeTable(description string, itBody interface{}, entries []TableEntry, flag types.FlagType) {
+func describeTable(description string, itBody interface{}, entries []TableEntry, markedFocus bool, markedPending bool) {
 	itBodyValue := reflect.ValueOf(itBody)
 	if itBodyValue.Kind() != reflect.Func {
 		panic(fmt.Sprintf("DescribeTable expects a function, got %#v", itBody))
 	}
 
-	global.Suite.PushContainerNode(
-		description,
-		func() {
-			for _, entry := range entries {
-				entry.generateIt(itBodyValue)
-			}
-		},
-		flag,
-		codelocation.New(2),
-	)
+	global.Suite.PushNode(internal.NewNode(types.NodeTypeContainer, description, func() {
+		for _, entry := range entries {
+			entry.generateIt(itBodyValue)
+		}
+	}, types.NewCodeLocation(2), markedFocus, markedPending))
 }

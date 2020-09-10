@@ -32,10 +32,6 @@ var _ = Describe("FocusedFixture", func() {
 
 	})
 
-	FMeasure("focused", func(b Benchmarker) {
-
-	}, 2)
-
 	FDescribeTable("focused",
 		func() {},
 		Entry("focused"),
@@ -61,10 +57,6 @@ var _ = Describe("FocusedFixture", func() {
 	It("not focused", func() {
 
 	})
-
-	Measure("not focused", func(b Benchmarker) {
-
-	}, 2)
 
 	DescribeTable("not focused",
 		func() {},

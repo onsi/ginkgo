@@ -1,3 +1,7 @@
+## 2.0.0
+
+See [https://github.com/onsi/ginkgo/blob/v2/docs/MIGRATING_TO_V2.md](https://github.com/onsi/ginkgo/blob/v2/docs/MIGRATING_TO_V2.md)
+
 ## 1.16.4
 
 ### Fixes
@@ -28,7 +32,6 @@
 
 - Add slim-sprig template functions to bootstrap/generate (#775) [9162b86]
 
-### Fixes
 - Fix accidental reference to 1488 (#784) [9fb7fe4]
 
 ## 1.15.2

@@ -5,10 +5,10 @@ import (
 
 	"regexp"
 
-	"github.com/onsi/ginkgo/ginkgo/testsuite"
+	"github.com/onsi/ginkgo/ginkgo/internal"
 )
 
-type SuiteErrors map[testsuite.TestSuite]error
+type SuiteErrors map[internal.TestSuite]error
 
 type DeltaTracker struct {
 	maxDepth      int
@@ -26,7 +26,7 @@ func NewDeltaTracker(maxDepth int, watchRegExp *regexp.Regexp) *DeltaTracker {
 	}
 }
 
-func (d *DeltaTracker) Delta(suites []testsuite.TestSuite) (delta Delta, errors SuiteErrors) {
+func (d *DeltaTracker) Delta(suites []internal.TestSuite) (delta Delta, errors SuiteErrors) {
 	errors = SuiteErrors{}
 	delta.ModifiedPackages = d.packageHashes.CheckForChanges()
 
@@ -65,7 +65,7 @@ func (d *DeltaTracker) Delta(suites []testsuite.TestSuite) (delta Delta, errors 
 	return delta, errors
 }
 
-func (d *DeltaTracker) WillRun(suite testsuite.TestSuite) error {
+func (d *DeltaTracker) WillRun(suite internal.TestSuite) error {
 	s, ok := d.suites[suite.Path]
 	if !ok {
 		return fmt.Errorf("unknown suite %s", suite.Path)

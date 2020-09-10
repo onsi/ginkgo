@@ -1,22 +1,17 @@
 package global
 
 import (
-	"time"
-
-	"github.com/onsi/ginkgo/internal/failer"
-	"github.com/onsi/ginkgo/internal/suite"
+	"github.com/onsi/ginkgo/internal"
 )
 
-const DefaultTimeout = time.Duration(1 * time.Second)
-
-var Suite *suite.Suite
-var Failer *failer.Failer
+var Suite *internal.Suite
+var Failer *internal.Failer
 
 func init() {
 	InitializeGlobals()
 }
 
 func InitializeGlobals() {
-	Failer = failer.New()
-	Suite = suite.New(Failer)
+	Failer = internal.NewFailer()
+	Suite = internal.NewSuite()
 }
