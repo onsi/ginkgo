@@ -8,18 +8,16 @@ import (
 )
 
 var _ = Describe("Emitting progress", func() {
-	var pathToTest string
 	var session *gexec.Session
 	var args []string
 
 	BeforeEach(func() {
-		args = []string{"--noColor"}
-		pathToTest = tmpPath("progress")
-		copyIn(fixturePath("progress_fixture"), pathToTest, false)
+		args = []string{"--no-color"}
+		fm.MountFixture("progress")
 	})
 
 	JustBeforeEach(func() {
-		session = startGinkgo(pathToTest, args...)
+		session = startGinkgo(fm.PathTo("progress"), args...)
 		Eventually(session).Should(gexec.Exit(0))
 	})
 

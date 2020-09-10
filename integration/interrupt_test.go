@@ -10,30 +10,27 @@ import (
 )
 
 var _ = Describe("Interrupt", func() {
-	var pathToTest string
 	BeforeEach(func() {
-		pathToTest = tmpPath("hanging")
-		copyIn(fixturePath("hanging_suite"), pathToTest, false)
+		fm.MountFixture("hanging")
 	})
 
 	Context("when interrupting a suite", func() {
 		var session *gexec.Session
 		BeforeEach(func() {
 			//we need to signal the actual process, so we must compile the test first
-			var err error
-			cmd := exec.Command("go", "test", "-c")
-			cmd.Dir = pathToTest
-			session, err = gexec.Start(cmd, GinkgoWriter, GinkgoWriter)
-			Ω(err).ShouldNot(HaveOccurred())
+			session = startGinkgo(fm.PathTo("hanging"), "build")
 			Eventually(session).Should(gexec.Exit(0))
 
 			//then run the compiled test directly
-			cmd = exec.Command("./hanging.test", "--test.v=true", "--ginkgo.noColor")
-			cmd.Dir = pathToTest
+			cmd := exec.Command("./hanging.test", "--test.v", "--ginkgo.no-color")
+			cmd.Dir = fm.PathTo("hanging")
+			var err error
 			session, err = gexec.Start(cmd, GinkgoWriter, GinkgoWriter)
 			Ω(err).ShouldNot(HaveOccurred())
 
 			Eventually(session).Should(gbytes.Say("Sleeping..."))
+			session.Interrupt()
+			Eventually(session).Should(gbytes.Say("Sleeping again..."))
 			session.Interrupt()
 			Eventually(session, 1000).Should(gexec.Exit(1))
 		})
@@ -44,7 +41,15 @@ var _ = Describe("Interrupt", func() {
 			Ω(session).Should(gbytes.Say("Hanging Out"))
 		})
 
-		It("should run the AfterSuite", func() {
+		It("should report where the suite was interrupted", func() {
+			Ω(session).Should(gbytes.Say(`\[INTERRUPTED\]`))
+			Ω(session).Should(gbytes.Say(`\[It\] .*hanging_test.go:24`))
+		})
+
+		It("should run the AfterEach and the AfterSuite", func() {
+			Ω(session).Should(gbytes.Say("Cleaning up once..."))
+			Ω(session).Should(gbytes.Say("Cleaning up twice..."))
+			Ω(session).Should(gbytes.Say("Cleaning up thrice..."))
 			Ω(session).Should(gbytes.Say("Heading Out After Suite"))
 		})
 	})

@@ -13,9 +13,6 @@ func TestNodot(t *testing.T) {
 }
 
 // Declarations for Ginkgo DSL
-type Done ginkgo.Done
-type Benchmarker ginkgo.Benchmarker
-
 var GinkgoWriter = ginkgo.GinkgoWriter
 var GinkgoParallelNode = ginkgo.GinkgoParallelNode
 var GinkgoT = ginkgo.GinkgoT
@@ -37,10 +34,6 @@ var It = ginkgo.It
 var FIt = ginkgo.FIt
 var PIt = ginkgo.PIt
 var XIt = ginkgo.XIt
-var Measure = ginkgo.Measure
-var FMeasure = ginkgo.FMeasure
-var PMeasure = ginkgo.PMeasure
-var XMeasure = ginkgo.XMeasure
 var BeforeSuite = ginkgo.BeforeSuite
 var AfterSuite = ginkgo.AfterSuite
 var SynchronizedBeforeSuite = ginkgo.SynchronizedBeforeSuite
