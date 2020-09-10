@@ -3,50 +3,47 @@ package interrupthandler
 import (
 	"os"
 	"os/signal"
-	"sync"
 	"syscall"
 )
 
 type InterruptHandler struct {
-	interruptCount int
-	lock           *sync.Mutex
-	C              chan bool
+	c chan interface{}
 }
 
 func NewInterruptHandler() *InterruptHandler {
-	h := &InterruptHandler{
-		lock: &sync.Mutex{},
-		C:    make(chan bool),
+	handler := &InterruptHandler{
+		c: make(chan interface{}),
 	}
 
-	go h.handleInterrupt()
+	handler.registerForInterrupts()
 	SwallowSigQuit()
 
-	return h
+	return handler
 }
 
-func (h *InterruptHandler) WasInterrupted() bool {
-	h.lock.Lock()
-	defer h.lock.Unlock()
+func (handler *InterruptHandler) registerForInterrupts() {
+	didRegister := make(chan struct{})
+	go func() {
+		c := make(chan os.Signal, 1)
+		signal.Notify(c, os.Interrupt, syscall.SIGTERM)
+		close(didRegister)
 
-	return h.interruptCount > 0
+		<-c
+
+		close(handler.c)
+	}()
+	<-didRegister
 }
 
-func (h *InterruptHandler) handleInterrupt() {
-	c := make(chan os.Signal, 1)
-	signal.Notify(c, os.Interrupt, syscall.SIGTERM)
-
-	<-c
-	signal.Stop(c)
-
-	h.lock.Lock()
-	h.interruptCount++
-	if h.interruptCount == 1 {
-		close(h.C)
-	} else if h.interruptCount > 5 {
-		os.Exit(1)
+func (handler *InterruptHandler) WasInterrupted() bool {
+	select {
+	case <-handler.c:
+		return true
+	default:
+		return false
 	}
-	h.lock.Unlock()
+}
 
-	go h.handleInterrupt()
+func (handler *InterruptHandler) InterruptChannel() chan interface{} {
+	return handler.c
 }

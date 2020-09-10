@@ -4,7 +4,7 @@ import (
 	"fmt"
 	"reflect"
 
-	"github.com/onsi/ginkgo/internal/codelocation"
+	"github.com/onsi/ginkgo/internal"
 	"github.com/onsi/ginkgo/internal/global"
 	"github.com/onsi/ginkgo/types"
 )
@@ -41,7 +41,7 @@ func (t TableEntry) generateIt(itBody reflect.Value) {
 	}
 
 	if t.Pending {
-		global.Suite.PushItNode(description, func() {}, types.FlagTypePending, t.codeLocation, 0)
+		global.Suite.PushNode(internal.NewNode(types.NodeTypeIt, description, func() {}, t.codeLocation, false, true))
 		return
 	}
 
@@ -50,11 +50,7 @@ func (t TableEntry) generateIt(itBody reflect.Value) {
 		itBody.Call(values)
 	}
 
-	if t.Focused {
-		global.Suite.PushItNode(description, body, types.FlagTypeFocused, t.codeLocation, global.DefaultTimeout)
-	} else {
-		global.Suite.PushItNode(description, body, types.FlagTypeNone, t.codeLocation, global.DefaultTimeout)
-	}
+	global.Suite.PushNode(internal.NewNode(types.NodeTypeIt, description, body, t.codeLocation, t.Focused, false))
 }
 
 func castParameters(function reflect.Value, parameters []interface{}) []reflect.Value {
@@ -85,7 +81,7 @@ func Entry(description interface{}, parameters ...interface{}) TableEntry {
 		Parameters:   parameters,
 		Pending:      false,
 		Focused:      false,
-		codeLocation: codelocation.New(1),
+		codeLocation: types.NewCodeLocation(1),
 	}
 }
 
@@ -98,7 +94,7 @@ func FEntry(description interface{}, parameters ...interface{}) TableEntry {
 		Parameters:   parameters,
 		Pending:      false,
 		Focused:      true,
-		codeLocation: codelocation.New(1),
+		codeLocation: types.NewCodeLocation(1),
 	}
 }
 
@@ -111,7 +107,7 @@ func PEntry(description interface{}, parameters ...interface{}) TableEntry {
 		Parameters:   parameters,
 		Pending:      true,
 		Focused:      false,
-		codeLocation: codelocation.New(1),
+		codeLocation: types.NewCodeLocation(1),
 	}
 }
 
@@ -124,6 +120,6 @@ func XEntry(description interface{}, parameters ...interface{}) TableEntry {
 		Parameters:   parameters,
 		Pending:      true,
 		Focused:      false,
-		codeLocation: codelocation.New(1),
+		codeLocation: types.NewCodeLocation(1),
 	}
 }

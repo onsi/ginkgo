@@ -1,135 +1,89 @@
 package types
 
 import (
-	"strconv"
+	"encoding/json"
 	"time"
 )
 
 const GINKGO_FOCUS_EXIT_CODE = 197
 
-/*
-SuiteSummary represents the a summary of the test suite and is passed to both
-Reporter.SpecSuiteWillBegin
-Reporter.SpecSuiteDidEnd
-
-this is unfortunate as these two methods should receive different objects. When running in parallel
-each node does not deterministically know how many specs it will end up running.
-
-Unfortunately making such a change would break backward compatibility.
-
-Until Ginkgo 2.0 comes out we will continue to reuse this struct but populate unknown fields
-with -1.
-*/
 type SuiteSummary struct {
 	SuiteDescription string
 	SuiteSucceeded   bool
-	SuiteID          string
 
-	NumberOfSpecsBeforeParallelization int
-	NumberOfTotalSpecs                 int
-	NumberOfSpecsThatWillBeRun         int
-	NumberOfPendingSpecs               int
-	NumberOfSkippedSpecs               int
-	NumberOfPassedSpecs                int
-	NumberOfFailedSpecs                int
-	// Flaked specs are those that failed initially, but then passed on a
-	// subsequent try.
-	NumberOfFlakedSpecs int
-	RunTime             time.Duration
+	NumberOfTotalSpecs         int
+	NumberOfSpecsThatWillBeRun int
+
+	NumberOfSkippedSpecs int
+	NumberOfPassedSpecs  int
+	NumberOfFailedSpecs  int
+	NumberOfPendingSpecs int
+	NumberOfFlakedSpecs  int
+	RunTime              time.Duration
 }
 
-type SpecSummary struct {
-	ComponentTexts         []string
-	ComponentCodeLocations []CodeLocation
-
-	State           SpecState
-	RunTime         time.Duration
-	Failure         SpecFailure
-	IsMeasurement   bool
-	NumberOfSamples int
-	Measurements    map[string]*SpecMeasurement
-
-	CapturedOutput string
-	SuiteID        string
+func (summary SuiteSummary) NumberOfSpecsThatRan() int {
+	return summary.NumberOfPassedSpecs + summary.NumberOfFailedSpecs
 }
 
-func (s SpecSummary) HasFailureState() bool {
-	return s.State.IsFailure()
+func (summary SuiteSummary) Add(other SuiteSummary) SuiteSummary {
+	out := SuiteSummary{}
+	out.SuiteDescription = summary.SuiteDescription
+	out.SuiteSucceeded = summary.SuiteSucceeded && other.SuiteSucceeded
+	out.NumberOfTotalSpecs = summary.NumberOfTotalSpecs
+	out.NumberOfSpecsThatWillBeRun = summary.NumberOfSpecsThatWillBeRun
+
+	out.NumberOfSkippedSpecs = summary.NumberOfSkippedSpecs + other.NumberOfSkippedSpecs
+	out.NumberOfPassedSpecs = summary.NumberOfPassedSpecs + other.NumberOfPassedSpecs
+	out.NumberOfFailedSpecs = summary.NumberOfFailedSpecs + other.NumberOfFailedSpecs
+	out.NumberOfPendingSpecs = summary.NumberOfPendingSpecs + other.NumberOfPendingSpecs
+	out.NumberOfFlakedSpecs = summary.NumberOfFlakedSpecs + other.NumberOfFlakedSpecs
+	if summary.RunTime > other.RunTime {
+		out.RunTime = summary.RunTime
+	} else {
+		out.RunTime = other.RunTime
+	}
+
+	return out
 }
 
-func (s SpecSummary) TimedOut() bool {
-	return s.State == SpecStateTimedOut
+type Summary struct {
+	NodeTexts     []string
+	NodeLocations []CodeLocation
+
+	LeafNodeType     NodeType
+	LeafNodeLocation CodeLocation
+
+	State       SpecState
+	RunTime     time.Duration
+	Failure     Failure
+	NumAttempts int
+
+	CapturedStdOutErr          string
+	CapturedGinkgoWriterOutput string
 }
 
-func (s SpecSummary) Panicked() bool {
-	return s.State == SpecStatePanicked
+func (summary Summary) CombinedOutput() string {
+	output := summary.CapturedStdOutErr
+	if output == "" {
+		output = summary.CapturedGinkgoWriterOutput
+	} else {
+		output = output + "\n" + summary.CapturedGinkgoWriterOutput
+	}
+	return output
 }
 
-func (s SpecSummary) Failed() bool {
-	return s.State == SpecStateFailed
-}
-
-func (s SpecSummary) Passed() bool {
-	return s.State == SpecStatePassed
-}
-
-func (s SpecSummary) Skipped() bool {
-	return s.State == SpecStateSkipped
-}
-
-func (s SpecSummary) Pending() bool {
-	return s.State == SpecStatePending
-}
-
-type SetupSummary struct {
-	ComponentType SpecComponentType
-	CodeLocation  CodeLocation
-
-	State   SpecState
-	RunTime time.Duration
-	Failure SpecFailure
-
-	CapturedOutput string
-	SuiteID        string
-}
-
-type SpecFailure struct {
+type Failure struct {
 	Message        string
 	Location       CodeLocation
 	ForwardedPanic string
 
-	ComponentIndex        int
-	ComponentType         SpecComponentType
-	ComponentCodeLocation CodeLocation
+	NodeIndex int
+	NodeType  NodeType
 }
 
-type SpecMeasurement struct {
-	Name  string
-	Info  interface{}
-	Order int
-
-	Results []float64
-
-	Smallest     float64
-	Largest      float64
-	Average      float64
-	StdDeviation float64
-
-	SmallestLabel string
-	LargestLabel  string
-	AverageLabel  string
-	Units         string
-	Precision     int
-}
-
-func (s SpecMeasurement) PrecisionFmt() string {
-	if s.Precision == 0 {
-		return "%f"
-	}
-
-	str := strconv.Itoa(s.Precision)
-
-	return "%." + str + "f"
+func (f Failure) IsZero() bool {
+	return f == Failure{}
 }
 
 type SpecState uint
@@ -142,33 +96,101 @@ const (
 	SpecStatePassed
 	SpecStateFailed
 	SpecStatePanicked
-	SpecStateTimedOut
+	SpecStateInterrupted
 )
 
-func (state SpecState) IsFailure() bool {
-	return state == SpecStateTimedOut || state == SpecStatePanicked || state == SpecStateFailed
+var SpecStateFailureStates = []SpecState{SpecStateFailed, SpecStatePanicked, SpecStateInterrupted}
+
+func (state SpecState) Is(states ...SpecState) bool {
+	for _, testState := range states {
+		if testState == state {
+			return true
+		}
+	}
+
+	return false
 }
 
-type SpecComponentType uint
+type NodeType uint
 
 const (
-	SpecComponentTypeInvalid SpecComponentType = iota
+	NodeTypeInvalid NodeType = iota
 
-	SpecComponentTypeContainer
-	SpecComponentTypeBeforeSuite
-	SpecComponentTypeAfterSuite
-	SpecComponentTypeBeforeEach
-	SpecComponentTypeJustBeforeEach
-	SpecComponentTypeJustAfterEach
-	SpecComponentTypeAfterEach
-	SpecComponentTypeIt
-	SpecComponentTypeMeasure
+	NodeTypeContainer
+	NodeTypeIt
+
+	NodeTypeBeforeEach
+	NodeTypeJustBeforeEach
+	NodeTypeAfterEach
+	NodeTypeJustAfterEach
+
+	NodeTypeBeforeSuite
+	NodeTypeSynchronizedBeforeSuite
+	NodeTypeAfterSuite
+	NodeTypeSynchronizedAfterSuite
 )
 
-type FlagType uint
+var NodeTypesForContainerAndIt = []NodeType{NodeTypeContainer, NodeTypeIt}
+var NodeTypesForSuiteSetup = []NodeType{NodeTypeBeforeSuite, NodeTypeSynchronizedBeforeSuite, NodeTypeAfterSuite, NodeTypeSynchronizedAfterSuite}
+
+func (nt NodeType) Is(nodeTypes ...NodeType) bool {
+	for _, nodeType := range nodeTypes {
+		if nt == nodeType {
+			return true
+		}
+	}
+
+	return false
+}
+
+func (nt NodeType) String() string {
+	switch nt {
+	case NodeTypeContainer:
+		return "Container"
+	case NodeTypeIt:
+		return "It"
+	case NodeTypeBeforeEach:
+		return "BeforeEach"
+	case NodeTypeJustBeforeEach:
+		return "JustBeforeEach"
+	case NodeTypeAfterEach:
+		return "AfterEach"
+	case NodeTypeJustAfterEach:
+		return "JustAfterEach"
+	case NodeTypeBeforeSuite:
+		return "BeforeSuite"
+	case NodeTypeSynchronizedBeforeSuite:
+		return "SynchronizedBeforeSuite"
+	case NodeTypeAfterSuite:
+		return "AfterSuite"
+	case NodeTypeSynchronizedAfterSuite:
+		return "SynchronizedAfterSuite"
+	}
+
+	return "INVALID NODE TYPE"
+}
+
+type RemoteBeforeSuiteState int
 
 const (
-	FlagTypeNone FlagType = iota
-	FlagTypeFocused
-	FlagTypePending
+	RemoteBeforeSuiteStateInvalid RemoteBeforeSuiteState = iota
+
+	RemoteBeforeSuiteStatePending
+	RemoteBeforeSuiteStatePassed
+	RemoteBeforeSuiteStateFailed
+	RemoteBeforeSuiteStateDisappeared
 )
+
+type RemoteBeforeSuiteData struct {
+	Data  []byte
+	State RemoteBeforeSuiteState
+}
+
+func (r RemoteBeforeSuiteData) ToJSON() []byte {
+	data, _ := json.Marshal(r)
+	return data
+}
+
+type RemoteAfterSuiteData struct {
+	CanRun bool
+}

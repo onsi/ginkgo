@@ -1,4 +1,4 @@
-package fail_fixture_test
+package skip_fixture_test
 
 import (
 	. "github.com/onsi/ginkgo"
@@ -7,7 +7,7 @@ import (
 	"testing"
 )
 
-func TestFail_fixture(t *testing.T) {
+func TestSkip_fixture(t *testing.T) {
 	RegisterFailHandler(Fail)
 	RunSpecs(t, "Skip_fixture Suite")
 }

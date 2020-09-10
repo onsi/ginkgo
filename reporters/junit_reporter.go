@@ -62,7 +62,7 @@ func NewJUnitReporter(filename string) *JUnitReporter {
 	}
 }
 
-func (reporter *JUnitReporter) SpecSuiteWillBegin(ginkgoConfig config.GinkgoConfigType, summary *types.SuiteSummary) {
+func (reporter *JUnitReporter) SpecSuiteWillBegin(ginkgoConfig config.GinkgoConfigType, summary types.SuiteSummary) {
 	reporter.suite = JUnitTestSuite{
 		Name:      summary.SuiteDescription,
 		TestCases: []JUnitTestCase{},
@@ -71,107 +71,80 @@ func (reporter *JUnitReporter) SpecSuiteWillBegin(ginkgoConfig config.GinkgoConf
 	reporter.ReporterConfig = config.DefaultReporterConfig
 }
 
-func (reporter *JUnitReporter) SpecWillRun(specSummary *types.SpecSummary) {
+func (reporter *JUnitReporter) WillRun(_ types.Summary) {
 }
 
-func (reporter *JUnitReporter) BeforeSuiteDidRun(setupSummary *types.SetupSummary) {
-	reporter.handleSetupSummary("BeforeSuite", setupSummary)
-}
-
-func (reporter *JUnitReporter) AfterSuiteDidRun(setupSummary *types.SetupSummary) {
-	reporter.handleSetupSummary("AfterSuite", setupSummary)
-}
-
-func failureMessage(failure types.SpecFailure) string {
-	return fmt.Sprintf("%s\n%s\n%s", failure.ComponentCodeLocation.String(), failure.Message, failure.Location.String())
-}
-
-func (reporter *JUnitReporter) handleSetupSummary(name string, setupSummary *types.SetupSummary) {
-	if setupSummary.State != types.SpecStatePassed {
-		testCase := JUnitTestCase{
-			Name:      name,
-			ClassName: reporter.testSuiteName,
-		}
-
-		testCase.FailureMessage = &JUnitFailureMessage{
-			Type:    reporter.failureTypeForState(setupSummary.State),
-			Message: failureMessage(setupSummary.Failure),
-		}
-		testCase.SystemOut = setupSummary.CapturedOutput
-		testCase.Time = setupSummary.RunTime.Seconds()
-		reporter.suite.TestCases = append(reporter.suite.TestCases, testCase)
-	}
-}
-
-func (reporter *JUnitReporter) SpecDidComplete(specSummary *types.SpecSummary) {
+func (reporter *JUnitReporter) DidRun(summary types.Summary) {
 	testCase := JUnitTestCase{
-		Name:      strings.Join(specSummary.ComponentTexts[1:], " "),
 		ClassName: reporter.testSuiteName,
 	}
-	if reporter.ReporterConfig.ReportPassed && specSummary.State == types.SpecStatePassed {
-		testCase.SystemOut = specSummary.CapturedOutput
+	if summary.LeafNodeType.Is(types.NodeTypesForSuiteSetup...) {
+		if summary.State.Is(types.SpecStatePassed) {
+			return
+		}
+		testCase.Name = summary.LeafNodeType.String()
+	} else {
+		testCase.Name = strings.Join(summary.NodeTexts, " ")
 	}
-	if specSummary.State == types.SpecStateFailed || specSummary.State == types.SpecStateTimedOut || specSummary.State == types.SpecStatePanicked {
+	if reporter.ReporterConfig.ReportPassed && summary.State == types.SpecStatePassed {
+		testCase.SystemOut = summary.CombinedOutput()
+	}
+	if summary.State.Is(types.SpecStateFailureStates...) {
 		testCase.FailureMessage = &JUnitFailureMessage{
-			Type:    reporter.failureTypeForState(specSummary.State),
-			Message: failureMessage(specSummary.Failure),
+			Type:    reporter.failureTypeForState(summary.State),
+			Message: reporter.failureMessage(summary.Failure),
 		}
-		if specSummary.State == types.SpecStatePanicked {
+		if summary.State.Is(types.SpecStatePanicked) {
 			testCase.FailureMessage.Message += fmt.Sprintf("\n\nPanic: %s\n\nFull stack:\n%s",
-				specSummary.Failure.ForwardedPanic,
-				specSummary.Failure.Location.FullStackTrace)
+				summary.Failure.ForwardedPanic,
+				summary.Failure.Location.FullStackTrace)
 		}
-		testCase.SystemOut = specSummary.CapturedOutput
+		testCase.SystemOut = summary.CombinedOutput()
 	}
-	if specSummary.State == types.SpecStateSkipped || specSummary.State == types.SpecStatePending {
+	if summary.State == types.SpecStateSkipped || summary.State == types.SpecStatePending {
 		testCase.Skipped = &JUnitSkipped{}
-		if specSummary.Failure.Message != "" {
-			testCase.Skipped.Message = failureMessage(specSummary.Failure)
+		if summary.Failure.Message != "" {
+			testCase.Skipped.Message = reporter.failureMessage(summary.Failure)
 		}
 	}
-	testCase.Time = specSummary.RunTime.Seconds()
+	testCase.Time = summary.RunTime.Seconds()
 	reporter.suite.TestCases = append(reporter.suite.TestCases, testCase)
 }
 
-func (reporter *JUnitReporter) SpecSuiteDidEnd(summary *types.SuiteSummary) {
+func (reporter *JUnitReporter) SpecSuiteDidEnd(summary types.SuiteSummary) {
 	reporter.suite.Tests = summary.NumberOfSpecsThatWillBeRun
 	reporter.suite.Time = math.Trunc(summary.RunTime.Seconds()*1000) / 1000
 	reporter.suite.Failures = summary.NumberOfFailedSpecs
 	reporter.suite.Errors = 0
-	if reporter.ReporterConfig.ReportFile != "" {
-		reporter.filename = reporter.ReporterConfig.ReportFile
-		fmt.Printf("\nJUnit path was configured: %s\n", reporter.filename)
-	}
 	filePath, _ := filepath.Abs(reporter.filename)
 	dirPath := filepath.Dir(filePath)
 	err := os.MkdirAll(dirPath, os.ModePerm)
 	if err != nil {
-		fmt.Printf("\nFailed to create JUnit directory: %s\n\t%s", filePath, err.Error())
+		return
 	}
 	file, err := os.Create(filePath)
 	if err != nil {
-		fmt.Fprintf(os.Stderr, "Failed to create JUnit report file: %s\n\t%s", filePath, err.Error())
+		return
 	}
 	defer file.Close()
 	file.WriteString(xml.Header)
 	encoder := xml.NewEncoder(file)
 	encoder.Indent("  ", "    ")
-	err = encoder.Encode(reporter.suite)
-	if err == nil {
-		fmt.Fprintf(os.Stdout, "\nJUnit report was created: %s\n", filePath)
-	} else {
-		fmt.Fprintf(os.Stderr,"\nFailed to generate JUnit report data:\n\t%s", err.Error())
-	}
+	encoder.Encode(reporter.suite)
+}
+
+func (reporter *JUnitReporter) failureMessage(failure types.Failure) string {
+	return fmt.Sprintf("%s\n%s\n%s", failure.NodeType.String(), failure.Message, failure.Location.String())
 }
 
 func (reporter *JUnitReporter) failureTypeForState(state types.SpecState) string {
 	switch state {
 	case types.SpecStateFailed:
 		return "Failure"
-	case types.SpecStateTimedOut:
-		return "Timeout"
 	case types.SpecStatePanicked:
-		return "Panic"
+		return "Panicked"
+	case types.SpecStateInterrupted:
+		return "Interrupted"
 	default:
 		return ""
 	}

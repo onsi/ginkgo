@@ -1,9 +1,7 @@
 package integration_test
 
 import (
-	"os"
 	"os/exec"
-	"path/filepath"
 
 	. "github.com/onsi/ginkgo"
 	. "github.com/onsi/gomega"
@@ -12,12 +10,9 @@ import (
 )
 
 var _ = Describe("ginkgo build", func() {
-	var pathToTest string
-
 	BeforeEach(func() {
-		pathToTest = tmpPath("passing_ginkgo_tests")
-		copyIn(fixturePath("passing_ginkgo_tests"), pathToTest, false)
-		session := startGinkgo(pathToTest, "build")
+		fm.MountFixture("passing_ginkgo_tests")
+		session := startGinkgo(fm.PathTo("passing_ginkgo_tests"), "build")
 		Eventually(session).Should(gexec.Exit(0))
 		output := string(session.Out.Contents())
 		Ω(output).Should(ContainSubstring("Compiling passing_ginkgo_tests"))
@@ -25,13 +20,12 @@ var _ = Describe("ginkgo build", func() {
 	})
 
 	It("should build a test binary", func() {
-		_, err := os.Stat(filepath.Join(pathToTest, "passing_ginkgo_tests.test"))
-		Ω(err).ShouldNot(HaveOccurred())
+		Ω(fm.PathTo("passing_ginkgo_tests", "passing_ginkgo_tests.test")).Should(BeAnExistingFile())
 	})
 
 	It("should be possible to run the test binary directly", func() {
 		cmd := exec.Command("./passing_ginkgo_tests.test")
-		cmd.Dir = pathToTest
+		cmd.Dir = fm.PathTo("passing_ginkgo_tests")
 		session, err := gexec.Start(cmd, GinkgoWriter, GinkgoWriter)
 		Ω(err).ShouldNot(HaveOccurred())
 		Eventually(session).Should(gexec.Exit(0))
@@ -39,15 +33,15 @@ var _ = Describe("ginkgo build", func() {
 	})
 
 	It("should be possible to run the test binary via ginkgo", func() {
-		session := startGinkgo(pathToTest, "./passing_ginkgo_tests.test")
+		session := startGinkgo(fm.PathTo("passing_ginkgo_tests"), "./passing_ginkgo_tests.test")
 		Eventually(session).Should(gexec.Exit(0))
 		Ω(session).Should(gbytes.Say("Running Suite: Passing_ginkgo_tests Suite"))
 	})
 
 	It("should be possible to run the test binary in parallel", func() {
-		session := startGinkgo(pathToTest, "--nodes=4", "--noColor", "./passing_ginkgo_tests.test")
+		session := startGinkgo(fm.PathTo("passing_ginkgo_tests"), "--nodes=2", "--no-color", "./passing_ginkgo_tests.test")
 		Eventually(session).Should(gexec.Exit(0))
 		Ω(session).Should(gbytes.Say("Running Suite: Passing_ginkgo_tests Suite"))
-		Ω(session).Should(gbytes.Say("Running in parallel across 4 nodes"))
+		Ω(session).Should(gbytes.Say("Running in parallel across 2 nodes"))
 	})
 })
