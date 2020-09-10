@@ -64,7 +64,6 @@ var _ = DescribeTable("Validate outline from file with",
 )
 
 var _ = Describe("Validate position", func() {
-
 	It("should report the correct start and end byte offsets of the ginkgo container or spec", func() {
 		fset := token.NewFileSet()
 		astFile, err := parser.ParseFile(fset, filepath.Join("_testdata", "position_test.go"), nil, 0)

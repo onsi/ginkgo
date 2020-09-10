@@ -10,24 +10,19 @@ import (
 )
 
 var _ = Describe("Verbose And Succinct Mode", func() {
-	var pathToTest string
-	var otherPathToTest string
-
-	isWindows := (runtime.GOOS == "windows")
 	denoter := "•"
 
-	if isWindows {
+	if runtime.GOOS == "windows" {
 		denoter = "+"
 	}
 
 	Context("when running one package", func() {
 		BeforeEach(func() {
-			pathToTest = tmpPath("ginkgo")
-			copyIn(fixturePath("passing_ginkgo_tests"), pathToTest, false)
+			fm.MountFixture("passing_ginkgo_tests")
 		})
 
 		It("should default to non-succinct mode", func() {
-			session := startGinkgo(pathToTest, "--noColor")
+			session := startGinkgo(fm.PathTo("passing_ginkgo_tests"), "--no-color")
 			Eventually(session).Should(gexec.Exit(0))
 			output := session.Out.Contents()
 
@@ -37,15 +32,13 @@ var _ = Describe("Verbose And Succinct Mode", func() {
 
 	Context("when running more than one package", func() {
 		BeforeEach(func() {
-			pathToTest = tmpPath("ginkgo")
-			copyIn(fixturePath("passing_ginkgo_tests"), pathToTest, false)
-			otherPathToTest = tmpPath("more_ginkgo")
-			copyIn(fixturePath("more_ginkgo_tests"), otherPathToTest, false)
+			fm.MountFixture("passing_ginkgo_tests")
+			fm.MountFixture("more_ginkgo_tests")
 		})
 
 		Context("with no flags set", func() {
 			It("should default to succinct mode", func() {
-				session := startGinkgo(tmpDir, "--noColor", "ginkgo", "more_ginkgo")
+				session := startGinkgo(fm.TmpDir, "--no-color", "passing_ginkgo_tests", "more_ginkgo_tests")
 				Eventually(session).Should(gexec.Exit(0))
 				output := session.Out.Contents()
 
@@ -56,7 +49,7 @@ var _ = Describe("Verbose And Succinct Mode", func() {
 
 		Context("with --succinct=false", func() {
 			It("should not be in succinct mode", func() {
-				session := startGinkgo(tmpDir, "--noColor", "--succinct=false", "ginkgo", "more_ginkgo")
+				session := startGinkgo(fm.TmpDir, "--no-color", "--succinct=false", "passing_ginkgo_tests", "more_ginkgo_tests")
 				Eventually(session).Should(gexec.Exit(0))
 				output := session.Out.Contents()
 
@@ -67,7 +60,7 @@ var _ = Describe("Verbose And Succinct Mode", func() {
 
 		Context("with -v", func() {
 			It("should not be in succinct mode, but should be verbose", func() {
-				session := startGinkgo(tmpDir, "--noColor", "-v", "ginkgo", "more_ginkgo")
+				session := startGinkgo(fm.TmpDir, "--no-color", "-v", "passing_ginkgo_tests", "more_ginkgo_tests")
 				Eventually(session).Should(gexec.Exit(0))
 				output := session.Out.Contents()
 
@@ -78,7 +71,7 @@ var _ = Describe("Verbose And Succinct Mode", func() {
 			})
 
 			It("should emit output from Bys", func() {
-				session := startGinkgo(tmpDir, "--noColor", "-v", "ginkgo")
+				session := startGinkgo(fm.PathTo("passing_ginkgo_tests"), "--no-color", "-v")
 				Eventually(session).Should(gexec.Exit(0))
 				output := session.Out.Contents()
 
