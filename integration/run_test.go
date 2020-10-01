@@ -7,6 +7,7 @@ import (
 	"regexp"
 	"runtime"
 	"strings"
+	"time"
 
 	. "github.com/onsi/ginkgo"
 	"github.com/onsi/ginkgo/types"
@@ -441,7 +442,7 @@ var _ = Describe("Running Specs", func() {
 
 			It("should soldier on", func() {
 				session := startGinkgo(tmpDir, "--noColor", "-r", "-keepGoing")
-				Eventually(session).Should(gexec.Exit(1))
+				Eventually(session, 5*time.Minute).Should(gexec.Exit(1))
 				output := string(session.Out.Contents())
 
 				outputLines := strings.Split(output, "\n")
