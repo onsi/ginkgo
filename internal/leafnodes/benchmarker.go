@@ -34,6 +34,19 @@ func (b *benchmarker) Time(name string, body func(), info ...interface{}) (elaps
 	return
 }
 
+func (b *benchmarker) TimeWithPrecision(name string, body func(), units string, precision int, info ...interface{}) (elapsedTime time.Duration) {
+	t := time.Now()
+	body()
+	elapsedTime = time.Since(t)
+
+	b.mu.Lock()
+	defer b.mu.Unlock()
+	measurement := b.getMeasurement(name, "Fastest Time", "Slowest Time", "Average Time", units, precision, info...)
+	measurement.Results = append(measurement.Results, elapsedTime.Seconds())
+
+	return
+}
+
 func (b *benchmarker) RecordValue(name string, value float64, info ...interface{}) {
 	b.mu.Lock()
 	measurement := b.getMeasurement(name, "Smallest", " Largest", " Average", "", 3, info...)
