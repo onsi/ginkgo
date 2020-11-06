@@ -105,6 +105,19 @@ var _ = Describe("Flags Specs", func() {
 		Ω(output).Should(ContainSubstring("3 Skipped"))
 	})
 
+	It("should override the programmatic focus when told to skip (multiple options)", func() {
+		session := startGinkgo(pathToTest, "--noColor", "--skip=marshmallow", "--skip=failing", "--skip=flaky")
+		Eventually(session).Should(gexec.Exit(0))
+		output := string(session.Out.Contents())
+
+		Ω(output).ShouldNot(ContainSubstring("marshmallow"))
+		Ω(output).Should(ContainSubstring("chocolate"))
+		Ω(output).Should(ContainSubstring("smores"))
+		Ω(output).Should(ContainSubstring("11 Passed"))
+		Ω(output).Should(ContainSubstring("0 Failed"))
+		Ω(output).Should(ContainSubstring("1 Pending"))
+		Ω(output).Should(ContainSubstring("3 Skipped"))
+	})
 	It("should run the race detector when told to", func() {
 		if !raceDetectorSupported() {
 			Skip("race detection is not supported")
