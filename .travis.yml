@@ -19,7 +19,5 @@ install:
   - export PATH=$PATH:$HOME/gopath/bin
 
 script:
-  - GO111MODULE="on" go mod tidy
-  - diff -u <(echo -n) <(git diff go.mod)
-  - diff -u <(echo -n) <(git diff go.sum)
+  - GO111MODULE="on" go mod tidy && git diff --exit-code go.mod go.sum
   - $HOME/gopath/bin/ginkgo -r --randomizeAllSpecs --randomizeSuites --race --trace && go vet
