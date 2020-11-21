@@ -436,11 +436,15 @@ func XSpecify(text string, is ...interface{}) bool {
 //By allows you to document such flows.  By must be called within a runnable node (It, BeforeEach, Measure, etc...)
 //By will simply log the passed in text to the GinkgoWriter.  If By is handed a function it will immediately run the function.
 func By(text string, callbacks ...func()) {
+	timestamp := ""
+	if config.GinkgoConfig.ShowTimestamp {
+		timestamp = "[" + time.Now().Format(time.RFC3339) + "] "
+	}
 	preamble := "\x1b[1mSTEP\x1b[0m"
 	if config.DefaultReporterConfig.NoColor {
 		preamble = "STEP"
 	}
-	fmt.Fprintln(GinkgoWriter, preamble+": "+text)
+	fmt.Fprintln(GinkgoWriter, timestamp+preamble+": "+text)
 	if len(callbacks) == 1 {
 		callbacks[0]()
 	}

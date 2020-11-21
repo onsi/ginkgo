@@ -33,6 +33,7 @@ type GinkgoConfigType struct {
 	FailFast           bool
 	FlakeAttempts      int
 	EmitSpecProgress   bool
+	ShowTimestamp      bool
 	DryRun             bool
 	DebugParallel      bool
 
@@ -83,6 +84,8 @@ func Flags(flagSet *flag.FlagSet, prefix string, includeParallelFlags bool) {
 	flagSet.IntVar(&(GinkgoConfig.FlakeAttempts), prefix+"flakeAttempts", 1, "Make up to this many attempts to run each spec. Please note that if any of the attempts succeed, the suite will not be failed. But any failures will still be recorded.")
 
 	flagSet.BoolVar(&(GinkgoConfig.EmitSpecProgress), prefix+"progress", false, "If set, ginkgo will emit progress information as each spec runs to the GinkgoWriter.")
+
+	flagSet.BoolVar(&(GinkgoConfig.ShowTimestamp), prefix+"timestamp", false, "If set, ginkgo will print timestamps as each By function executes to the GinkgoWriter.")
 
 	flagSet.BoolVar(&(GinkgoConfig.DebugParallel), prefix+"debug", false, "If set, ginkgo will emit node output to files when running in parallel.")
 
@@ -147,6 +150,10 @@ func BuildFlagArgs(prefix string, ginkgo GinkgoConfigType, reporter DefaultRepor
 
 	if ginkgo.EmitSpecProgress {
 		result = append(result, fmt.Sprintf("--%sprogress", prefix))
+	}
+
+	if ginkgo.ShowTimestamp {
+		result = append(result, fmt.Sprintf("--%stimestamp", prefix))
 	}
 
 	if ginkgo.DebugParallel {
