@@ -114,6 +114,10 @@ func generateSpecForSubject(subject string, agouti, noDot, internal bool) error 
 		formattedName = prettifyPackageName(specFilePrefix)
 	}
 
+	if internal {
+		specFilePrefix = specFilePrefix + "_internal"
+	}
+
 	data := specData{
 		Package:           determinePackageName(packageName, internal),
 		Subject:           formattedName,
