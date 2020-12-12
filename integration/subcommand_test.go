@@ -175,6 +175,36 @@ var _ = Describe("Subcommand", func() {
 			})
 		})
 
+		Context("with template argument", func() {
+			It("should generate a test file using a template", func() {
+				templateFile := filepath.Join(pkgPath, ".generate")
+				ioutil.WriteFile(templateFile, []byte(`package {{.Package}}
+				import (
+					{{if .IncludeImports}}. "github.com/onsi/ginkgo"{{end}}
+					{{if .IncludeImports}}. "github.com/onsi/gomega"{{end}}
+				
+					{{if .ImportPackage}}"{{.PackageImportPath}}"{{end}}
+				)
+				
+				var _ = Describe("{{.Subject}}", func() {
+					// This is a {{.Package}} test
+				})`), 0666)
+				session := startGinkgo(pkgPath, "generate", "--template", ".generate")
+				Eventually(session).Should(gexec.Exit(0))
+				output := session.Out.Contents()
+
+				Ω(output).Should(ContainSubstring("foo_test.go"))
+
+				content, err := ioutil.ReadFile(filepath.Join(pkgPath, "foo_suite_test.go"))
+				Ω(err).ShouldNot(HaveOccurred())
+				Ω(content).Should(ContainSubstring("package foo_test"))
+				Ω(content).Should(ContainSubstring(`. "github.com/onsi/ginkgo"`))
+				Ω(content).Should(ContainSubstring(`. "github.com/onsi/gomega"`))
+				Ω(content).Should(ContainSubstring(`"foo"`))
+				Ω(content).Should(ContainSubstring("// This is a foo_test test"))
+			})
+		})
+
 		Context("with an argument of the form: foo", func() {
 			It("should generate a test file named after the argument", func() {
 				session := startGinkgo(pkgPath, "generate", "baz_buzz")
