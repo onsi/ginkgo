@@ -193,15 +193,15 @@ var _ = Describe("Subcommand", func() {
 				Eventually(session).Should(gexec.Exit(0))
 				output := session.Out.Contents()
 
-				Ω(output).Should(ContainSubstring("foo_test.go"))
+				Ω(output).Should(ContainSubstring("foo_bar_test.go"))
 
-				content, err := ioutil.ReadFile(filepath.Join(pkgPath, "foo_suite_test.go"))
+				content, err := ioutil.ReadFile(filepath.Join(pkgPath, "foo_bar_test.go"))
 				Ω(err).ShouldNot(HaveOccurred())
-				Ω(content).Should(ContainSubstring("package foo_test"))
+				Ω(content).Should(ContainSubstring("package foo_bar_test"))
 				Ω(content).Should(ContainSubstring(`. "github.com/onsi/ginkgo"`))
 				Ω(content).Should(ContainSubstring(`. "github.com/onsi/gomega"`))
 				Ω(content).Should(ContainSubstring(`"foo"`))
-				Ω(content).Should(ContainSubstring("// This is a foo_test test"))
+				Ω(content).Should(ContainSubstring("// This is a foo_bar_test test"))
 			})
 		})
 
