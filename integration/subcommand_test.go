@@ -200,7 +200,7 @@ var _ = Describe("Subcommand", func() {
 				Ω(content).Should(ContainSubstring("package foo_bar_test"))
 				Ω(content).Should(ContainSubstring(`. "github.com/onsi/ginkgo"`))
 				Ω(content).Should(ContainSubstring(`. "github.com/onsi/gomega"`))
-				Ω(content).Should(ContainSubstring(`"foo"`))
+				Ω(content).Should(ContainSubstring(`/foo_bar"`))
 				Ω(content).Should(ContainSubstring("// This is a foo_bar_test test"))
 			})
 		})
