@@ -1,0 +1,11 @@
+Name,Text,Start,End,Spec,Focused,Pending
+Describe,FocusedFixture,116,596,false,false,false
+FDescribe,focused,153,217,false,true,false
+It,focused,185,213,true,false,false
+FContext,focused,220,283,false,true,false
+It,focused,251,279,true,false,false
+FWhen,focused,286,346,false,true,false
+It,focused,314,342,true,false,false
+FIt,focused,349,377,true,true,false
+FSpecify,focused,380,413,true,true,false
+FMeasure,focused,416,465,true,true,false

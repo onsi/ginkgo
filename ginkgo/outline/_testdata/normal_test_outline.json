@@ -1,0 +1,100 @@
+[
+  {
+    "name": "Describe",
+    "text": "NormalFixture",
+    "start": 116,
+    "end": 574,
+    "spec": false,
+    "focused": false,
+    "pending": false,
+    "nodes": [
+      {
+        "name": "Describe",
+        "text": "normal",
+        "start": 152,
+        "end": 213,
+        "spec": false,
+        "focused": false,
+        "pending": false,
+        "nodes": [
+          {
+            "name": "It",
+            "text": "normal",
+            "start": 182,
+            "end": 209,
+            "spec": true,
+            "focused": false,
+            "pending": false
+          }
+        ]
+      },
+      {
+        "name": "Context",
+        "text": "normal",
+        "start": 216,
+        "end": 276,
+        "spec": false,
+        "focused": false,
+        "pending": false,
+        "nodes": [
+          {
+            "name": "It",
+            "text": "normal",
+            "start": 245,
+            "end": 272,
+            "spec": true,
+            "focused": false,
+            "pending": false
+          }
+        ]
+      },
+      {
+        "name": "When",
+        "text": "normal",
+        "start": 279,
+        "end": 336,
+        "spec": false,
+        "focused": false,
+        "pending": false,
+        "nodes": [
+          {
+            "name": "It",
+            "text": "normal",
+            "start": 305,
+            "end": 332,
+            "spec": true,
+            "focused": false,
+            "pending": false
+          }
+        ]
+      },
+      {
+        "name": "It",
+        "text": "normal",
+        "start": 339,
+        "end": 365,
+        "spec": true,
+        "focused": false,
+        "pending": false
+      },
+      {
+        "name": "Specify",
+        "text": "normal",
+        "start": 368,
+        "end": 399,
+        "spec": true,
+        "focused": false,
+        "pending": false
+      },
+      {
+        "name": "Measure",
+        "text": "normal",
+        "start": 402,
+        "end": 449,
+        "spec": true,
+        "focused": false,
+        "pending": false
+      }
+    ]
+  }
+]

@@ -1,0 +1,100 @@
+[
+  {
+    "name": "Describe",
+    "text": "FocusedFixture",
+    "start": 116,
+    "end": 596,
+    "spec": false,
+    "focused": false,
+    "pending": false,
+    "nodes": [
+      {
+        "name": "FDescribe",
+        "text": "focused",
+        "start": 153,
+        "end": 217,
+        "spec": false,
+        "focused": true,
+        "pending": false,
+        "nodes": [
+          {
+            "name": "It",
+            "text": "focused",
+            "start": 185,
+            "end": 213,
+            "spec": true,
+            "focused": false,
+            "pending": false
+          }
+        ]
+      },
+      {
+        "name": "FContext",
+        "text": "focused",
+        "start": 220,
+        "end": 283,
+        "spec": false,
+        "focused": true,
+        "pending": false,
+        "nodes": [
+          {
+            "name": "It",
+            "text": "focused",
+            "start": 251,
+            "end": 279,
+            "spec": true,
+            "focused": false,
+            "pending": false
+          }
+        ]
+      },
+      {
+        "name": "FWhen",
+        "text": "focused",
+        "start": 286,
+        "end": 346,
+        "spec": false,
+        "focused": true,
+        "pending": false,
+        "nodes": [
+          {
+            "name": "It",
+            "text": "focused",
+            "start": 314,
+            "end": 342,
+            "spec": true,
+            "focused": false,
+            "pending": false
+          }
+        ]
+      },
+      {
+        "name": "FIt",
+        "text": "focused",
+        "start": 349,
+        "end": 377,
+        "spec": true,
+        "focused": true,
+        "pending": false
+      },
+      {
+        "name": "FSpecify",
+        "text": "focused",
+        "start": 380,
+        "end": 413,
+        "spec": true,
+        "focused": true,
+        "pending": false
+      },
+      {
+        "name": "FMeasure",
+        "text": "focused",
+        "start": 416,
+        "end": 465,
+        "spec": true,
+        "focused": true,
+        "pending": false
+      }
+    ]
+  }
+]

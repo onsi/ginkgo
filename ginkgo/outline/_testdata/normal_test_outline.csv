@@ -1,0 +1,11 @@
+Name,Text,Start,End,Spec,Focused,Pending
+Describe,NormalFixture,116,574,false,false,false
+Describe,normal,152,213,false,false,false
+It,normal,182,209,true,false,false
+Context,normal,216,276,false,false,false
+It,normal,245,272,true,false,false
+When,normal,279,336,false,false,false
+It,normal,305,332,true,false,false
+It,normal,339,365,true,false,false
+Specify,normal,368,399,true,false,false
+Measure,normal,402,449,true,false,false
