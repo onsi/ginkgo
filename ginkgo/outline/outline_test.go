@@ -40,6 +40,8 @@ var _ = DescribeTable("Validate outline from file with",
 
 		Expect(gotCSV).To(Equal(string(wantCSV)))
 	},
+	Entry("normal import of ginkgo package (no dot, no alias), normal container and specs", "nodot_test.go", "nodot_test_outline.json", "nodot_test_outline.csv"),
+	Entry("aliased import of ginkgo package, normal container and specs", "alias_test.go", "alias_test_outline.json", "alias_test_outline.csv"),
 	Entry("normal containers and specs", "normal_test.go", "normal_test_outline.json", "normal_test_outline.csv"),
 	Entry("focused containers and specs", "focused_test.go", "focused_test_outline.json", "focused_test_outline.csv"),
 	Entry("pending containers and specs", "pending_test.go", "pending_test_outline.json", "pending_test_outline.csv"),

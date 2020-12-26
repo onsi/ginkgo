@@ -12,6 +12,8 @@ import (
 )
 
 const (
+	// ginkgoImportPath is the well-known ginkgo import path
+	ginkgoImportPath = "github.com/onsi/ginkgo"
 	// undefinedTextAlt is used if the spec/container text cannot be derived
 	undefinedTextAlt = "undefined"
 )
@@ -52,9 +54,28 @@ func (n *ginkgoNode) Walk(f walkFunc) {
 
 // ginkgoNodeFromCallExpr derives an outline entry from a go AST subtree
 // corresponding to a Ginkgo container or spec.
-func ginkgoNodeFromCallExpr(ce *ast.CallExpr) (*ginkgoNode, bool) {
-	id, ok := ce.Fun.(*ast.Ident)
-	if !ok {
+func ginkgoNodeFromCallExpr(ce *ast.CallExpr, ginkgoImportName string) (*ginkgoNode, bool) {
+	var id *ast.Ident
+	switch ex := ce.Fun.(type) {
+	case *ast.Ident:
+		if ginkgoImportName != "." {
+			return nil, false
+		}
+		id = ex
+	case *ast.SelectorExpr:
+		pkgID, ok := ex.X.(*ast.Ident)
+		if !ok {
+			return nil, false
+		}
+		// A package identifier is top-level, so Obj must be nil
+		if pkgID.Obj != nil {
+			return nil, false
+		}
+		if ginkgoImportName != pkgID.Name {
+			return nil, false
+		}
+		id = ex.Sel
+	default:
 		return nil, false
 	}
 
@@ -62,8 +83,6 @@ func ginkgoNodeFromCallExpr(ce *ast.CallExpr) (*ginkgoNode, bool) {
 	n.Name = id.Name
 	n.Start = ce.Pos()
 	n.End = ce.End()
-	// TODO: Handle nodot and alias imports of the ginkgo package.
-	// The below assumes dot imports .
 	switch id.Name {
 	case "It", "Measure", "Specify":
 		n.Spec = true
@@ -131,6 +150,10 @@ func textFromCallExpr(ce *ast.CallExpr) (string, bool) {
 
 // FromASTFile returns an outline for a Ginkgo test source file
 func FromASTFile(src *ast.File) (*outline, error) {
+	ginkgoImportName, ok := importNameForPackage(src, ginkgoImportPath)
+	if !ok {
+		return nil, fmt.Errorf("file does not import %s", ginkgoImportPath)
+	}
 	root := ginkgoNode{
 		Nodes: []*ginkgoNode{},
 	}
@@ -144,7 +167,7 @@ func FromASTFile(src *ast.File) (*outline, error) {
 			// ast.CallExpr, this should never happen
 			panic(fmt.Errorf("node starting at %d, ending at %d is not an *ast.CallExpr", node.Pos(), node.End()))
 		}
-		gn, ok := ginkgoNodeFromCallExpr(ce)
+		gn, ok := ginkgoNodeFromCallExpr(ce, ginkgoImportName)
 		if !ok {
 			// Not a Ginkgo call, continue
 			return true
