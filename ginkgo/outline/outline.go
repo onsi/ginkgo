@@ -45,11 +45,18 @@ type ginkgoNode struct {
 
 type walkFunc func(n *ginkgoNode)
 
-func (n *ginkgoNode) Walk(f walkFunc) {
+func (n *ginkgoNode) PreOrder(f walkFunc) {
 	f(n)
 	for _, m := range n.Nodes {
-		m.Walk(f)
+		m.PreOrder(f)
 	}
+}
+
+func (n *ginkgoNode) PostOrder(f walkFunc) {
+	for _, m := range n.Nodes {
+		m.PostOrder(f)
+	}
+	f(n)
 }
 
 // ginkgoNodeFromCallExpr derives an outline entry from a go AST subtree
@@ -162,7 +169,7 @@ func FromASTFile(src *ast.File) (*outline, error) {
 	ispr := inspector.New([]*ast.File{src})
 	ispr.Nodes([]ast.Node{(*ast.CallExpr)(nil)}, func(node ast.Node, push bool) bool {
 		if push {
-			// Visiting this node on the way down
+			// Pre-order traversal
 			ce, ok := node.(*ast.CallExpr)
 			if !ok {
 				// Because `Nodes` calls this function only when the node is an
@@ -176,19 +183,12 @@ func FromASTFile(src *ast.File) (*outline, error) {
 			}
 
 			parent := stack[len(stack)-1]
-			if parent.Pending {
-				gn.Pending = true
-			}
-			// TODO: Update focused based on ginkgo behavior:
-			// > Nested programmatically focused specs follow a simple rule: if
-			// > a leaf-node is marked focused, any of its ancestor nodes that
-			// > are marked focus will be unfocused.
 			parent.Nodes = append(parent.Nodes, gn)
 
 			stack = append(stack, gn)
 			return true
 		}
-		// Visiting node on the way up
+		// Post-order traversal
 		lastVisitedGinkgoNode := stack[len(stack)-1]
 		if node.Pos() != lastVisitedGinkgoNode.Start || node.End() != lastVisitedGinkgoNode.End {
 			// Node is not a Ginkgo spec or container, so it was not pushed onto the stack, continue
@@ -196,6 +196,40 @@ func FromASTFile(src *ast.File) (*outline, error) {
 		}
 		stack = stack[0 : len(stack)-1]
 		return true
+	})
+
+	// Derive authoritative focus by applying this rule:
+	// > Nested programmatically focused specs follow a simple rule: if a
+	// > leaf-node is marked focused, any of its ancestor nodes that are marked
+	// > focus will be unfocused.
+	focusedSpecInSubtreeStack := []bool{}
+	root.PostOrder(func(n *ginkgoNode) {
+		if n.Spec {
+			focusedSpecInSubtreeStack = append(focusedSpecInSubtreeStack, n.Focused)
+			return
+		}
+		focusedSpecInSubtree := false
+		for range n.Nodes {
+			focusedSpecInSubtree = focusedSpecInSubtree || focusedSpecInSubtreeStack[len(focusedSpecInSubtreeStack)-1]
+			focusedSpecInSubtreeStack = focusedSpecInSubtreeStack[0 : len(focusedSpecInSubtreeStack)-1]
+		}
+		focusedSpecInSubtreeStack = append(focusedSpecInSubtreeStack, focusedSpecInSubtree)
+		if focusedSpecInSubtree {
+			n.Focused = false
+		}
+	})
+
+	// Propagate focus and pending.
+	root.PreOrder(func(n *ginkgoNode) {
+		for _, m := range n.Nodes {
+			if n.Pending {
+				m.Pending = true
+				m.Focused = false
+			}
+			if n.Focused && !m.Pending {
+				m.Focused = true
+			}
+		}
 	})
 
 	return (*outline)(&root), nil
@@ -216,7 +250,7 @@ func (o *outline) String() string {
 		b.WriteString(fmt.Sprintf("%s,%s,%d,%d,%t,%t,%t\n", n.Name, n.Text, n.Start, n.End, n.Spec, n.Focused, n.Pending))
 	}
 	for _, n := range o.Nodes {
-		n.Walk(f)
+		n.PreOrder(f)
 	}
 	return b.String()
 }

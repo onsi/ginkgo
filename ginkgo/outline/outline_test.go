@@ -45,4 +45,6 @@ var _ = DescribeTable("Validate outline from file with",
 	Entry("normal containers and specs", "normal_test.go", "normal_test_outline.json", "normal_test_outline.csv"),
 	Entry("focused containers and specs", "focused_test.go", "focused_test_outline.json", "focused_test_outline.csv"),
 	Entry("pending containers and specs", "pending_test.go", "pending_test_outline.json", "pending_test_outline.csv"),
+	Entry("nested focused containers and specs", "nestedfocused_test.go", "nestedfocused_test_outline.json", "nestedfocused_test_outline.csv"),
+	Entry("mixed focused containers and specs", "mixed_test.go", "mixed_test_outline.json", "mixed_test_outline.csv"),
 )

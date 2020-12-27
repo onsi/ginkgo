@@ -5,7 +5,7 @@ import (
 	. "github.com/onsi/ginkgo/extensions/table"
 )
 
-var _ = Describe("FocusedFixture", func() {
+var _ = Describe("unfocused", func() {
 	FDescribe("focused", func() {
 		It("focused", func() {
 
