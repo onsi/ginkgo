@@ -161,20 +161,20 @@ func FromASTFile(src *ast.File) (*outline, error) {
 
 	ispr := inspector.New([]*ast.File{src})
 	ispr.Nodes([]ast.Node{(*ast.CallExpr)(nil)}, func(node ast.Node, push bool) bool {
-		ce, ok := node.(*ast.CallExpr)
-		if !ok {
-			// Because `Nodes` calls this function only when the node is an
-			// ast.CallExpr, this should never happen
-			panic(fmt.Errorf("node starting at %d, ending at %d is not an *ast.CallExpr", node.Pos(), node.End()))
-		}
-		gn, ok := ginkgoNodeFromCallExpr(ce, ginkgoImportName)
-		if !ok {
-			// Not a Ginkgo call, continue
-			return true
-		}
-
-		// Visiting this node on the way down
 		if push {
+			// Visiting this node on the way down
+			ce, ok := node.(*ast.CallExpr)
+			if !ok {
+				// Because `Nodes` calls this function only when the node is an
+				// ast.CallExpr, this should never happen
+				panic(fmt.Errorf("node starting at %d, ending at %d is not an *ast.CallExpr", node.Pos(), node.End()))
+			}
+			gn, ok := ginkgoNodeFromCallExpr(ce, ginkgoImportName)
+			if !ok {
+				// Node is not a Ginkgo spec or container, continue
+				return true
+			}
+
 			parent := stack[len(stack)-1]
 			if parent.Pending {
 				gn.Pending = true
@@ -189,6 +189,11 @@ func FromASTFile(src *ast.File) (*outline, error) {
 			return true
 		}
 		// Visiting node on the way up
+		lastVisitedGinkgoNode := stack[len(stack)-1]
+		if node.Pos() != lastVisitedGinkgoNode.Start || node.End() != lastVisitedGinkgoNode.End {
+			// Node is not a Ginkgo spec or container, so it was not pushed onto the stack, continue
+			return true
+		}
 		stack = stack[0 : len(stack)-1]
 		return true
 	})
