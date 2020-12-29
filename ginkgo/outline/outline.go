@@ -59,6 +59,47 @@ func (n *ginkgoNode) PostOrder(f walkFunc) {
 	f(n)
 }
 
+// PropagateInheritedProperties propagates the Pending and Focused properties
+// through the subtree rooted at n.
+func (n *ginkgoNode) PropagateInheritedProperties() {
+	n.PreOrder(func(thisNode *ginkgoNode) {
+		for _, descendantNode := range thisNode.Nodes {
+			if thisNode.Pending {
+				descendantNode.Pending = true
+				descendantNode.Focused = false
+			}
+			if thisNode.Focused && !descendantNode.Pending {
+				descendantNode.Focused = true
+			}
+		}
+	})
+}
+
+// BackpropagateUnfocus propagates the Focused property through the subtree
+// rooted at n. It applies the rule described in the Ginkgo docs:
+// > Nested programmatically focused specs follow a simple rule: if a
+// > leaf-node is marked focused, any of its ancestor nodes that are marked
+// > focus will be unfocused.
+func (n *ginkgoNode) BackpropagateUnfocus() {
+	focusedSpecInSubtreeStack := []bool{}
+	n.PostOrder(func(thisNode *ginkgoNode) {
+		if thisNode.Spec {
+			focusedSpecInSubtreeStack = append(focusedSpecInSubtreeStack, thisNode.Focused)
+			return
+		}
+		focusedSpecInSubtree := false
+		for range thisNode.Nodes {
+			focusedSpecInSubtree = focusedSpecInSubtree || focusedSpecInSubtreeStack[len(focusedSpecInSubtreeStack)-1]
+			focusedSpecInSubtreeStack = focusedSpecInSubtreeStack[0 : len(focusedSpecInSubtreeStack)-1]
+		}
+		focusedSpecInSubtreeStack = append(focusedSpecInSubtreeStack, focusedSpecInSubtree)
+		if focusedSpecInSubtree {
+			thisNode.Focused = false
+		}
+	})
+
+}
+
 // ginkgoNodeFromCallExpr derives an outline entry from a go AST subtree
 // corresponding to a Ginkgo container or spec.
 func ginkgoNodeFromCallExpr(ce *ast.CallExpr, ginkgoImportName string) (*ginkgoNode, bool) {
@@ -198,39 +239,11 @@ func FromASTFile(src *ast.File) (*outline, error) {
 		return true
 	})
 
-	// Derive authoritative focus by applying this rule:
-	// > Nested programmatically focused specs follow a simple rule: if a
-	// > leaf-node is marked focused, any of its ancestor nodes that are marked
-	// > focus will be unfocused.
-	focusedSpecInSubtreeStack := []bool{}
-	root.PostOrder(func(n *ginkgoNode) {
-		if n.Spec {
-			focusedSpecInSubtreeStack = append(focusedSpecInSubtreeStack, n.Focused)
-			return
-		}
-		focusedSpecInSubtree := false
-		for range n.Nodes {
-			focusedSpecInSubtree = focusedSpecInSubtree || focusedSpecInSubtreeStack[len(focusedSpecInSubtreeStack)-1]
-			focusedSpecInSubtreeStack = focusedSpecInSubtreeStack[0 : len(focusedSpecInSubtreeStack)-1]
-		}
-		focusedSpecInSubtreeStack = append(focusedSpecInSubtreeStack, focusedSpecInSubtree)
-		if focusedSpecInSubtree {
-			n.Focused = false
-		}
-	})
-
-	// Propagate focus and pending.
-	root.PreOrder(func(n *ginkgoNode) {
-		for _, m := range n.Nodes {
-			if n.Pending {
-				m.Pending = true
-				m.Focused = false
-			}
-			if n.Focused && !m.Pending {
-				m.Focused = true
-			}
-		}
-	})
+	// Derive the final focused property for all nodes. This must be done
+	// _before_ propagating the inherited focused property.
+	root.BackpropagateUnfocus()
+	// Now, propagate inherited properties, including focused and pending.
+	root.PropagateInheritedProperties()
 
 	return (*outline)(&root), nil
 }
