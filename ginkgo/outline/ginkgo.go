@@ -52,6 +52,14 @@ func (n *ginkgoNode) PostOrder(f walkFunc) {
 	f(n)
 }
 
+func (n *ginkgoNode) Walk(pre, post walkFunc) {
+	pre(n)
+	for _, m := range n.Nodes {
+		m.Walk(pre, post)
+	}
+	post(n)
+}
+
 // PropagateInheritedProperties propagates the Pending and Focused properties
 // through the subtree rooted at n.
 func (n *ginkgoNode) PropagateInheritedProperties() {

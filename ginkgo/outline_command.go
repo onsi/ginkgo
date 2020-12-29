@@ -11,11 +11,16 @@ import (
 	"github.com/onsi/ginkgo/ginkgo/outline"
 )
 
+const (
+	// indentWidth is the width used by the 'indent' output
+	indentWidth = 4
+)
+
 func BuildOutlineCommand() *Command {
 	const defaultFormat = "csv"
 	var format string
 	flagSet := flag.NewFlagSet("outline", flag.ExitOnError)
-	flagSet.StringVar(&format, "format", defaultFormat, "Format of outline. Accepted: 'csv', 'json'")
+	flagSet.StringVar(&format, "format", defaultFormat, "Format of outline. Accepted: 'csv', 'indent', 'json'")
 	return &Command{
 		Name:         "outline",
 		FlagSet:      flagSet,
@@ -54,6 +59,8 @@ func outlineFile(args []string, format string) {
 	switch format {
 	case "csv":
 		_, oerr = fmt.Print(o)
+	case "indent":
+		_, oerr = fmt.Print(o.StringIndent(indentWidth))
 	case "json":
 		b, err := json.Marshal(o)
 		if err != nil {

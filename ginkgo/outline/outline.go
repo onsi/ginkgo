@@ -77,13 +77,26 @@ func (o *outline) MarshalJSON() ([]byte, error) {
 // String returns a CSV-formatted outline. Spec or container are output in
 // depth-first order.
 func (o *outline) String() string {
+	return o.StringIndent(0)
+}
+
+// StringIndent returns a CSV-formated outline, but every line is indented by
+// one 'width' of spaces for every level of nesting.
+func (o *outline) StringIndent(width int) string {
 	var b strings.Builder
 	b.WriteString("Name,Text,Start,End,Spec,Focused,Pending\n")
-	f := func(n *ginkgoNode) {
+
+	currentIndent := 0
+	pre := func(n *ginkgoNode) {
+		b.WriteString(fmt.Sprintf("%*s", currentIndent, ""))
 		b.WriteString(fmt.Sprintf("%s,%s,%d,%d,%t,%t,%t\n", n.Name, n.Text, n.Start, n.End, n.Spec, n.Focused, n.Pending))
+		currentIndent += width
+	}
+	post := func(n *ginkgoNode) {
+		currentIndent -= width
 	}
 	for _, n := range o.Nodes {
-		n.PreOrder(f)
+		n.Walk(pre, post)
 	}
 	return b.String()
 }
