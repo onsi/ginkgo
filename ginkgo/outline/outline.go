@@ -100,38 +100,48 @@ func (n *ginkgoNode) BackpropagateUnfocus() {
 
 }
 
-// ginkgoNodeFromCallExpr derives an outline entry from a go AST subtree
-// corresponding to a Ginkgo container or spec.
-func ginkgoNodeFromCallExpr(ce *ast.CallExpr, ginkgoImportName string) (*ginkgoNode, bool) {
-	var id *ast.Ident
+func ginkgoIdentNameFromCallExpr(ce *ast.CallExpr, ginkgoImportName string) (string, bool) {
 	switch ex := ce.Fun.(type) {
 	case *ast.Ident:
 		if ginkgoImportName != "." {
-			return nil, false
+			return "", false
 		}
-		id = ex
+		return ex.Name, true
 	case *ast.SelectorExpr:
 		pkgID, ok := ex.X.(*ast.Ident)
 		if !ok {
-			return nil, false
+			return "", false
 		}
 		// A package identifier is top-level, so Obj must be nil
 		if pkgID.Obj != nil {
-			return nil, false
+			return "", false
 		}
 		if ginkgoImportName != pkgID.Name {
-			return nil, false
+			return "", false
 		}
-		id = ex.Sel
+		if ex.Sel == nil {
+			return "", false
+		}
+		return ex.Sel.Name, true
 	default:
+		return "", false
+	}
+}
+
+// ginkgoNodeFromCallExpr derives an outline entry from a go AST subtree
+// corresponding to a Ginkgo container or spec.
+func ginkgoNodeFromCallExpr(ce *ast.CallExpr, ginkgoImportName string) (*ginkgoNode, bool) {
+	identName, ok := ginkgoIdentNameFromCallExpr(ce, ginkgoImportName)
+	if !ok {
 		return nil, false
 	}
 
 	n := ginkgoNode{}
-	n.Name = id.Name
+	n.Name = identName
 	n.Start = ce.Pos()
 	n.End = ce.End()
-	switch id.Name {
+
+	switch identName {
 	case "It", "Measure", "Specify":
 		n.Spec = true
 		n.Text = textOrAltFromCallExpr(ce, undefinedTextAlt)
