@@ -63,10 +63,12 @@ func FromASTFile(src *ast.File) (*outline, error) {
 	// Now, propagate inherited properties, including focused and pending.
 	root.PropagateInheritedProperties()
 
-	return (*outline)(&root), nil
+	return &outline{root}, nil
 }
 
-type outline ginkgoNode
+type outline struct {
+	ginkgoNode
+}
 
 func (o *outline) MarshalJSON() ([]byte, error) {
 	return json.Marshal(o.Nodes)
