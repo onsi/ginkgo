@@ -48,11 +48,11 @@ var _ = DescribeTable("Validate outline from file with",
 	// 1. Run `bash ./_testdata/create_result.sh ./testdata/myspecialcase_test.go`
 	// To re-create the sample results for all tests:
 	// 1. Run `for name in ./_testdata/*_test.go; do bash ./_testdata/create_result.sh $name; done`
-	Entry("normal import of ginkgo package (no dot, no alias), normal container and specs", "nodot_test.go", "nodot_test_outline.json", "nodot_test_outline.csv"),
-	Entry("aliased import of ginkgo package, normal container and specs", "alias_test.go", "alias_test_outline.json", "alias_test_outline.csv"),
-	Entry("normal containers and specs", "normal_test.go", "normal_test_outline.json", "normal_test_outline.csv"),
-	Entry("focused containers and specs", "focused_test.go", "focused_test_outline.json", "focused_test_outline.csv"),
-	Entry("pending containers and specs", "pending_test.go", "pending_test_outline.json", "pending_test_outline.csv"),
-	Entry("nested focused containers and specs", "nestedfocused_test.go", "nestedfocused_test_outline.json", "nestedfocused_test_outline.csv"),
-	Entry("mixed focused containers and specs", "mixed_test.go", "mixed_test_outline.json", "mixed_test_outline.csv"),
+	Entry("normal import of ginkgo package (no dot, no alias), normal container and specs", "nodot_test.go", "nodot_test.go.json", "nodot_test.go.csv"),
+	Entry("aliased import of ginkgo package, normal container and specs", "alias_test.go", "alias_test.go.json", "alias_test.go.csv"),
+	Entry("normal containers and specs", "normal_test.go", "normal_test.go.json", "normal_test.go.csv"),
+	Entry("focused containers and specs", "focused_test.go", "focused_test.go.json", "focused_test.go.csv"),
+	Entry("pending containers and specs", "pending_test.go", "pending_test.go.json", "pending_test.go.csv"),
+	Entry("nested focused containers and specs", "nestedfocused_test.go", "nestedfocused_test.go.json", "nestedfocused_test.go.csv"),
+	Entry("mixed focused containers and specs", "mixed_test.go", "mixed_test.go.json", "mixed_test.go.csv"),
 )
