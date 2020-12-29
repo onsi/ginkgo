@@ -155,6 +155,7 @@ func ginkgoNodeFromCallExpr(ce *ast.CallExpr, ginkgoImportName string) (*ginkgoN
 		n.Pending = true
 		n.Text = textOrAltFromCallExpr(ce, undefinedTextAlt)
 	case "By":
+		n.Text = textOrAltFromCallExpr(ce, undefinedTextAlt)
 	case "AfterEach", "BeforeEach":
 	case "JustAfterEach", "JustBeforeEach":
 	case "AfterSuite", "BeforeSuite":

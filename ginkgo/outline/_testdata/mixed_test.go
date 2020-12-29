@@ -34,10 +34,12 @@ var _ = FDescribe("unfocused", func() {
 
 	PContext("unfocused", func() {
 		FIt("unfocused", func() {
-
+			By("unfocused")
+			By("unfocused")
 		})
 		It("unfocused", func() {
-
+			By("unfocused")
+			By("unfocused")
 		})
 	})
 })

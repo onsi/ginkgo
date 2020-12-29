@@ -7,6 +7,8 @@ import (
 var _ = fooginkgo.Describe("NodotFixture", func() {
 	fooginkgo.Describe("normal", func() {
 		fooginkgo.It("normal", func() {
+			fooginkgo.By("normal")
+			fooginkgo.By("normal")
 
 		})
 	})

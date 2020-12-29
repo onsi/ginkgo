@@ -8,7 +8,8 @@ import (
 var _ = Describe("NormalFixture", func() {
 	Describe("normal", func() {
 		It("normal", func() {
-
+			By("step 1")
+			By("step 2")
 		})
 	})
 

@@ -8,7 +8,8 @@ import (
 var _ = Describe("PendingFixture", func() {
 	PDescribe("pending", func() {
 		It("pending", func() {
-
+			By("pending")
+			By("pending")
 		})
 	})
 

@@ -7,10 +7,12 @@ import (
 var _ = FDescribe("unfocused", func() {
 	FContext("unfocused", func() {
 		It("unfocused", func() {
-
+			By("unfocused")
+			By("unfocused")
 		})
 		FIt("focused", func() {
-
+			By("focused")
+			By("focused")
 		})
 	})
 

@@ -7,7 +7,8 @@ import (
 var _ = ginkgo.Describe("NodotFixture", func() {
 	ginkgo.Describe("normal", func() {
 		ginkgo.It("normal", func() {
-
+			ginkgo.By("normal")
+			ginkgo.By("normal")
 		})
 	})
 

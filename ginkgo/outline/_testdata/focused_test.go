@@ -8,7 +8,8 @@ import (
 var _ = Describe("unfocused", func() {
 	FDescribe("focused", func() {
 		It("focused", func() {
-
+			By("focused")
+			By("focused")
 		})
 	})
 
