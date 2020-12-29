@@ -40,6 +40,14 @@ var _ = DescribeTable("Validate outline from file with",
 
 		Expect(gotCSV).To(Equal(string(wantCSV)))
 	},
+	// To add a test:
+	// 1. Create the input, e.g., `myspecialcase_test.go`
+	// 2. Create the sample CSV and JSON results: Run `bash ./_testdata/create_result.sh ./_testdata/myspecialcase_test.go`
+	// 3. Add an Entry below, by copying an existing one, and substituting `myspecialcase` where needed.
+	// To re-create the sample results for a test:
+	// 1. Run `bash ./_testdata/create_result.sh ./testdata/myspecialcase_test.go`
+	// To re-create the sample results for all tests:
+	// 1. Run `for name in ./_testdata/*_test.go; do bash ./_testdata/create_result.sh $name; done`
 	Entry("normal import of ginkgo package (no dot, no alias), normal container and specs", "nodot_test.go", "nodot_test_outline.json", "nodot_test_outline.csv"),
 	Entry("aliased import of ginkgo package, normal container and specs", "alias_test.go", "alias_test_outline.json", "alias_test_outline.csv"),
 	Entry("normal containers and specs", "normal_test.go", "normal_test_outline.json", "normal_test_outline.csv"),
