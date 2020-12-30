@@ -20,11 +20,9 @@ func FromASTFile(src *ast.File) (*outline, error) {
 	if !ok {
 		return nil, fmt.Errorf("file does not import %s", ginkgoImportPath)
 	}
-	root := ginkgoNode{
-		Nodes: []*ginkgoNode{},
-	}
-	stack := []*ginkgoNode{&root}
 
+	root := ginkgoNode{}
+	stack := []*ginkgoNode{&root}
 	ispr := inspector.New([]*ast.File{src})
 	ispr.Nodes([]ast.Node{(*ast.CallExpr)(nil)}, func(node ast.Node, push bool) bool {
 		if push {
@@ -40,10 +38,8 @@ func FromASTFile(src *ast.File) (*outline, error) {
 				// Node is not a Ginkgo spec or container, continue
 				return true
 			}
-
 			parent := stack[len(stack)-1]
 			parent.Nodes = append(parent.Nodes, gn)
-
 			stack = append(stack, gn)
 			return true
 		}
@@ -56,6 +52,9 @@ func FromASTFile(src *ast.File) (*outline, error) {
 		stack = stack[0 : len(stack)-1]
 		return true
 	})
+	if len(root.Nodes) == 0 {
+		return &outline{[]*ginkgoNode{}}, nil
+	}
 
 	// Derive the final focused property for all nodes. This must be done
 	// _before_ propagating the inherited focused property.
@@ -63,11 +62,11 @@ func FromASTFile(src *ast.File) (*outline, error) {
 	// Now, propagate inherited properties, including focused and pending.
 	root.PropagateInheritedProperties()
 
-	return &outline{root}, nil
+	return &outline{root.Nodes}, nil
 }
 
 type outline struct {
-	ginkgoNode
+	Nodes []*ginkgoNode `json:"nodes"`
 }
 
 func (o *outline) MarshalJSON() ([]byte, error) {
