@@ -1,0 +1,13 @@
+Name,Text,Start,End,Spec,Focused,Pending
+Describe,PendingFixture,116,629,false,false,false
+PDescribe,pending,153,250,false,false,true
+It,pending,185,246,true,false,true
+By,pending,211,224,false,false,true
+By,pending,228,241,false,false,true
+PContext,pending,253,316,false,false,true
+It,pending,284,312,true,false,true
+PWhen,pending,319,379,false,false,true
+It,pending,347,375,true,false,true
+PIt,pending,382,410,true,false,true
+PSpecify,pending,413,446,true,false,true
+PMeasure,pending,449,498,true,false,true

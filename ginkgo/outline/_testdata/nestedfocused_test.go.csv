@@ -1,0 +1,15 @@
+Name,Text,Start,End,Spec,Focused,Pending
+FDescribe,unfocused,71,474,false,false,false
+FContext,unfocused,104,273,false,false,false
+It,unfocused,137,204,true,false,false
+By,unfocused,165,180,false,false,false
+By,unfocused,184,199,false,false,false
+FIt,focused,207,269,true,true,false
+By,focused,234,247,false,true,false
+By,focused,251,264,false,true,false
+Context,unfocused,276,374,false,false,false
+FIt,focused,308,337,true,true,false
+It,unfocused,340,370,true,false,false
+FContext,focused,377,471,false,true,false
+It,focused,408,436,true,true,false
+It,focused,439,467,true,true,false

@@ -1,0 +1,13 @@
+Name,Text,Start,End,Spec,Focused,Pending
+Describe,NodotFixture,79,728,false,false,false
+Describe,normal,124,257,false,false,false
+It,normal,164,253,true,false,false
+By,normal,199,221,false,false,false
+By,normal,225,247,false,false,false
+Context,normal,260,340,false,false,false
+It,normal,299,336,true,false,false
+When,normal,343,420,false,false,false
+It,normal,379,416,true,false,false
+It,normal,423,459,true,false,false
+Specify,normal,462,503,true,false,false
+Measure,normal,506,563,true,false,false
