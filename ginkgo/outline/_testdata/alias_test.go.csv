@@ -11,3 +11,7 @@ It,normal,431,468,true,false,false
 It,normal,475,511,true,false,false
 Specify,normal,514,555,true,false,false
 Measure,normal,558,625,true,false,false
+DescribeTable,normal,628,704,false,false,false
+Entry,normal,676,700,true,false,false
+DescribeTable,normal,707,783,false,false,false
+Entry,normal,755,779,true,false,false

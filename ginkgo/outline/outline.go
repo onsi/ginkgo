@@ -12,13 +12,17 @@ import (
 const (
 	// ginkgoImportPath is the well-known ginkgo import path
 	ginkgoImportPath = "github.com/onsi/ginkgo"
+
+	// tableImportPath is the well-known table extension import path
+	tableImportPath = "github.com/onsi/ginkgo/extensions/table"
 )
 
 // FromASTFile returns an outline for a Ginkgo test source file
 func FromASTFile(src *ast.File) (*outline, error) {
 	ginkgoPackageName := packageNameForImport(src, ginkgoImportPath)
-	if ginkgoPackageName == nil {
-		return nil, fmt.Errorf("file does not import %q", ginkgoImportPath)
+	tablePackageName := packageNameForImport(src, tableImportPath)
+	if ginkgoPackageName == nil && tablePackageName == nil {
+		return nil, fmt.Errorf("file does not import %q or %q", ginkgoImportPath, tableImportPath)
 	}
 
 	root := ginkgoNode{}
@@ -33,7 +37,7 @@ func FromASTFile(src *ast.File) (*outline, error) {
 				// ast.CallExpr, this should never happen
 				panic(fmt.Errorf("node starting at %d, ending at %d is not an *ast.CallExpr", node.Pos(), node.End()))
 			}
-			gn, ok := ginkgoNodeFromCallExpr(ce, ginkgoPackageName)
+			gn, ok := ginkgoNodeFromCallExpr(ce, ginkgoPackageName, tablePackageName)
 			if !ok {
 				// Node is not a Ginkgo spec or container, continue
 				return true

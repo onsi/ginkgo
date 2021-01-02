@@ -11,3 +11,7 @@ It,focused,342,370,true,true,false
 FIt,focused,377,405,true,true,false
 FSpecify,focused,408,441,true,true,false
 FMeasure,focused,444,493,true,true,false
+FDescribeTable,focused,496,557,false,true,false
+Entry,focused,537,553,true,true,false
+DescribeTable,focused,560,621,false,false,false
+FEntry,focused,600,617,true,true,false
