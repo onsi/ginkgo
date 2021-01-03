@@ -14,16 +14,17 @@ import (
 	"strings"
 )
 
-// importNameForPackage returns the import name for the package. If the package
-// is not imported, it returns false. Examples:
-// How package is imported -> Import Name
+// packageNameForImport returns the package name for the package. If the package
+// is not imported, it returns nil. "Package name" refers to `pkgname` in the
+// call expression `pkgname.ExportedIdentifier`. Examples:
+// (import path not found) -> nil
 // "import example.com/pkg/foo" -> "foo"
 // "import fooalias example.com/pkg/foo" -> "fooalias"
-// "import . example.com/pkg/foo" -> "."
-func importNameForPackage(f *ast.File, path string) (string, bool) {
+// "import . example.com/pkg/foo" -> ""
+func packageNameForImport(f *ast.File, path string) *string {
 	spec := importSpec(f, path)
 	if spec == nil {
-		return "", false
+		return nil
 	}
 	name := spec.Name.String()
 	if name == "<nil>" {
@@ -36,7 +37,10 @@ func importNameForPackage(f *ast.File, path string) (string, bool) {
 			name = path[lastSlash+1:]
 		}
 	}
-	return name, true
+	if name == "." {
+		name = ""
+	}
+	return &name
 }
 
 // importSpec returns the import spec if f imports path,

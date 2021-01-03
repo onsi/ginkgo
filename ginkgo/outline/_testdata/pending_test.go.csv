@@ -11,3 +11,7 @@ It,pending,347,375,true,false,true
 PIt,pending,382,410,true,false,true
 PSpecify,pending,413,446,true,false,true
 PMeasure,pending,449,498,true,false,true
+PDescribeTable,pending,501,562,false,false,true
+Entry,pending,542,558,true,false,true
+DescribeTable,pending,565,626,false,false,false
+PEntry,pending,605,622,true,false,true

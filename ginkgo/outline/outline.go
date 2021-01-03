@@ -12,19 +12,21 @@ import (
 const (
 	// ginkgoImportPath is the well-known ginkgo import path
 	ginkgoImportPath = "github.com/onsi/ginkgo"
+
+	// tableImportPath is the well-known table extension import path
+	tableImportPath = "github.com/onsi/ginkgo/extensions/table"
 )
 
 // FromASTFile returns an outline for a Ginkgo test source file
 func FromASTFile(src *ast.File) (*outline, error) {
-	ginkgoImportName, ok := importNameForPackage(src, ginkgoImportPath)
-	if !ok {
-		return nil, fmt.Errorf("file does not import %s", ginkgoImportPath)
+	ginkgoPackageName := packageNameForImport(src, ginkgoImportPath)
+	tablePackageName := packageNameForImport(src, tableImportPath)
+	if ginkgoPackageName == nil && tablePackageName == nil {
+		return nil, fmt.Errorf("file does not import %q or %q", ginkgoImportPath, tableImportPath)
 	}
-	root := ginkgoNode{
-		Nodes: []*ginkgoNode{},
-	}
-	stack := []*ginkgoNode{&root}
 
+	root := ginkgoNode{}
+	stack := []*ginkgoNode{&root}
 	ispr := inspector.New([]*ast.File{src})
 	ispr.Nodes([]ast.Node{(*ast.CallExpr)(nil)}, func(node ast.Node, push bool) bool {
 		if push {
@@ -35,15 +37,13 @@ func FromASTFile(src *ast.File) (*outline, error) {
 				// ast.CallExpr, this should never happen
 				panic(fmt.Errorf("node starting at %d, ending at %d is not an *ast.CallExpr", node.Pos(), node.End()))
 			}
-			gn, ok := ginkgoNodeFromCallExpr(ce, ginkgoImportName)
+			gn, ok := ginkgoNodeFromCallExpr(ce, ginkgoPackageName, tablePackageName)
 			if !ok {
 				// Node is not a Ginkgo spec or container, continue
 				return true
 			}
-
 			parent := stack[len(stack)-1]
 			parent.Nodes = append(parent.Nodes, gn)
-
 			stack = append(stack, gn)
 			return true
 		}
@@ -56,6 +56,9 @@ func FromASTFile(src *ast.File) (*outline, error) {
 		stack = stack[0 : len(stack)-1]
 		return true
 	})
+	if len(root.Nodes) == 0 {
+		return &outline{[]*ginkgoNode{}}, nil
+	}
 
 	// Derive the final focused property for all nodes. This must be done
 	// _before_ propagating the inherited focused property.
@@ -63,11 +66,11 @@ func FromASTFile(src *ast.File) (*outline, error) {
 	// Now, propagate inherited properties, including focused and pending.
 	root.PropagateInheritedProperties()
 
-	return &outline{root}, nil
+	return &outline{root.Nodes}, nil
 }
 
 type outline struct {
-	ginkgoNode
+	Nodes []*ginkgoNode `json:"nodes"`
 }
 
 func (o *outline) MarshalJSON() ([]byte, error) {
