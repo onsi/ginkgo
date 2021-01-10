@@ -14,6 +14,9 @@ import (
 const (
 	// indentWidth is the width used by the 'indent' output
 	indentWidth = 4
+	// stdinAlias is a portable alias for stdin. This convention is used in
+	// other CLIs, e.g., kubectl.
+	stdinAlias   = "-"
 )
 
 func BuildOutlineCommand() *Command {
@@ -26,7 +29,9 @@ func BuildOutlineCommand() *Command {
 		FlagSet:      flagSet,
 		UsageCommand: "ginkgo outline <filename>",
 		Usage: []string{
-			"Outline of Ginkgo symbols for the file",
+			"Create an outline of Ginkgo symbols for a file",
+			"To read from stdin, use: `ginkgo outline -`",
+			"Accepts the following flags:",
 		},
 		Command: func(args []string, additionalArgs []string) {
 			outlineFile(args, format)
@@ -41,15 +46,27 @@ func outlineFile(args []string, format string) {
 	}
 
 	filename := args[0]
+	var src *os.File
+	if filename == stdinAlias {
+		src = os.Stdin
+	} else {
+		var err error
+		src, err = os.Open(filename)
+		if err != nil {
+			println(fmt.Sprintf("error opening file: %s", err))
+			os.Exit(1)
+		}
+	}
+
 	fset := token.NewFileSet()
 
-	src, err := parser.ParseFile(fset, filename, nil, 0)
+	parsedSrc, err := parser.ParseFile(fset, filename, src, 0)
 	if err != nil {
 		println(fmt.Sprintf("error parsing source: %s", err))
 		os.Exit(1)
 	}
 
-	o, err := outline.FromASTFile(src)
+	o, err := outline.FromASTFile(parsedSrc)
 	if err != nil {
 		println(fmt.Sprintf("error creating outline: %s", err))
 		os.Exit(1)
