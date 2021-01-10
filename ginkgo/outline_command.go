@@ -17,6 +17,7 @@ const (
 	// stdinAlias is a portable alias for stdin. This convention is used in
 	// other CLIs, e.g., kubectl.
 	stdinAlias   = "-"
+	usageCommand = "ginkgo outline <filename>"
 )
 
 func BuildOutlineCommand() *Command {
@@ -27,7 +28,7 @@ func BuildOutlineCommand() *Command {
 	return &Command{
 		Name:         "outline",
 		FlagSet:      flagSet,
-		UsageCommand: "ginkgo outline <filename>",
+		UsageCommand: usageCommand,
 		Usage: []string{
 			"Create an outline of Ginkgo symbols for a file",
 			"To read from stdin, use: `ginkgo outline -`",
@@ -41,7 +42,7 @@ func BuildOutlineCommand() *Command {
 
 func outlineFile(args []string, format string) {
 	if len(args) != 1 {
-		println("usage: ginkgo outline <filename>")
+		println(fmt.Sprintf("usage: %s", usageCommand))
 		os.Exit(1)
 	}
 
