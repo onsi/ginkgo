@@ -111,7 +111,7 @@ var _ = Describe("Specs", func() {
 	Describe("with no programmatic focus", func() {
 		BeforeEach(func() {
 			specs = newSpecs("A1", noneFlag, "A2", noneFlag, "B1", noneFlag, "B2", pendingFlag)
-			specs.ApplyFocus("", "", "")
+			specs.ApplyFocus("", []string{}, []string{})
 		})
 
 		It("should not report as having programmatic specs", func() {
@@ -120,15 +120,20 @@ var _ = Describe("Specs", func() {
 	})
 
 	Describe("Applying focus/skip", func() {
-		var description, focusString, skipString string
+		var (
+			description string
+			focus, skip []string
+		)
 
 		BeforeEach(func() {
-			description, focusString, skipString = "", "", ""
+			description = ""
+			focus = []string{}
+			skip = []string{}
 		})
 
 		JustBeforeEach(func() {
 			specs = newSpecs("A1", focusedFlag, "A2", noneFlag, "B1", focusedFlag, "B2", pendingFlag)
-			specs.ApplyFocus(description, focusString, skipString)
+			specs.ApplyFocus(description, focus, skip)
 		})
 
 		Context("with neither a focus string nor a skip string", func() {
@@ -145,7 +150,7 @@ var _ = Describe("Specs", func() {
 
 		Context("with a focus regexp", func() {
 			BeforeEach(func() {
-				focusString = "A"
+				focus = []string{"A"}
 			})
 
 			It("should override the programmatic focus", func() {
@@ -161,7 +166,7 @@ var _ = Describe("Specs", func() {
 
 		Context("with a focus regexp", func() {
 			BeforeEach(func() {
-				focusString = "B"
+				focus = []string{"B"}
 			})
 
 			It("should not override any pendings", func() {
@@ -174,7 +179,7 @@ var _ = Describe("Specs", func() {
 		Context("with a description", func() {
 			BeforeEach(func() {
 				description = "C"
-				focusString = "C"
+				focus = []string{"C"}
 			})
 
 			It("should include the description in the focus determination", func() {
@@ -187,7 +192,7 @@ var _ = Describe("Specs", func() {
 		Context("with a description", func() {
 			BeforeEach(func() {
 				description = "C"
-				skipString = "C"
+				skip = []string{"C"}
 			})
 
 			It("should include the description in the focus determination", func() {
@@ -199,7 +204,7 @@ var _ = Describe("Specs", func() {
 
 		Context("with a skip regexp", func() {
 			BeforeEach(func() {
-				skipString = "A"
+				skip = []string{"A"}
 			})
 
 			It("should override the programmatic focus", func() {
@@ -215,8 +220,8 @@ var _ = Describe("Specs", func() {
 
 		Context("with both a focus and a skip regexp", func() {
 			BeforeEach(func() {
-				focusString = "1"
-				skipString = "B"
+				focus = []string{"1"}
+				skip = []string{"B"}
 			})
 
 			It("should AND the two", func() {
@@ -251,7 +256,7 @@ var _ = Describe("Specs", func() {
 				pendingInFocused,
 				focusedInPending,
 			})
-			specs.ApplyFocus("", "", "")
+			specs.ApplyFocus("", []string{}, []string{})
 		})
 
 		It("should not have a programmatic focus and should run all tests", func() {

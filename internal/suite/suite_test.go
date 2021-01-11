@@ -40,7 +40,7 @@ var _ = Describe("Suite", func() {
 			runOrder             []string
 			randomizeAllSpecs    bool
 			randomSeed           int64
-			focusString          string
+			focusStrings         []string
 			parallelNode         int
 			parallelTotal        int
 			runResult            bool
@@ -58,7 +58,7 @@ var _ = Describe("Suite", func() {
 			randomSeed = 11
 			parallelNode = 1
 			parallelTotal = 1
-			focusString = ""
+			focusStrings = []string{}
 
 			runOrder = make([]string, 0)
 			specSuite.SetBeforeSuiteNode(f("BeforeSuite"), codelocation.New(0), 0)
@@ -91,7 +91,7 @@ var _ = Describe("Suite", func() {
 			runResult, hasProgrammaticFocus = specSuite.Run(fakeT, "suite description", []reporters.Reporter{fakeR}, writer, config.GinkgoConfigType{
 				RandomSeed:        randomSeed,
 				RandomizeAllSpecs: randomizeAllSpecs,
-				FocusString:       focusString,
+				FocusStrings:      focusStrings,
 				ParallelNode:      parallelNode,
 				ParallelTotal:     parallelTotal,
 			})
@@ -186,7 +186,7 @@ var _ = Describe("Suite", func() {
 
 		Context("when provided with a filter", func() {
 			BeforeEach(func() {
-				focusString = `inner|\d`
+				focusStrings = []string{`inner`, `\d`}
 			})
 
 			It("converts the filter to a regular expression and uses it to filter the running specs", func() {
