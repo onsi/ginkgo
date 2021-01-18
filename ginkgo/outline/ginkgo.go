@@ -20,10 +20,10 @@ type ginkgoMetadata struct {
 	Text string `json:"text"`
 
 	// Start is the position of first character of the spec or container block
-	Start token.Pos `json:"start"`
+	Start int `json:"start"`
 
 	// End is the position of first character immediately after the spec or container block
-	End token.Pos `json:"end"`
+	End int `json:"end"`
 
 	Spec    bool `json:"spec"`
 	Focused bool `json:"focused"`
@@ -123,9 +123,15 @@ func packageAndIdentNamesFromCallExpr(ce *ast.CallExpr) (string, string, bool) {
 	}
 }
 
+// absoluteOffsetsForNode derives the absolute character offsets of the node start and
+// end positions.
+func absoluteOffsetsForNode(fset *token.FileSet, n ast.Node) (start, end int) {
+	return fset.PositionFor(n.Pos(), false).Offset, fset.PositionFor(n.End(), false).Offset
+}
+
 // ginkgoNodeFromCallExpr derives an outline entry from a go AST subtree
 // corresponding to a Ginkgo container or spec.
-func ginkgoNodeFromCallExpr(ce *ast.CallExpr, ginkgoPackageName, tablePackageName *string) (*ginkgoNode, bool) {
+func ginkgoNodeFromCallExpr(fset *token.FileSet, ce *ast.CallExpr, ginkgoPackageName, tablePackageName *string) (*ginkgoNode, bool) {
 	packageName, identName, ok := packageAndIdentNamesFromCallExpr(ce)
 	if !ok {
 		return nil, false
@@ -133,8 +139,7 @@ func ginkgoNodeFromCallExpr(ce *ast.CallExpr, ginkgoPackageName, tablePackageNam
 
 	n := ginkgoNode{}
 	n.Name = identName
-	n.Start = ce.Pos()
-	n.End = ce.End()
+	n.Start, n.End = absoluteOffsetsForNode(fset, ce)
 	n.Nodes = make([]*ginkgoNode, 0)
 	switch identName {
 	case "It", "Measure", "Specify":

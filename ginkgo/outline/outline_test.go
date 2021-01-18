@@ -2,12 +2,16 @@ package outline
 
 import (
 	"encoding/json"
+	"fmt"
 	"go/parser"
 	"go/token"
 	"io/ioutil"
 	"log"
 	"path/filepath"
+	"strconv"
+	"strings"
 
+	. "github.com/onsi/ginkgo"
 	. "github.com/onsi/ginkgo/extensions/table"
 	. "github.com/onsi/gomega"
 )
@@ -22,7 +26,7 @@ var _ = DescribeTable("Validate outline from file with",
 			log.Fatalf("error parsing source: %s", err)
 		}
 
-		o, err := FromASTFile(astFile)
+		o, err := FromASTFile(fset, astFile)
 		Expect(err).To(BeNil(), "error creating outline: %s", err)
 
 		gotJSON, err := json.MarshalIndent(o, "", "  ")
@@ -55,5 +59,37 @@ var _ = DescribeTable("Validate outline from file with",
 	Entry("pending containers and specs", "pending_test.go", "pending_test.go.json", "pending_test.go.csv"),
 	Entry("nested focused containers and specs", "nestedfocused_test.go", "nestedfocused_test.go.json", "nestedfocused_test.go.csv"),
 	Entry("mixed focused containers and specs", "mixed_test.go", "mixed_test.go.json", "mixed_test.go.csv"),
+	Entry("specs used to verify position", "position_test.go", "position_test.go.json", "position_test.go.csv"),
 	Entry("suite setup", "suite_test.go", "suite_test.go.json", "suite_test.go.csv"),
 )
+
+var _ = Describe("Validate position", func() {
+
+	It("should report the correct start and end byte offsets of the ginkgo container or spec", func() {
+		fset := token.NewFileSet()
+		astFile, err := parser.ParseFile(fset, filepath.Join("_testdata", "position_test.go"), nil, 0)
+		Expect(err).To(BeNil(), "error parsing source: %s", err)
+
+		if err != nil {
+			log.Fatalf("error parsing source: %s", err)
+		}
+
+		o, err := FromASTFile(fset, astFile)
+		Expect(err).To(BeNil(), "error creating outline: %s", err)
+
+		for _, n := range o.Nodes {
+			n.PreOrder(func(n *ginkgoNode) {
+				wantPositions := strings.Split(n.Text, ",")
+				Expect(len(wantPositions)).To(Equal(2), "test fixture node text should be \"start position,end position")
+				wantStart, err := strconv.Atoi(wantPositions[0])
+				Expect(err).To(BeNil(), "could not parse start offset")
+				wantEnd, err := strconv.Atoi(wantPositions[1])
+				Expect(err).To(BeNil(), "could not parse end offset")
+
+				Expect(int(n.Start)).To(Equal(wantStart), fmt.Sprintf("test fixture node text says the node should start at %d, but it starts at %d", wantStart, n.Start))
+				Expect(int(n.End)).To(Equal(wantEnd), fmt.Sprintf("test fixture node text says the node should end at %d, but it ends at %d", wantEnd, n.End))
+			})
+		}
+
+	})
+})

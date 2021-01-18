@@ -67,7 +67,7 @@ func outlineFile(args []string, format string) {
 		os.Exit(1)
 	}
 
-	o, err := outline.FromASTFile(parsedSrc)
+	o, err := outline.FromASTFile(fset, parsedSrc)
 	if err != nil {
 		println(fmt.Sprintf("error creating outline: %s", err))
 		os.Exit(1)
