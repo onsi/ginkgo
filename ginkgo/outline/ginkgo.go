@@ -33,7 +33,7 @@ type ginkgoMetadata struct {
 // ginkgoNode is used to construct the outline as a tree
 type ginkgoNode struct {
 	ginkgoMetadata
-	Nodes []*ginkgoNode `json:"nodes,omitempty"`
+	Nodes []*ginkgoNode `json:"nodes"`
 }
 
 type walkFunc func(n *ginkgoNode)
@@ -135,6 +135,7 @@ func ginkgoNodeFromCallExpr(ce *ast.CallExpr, ginkgoPackageName, tablePackageNam
 	n.Name = identName
 	n.Start = ce.Pos()
 	n.End = ce.End()
+	n.Nodes = make([]*ginkgoNode, 0)
 	switch identName {
 	case "It", "Measure", "Specify":
 		n.Spec = true
