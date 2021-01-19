@@ -4,6 +4,7 @@ import (
 	"encoding/json"
 	"fmt"
 	"go/ast"
+	"go/token"
 	"strings"
 
 	"golang.org/x/tools/go/ast/inspector"
@@ -18,7 +19,7 @@ const (
 )
 
 // FromASTFile returns an outline for a Ginkgo test source file
-func FromASTFile(src *ast.File) (*outline, error) {
+func FromASTFile(fset *token.FileSet, src *ast.File) (*outline, error) {
 	ginkgoPackageName := packageNameForImport(src, ginkgoImportPath)
 	tablePackageName := packageNameForImport(src, tableImportPath)
 	if ginkgoPackageName == nil && tablePackageName == nil {
@@ -37,7 +38,7 @@ func FromASTFile(src *ast.File) (*outline, error) {
 				// ast.CallExpr, this should never happen
 				panic(fmt.Errorf("node starting at %d, ending at %d is not an *ast.CallExpr", node.Pos(), node.End()))
 			}
-			gn, ok := ginkgoNodeFromCallExpr(ce, ginkgoPackageName, tablePackageName)
+			gn, ok := ginkgoNodeFromCallExpr(fset, ce, ginkgoPackageName, tablePackageName)
 			if !ok {
 				// Node is not a Ginkgo spec or container, continue
 				return true
@@ -48,8 +49,9 @@ func FromASTFile(src *ast.File) (*outline, error) {
 			return true
 		}
 		// Post-order traversal
+		start, end := absoluteOffsetsForNode(fset, node)
 		lastVisitedGinkgoNode := stack[len(stack)-1]
-		if node.Pos() != lastVisitedGinkgoNode.Start || node.End() != lastVisitedGinkgoNode.End {
+		if start != lastVisitedGinkgoNode.Start || end != lastVisitedGinkgoNode.End {
 			// Node is not a Ginkgo spec or container, so it was not pushed onto the stack, continue
 			return true
 		}
