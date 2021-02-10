@@ -93,7 +93,7 @@ var _ = Describe("JUnit Reporter", func() {
 			Expect(output.TestCases[0].FailureMessage).To(BeNil())
 			Expect(output.TestCases[0].Skipped).To(BeNil())
 			Expect(output.TestCases[0].Time).To(Equal(5.0))
-			Expect(output.TestCases[0].PassedMessage.Message).To(ContainSubstring("Test scenario"))
+			Expect(output.TestCases[0].SystemOut).To(ContainSubstring("Test scenario"))
 		})
 	})
 
