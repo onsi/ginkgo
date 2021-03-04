@@ -3,6 +3,7 @@ module github.com/onsi/ginkgo
 go 1.15
 
 require (
+	github.com/Masterminds/sprig/v3 v3.2.2
 	github.com/nxadm/tail v1.4.8
 	github.com/onsi/gomega v1.10.1
 	golang.org/x/sys v0.0.0-20210112080510-489259a85091
