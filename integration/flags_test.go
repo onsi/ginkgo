@@ -118,6 +118,15 @@ var _ = Describe("Flags Specs", func() {
 		Ω(output).Should(ContainSubstring("1 Pending"))
 		Ω(output).Should(ContainSubstring("3 Skipped"))
 	})
+
+	It("should ignore empty skip and focus variables", func() {
+		session := startGinkgo(pathToTest, "--noColor", "--skip=", "--focus=")
+		Eventually(session).Should(gexec.Exit(types.GINKGO_FOCUS_EXIT_CODE))
+		output := string(session.Out.Contents())
+		Ω(output).Should(ContainSubstring("marshmallow"))
+		Ω(output).Should(ContainSubstring("chocolate"))
+	})
+
 	It("should run the race detector when told to", func() {
 		if !raceDetectorSupported() {
 			Skip("race detection is not supported")
