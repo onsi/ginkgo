@@ -11,7 +11,7 @@ import (
 	"strings"
 	"text/template"
 
-	"github.com/Masterminds/sprig/v3"
+	sprig "github.com/go-task/slim-sprig"
 )
 
 func BuildGenerateCommand() *Command {

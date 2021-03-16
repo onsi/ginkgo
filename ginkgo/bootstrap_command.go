@@ -12,7 +12,7 @@ import (
 
 	"go/build"
 
-	"github.com/Masterminds/sprig/v3"
+	sprig "github.com/go-task/slim-sprig"
 	"github.com/onsi/ginkgo/ginkgo/nodot"
 )
 
