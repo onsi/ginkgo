@@ -16,7 +16,7 @@ var _ = Describe("Book", func() {
 		longBook = Book{
 			Title:  "Les Miserables",
 			Author: "Victor Hugo",
-			Pages:  1488,
+			Pages:  2783,
 		}
 
 		shortBook = Book{
