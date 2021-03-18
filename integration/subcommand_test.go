@@ -112,6 +112,36 @@ var _ = Describe("Subcommand", func() {
 			Ω(content).Should(ContainSubstring(`"binary"`))
 			Ω(content).Should(ContainSubstring("// This is a foo_test test"))
 		})
+
+		It("should generate a bootstrap file using a template that contains functions when told to", func() {
+			templateFile := filepath.Join(pkgPath, ".bootstrap")
+			ioutil.WriteFile(templateFile, []byte(`package {{.Package}}
+
+			import (
+				{{.GinkgoImport}}
+				{{.GomegaImport}}
+
+				"testing"
+				"binary"
+			)
+
+			func Test{{.FormattedName}}(t *testing.T) {
+				// This is a {{.Package | repeat 3}} test
+			}`), 0666)
+			session := startGinkgo(pkgPath, "bootstrap", "--template", ".bootstrap")
+			Eventually(session).Should(gexec.Exit(0))
+			output := session.Out.Contents()
+
+			Ω(output).Should(ContainSubstring("foo_suite_test.go"))
+
+			content, err := ioutil.ReadFile(filepath.Join(pkgPath, "foo_suite_test.go"))
+			Ω(err).ShouldNot(HaveOccurred())
+			Ω(content).Should(ContainSubstring("package foo_test"))
+			Ω(content).Should(ContainSubstring(`. "github.com/onsi/ginkgo"`))
+			Ω(content).Should(ContainSubstring(`. "github.com/onsi/gomega"`))
+			Ω(content).Should(ContainSubstring(`"binary"`))
+			Ω(content).Should(ContainSubstring("// This is a foo_testfoo_testfoo_test test"))
+		})
 	})
 
 	Describe("nodot", func() {
@@ -182,10 +212,10 @@ var _ = Describe("Subcommand", func() {
 				import (
 					{{if .IncludeImports}}. "github.com/onsi/ginkgo"{{end}}
 					{{if .IncludeImports}}. "github.com/onsi/gomega"{{end}}
-				
+
 					{{if .ImportPackage}}"{{.PackageImportPath}}"{{end}}
 				)
-				
+
 				var _ = Describe("{{.Subject}}", func() {
 					// This is a {{.Package}} test
 				})`), 0666)
@@ -202,6 +232,34 @@ var _ = Describe("Subcommand", func() {
 				Ω(content).Should(ContainSubstring(`. "github.com/onsi/gomega"`))
 				Ω(content).Should(ContainSubstring(`/foo_bar"`))
 				Ω(content).Should(ContainSubstring("// This is a foo_bar_test test"))
+			})
+
+			It("should generate a test file using a template that contains functions", func() {
+				templateFile := filepath.Join(pkgPath, ".generate")
+				ioutil.WriteFile(templateFile, []byte(`package {{.Package}}
+				import (
+					{{if .IncludeImports}}. "github.com/onsi/ginkgo"{{end}}
+					{{if .IncludeImports}}. "github.com/onsi/gomega"{{end}}
+
+					{{if .ImportPackage}}"{{.PackageImportPath}}"{{end}}
+				)
+
+				var _ = Describe("{{.Subject}}", func() {
+					// This is a {{.Package | repeat 3 }} test
+				})`), 0666)
+				session := startGinkgo(pkgPath, "generate", "--template", ".generate")
+				Eventually(session).Should(gexec.Exit(0))
+				output := session.Out.Contents()
+
+				Ω(output).Should(ContainSubstring("foo_bar_test.go"))
+
+				content, err := ioutil.ReadFile(filepath.Join(pkgPath, "foo_bar_test.go"))
+				Ω(err).ShouldNot(HaveOccurred())
+				Ω(content).Should(ContainSubstring("package foo_bar_test"))
+				Ω(content).Should(ContainSubstring(`. "github.com/onsi/ginkgo"`))
+				Ω(content).Should(ContainSubstring(`. "github.com/onsi/gomega"`))
+				Ω(content).Should(ContainSubstring(`/foo_bar"`))
+				Ω(content).Should(ContainSubstring("// This is a foo_bar_testfoo_bar_testfoo_bar_test test"))
 			})
 		})
 
