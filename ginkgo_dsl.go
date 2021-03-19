@@ -201,13 +201,13 @@ type Benchmarker interface {
 //
 //	ginkgo bootstrap
 func RunSpecs(t GinkgoTestingT, description string) bool {
-	specReporters := []Reporter{buildDefaultReporter()}
+	var specReporters []Reporter
+
 	if config.DefaultReporterConfig.ReportFile != "" {
 		reportFile := config.DefaultReporterConfig.ReportFile
-		specReporters[0] = reporters.NewJUnitReporter(reportFile)
-		return RunSpecsWithDefaultAndCustomReporters(t, description, specReporters)
+		specReporters = append(specReporters, reporters.NewJUnitReporter(reportFile))
 	}
-	return RunSpecsWithCustomReporters(t, description, specReporters)
+	return RunSpecsWithDefaultAndCustomReporters(t, description, specReporters)
 }
 
 //To run your tests with Ginkgo's default reporter and your custom reporter(s), replace

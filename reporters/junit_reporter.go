@@ -148,6 +148,13 @@ func (reporter *JUnitReporter) SpecSuiteDidEnd(summary *types.SuiteSummary) {
 	if err != nil {
 		fmt.Printf("\nFailed to create JUnit directory: %s\n\t%s", filePath, err.Error())
 	}
+
+	if config.GinkgoConfig.ParallelTotal > 1  {
+		ext := filepath.Ext(filePath)
+		filename := filePath[0:len(filePath)-len(ext)]
+		filePath = fmt.Sprintf("%s_%02d%s", filename, config.GinkgoConfig.ParallelNode, ext)
+	}
+
 	file, err := os.Create(filePath)
 	if err != nil {
 		fmt.Fprintf(os.Stderr, "Failed to create JUnit report file: %s\n\t%s", filePath, err.Error())
