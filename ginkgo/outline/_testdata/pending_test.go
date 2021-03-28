@@ -11,6 +11,11 @@ var _ = Describe("PendingFixture", func() {
 			By("pending")
 			By("pending")
 		})
+
+		ItTable("pending",
+			func() {},
+			Entry("pending"),
+		)
 	})
 
 	PContext("pending", func() {
@@ -43,6 +48,16 @@ var _ = Describe("PendingFixture", func() {
 	)
 
 	DescribeTable("pending",
+		func() {},
+		PEntry("pending"),
+	)
+
+	PItTable("pending",
+		func(_ string) {},
+		Entry("pending"),
+	)
+
+	ItTable("pending",
 		func() {},
 		PEntry("pending"),
 	)

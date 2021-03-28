@@ -172,7 +172,7 @@ func scanForFocus(file *ast.File) (eliminations []int64) {
 
 func isFocus(name string) bool {
 	switch name {
-	case "FDescribe", "FContext", "FIt", "FMeasure", "FDescribeTable", "FEntry", "FSpecify", "FWhen":
+	case "FDescribe", "FContext", "FIt", "FMeasure", "FDescribeTable", "FItTable", "FEntry", "FSpecify", "FWhen":
 		return true
 	default:
 		return false

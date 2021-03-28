@@ -1,5 +1,5 @@
 Name,Text,Start,End,Spec,Focused,Pending
-Describe,NormalFixture,115,604,false,false,false
+Describe,NormalFixture,115,730,false,false,false
 Describe,normal,151,243,false,false,false
 It,normal,181,239,true,false,false
 By,step 1,206,218,false,false,false
@@ -15,3 +15,5 @@ DescribeTable,normal,482,540,false,false,false
 Entry,normal,521,536,true,false,false
 DescribeTable,normal,543,601,false,false,false
 Entry,normal,582,597,true,false,false
+Entry,normal,645,660,true,false,false
+Entry,normal,708,723,true,false,false

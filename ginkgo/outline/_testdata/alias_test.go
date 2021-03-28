@@ -47,4 +47,14 @@ var _ = fooginkgo.Describe("NodotFixture", func() {
 		func() {},
 		footable.Entry("normal"),
 	)
+
+	footable.ItTable("normal",
+		func(_ string) {},
+		footable.Entry("normal"),
+	)
+
+	footable.ItTable("normal",
+		func(_ string) {},
+		footable.Entry("normal"),
+	)
 })

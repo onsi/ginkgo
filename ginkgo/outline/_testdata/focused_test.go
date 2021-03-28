@@ -11,6 +11,11 @@ var _ = Describe("unfocused", func() {
 			By("focused")
 			By("focused")
 		})
+
+		ItTable("unfocused",
+			func(_ string) {},
+			Entry("unfocused"),
+		)
 	})
 
 	FContext("focused", func() {
@@ -44,6 +49,16 @@ var _ = Describe("unfocused", func() {
 
 	DescribeTable("focused",
 		func() {},
+		FEntry("focused"),
+	)
+
+	FItTable("focused",
+		func(_ string) {},
+		Entry("focused"),
+	)
+
+	ItTable("focused",
+		func(_ string) {},
 		FEntry("focused"),
 	)
 })

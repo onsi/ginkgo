@@ -1,5 +1,5 @@
 Name,Text,Start,End,Spec,Focused,Pending
-Describe,NodotFixture,130,785,false,false,false
+Describe,NodotFixture,130,947,false,false,false
 Describe,normal,175,308,false,false,false
 It,normal,215,304,true,false,false
 By,normal,250,272,false,false,false
@@ -15,3 +15,5 @@ DescribeTable,normal,627,703,false,false,false
 Entry,normal,675,699,true,false,false
 DescribeTable,normal,706,782,false,false,false
 Entry,normal,754,778,true,false,false
+Entry,normal,835,859,true,false,false
+Entry,normal,916,940,true,false,false

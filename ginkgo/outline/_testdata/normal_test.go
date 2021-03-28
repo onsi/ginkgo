@@ -46,4 +46,14 @@ var _ = Describe("NormalFixture", func() {
 		func() {},
 		Entry("normal"),
 	)
+
+	ItTable("normal",
+		func(_ string) {},
+		Entry("normal"),
+	)
+
+	ItTable("normal",
+		func(_ string) {},
+		Entry("normal"),
+	)
 })
