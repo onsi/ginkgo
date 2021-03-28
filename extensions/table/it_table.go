@@ -18,7 +18,15 @@ For example:
         )
     })
 
-The first argument to `ItTable` can either be a string or a function. If it is a function, the function must accept all the same arguments as the callback function and must return a string.
+The first argument to `ItTable` can either be a string or a function. If it is a function, the function must accept all the same arguments as the callback function and must return a string. If it is a string, a list of the arguments provided will be appended to the description of the Ginkgo It that is generated. For example:
+    ItTable("should add up to 10",
+        func(x, y int) {
+            Ω(x + y).Should(Equal(10))
+        },
+        Entry(6, 4),
+    )
+is the same as:
+    It("should add up to 10: [6, 4]", func() {...
 The second argument is the callback function called in each generated Ginkgo It. This is where you should put your assertions.
 All subsequent arguments must be of type `TableEntry`. If you choose to use the `Entry` constructor, you should NOT put a description as the first argument and instead put only the arguments you want sent to the callback function. The description of the `ItTable` will be used for the description of the generated Ginkgo It fields. If you choose to create a `TableEntry` struct yourself, do not set the `Description` field.
 

@@ -11,3 +11,9 @@ func TestTable(t *testing.T) {
 	RegisterFailHandler(Fail)
 	RunSpecs(t, "Table Suite")
 }
+
+type ComplicatedThings struct {
+	Superstructure string
+	Substructure   string
+	Count          int
+}

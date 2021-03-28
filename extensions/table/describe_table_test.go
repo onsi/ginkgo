@@ -20,12 +20,6 @@ var _ = Describe("DescribeTable", func() {
 		Entry("x < y", 0, 1, false),
 	)
 
-	type ComplicatedThings struct {
-		Superstructure string
-		Substructure   string
-		Count          int
-	}
-
 	DescribeTable("a more complicated table",
 		func(c ComplicatedThings) {
 			Ω(strings.Count(c.Superstructure, c.Substructure)).Should(BeNumerically("==", c.Count))
