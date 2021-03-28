@@ -1,5 +1,10 @@
 package table
 
+import (
+	"fmt"
+	"reflect"
+)
+
 /*
 ItTable creates a Ginkgo It for every entry provided within the Ginkgo Describe that contains it.
 
@@ -33,6 +38,7 @@ All subsequent arguments must be of type `TableEntry`. If you choose to use the 
 Individual Entries can be focused (with FEntry) or marked pending (with PEntry or XEntry).  In addition, the entire table can be focused or marked pending with FItTable and PItTable/XItTable.
 */
 func ItTable(description, body interface{}, entries ...TableEntry) bool {
+	itTable(description, body, entries, false, false)
 	return true
 }
 
@@ -40,6 +46,7 @@ func ItTable(description, body interface{}, entries ...TableEntry) bool {
 You can focus a table with `FItTable`. This is equivalent to `FIt`.
 */
 func FItTable(description, body interface{}, entries ...TableEntry) bool {
+	itTable(description, body, entries, false, true)
 	return true
 }
 
@@ -47,6 +54,7 @@ func FItTable(description, body interface{}, entries ...TableEntry) bool {
 You can mark a table as pending with `PItTable`. This is equivalent to `PIt`.
 */
 func PItTable(description, body interface{}, entries ...TableEntry) bool {
+	itTable(description, body, entries, true, false)
 	return true
 }
 
@@ -54,5 +62,25 @@ func PItTable(description, body interface{}, entries ...TableEntry) bool {
 You can mark a table as pending with `XItTable`. This is equivalent to `XIt`.
 */
 func XItTable(description, body interface{}, entries ...TableEntry) bool {
+	itTable(description, body, entries, true, false)
 	return true
+}
+
+func itTable(description, body interface{}, entries []TableEntry, pending, focused bool) {
+	bodyValue := reflect.ValueOf(body)
+	if bodyValue.Kind() != reflect.Func {
+		panic(fmt.Sprintf("ItTable expects a function, got %#v", body))
+	}
+
+	for _, entry := range entries {
+		entry.Parameters = append([]interface{}{entry.Description}, entry.Parameters...)
+		entry.Description = description
+		if pending {
+			entry.Pending = true
+		}
+		if focused {
+			entry.Focused = true
+		}
+		entry.generateIt(bodyValue)
+	}
 }

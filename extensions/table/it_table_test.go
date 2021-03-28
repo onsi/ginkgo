@@ -8,7 +8,7 @@ import (
 	"strings"
 )
 
-var _ = PDescribe("ItTable", func() {
+var _ = Describe("ItTable", func() {
 	Describe("a simple table", func() {
 		ItTable(func(x, y int, expected bool) string {
 			return fmt.Sprintf("should assert that '%d > %d' is %t", x, y, expected)
