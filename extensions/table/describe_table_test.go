@@ -10,7 +10,7 @@ import (
 	. "github.com/onsi/gomega"
 )
 
-var _ = Describe("Table", func() {
+var _ = Describe("DescribeTable", func() {
 	DescribeTable("a simple table",
 		func(x int, y int, expected bool) {
 			Ω(x > y).Should(Equal(expected))

@@ -6,7 +6,7 @@ ItTable creates a Ginkgo It for every entry provided within the Ginkgo Describe 
 For example:
 
     Describe("a simple test", func() {
-        ItTable(func(x, y int, expected bool) {
+        ItTable(func(x, y int, expected bool) string {
             return fmt.Sprintf("should assert that '%d > %d' is %t", x, y, expected)
         },
             func(x, y int, expected bool) {
