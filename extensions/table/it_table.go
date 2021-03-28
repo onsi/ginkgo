@@ -74,7 +74,26 @@ func itTable(description, body interface{}, entries []TableEntry, pending, focus
 
 	for _, entry := range entries {
 		entry.Parameters = append([]interface{}{entry.Description}, entry.Parameters...)
+
 		entry.Description = description
+		switch entry.Description.(type) {
+		case string:
+			omitFuncAddress := func(v interface{}) string {
+				if val := reflect.ValueOf(v).Kind(); val == reflect.Func {
+					return fmt.Sprintf("%T", v)
+				} else if val == reflect.Invalid {
+					return "nil"
+				} else {
+					return fmt.Sprintf("%#v", v)
+				}
+			}
+			d := entry.Description.(string) + fmt.Sprintf(": [%s", omitFuncAddress(entry.Parameters[0]))
+			for _, v := range entry.Parameters[1:] {
+				d += fmt.Sprintf(", %s", omitFuncAddress(v))
+			}
+			entry.Description = d + "]"
+		}
+
 		if pending {
 			entry.Pending = true
 		}
