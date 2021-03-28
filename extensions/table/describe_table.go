@@ -18,7 +18,7 @@ import (
 )
 
 /*
-DescribeTable describes a table-driven test.
+DescribeTable describes a standalone table-driven test.
 
 For example:
 
@@ -35,7 +35,7 @@ The first argument to `DescribeTable` is a string description.
 The second argument is a function that will be run for each table entry.  Your assertions go here - the function is equivalent to a Ginkgo It.
 The subsequent arguments must be of type `TableEntry`.  We recommend using the `Entry` convenience constructors.
 
-The `Entry` constructor takes a string description followed by an arbitrary set of parameters.  These parameters are passed into your function.
+When used in a `DescribeTable`, the `Entry` constructor requires: first, a string or function description and then an arbitrary number of arguments.
 
 Under the hood, `DescribeTable` simply generates a new Ginkgo `Describe`.  Each `Entry` is turned into an `It` within the `Describe`.
 
