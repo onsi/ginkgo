@@ -1928,7 +1928,7 @@ var _ = Describe("Math", func() {
 
 Let's break this down `DescribeTable` takes a description, a function to run for each test case, and a set of table entries.
 
-The function you pass in to `DescribeTable` can accept arbitrary arguments.  The parameters passed in to the individual `Entry` calls will be passed in to the function (type mismatches will result in a runtime panic).
+The function you pass in to `DescribeTable` can accept arbitrary arguments.  The parameters passed in to the individual `Entry` calls will be passed in to the function (type mismatches will result in a runtime panic). The first argument to `Entry` is not passed in to the function, and instead is used as the description for the generated `It` field.
 
 The indiviudal `Entry` calls construct a `TableEntry` that is passed into `DescribeTable`.  A `TableEntry` consists of a description (the first call to `Entry`) and an arbitrary set of parameters to be passed into the function registered with `DescribeTable`.
 
@@ -1963,9 +1963,60 @@ var _ = Describe("Math", func() {
 
 You should be aware of the Ginkgo test lifecycle - particularly around [dynamically generating tests](#patterns-for-dynamically-generating-tests) - when using `DescribeTable`.
 
+#### `DescribeTable` vs. `ItTable`
+`ItTable` is an alternative table-generator that you can use to have your tests read differently than they would if you used `DescribeTable`. Instead of creating a `Describe` field and filling it with `It`s based on the provided `Entry`s, it skips the first part and just creates the `It` fields. Using `ItTable` is similar, but not *exactly* the same as using `DescribeTable`. 
+
+There are a few key differences:
+- `DescribeTable` is self-contained, whereas `ItTable` needs a `Describe` container. That means that this is valid:
+  ```go
+  var _ = DescribeTable(...
+  ```
+  However, this is not:
+  ```go
+  var _ = ItTable(...
+  ```
+- `ItTable` itself accepts a function **or** a string as a description, in the same way you can write [custom descriptions for entries in `DescribeTable`s](#custom-entry-description). `DescribeTable` only accepts a string.
+- The first argument you provide to the `Entry` constructor when using a `DescribeTable` must be a description of the `Entry`. In an `ItTable`, the first argument is treated the same as the rest, and the description of the generated `It` field is created based on the `description` parameter of the `ItTable`. If the `description` is a function, the function is called, and the result is used. If the `description` is a string, a list of the parameters in the `Entry` are appended to the string. This means that:
+    ```go
+    ItTable(func(x, y int, expected bool) string {
+        return fmt.Sprintf("should assert that %d > %d is %t", x, y, expected)
+    },
+        func(x, y int, expected bool) {
+            Ω(x > y).Should(Equal(expected))
+        },
+        Entry(1, 0, true),
+        Entry(0, 0, false),
+        Entry(0, 1, false),
+    )
+    ```
+    creates:
+    ```go
+    It("should assert that 1 > 0 is true", func() {
+        Ω(1 > 0).Should(Equal(true))
+    })
+    It("should assert that 0 > 0 is false", func() {
+        Ω(0 > 0).Should(Equal(false))
+    })
+    It("should assert that 0 > 1 is false", func() {
+        Ω(0 > 1).Should(Equal(false))
+    })
+    ```
+    However, if we replace the description function in the example above with a string: `"should make proper assertions relating to the > inequality"`, the following will be generated:
+    ```go
+    It("should make proper assertions relating to the > inequality: [1, 0, true]", func() {
+        Ω(1 > 0).Should(Equal(true))
+    })
+    It("should make proper assertions relating to the > inequality: [0, 0, false]", func() {
+        Ω(0 > 0).Should(Equal(false))
+    })
+    It("should make proper assertions relating to the > inequality: [0, 1, false]", func() {
+        Ω(0 > 1).Should(Equal(false))
+    })
+    ```
+
 #### Focusing and Pending Tables and Entries
 
-Here's the cool part.  Entire tables can be focused or marked pending by simply swapping out `DescribeTable` with `FDescribeTable` (to focus) or `PDescribeTable` (to mark pending).
+Here's the cool part.  Entire tables can be focused or marked pending by simply swapping out `DescribeTable`/`ItTable` with `FDescribeTable`/`FItTable` (to focus) or `PDescribeTable`/`PItTable` (to mark pending).
 
 Similarly, individual entries can be focused/pended out with `FEntry` and `PEntry`.  This is particularly useful when debugging tests.
 
