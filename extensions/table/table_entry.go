@@ -2,9 +2,9 @@ package table
 
 import (
 	"fmt"
+	"github.com/onsi/ginkgo/internal/codelocation"
 	"reflect"
 
-	"github.com/onsi/ginkgo/internal/codelocation"
 	"github.com/onsi/ginkgo/internal/global"
 	"github.com/onsi/ginkgo/types"
 )
@@ -74,56 +74,53 @@ func castParameters(function reflect.Value, parameters []interface{}) []reflect.
 /*
 Entry constructs a TableEntry.
 
-The first argument is a required description (this becomes the content of the generated Ginkgo `It`).
-Subsequent parameters are saved off and sent to the callback passed in to `DescribeTable`.
+When used in `DescribeTable`, the first argument should be a description (this becomes the content of the generated Ginkgo `It`) and all subsequent parameters are saved off and sent to the callback passed in to `DescribeTable`.
+This description can either be a string or a function. If the description is a function, the function must accept all of the arguments contained in the entry and must return a string.
+
+When used in `ItTable`, all arguments are saved and sent to the callback method of `ItTable` (and the description of `ItTable` when it is a function).
 
 Each Entry ends up generating an individual Ginkgo It.
 */
-func Entry(description interface{}, parameters ...interface{}) TableEntry {
-	return TableEntry{
-		Description:  description,
-		Parameters:   parameters,
-		Pending:      false,
-		Focused:      false,
-		codeLocation: codelocation.New(1),
-	}
+func Entry(parameters ...interface{}) TableEntry {
+	return entry(false, false, parameters)
 }
 
 /*
 You can focus a particular entry with FEntry.  This is equivalent to FIt.
 */
-func FEntry(description interface{}, parameters ...interface{}) TableEntry {
-	return TableEntry{
-		Description:  description,
-		Parameters:   parameters,
-		Pending:      false,
-		Focused:      true,
-		codeLocation: codelocation.New(1),
-	}
+func FEntry(parameters ...interface{}) TableEntry {
+	return entry(false, true, parameters)
 }
 
 /*
 You can mark a particular entry as pending with PEntry.  This is equivalent to PIt.
 */
-func PEntry(description interface{}, parameters ...interface{}) TableEntry {
-	return TableEntry{
-		Description:  description,
-		Parameters:   parameters,
-		Pending:      true,
-		Focused:      false,
-		codeLocation: codelocation.New(1),
-	}
+func PEntry(parameters ...interface{}) TableEntry {
+	return entry(true, false, parameters)
 }
 
 /*
 You can mark a particular entry as pending with XEntry.  This is equivalent to XIt.
 */
-func XEntry(description interface{}, parameters ...interface{}) TableEntry {
+func XEntry(parameters ...interface{}) TableEntry {
+	return entry(true, false, parameters)
+}
+
+func entry(pending, focused bool, parameters ...interface{}) TableEntry {
+	if len(parameters) == 0 {
+		panic("Entry requires at least one parameter")
+	}
+
+	p := parameters[0].([]interface{})
+	if len(p) == 0 {
+		panic("Entry requires at least one parameter")
+	}
+
 	return TableEntry{
-		Description:  description,
-		Parameters:   parameters,
-		Pending:      true,
-		Focused:      false,
-		codeLocation: codelocation.New(1),
+		p[0],
+		p[1:],
+		pending,
+		focused,
+		codelocation.New(1),
 	}
 }
