@@ -11,11 +11,6 @@ var _ = Describe("PendingFixture", func() {
 			By("pending")
 			By("pending")
 		})
-
-		ItTable("pending",
-			func() {},
-			Entry("pending"),
-		)
 	})
 
 	PContext("pending", func() {

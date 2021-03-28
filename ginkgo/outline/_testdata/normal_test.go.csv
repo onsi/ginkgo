@@ -15,5 +15,7 @@ DescribeTable,normal,482,540,false,false,false
 Entry,normal,521,536,true,false,false
 DescribeTable,normal,543,601,false,false,false
 Entry,normal,582,597,true,false,false
+ItTable,normal,604,664,false,false,false
 Entry,normal,645,660,true,false,false
+ItTable,normal,667,727,false,false,false
 Entry,normal,708,723,true,false,false

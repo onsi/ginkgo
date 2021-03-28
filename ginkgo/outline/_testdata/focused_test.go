@@ -11,11 +11,6 @@ var _ = Describe("unfocused", func() {
 			By("focused")
 			By("focused")
 		})
-
-		ItTable("unfocused",
-			func(_ string) {},
-			Entry("unfocused"),
-		)
 	})
 
 	FContext("focused", func() {
