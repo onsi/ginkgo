@@ -121,6 +121,6 @@ func entry(pending, focused bool, parameters ...interface{}) TableEntry {
 		p[1:],
 		pending,
 		focused,
-		codelocation.New(1),
+		codelocation.New(2),
 	}
 }
