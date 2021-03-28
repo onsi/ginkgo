@@ -106,25 +106,4 @@ var _ = Describe("TableWithParametricDescription", func() {
 			Count:          3,
 		}),
 	)
-
-	DescribeTable("entries with invalid descriptions",
-		func(description interface{}) {
-			Expect(func() {
-				DescribeTable("", func(_ string) {},
-					Entry(description, "foobar"),
-				)
-			}).To(Panic())
-		},
-		Entry("no description", nil),
-		Entry("description function with incorrect parameters", func() string {
-			return "foobaz"
-		}),
-		Entry("description function that does not return a string", func(_ string) {}),
-	)
-
-	It("should panic when no parameters are provided to an entry", func() {
-		Expect(func() {
-			DescribeTable("", func() {}, Entry())
-		}).To(Panic())
-	})
 })

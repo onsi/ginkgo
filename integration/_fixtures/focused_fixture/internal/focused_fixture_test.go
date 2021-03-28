@@ -47,12 +47,12 @@ var _ = Describe("FocusedFixture", func() {
 	)
 
 	FItTable("focused",
-		func() {},
+		func(_ string) {},
 		Entry("focused"),
 	)
 
 	ItTable("focused",
-		func() {},
+		func(_ string) {},
 		FEntry("focused"),
 	)
 
@@ -82,7 +82,7 @@ var _ = Describe("FocusedFixture", func() {
 	)
 
 	ItTable("not focused",
-		func() {},
+		func(_ string) {},
 		Entry("not focused"),
 	)
 })

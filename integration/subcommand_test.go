@@ -525,7 +525,7 @@ var _ = Describe("Subcommand", func() {
 			session = startGinkgo(pathToTest, "--noColor")
 			Eventually(session).Should(gexec.Exit(0))
 			output := session.Out.Contents()
-			Expect(string(output)).To(ContainSubstring("13 Passed"))
+			Expect(string(output)).To(ContainSubstring("16 Passed"))
 			Expect(string(output)).To(ContainSubstring("0 Skipped"))
 
 			vendorPath := fixturePath("focused_fixture_with_vendor/vendor")
