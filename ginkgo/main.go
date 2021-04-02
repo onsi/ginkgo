@@ -155,6 +155,7 @@ func main() {
 		DefaultCommand: run.BuildRunCommand(),
 		DeprecatedCommands: []command.DeprecatedCommand{
 			{Name: "convert", Deprecation: types.Deprecations.Convert()},
+			{Name: "blur", Deprecation: types.Deprecations.Blur()},
 		},
 	}
 

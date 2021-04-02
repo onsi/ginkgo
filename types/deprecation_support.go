@@ -44,6 +44,12 @@ func (d deprecations) Convert() Deprecation {
 	}
 }
 
+func (d deprecations) Blur() Deprecation {
+	return Deprecation{
+		Message: "The blur command is deprecated in Ginkgo V2.  Use 'ginkgo unfocus' instead.",
+	}
+}
+
 
 type DeprecationTracker struct {
 	deprecations map[Deprecation][]CodeLocation
