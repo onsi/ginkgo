@@ -164,5 +164,3 @@ These are minor changes that will be transparent for most users.
 - The output format of Ginkgo's Default Reporter has changed in numerous subtle ways to improve readability and the user experience.  Users who were scraping Ginkgo output programatically may need to change their scripts or use the new JSON formatted report option (TODO: update with link once JSON reporting is implemented).
 
 - Removed `ginkgo blur` alias.  Use `ginkgo unfocus` instead.
-
-
