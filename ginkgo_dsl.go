@@ -190,7 +190,8 @@ func RunSpecsWithCustomReporters(t GinkgoTestingT, description string, specRepor
 
 	for reporter := range specReporters {
 		if _, isDeprecated := reflect.TypeOf(reporter).MethodByName("IsDeprecatedReporter"); isDeprecated {
-			deprecationTracker.TrackDeprecation(types.Deprecations.V1Report())
+			deprecationTracker.TrackDeprecation(types.Deprecations.V1Reporter())
+			deprecationTracker.TrackDeprecation(types.Deprecations.CustomReporter())
 		}
 	}
 	multiReporter := reporters.NewMultiReporter(specReporters...)
