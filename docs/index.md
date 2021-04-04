@@ -73,7 +73,7 @@ Let's break this down:
 - We import the `ginkgo` and `gomega` packages into the test's top-level namespace by performing a dot-import.  If you'd rather not do this, check out the [Avoiding Dot Imports](#avoiding-dot-imports) section below.
 - `TestBooks` is a `testing` test.  The Go test runner will run this function when you run `go test` or `ginkgo`.
 - `RegisterFailHandler(Fail)`: A Ginkgo test signals failure by calling Ginkgo's `Fail(description string)` function.  We pass this function to Gomega using `RegisterFailHandler`.  This is the sole connection point between Ginkgo and Gomega.
-- `RunSpecs(t *testing.T, suiteDescription string)` tells Ginkgo to start the test suite.  Ginkgo will automatically fail the `testing.T` if any of your specs fail.
+- `RunSpecs(t *testing.T, suiteDescription string)` tells Ginkgo to start the test suite.  Ginkgo will automatically fail the `testing.T` if any of your specs fail.  You should only ever call `RunSpecs` once.
 
 At this point you can run your suite:
 
@@ -675,6 +675,18 @@ To randomize *all* specs in a suite, you can pass the `--randomizeAllSpecs` flag
 Ginkgo uses the current time to seed the randomization.  It prints out the seed near the beginning of the test output.  If you notice test intermittent test failures that you think may be due to test pollution, you can use the seed from a failing suite to exactly reproduce the spec order for that suite.  To do this pass the `--seed=SEED` flag.
 
 When running multiple spec suites Ginkgo defaults to running the suites in the order they would be listed on the file-system.  You can permute the suites by passing `ginkgo --randomizeSuites`
+
+### Repeating Test Runs and Managing Flakey Tests
+
+It is sometimes useful to rerun a test suite repeatedly - for example, to ensure there are no flakey tests or race conditions.  The `ginkgo` CLI provides two flags that support this:
+
+- `ginkgo --until-it-fails`: will rerun the target test suites repeatedly until a failure occurs.  This flag is best paired with `--randomize-all` and `--randomize-suites` to ensure all tests are permuted between each run.  `--until-it-fails` can be useful when debugging a flaky test in a development environment.
+
+- `ginkgo --repeat=N`: will repeat the test suite up to `N` times or until a failure occurs, whichever comes first.  Like `--until-it-fails`, `--repeat` is best paired with `--randomize-all` and `--randomize-suites`.  `--repeat` can be useful in CI environments to root out potential flakey tests.
+
+> Note, you should not call `RunSpecs` more than once in your test suite.  Ginkgo will exit with an error if you attempt to do so - use `--repeat` or `--until-it-fails` instead.
+
+It is strongly recommended that flakey tests be identified quickly and fixed.  Sometimes, however, flakey tests can't be prevented and retries are necessary.  The `ginkgo` CLI supports this at a global level with `ginkgo --flake-attempts=N`.  Any individual test that fails will be rerun up-to `N` times.  If it succeeds in any of those tries the test suite is considered successful.
 
 ### Parallel Specs
 
