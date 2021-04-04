@@ -141,6 +141,14 @@ You passed {{bold}}%s{{/}} instead.`, t),
 	}
 }
 
+func (g ginkgoErrors) RerunningSuite() error {
+	return GinkgoError{
+		Heading: "Rerunning Suite",
+		Message: formatter.F(`It looks like you are calling RunSpecs more than once. Ginkgo does not support rerunning suites.  If you want to rerun a suite try {{bold}}ginkgo --repeat=N{{/}} or {{bold}}ginkgo --until-it-fails{{/}}`),
+		DocLink: "repeating-test-runs-and-managing-flakey-tests",
+	}
+}
+
 var sharedParallelErrorMessage = "It looks like you are trying to run tests in parallel with go test.\nThis is unsupported and you should use the ginkgo CLI instead."
 
 func (g ginkgoErrors) InvalidParallelTotalConfiguration() error {

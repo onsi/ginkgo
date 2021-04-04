@@ -34,6 +34,8 @@ const GINKGO_VERSION = config.VERSION
 var flagSet config.GinkgoFlagSet
 var deprecationTracker = types.NewDeprecationTracker()
 
+var suiteDidRun = false
+
 func init() {
 	var err error
 	flagSet, err = config.BuildTestSuiteFlagSet()
@@ -185,6 +187,11 @@ func RunSpecsWithDefaultAndCustomReporters(t GinkgoTestingT, description string,
 //To run your tests with your custom reporter(s) (and *not* Ginkgo's default reporter), replace
 //RunSpecs() with this method.  Note that parallel tests will not work correctly without the default reporter
 func RunSpecsWithCustomReporters(t GinkgoTestingT, description string, specReporters []Reporter) bool {
+	if suiteDidRun {
+		exitIfErr(types.GinkgoErrors.RerunningSuite())
+	}
+	suiteDidRun = true
+
 	writer := GinkgoWriter.(*internal.Writer)
 	writer.SetStream(config.DefaultReporterConfig.Verbose && config.GinkgoConfig.ParallelTotal == 1)
 
