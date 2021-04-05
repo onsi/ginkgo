@@ -287,7 +287,10 @@ func (suite *Suite) runSpec(spec Spec, failer *Failer, interruptHandler Interrup
 
 		interruptStatus := interruptHandler.Status()
 		deepestNestingLevelAttained := -1
-		nodes := spec.Nodes.WithType(types.NodeTypeBeforeEach).CopyAppend(spec.Nodes.WithType(types.NodeTypeJustBeforeEach)...).CopyAppend(spec.Nodes.WithType(types.NodeTypeIt)...)
+		nodes := spec.Nodes.WithType(types.NodeTypeBeforeEach).SortedByAscendingNestingLevel()
+		nodes = nodes.CopyAppend(spec.Nodes.WithType(types.NodeTypeJustBeforeEach).SortedByAscendingNestingLevel()...)
+		nodes = nodes.CopyAppend(spec.Nodes.WithType(types.NodeTypeIt)...)
+
 		for _, node := range nodes {
 			deepestNestingLevelAttained = max(deepestNestingLevelAttained, node.NestingLevel)
 			suite.currentSpecSummary.State, suite.currentSpecSummary.Failure = suite.runNode(node, failer, interruptStatus.Channel, spec.Nodes.BestTextFor(node), writer, config)

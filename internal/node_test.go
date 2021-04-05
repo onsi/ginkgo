@@ -187,6 +187,26 @@ var _ = Describe("Nodes", func() {
 		})
 	})
 
+	Describe("SortedByAscendingNestingLevel", func() {
+		var n0A, n0B, n1A, n1B, n1C, n2A, n2B Node
+		var nodes Nodes
+		BeforeEach(func() {
+			n0A = N(NestingLevel(0))
+			n0B = N(NestingLevel(0))
+			n1A = N(NestingLevel(1))
+			n1B = N(NestingLevel(1))
+			n1C = N(NestingLevel(1))
+			n2A = N(NestingLevel(2))
+			n2B = N(NestingLevel(2))
+			nodes = Nodes{n2A, n1A, n1B, n0A, n2B, n0B, n1C}
+		})
+
+		It("returns copy sorted by ascending nesting level, preserving order within nesting level", func() {
+			Ω(nodes.SortedByAscendingNestingLevel()).Should(Equal(Nodes{n0A, n0B, n1A, n1B, n1C, n2A, n2B}))
+			Ω(nodes).Should(Equal(Nodes{n2A, n1A, n1B, n0A, n2B, n0B, n1C}), "original nodes should not have been modified")
+		})
+	})
+
 	Describe("WithinNestingLevel", func() {
 		var n0, n1, n2a, n2b, n3 Node
 		var nodes Nodes
