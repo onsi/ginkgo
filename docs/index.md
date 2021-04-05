@@ -135,7 +135,7 @@ var _ = Describe("Book", func() {
         longBook = Book{
             Title:  "Les Miserables",
             Author: "Victor Hugo",
-            Pages:  1488,
+            Pages:  2783,
         }
 
         shortBook = Book{
@@ -249,12 +249,12 @@ var _ = Describe("Book", func() {
         book := NewBookFromJSON(`{
             "title":"Les Miserables",
             "author":"Victor Hugo",
-            "pages":1488
+            "pages":2783
         }`)
 
         Expect(book.Title).To(Equal("Les Miserables"))
         Expect(book.Author).To(Equal("Victor Hugo"))
-        Expect(book.Pages).To(Equal(1488))
+        Expect(book.Pages).To(Equal(2783))
     })
 })
 ```
@@ -289,14 +289,14 @@ var _ = Describe("Book", func() {
         book = NewBookFromJSON(`{
             "title":"Les Miserables",
             "author":"Victor Hugo",
-            "pages":1488
+            "pages":2783
         }`)
     })
 
     It("can be loaded from JSON", func() {
         Expect(book.Title).To(Equal("Les Miserables"))
         Expect(book.Author).To(Equal("Victor Hugo"))
-        Expect(book.Pages).To(Equal(1488))
+        Expect(book.Pages).To(Equal(2783))
     })
 
     It("can extract the author's last name", func() {
@@ -324,7 +324,7 @@ var _ = Describe("Book", func() {
         book, err = NewBookFromJSON(`{
             "title":"Les Miserables",
             "author":"Victor Hugo",
-            "pages":1488
+            "pages":2783
         }`)
     })
 
@@ -333,7 +333,7 @@ var _ = Describe("Book", func() {
             It("should populate the fields correctly", func() {
                 Expect(book.Title).To(Equal("Les Miserables"))
                 Expect(book.Author).To(Equal("Victor Hugo"))
-                Expect(book.Pages).To(Equal(1488))
+                Expect(book.Pages).To(Equal(2783))
             })
 
             It("should not error", func() {
@@ -346,7 +346,7 @@ var _ = Describe("Book", func() {
                 book, err = NewBookFromJSON(`{
                     "title":"Les Miserables",
                     "author":"Victor Hugo",
-                    "pages":1488oops
+                    "pages":2783oops
                 }`)
             })
 
@@ -396,7 +396,7 @@ var _ = Describe("Book", func() {
         json = `{
             "title":"Les Miserables",
             "author":"Victor Hugo",
-            "pages":1488
+            "pages":2783
         }`
     })
 
@@ -409,7 +409,7 @@ var _ = Describe("Book", func() {
             It("should populate the fields correctly", func() {
                 Expect(book.Title).To(Equal("Les Miserables"))
                 Expect(book.Author).To(Equal("Victor Hugo"))
-                Expect(book.Pages).To(Equal(1488))
+                Expect(book.Pages).To(Equal(2783))
             })
 
             It("should not error", func() {
@@ -422,7 +422,7 @@ var _ = Describe("Book", func() {
                 json = `{
                     "title":"Les Miserables",
                     "author":"Victor Hugo",
-                    "pages":1488oops
+                    "pages":2783oops
                 }`
             })
 
