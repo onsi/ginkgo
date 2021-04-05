@@ -59,6 +59,9 @@ func (interceptor *outputInterceptor) StopInterceptingAndReturnOutput() (string,
 	unix.Dup2(interceptor.stdoutClone, 1)
 	unix.Dup2(interceptor.stderrClone, 2)
 
+	unix.Close(interceptor.stdoutClone)
+	unix.Close(interceptor.stderrClone)
+
 	interceptor.intercepting = false
 
 	return string(output), err
