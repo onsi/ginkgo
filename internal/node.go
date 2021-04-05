@@ -3,8 +3,9 @@ package internal
 import (
 	"sort"
 
-	"github.com/onsi/ginkgo/types"
 	"sync"
+
+	"github.com/onsi/ginkgo/types"
 )
 
 var _global_node_id_counter = uint(0)
@@ -123,12 +124,20 @@ func (n Nodes) WithinNestingLevel(deepestNestingLevel int) Nodes {
 }
 
 func (n Nodes) SortedByDescendingNestingLevel() Nodes {
-	out := Nodes{}
-	for _, node := range n {
-		out = append(out, node)
-	}
+	out := make(Nodes, len(n))
+	copy(out, n)
 	sort.SliceStable(out, func(i int, j int) bool {
 		return out[i].NestingLevel > out[j].NestingLevel
+	})
+
+	return out
+}
+
+func (n Nodes) SortedByAscendingNestingLevel() Nodes {
+	out := make(Nodes, len(n))
+	copy(out, n)
+	sort.SliceStable(out, func(i int, j int) bool {
+		return out[i].NestingLevel < out[j].NestingLevel
 	})
 
 	return out
