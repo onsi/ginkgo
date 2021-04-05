@@ -46,6 +46,10 @@ var _ = Describe("Running Tests in Series - the happy path", func() {
 					}))
 					It("D", rt.T("D"))
 				})
+				JustBeforeEach(rt.T("outer-just-before-each"))
+				BeforeEach(rt.T("outer-before-each"))
+				AfterEach(rt.T("outer-after-each"))
+				JustAfterEach(rt.T("outer-just-after-each"))
 			})
 		})
 		Ω(success).Should(BeTrue())
@@ -55,10 +59,10 @@ var _ = Describe("Running Tests in Series - the happy path", func() {
 	It("runs all the test nodes in the expected order", func() {
 		Ω(rt).Should(HaveTracked(
 			"before-suite",
-			"before-each", "just-before-each", "A", "just-after-each", "after-each", "after-each-2",
-			"before-each", "just-before-each", "B", "just-after-each", "after-each", "after-each-2",
-			"before-each", "nested-before-each", "just-before-each", "nested-just-before-each", "C", "nested-just-after-each", "nested-just-after-each-2", "just-after-each", "nested-after-each", "after-each", "after-each-2",
-			"before-each", "nested-before-each", "just-before-each", "nested-just-before-each", "D", "nested-just-after-each", "nested-just-after-each-2", "just-after-each", "nested-after-each", "after-each", "after-each-2",
+			"before-each", "outer-before-each", "just-before-each", "outer-just-before-each", "A", "just-after-each", "outer-just-after-each", "after-each", "after-each-2", "outer-after-each",
+			"before-each", "outer-before-each", "just-before-each", "outer-just-before-each", "B", "just-after-each", "outer-just-after-each", "after-each", "after-each-2", "outer-after-each",
+			"before-each", "outer-before-each", "nested-before-each", "just-before-each", "outer-just-before-each", "nested-just-before-each", "C", "nested-just-after-each", "nested-just-after-each-2", "just-after-each", "outer-just-after-each", "nested-after-each", "after-each", "after-each-2", "outer-after-each",
+			"before-each", "outer-before-each", "nested-before-each", "just-before-each", "outer-just-before-each", "nested-just-before-each", "D", "nested-just-after-each", "nested-just-after-each-2", "just-after-each", "outer-just-after-each", "nested-after-each", "after-each", "after-each-2", "outer-after-each",
 			"after-suite",
 		))
 	})
