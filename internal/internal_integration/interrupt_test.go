@@ -32,7 +32,7 @@ var _ = Describe("When a test suite is interrupted", func() {
 		It("reports the correct failure", func() {
 			summary := reporter.Did.FindByLeafNodeType(types.NodeTypeBeforeSuite)
 			Ω(summary.State).Should(Equal(types.SpecStateInterrupted))
-			Ω(summary.Failure.Message).Should(Equal("interrupted by user"))
+			Ω(summary.Failure.Message).Should(ContainSubstring("Interrupted by User"))
 		})
 
 		It("reports the correct statistics", func() {
@@ -88,8 +88,11 @@ var _ = Describe("When a test suite is interrupted", func() {
 			Ω(reporter.Did.WithState(types.SpecStateSkipped).Names()).Should(ConsistOf("skipped.1", "skipped.2"))
 		})
 
-		It("reports the interrupted test as interrupted", func() {
-			Ω(reporter.Did.Find("the interrupted test").Failure.Message).Should(Equal("interrupted by user"))
+		It("reports the interrupted test as interrupted and emits a stack trace", func() {
+			message := reporter.Did.Find("the interrupted test").Failure.Message
+			Ω(message).Should(ContainSubstring("Interrupted by User"))
+			Ω(message).Should(ContainSubstring("Here's a stack trace of all running goroutines:"))
+			Ω(message).Should(ContainSubstring("internal.interruptMessageWithStackTraces"))
 		})
 
 		It("reports the correct statistics", func() {

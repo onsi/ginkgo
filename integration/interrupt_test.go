@@ -43,6 +43,7 @@ var _ = Describe("Interrupt", func() {
 
 		It("should report where the suite was interrupted", func() {
 			Ω(session).Should(gbytes.Say(`\[INTERRUPTED\]`))
+			Ω(session).Should(gbytes.Say(`Here's a stack trace of all running goroutines:`))
 			Ω(session).Should(gbytes.Say(`\[It\] .*hanging_test.go:24`))
 		})
 

@@ -516,7 +516,7 @@ var _ = AfterSuite(func() {
 
 The `BeforeSuite` function is run before any specs are run.  If a failure occurs in the `BeforeSuite` then none of the specs are run and the test suite ends.
 
-The `AfterSuite` function is run after all the specs have run, regardless of whether any tests have failed.  Since the `AfterSuite` typically includes code to clean up persistent state ginkgo will *also* run `AfterSuite` when you send the running test suite an interrupt signal (`^C`).  To abort the `AfterSuite` send another interrupt signal.
+The `AfterSuite` function is run after all the specs have run, regardless of whether any tests have failed.
 
 Both `BeforeSuite` and `AfterSuite` can be run asynchronously by passing a function that takes a `Done` parameter.
 
@@ -809,6 +809,22 @@ With `SynchronizedAfterSuite` the *first* function is run on *all* nodes (includ
 Finally, all of these function can be passed an additional `Done` parameter to run asynchronously.  When running asynchronously, an optional timeout can be provided as a third parameter to `SynchronizedBeforeSuite` and `SynchronizedAfterSuite`.  The same timeout is applied to both functions.
 
 > Note an important subtelty:  The `dbRunner` variable is *only* populated on Node 1.  No other node should attempt to touch the data in that variable (it will be nil on the other nodes).  The `dbClient` variable, which is populated in the second `SynchronizedBeforeSuite` function is, of course, available across all nodes.
+
+### Interrupting and Aborting Test Runs
+
+Users can end a test run by sending a `SIGINT` or `SIGTERM` signal (or, in a terminal, just hit `^C`).  When an interrupt signal is received Ginkgo will:
+
+- Immediately interrupt the current test.
+- Run any `AfterEach` and `JustAfterEach` components associated with the current test.
+- Emit infromation about the interrupted test, this includes:
+    - Anything written to the `GinkgoWriter`
+    - The location of the Ginkgo component that was running at the time of interrupt
+    - A full stacktrace dump of all running goroutines at the time of interrupt
+- Skip any subsequent tests
+- Run the `AfterSuite` component if present
+- Exit, marking the test suite as failed
+
+Should any of the components run after receiving an interrupt get stuck, subsequent interrupt signals can be sent by the user to interrupt them as well.
 
 ---
 
