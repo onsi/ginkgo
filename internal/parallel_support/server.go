@@ -189,10 +189,14 @@ func (server *Server) nodeIsAlive(node int) bool {
 
 func (server *Server) handleBeforeSuiteState(writer http.ResponseWriter, request *http.Request) {
 	if request.Method == "POST" {
+		server.lock.Lock()
 		dec := json.NewDecoder(request.Body)
 		dec.Decode(&(server.beforeSuiteData))
+		server.lock.Unlock()
 	} else {
+		server.lock.Lock()
 		beforeSuiteData := server.beforeSuiteData
+		server.lock.Unlock()
 		if beforeSuiteData.State == types.RemoteBeforeSuiteStatePending && !server.nodeIsAlive(1) {
 			beforeSuiteData.State = types.RemoteBeforeSuiteStateDisappeared
 		}
