@@ -368,7 +368,7 @@ func (suite *Suite) runNode(node Node, failer *Failer, interruptChannel chan int
 		return outcome, failure
 	case <-interruptChannel:
 		return types.SpecStateInterrupted, types.Failure{
-			Message:   "interrupted by user",
+			Message:   interruptMessageWithStackTraces(),
 			Location:  node.CodeLocation,
 			NodeType:  node.NodeType,
 			NodeIndex: failureNestingLevel,
