@@ -45,11 +45,28 @@ func init() {
 	GinkgoWriter = internal.NewWriter(os.Stdout)
 }
 
-//GinkgoWriter implements an io.Writer
+type GinkgoWriterInterface interface {
+	io.Writer
+
+	Print(a ...interface{})
+	Printf(format string, a ...interface{})
+	Println(a ...interface{})
+
+	TeeTo(writer io.Writer)
+	ClearTeeWriters()
+}
+
+//GinkgoWriter implements a GinkgoWriterInterface and io.Writer
 //When running in verbose mode any writes to GinkgoWriter will be immediately printed
 //to stdout.  Otherwise, GinkgoWriter will buffer any writes produced during the current test and flush them to screen
 //only if the current test fails.
-var GinkgoWriter io.Writer
+//
+//GinkgoWriter also provides convenience `Print`, `Printf` and `Println` methods.  Running `GinkgoWriter.Print*(...)` is equivalent to `fmt.Fprint*(GinkgoWriter, ...)`
+//
+//GinkgoWriter also allows you to tee to a custom writer via `GinkgoWriter.TeeTo(writer)`.  Once registered via `TeeTo`, the `writer` will receive _any_ data
+//You can unregister all Tee'd Writers with `GinkgoWRiter.ClearTeeWriters()`
+//written to `GinkgoWriter` regardless of whether the test succeeded or failed.
+var GinkgoWriter GinkgoWriterInterface
 
 //The interface by which Ginkgo receives *testing.T
 type GinkgoTestingT interface {
@@ -193,7 +210,11 @@ func RunSpecsWithCustomReporters(t GinkgoTestingT, description string, specRepor
 	suiteDidRun = true
 
 	writer := GinkgoWriter.(*internal.Writer)
-	writer.SetStream(config.DefaultReporterConfig.Verbose && config.GinkgoConfig.ParallelTotal == 1)
+	if config.DefaultReporterConfig.Verbose && config.GinkgoConfig.ParallelTotal == 1 {
+		writer.SetMode(internal.WriterModeStreamWithoutBuffer)
+	} else {
+		writer.SetMode(internal.WriterModeBufferOnly)
+	}
 
 	for reporter := range specReporters {
 		if _, isDeprecated := reflect.TypeOf(reporter).MethodByName("IsDeprecatedReporter"); isDeprecated {

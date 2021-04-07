@@ -222,9 +222,17 @@ More details about `Fail` and about using matcher libraries other than Gomega ca
 
 ### Logging Output
 
-Ginkgo provides a globally available `io.Writer` called `GinkgoWriter` that you can write to.  `GinkgoWriter` aggregates input while a test is running and only dumps it to stdout if the test fails.  When running in verbose mode (`ginkgo -v` or `go test -ginkgo.v`) `GinkgoWriter` always immediately redirects its input to stdout.
+Ginkgo provides a globally available `io.Writer` called `GinkgoWriter` that you can write to.  `GinkgoWriter` aggregates input while a test is running and only dumps it to stdout if the test fails or is [interrupted](#interrupting-and-aborting-test-runs) (via `^C`).  When running in verbose mode (`ginkgo -v` or `go test -ginkgo.v`) `GinkgoWriter` always immediately redirects its input to stdout.
 
-When a Ginkgo test suite is interrupted (via `^C`) Ginkgo will emit any content written to the `GinkgoWriter`.  This makes it easier to debug stuck tests.  This is particularly useful when paired with `--progress` which instruct Ginkgo to emit notifications to the `GinkgoWriter` as it runs through your `BeforeEach`es, `It`s, `AfterEach`es, etc...
+`GinkgoWriter` includes three convenience methods:
+
+- `GinkgoWriter.Print(a ...interface{})` is equivalent to `fmt.Fprint(GinkgoWriter, a...)`
+- `GinkgoWriter.Println(a ...interface{})` is equivalent to `fmt.Fprintln(GinkgoWriter, a...)`
+- `GinkgoWriter.Printf(format string, a ...interface{})` is equivalent to `fmt.Fprintf(GinkgoWriter, format, a...)`
+
+You can also attach additional `io.Writer`s for `GinkgoWriter` to tee to via `GinkgoWriter.TeeTo(writer)`.  Any data written to `GinkgoWriter` will immediately be sent to attached tee writers.  All attached Tee writers can be cleared wtih `GinkgoWriter.ClearTeeWriters()`.
+
+> Note that data is **immediately** written to writers registered via `GinkgoWriter.TooTo(writer)` regardless of whether the test has succeeded or passed.
 
 ### IDE Support
 

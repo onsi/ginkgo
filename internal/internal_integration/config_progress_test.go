@@ -8,8 +8,10 @@ import (
 )
 
 var _ = Describe("when config.EmitSpecProgress is enabled", func() {
+	var buffer *gbytes.Buffer
 	BeforeEach(func() {
-		writer.SetStream(true)
+		buffer = gbytes.NewBuffer()
+		writer.TeeTo(buffer)
 		conf.EmitSpecProgress = true
 	})
 
@@ -17,30 +19,30 @@ var _ = Describe("when config.EmitSpecProgress is enabled", func() {
 		l := types.NewCodeLocation(0)
 		RunFixture("emitting spec progress", func() {
 			BeforeSuite(func() {
-				Ω(writerBuffer).Should(gbytes.Say(`\[BeforeSuite\] TOP-LEVEL`))
-				Ω(writerBuffer).Should(gbytes.Say(`%s:%d`, l.FileName, l.LineNumber+2))
+				Ω(buffer).Should(gbytes.Say(`\[BeforeSuite\] TOP-LEVEL`))
+				Ω(buffer).Should(gbytes.Say(`%s:%d`, l.FileName, l.LineNumber+2))
 			})
 			Describe("a container", func() {
 				BeforeEach(func() {
-					Ω(writerBuffer).Should(gbytes.Say(`\[BeforeEach\] a container`))
-					Ω(writerBuffer).Should(gbytes.Say(`%s:\d+`, l.FileName))
+					Ω(buffer).Should(gbytes.Say(`\[BeforeEach\] a container`))
+					Ω(buffer).Should(gbytes.Say(`%s:\d+`, l.FileName))
 				})
 				It("A", func() {
-					Ω(writerBuffer).Should(gbytes.Say(`\[It\] A`))
-					Ω(writerBuffer).Should(gbytes.Say(`%s:\d+`, l.FileName))
+					Ω(buffer).Should(gbytes.Say(`\[It\] A`))
+					Ω(buffer).Should(gbytes.Say(`%s:\d+`, l.FileName))
 				})
 				It("B", func() {
-					Ω(writerBuffer).Should(gbytes.Say(`\[It\] B`))
-					Ω(writerBuffer).Should(gbytes.Say(`%s:\d+`, l.FileName))
+					Ω(buffer).Should(gbytes.Say(`\[It\] B`))
+					Ω(buffer).Should(gbytes.Say(`%s:\d+`, l.FileName))
 				})
 				AfterEach(func() {
-					Ω(writerBuffer).Should(gbytes.Say(`\[AfterEach\] a container`))
-					Ω(writerBuffer).Should(gbytes.Say(`%s:\d+`, l.FileName))
+					Ω(buffer).Should(gbytes.Say(`\[AfterEach\] a container`))
+					Ω(buffer).Should(gbytes.Say(`%s:\d+`, l.FileName))
 				})
 			})
 			AfterSuite(func() {
-				Ω(writerBuffer).Should(gbytes.Say(`\[AfterSuite\] TOP-LEVEL`))
-				Ω(writerBuffer).Should(gbytes.Say(`%s:\d+`, l.FileName))
+				Ω(buffer).Should(gbytes.Say(`\[AfterSuite\] TOP-LEVEL`))
+				Ω(buffer).Should(gbytes.Say(`%s:\d+`, l.FileName))
 			})
 		})
 
