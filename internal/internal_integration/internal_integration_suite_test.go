@@ -1,6 +1,7 @@
 package internal_integration_test
 
 import (
+	"io/ioutil"
 	"reflect"
 	"sync"
 	"testing"
@@ -9,7 +10,6 @@ import (
 	. "github.com/onsi/ginkgo/internal/test_helpers"
 	"github.com/onsi/ginkgo/types"
 	. "github.com/onsi/gomega"
-	"github.com/onsi/gomega/gbytes"
 
 	"github.com/onsi/ginkgo/config"
 	"github.com/onsi/ginkgo/internal"
@@ -24,7 +24,6 @@ func TestSuiteTests(t *testing.T) {
 var conf config.GinkgoConfigType
 var failer *internal.Failer
 var writer *internal.Writer
-var writerBuffer *gbytes.Buffer
 var reporter *FakeReporter
 var rt *RunTracker
 var cl types.CodeLocation
@@ -33,9 +32,8 @@ var interruptHandler *FakeInterruptHandler
 var _ = BeforeEach(func() {
 	conf = config.GinkgoConfigType{}
 	failer = internal.NewFailer()
-	writerBuffer = gbytes.NewBuffer()
-	writer = internal.NewWriter(writerBuffer)
-	writer.SetStream(false)
+	writer = internal.NewWriter(ioutil.Discard)
+	writer.SetMode(internal.WriterModeBufferOnly)
 	reporter = &FakeReporter{}
 	rt = NewRunTracker()
 	cl = types.NewCodeLocation(0)
