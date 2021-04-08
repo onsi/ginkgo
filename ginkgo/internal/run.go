@@ -117,7 +117,7 @@ func runParallel(suite TestSuite, ginkgoConfig config.GinkgoConfigType, reporter
 		nodeGoFlagsConfig := goFlagsConfig
 		if goFlagsConfig.Cover {
 			nodeGoFlagsConfig.CoverProfile = fmt.Sprintf("%s.%d", goFlagsConfig.CoverProfile, node)
-			coverProfiles = append(coverProfiles, nodeGoFlagsConfig.CoverProfile)
+			coverProfiles = append(coverProfiles, filepath.Join(suite.Path, nodeGoFlagsConfig.CoverProfile))
 		}
 
 		args, err := config.GenerateTestRunArgs(nodeGinkgoConfig, reporterConfig, nodeGoFlagsConfig)
@@ -170,8 +170,17 @@ func runParallel(suite TestSuite, ginkgoConfig config.GinkgoConfigType, reporter
 	}
 
 	if len(coverProfiles) > 0 {
-		err := MergeAndCleanupCoverProfiles(coverProfiles, filepath.Join(suite.Path, goFlagsConfig.CoverProfile))
+		coverProfile := filepath.Join(suite.Path, goFlagsConfig.CoverProfile)
+		err := MergeAndCleanupCoverProfiles(coverProfiles, coverProfile)
 		command.AbortIfError("Failed to combine cover profiles", err)
+
+		coverage, err := GetCoverageFromCoverProfile(coverProfile)
+		command.AbortIfError("Failed to compute coverage", err)
+		if coverage == 0 {
+			fmt.Fprintln(os.Stdout, "coverage: [no statements]")
+		} else {
+			fmt.Fprintf(os.Stdout, "coverage: %.1f%% of statements\n", coverage)
+		}
 	}
 
 	return suite
