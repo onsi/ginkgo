@@ -28,7 +28,7 @@ func BuildWatchCommand() command.Command {
 		Name:          "watch",
 		Flags:         flags,
 		Usage:         "ginkgo watch <FLAGS> <PACKAGES> -- <PASS-THROUGHS>",
-		ShortDoc:      "Watches the passed in <PACKAGES> and runs their tests whenever changes occur.",
+		ShortDoc:      "Watch the passed in <PACKAGES> and runs their tests whenever changes occur.",
 		Documentation: "Any arguments after -- will be passed to the test.",
 		DocLink:       "watching-for-changes",
 		Command: func(args []string, additionalArgs []string) {
