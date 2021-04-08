@@ -5,13 +5,16 @@ import (
 	"fmt"
 	"io/ioutil"
 	"os"
+	"os/exec"
 	"path/filepath"
 	"regexp"
+	"strconv"
 
 	"github.com/onsi/ginkgo/config"
 )
 
-func FinalizeProfilesForSuites(suites []TestSuite, cliConfig config.GinkgoCLIConfigType, goFlagsConfig config.GoFlagsConfigType) error {
+func FinalizeProfilesForSuites(suites []TestSuite, cliConfig config.GinkgoCLIConfigType, goFlagsConfig config.GoFlagsConfigType) ([]string, error) {
+	messages := []string{}
 	if goFlagsConfig.Cover {
 		if cliConfig.KeepSeparateCoverprofiles {
 			if cliConfig.OutputDir != "" {
@@ -22,7 +25,7 @@ func FinalizeProfilesForSuites(suites []TestSuite, cliConfig config.GinkgoCLICon
 					fmt.Println(src, dst)
 					err := os.Rename(src, dst)
 					if err != nil {
-						return err
+						return messages, err
 					}
 				}
 			}
@@ -38,12 +41,23 @@ func FinalizeProfilesForSuites(suites []TestSuite, cliConfig config.GinkgoCLICon
 			}
 			err := MergeAndCleanupCoverProfiles(coverProfiles, dst)
 			if err != nil {
-				return err
+				return messages, err
 			}
+
+			coverage, err := GetCoverageFromCoverProfile(dst)
+			if err != nil {
+				return messages, err
+			}
+			if coverage == 0 {
+				messages = append(messages, "composite coverage: [no statements]")
+			} else {
+				messages = append(messages, fmt.Sprintf("composite coverage: %.1f%% of statements", coverage))
+			}
+
 		}
 	}
 
-	return nil
+	return messages, nil
 }
 
 //loads each profile, combines them, deletes them, stores them in destination
@@ -80,4 +94,24 @@ func MergeAndCleanupCoverProfiles(profiles []string, destination string) error {
 		return fmt.Errorf("Unable to create combined cover profile:\n%s", err.Error())
 	}
 	return nil
+}
+
+func GetCoverageFromCoverProfile(profile string) (float64, error) {
+	cmd := exec.Command("go", "tool", "cover", "-func", profile)
+	output, err := cmd.CombinedOutput()
+	if err != nil {
+		return 0, fmt.Errorf("Could not process Coverprofile %s: %s", profile, err.Error())
+	}
+	re := regexp.MustCompile(`total:\s*\(statements\)\s*(\d*\.\d*)\%`)
+	matches := re.FindStringSubmatch(string(output))
+	if matches == nil {
+		return 0, fmt.Errorf("Could not parse Coverprofile to compute coverage percentage")
+	}
+	coverageString := matches[1]
+	coverage, err := strconv.ParseFloat(coverageString, 64)
+	if err != nil {
+		return 0, fmt.Errorf("Could not parse Coverprofile to compute coverage percentage: %s", err.Error())
+	}
+
+	return coverage, nil
 }

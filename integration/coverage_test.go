@@ -33,6 +33,7 @@ var _ = Describe("Coverage Specs", func() {
 
 			parallelSession := startGinkgo(fm.PathTo("coverage"), "--no-color", "-nodes=2", "-cover")
 			Eventually(parallelSession).Should(gexec.Exit(0))
+			Ω(parallelSession.Out).Should(gbytes.Say(`coverage: 80\.0% of statements`))
 			parallelCoverage := processCoverageProfile(fm.PathTo("coverage", "coverprofile.out"))
 
 			Ω(parallelCoverage).Should(Equal(seriesCoverage))
@@ -50,6 +51,7 @@ var _ = Describe("Coverage Specs", func() {
 
 			parallelSession := startGinkgo(fm.PathTo("coverage"), "--no-color", "-nodes=2", coverPkgFlag)
 			Eventually(parallelSession).Should(gexec.Exit(0))
+			Ω(parallelSession.Out).Should(gbytes.Say(`coverage: 71\.4% of statements`))
 			parallelCoverage := processCoverageProfile(fm.PathTo("coverage", "coverprofile.out"))
 
 			Ω(parallelCoverage).Should(Equal(seriesCoverage))
@@ -72,26 +74,35 @@ var _ = Describe("Coverage Specs", func() {
 		})
 
 		It("generates a single cover profile", func() {
-			session := startGinkgo(fm.PathTo("combined_coverage"), "--no-color", "--cover", "-r", "--covermode=atomic")
+			session := startGinkgo(fm.PathTo("combined_coverage"), "--no-color", "--cover", "-r", "-nodes=2", "--covermode=atomic")
 			Eventually(session).Should(gexec.Exit(0))
 			Ω(fm.PathTo("combined_coverage", "coverprofile.out")).Should(BeAnExistingFile())
 			Ω(fm.PathTo("combined_coverage", "first_package/coverprofile.out")).ShouldNot(BeAnExistingFile())
 			Ω(fm.PathTo("combined_coverage", "second_package/coverprofile.out")).ShouldNot(BeAnExistingFile())
+			Ω(fm.PathTo("combined_coverage", "third_package/coverprofile.out")).ShouldNot(BeAnExistingFile())
+
+			Ω(session.Out).Should(gbytes.Say(`coverage: 80\.0% of statements`))
+			Ω(session.Out).Should(gbytes.Say(`coverage: 100\.0% of statements`))
+			Ω(session.Out).Should(gbytes.Say(`coverage: \[no statements\]`))
 
 			By("ensuring there is only one 'mode:' line")
 			re := regexp.MustCompile(`mode: atomic`)
 			content := fm.ContentOf("combined_coverage", "coverprofile.out")
 			matches := re.FindAllStringIndex(content, -1)
 			Ω(len(matches)).Should(Equal(1))
+
+			By("emitting a composite coverage score")
+			Ω(session.Out).Should(gbytes.Say(`composite coverage: 90\.0% of statements`))
 		})
 
 		Context("when -keep-separate-coverprofiles is set", func() {
 			It("generates separate coverprofiles", func() {
-				session := startGinkgo(fm.PathTo("combined_coverage"), "--no-color", "--cover", "-r", "--keep-separate-coverprofiles")
+				session := startGinkgo(fm.PathTo("combined_coverage"), "--no-color", "--cover", "-r", "-nodes=2", "--keep-separate-coverprofiles")
 				Eventually(session).Should(gexec.Exit(0))
 				Ω(fm.PathTo("combined_coverage", "coverprofile.out")).ShouldNot(BeAnExistingFile())
 				Ω(fm.PathTo("combined_coverage", "first_package/coverprofile.out")).Should(BeAnExistingFile())
 				Ω(fm.PathTo("combined_coverage", "second_package/coverprofile.out")).Should(BeAnExistingFile())
+				Ω(fm.PathTo("combined_coverage", "third_package/coverprofile.out")).Should(BeAnExistingFile())
 			})
 		})
 	})
@@ -102,14 +113,17 @@ var _ = Describe("Coverage Specs", func() {
 		})
 
 		It("puts the cover profile in -output-dir", func() {
-			session := startGinkgo(fm.PathTo("combined_coverage"), "--no-color", "--cover", "-r", "--output-dir=./output")
+			session := startGinkgo(fm.PathTo("combined_coverage"), "--no-color", "--cover", "-r", "-nodes=2", "--output-dir=./output")
 			Eventually(session).Should(gexec.Exit(0))
 			Ω(fm.PathTo("combined_coverage", "output/coverprofile.out")).Should(BeAnExistingFile())
+
+			By("emitting a composite coverage score")
+			Ω(session.Out).Should(gbytes.Say(`composite coverage: 90\.0% of statements`))
 		})
 
 		Context("when -keep-separate-coverprofiles is set", func() {
 			It("puts namespaced coverprofiels in the -output-dir", func() {
-				session := startGinkgo(fm.PathTo("combined_coverage"), "--no-color", "--cover", "-r", "--output-dir=./output", "--keep-separate-coverprofiles")
+				session := startGinkgo(fm.PathTo("combined_coverage"), "--no-color", "--cover", "-r", "-nodes=2", "--output-dir=./output", "--keep-separate-coverprofiles")
 				Eventually(session).Should(gexec.Exit(0))
 				Ω(fm.PathTo("combined_coverage", "output/coverprofile.out")).ShouldNot(BeAnExistingFile())
 				Ω(fm.PathTo("combined_coverage", "output/first_package_coverprofile.out")).Should(BeAnExistingFile())
