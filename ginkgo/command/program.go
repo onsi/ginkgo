@@ -163,7 +163,10 @@ func (p Program) handleHelpRequestsAndExit(writer io.Writer, args []string) {
 func (p Program) EmitUsage(writer io.Writer) {
 	fmt.Fprintln(writer, formatter.F(p.Heading))
 	fmt.Fprintln(writer, formatter.F("{{gray}}%s{{/}}", strings.Repeat("-", len(p.Heading))))
-	fmt.Fprintln(writer, formatter.F("For usage information, run {{bold}}%s help <COMMAND>{{/}}:", p.Name))
+	fmt.Fprintln(writer, formatter.F("For usage information for a command, run {{bold}}%s help COMMAND{{/}}.", p.Name))
+	fmt.Fprintln(writer, formatter.F("For usage information for the default command, run {{bold}}%s help %s{{/}} or {{bold}}%s help %s{{/}}.", p.Name, p.Name, p.Name, p.DefaultCommand.Name))
+	fmt.Fprintln(writer, "")
+	fmt.Fprintln(writer, formatter.F("The following commands are available:"))
 
 	fmt.Fprintln(writer, formatter.Fi(1, "{{bold}}%s{{/}} or %s {{bold}}%s{{/}} - {{gray}}%s{{/}}", p.Name, p.Name, p.DefaultCommand.Name, p.DefaultCommand.Usage))
 	if p.DefaultCommand.ShortDoc != "" {
