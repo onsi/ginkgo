@@ -9,7 +9,7 @@ import (
 )
 
 var _ = Describe("Types", func() {
-	var _ = Describe("NodeType", func() {
+	Describe("NodeType", func() {
 		Describe("Is", func() {
 			It("returns true when the NodeType is in the passed-in list", func() {
 				Ω(types.NodeTypeContainer.Is(types.NodeTypeIt, types.NodeTypeContainer)).Should(BeTrue())
@@ -35,5 +35,82 @@ var _ = Describe("Types", func() {
 			Entry("SynchronizedAfterSuite", types.NodeTypeSynchronizedAfterSuite, "SynchronizedAfterSuite"),
 			Entry("Invalid", types.NodeTypeInvalid, "INVALID NODE TYPE"),
 		)
+	})
+
+	Describe("Summary Helper Functions", func() {
+		Describe("CombinedOutput", func() {
+			Context("with no GinkgoWriter or StdOutErr output", func() {
+				It("comes back empty", func() {
+					Ω(types.Summary{}.CombinedOutput()).Should(Equal(""))
+				})
+			})
+
+			Context("wtih only StdOutErr output", func() {
+				It("returns that output", func() {
+					Ω(types.Summary{
+						CapturedStdOutErr: "hello",
+					}.CombinedOutput()).Should(Equal("hello"))
+				})
+			})
+
+			Context("wtih only GinkgoWriter output", func() {
+				It("returns that output", func() {
+					Ω(types.Summary{
+						CapturedGinkgoWriterOutput: "hello",
+					}.CombinedOutput()).Should(Equal("hello"))
+				})
+			})
+
+			Context("wtih both", func() {
+				It("returns both concatenated", func() {
+					Ω(types.Summary{
+						CapturedGinkgoWriterOutput: "gw",
+						CapturedStdOutErr:          "std",
+					}.CombinedOutput()).Should(Equal("std\ngw"))
+				})
+			})
+		})
+
+		It("can report on whether state is a failed state", func() {
+			Ω(types.Summary{State: types.SpecStatePending}.Failed()).Should(BeFalse())
+			Ω(types.Summary{State: types.SpecStateSkipped}.Failed()).Should(BeFalse())
+			Ω(types.Summary{State: types.SpecStatePassed}.Failed()).Should(BeFalse())
+			Ω(types.Summary{State: types.SpecStateFailed}.Failed()).Should(BeTrue())
+			Ω(types.Summary{State: types.SpecStatePanicked}.Failed()).Should(BeTrue())
+			Ω(types.Summary{State: types.SpecStateInterrupted}.Failed()).Should(BeTrue())
+		})
+
+		It("can return a concatenated set of texts", func() {
+			Ω(CurrentSpec().FullText()).Should(Equal("Types Summary Helper Functions can return a concatenated set of texts"))
+		})
+
+		It("can return the text of the Spec itself", func() {
+			Ω(CurrentSpec().SpecText()).Should(Equal("can return the text of the Spec itself"))
+		})
+
+		It("can return the name of the file it's spec is in", func() {
+			cl := types.NewCodeLocation(0)
+			Ω(CurrentSpec().FileName()).Should(Equal(cl.FileName))
+		})
+
+		It("can return the linenumber of the file it's spec is in", func() {
+			cl := types.NewCodeLocation(0)
+			Ω(CurrentSpec().LineNumber()).Should(Equal(cl.LineNumber - 1))
+		})
+
+		It("can return it's failure's message", func() {
+			summary := types.Summary{
+				Failure: types.Failure{Message: "why this failed"},
+			}
+			Ω(summary.FailureMessage()).Should(Equal("why this failed"))
+		})
+
+		It("can return it's failure's code location", func() {
+			cl := types.NewCodeLocation(0)
+			summary := types.Summary{
+				Failure: types.Failure{Location: cl},
+			}
+			Ω(summary.FailureLocation()).Should(Equal(cl))
+		})
 	})
 })

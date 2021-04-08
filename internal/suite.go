@@ -26,6 +26,7 @@ type Suite struct {
 	beforeSuiteNodeBuilder SuiteNodeBuilder
 	afterSuiteNodeBuilder  SuiteNodeBuilder
 
+	writer             WriterInterface
 	currentSpecSummary types.Summary
 }
 
@@ -140,14 +141,17 @@ func (suite *Suite) PushSuiteNodeBuilder(nodeBuilder SuiteNodeBuilder) error {
 /*
   Spec Running methods - used during PhaseRun
 */
-func (suite *Suite) CurrentSpecSummary() (types.Summary, bool) {
-	if suite.currentSpecSummary.State == types.SpecStateInvalid {
-		return types.Summary{}, false
+func (suite *Suite) CurrentSpecSummary() types.Summary {
+	summary := suite.currentSpecSummary
+	if suite.writer != nil {
+		summary.CapturedGinkgoWriterOutput = string(suite.writer.Bytes())
 	}
-	return suite.currentSpecSummary, true
+	return summary
 }
 
 func (suite *Suite) runSpecs(description string, specs Specs, failer *Failer, reporter reporters.Reporter, writer WriterInterface, interruptHandler InterruptHandlerInterface, config config.GinkgoConfigType) bool {
+	suite.writer = writer
+
 	suiteStartTime := time.Now()
 
 	beforeSuiteNode := suite.beforeSuiteNodeBuilder.BuildNode(config, failer)

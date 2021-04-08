@@ -110,9 +110,16 @@ Instead of implementing custom reporters Ginkgo 2.0 will:
 
 We'd like feedback on all this.  Please leave comments at [#711](#711)!
 
+### Changed: CurrentGinkgoTestDescription()
+`CurrentGinkgoTestDescription()` has been deprecated and will be removed in a future release.  The method was returning a processed object that included a subset of information available about the running test.
+
+It has been replaced with `CurrentSpec()` which returns the full-fledge `types.Summary` used by Ginkgo's reporting infrastructure.  To help users migrate, `types.Summary` now includes a number of helper methods to make it easier to extract information about the running test.
+
+### Migration Strategy:
+Replace any calls to `CurrentGinkgoTestDescription()` with `CurrentSpec()` and use the struct fields or helper methods on the returned `types.Summary` to get the information you need about the current test.
 
 ### Changed: Reporter Interface
-If custom reports stay in 2.0 (see "Removed: Custom Reporters" above), the `Reporter` interface will be changing.
+If custom reporters stay in 2.0 (see "Removed: Custom Reporters" above), the `Reporter` interface will be changing.
 
 The Ginkgo 1.x `Reporter` interface:
 ```
@@ -198,5 +205,7 @@ These are minor changes that will be transparent for most users.
 - `"top level"` is no longer the first element in `types.Summary.NodeTexts`.  This will only affect users who write custom reporters.
 
 - The output format of Ginkgo's Default Reporter has changed in numerous subtle ways to improve readability and the user experience.  Users who were scraping Ginkgo output programatically may need to change their scripts or use the new JSON formatted report option (TODO: update with link once JSON reporting is implemented).
+
+- When running in series and verbose mode (i.e. `ginkgo -v`) GinkgoWriter output is emitted in real-time (existing behavior) but also emitted in the failure message for failed tests.  This allows for consistent failure messages regardless of verbosity settings and also makes it possible for the resulting JSON report to include captured GinkgoWriter information.
 
 - Removed `ginkgo blur` alias.  Use `ginkgo unfocus` instead.
