@@ -17,16 +17,16 @@ var _ = Describe("Writer", func() {
 		writer = internal.NewWriter(out)
 	})
 
-	Context("when configured to WriterModeStreamWithoutBuffer", func() {
-		It("should stream directly to the passed in writer by default", func() {
+	Context("when configured to WriterModeStreamAndBuffer (the default setting)", func() {
+		It("should stream directly to the passed in writer", func() {
 			writer.Write([]byte("foo"))
 			Ω(out).Should(gbytes.Say("foo"))
 		})
 
-		It("does not store the bytes", func() {
+		It("does also stores the bytes", func() {
 			writer.Write([]byte("foo"))
 			Ω(out).Should(gbytes.Say("foo"))
-			Ω(writer.Bytes()).Should(BeEmpty())
+			Ω(string(writer.Bytes())).Should(Equal("foo"))
 		})
 	})
 

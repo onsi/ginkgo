@@ -105,10 +105,10 @@ func GinkgoT(optionalOffset ...int) GinkgoTInterface {
 		offset = optionalOffset[0]
 	}
 	failedFunc := func() bool {
-		return CurrentGinkgoTestDescription().Failed
+		return CurrentSpec().Failed()
 	}
 	nameFunc := func() string {
-		return CurrentGinkgoTestDescription().FullTestText
+		return CurrentSpec().FullText()
 	}
 	return testingtproxy.New(GinkgoWriter, Fail, Skip, failedFunc, nameFunc, offset)
 }
@@ -149,7 +149,9 @@ type Reporter = reporters.Reporter
 //	FileName: the name of the file containing the current test
 //	LineNumber: the line number for the current test
 //	Failed: if the current test has failed, this will be true (useful in an AfterEach)
-type GinkgoTestDescription struct {
+//
+//Deprecated: Use CurrentSpec() instead
+type DeprecatedGinkgoTestDescription struct {
 	FullTestText   string
 	ComponentTexts []string
 	TestText       string
@@ -160,15 +162,21 @@ type GinkgoTestDescription struct {
 	Failed   bool
 	Duration time.Duration
 }
+type GinkgoTestDescription = DeprecatedGinkgoTestDescription
 
 //CurrentGinkgoTestDescripton returns information about the current running test.
-func CurrentGinkgoTestDescription() GinkgoTestDescription {
-	summary, ok := global.Suite.CurrentSpecSummary()
-	if !ok {
+//Deprecated: Use CurrentSpec() instead
+func CurrentGinkgoTestDescription() DeprecatedGinkgoTestDescription {
+	deprecationTracker.TrackDeprecation(
+		types.Deprecations.CurrentGinkgoTestDescription(),
+		types.NewCodeLocation(1),
+	)
+	summary := global.Suite.CurrentSpecSummary()
+	if summary.State == types.SpecStateInvalid {
 		return GinkgoTestDescription{}
 	}
 
-	return GinkgoTestDescription{
+	return DeprecatedGinkgoTestDescription{
 		ComponentTexts: summary.NodeTexts,
 		FullTestText:   strings.Join(summary.NodeTexts, " "),
 		TestText:       summary.NodeTexts[len(summary.NodeTexts)-1],
@@ -177,6 +185,13 @@ func CurrentGinkgoTestDescription() GinkgoTestDescription {
 		Failed:         summary.State.Is(types.SpecStateFailureStates...),
 		Duration:       summary.RunTime,
 	}
+}
+
+// CurrentSpec returns information about the current running test.
+// The returned object is a types.Summary which includes helper methods
+// to make extracting information about the test easier.
+func CurrentSpec() types.Summary {
+	return global.Suite.CurrentSpecSummary()
 }
 
 //RunSpecs is the entry point for the Ginkgo test runner.
@@ -211,7 +226,7 @@ func RunSpecsWithCustomReporters(t GinkgoTestingT, description string, specRepor
 
 	writer := GinkgoWriter.(*internal.Writer)
 	if config.DefaultReporterConfig.Verbose && config.GinkgoConfig.ParallelTotal == 1 {
-		writer.SetMode(internal.WriterModeStreamWithoutBuffer)
+		writer.SetMode(internal.WriterModeStreamAndBuffer)
 	} else {
 		writer.SetMode(internal.WriterModeBufferOnly)
 	}

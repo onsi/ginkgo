@@ -16,7 +16,7 @@ func TestNodot(t *testing.T) {
 var GinkgoWriter = ginkgo.GinkgoWriter
 var GinkgoParallelNode = ginkgo.GinkgoParallelNode
 var GinkgoT = ginkgo.GinkgoT
-var CurrentGinkgoTestDescription = ginkgo.CurrentGinkgoTestDescription
+var CurrentSpec = ginkgo.CurrentSpec
 var RunSpecs = ginkgo.RunSpecs
 var RunSpecsWithDefaultAndCustomReporters = ginkgo.RunSpecsWithDefaultAndCustomReporters
 var RunSpecsWithCustomReporters = ginkgo.RunSpecsWithCustomReporters
