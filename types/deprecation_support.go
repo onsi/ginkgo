@@ -44,6 +44,13 @@ func (d deprecations) Measure() Deprecation {
 	}
 }
 
+func (d deprecations) CurrentGinkgoTestDescription() Deprecation {
+	return Deprecation{
+		Message: "CurrentGinkgoTestDescription() is deprecated in Ginkgo V2.  Use CurrentSpec() instead.",
+		DocLink: "changed-currentginkgotestdescription",
+	}
+}
+
 func (d deprecations) Convert() Deprecation {
 	return Deprecation{
 		Message: "The convert command is deprecated in Ginkgo V2",
