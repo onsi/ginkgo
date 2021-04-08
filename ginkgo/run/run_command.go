@@ -153,8 +153,11 @@ OUTER_LOOP:
 
 	internal.Cleanup(suites...)
 
-	err := internal.FinalizeProfilesForSuites(suites, r.cliConfig, r.goFlagsConfig)
+	messages, err := internal.FinalizeProfilesForSuites(suites, r.cliConfig, r.goFlagsConfig)
 	command.AbortIfError("could not finalize profiles:", err)
+	for _, message := range messages {
+		fmt.Println(message)
+	}
 
 	fmt.Printf("\nGinkgo ran %d %s in %s\n", len(suites), internal.PluralizedWord("suite", "suites", len(suites)), time.Since(t))
 
