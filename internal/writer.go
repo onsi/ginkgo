@@ -10,7 +10,7 @@ import (
 type WriterMode uint
 
 const (
-	WriterModeStreamWithoutBuffer WriterMode = iota
+	WriterModeStreamAndBuffer WriterMode = iota
 	WriterModeBufferOnly
 )
 
@@ -36,7 +36,7 @@ func NewWriter(outWriter io.Writer) *Writer {
 		buffer:    &bytes.Buffer{},
 		lock:      &sync.Mutex{},
 		outWriter: outWriter,
-		mode:      WriterModeStreamWithoutBuffer,
+		mode:      WriterModeStreamAndBuffer,
 	}
 }
 
@@ -54,11 +54,10 @@ func (w *Writer) Write(b []byte) (n int, err error) {
 		teeWriter.Write(b)
 	}
 
-	if w.mode == WriterModeStreamWithoutBuffer {
-		return w.outWriter.Write(b)
-	} else {
-		return w.buffer.Write(b)
+	if w.mode == WriterModeStreamAndBuffer {
+		w.outWriter.Write(b)
 	}
+	return w.buffer.Write(b)
 }
 
 func (w *Writer) Truncate() {
