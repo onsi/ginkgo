@@ -103,6 +103,12 @@ func runParallel(suite TestSuite, ginkgoConfig config.GinkgoConfigType, reporter
 	numNodes := cliConfig.ComputedNodes()
 	nodeOutput := make([]*bytes.Buffer, numNodes)
 	coverProfiles := []string{}
+
+	blockProfiles := []string{}
+	cpuProfiles := []string{}
+	memProfiles := []string{}
+	mutexProfiles := []string{}
+
 	nodeResults := make(chan nodeResult)
 
 	server, err := parallel_support.NewServer(numNodes, reporters.NewDefaultReporter(reporterConfig, formatter.ColorableStdOut))
@@ -118,6 +124,22 @@ func runParallel(suite TestSuite, ginkgoConfig config.GinkgoConfigType, reporter
 		if goFlagsConfig.Cover {
 			nodeGoFlagsConfig.CoverProfile = fmt.Sprintf("%s.%d", goFlagsConfig.CoverProfile, node)
 			coverProfiles = append(coverProfiles, filepath.Join(suite.Path, nodeGoFlagsConfig.CoverProfile))
+		}
+		if goFlagsConfig.BlockProfile != "" {
+			nodeGoFlagsConfig.BlockProfile = fmt.Sprintf("%s.%d", goFlagsConfig.BlockProfile, node)
+			blockProfiles = append(blockProfiles, filepath.Join(suite.Path, nodeGoFlagsConfig.BlockProfile))
+		}
+		if goFlagsConfig.CPUProfile != "" {
+			nodeGoFlagsConfig.CPUProfile = fmt.Sprintf("%s.%d", goFlagsConfig.CPUProfile, node)
+			cpuProfiles = append(cpuProfiles, filepath.Join(suite.Path, nodeGoFlagsConfig.CPUProfile))
+		}
+		if goFlagsConfig.MemProfile != "" {
+			nodeGoFlagsConfig.MemProfile = fmt.Sprintf("%s.%d", goFlagsConfig.MemProfile, node)
+			memProfiles = append(memProfiles, filepath.Join(suite.Path, nodeGoFlagsConfig.MemProfile))
+		}
+		if goFlagsConfig.MutexProfile != "" {
+			nodeGoFlagsConfig.MutexProfile = fmt.Sprintf("%s.%d", goFlagsConfig.MutexProfile, node)
+			mutexProfiles = append(mutexProfiles, filepath.Join(suite.Path, nodeGoFlagsConfig.MutexProfile))
 		}
 
 		args, err := config.GenerateTestRunArgs(nodeGinkgoConfig, reporterConfig, nodeGoFlagsConfig)
@@ -181,6 +203,26 @@ func runParallel(suite TestSuite, ginkgoConfig config.GinkgoConfigType, reporter
 		} else {
 			fmt.Fprintf(os.Stdout, "coverage: %.1f%% of statements\n", coverage)
 		}
+	}
+	if len(blockProfiles) > 0 {
+		blockProfile := filepath.Join(suite.Path, goFlagsConfig.BlockProfile)
+		err := MergeProfiles(blockProfiles, blockProfile)
+		command.AbortIfError("Failed to combine blockprofiles", err)
+	}
+	if len(cpuProfiles) > 0 {
+		cpuProfile := filepath.Join(suite.Path, goFlagsConfig.CPUProfile)
+		err := MergeProfiles(cpuProfiles, cpuProfile)
+		command.AbortIfError("Failed to combine cpuprofiles", err)
+	}
+	if len(memProfiles) > 0 {
+		memProfile := filepath.Join(suite.Path, goFlagsConfig.MemProfile)
+		err := MergeProfiles(memProfiles, memProfile)
+		command.AbortIfError("Failed to combine memprofiles", err)
+	}
+	if len(mutexProfiles) > 0 {
+		mutexProfile := filepath.Join(suite.Path, goFlagsConfig.MutexProfile)
+		err := MergeProfiles(mutexProfiles, mutexProfile)
+		command.AbortIfError("Failed to combine mutexprofiles", err)
 	}
 
 	return suite

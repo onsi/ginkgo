@@ -151,7 +151,7 @@ OUTER_LOOP:
 		iteration += 1
 	}
 
-	internal.Cleanup(suites...)
+	internal.Cleanup(r.goFlagsConfig, suites...)
 
 	messages, err := internal.FinalizeProfilesForSuites(suites, r.cliConfig, r.goFlagsConfig)
 	command.AbortIfError("could not finalize profiles:", err)

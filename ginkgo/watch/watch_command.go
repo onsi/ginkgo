@@ -160,7 +160,7 @@ func (w *SpecWatcher) compileAndRun(suite internal.TestSuite, additionalArgs []s
 		return false
 	}
 	suite = internal.RunCompiledSuite(suite, w.ginkgoConfig, w.reporterConfig, w.cliConfig, w.goFlagsConfig, additionalArgs)
-	internal.Cleanup(suite)
+	internal.Cleanup(w.goFlagsConfig, suite)
 	return suite.Passed
 }
 
