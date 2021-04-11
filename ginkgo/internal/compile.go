@@ -52,7 +52,10 @@ func CompileSuite(suite TestSuite, goFlagsConfig config.GoFlagsConfigType) TestS
 	return suite
 }
 
-func Cleanup(suites ...TestSuite) {
+func Cleanup(goFlagsConfig config.GoFlagsConfigType, suites ...TestSuite) {
+	if goFlagsConfig.BinaryMustBePreserved() {
+		return
+	}
 	for _, suite := range suites {
 		if !suite.Precompiled {
 			os.Remove(suite.PathToCompiledTest)
