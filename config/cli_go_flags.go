@@ -50,6 +50,10 @@ func NewDefaultGoFlagsConfig() GoFlagsConfigType {
 	return GoFlagsConfigType{}
 }
 
+func (g GoFlagsConfigType) BinaryMustBePreserved() bool {
+	return g.BlockProfile != "" || g.CPUProfile != "" || g.MemProfile != "" || g.MutexProfile != ""
+}
+
 var GoBuildFlags = GinkgoFlags{
 	{KeyPath: "Go.Race", Name: "race", SectionKey: "code-and-coverage-analysis",
 		Usage: "enable data race detection. Supported only on linux/amd64, freebsd/amd64, darwin/amd64, windows/amd64, linux/ppc64le and linux/arm64 (only for 48-bit VMA)."},
