@@ -10,6 +10,7 @@ import (
 	"regexp"
 	"strconv"
 
+	"github.com/google/pprof/profile"
 	"github.com/onsi/ginkgo/config"
 )
 
@@ -22,7 +23,6 @@ func FinalizeProfilesForSuites(suites []TestSuite, cliConfig config.GinkgoCLICon
 				for _, suite := range suites {
 					src := filepath.Join(suite.Path, goFlagsConfig.CoverProfile)
 					dst := filepath.Join(cliConfig.OutputDir, suite.NamespacedName()+"_"+goFlagsConfig.CoverProfile)
-					fmt.Println(src, dst)
 					err := os.Rename(src, dst)
 					if err != nil {
 						return messages, err
@@ -54,6 +54,31 @@ func FinalizeProfilesForSuites(suites []TestSuite, cliConfig config.GinkgoCLICon
 				messages = append(messages, fmt.Sprintf("composite coverage: %.1f%% of statements", coverage))
 			}
 
+		}
+	}
+
+	if cliConfig.OutputDir != "" {
+		//we need to do some relocation if we've generated other profiles
+		for _, suite := range suites {
+			if goFlagsConfig.BinaryMustBePreserved() {
+				src := suite.PathToCompiledTest
+				dst := filepath.Join(cliConfig.OutputDir, suite.NamespacedName()+".test")
+				err := os.Rename(src, dst)
+				if err != nil {
+					return messages, err
+				}
+			}
+			profiles := []string{goFlagsConfig.BlockProfile, goFlagsConfig.CPUProfile, goFlagsConfig.MemProfile, goFlagsConfig.MutexProfile}
+			for _, profile := range profiles {
+				if profile != "" {
+					src := filepath.Join(suite.Path, profile)
+					dst := filepath.Join(cliConfig.OutputDir, suite.NamespacedName()+"_"+profile)
+					err := os.Rename(src, dst)
+					if err != nil {
+						return messages, err
+					}
+				}
+			}
 		}
 	}
 
@@ -114,4 +139,40 @@ func GetCoverageFromCoverProfile(profile string) (float64, error) {
 	}
 
 	return coverage, nil
+}
+
+func MergeProfiles(profilePaths []string, destination string) error {
+	profiles := []*profile.Profile{}
+	for _, profilePath := range profilePaths {
+		proFile, err := os.Open(profilePath)
+		if err != nil {
+			return fmt.Errorf("Could not open profile: %s\n%s", profilePath, err.Error())
+		}
+		prof, err := profile.Parse(proFile)
+		if err != nil {
+			return fmt.Errorf("Could not parse profile: %s\n%s", profilePath, err.Error())
+		}
+		profiles = append(profiles, prof)
+		os.Remove(profilePath)
+	}
+
+	mergedProfile, err := profile.Merge(profiles)
+	if err != nil {
+		return fmt.Errorf("Could not merge profiles:\n%s", err.Error())
+	}
+
+	outFile, err := os.Create(destination)
+	if err != nil {
+		return fmt.Errorf("Could not create merged profile %s:\n%s", destination, err.Error())
+	}
+	err = mergedProfile.Write(outFile)
+	if err != nil {
+		return fmt.Errorf("Could not write merged profile %s:\n%s", destination, err.Error())
+	}
+	err = outFile.Close()
+	if err != nil {
+		return fmt.Errorf("Could not close merged profile %s:\n%s", destination, err.Error())
+	}
+
+	return nil
 }
