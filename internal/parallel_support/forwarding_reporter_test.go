@@ -58,7 +58,7 @@ var _ = Describe("ForwardingReporter", func() {
 
 	Context("When a spec will run", func() {
 		BeforeEach(func() {
-			reporter.WillRun(types.Summary{
+			reporter.WillRun(types.SpecReport{
 				State:         types.SpecStatePassed,
 				NodeTexts:     []string{"My test"},
 				NodeLocations: []types.CodeLocation{types.NewCodeLocation(0)},
@@ -75,7 +75,7 @@ var _ = Describe("ForwardingReporter", func() {
 			cls := []types.CodeLocation{types.NewCodeLocation(0)}
 			server.AppendHandlers(ghttp.CombineHandlers(
 				ghttp.VerifyRequest("POST", "/DidRun"),
-				ghttp.VerifyJSONRepresenting(types.Summary{
+				ghttp.VerifyJSONRepresenting(types.SpecReport{
 					State:             types.SpecStatePassed,
 					NodeTexts:         []string{"My test"},
 					NodeLocations:     cls,
@@ -83,7 +83,7 @@ var _ = Describe("ForwardingReporter", func() {
 				}),
 			))
 
-			reporter.DidRun(types.Summary{
+			reporter.DidRun(types.SpecReport{
 				State:         types.SpecStatePassed,
 				NodeTexts:     []string{"My test"},
 				NodeLocations: cls,

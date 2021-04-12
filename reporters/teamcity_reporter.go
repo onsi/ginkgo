@@ -40,35 +40,35 @@ func (reporter *TeamCityReporter) SpecSuiteWillBegin(conf config.GinkgoConfigTyp
 	fmt.Fprintf(reporter.writer, "%s[testSuiteStarted name='%s']\n", teamcityMessageId, reporter.testSuiteName)
 }
 
-func (reporter *TeamCityReporter) testNameFor(summary types.Summary) string {
-	if summary.LeafNodeType.Is(types.NodeTypesForSuiteSetup...) {
-		return reporter.escape(summary.LeafNodeType.String())
+func (reporter *TeamCityReporter) testNameFor(report types.SpecReport) string {
+	if report.LeafNodeType.Is(types.NodeTypesForSuiteSetup...) {
+		return reporter.escape(report.LeafNodeType.String())
 	} else {
-		return reporter.escape(strings.Join(summary.NodeTexts, " "))
+		return reporter.escape(strings.Join(report.NodeTexts, " "))
 	}
 }
 
-func (reporter *TeamCityReporter) WillRun(summary types.Summary) {
-	fmt.Fprintf(reporter.writer, "%s[testStarted name='%s']\n", teamcityMessageId, reporter.testNameFor(summary))
+func (reporter *TeamCityReporter) WillRun(report types.SpecReport) {
+	fmt.Fprintf(reporter.writer, "%s[testStarted name='%s']\n", teamcityMessageId, reporter.testNameFor(report))
 }
 
-func (reporter *TeamCityReporter) DidRun(summary types.Summary) {
-	testName := reporter.testNameFor(summary)
+func (reporter *TeamCityReporter) DidRun(report types.SpecReport) {
+	testName := reporter.testNameFor(report)
 
-	if reporter.ReporterConfig.ReportPassed && summary.State == types.SpecStatePassed {
-		details := reporter.escape(summary.CombinedOutput())
+	if reporter.ReporterConfig.ReportPassed && report.State == types.SpecStatePassed {
+		details := reporter.escape(report.CombinedOutput())
 		fmt.Fprintf(reporter.writer, "%s[testPassed name='%s' details='%s']\n", teamcityMessageId, testName, details)
 	}
-	if summary.State.Is(types.SpecStateFailureStates...) {
-		message := reporter.failureMessage(summary.Failure)
-		details := reporter.failureDetails(summary.Failure)
+	if report.State.Is(types.SpecStateFailureStates...) {
+		message := reporter.failureMessage(report.Failure)
+		details := reporter.failureDetails(report.Failure)
 		fmt.Fprintf(reporter.writer, "%s[testFailed name='%s' message='%s' details='%s']\n", teamcityMessageId, testName, message, details)
 	}
-	if summary.State == types.SpecStateSkipped || summary.State == types.SpecStatePending {
+	if report.State == types.SpecStateSkipped || report.State == types.SpecStatePending {
 		fmt.Fprintf(reporter.writer, "%s[testIgnored name='%s']\n", teamcityMessageId, testName)
 	}
 
-	durationInMilliseconds := summary.RunTime.Seconds() * 1000
+	durationInMilliseconds := report.RunTime.Seconds() * 1000
 	fmt.Fprintf(reporter.writer, "%s[testFinished name='%s' duration='%v']\n", teamcityMessageId, testName, durationInMilliseconds)
 }
 

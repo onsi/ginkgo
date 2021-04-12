@@ -90,11 +90,11 @@ var _ = Describe("Deprecation Support", func() {
 		})
 	})
 
-	Describe("DeprecatedSetupSummaryFromSummary", func() {
+	Describe("DeprecatedSetupSummaryFromSpecReport", func() {
 		It("converts to the v1 summary format", func() {
 			cl1 := types.CodeLocation{FileName: "foo.go", LineNumber: 3}
 			cl2 := types.CodeLocation{FileName: "bar.go", LineNumber: 5}
-			Ω(types.DeprecatedSetupSummaryFromSummary(types.Summary{
+			Ω(types.DeprecatedSetupSummaryFromSpecReport(types.SpecReport{
 				LeafNodeType:               types.NodeTypeBeforeSuite,
 				LeafNodeLocation:           cl1,
 				State:                      types.SpecStateFailed,
@@ -128,11 +128,11 @@ var _ = Describe("Deprecation Support", func() {
 		})
 	})
 
-	Describe("DeprecatedSpecSummaryFromSummary", func() {
+	Describe("DeprecatedSpecSummaryFromSpecReport", func() {
 		It("converts to the v1 summary format", func() {
 			cl1 := types.CodeLocation{FileName: "foo.go", LineNumber: 3}
 			cl2 := types.CodeLocation{FileName: "bar.go", LineNumber: 5}
-			Ω(types.DeprecatedSpecSummaryFromSummary(types.Summary{
+			Ω(types.DeprecatedSpecSummaryFromSpecReport(types.SpecReport{
 				NodeTexts:                  []string{"A", "B"},
 				NodeLocations:              []types.CodeLocation{cl1, cl2},
 				LeafNodeType:               types.NodeTypeBeforeSuite,
