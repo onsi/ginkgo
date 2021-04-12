@@ -42,6 +42,12 @@ In Ginkgo 2.0 `GinkgoWriter` now has:
 
 	Note that _all_ data written to `GinkgoWriter` is immediately forwarded to attached tee writers regardless of where a test passes or fails.
 
+### Improved: Reporting Infrastructure
+- main usecase was junit and teamcity.
+- this is now easier
+- limitation of default reporters + parallel.  this is now much simpler.  use ReportAfterSuite and ReportAfterEach.
+- for users with existing custom reporters, migration guide is below
+
 ### Improved: Profiling Support
 Ginkgo V1 was incorrectly handling Go test's various profiling flags (e.g. -cpuprofile, -memprofile).  This has been fixed in V2.  In fact, V2 can capture profiles for multiple packages (e.g. ginkgo -r -cpuprofile=profile.out will work).
 
@@ -120,69 +126,24 @@ will emit a deprecation warning and **will no longer run**.
 A new Gomega benchmarking subpackage is being developed to replace Ginkgo's benchmarking capabilities with a more mature, decoupled, and useful implementation.  This section will be updated once the Gomega package is ready.
 
 ### Removed: Custom Reporters
-Ginkgo 2.0 may remove the ability to provide custom reporters.  This decision hasn't been finalized yet - the interface _will_ be changing (see "Changed: Reporter Interface" below) but may be removed entirely.  We're trying to get feedback on the impact of this decision.
+Ginkgo 2.0 removes support for custom reporters.  Instead, the reporting infrastructure has been significantly improved to enable simpler support for the most common use-cases and custom reporting needs.
 
-Currently, custom reporters don't work well with Ginkgo's parallelization scheme and users end up needing to manually merge report files together after a parallel test run.  Moreover, the dominant use of custom reporters is to generate JUnit and Teamcity reports using Ginkgo's JUnit and Teamcity reporters.  When running across several suites in parallel this can generate very many report files that need to be managed by the user after-the-fact.
+Please read through the [Improved: Reporting Infrastructure](#improved-reporting-infrastructure) section to learn more.  For users with custom reporters, follow the migration guide below.
 
-Instead of implementing custom reporters Ginkgo 2.0 will:
-
-- allow the user to specify that they want a `--junit-report` or `--team-city-report`.  This will generate a single JUnit/Teamcity report that encapsulates the entire test run across all suites (unless `--keep-separate-reports` is set).
-- allow the user to request a `--json-report`.  This will generate a machine-readable JSON report that users can subsequently manipulate to extract information about their test run.  The work being done today by custom reporters can then be replaced by a simple tool that reads and processes the resulting JSON report.
-
-We'd like feedback on all this.  Please leave comments at [#711](#711)!
+#### Migration Strategy:
+TODO
+- for junit/teamcity, use the flags or the helper functions and ReportAftersuite
+- for custom reporters: ReportAfterSuite should be enough, you can even wrap it with the ReportViaDeprecatedReporter method.  But this will be removed in a future release.
+- If you really need real-time reporting, use ReportAfterEach
 
 ### Changed: CurrentGinkgoTestDescription()
 `CurrentGinkgoTestDescription()` has been deprecated and will be removed in a future release.  The method was returning a processed object that included a subset of information available about the running test.
 
 It has been replaced with `CurrentSpec()` which returns the full-fledge `types.Summary` used by Ginkgo's reporting infrastructure.  To help users migrate, `types.Summary` now includes a number of helper methods to make it easier to extract information about the running test.
 
-### Migration Strategy:
+#### Migration Strategy:
 Replace any calls to `CurrentGinkgoTestDescription()` with `CurrentSpec()` and use the struct fields or helper methods on the returned `types.Summary` to get the information you need about the current test.
 
-### Changed: Reporter Interface
-If custom reporters stay in 2.0 (see "Removed: Custom Reporters" above), the `Reporter` interface will be changing.
-
-The Ginkgo 1.x `Reporter` interface:
-```
-type V1Reporter interface {
-	SpecSuiteWillBegin(config config.GinkgoConfigType, summary *types.SuiteSummary)
-	BeforeSuiteDidRun(setupSummary *types.SetupSummary)
-	SpecWillRun(specSummary *types.SpecSummary)
-	SpecDidComplete(specSummary *types.SpecSummary)
-	AfterSuiteDidRun(setupSummary *types.SetupSummary)
-	SpecSuiteDidEnd(summary *types.SuiteSummary)
-}
-```
-
-is now simpler in Ginkgo 2.0:
-```
-type Reporter interface {
-	SpecSuiteWillBegin(config config.GinkgoConfigType, summary types.SuiteSummary)
-	WillRun(specSummary types.Summary)
-	DidRun(specSummary types.Summary)
-	SpecSuiteDidEnd(summary types.SuiteSummary)
-}
-```
-
-In addition, there have been changes to the data types passed into these methods.  The original types are preserved in [http://github.com/onsi/ginkgo/blob/v2/types/deprecation_support.go] and aliased to their original names.
-
-#### Migration Strategy:
-Most users will not need to worry about this change.  For users with custom reporters you will see a compilation failure when you try to pass your `V1Reporter` to Ginkgo.  This can be fixed immediately by wrapping your custom reporter with `reporters.ReporterFromV1Reporter()`:
-
-```
-import "github.com/onsi/ginkgo/reporters"
-
-func TestXXX(t *testing.T) {
-	RegisterFailHandler(Fail)
-	RunSpecsWithDefaultAndCustomReporters(t, "XXX", []Reporter{
-		reporters.ReporterFromV1Reporter(customV1Reporter)
-	})
-}
-```
-
-Your test suite will now compile and Ginkgo will send appropriately formatted data to your reporter.  However, Ginkgo will emit a deprecation warning that you are using a V1 reporter.  To silence the warning you will need to rewrite your reporter to match the new interface.  You can look at the implementation of `reporters.ReporterFromV1Reporter` and `reporters.DefaultReporter` for guidance, open an issue for help, or reach out for help on the Ginkgo slack channel.
-
-Alternatively, you can avoid using a custom reporter and instead ask Ginkgo to emit a JSON formatted report (TODO: update with link once implemented) that you can then post-process with your tooling.
 
 ### Changed: Command Line Flags
 All camel case flags (e.g. `-randomizeAllSpecs`) are replaced with kebab case flags (e.g. `-randomize-all-specs`) in Ginkgo 2.0.  The camel case versions continue to work but emit a deprecation warning.
