@@ -28,6 +28,7 @@ var reporter *FakeReporter
 var rt *RunTracker
 var cl types.CodeLocation
 var interruptHandler *FakeInterruptHandler
+var outputInterceptor *FakeOutputInterceptor
 
 var _ = BeforeEach(func() {
 	conf = config.GinkgoConfigType{}
@@ -38,6 +39,7 @@ var _ = BeforeEach(func() {
 	rt = NewRunTracker()
 	cl = types.NewCodeLocation(0)
 	interruptHandler = NewFakeInterruptHandler()
+	outputInterceptor = &FakeOutputInterceptor{}
 
 	conf.ParallelTotal = 1
 	conf.ParallelNode = 1
@@ -57,7 +59,7 @@ func RunFixture(description string, callback func()) (bool, bool) {
 	WithSuite(suite, func() {
 		callback()
 		Ω(suite.BuildTree()).Should(Succeed())
-		success, hasProgrammaticFocus = suite.Run(description, failer, reporter, writer, interruptHandler, conf)
+		success, hasProgrammaticFocus = suite.Run(description, failer, reporter, writer, outputInterceptor, interruptHandler, conf)
 	})
 	return success, hasProgrammaticFocus
 }

@@ -11,19 +11,13 @@ import (
 
 var _ = Describe("ForwardingReporter", func() {
 	var (
-		server      *ghttp.Server
-		reporter    *ForwardingReporter
-		interceptor *fakeOutputInterceptor
+		server   *ghttp.Server
+		reporter *ForwardingReporter
 	)
 
 	BeforeEach(func() {
 		server = ghttp.NewServer()
-
-		interceptor = &fakeOutputInterceptor{
-			InterceptedOutput: "The intercepted output!",
-		}
-
-		reporter = NewForwardingReporter(config.DefaultReporterConfigType{}, server.URL(), interceptor, nil)
+		reporter = NewForwardingReporter(config.DefaultReporterConfigType{}, server.URL(), nil)
 	})
 
 	AfterEach(func() {
@@ -45,10 +39,6 @@ var _ = Describe("ForwardingReporter", func() {
 			))
 
 			reporter.SpecSuiteWillBegin(config.GinkgoConfig, suiteSummary)
-		})
-
-		It("should start intercepting output", func() {
-			Ω(interceptor.DidStartInterceptingOutput).Should(BeTrue())
 		})
 
 		It("should POST the SuiteSummary and Ginkgo Config to the Ginkgo server", func() {
@@ -76,10 +66,9 @@ var _ = Describe("ForwardingReporter", func() {
 			server.AppendHandlers(ghttp.CombineHandlers(
 				ghttp.VerifyRequest("POST", "/DidRun"),
 				ghttp.VerifyJSONRepresenting(types.SpecReport{
-					State:             types.SpecStatePassed,
-					NodeTexts:         []string{"My test"},
-					NodeLocations:     cls,
-					CapturedStdOutErr: interceptor.InterceptedOutput,
+					State:         types.SpecStatePassed,
+					NodeTexts:     []string{"My test"},
+					NodeLocations: cls,
 				}),
 			))
 
@@ -90,13 +79,8 @@ var _ = Describe("ForwardingReporter", func() {
 			})
 		})
 
-		It("should POST the SpecSummary to the Ginkgo server and include any intercepted output", func() {
+		It("should POST the SpecSummary to the Ginkgo server", func() {
 			Ω(server.ReceivedRequests()).Should(HaveLen(1))
-		})
-
-		It("should stop, then start intercepting output", func() {
-			Ω(interceptor.DidStopInterceptingOutput).Should(BeTrue())
-			Ω(interceptor.DidStartInterceptingOutput).Should(BeTrue())
 		})
 	})
 

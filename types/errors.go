@@ -48,9 +48,9 @@ To circumvent this, you should call
 
 at the top of the goroutine that caused this panic.
 
-Alternatively, you may have made an assertion outside of the Ginkgo
-testing tree (e.g. in a func init()) - please move your assertion to
-an appropriate Ginkgo node (e.g. a BeforeSuite or as part of a specific test).`,
+Alternatively, you may have made an assertion outside of a Ginkgo
+leaf node (e.g. in a container node or some out-of-band function) - please move your assertion to
+an appropriate Ginkgo node (e.g. a BeforeSuite, BeforeEach, It, etc...).`,
 		DocLink:      "marking-specs-as-failed",
 		CodeLocation: cl,
 	}
@@ -72,7 +72,7 @@ body of a {{bold}}Describe{{/}}, {{bold}}Context{{/}}, or {{bold}}When{{/}}.`, n
 	}
 }
 
-func (g ginkgoErrors) CaughtPanicDuringABuildPhase(cl CodeLocation) error {
+func (g ginkgoErrors) CaughtPanicDuringABuildPhase(caughtPanic interface{}, cl CodeLocation) error {
 	return GinkgoError{
 		Heading: "Assertion or Panic detected during tree construction",
 		Message: formatter.F(
@@ -81,7 +81,10 @@ You may be trying to make an assertion in the body of a container node
 (i.e. {{bold}}Describe{{/}}, {{bold}}Context{{/}}, or {{bold}}When{{/}}).
 
 Please ensure all assertions are inside leaf nodes such as {{bold}}BeforeEach{{/}},
-{{bold}}It{{/}}, etc.`),
+{{bold}}It{{/}}, etc.
+
+{{bold}}Here's the content of the panic that was caught:{{/}}
+%v`, caughtPanic),
 		CodeLocation: cl,
 		DocLink:      "do-not-make-assertions-in-container-node-functions",
 	}
