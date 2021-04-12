@@ -10,8 +10,11 @@ import (
 
 var _ = Describe("CurrentSpecReport", func() {
 	var specs map[string]types.SpecReport
+
 	BeforeEach(func() {
 		specs = map[string]types.SpecReport{}
+		outputInterceptor.InterceptedOutput = "output-interceptor-content"
+
 		logCurrentSpecReport := func(key string, andRun ...func()) func() {
 			return func() {
 				specs[key] = CurrentSpecReport()
@@ -70,6 +73,11 @@ var _ = Describe("CurrentSpecReport", func() {
 		Ω(specs["bef-B"].CapturedGinkgoWriterOutput).Should(BeZero())
 		Ω(specs["it-B"].CapturedGinkgoWriterOutput).Should(BeZero())
 		Ω(specs["aft-B"].CapturedGinkgoWriterOutput).Should(Equal("hello it-B\n"))
+	})
+
+	It("does not capture stdout/err output", func() {
+		Ω(specs["aft-A"].CapturedStdOutErr).Should(BeZero())
+		Ω(specs["aft-B"].CapturedStdOutErr).Should(BeZero())
 	})
 
 	It("captures test details correctly", func() {

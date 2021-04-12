@@ -32,7 +32,7 @@ var _ = Describe("Server", func() {
 		server.Start()
 		Eventually(StatusCodePoller(server.Address() + "/up")).Should(Equal(http.StatusOK))
 
-		forwardingReporter = NewForwardingReporter(config.DefaultReporterConfigType{}, server.Address(), &fakeOutputInterceptor{}, nil)
+		forwardingReporter = NewForwardingReporter(config.DefaultReporterConfigType{}, server.Address(), nil)
 	})
 
 	AfterEach(func() {
