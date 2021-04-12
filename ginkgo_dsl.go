@@ -136,57 +136,6 @@ type GinkgoTInterface interface {
 	TempDir() string
 }
 
-//Custom Ginkgo test reporters must implement the Reporter interface.
-//
-//The custom reporter is passed in a SuiteSummary when the suite begins and ends,
-//and a Summary just before a spec begins and just after a spec ends
-type Reporter = reporters.Reporter
-
-//GinkgoTestDescription represents the information about the current running test returned by CurrentGinkgoTestDescription
-//	FullTestText: a concatenation of ComponentTexts and the TestText
-//	ComponentTexts: a list of all texts for the Describes & Contexts leading up to the current test
-//	TestText: the text in the It node
-//	FileName: the name of the file containing the current test
-//	LineNumber: the line number for the current test
-//	Failed: if the current test has failed, this will be true (useful in an AfterEach)
-//
-//Deprecated: Use CurrentSpec() instead
-type DeprecatedGinkgoTestDescription struct {
-	FullTestText   string
-	ComponentTexts []string
-	TestText       string
-
-	FileName   string
-	LineNumber int
-
-	Failed   bool
-	Duration time.Duration
-}
-type GinkgoTestDescription = DeprecatedGinkgoTestDescription
-
-//CurrentGinkgoTestDescripton returns information about the current running test.
-//Deprecated: Use CurrentSpec() instead
-func CurrentGinkgoTestDescription() DeprecatedGinkgoTestDescription {
-	deprecationTracker.TrackDeprecation(
-		types.Deprecations.CurrentGinkgoTestDescription(),
-		types.NewCodeLocation(1),
-	)
-	summary := global.Suite.CurrentSpecSummary()
-	if summary.State == types.SpecStateInvalid {
-		return GinkgoTestDescription{}
-	}
-
-	return DeprecatedGinkgoTestDescription{
-		ComponentTexts: summary.NodeTexts,
-		FullTestText:   strings.Join(summary.NodeTexts, " "),
-		TestText:       summary.NodeTexts[len(summary.NodeTexts)-1],
-		FileName:       summary.LeafNodeLocation.FileName,
-		LineNumber:     summary.LeafNodeLocation.LineNumber,
-		Failed:         summary.State.Is(types.SpecStateFailureStates...),
-		Duration:       summary.RunTime,
-	}
-}
-
 // CurrentSpec returns information about the current running test.
 // The returned object is a types.Summary which includes helper methods
 // to make extracting information about the test easier.
@@ -201,28 +150,17 @@ func CurrentSpec() types.Summary {
 //
 //	ginkgo bootstrap
 func RunSpecs(t GinkgoTestingT, description string) bool {
-	specReporters := []Reporter{buildDefaultReporter()}
-	if config.DefaultReporterConfig.JUnitReportFile != "" {
-		specReporters[0] = reporters.NewJUnitReporter(config.DefaultReporterConfig.JUnitReportFile)
-		return RunSpecsWithDefaultAndCustomReporters(t, description, specReporters)
-	}
-	return RunSpecsWithCustomReporters(t, description, specReporters)
-}
-
-//To run your tests with Ginkgo's default reporter and your custom reporter(s), replace
-//RunSpecs() with this method.
-func RunSpecsWithDefaultAndCustomReporters(t GinkgoTestingT, description string, specReporters []Reporter) bool {
-	specReporters = append(specReporters, buildDefaultReporter())
-	return RunSpecsWithCustomReporters(t, description, specReporters)
-}
-
-//To run your tests with your custom reporter(s) (and *not* Ginkgo's default reporter), replace
-//RunSpecs() with this method.  Note that parallel tests will not work correctly without the default reporter
-func RunSpecsWithCustomReporters(t GinkgoTestingT, description string, specReporters []Reporter) bool {
 	if suiteDidRun {
 		exitIfErr(types.GinkgoErrors.RerunningSuite())
 	}
 	suiteDidRun = true
+
+	var reporter reporters.Reporter
+	if config.GinkgoConfig.ParallelTotal == 1 {
+		reporter = reporters.NewDefaultReporter(config.DefaultReporterConfig, formatter.ColorableStdOut)
+	} else {
+		reporter = parallel_support.NewForwardingReporter(config.DefaultReporterConfig, config.GinkgoConfig.ParallelHost, parallel_support.NewOutputInterceptor(), GinkgoWriter.(*internal.Writer))
+	}
 
 	writer := GinkgoWriter.(*internal.Writer)
 	if config.DefaultReporterConfig.Verbose && config.GinkgoConfig.ParallelTotal == 1 {
@@ -230,14 +168,6 @@ func RunSpecsWithCustomReporters(t GinkgoTestingT, description string, specRepor
 	} else {
 		writer.SetMode(internal.WriterModeBufferOnly)
 	}
-
-	for reporter := range specReporters {
-		if _, isDeprecated := reflect.TypeOf(reporter).MethodByName("IsDeprecatedReporter"); isDeprecated {
-			deprecationTracker.TrackDeprecation(types.Deprecations.V1Reporter())
-			deprecationTracker.TrackDeprecation(types.Deprecations.CustomReporter())
-		}
-	}
-	multiReporter := reporters.NewMultiReporter(specReporters...)
 
 	configErrors := config.VetConfig(flagSet, config.GinkgoConfig, config.DefaultReporterConfig)
 	if len(configErrors) > 0 {
@@ -251,7 +181,7 @@ func RunSpecsWithCustomReporters(t GinkgoTestingT, description string, specRepor
 	err := global.Suite.BuildTree()
 	exitIfErr(err)
 
-	passed, hasFocusedTests := global.Suite.Run(description, global.Failer, multiReporter, writer, nil, config.GinkgoConfig)
+	passed, hasFocusedTests := global.Suite.Run(description, global.Failer, reporter, writer, nil, config.GinkgoConfig)
 
 	flagSet.ValidateDeprecations(deprecationTracker)
 	if deprecationTracker.DidTrackDeprecations() {
@@ -261,23 +191,12 @@ func RunSpecsWithCustomReporters(t GinkgoTestingT, description string, specRepor
 	if !passed {
 		t.Fail()
 	}
+
 	if passed && hasFocusedTests && strings.TrimSpace(os.Getenv("GINKGO_EDITOR_INTEGRATION")) == "" {
 		fmt.Println("PASS | FOCUSED")
 		os.Exit(types.GINKGO_FOCUS_EXIT_CODE)
 	}
 	return passed
-}
-
-func buildDefaultReporter() Reporter {
-	if config.GinkgoConfig.ParallelTotal == 1 {
-		return reporters.NewDefaultReporter(config.DefaultReporterConfig, formatter.ColorableStdOut)
-	} else {
-		debugFile := ""
-		if config.GinkgoConfig.DebugParallel {
-			debugFile = fmt.Sprintf("ginkgo-node-%d.log", config.GinkgoConfig.ParallelNode)
-		}
-		return parallel_support.NewForwardingReporter(config.DefaultReporterConfig, config.GinkgoConfig.ParallelHost, parallel_support.NewOutputInterceptor(), GinkgoWriter.(*internal.Writer), debugFile)
-	}
 }
 
 //Skip notifies Ginkgo that the current spec was skipped.
@@ -634,6 +553,77 @@ func validateBodyFunc(body interface{}, cl types.CodeLocation) func() {
 
 	return func() {
 		body.(func(Done))(make(Done))
+	}
+}
+
+//Deprecated: Custom Ginkgo test reporters are no longer supported
+//Please read the documentation at:
+//https://github.com/onsi/ginkgo/blob/v2/docs/MIGRATING_TO_V2.md#removed-custom-reporters
+//for Ginkgo's new behavior and for a migration path.
+type Reporter = reporters.DeprecatedReporter
+
+//Deprecated: Custom Reporters have been removed in v2.  RunSpecsWithDefaultAndCustomReporters will simply call RunSpecs()
+//
+//Please read the documentation at:
+//https://github.com/onsi/ginkgo/blob/v2/docs/MIGRATING_TO_V2.md#removed-custom-reporters
+//for Ginkgo's new behavior and for a migration path.
+func RunSpecsWithDefaultAndCustomReporters(t GinkgoTestingT, description string, _ []Reporter) bool {
+	deprecationTracker.TrackDeprecation(types.Deprecations.CustomReporter())
+	return RunSpecs(t, description)
+}
+
+//Deprecated: Custom Reporters have been removed in v2.  RunSpecsWithCustomReporters will simply call RunSpecs()
+//
+//Please read the documentation at:
+//https://github.com/onsi/ginkgo/blob/v2/docs/MIGRATING_TO_V2.md#removed-custom-reporters
+//for Ginkgo's new behavior and for a migration path.
+func RunSpecsWithCustomReporters(t GinkgoTestingT, description string, _ []Reporter) bool {
+	deprecationTracker.TrackDeprecation(types.Deprecations.CustomReporter())
+	return RunSpecs(t, description)
+}
+
+//GinkgoTestDescription represents the information about the current running test returned by CurrentGinkgoTestDescription
+//	FullTestText: a concatenation of ComponentTexts and the TestText
+//	ComponentTexts: a list of all texts for the Describes & Contexts leading up to the current test
+//	TestText: the text in the It node
+//	FileName: the name of the file containing the current test
+//	LineNumber: the line number for the current test
+//	Failed: if the current test has failed, this will be true (useful in an AfterEach)
+//
+//Deprecated: Use CurrentSpec() instead
+type DeprecatedGinkgoTestDescription struct {
+	FullTestText   string
+	ComponentTexts []string
+	TestText       string
+
+	FileName   string
+	LineNumber int
+
+	Failed   bool
+	Duration time.Duration
+}
+type GinkgoTestDescription = DeprecatedGinkgoTestDescription
+
+//CurrentGinkgoTestDescripton returns information about the current running test.
+//Deprecated: Use CurrentSpec() instead
+func CurrentGinkgoTestDescription() DeprecatedGinkgoTestDescription {
+	deprecationTracker.TrackDeprecation(
+		types.Deprecations.CurrentGinkgoTestDescription(),
+		types.NewCodeLocation(1),
+	)
+	summary := global.Suite.CurrentSpecSummary()
+	if summary.State == types.SpecStateInvalid {
+		return GinkgoTestDescription{}
+	}
+
+	return DeprecatedGinkgoTestDescription{
+		ComponentTexts: summary.NodeTexts,
+		FullTestText:   strings.Join(summary.NodeTexts, " "),
+		TestText:       summary.NodeTexts[len(summary.NodeTexts)-1],
+		FileName:       summary.LeafNodeLocation.FileName,
+		LineNumber:     summary.LeafNodeLocation.LineNumber,
+		Failed:         summary.State.Is(types.SpecStateFailureStates...),
+		Duration:       summary.RunTime,
 	}
 }
 

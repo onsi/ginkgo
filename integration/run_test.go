@@ -272,42 +272,6 @@ var _ = Describe("Running Specs", func() {
 		})
 	})
 
-	Context("when running in parallel with -debug-parallel", func() {
-		BeforeEach(func() {
-			fm.MountFixture("debug_parallel")
-		})
-
-		Context("without -v", func() {
-			It("should emit node output to files on disk", func() {
-				session := startGinkgo(fm.PathTo("debug_parallel"), "--nodes=2", "--debug-parallel")
-				Eventually(session).Should(gexec.Exit(0))
-
-				f0 := fm.ContentOf("debug_parallel", "ginkgo-node-1.log")
-				f1 := fm.ContentOf("debug_parallel", "ginkgo-node-2.log")
-				content := f0 + f1
-
-				for i := 0; i < 10; i += 1 {
-					Ω(content).Should(ContainSubstring("StdOut %d\n", i))
-					Ω(content).Should(ContainSubstring("GinkgoWriter %d\n", i))
-				}
-			})
-		})
-
-		Context("with -v", func() {
-			It("should emit node output to files on disk, without duplicating the GinkgoWriter output", func() {
-				session := startGinkgo(fm.PathTo("debug_parallel"), "--nodes=2", "--debug-parallel", "-v")
-				Eventually(session).Should(gexec.Exit(0))
-
-				f0 := fm.ContentOf("debug_parallel", "ginkgo-node-1.log")
-				f1 := fm.ContentOf("debug_parallel", "ginkgo-node-2.log")
-				content := f0 + f1
-
-				out := strings.Split(content, "GinkgoWriter 2")
-				Ω(out).Should(HaveLen(2))
-			})
-		})
-	})
-
 	Context("when running multiple tests", func() {
 		BeforeEach(func() {
 			fm.MountFixture("passing_ginkgo_tests")
