@@ -23,7 +23,7 @@ type DefaultReporter struct {
 	hasFailOnPending bool
 	writer           io.Writer
 
-	failures []types.Summary
+	failures []types.SpecReport
 
 	// managing the emission stream
 	lastChar                 string
@@ -90,46 +90,46 @@ func (r *DefaultReporter) SpecSuiteWillBegin(config config.GinkgoConfigType, sum
 	}
 }
 
-func (r *DefaultReporter) WillRun(summary types.Summary) {
-	if !r.conf.Verbose || summary.State.Is(types.SpecStatePending, types.SpecStateSkipped) {
+func (r *DefaultReporter) WillRun(report types.SpecReport) {
+	if !r.conf.Verbose || report.State.Is(types.SpecStatePending, types.SpecStateSkipped) {
 		return
 	}
 
 	r.emitDelimiter()
-	if summary.LeafNodeType.Is(types.NodeTypesForSuiteSetup...) {
-		r.emitBlock(r.f("{{bold}}[%s]{{/}}", summary.LeafNodeType.String()))
-		r.emitBlock(r.f("{{gray}}%s{{/}}", summary.LeafNodeLocation))
+	if report.LeafNodeType.Is(types.NodeTypesForSuiteSetup...) {
+		r.emitBlock(r.f("{{bold}}[%s]{{/}}", report.LeafNodeType.String()))
+		r.emitBlock(r.f("{{gray}}%s{{/}}", report.LeafNodeLocation))
 	} else {
-		lastIndex := len(summary.NodeTexts) - 1
+		lastIndex := len(report.NodeTexts) - 1
 		indentation := uint(0)
 		if lastIndex > 0 {
-			r.emitBlock(r.cycleJoin(summary.NodeTexts[0:lastIndex], " "))
+			r.emitBlock(r.cycleJoin(report.NodeTexts[0:lastIndex], " "))
 			indentation = 1
 		}
 		if lastIndex >= 0 {
-			r.emitBlock(r.fi(indentation, "{{bold}}%s{{/}}", summary.NodeTexts[lastIndex]))
-			r.emitBlock(r.fi(indentation, "{{gray}}%s{{/}}", summary.NodeLocations[lastIndex]))
+			r.emitBlock(r.fi(indentation, "{{bold}}%s{{/}}", report.NodeTexts[lastIndex]))
+			r.emitBlock(r.fi(indentation, "{{gray}}%s{{/}}", report.NodeLocations[lastIndex]))
 		}
 	}
 }
 
-func (r *DefaultReporter) DidRun(summary types.Summary) {
+func (r *DefaultReporter) DidRun(report types.SpecReport) {
 	var header, highlightColor string
 	includeRuntime, emitGinkgoWriterOutput, stream, denoter := true, true, false, r.specDenoter
 	succinctLocationBlock := r.conf.Succinct
 
-	hasGW := summary.CapturedGinkgoWriterOutput != ""
-	hasStd := summary.CapturedStdOutErr != ""
+	hasGW := report.CapturedGinkgoWriterOutput != ""
+	hasStd := report.CapturedStdOutErr != ""
 
-	if summary.LeafNodeType.Is(types.NodeTypesForSuiteSetup...) {
-		denoter = fmt.Sprintf("[%s]", summary.LeafNodeType)
+	if report.LeafNodeType.Is(types.NodeTypesForSuiteSetup...) {
+		denoter = fmt.Sprintf("[%s]", report.LeafNodeType)
 	}
 
-	switch summary.State {
+	switch report.State {
 	case types.SpecStatePassed:
 		highlightColor, succinctLocationBlock = "{{green}}", !r.conf.Verbose
 		emitGinkgoWriterOutput = (r.conf.ReportPassed || r.conf.Verbose) && hasGW
-		if summary.LeafNodeType.Is(types.NodeTypesForSuiteSetup...) {
+		if report.LeafNodeType.Is(types.NodeTypesForSuiteSetup...) {
 			if r.conf.Verbose || hasStd {
 				header = fmt.Sprintf("%s PASSED", denoter)
 			} else {
@@ -137,10 +137,10 @@ func (r *DefaultReporter) DidRun(summary types.Summary) {
 			}
 		} else {
 			header, stream = denoter, true
-			if summary.NumAttempts > 1 {
-				header, stream = fmt.Sprintf("%s [FLAKEY TEST - TOOK %d ATTEMPTS TO PASS]", r.retryDenoter, summary.NumAttempts), false
+			if report.NumAttempts > 1 {
+				header, stream = fmt.Sprintf("%s [FLAKEY TEST - TOOK %d ATTEMPTS TO PASS]", r.retryDenoter, report.NumAttempts), false
 			}
-			if summary.RunTime.Seconds() > r.conf.SlowSpecThreshold {
+			if report.RunTime.Seconds() > r.conf.SlowSpecThreshold {
 				header, stream = fmt.Sprintf("%s [SLOW TEST]", header), false
 			}
 		}
@@ -157,20 +157,20 @@ func (r *DefaultReporter) DidRun(summary types.Summary) {
 		}
 	case types.SpecStateSkipped:
 		highlightColor = "{{cyan}}"
-		if r.conf.Succinct || summary.Failure.Message == "" {
+		if r.conf.Succinct || report.Failure.Message == "" {
 			header, stream = "S", true
 		} else {
 			header, succinctLocationBlock = "S [SKIPPED]", !r.conf.Verbose
 		}
 	case types.SpecStateFailed:
 		highlightColor, header = "{{red}}", fmt.Sprintf("%s [FAILED]", denoter)
-		r.failures = append(r.failures, summary)
+		r.failures = append(r.failures, report)
 	case types.SpecStatePanicked:
 		highlightColor, header = "{{magenta}}", fmt.Sprintf("%s! [PANICKED]", denoter)
-		r.failures = append(r.failures, summary)
+		r.failures = append(r.failures, report)
 	case types.SpecStateInterrupted:
 		highlightColor, header = "{{orange}}", fmt.Sprintf("%s! [INTERRUPTED]", denoter)
-		r.failures = append(r.failures, summary)
+		r.failures = append(r.failures, report)
 	}
 
 	// Emit stream and return
@@ -182,18 +182,18 @@ func (r *DefaultReporter) DidRun(summary types.Summary) {
 	// Emit header
 	r.emitDelimiter()
 	if includeRuntime {
-		header = r.f("%s [%.3f seconds]", header, summary.RunTime.Seconds())
+		header = r.f("%s [%.3f seconds]", header, report.RunTime.Seconds())
 	}
 	r.emitBlock(r.f(highlightColor + header + "{{/}}"))
 
 	// Emit Code Location Block
-	r.emitBlock(r.codeLocationBlock(summary, highlightColor, succinctLocationBlock))
+	r.emitBlock(r.codeLocationBlock(report, highlightColor, succinctLocationBlock))
 
 	//Emit Stdout/Stderr Output
 	if hasStd {
 		r.emitBlock("\n")
 		r.emitBlock(r.fi(1, "{{gray}}Begin Captured StdOut/StdErr Output >>{{/}}"))
-		r.emitBlock(r.fi(2, "%s", summary.CapturedStdOutErr))
+		r.emitBlock(r.fi(2, "%s", report.CapturedStdOutErr))
 		r.emitBlock(r.fi(1, "{{gray}}<< End Captured StdOut/StdErr Output{{/}}"))
 	}
 
@@ -201,24 +201,24 @@ func (r *DefaultReporter) DidRun(summary types.Summary) {
 	if emitGinkgoWriterOutput && hasGW {
 		r.emitBlock("\n")
 		r.emitBlock(r.fi(1, "{{gray}}Begin Captured GinkgoWriter Output >>{{/}}"))
-		r.emitBlock(r.fi(2, "%s", summary.CapturedGinkgoWriterOutput))
+		r.emitBlock(r.fi(2, "%s", report.CapturedGinkgoWriterOutput))
 		r.emitBlock(r.fi(1, "{{gray}}<< End Captured GinkgoWriter Output{{/}}"))
 	}
 
 	// Emit Failure Message
-	if !summary.Failure.IsZero() {
+	if !report.Failure.IsZero() {
 		r.emitBlock("\n")
-		r.emitBlock(r.fi(1, highlightColor+"%s{{/}}", summary.Failure.Message))
-		r.emitBlock(r.fi(1, highlightColor+"In {{bold}}[%s]{{/}}"+highlightColor+" at: {{bold}}%s{{/}}\n", summary.Failure.NodeType, summary.Failure.Location))
-		if summary.Failure.ForwardedPanic != "" {
+		r.emitBlock(r.fi(1, highlightColor+"%s{{/}}", report.Failure.Message))
+		r.emitBlock(r.fi(1, highlightColor+"In {{bold}}[%s]{{/}}"+highlightColor+" at: {{bold}}%s{{/}}\n", report.Failure.NodeType, report.Failure.Location))
+		if report.Failure.ForwardedPanic != "" {
 			r.emitBlock("\n")
-			r.emitBlock(r.fi(1, highlightColor+"%s{{/}}", summary.Failure.ForwardedPanic))
+			r.emitBlock(r.fi(1, highlightColor+"%s{{/}}", report.Failure.ForwardedPanic))
 		}
 
-		if r.conf.FullTrace || summary.Failure.ForwardedPanic != "" {
+		if r.conf.FullTrace || report.Failure.ForwardedPanic != "" {
 			r.emitBlock("\n")
 			r.emitBlock(r.fi(1, highlightColor+"Full Stack Trace{{/}}"))
-			r.emitBlock(r.fi(2, "%s", summary.Failure.Location.FullStackTrace))
+			r.emitBlock(r.fi(2, "%s", report.Failure.Location.FullStackTrace))
 		}
 	}
 
@@ -311,30 +311,30 @@ func (r *DefaultReporter) cycleJoin(elements []string, joiner string) string {
 	return r.formatter.CycleJoin(elements, joiner, []string{"{{/}}", "{{gray}}"})
 }
 
-func (r *DefaultReporter) codeLocationBlock(summary types.Summary, highlightColor string, succinct bool) string {
+func (r *DefaultReporter) codeLocationBlock(report types.SpecReport, highlightColor string, succinct bool) string {
 	out := ""
 
-	if summary.LeafNodeType.Is(types.NodeTypesForSuiteSetup...) {
-		out = r.f(highlightColor+"{{bold}}[%s]{{/}}\n", summary.LeafNodeType)
-		if summary.Failure.IsZero() {
-			out += r.f("{{gray}}%s{{/}}\n", summary.LeafNodeLocation)
+	if report.LeafNodeType.Is(types.NodeTypesForSuiteSetup...) {
+		out = r.f(highlightColor+"{{bold}}[%s]{{/}}\n", report.LeafNodeType)
+		if report.Failure.IsZero() {
+			out += r.f("{{gray}}%s{{/}}\n", report.LeafNodeLocation)
 		} else {
-			out += r.f("{{gray}}%s{{/}}\n", summary.Failure.Location)
+			out += r.f("{{gray}}%s{{/}}\n", report.Failure.Location)
 		}
 		return out
 	}
 
 	if succinct {
-		texts := make([]string, len(summary.NodeTexts))
-		copy(texts, summary.NodeTexts)
-		var codeLocation = summary.NodeLocations[len(summary.NodeLocations)-1]
-		if !summary.Failure.IsZero() {
-			codeLocation = summary.Failure.Location
-			if summary.Failure.NodeIndex == -1 {
-				texts = append([]string{r.f(highlightColor+"{{bold}}[%s]{{/}}", summary.Failure.NodeType)}, texts...)
-			} else if summary.Failure.NodeIndex < len(texts) {
-				i := summary.Failure.NodeIndex
-				texts[i] = r.f(highlightColor+"{{bold}}[%s] %s{{/}}", summary.Failure.NodeType, texts[i])
+		texts := make([]string, len(report.NodeTexts))
+		copy(texts, report.NodeTexts)
+		var codeLocation = report.NodeLocations[len(report.NodeLocations)-1]
+		if !report.Failure.IsZero() {
+			codeLocation = report.Failure.Location
+			if report.Failure.NodeIndex == -1 {
+				texts = append([]string{r.f(highlightColor+"{{bold}}[%s]{{/}}", report.Failure.NodeType)}, texts...)
+			} else if report.Failure.NodeIndex < len(texts) {
+				i := report.Failure.NodeIndex
+				texts[i] = r.f(highlightColor+"{{bold}}[%s] %s{{/}}", report.Failure.NodeType, texts[i])
 			}
 		}
 		out += r.f("%s\n", r.cycleJoin(texts, " "))
@@ -344,19 +344,19 @@ func (r *DefaultReporter) codeLocationBlock(summary types.Summary, highlightColo
 	}
 
 	indentation := uint(0)
-	if !summary.Failure.IsZero() && summary.Failure.NodeIndex == -1 {
-		out += r.fi(indentation, highlightColor+"{{bold}}TOP-LEVEL [%s]{{/}}\n", summary.Failure.NodeType)
-		out += r.fi(indentation, "{{gray}}%s{{/}}\n", summary.Failure.Location)
+	if !report.Failure.IsZero() && report.Failure.NodeIndex == -1 {
+		out += r.fi(indentation, highlightColor+"{{bold}}TOP-LEVEL [%s]{{/}}\n", report.Failure.NodeType)
+		out += r.fi(indentation, "{{gray}}%s{{/}}\n", report.Failure.Location)
 		indentation += 1
 	}
 
-	for i := range summary.NodeTexts {
-		if !summary.Failure.IsZero() && i == summary.Failure.NodeIndex {
-			out += r.fi(indentation, highlightColor+"{{bold}}%s [%s]{{/}}\n", summary.NodeTexts[i], summary.Failure.NodeType)
+	for i := range report.NodeTexts {
+		if !report.Failure.IsZero() && i == report.Failure.NodeIndex {
+			out += r.fi(indentation, highlightColor+"{{bold}}%s [%s]{{/}}\n", report.NodeTexts[i], report.Failure.NodeType)
 		} else {
-			out += r.fi(indentation, "%s\n", summary.NodeTexts[i])
+			out += r.fi(indentation, "%s\n", report.NodeTexts[i])
 		}
-		out += r.fi(indentation, "{{gray}}%s{{/}}\n", summary.NodeLocations[i])
+		out += r.fi(indentation, "{{gray}}%s{{/}}\n", report.NodeLocations[i])
 		indentation += 1
 	}
 

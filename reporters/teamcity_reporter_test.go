@@ -32,14 +32,14 @@ var _ = Describe("TeamCity Reporter", func() {
 			// Set the ReportPassed config flag, in order to show captured output when tests have passed.
 			reporter.ReporterConfig.ReportPassed = true
 
-			spec := types.Summary{
+			report := types.SpecReport{
 				NodeTexts:                  []string{"A", "B", "C"},
 				CapturedGinkgoWriterOutput: "Test scenario...",
 				State:                      types.SpecStatePassed,
 				RunTime:                    5 * time.Second,
 			}
-			reporter.WillRun(spec)
-			reporter.DidRun(spec)
+			reporter.WillRun(report)
+			reporter.DidRun(report)
 
 			reporter.SpecSuiteDidEnd(types.SuiteSummary{
 				NumberOfSpecsThatWillBeRun: 1,
@@ -61,10 +61,10 @@ var _ = Describe("TeamCity Reporter", func() {
 	})
 
 	Describe("when the BeforeSuite fails", func() {
-		var beforeSuite types.Summary
+		var beforeSuite types.SpecReport
 
 		BeforeEach(func() {
-			beforeSuite = types.Summary{
+			beforeSuite = types.SpecReport{
 				LeafNodeType: types.NodeTypeBeforeSuite,
 				State:        types.SpecStateFailed,
 				RunTime:      3 * time.Second,
@@ -110,9 +110,9 @@ var _ = Describe("TeamCity Reporter", func() {
 	for _, specStateCase := range specStateCases {
 		specStateCase := specStateCase
 		Describe("a failing test", func() {
-			var spec types.Summary
+			var report types.SpecReport
 			BeforeEach(func() {
-				spec = types.Summary{
+				report = types.SpecReport{
 					NodeTexts: []string{"A", "B", "C"},
 					State:     specStateCase.state,
 					RunTime:   5 * time.Second,
@@ -122,8 +122,8 @@ var _ = Describe("TeamCity Reporter", func() {
 						Message:  "I failed",
 					},
 				}
-				reporter.WillRun(spec)
-				reporter.DidRun(spec)
+				reporter.WillRun(report)
+				reporter.DidRun(report)
 
 				reporter.SpecSuiteDidEnd(types.SuiteSummary{
 					NumberOfSpecsThatWillBeRun: 1,
@@ -140,7 +140,7 @@ var _ = Describe("TeamCity Reporter", func() {
 						"##teamcity[testFailed name='A B C' message='JustBeforeEach' details='I failed|n%s']\n"+
 						"##teamcity[testFinished name='A B C' duration='5000']\n"+
 						"##teamcity[testSuiteFinished name='Foo|'s test suite']\n",
-						spec.Failure.Location.String(),
+						report.Failure.Location.String(),
 					)
 				Ω(actual).Should(Equal(expected))
 			})
@@ -150,15 +150,15 @@ var _ = Describe("TeamCity Reporter", func() {
 	for _, specStateCase := range []types.SpecState{types.SpecStatePending, types.SpecStateSkipped} {
 		specStateCase := specStateCase
 		Describe("a skipped test", func() {
-			var spec types.Summary
+			var report types.SpecReport
 			BeforeEach(func() {
-				spec = types.Summary{
+				report = types.SpecReport{
 					NodeTexts: []string{"A", "B", "C"},
 					State:     specStateCase,
 					RunTime:   5 * time.Second,
 				}
-				reporter.WillRun(spec)
-				reporter.DidRun(spec)
+				reporter.WillRun(report)
+				reporter.DidRun(report)
 
 				reporter.SpecSuiteDidEnd(types.SuiteSummary{
 					NumberOfSpecsThatWillBeRun: 1,

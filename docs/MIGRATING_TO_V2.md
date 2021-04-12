@@ -139,10 +139,10 @@ TODO
 ### Changed: CurrentGinkgoTestDescription()
 `CurrentGinkgoTestDescription()` has been deprecated and will be removed in a future release.  The method was returning a processed object that included a subset of information available about the running test.
 
-It has been replaced with `CurrentSpec()` which returns the full-fledge `types.Summary` used by Ginkgo's reporting infrastructure.  To help users migrate, `types.Summary` now includes a number of helper methods to make it easier to extract information about the running test.
+It has been replaced with `CurrentSpecReport()` which returns the full-fledge `types.SpecReport` used by Ginkgo's reporting infrastructure.  To help users migrate, `types.SpecReport` now includes a number of helper methods to make it easier to extract information about the running test.
 
 #### Migration Strategy:
-Replace any calls to `CurrentGinkgoTestDescription()` with `CurrentSpec()` and use the struct fields or helper methods on the returned `types.Summary` to get the information you need about the current test.
+Replace any calls to `CurrentGinkgoTestDescription()` with `CurrentSpecReport()` and use the struct fields or helper methods on the returned `types.SpecReport` to get the information you need about the current test.
 
 
 ### Changed: Command Line Flags
@@ -172,7 +172,7 @@ The `ginkgo convert` subcommand in V1 could convert an existing set of Go tests 
 ## Minor Changes
 These are minor changes that will be transparent for most users.
 
-- `"top level"` is no longer the first element in `types.Summary.NodeTexts`.  This will only affect users who write custom reporters.
+- `"top level"` is no longer the first element in `types.SpecReport.NodeTexts`.  This will only affect users who write custom reporters.
 
 - The output format of Ginkgo's Default Reporter has changed in numerous subtle ways to improve readability and the user experience.  Users who were scraping Ginkgo output programatically may need to change their scripts or use the new JSON formatted report option (TODO: update with link once JSON reporting is implemented).
 
