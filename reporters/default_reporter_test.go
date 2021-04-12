@@ -55,8 +55,8 @@ type STD string
 type GW string
 
 // convenience helper to quickly make summaries
-func S(options ...interface{}) types.Summary {
-	summary := types.Summary{
+func S(options ...interface{}) types.SpecReport {
+	report := types.SpecReport{
 		LeafNodeType: types.NodeTypeIt,
 		State:        types.SpecStatePassed,
 		NumAttempts:  1,
@@ -65,28 +65,28 @@ func S(options ...interface{}) types.Summary {
 	for _, option := range options {
 		switch reflect.TypeOf(option) {
 		case reflect.TypeOf([]string{}):
-			summary.NodeTexts = option.([]string)
+			report.NodeTexts = option.([]string)
 		case reflect.TypeOf([]types.CodeLocation{}):
-			summary.NodeLocations = option.([]types.CodeLocation)
+			report.NodeLocations = option.([]types.CodeLocation)
 		case reflect.TypeOf(types.NodeTypeIt):
-			summary.LeafNodeType = option.(types.NodeType)
+			report.LeafNodeType = option.(types.NodeType)
 		case reflect.TypeOf(types.CodeLocation{}):
-			summary.LeafNodeLocation = option.(types.CodeLocation)
+			report.LeafNodeLocation = option.(types.CodeLocation)
 		case reflect.TypeOf(types.SpecStatePassed):
-			summary.State = option.(types.SpecState)
+			report.State = option.(types.SpecState)
 		case reflect.TypeOf(time.Second):
-			summary.RunTime = option.(time.Duration)
+			report.RunTime = option.(time.Duration)
 		case reflect.TypeOf(types.Failure{}):
-			summary.Failure = option.(types.Failure)
+			report.Failure = option.(types.Failure)
 		case reflect.TypeOf(0):
-			summary.NumAttempts = option.(int)
+			report.NumAttempts = option.(int)
 		case reflect.TypeOf(STD("")):
-			summary.CapturedStdOutErr = string(option.(STD))
+			report.CapturedStdOutErr = string(option.(STD))
 		case reflect.TypeOf(GW("")):
-			summary.CapturedGinkgoWriterOutput = string(option.(GW))
+			report.CapturedGinkgoWriterOutput = string(option.(GW))
 		}
 	}
-	return summary
+	return report
 }
 
 type ConfigFlags uint8
@@ -195,9 +195,9 @@ var _ = Describe("DefaultReporter", func() {
 	)
 
 	DescribeTable("WillRun",
-		func(conf config.DefaultReporterConfigType, summary types.Summary, output ...string) {
+		func(conf config.DefaultReporterConfigType, report types.SpecReport, output ...string) {
 			reporter := reporters.NewDefaultReporterUnderTest(conf, buf)
-			reporter.WillRun(summary)
+			reporter.WillRun(report)
 			verifyExpectedOutput(output)
 		},
 		Entry("when not verbose, it emits nothing", C(), S(CTS("A"), CLS(cl0))),
@@ -228,9 +228,9 @@ var _ = Describe("DefaultReporter", func() {
 	)
 
 	DescribeTable("DidRun",
-		func(conf config.DefaultReporterConfigType, summary types.Summary, output ...string) {
+		func(conf config.DefaultReporterConfigType, report types.SpecReport, output ...string) {
 			reporter := reporters.NewDefaultReporterUnderTest(conf, buf)
-			reporter.DidRun(summary)
+			reporter.DidRun(report)
 			verifyExpectedOutput(output)
 		},
 		// Passing Tests
@@ -700,11 +700,11 @@ var _ = Describe("DefaultReporter", func() {
 	)
 
 	DescribeTable("Rendering SpecSuiteDidEnd",
-		func(conf config.DefaultReporterConfigType, summaries []types.Summary, summary types.SuiteSummary, expected ...string) {
+		func(conf config.DefaultReporterConfigType, reports []types.SpecReport, summary types.SuiteSummary, expected ...string) {
 			reporter := reporters.NewDefaultReporterUnderTest(conf, buf)
-			for _, summary := range summaries {
-				reporter.WillRun(summary)
-				reporter.DidRun(summary)
+			for _, report := range reports {
+				reporter.WillRun(report)
+				reporter.DidRun(report)
 			}
 			buf.Clear()
 			reporter.SpecSuiteDidEnd(summary)
@@ -713,7 +713,7 @@ var _ = Describe("DefaultReporter", func() {
 
 		Entry("when configured to be succinct",
 			C(Succinct),
-			[]types.Summary{S()},
+			[]types.SpecReport{S()},
 			types.SuiteSummary{
 				SuiteSucceeded: true,
 				RunTime:        time.Minute,
@@ -722,7 +722,7 @@ var _ = Describe("DefaultReporter", func() {
 		),
 		Entry("the suite passes",
 			C(),
-			[]types.Summary{S()},
+			[]types.SpecReport{S()},
 			types.SuiteSummary{
 				SuiteSucceeded:             true,
 				RunTime:                    time.Minute,
@@ -742,7 +742,7 @@ var _ = Describe("DefaultReporter", func() {
 		),
 		Entry("the suite passes and has flaky specs",
 			C(),
-			[]types.Summary{S()},
+			[]types.SpecReport{S()},
 			types.SuiteSummary{
 				SuiteSucceeded:             true,
 				RunTime:                    time.Minute,
@@ -762,7 +762,7 @@ var _ = Describe("DefaultReporter", func() {
 		),
 		Entry("the suite fails with one failed test",
 			C(),
-			[]types.Summary{S(CTS("Describe A", "Context B", "The Test"), CLS(cl0, cl1, cl2),
+			[]types.SpecReport{S(CTS("Describe A", "Context B", "The Test"), CLS(cl0, cl1, cl2),
 				types.SpecStateFailed, 2,
 				F("FAILURE MESSAGE\nWITH DETAILS", Location(cl3), types.NodeTypeJustBeforeEach, 1),
 			)},
@@ -784,7 +784,7 @@ var _ = Describe("DefaultReporter", func() {
 		),
 		Entry("the suite fails with multiple failed tests",
 			C(),
-			[]types.Summary{
+			[]types.SpecReport{
 				S(CTS("Describe A", "Context B", "The Test"), CLS(cl0, cl1, cl2),
 					types.SpecStateFailed, 2,
 					F("FAILURE MESSAGE\nWITH DETAILS", Location(cl3), types.NodeTypeJustBeforeEach, 1),
@@ -825,7 +825,7 @@ var _ = Describe("DefaultReporter", func() {
 		),
 		Entry("the suite fails with failed suite setups",
 			C(),
-			[]types.Summary{
+			[]types.SpecReport{
 				S(types.NodeTypeBeforeSuite, cl0, types.SpecStateFailed, 2,
 					F("FAILURE MESSAGE\nWITH DETAILS", Location(cl1), types.NodeTypeBeforeSuite, 0),
 				),

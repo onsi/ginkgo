@@ -52,14 +52,14 @@ var _ = Describe("JUnit Reporter", func() {
 		BeforeEach(func() {
 			reporter.ReporterConfig.ReportPassed = true
 
-			spec := types.Summary{
+			report := types.SpecReport{
 				NodeTexts:                  []string{"A", "B", "C"},
 				CapturedGinkgoWriterOutput: "Test scenario...",
 				State:                      types.SpecStatePassed,
 				RunTime:                    5 * time.Second,
 			}
-			reporter.WillRun(spec)
-			reporter.DidRun(spec)
+			reporter.WillRun(report)
+			reporter.DidRun(report)
 
 			reporter.SpecSuiteDidEnd(types.SuiteSummary{
 				NumberOfSpecsThatWillBeRun: 1,
@@ -86,10 +86,10 @@ var _ = Describe("JUnit Reporter", func() {
 	})
 
 	Describe("when a BeforeSuite fails", func() {
-		var beforeSuite types.Summary
+		var beforeSuite types.SpecReport
 
 		BeforeEach(func() {
-			beforeSuite = types.Summary{
+			beforeSuite = types.SpecReport{
 				LeafNodeType: types.NodeTypeBeforeSuite,
 				State:        types.SpecStateFailed,
 				RunTime:      3 * time.Second,
@@ -142,9 +142,9 @@ var _ = Describe("JUnit Reporter", func() {
 	for _, specStateCase := range specStateCases {
 		specStateCase := specStateCase
 		Describe("a failing test", func() {
-			var spec types.Summary
+			var report types.SpecReport
 			BeforeEach(func() {
-				spec = types.Summary{
+				report = types.SpecReport{
 					NodeTexts: []string{"A", "B", "C"},
 					State:     specStateCase.state,
 					RunTime:   5 * time.Second,
@@ -155,8 +155,8 @@ var _ = Describe("JUnit Reporter", func() {
 						ForwardedPanic: specStateCase.forwardedPanic,
 					},
 				}
-				reporter.WillRun(spec)
-				reporter.DidRun(spec)
+				reporter.WillRun(report)
+				reporter.DidRun(report)
 
 				reporter.SpecSuiteDidEnd(types.SuiteSummary{
 					NumberOfSpecsThatWillBeRun: 1,
@@ -177,11 +177,11 @@ var _ = Describe("JUnit Reporter", func() {
 				Expect(output.TestCases[0].FailureMessage.Type).To(Equal(specStateCase.message))
 				Expect(output.TestCases[0].FailureMessage.Message).To(ContainSubstring("I failed"))
 				Expect(output.TestCases[0].FailureMessage.Message).To(ContainSubstring("JustBeforeEach"))
-				Expect(output.TestCases[0].FailureMessage.Message).To(ContainSubstring(spec.Failure.Location.String()))
+				Expect(output.TestCases[0].FailureMessage.Message).To(ContainSubstring(report.Failure.Location.String()))
 				Expect(output.TestCases[0].Skipped).To(BeNil())
 				if specStateCase.state == types.SpecStatePanicked {
 					Expect(output.TestCases[0].FailureMessage.Message).To(ContainSubstring("\nPanic: " + specStateCase.forwardedPanic + "\n"))
-					Expect(output.TestCases[0].FailureMessage.Message).To(ContainSubstring("\nFull stack:\n" + spec.Failure.Location.FullStackTrace))
+					Expect(output.TestCases[0].FailureMessage.Message).To(ContainSubstring("\nFull stack:\n" + report.Failure.Location.FullStackTrace))
 				}
 			})
 		})
@@ -190,9 +190,9 @@ var _ = Describe("JUnit Reporter", func() {
 	for _, specStateCase := range []types.SpecState{types.SpecStatePending, types.SpecStateSkipped} {
 		specStateCase := specStateCase
 		Describe("a skipped test", func() {
-			var spec types.Summary
+			var report types.SpecReport
 			BeforeEach(func() {
-				spec = types.Summary{
+				report = types.SpecReport{
 					NodeTexts: []string{"A", "B", "C"},
 					State:     specStateCase,
 					RunTime:   5 * time.Second,
@@ -200,8 +200,8 @@ var _ = Describe("JUnit Reporter", func() {
 						Message: "skipped reason",
 					},
 				}
-				reporter.WillRun(spec)
-				reporter.DidRun(spec)
+				reporter.WillRun(report)
+				reporter.DidRun(report)
 
 				reporter.SpecSuiteDidEnd(types.SuiteSummary{
 					NumberOfSpecsThatWillBeRun: 1,

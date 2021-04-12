@@ -37,7 +37,7 @@ type Server struct {
 	numSuiteDidBegins         int
 	numSuiteDidEnds           int
 	aggregatedSuiteEndSummary types.SuiteSummary
-	summaryHoldingArea        []types.Summary
+	reportHoldingArea         []types.SpecReport
 }
 
 //Create a new server, automatically selecting a port
@@ -114,12 +114,12 @@ func (server *Server) specSuiteWillBegin(writer http.ResponseWriter, request *ht
 	if server.numSuiteDidBegins == server.parallelTotal {
 		server.reporter.SpecSuiteWillBegin(data.Config, data.Summary)
 
-		for _, summary := range server.summaryHoldingArea {
+		for _, summary := range server.reportHoldingArea {
 			server.reporter.WillRun(summary)
 			server.reporter.DidRun(summary)
 		}
 
-		server.summaryHoldingArea = nil
+		server.reportHoldingArea = nil
 	}
 }
 
@@ -127,18 +127,18 @@ func (server *Server) didRun(writer http.ResponseWriter, request *http.Request) 
 	server.lock.Lock()
 	defer server.lock.Unlock()
 
-	var summary types.Summary
-	err := server.decode(request, &summary)
+	var report types.SpecReport
+	err := server.decode(request, &report)
 	if err != nil {
 		writer.WriteHeader(http.StatusBadRequest)
 		return
 	}
 
 	if server.numSuiteDidBegins == server.parallelTotal {
-		server.reporter.WillRun(summary)
-		server.reporter.DidRun(summary)
+		server.reporter.WillRun(report)
+		server.reporter.DidRun(report)
 	} else {
-		server.summaryHoldingArea = append(server.summaryHoldingArea, summary)
+		server.reportHoldingArea = append(server.reportHoldingArea, report)
 	}
 }
 

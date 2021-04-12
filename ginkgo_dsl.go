@@ -105,10 +105,10 @@ func GinkgoT(optionalOffset ...int) GinkgoTInterface {
 		offset = optionalOffset[0]
 	}
 	failedFunc := func() bool {
-		return CurrentSpec().Failed()
+		return CurrentSpecReport().Failed()
 	}
 	nameFunc := func() string {
-		return CurrentSpec().FullText()
+		return CurrentSpecReport().FullText()
 	}
 	return testingtproxy.New(GinkgoWriter, Fail, Skip, failedFunc, nameFunc, offset)
 }
@@ -136,11 +136,11 @@ type GinkgoTInterface interface {
 	TempDir() string
 }
 
-// CurrentSpec returns information about the current running test.
-// The returned object is a types.Summary which includes helper methods
+// CurrentSpecReport returns information about the current running test.
+// The returned object is a types.SpecReport which includes helper methods
 // to make extracting information about the test easier.
-func CurrentSpec() types.Summary {
-	return global.Suite.CurrentSpecSummary()
+func CurrentSpecReport() types.SpecReport {
+	return global.Suite.CurrentSpecReport()
 }
 
 //RunSpecs is the entry point for the Ginkgo test runner.
@@ -590,7 +590,7 @@ func RunSpecsWithCustomReporters(t GinkgoTestingT, description string, _ []Repor
 //	LineNumber: the line number for the current test
 //	Failed: if the current test has failed, this will be true (useful in an AfterEach)
 //
-//Deprecated: Use CurrentSpec() instead
+//Deprecated: Use CurrentSpecReport() instead
 type DeprecatedGinkgoTestDescription struct {
 	FullTestText   string
 	ComponentTexts []string
@@ -605,25 +605,25 @@ type DeprecatedGinkgoTestDescription struct {
 type GinkgoTestDescription = DeprecatedGinkgoTestDescription
 
 //CurrentGinkgoTestDescripton returns information about the current running test.
-//Deprecated: Use CurrentSpec() instead
+//Deprecated: Use CurrentSpecReport() instead
 func CurrentGinkgoTestDescription() DeprecatedGinkgoTestDescription {
 	deprecationTracker.TrackDeprecation(
 		types.Deprecations.CurrentGinkgoTestDescription(),
 		types.NewCodeLocation(1),
 	)
-	summary := global.Suite.CurrentSpecSummary()
-	if summary.State == types.SpecStateInvalid {
+	report := global.Suite.CurrentSpecReport()
+	if report.State == types.SpecStateInvalid {
 		return GinkgoTestDescription{}
 	}
 
 	return DeprecatedGinkgoTestDescription{
-		ComponentTexts: summary.NodeTexts,
-		FullTestText:   strings.Join(summary.NodeTexts, " "),
-		TestText:       summary.NodeTexts[len(summary.NodeTexts)-1],
-		FileName:       summary.LeafNodeLocation.FileName,
-		LineNumber:     summary.LeafNodeLocation.LineNumber,
-		Failed:         summary.State.Is(types.SpecStateFailureStates...),
-		Duration:       summary.RunTime,
+		ComponentTexts: report.NodeTexts,
+		FullTestText:   strings.Join(report.NodeTexts, " "),
+		TestText:       report.NodeTexts[len(report.NodeTexts)-1],
+		FileName:       report.LeafNodeLocation.FileName,
+		LineNumber:     report.LeafNodeLocation.LineNumber,
+		Failed:         report.State.Is(types.SpecStateFailureStates...),
+		Duration:       report.RunTime,
 	}
 }
 

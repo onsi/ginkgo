@@ -42,15 +42,15 @@ var _ = Describe("Server", func() {
 	Describe("Streaming endpoints", func() {
 		var beginSummary, thirdBeginSummary types.SuiteSummary
 		var endSummary1, endSummary2, endSummary3 types.SuiteSummary
-		var summaryA, summaryB, summaryC types.Summary
+		var reportA, reportB, reportC types.SpecReport
 
 		BeforeEach(func() {
 			beginSummary = types.SuiteSummary{SuiteDescription: "my sweet suite"}
 			thirdBeginSummary = types.SuiteSummary{SuiteDescription: "laste one in gets forwarded"}
 
-			summaryA = types.Summary{NodeTexts: []string{"A"}}
-			summaryB = types.Summary{NodeTexts: []string{"B"}}
-			summaryC = types.Summary{NodeTexts: []string{"C"}}
+			reportA = types.SpecReport{NodeTexts: []string{"A"}}
+			reportB = types.SpecReport{NodeTexts: []string{"B"}}
+			reportC = types.SpecReport{NodeTexts: []string{"C"}}
 
 			endSummary1 = types.SuiteSummary{NumberOfPassedSpecs: 2, RunTime: time.Second, SuiteSucceeded: true}
 			endSummary2 = types.SuiteSummary{NumberOfPassedSpecs: 3, RunTime: time.Minute, NumberOfSkippedSpecs: 2, SuiteSucceeded: true}
@@ -64,9 +64,9 @@ var _ = Describe("Server", func() {
 		Context("before all nodes have reported SpecSuiteWillBegin", func() {
 			BeforeEach(func() {
 				forwardingReporter.SpecSuiteWillBegin(config.GinkgoConfig, beginSummary)
-				forwardingReporter.DidRun(summaryA)
+				forwardingReporter.DidRun(reportA)
 				forwardingReporter.SpecSuiteWillBegin(config.GinkgoConfig, beginSummary)
-				forwardingReporter.DidRun(summaryB)
+				forwardingReporter.DidRun(reportB)
 			})
 
 			It("should not forward anything to the attached reporter", func() {
@@ -90,7 +90,7 @@ var _ = Describe("Server", func() {
 
 				Context("any subsequent summaries", func() {
 					BeforeEach(func() {
-						forwardingReporter.DidRun(summaryC)
+						forwardingReporter.DidRun(reportC)
 					})
 
 					It("are forwarded immediately", func() {
