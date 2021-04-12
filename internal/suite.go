@@ -26,7 +26,8 @@ type Suite struct {
 	beforeSuiteNodeBuilder SuiteNodeBuilder
 	afterSuiteNodeBuilder  SuiteNodeBuilder
 
-	writer            WriterInterface
+	writer WriterInterface
+	outputInterceptor
 	currentSpecReport types.SpecReport
 }
 
@@ -49,7 +50,7 @@ func (suite *Suite) BuildTree() error {
 	return nil
 }
 
-func (suite *Suite) Run(description string, failer *Failer, reporter reporters.Reporter, writer WriterInterface, interruptHandler InterruptHandlerInterface, config config.GinkgoConfigType) (bool, bool) {
+func (suite *Suite) Run(description string, failer *Failer, reporter reporters.Reporter, writer WriterInterface, outputInterceptor OutputInterceptor, interruptHandler InterruptHandlerInterface, config config.GinkgoConfigType) (bool, bool) {
 	if suite.phase != PhaseBuildTree {
 		panic("cannot run before building the tree = call suite.BuildTree() first")
 	}
@@ -59,10 +60,8 @@ func (suite *Suite) Run(description string, failer *Failer, reporter reporters.R
 	specs, hasProgrammaticFocus := ApplyFocusToSpecs(specs, description, config)
 
 	suite.phase = PhaseRun
-	if interruptHandler == nil {
-		interruptHandler = NewInterruptHandler()
-	}
-	success := suite.runSpecs(description, specs, failer, reporter, writer, interruptHandler, config)
+
+	success := suite.runSpecs(description, specs, failer, reporter, writer, outputInterceptor, interruptHandler, config)
 	return success, hasProgrammaticFocus
 }
 
@@ -94,7 +93,7 @@ func (suite *Suite) PushNode(node Node) error {
 			err := func() (err error) {
 				defer func() {
 					if e := recover(); e != nil {
-						err = types.GinkgoErrors.CaughtPanicDuringABuildPhase(node.CodeLocation)
+						err = types.GinkgoErrors.CaughtPanicDuringABuildPhase(e, node.CodeLocation)
 					}
 				}()
 				node.Body()
@@ -149,7 +148,7 @@ func (suite *Suite) CurrentSpecReport() types.SpecReport {
 	return report
 }
 
-func (suite *Suite) runSpecs(description string, specs Specs, failer *Failer, reporter reporters.Reporter, writer WriterInterface, interruptHandler InterruptHandlerInterface, config config.GinkgoConfigType) bool {
+func (suite *Suite) runSpecs(description string, specs Specs, failer *Failer, reporter reporters.Reporter, writer WriterInterface, outputInterceptor OutputInterceptor, interruptHandler InterruptHandlerInterface, config config.GinkgoConfigType) bool {
 	suite.writer = writer
 
 	suiteStartTime := time.Now()
@@ -173,7 +172,7 @@ func (suite *Suite) runSpecs(description string, specs Specs, failer *Failer, re
 		report := types.SpecReport{LeafNodeType: beforeSuiteNode.NodeType, LeafNodeLocation: beforeSuiteNode.CodeLocation}
 		reporter.WillRun(report)
 
-		report = suite.runSuiteNode(report, beforeSuiteNode, failer, interruptStatus.Channel, writer, config)
+		report = suite.runSuiteNode(report, beforeSuiteNode, failer, interruptStatus.Channel, writer, outputInterceptor, config)
 		reporter.DidRun(report)
 
 		if report.State != types.SpecStatePassed {
@@ -219,7 +218,7 @@ func (suite *Suite) runSpecs(description string, specs Specs, failer *Failer, re
 
 			if !spec.Skip {
 				//runSpec updates suite.currentSpecReport directly
-				suite.runSpec(spec, failer, interruptHandler, writer, config)
+				suite.runSpec(spec, failer, interruptHandler, writer, outputInterceptor, config)
 			}
 
 			reporter.DidRun(suite.currentSpecReport)
@@ -255,7 +254,7 @@ func (suite *Suite) runSpecs(description string, specs Specs, failer *Failer, re
 		report := types.SpecReport{LeafNodeType: afterSuiteNode.NodeType, LeafNodeLocation: afterSuiteNode.CodeLocation}
 		reporter.WillRun(report)
 
-		report = suite.runSuiteNode(report, afterSuiteNode, failer, interruptHandler.Status().Channel, writer, config)
+		report = suite.runSuiteNode(report, afterSuiteNode, failer, interruptHandler.Status().Channel, writer, outputInterceptor, config)
 		reporter.DidRun(report)
 		if report.State != types.SpecStatePassed {
 			suitePassed = false
@@ -272,13 +271,14 @@ func (suite *Suite) runSpecs(description string, specs Specs, failer *Failer, re
 // runSpec(spec) mutates currentSpecReport.  this is ugly
 // but it allows the user to call CurrentGinkgoSpecDescription and get
 // an up-to-date state of the spec **from within a running spec**
-func (suite *Suite) runSpec(spec Spec, failer *Failer, interruptHandler InterruptHandlerInterface, writer WriterInterface, config config.GinkgoConfigType) {
+func (suite *Suite) runSpec(spec Spec, failer *Failer, interruptHandler InterruptHandlerInterface, writer WriterInterface, outputInterceptor OutputInterceptor, config config.GinkgoConfigType) {
 	if config.DryRun {
 		suite.currentSpecReport.State = types.SpecStatePassed
 		return
 	}
 
 	writer.Truncate()
+	outputInterceptor.StartInterceptingOutput()
 	t := time.Now()
 	maxAttempts := max(1, config.FlakeAttempts)
 
@@ -318,6 +318,7 @@ func (suite *Suite) runSpec(spec Spec, failer *Failer, interruptHandler Interrup
 
 		suite.currentSpecReport.RunTime = time.Since(t)
 		suite.currentSpecReport.CapturedGinkgoWriterOutput = string(writer.Bytes())
+		suite.currentSpecReport.CapturedStdOutErr = outputInterceptor.StopInterceptingAndReturnOutput()
 
 		if suite.currentSpecReport.State == types.SpecStatePassed {
 			return
@@ -380,17 +381,19 @@ func (suite *Suite) runNode(node Node, failer *Failer, interruptChannel chan int
 	}
 }
 
-func (suite *Suite) runSuiteNode(report types.SpecReport, node Node, failer *Failer, interruptChannel chan interface{}, writer WriterInterface, config config.GinkgoConfigType) types.SpecReport {
+func (suite *Suite) runSuiteNode(report types.SpecReport, node Node, failer *Failer, interruptChannel chan interface{}, writer WriterInterface, outputInterceptor OutputInterceptor, config config.GinkgoConfigType) types.SpecReport {
 	if config.DryRun {
 		report.State = types.SpecStatePassed
 		return report
 	}
 
 	writer.Truncate()
+	outputInterceptor.StartInterceptingOutput()
 	t := time.Now()
 	report.State, report.Failure = suite.runNode(node, failer, interruptChannel, "", writer, config)
 	report.RunTime = time.Since(t)
 	report.CapturedGinkgoWriterOutput = string(writer.Bytes())
+	report.CapturedStdOutErr = outputInterceptor.StopInterceptingAndReturnOutput()
 
 	return report
 }
