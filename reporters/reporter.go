@@ -12,8 +12,14 @@ type Reporter interface {
 	SpecSuiteDidEnd(summary types.SuiteSummary)
 }
 
-// Old V1Reporter compatibility support
-type V1Reporter interface {
+// Deprecated Custom Reporters in V2
+
+// Deprecated: DeprecatedReporter was how Ginkgo V1 provided support for CustomReporters
+// this has been removed in V2.
+// Please read the documentation at:
+// https://github.com/onsi/ginkgo/blob/v2/docs/MIGRATING_TO_V2.md#removed-custom-reporters
+// for Ginkgo's new behavior and for a migration path.
+type DeprecatedReporter interface {
 	SpecSuiteWillBegin(config config.GinkgoConfigType, summary *types.SuiteSummary)
 	BeforeSuiteDidRun(setupSummary *types.SetupSummary)
 	SpecWillRun(specSummary *types.SpecSummary)
@@ -22,43 +28,48 @@ type V1Reporter interface {
 	SpecSuiteDidEnd(summary *types.SuiteSummary)
 }
 
-type compatiblityShim struct {
-	reporter V1Reporter
-}
+// ReportViaDeprecatedReporter takes a V1 custom reporter and a V2 report and
+// calls the custom reporter's methods with appropriately transformed data from the V2 report.
+//
+// ReportViaDeprecatedReporter should be called in a `ReportAfterSuite()`
+//
+// Deprecated: ReportViaDeprecatedReporter method exists to help developer bridge between deprecated V1 functionality and the new
+// reporting support in V2.  It will be removed in a future minor version of Ginkgo.
+func ReportViaDeprecatedReporter(reporter DeprecatedReporter, report types.SuiteSummary) {
+	//TODO flesh this out
 
-func (cs *compatiblityShim) IsDeprecatedReporter() {}
+	// type compatiblityShim struct {
+	// 	reporter V1Reporter
+	// }
 
-func (cs *compatiblityShim) SpecSuiteWillBegin(config config.GinkgoConfigType, summary types.SuiteSummary) {
-	s := summary
-	cs.reporter.SpecSuiteWillBegin(config, &s)
-}
+	// func (cs *compatiblityShim) IsDeprecatedReporter() {}
 
-func (cs *compatiblityShim) WillRun(summary types.Summary) {
-	if summary.LeafNodeType.Is(types.NodeTypesForSuiteSetup...) {
-		return
-	}
-	cs.reporter.SpecWillRun(types.DeprecatedSpecSummaryFromSummary(summary))
-}
+	// func (cs *compatiblityShim) SpecSuiteWillBegin(config config.GinkgoConfigType, summary types.SuiteSummary) {
+	// 	s := summary
+	// 	cs.reporter.SpecSuiteWillBegin(config, &s)
+	// }
 
-func (cs *compatiblityShim) DidRun(summary types.Summary) {
-	if summary.LeafNodeType.Is(types.NodeTypesForSuiteSetup...) {
-		if summary.LeafNodeType.Is(types.NodeTypeBeforeSuite, types.NodeTypeSynchronizedBeforeSuite) {
-			cs.reporter.BeforeSuiteDidRun(types.DeprecatedSetupSummaryFromSummary(summary))
-		} else {
-			cs.reporter.AfterSuiteDidRun(types.DeprecatedSetupSummaryFromSummary(summary))
-		}
-	} else {
-		cs.reporter.SpecDidComplete(types.DeprecatedSpecSummaryFromSummary(summary))
-	}
-}
+	// func (cs *compatiblityShim) WillRun(summary types.Summary) {
+	// 	if summary.LeafNodeType.Is(types.NodeTypesForSuiteSetup...) {
+	// 		return
+	// 	}
+	// 	cs.reporter.SpecWillRun(types.DeprecatedSpecSummaryFromSummary(summary))
+	// }
 
-func (cs *compatiblityShim) SpecSuiteDidEnd(summary types.SuiteSummary) {
-	s := summary
-	cs.reporter.SpecSuiteDidEnd(&s)
-}
+	// func (cs *compatiblityShim) DidRun(summary types.Summary) {
+	// 	if summary.LeafNodeType.Is(types.NodeTypesForSuiteSetup...) {
+	// 		if summary.LeafNodeType.Is(types.NodeTypeBeforeSuite, types.NodeTypeSynchronizedBeforeSuite) {
+	// 			cs.reporter.BeforeSuiteDidRun(types.DeprecatedSetupSummaryFromSummary(summary))
+	// 		} else {
+	// 			cs.reporter.AfterSuiteDidRun(types.DeprecatedSetupSummaryFromSummary(summary))
+	// 		}
+	// 	} else {
+	// 		cs.reporter.SpecDidComplete(types.DeprecatedSpecSummaryFromSummary(summary))
+	// 	}
+	// }
 
-func ReporterFromV1Reporter(reporter V1Reporter) Reporter {
-	return &compatiblityShim{
-		reporter: reporter,
-	}
+	// func (cs *compatiblityShim) SpecSuiteDidEnd(summary types.SuiteSummary) {
+	// 	s := summary
+	// 	cs.reporter.SpecSuiteDidEnd(&s)
+	// }
 }
