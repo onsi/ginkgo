@@ -160,6 +160,9 @@ Users should update any scripts they have that invoke the `ginkgo` cli from came
 ### Removed: `-noisyPendings` and `-noisySkippings`
 Both these flags tweaked the reporter's behavior for pending and skipped tests.  A similar, and more intuitive, outcome is possible using `--succinct` and `-v`.
 
+### Removed: `-debug`
+The `-debug` flag has been removed.  It functioned primarily as a band-aid to Ginkgo V1's poor handling of stuck parallel tests. The new [interrupt behavior](#interrupt-behavior) in V2 resolves the root issues behind the `-debug` flag.
+
 #### Migration Strategy:
 Users should remove -stream from any scripts they have that invoke the `ginkgo` cli.
 
