@@ -18,15 +18,8 @@ var Deprecations = deprecations{}
 
 func (d deprecations) CustomReporter() Deprecation {
 	return Deprecation{
-		Message: "You are using a custom reporter.  Support for custom reporters will likely be removed in V2.  Most users were using them to generate junit or teamcity reports and this functionality will be merged into the core reporter.  In addition, Ginkgo 2.0 will support emitting a JSON-formatted report that users can then manipulate to generate custom reports.\n\n{{red}}{{bold}}If this change will be impactful to you please leave a comment on {{cyan}}{{underline}}https://github.com/onsi/ginkgo/issues/711{{/}}",
+		Message: "Support for custom reporters has been removed in V2.  Please read the documentation linked to below for Ginkgo's new behavior and for a migration path:",
 		DocLink: "removed-custom-reporters",
-	}
-}
-
-func (d deprecations) V1Reporter() Deprecation {
-	return Deprecation{
-		Message: "You are susing a V1 Ginkgo Reporter.  Please update your custom reporter to the new V2 Reporter interface.",
-		DocLink: "changed-reporter-interface",
 	}
 }
 
