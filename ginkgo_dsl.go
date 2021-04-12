@@ -163,10 +163,13 @@ func RunSpecs(t GinkgoTestingT, description string) bool {
 	suiteDidRun = true
 
 	var reporter reporters.Reporter
+	var outputInterceptor internal.OutputInterceptor
 	if config.GinkgoConfig.ParallelTotal == 1 {
 		reporter = reporters.NewDefaultReporter(config.DefaultReporterConfig, formatter.ColorableStdOut)
+		outputInterceptor = internal.NewNoopOutputInterceptor()
 	} else {
-		reporter = parallel_support.NewForwardingReporter(config.DefaultReporterConfig, config.GinkgoConfig.ParallelHost, parallel_support.NewOutputInterceptor(), GinkgoWriter.(*internal.Writer))
+		reporter = parallel_support.NewForwardingReporter(config.DefaultReporterConfig, config.GinkgoConfig.ParallelHost, GinkgoWriter.(*internal.Writer))
+		outputInterceptor = internal.NewOutputInterceptor()
 	}
 
 	writer := GinkgoWriter.(*internal.Writer)
@@ -188,7 +191,7 @@ func RunSpecs(t GinkgoTestingT, description string) bool {
 	err := global.Suite.BuildTree()
 	exitIfErr(err)
 
-	passed, hasFocusedTests := global.Suite.Run(description, global.Failer, reporter, writer, nil, config.GinkgoConfig)
+	passed, hasFocusedTests := global.Suite.Run(description, global.Failer, reporter, writer, outputInterceptor, internal.NewInterruptHandler(), config.GinkgoConfig)
 
 	flagSet.ValidateDeprecations(deprecationTracker)
 	if deprecationTracker.DidTrackDeprecations() {

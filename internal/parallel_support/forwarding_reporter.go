@@ -11,15 +11,6 @@ import (
 	"github.com/onsi/ginkgo/types"
 )
 
-/*
-The OutputInterceptor is used by the ForwardingReporter to
-intercept and capture all stdin and stderr output during a test run.
-*/
-type OutputInterceptor interface {
-	StartInterceptingOutput() error
-	StopInterceptingAndReturnOutput() (string, error)
-}
-
 type ConfigAndSummary struct {
 	Config  config.GinkgoConfigType `json:"config"`
 	Summary types.SuiteSummary      `json:"suite-summary"`
@@ -37,14 +28,12 @@ in place of Ginkgo's DefaultReporter.
 */
 
 type ForwardingReporter struct {
-	serverHost        string
-	outputInterceptor OutputInterceptor
+	serverHost string
 }
 
-func NewForwardingReporter(config config.DefaultReporterConfigType, serverHost string, outputInterceptor OutputInterceptor, ginkgoWriter *internal.Writer) *ForwardingReporter {
+func NewForwardingReporter(config config.DefaultReporterConfigType, serverHost string, ginkgoWriter *internal.Writer) *ForwardingReporter {
 	reporter := &ForwardingReporter{
-		serverHost:        serverHost,
-		outputInterceptor: outputInterceptor,
+		serverHost: serverHost,
 	}
 
 	return reporter
@@ -57,23 +46,16 @@ func (reporter *ForwardingReporter) post(path string, data interface{}) {
 }
 
 func (reporter *ForwardingReporter) SpecSuiteWillBegin(conf config.GinkgoConfigType, summary types.SuiteSummary) {
-	data := ConfigAndSummary{Config: conf, Summary: summary}
-
-	reporter.outputInterceptor.StartInterceptingOutput()
-	reporter.post("/SpecSuiteWillBegin", data)
+	reporter.post("/SpecSuiteWillBegin", ConfigAndSummary{Config: conf, Summary: summary})
 }
 
 func (reporter *ForwardingReporter) WillRun(report types.SpecReport) {
 }
 
 func (reporter *ForwardingReporter) DidRun(report types.SpecReport) {
-	output, _ := reporter.outputInterceptor.StopInterceptingAndReturnOutput()
-	reporter.outputInterceptor.StartInterceptingOutput()
-	report.CapturedStdOutErr = output
 	reporter.post("/DidRun", report)
 }
 
 func (reporter *ForwardingReporter) SpecSuiteDidEnd(summary types.SuiteSummary) {
-	reporter.outputInterceptor.StopInterceptingAndReturnOutput()
 	reporter.post("/SpecSuiteDidEnd", summary)
 }

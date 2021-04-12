@@ -22,6 +22,8 @@ var _ = Describe("Suite", func() {
 	var failer *internal.Failer
 	var reporter *FakeReporter
 	var writer *internal.Writer
+	var outputInterceptor *FakeOutputInterceptor
+	var interruptHandler *internal.InterruptHandler
 	var conf config.GinkgoConfigType
 	var rt *RunTracker
 
@@ -29,6 +31,8 @@ var _ = Describe("Suite", func() {
 		failer = internal.NewFailer()
 		reporter = &FakeReporter{}
 		writer = internal.NewWriter(ioutil.Discard)
+		outputInterceptor = &FakeOutputInterceptor{}
+		interruptHandler = internal.NewInterruptHandler()
 		conf = config.GinkgoConfigType{
 			ParallelTotal: 1,
 			ParallelNode:  1,
@@ -57,7 +61,7 @@ var _ = Describe("Suite", func() {
 				Ω(rt).Should(HaveTracked("traversing outer", "traversing nested"))
 
 				rt.Reset()
-				suite.Run("suite", failer, reporter, writer, nil, conf)
+				suite.Run("suite", failer, reporter, writer, outputInterceptor, interruptHandler, conf)
 				Ω(rt).Should(HaveTracked("running it"))
 
 				Ω(err1).ShouldNot(HaveOccurred())
@@ -82,7 +86,7 @@ var _ = Describe("Suite", func() {
 			})
 
 			It("errors", func() {
-				suite.Run("suite", failer, reporter, writer, nil, conf)
+				suite.Run("suite", failer, reporter, writer, outputInterceptor, interruptHandler, conf)
 				Ω(pushNodeErrDuringRun).Should(HaveOccurred())
 				Ω(rt).Should(HaveTracked("in it"))
 			})
@@ -100,6 +104,7 @@ var _ = Describe("Suite", func() {
 			It("errors", func() {
 				err := suite.BuildTree()
 				Ω(err.Error()).Should(ContainSubstring(cl.String()))
+				Ω(err.Error()).Should(ContainSubstring("simulate ginkgo panic"))
 			})
 		})
 
@@ -113,6 +118,7 @@ var _ = Describe("Suite", func() {
 			It("errors", func() {
 				err := suite.BuildTree()
 				Ω(err).Should(HaveOccurred())
+				Ω(err.Error()).Should(ContainSubstring("boom"))
 			})
 		})
 
@@ -191,7 +197,7 @@ var _ = Describe("Suite", func() {
 
 					Ω(err).ShouldNot(HaveOccurred())
 					Ω(suite.BuildTree()).Should(Succeed())
-					suite.Run("suite", failer, reporter, writer, nil, conf)
+					suite.Run("suite", failer, reporter, writer, outputInterceptor, interruptHandler, conf)
 					Ω(pushSuiteNodeErr).Should(HaveOccurred())
 				})
 			})
