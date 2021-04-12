@@ -71,43 +71,43 @@ func (reporter *JUnitReporter) SpecSuiteWillBegin(ginkgoConfig config.GinkgoConf
 	reporter.ReporterConfig = config.DefaultReporterConfig
 }
 
-func (reporter *JUnitReporter) WillRun(_ types.Summary) {
+func (reporter *JUnitReporter) WillRun(_ types.SpecReport) {
 }
 
-func (reporter *JUnitReporter) DidRun(summary types.Summary) {
+func (reporter *JUnitReporter) DidRun(report types.SpecReport) {
 	testCase := JUnitTestCase{
 		ClassName: reporter.testSuiteName,
 	}
-	if summary.LeafNodeType.Is(types.NodeTypesForSuiteSetup...) {
-		if summary.State.Is(types.SpecStatePassed) {
+	if report.LeafNodeType.Is(types.NodeTypesForSuiteSetup...) {
+		if report.State.Is(types.SpecStatePassed) {
 			return
 		}
-		testCase.Name = summary.LeafNodeType.String()
+		testCase.Name = report.LeafNodeType.String()
 	} else {
-		testCase.Name = strings.Join(summary.NodeTexts, " ")
+		testCase.Name = strings.Join(report.NodeTexts, " ")
 	}
-	if reporter.ReporterConfig.ReportPassed && summary.State == types.SpecStatePassed {
-		testCase.SystemOut = summary.CombinedOutput()
+	if reporter.ReporterConfig.ReportPassed && report.State == types.SpecStatePassed {
+		testCase.SystemOut = report.CombinedOutput()
 	}
-	if summary.State.Is(types.SpecStateFailureStates...) {
+	if report.State.Is(types.SpecStateFailureStates...) {
 		testCase.FailureMessage = &JUnitFailureMessage{
-			Type:    reporter.failureTypeForState(summary.State),
-			Message: reporter.failureMessage(summary.Failure),
+			Type:    reporter.failureTypeForState(report.State),
+			Message: reporter.failureMessage(report.Failure),
 		}
-		if summary.State.Is(types.SpecStatePanicked) {
+		if report.State.Is(types.SpecStatePanicked) {
 			testCase.FailureMessage.Message += fmt.Sprintf("\n\nPanic: %s\n\nFull stack:\n%s",
-				summary.Failure.ForwardedPanic,
-				summary.Failure.Location.FullStackTrace)
+				report.Failure.ForwardedPanic,
+				report.Failure.Location.FullStackTrace)
 		}
-		testCase.SystemOut = summary.CombinedOutput()
+		testCase.SystemOut = report.CombinedOutput()
 	}
-	if summary.State == types.SpecStateSkipped || summary.State == types.SpecStatePending {
+	if report.State == types.SpecStateSkipped || report.State == types.SpecStatePending {
 		testCase.Skipped = &JUnitSkipped{}
-		if summary.Failure.Message != "" {
-			testCase.Skipped.Message = reporter.failureMessage(summary.Failure)
+		if report.Failure.Message != "" {
+			testCase.Skipped.Message = reporter.failureMessage(report.Failure)
 		}
 	}
-	testCase.Time = summary.RunTime.Seconds()
+	testCase.Time = report.RunTime.Seconds()
 	reporter.suite.TestCases = append(reporter.suite.TestCases, testCase)
 }
 
