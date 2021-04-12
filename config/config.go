@@ -34,7 +34,6 @@ type GinkgoConfigType struct {
 	FlakeAttempts      int
 	EmitSpecProgress   bool
 	DryRun             bool
-	DebugParallel      bool
 
 	ParallelNode  int
 	ParallelTotal int
@@ -52,6 +51,7 @@ type DefaultReporterConfigType struct {
 }
 
 type deprecatedConfigsType struct {
+	DebugParallel  bool
 	NoisySkippings bool
 	NoisyPendings  bool
 }
@@ -97,8 +97,7 @@ var GinkgoConfigFlags = GinkgoFlags{
 		Usage: "If set, ginkgo will only run specs that do not match this regular expression. Can be specified multiple times, values are ORed."},
 	{KeyPath: "G.RegexScansFilePath", Name: "regex-scans-filepath", SectionKey: "filter", DeprecatedName: "regexScansFilePath", DeprecatedDocLink: "changed-command-line-flags",
 		Usage: "If set, ginkgo regex matching also will look at the file path (code location)."},
-	{KeyPath: "G.DebugParallel", Name: "debug-parallel", SectionKey: "debug", DeprecatedName: "debug",
-		Usage: "If set, ginkgo will emit node output to files when running in parallel."},
+	{KeyPath: "D.DebugParallel", DeprecatedName: "debug", DeprecatedDocLink: "removed--debug"},
 }
 
 var GinkgoParallelConfigFlags = GinkgoFlags{
