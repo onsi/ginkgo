@@ -16,29 +16,29 @@ A FakeReporter and collection of matchers to match against reported suite and sp
 
 */
 
-type Summaries []types.Summary
+type Reports []types.SpecReport
 
-func (s Summaries) FindByLeafNodeType(nodeType ...types.NodeType) types.Summary {
+func (s Reports) FindByLeafNodeType(nodeType ...types.NodeType) types.SpecReport {
 	for _, summary := range s {
 		if summary.LeafNodeType.Is(nodeType...) {
 			return summary
 		}
 	}
 
-	return types.Summary{}
+	return types.SpecReport{}
 }
 
-func (s Summaries) Find(name string) types.Summary {
+func (s Reports) Find(name string) types.SpecReport {
 	for _, summary := range s {
 		if len(summary.NodeTexts) > 0 && summary.NodeTexts[len(summary.NodeTexts)-1] == name {
 			return summary
 		}
 	}
 
-	return types.Summary{}
+	return types.SpecReport{}
 }
 
-func (s Summaries) Names() []string {
+func (s Reports) Names() []string {
 	out := []string{}
 	for _, summary := range s {
 		if len(summary.NodeTexts) > 0 {
@@ -48,8 +48,8 @@ func (s Summaries) Names() []string {
 	return out
 }
 
-func (s Summaries) WithState(state types.SpecState) Summaries {
-	out := Summaries{}
+func (s Reports) WithState(state types.SpecState) Reports {
+	out := Reports{}
 	for _, summary := range s {
 		if summary.State == state {
 			out = append(out, summary)
@@ -61,8 +61,8 @@ func (s Summaries) WithState(state types.SpecState) Summaries {
 type FakeReporter struct {
 	Config config.GinkgoConfigType
 	Begin  types.SuiteSummary
-	Will   Summaries
-	Did    Summaries
+	Will   Reports
+	Did    Reports
 	End    types.SuiteSummary
 }
 
@@ -71,12 +71,12 @@ func (r *FakeReporter) SpecSuiteWillBegin(conf config.GinkgoConfigType, summary 
 	r.Config = conf
 }
 
-func (r *FakeReporter) WillRun(summary types.Summary) {
-	r.Will = append(r.Will, summary)
+func (r *FakeReporter) WillRun(report types.SpecReport) {
+	r.Will = append(r.Will, report)
 }
 
-func (r *FakeReporter) DidRun(summary types.Summary) {
-	r.Did = append(r.Did, summary)
+func (r *FakeReporter) DidRun(report types.SpecReport) {
+	r.Did = append(r.Did, report)
 }
 
 func (r *FakeReporter) SpecSuiteDidEnd(summary types.SuiteSummary) {

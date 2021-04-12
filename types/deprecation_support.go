@@ -39,7 +39,7 @@ func (d deprecations) Measure() Deprecation {
 
 func (d deprecations) CurrentGinkgoTestDescription() Deprecation {
 	return Deprecation{
-		Message: "CurrentGinkgoTestDescription() is deprecated in Ginkgo V2.  Use CurrentSpec() instead.",
+		Message: "CurrentGinkgoTestDescription() is deprecated in Ginkgo V2.  Use CurrentSpecReport() instead.",
 		DocLink: "changed-currentginkgotestdescription",
 	}
 }
@@ -130,14 +130,14 @@ type DeprecatedSetupSummary struct {
 	SuiteID        string
 }
 
-func DeprecatedSetupSummaryFromSummary(summary Summary) *DeprecatedSetupSummary {
+func DeprecatedSetupSummaryFromSpecReport(report SpecReport) *DeprecatedSetupSummary {
 	return &DeprecatedSetupSummary{
-		ComponentType:  summary.LeafNodeType,
-		CodeLocation:   summary.LeafNodeLocation,
-		State:          summary.State,
-		RunTime:        summary.RunTime,
-		Failure:        deprecatedSpecFailureFromFailure(summary.Failure),
-		CapturedOutput: summary.CombinedOutput(),
+		ComponentType:  report.LeafNodeType,
+		CodeLocation:   report.LeafNodeLocation,
+		State:          report.State,
+		RunTime:        report.RunTime,
+		Failure:        deprecatedSpecFailureFromFailure(report.Failure),
+		CapturedOutput: report.CombinedOutput(),
 	}
 }
 
@@ -156,17 +156,17 @@ type DeprecatedSpecSummary struct {
 	SuiteID        string
 }
 
-func DeprecatedSpecSummaryFromSummary(summary Summary) *DeprecatedSpecSummary {
+func DeprecatedSpecSummaryFromSpecReport(report SpecReport) *DeprecatedSpecSummary {
 	return &DeprecatedSpecSummary{
-		ComponentTexts:         summary.NodeTexts,
-		ComponentCodeLocations: summary.NodeLocations,
-		State:                  summary.State,
-		RunTime:                summary.RunTime,
-		Failure:                deprecatedSpecFailureFromFailure(summary.Failure),
+		ComponentTexts:         report.NodeTexts,
+		ComponentCodeLocations: report.NodeLocations,
+		State:                  report.State,
+		RunTime:                report.RunTime,
+		Failure:                deprecatedSpecFailureFromFailure(report.Failure),
 		IsMeasurement:          false,
 		NumberOfSamples:        0,
 		Measurements:           map[string]*DeprecatedSpecMeasurement{},
-		CapturedOutput:         summary.CombinedOutput(),
+		CapturedOutput:         report.CombinedOutput(),
 	}
 }
 

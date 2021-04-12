@@ -48,8 +48,8 @@ func (summary SuiteSummary) Add(other SuiteSummary) SuiteSummary {
 	return out
 }
 
-// Summary captures information about a Ginkgo spec.
-type Summary struct {
+// SpecReport captures information about a Ginkgo spec.
+type SpecReport struct {
 	// NodeTexts is a slice containing the text strings of
 	// all Describe/Context/When containers in this test's hierarchy.
 	// The last element in NodeTexts is the string of the It itself.
@@ -84,61 +84,61 @@ type Summary struct {
 	CapturedGinkgoWriterOutput string
 
 	// CapturedStdOutErr contains text printed to stdout/stderr (when running in parallel)
-	// This is always empty when running in series or calling CurrentSpec()
+	// This is always empty when running in series or calling CurrentSpecReport()
 	// It is used internally by Ginkgo's reporter
 	CapturedStdOutErr string
 }
 
 // CombinedOutput returns a single string representation of both CapturedStdOutErr and CapturedGinkgoWriterOutput
-// Note that both are empty when using CurrentSpec() so CurrentSpec().CombinedOutput() will always be empty.
+// Note that both are empty when using CurrentSpecReport() so CurrentSpecReport().CombinedOutput() will always be empty.
 // CombinedOutput() is used internally by Ginkgo's reporter.
-func (summary Summary) CombinedOutput() string {
-	if summary.CapturedStdOutErr == "" {
-		return summary.CapturedGinkgoWriterOutput
+func (report SpecReport) CombinedOutput() string {
+	if report.CapturedStdOutErr == "" {
+		return report.CapturedGinkgoWriterOutput
 	}
-	if summary.CapturedGinkgoWriterOutput == "" {
-		return summary.CapturedStdOutErr
+	if report.CapturedGinkgoWriterOutput == "" {
+		return report.CapturedStdOutErr
 	}
-	return summary.CapturedStdOutErr + "\n" + summary.CapturedGinkgoWriterOutput
+	return report.CapturedStdOutErr + "\n" + report.CapturedGinkgoWriterOutput
 }
 
-//Failed returns true if summary.State is one of the SpecStateFailureStates
+//Failed returns true if report.State is one of the SpecStateFailureStates
 // (SpecStateFAiled, SpecStatePanicked, SpecStateinterrupted)
-func (summary Summary) Failed() bool {
-	return summary.State.Is(SpecStateFailureStates...)
+func (report SpecReport) Failed() bool {
+	return report.State.Is(SpecStateFailureStates...)
 }
 
-//FullText returns a concatenation of all the summary.NodeTexts
-func (summary Summary) FullText() string {
-	return strings.Join(summary.NodeTexts, " ")
+//FullText returns a concatenation of all the report.NodeTexts
+func (report SpecReport) FullText() string {
+	return strings.Join(report.NodeTexts, " ")
 }
 
 //SpecText returns the text of the spec node (i.e. the string passed into It())
-func (summary Summary) SpecText() string {
-	if len(summary.NodeTexts) == 0 {
+func (report SpecReport) SpecText() string {
+	if len(report.NodeTexts) == 0 {
 		return ""
 	}
-	return summary.NodeTexts[len(summary.NodeTexts)-1]
+	return report.NodeTexts[len(report.NodeTexts)-1]
 }
 
 //FileName() returns the name of the file containing the spec
-func (summary Summary) FileName() string {
-	return summary.LeafNodeLocation.FileName
+func (report SpecReport) FileName() string {
+	return report.LeafNodeLocation.FileName
 }
 
 //LineNumber() returns the line number of the leaf node
-func (summary Summary) LineNumber() int {
-	return summary.LeafNodeLocation.LineNumber
+func (report SpecReport) LineNumber() int {
+	return report.LeafNodeLocation.LineNumber
 }
 
 //FailureMessage() returns the failure message (or empty string if the test hasn't failed)
-func (summary Summary) FailureMessage() string {
-	return summary.Failure.Message
+func (report SpecReport) FailureMessage() string {
+	return report.Failure.Message
 }
 
 //FailureLocation() returns the location of the failure (or an empty CodeLocation if the test hasn't failed)
-func (summary Summary) FailureLocation() CodeLocation {
-	return summary.Failure.Location
+func (report SpecReport) FailureLocation() CodeLocation {
+	return report.Failure.Location
 }
 
 // Failure captures failure information for an individual test

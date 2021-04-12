@@ -37,17 +37,17 @@ var _ = Describe("Types", func() {
 		)
 	})
 
-	Describe("Summary Helper Functions", func() {
+	Describe("SpecReport Helper Functions", func() {
 		Describe("CombinedOutput", func() {
 			Context("with no GinkgoWriter or StdOutErr output", func() {
 				It("comes back empty", func() {
-					Ω(types.Summary{}.CombinedOutput()).Should(Equal(""))
+					Ω(types.SpecReport{}.CombinedOutput()).Should(Equal(""))
 				})
 			})
 
 			Context("wtih only StdOutErr output", func() {
 				It("returns that output", func() {
-					Ω(types.Summary{
+					Ω(types.SpecReport{
 						CapturedStdOutErr: "hello",
 					}.CombinedOutput()).Should(Equal("hello"))
 				})
@@ -55,7 +55,7 @@ var _ = Describe("Types", func() {
 
 			Context("wtih only GinkgoWriter output", func() {
 				It("returns that output", func() {
-					Ω(types.Summary{
+					Ω(types.SpecReport{
 						CapturedGinkgoWriterOutput: "hello",
 					}.CombinedOutput()).Should(Equal("hello"))
 				})
@@ -63,7 +63,7 @@ var _ = Describe("Types", func() {
 
 			Context("wtih both", func() {
 				It("returns both concatenated", func() {
-					Ω(types.Summary{
+					Ω(types.SpecReport{
 						CapturedGinkgoWriterOutput: "gw",
 						CapturedStdOutErr:          "std",
 					}.CombinedOutput()).Should(Equal("std\ngw"))
@@ -72,45 +72,45 @@ var _ = Describe("Types", func() {
 		})
 
 		It("can report on whether state is a failed state", func() {
-			Ω(types.Summary{State: types.SpecStatePending}.Failed()).Should(BeFalse())
-			Ω(types.Summary{State: types.SpecStateSkipped}.Failed()).Should(BeFalse())
-			Ω(types.Summary{State: types.SpecStatePassed}.Failed()).Should(BeFalse())
-			Ω(types.Summary{State: types.SpecStateFailed}.Failed()).Should(BeTrue())
-			Ω(types.Summary{State: types.SpecStatePanicked}.Failed()).Should(BeTrue())
-			Ω(types.Summary{State: types.SpecStateInterrupted}.Failed()).Should(BeTrue())
+			Ω(types.SpecReport{State: types.SpecStatePending}.Failed()).Should(BeFalse())
+			Ω(types.SpecReport{State: types.SpecStateSkipped}.Failed()).Should(BeFalse())
+			Ω(types.SpecReport{State: types.SpecStatePassed}.Failed()).Should(BeFalse())
+			Ω(types.SpecReport{State: types.SpecStateFailed}.Failed()).Should(BeTrue())
+			Ω(types.SpecReport{State: types.SpecStatePanicked}.Failed()).Should(BeTrue())
+			Ω(types.SpecReport{State: types.SpecStateInterrupted}.Failed()).Should(BeTrue())
 		})
 
 		It("can return a concatenated set of texts", func() {
-			Ω(CurrentSpec().FullText()).Should(Equal("Types Summary Helper Functions can return a concatenated set of texts"))
+			Ω(CurrentSpecReport().FullText()).Should(Equal("Types SpecReport Helper Functions can return a concatenated set of texts"))
 		})
 
 		It("can return the text of the Spec itself", func() {
-			Ω(CurrentSpec().SpecText()).Should(Equal("can return the text of the Spec itself"))
+			Ω(CurrentSpecReport().SpecText()).Should(Equal("can return the text of the Spec itself"))
 		})
 
 		It("can return the name of the file it's spec is in", func() {
 			cl := types.NewCodeLocation(0)
-			Ω(CurrentSpec().FileName()).Should(Equal(cl.FileName))
+			Ω(CurrentSpecReport().FileName()).Should(Equal(cl.FileName))
 		})
 
 		It("can return the linenumber of the file it's spec is in", func() {
 			cl := types.NewCodeLocation(0)
-			Ω(CurrentSpec().LineNumber()).Should(Equal(cl.LineNumber - 1))
+			Ω(CurrentSpecReport().LineNumber()).Should(Equal(cl.LineNumber - 1))
 		})
 
 		It("can return it's failure's message", func() {
-			summary := types.Summary{
+			report := types.SpecReport{
 				Failure: types.Failure{Message: "why this failed"},
 			}
-			Ω(summary.FailureMessage()).Should(Equal("why this failed"))
+			Ω(report.FailureMessage()).Should(Equal("why this failed"))
 		})
 
 		It("can return it's failure's code location", func() {
 			cl := types.NewCodeLocation(0)
-			summary := types.Summary{
+			report := types.SpecReport{
 				Failure: types.Failure{Location: cl},
 			}
-			Ω(summary.FailureLocation()).Should(Equal(cl))
+			Ω(report.FailureLocation()).Should(Equal(cl))
 		})
 	})
 })

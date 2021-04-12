@@ -8,13 +8,13 @@ import (
 	. "github.com/onsi/gomega"
 )
 
-var _ = Describe("CurrentSpec", func() {
-	var specs map[string]types.Summary
+var _ = Describe("CurrentSpecReport", func() {
+	var specs map[string]types.SpecReport
 	BeforeEach(func() {
-		specs = map[string]types.Summary{}
-		logCurrentSpec := func(key string, andRun ...func()) func() {
+		specs = map[string]types.SpecReport{}
+		logCurrentSpecReport := func(key string, andRun ...func()) func() {
 			return func() {
-				specs[key] = CurrentSpec()
+				specs[key] = CurrentSpecReport()
 				if len(andRun) > 0 {
 					andRun[0]()
 				}
@@ -22,26 +22,26 @@ var _ = Describe("CurrentSpec", func() {
 		}
 
 		RunFixture("current test description", func() {
-			BeforeSuite(logCurrentSpec("before-suite"))
+			BeforeSuite(logCurrentSpecReport("before-suite"))
 			Context("a passing test", func() {
-				BeforeEach(logCurrentSpec("bef-A", func() {
+				BeforeEach(logCurrentSpecReport("bef-A", func() {
 					writer.Println("hello bef-A")
 				}))
-				It("A", logCurrentSpec("it-A", func() {
+				It("A", logCurrentSpecReport("it-A", func() {
 					writer.Println("hello it-A")
 					time.Sleep(20 * time.Millisecond)
 				}))
-				AfterEach(logCurrentSpec("aft-A"))
+				AfterEach(logCurrentSpecReport("aft-A"))
 			})
 			Context("a failing test", func() {
-				BeforeEach(logCurrentSpec("bef-B"))
-				It("B", logCurrentSpec("it-B", func() {
+				BeforeEach(logCurrentSpecReport("bef-B"))
+				It("B", logCurrentSpecReport("it-B", func() {
 					writer.Println("hello it-B")
 					F("failed")
 				}))
-				AfterEach(logCurrentSpec("aft-B"))
+				AfterEach(logCurrentSpecReport("aft-B"))
 			})
-			AfterSuite(logCurrentSpec("after-suite"))
+			AfterSuite(logCurrentSpecReport("after-suite"))
 		})
 	})
 
