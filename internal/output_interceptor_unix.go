@@ -1,10 +1,10 @@
 //go:build freebsd || openbsd || netbsd || dragonfly || darwin || linux || solaris
 // +build freebsd openbsd netbsd dragonfly darwin linux solaris
 
-package parallel_support
+package internal
 
 import (
-	"errors"
+	"io/ioutil"
 	"os"
 
 	"golang.org/x/sys/unix"
@@ -23,17 +23,17 @@ type outputInterceptor struct {
 	stderrClone int
 }
 
-func (interceptor *outputInterceptor) StartInterceptingOutput() error {
+func (interceptor *outputInterceptor) StartInterceptingOutput() {
 	if interceptor.intercepting {
-		return errors.New("Already intercepting output!")
+		return
 	}
 	interceptor.intercepting = true
 
 	var err error
 
-	interceptor.redirectFile, err = os.CreateTemp("", "ginkgo-output")
+	interceptor.redirectFile, err = ioutil.TempFile("", "ginkgo-output")
 	if err != nil {
-		return err
+		return
 	}
 
 	interceptor.stdoutClone, _ = unix.Dup(1)
@@ -44,16 +44,19 @@ func (interceptor *outputInterceptor) StartInterceptingOutput() error {
 	unix.Dup2(int(interceptor.redirectFile.Fd()), 1)
 	unix.Dup2(int(interceptor.redirectFile.Fd()), 2)
 
-	return nil
+	return
 }
 
-func (interceptor *outputInterceptor) StopInterceptingAndReturnOutput() (string, error) {
+func (interceptor *outputInterceptor) StopInterceptingAndReturnOutput() string {
 	if !interceptor.intercepting {
-		return "", errors.New("Not intercepting output!")
+		return ""
 	}
 
 	interceptor.redirectFile.Close()
-	output, err := os.ReadFile(interceptor.redirectFile.Name())
+	output, err := ioutil.ReadFile(interceptor.redirectFile.Name())
+	if err != nil {
+		return ""
+	}
 	os.Remove(interceptor.redirectFile.Name())
 
 	unix.Dup2(interceptor.stdoutClone, 1)
@@ -64,5 +67,5 @@ func (interceptor *outputInterceptor) StopInterceptingAndReturnOutput() (string,
 
 	interceptor.intercepting = false
 
-	return string(output), err
+	return string(output)
 }
