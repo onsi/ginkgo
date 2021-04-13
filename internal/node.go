@@ -32,6 +32,8 @@ type Node struct {
 
 	MarkedFocus   bool
 	MarkedPending bool
+
+	ReportAfterEachBody func(types.SpecReport)
 }
 
 func NewNode(nodeType types.NodeType, text string, body func(), codeLocation types.CodeLocation, markedFocus bool, markedPending bool) Node {
@@ -44,6 +46,16 @@ func NewNode(nodeType types.NodeType, text string, body func(), codeLocation typ
 		MarkedFocus:   markedFocus,
 		MarkedPending: markedPending,
 		NestingLevel:  -1,
+	}
+}
+
+func NewReportAfterEachNode(body func(types.SpecReport), codeLocation types.CodeLocation) Node {
+	return Node{
+		ID:                  UniqueNodeID(),
+		NodeType:            types.NodeTypeReportAfterEach,
+		ReportAfterEachBody: body,
+		CodeLocation:        codeLocation,
+		NestingLevel:        -1,
 	}
 }
 
