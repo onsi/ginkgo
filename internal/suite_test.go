@@ -31,7 +31,7 @@ var _ = Describe("Suite", func() {
 		failer = internal.NewFailer()
 		reporter = &FakeReporter{}
 		writer = internal.NewWriter(ioutil.Discard)
-		outputInterceptor = &FakeOutputInterceptor{}
+		outputInterceptor = NewFakeOutputInterceptor()
 		interruptHandler = internal.NewInterruptHandler()
 		conf = config.GinkgoConfigType{
 			ParallelTotal: 1,

@@ -20,7 +20,7 @@ var _ = Describe("Types", func() {
 			})
 		})
 
-		DescribeTable("String and AsComponentType", func(nodeType types.NodeType, expectedString string) {
+		DescribeTable("String", func(nodeType types.NodeType, expectedString string) {
 			Ω(nodeType.String()).Should(Equal(expectedString))
 		},
 			Entry("Container", types.NodeTypeContainer, "Container"),
@@ -34,6 +34,19 @@ var _ = Describe("Types", func() {
 			Entry("AfterSuite", types.NodeTypeAfterSuite, "AfterSuite"),
 			Entry("SynchronizedAfterSuite", types.NodeTypeSynchronizedAfterSuite, "SynchronizedAfterSuite"),
 			Entry("Invalid", types.NodeTypeInvalid, "INVALID NODE TYPE"),
+		)
+	})
+
+	Describe("SpecState", func() {
+		DescribeTable("String", func(specState types.SpecState, expectedString string) {
+			Ω(specState.String()).Should(Equal(expectedString))
+		},
+			Entry("Pending", types.SpecStatePending, "pending"),
+			Entry("Skipped", types.SpecStateSkipped, "skipped"),
+			Entry("Passed", types.SpecStatePassed, "passed"),
+			Entry("Failed", types.SpecStateFailed, "failed"),
+			Entry("Panicked", types.SpecStatePanicked, "panicked"),
+			Entry("Interrupted", types.SpecStateInterrupted, "interrupted"),
 		)
 	})
 

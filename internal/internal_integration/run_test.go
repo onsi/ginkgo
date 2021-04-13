@@ -13,14 +13,15 @@ import (
 
 var _ = Describe("Running Tests in Series - the happy path", func() {
 	BeforeEach(func() {
-		outputInterceptor.InterceptedOutput = "output-interceptor-content"
 		success, hPF := RunFixture("happy-path run suite", func() {
 			BeforeSuite(rt.T("before-suite", func() {
 				time.Sleep(10 * time.Millisecond)
 				writer.Write([]byte("before-suite\n"))
+				outputInterceptor.InterceptedOutput = "output-intercepted-in-before-suite"
 			}))
 			AfterSuite(rt.T("after-suite", func() {
 				time.Sleep(20 * time.Millisecond)
+				outputInterceptor.InterceptedOutput = "output-intercepted-in-after-suite"
 			}))
 			Describe("top-level-container", func() {
 				JustBeforeEach(rt.T("just-before-each"))
@@ -44,6 +45,7 @@ var _ = Describe("Running Tests in Series - the happy path", func() {
 					JustAfterEach(rt.T("nested-just-after-each-2"))
 					It("C", rt.T("C", func() {
 						writer.Write([]byte("C\n"))
+						outputInterceptor.InterceptedOutput = "output-intercepted-in-C"
 					}))
 					It("D", rt.T("D"))
 				})
@@ -100,7 +102,7 @@ var _ = Describe("Running Tests in Series - the happy path", func() {
 				"RunTime":                    BeNumerically(">=", 10*time.Millisecond),
 				"Failure":                    BeZero(),
 				"CapturedGinkgoWriterOutput": Equal("before-suite\n"),
-				"CapturedStdOutErr":          Equal("output-interceptor-content"),
+				"CapturedStdOutErr":          Equal("output-intercepted-in-before-suite"),
 			}))
 
 			Ω(reporter.Did.FindByLeafNodeType(types.NodeTypeAfterSuite)).Should(MatchFields(IgnoreExtras, Fields{
@@ -109,7 +111,7 @@ var _ = Describe("Running Tests in Series - the happy path", func() {
 				"RunTime":                    BeNumerically(">=", 20*time.Millisecond),
 				"Failure":                    BeZero(),
 				"CapturedGinkgoWriterOutput": BeZero(),
-				"CapturedStdOutErr":          Equal("output-interceptor-content"),
+				"CapturedStdOutErr":          Equal("output-intercepted-in-after-suite"),
 			}))
 		})
 
@@ -129,7 +131,7 @@ var _ = Describe("Running Tests in Series - the happy path", func() {
 				"Failure":                    BeZero(),
 				"NumAttempts":                Equal(1),
 				"CapturedGinkgoWriterOutput": Equal("before-each\nC\n"),
-				"CapturedStdOutErr":          Equal("output-interceptor-content"),
+				"CapturedStdOutErr":          Equal("output-intercepted-in-C"),
 			}))
 		})
 
