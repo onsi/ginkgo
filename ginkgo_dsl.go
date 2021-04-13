@@ -136,10 +136,12 @@ type GinkgoTInterface interface {
 	TempDir() string
 }
 
+type SpecReport = types.SpecReport
+
 // CurrentSpecReport returns information about the current running test.
 // The returned object is a types.SpecReport which includes helper methods
 // to make extracting information about the test easier.
-func CurrentSpecReport() types.SpecReport {
+func CurrentSpecReport() SpecReport {
 	return global.Suite.CurrentSpecReport()
 }
 
@@ -516,6 +518,13 @@ func JustAfterEach(body interface{}, _ ...interface{}) bool {
 func AfterEach(body interface{}, _ ...interface{}) bool {
 	cl := types.NewCodeLocation(1)
 	return pushNode(internal.NewNode(types.NodeTypeAfterEach, "", validateBodyFunc(body, cl), cl, false, false))
+}
+
+//ReportAfterEach nodes are run for each test, even if the test is skipped or pending.  ReportAfterEach nodes take a function that
+//receives a types.SpecReport.  They are called after the test has completed and are passed in the final report for the test.
+func ReportAfterEach(body func(SpecReport)) bool {
+	cl := types.NewCodeLocation(1)
+	return pushNode(internal.NewReportAfterEachNode(body, cl))
 }
 
 func exitIfErr(err error) {

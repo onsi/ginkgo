@@ -182,6 +182,25 @@ const (
 	SpecStateInterrupted
 )
 
+func (s SpecState) String() string {
+	switch s {
+	case SpecStatePending:
+		return "pending"
+	case SpecStateSkipped:
+		return "skipped"
+	case SpecStatePassed:
+		return "passed"
+	case SpecStateFailed:
+		return "failed"
+	case SpecStatePanicked:
+		return "panicked"
+	case SpecStateInterrupted:
+		return "interrupted"
+	}
+
+	return "INVALID SPEC STATE"
+}
+
 var SpecStateFailureStates = []SpecState{SpecStateFailed, SpecStatePanicked, SpecStateInterrupted}
 
 func (state SpecState) Is(states ...SpecState) bool {
@@ -211,6 +230,8 @@ const (
 	NodeTypeSynchronizedBeforeSuite
 	NodeTypeAfterSuite
 	NodeTypeSynchronizedAfterSuite
+
+	NodeTypeReportAfterEach
 )
 
 var NodeTypesForContainerAndIt = []NodeType{NodeTypeContainer, NodeTypeIt}
@@ -248,6 +269,8 @@ func (nt NodeType) String() string {
 		return "AfterSuite"
 	case NodeTypeSynchronizedAfterSuite:
 		return "SynchronizedAfterSuite"
+	case NodeTypeReportAfterEach:
+		return "ReportAfterEach"
 	}
 
 	return "INVALID NODE TYPE"

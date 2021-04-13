@@ -1,6 +1,7 @@
 package internal
 
 import (
+	"fmt"
 	"os"
 	"os/signal"
 	"runtime"
@@ -17,12 +18,15 @@ type InterruptStatus struct {
 
 type InterruptHandlerInterface interface {
 	Status() InterruptStatus
+	SetInterruptMessage(string)
+	ClearInterruptMessage()
 }
 
 type InterruptHandler struct {
-	c           chan interface{}
-	lock        *sync.Mutex
-	interrupted bool
+	c                chan interface{}
+	lock             *sync.Mutex
+	interrupted      bool
+	interruptMessage string
 }
 
 func NewInterruptHandler() *InterruptHandler {
@@ -42,6 +46,9 @@ func (handler *InterruptHandler) registerForInterrupts() {
 		for {
 			<-c
 			handler.lock.Lock()
+			if handler.interruptMessage != "" {
+				fmt.Println(handler.interruptMessage)
+			}
 			handler.interrupted = true
 			close(handler.c)
 			handler.c = make(chan interface{})
@@ -58,6 +65,20 @@ func (handler *InterruptHandler) Status() InterruptStatus {
 		Interrupted: handler.interrupted,
 		Channel:     handler.c,
 	}
+}
+
+func (handler *InterruptHandler) SetInterruptMessage(message string) {
+	handler.lock.Lock()
+	defer handler.lock.Unlock()
+
+	handler.interruptMessage = message
+}
+
+func (handler *InterruptHandler) ClearInterruptMessage() {
+	handler.lock.Lock()
+	defer handler.lock.Unlock()
+
+	handler.interruptMessage = ""
 }
 
 func interruptMessageWithStackTraces() string {
