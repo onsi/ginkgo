@@ -3,7 +3,6 @@ package internal_integration_test
 import (
 	"io/ioutil"
 	"reflect"
-	"sync"
 	"testing"
 
 	. "github.com/onsi/ginkgo"
@@ -39,7 +38,7 @@ var _ = BeforeEach(func() {
 	rt = NewRunTracker()
 	cl = types.NewCodeLocation(0)
 	interruptHandler = NewFakeInterruptHandler()
-	outputInterceptor = &FakeOutputInterceptor{}
+	outputInterceptor = NewFakeOutputInterceptor()
 
 	conf.ParallelTotal = 1
 	conf.ParallelNode = 1
@@ -79,50 +78,17 @@ func F(options ...interface{}) {
 	panic("panic to simulate how ginkgo's Fail works")
 }
 
-/* InterruptHandler */
-
-type FakeInterruptHandler struct {
-	triggerInterrupt chan bool
-
-	c           chan interface{}
-	lock        *sync.Mutex
-	interrupted bool
-}
-
-func NewFakeInterruptHandler() *FakeInterruptHandler {
-	handler := &FakeInterruptHandler{
-		triggerInterrupt: make(chan bool),
-		c:                make(chan interface{}),
-		lock:             &sync.Mutex{},
-		interrupted:      false,
-	}
-	handler.registerForInterrupts()
-	return handler
-}
-
-func (handler *FakeInterruptHandler) registerForInterrupts() {
-	go func() {
-		for {
-			<-handler.triggerInterrupt
-			handler.lock.Lock()
-			handler.interrupted = true
-			close(handler.c)
-			handler.c = make(chan interface{})
-			handler.lock.Unlock()
+func FixtureSkip(options ...interface{}) {
+	location := cl
+	message := "skip"
+	for _, option := range options {
+		if reflect.TypeOf(option).Kind() == reflect.String {
+			message = option.(string)
+		} else if reflect.TypeOf(option) == reflect.TypeOf(cl) {
+			location = option.(types.CodeLocation)
 		}
-	}()
-}
-
-func (handler *FakeInterruptHandler) Interrupt() {
-	handler.triggerInterrupt <- true
-}
-
-func (handler *FakeInterruptHandler) Status() internal.InterruptStatus {
-	handler.lock.Lock()
-	defer handler.lock.Unlock()
-
-	return internal.InterruptStatus{
-		Interrupted: handler.interrupted,
-		Channel:     handler.c,
 	}
+
+	failer.Skip(message, location)
+	panic("panic to simulate how ginkgo's Skip works")
 }

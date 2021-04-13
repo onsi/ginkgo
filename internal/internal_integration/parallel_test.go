@@ -17,7 +17,6 @@ var _ = Describe("Running tests in parallel", func() {
 	var conf2 config.GinkgoConfigType
 	var reporter2 *FakeReporter
 	var rt2 *RunTracker
-	var outputInterceptor2 *FakeOutputInterceptor
 
 	var fixture = func(rt *RunTracker) {
 		SynchronizedBeforeSuite(func() []byte {
@@ -98,9 +97,6 @@ var _ = Describe("Running tests in parallel", func() {
 		})
 
 		finished := make(chan bool)
-
-		outputInterceptor.InterceptedOutput = "intercepted-output-on-node-1"
-
 		//now launch suite 1...
 		go func() {
 			success, _ := suite1.Run("node 1", failer, reporter, writer, outputInterceptor, interruptHandler, conf)
@@ -110,10 +106,8 @@ var _ = Describe("Running tests in parallel", func() {
 
 		//and launch suite 2...
 		reporter2 = &FakeReporter{}
-		outputInterceptor2 = &FakeOutputInterceptor{}
-		outputInterceptor2.InterceptedOutput = "intercepted-output-on-node-2"
 		go func() {
-			success, _ := suite2.Run("node 2", internal.NewFailer(), reporter2, writer, outputInterceptor2, interruptHandler, conf2)
+			success, _ := suite2.Run("node 2", internal.NewFailer(), reporter2, writer, outputInterceptor, interruptHandler, conf2)
 			finished <- success
 			aliveState.Store(2, false)
 		}()
@@ -149,9 +143,6 @@ var _ = Describe("Running tests in parallel", func() {
 		Ω(reporter2.Did.Names()).ShouldNot(BeEmpty())
 		names := append(reporter.Did.Names(), reporter2.Did.Names()...)
 		Ω(names).Should(ConsistOf("A", "B", "C", "D", "E", "F"))
-
-		Ω(reporter.Did[0].CapturedStdOutErr).Should(Equal("intercepted-output-on-node-1"))
-		Ω(reporter2.Did[0].CapturedStdOutErr).Should(Equal("intercepted-output-on-node-2"))
 	})
 
 	It("reports the correct statistics", func() {
