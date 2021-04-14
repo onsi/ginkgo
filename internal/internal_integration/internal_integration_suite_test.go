@@ -10,7 +10,6 @@ import (
 	"github.com/onsi/ginkgo/types"
 	. "github.com/onsi/gomega"
 
-	"github.com/onsi/ginkgo/config"
 	"github.com/onsi/ginkgo/internal"
 	"github.com/onsi/ginkgo/internal/global"
 )
@@ -20,7 +19,7 @@ func TestSuiteTests(t *testing.T) {
 	RunSpecs(t, "Suite Integration Tests")
 }
 
-var conf config.GinkgoConfigType
+var conf types.SuiteConfig
 var failer *internal.Failer
 var writer *internal.Writer
 var reporter *FakeReporter
@@ -30,7 +29,7 @@ var interruptHandler *FakeInterruptHandler
 var outputInterceptor *FakeOutputInterceptor
 
 var _ = BeforeEach(func() {
-	conf = config.GinkgoConfigType{}
+	conf = types.SuiteConfig{}
 	failer = internal.NewFailer()
 	writer = internal.NewWriter(ioutil.Discard)
 	writer.SetMode(internal.WriterModeBufferOnly)

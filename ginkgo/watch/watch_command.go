@@ -5,20 +5,20 @@ import (
 	"regexp"
 	"time"
 
-	"github.com/onsi/ginkgo/config"
 	"github.com/onsi/ginkgo/formatter"
 	"github.com/onsi/ginkgo/ginkgo/command"
 	"github.com/onsi/ginkgo/ginkgo/internal"
 	"github.com/onsi/ginkgo/ginkgo/interrupthandler"
+	"github.com/onsi/ginkgo/types"
 )
 
 func BuildWatchCommand() command.Command {
-	var ginkgoConfig = config.NewDefaultGinkgoConfig()
-	var reporterConfig = config.NewDefaultReporterConfig()
-	var cliConfig = config.NewDefaultGinkgoCLIConfig()
-	var goFlagsConfig = config.NewDefaultGoFlagsConfig()
+	var ginkgoConfig = types.NewDefaultSuiteConfig()
+	var reporterConfig = types.NewDefaultReporterConfig()
+	var cliConfig = types.NewDefaultCLIConfig()
+	var goFlagsConfig = types.NewDefaultGoFlagsConfig()
 
-	flags, err := config.BuildWatchCommandFlagSet(&ginkgoConfig, &reporterConfig, &cliConfig, &goFlagsConfig)
+	flags, err := types.BuildWatchCommandFlagSet(&ginkgoConfig, &reporterConfig, &cliConfig, &goFlagsConfig)
 	if err != nil {
 		panic(err)
 	}
@@ -33,8 +33,8 @@ func BuildWatchCommand() command.Command {
 		DocLink:       "watching-for-changes",
 		Command: func(args []string, additionalArgs []string) {
 			var errors []error
-			cliConfig, goFlagsConfig, errors = config.VetAndInitializeCLIAndGoConfig(cliConfig, goFlagsConfig)
-			command.AbortIfErrors("Ginkgo detected configuraiotn issues:", errors)
+			cliConfig, goFlagsConfig, errors = types.VetAndInitializeCLIAndGoConfig(cliConfig, goFlagsConfig)
+			command.AbortIfErrors("Ginkgo detected configuration issues:", errors)
 
 			watcher := &SpecWatcher{
 				cliConfig:      cliConfig,
@@ -52,11 +52,11 @@ func BuildWatchCommand() command.Command {
 }
 
 type SpecWatcher struct {
-	ginkgoConfig   config.GinkgoConfigType
-	reporterConfig config.DefaultReporterConfigType
-	cliConfig      config.GinkgoCLIConfigType
-	goFlagsConfig  config.GoFlagsConfigType
-	flags          config.GinkgoFlagSet
+	ginkgoConfig   types.SuiteConfig
+	reporterConfig types.ReporterConfig
+	cliConfig      types.CLIConfig
+	goFlagsConfig  types.GoFlagsConfig
+	flags          types.GinkgoFlagSet
 
 	interruptHandler *interrupthandler.InterruptHandler
 }

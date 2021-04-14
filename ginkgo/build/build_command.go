@@ -3,16 +3,16 @@ package build
 import (
 	"fmt"
 
-	"github.com/onsi/ginkgo/config"
 	"github.com/onsi/ginkgo/ginkgo/command"
 	"github.com/onsi/ginkgo/ginkgo/internal"
+	"github.com/onsi/ginkgo/types"
 )
 
 func BuildBuildCommand() command.Command {
-	var cliConfig = config.NewDefaultGinkgoCLIConfig()
-	var goFlagsConfig = config.NewDefaultGoFlagsConfig()
+	var cliConfig = types.NewDefaultCLIConfig()
+	var goFlagsConfig = types.NewDefaultGoFlagsConfig()
 
-	flags, err := config.BuildBuildCommandFlagSet(&cliConfig, &goFlagsConfig)
+	flags, err := types.BuildBuildCommandFlagSet(&cliConfig, &goFlagsConfig)
 	if err != nil {
 		panic(err)
 	}
@@ -25,15 +25,15 @@ func BuildBuildCommand() command.Command {
 		DocLink:  "precompiling-tests",
 		Command: func(args []string, _ []string) {
 			var errors []error
-			cliConfig, goFlagsConfig, errors = config.VetAndInitializeCLIAndGoConfig(cliConfig, goFlagsConfig)
-			command.AbortIfErrors("Ginkgo detected configuraiotn issues:", errors)
+			cliConfig, goFlagsConfig, errors = types.VetAndInitializeCLIAndGoConfig(cliConfig, goFlagsConfig)
+			command.AbortIfErrors("Ginkgo detected configuration issues:", errors)
 
 			buildSpecs(args, cliConfig, goFlagsConfig)
 		},
 	}
 }
 
-func buildSpecs(args []string, cliConfig config.GinkgoCLIConfigType, goFlagsConfig config.GoFlagsConfigType) {
+func buildSpecs(args []string, cliConfig types.CLIConfig, goFlagsConfig types.GoFlagsConfig) {
 	suites, _ := internal.FindSuites(args, cliConfig, false)
 	if len(suites) == 0 {
 		command.AbortWith("Found no test suites")

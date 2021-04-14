@@ -13,13 +13,12 @@ import (
 	"runtime"
 	"strings"
 
-	"github.com/onsi/ginkgo/config"
 	"github.com/onsi/ginkgo/formatter"
 	"github.com/onsi/ginkgo/types"
 )
 
 type DefaultReporter struct {
-	conf             config.DefaultReporterConfigType
+	conf             types.ReporterConfig
 	hasFailOnPending bool
 	writer           io.Writer
 
@@ -35,14 +34,14 @@ type DefaultReporter struct {
 	formatter    formatter.Formatter
 }
 
-func NewDefaultReporterUnderTest(conf config.DefaultReporterConfigType, writer io.Writer) *DefaultReporter {
+func NewDefaultReporterUnderTest(conf types.ReporterConfig, writer io.Writer) *DefaultReporter {
 	reporter := NewDefaultReporter(conf, writer)
 	reporter.formatter = formatter.New(formatter.ColorModePassthrough)
 
 	return reporter
 }
 
-func NewDefaultReporter(conf config.DefaultReporterConfigType, writer io.Writer) *DefaultReporter {
+func NewDefaultReporter(conf types.ReporterConfig, writer io.Writer) *DefaultReporter {
 	reporter := &DefaultReporter{
 		conf:   conf,
 		writer: writer,
@@ -64,28 +63,28 @@ func NewDefaultReporter(conf config.DefaultReporterConfigType, writer io.Writer)
 
 /* The Reporter Interface */
 
-func (r *DefaultReporter) SpecSuiteWillBegin(config config.GinkgoConfigType, summary types.SuiteSummary) {
-	r.hasFailOnPending = config.FailOnPending
+func (r *DefaultReporter) SpecSuiteWillBegin(suiteConfig types.SuiteConfig, summary types.SuiteSummary) {
+	r.hasFailOnPending = suiteConfig.FailOnPending
 	if r.conf.Succinct {
-		r.emit(r.f("[%d] {{bold}}%s{{/}} ", config.RandomSeed, summary.SuiteDescription))
+		r.emit(r.f("[%d] {{bold}}%s{{/}} ", suiteConfig.RandomSeed, summary.SuiteDescription))
 		r.emit(r.f("- %d/%d specs ", summary.NumberOfSpecsThatWillBeRun, summary.NumberOfTotalSpecs))
-		if config.ParallelTotal > 1 {
-			r.emit(r.f("- %d nodes ", config.ParallelTotal))
+		if suiteConfig.ParallelTotal > 1 {
+			r.emit(r.f("- %d nodes ", suiteConfig.ParallelTotal))
 		}
 	} else {
 		banner := r.f("Running Suite: %s", summary.SuiteDescription)
 		r.emitBlock(banner)
 		r.emitBlock(strings.Repeat("=", len(banner)))
 
-		out := r.f("Random Seed: {{bold}}%d{{/}}", config.RandomSeed)
-		if config.RandomizeAllSpecs {
+		out := r.f("Random Seed: {{bold}}%d{{/}}", suiteConfig.RandomSeed)
+		if suiteConfig.RandomizeAllSpecs {
 			out += r.f(" - will randomize all specs")
 		}
 		r.emitBlock(out)
 		r.emit("\n")
 		r.emitBlock(r.f("Will run {{bold}}%d{{/}} of {{bold}}%d{{/}} specs", summary.NumberOfSpecsThatWillBeRun, summary.NumberOfTotalSpecs))
-		if config.ParallelTotal > 1 {
-			r.emitBlock(r.f("Running in parallel across {{bold}}%d{{/}} nodes", config.ParallelTotal))
+		if suiteConfig.ParallelTotal > 1 {
+			r.emitBlock(r.f("Running in parallel across {{bold}}%d{{/}} nodes", suiteConfig.ParallelTotal))
 		}
 	}
 }

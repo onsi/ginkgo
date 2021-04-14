@@ -5,18 +5,18 @@ import (
 	"fmt"
 	"net/http"
 
-	"github.com/onsi/ginkgo/config"
+	"github.com/onsi/ginkgo/types"
 )
 
 type Counter struct {
 	Index int `json:"index"`
 }
 
-func MakeNextIndexCounter(config config.GinkgoConfigType) func() (int, error) {
-	if config.ParallelTotal > 1 {
+func MakeNextIndexCounter(suiteConfig types.SuiteConfig) func() (int, error) {
+	if suiteConfig.ParallelTotal > 1 {
 		client := &http.Client{}
 		return func() (int, error) {
-			resp, err := client.Get(config.ParallelHost + "/counter")
+			resp, err := client.Get(suiteConfig.ParallelHost + "/counter")
 			if err != nil {
 				return -1, err
 			}

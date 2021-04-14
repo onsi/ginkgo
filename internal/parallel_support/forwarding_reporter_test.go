@@ -2,7 +2,6 @@ package parallel_support_test
 
 import (
 	. "github.com/onsi/ginkgo"
-	"github.com/onsi/ginkgo/config"
 	. "github.com/onsi/ginkgo/internal/parallel_support"
 	"github.com/onsi/ginkgo/types"
 	. "github.com/onsi/gomega"
@@ -17,7 +16,7 @@ var _ = Describe("ForwardingReporter", func() {
 
 	BeforeEach(func() {
 		server = ghttp.NewServer()
-		reporter = NewForwardingReporter(config.DefaultReporterConfigType{}, server.URL(), nil)
+		reporter = NewForwardingReporter(types.ReporterConfig{}, server.URL(), nil)
 	})
 
 	AfterEach(func() {
@@ -32,13 +31,13 @@ var _ = Describe("ForwardingReporter", func() {
 
 			server.AppendHandlers(ghttp.CombineHandlers(
 				ghttp.VerifyRequest("POST", "/SpecSuiteWillBegin"),
-				ghttp.VerifyJSONRepresenting(ConfigAndSummary{
-					Config:  config.GinkgoConfig,
-					Summary: suiteSummary,
+				ghttp.VerifyJSONRepresenting(SuiteConfigAndSummary{
+					SuiteConfig: types.SuiteConfig{RandomSeed: 17},
+					Summary:     suiteSummary,
 				}),
 			))
 
-			reporter.SpecSuiteWillBegin(config.GinkgoConfig, suiteSummary)
+			reporter.SpecSuiteWillBegin(types.SuiteConfig{RandomSeed: 17}, suiteSummary)
 		})
 
 		It("should POST the SuiteSummary and Ginkgo Config to the Ginkgo server", func() {
