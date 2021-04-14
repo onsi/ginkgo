@@ -10,11 +10,6 @@ import (
 	"github.com/onsi/ginkgo/types"
 )
 
-type SuiteConfigAndSummary struct {
-	SuiteConfig types.SuiteConfig  `json:"suite-config"`
-	Summary     types.SuiteSummary `json:"suite-summary"`
-}
-
 /*
 The ForwardingReporter is a Ginkgo reporter that forwards information to
 a Ginkgo remote server.
@@ -44,8 +39,8 @@ func (reporter *ForwardingReporter) post(path string, data interface{}) {
 	http.Post(reporter.serverHost+path, "application/json", buffer)
 }
 
-func (reporter *ForwardingReporter) SpecSuiteWillBegin(suiteConfig types.SuiteConfig, summary types.SuiteSummary) {
-	reporter.post("/SpecSuiteWillBegin", SuiteConfigAndSummary{SuiteConfig: suiteConfig, Summary: summary})
+func (reporter *ForwardingReporter) SpecSuiteWillBegin(report types.Report) {
+	reporter.post("/SpecSuiteWillBegin", report)
 }
 
 func (reporter *ForwardingReporter) WillRun(report types.SpecReport) {
@@ -55,6 +50,6 @@ func (reporter *ForwardingReporter) DidRun(report types.SpecReport) {
 	reporter.post("/DidRun", report)
 }
 
-func (reporter *ForwardingReporter) SpecSuiteDidEnd(summary types.SuiteSummary) {
-	reporter.post("/SpecSuiteDidEnd", summary)
+func (reporter *ForwardingReporter) SpecSuiteDidEnd(report types.Report) {
+	reporter.post("/SpecSuiteDidEnd", report)
 }

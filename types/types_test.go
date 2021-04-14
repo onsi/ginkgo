@@ -1,6 +1,8 @@
 package types_test
 
 import (
+	"time"
+
 	. "github.com/onsi/ginkgo"
 	. "github.com/onsi/gomega"
 
@@ -9,6 +11,51 @@ import (
 )
 
 var _ = Describe("Types", func() {
+	Describe("Report", func() {
+		Describe("Add", func() {
+			It("concatenates spec reports, combines success, and computes a new RunTime", func() {
+				t := time.Now()
+				reportA := types.Report{
+					SuitePath:      "foo",
+					SuiteSucceeded: true,
+					StartTime:      t.Add(-time.Minute),
+					EndTime:        t.Add(2 * time.Minute),
+					SpecReports: types.SpecReports{
+						types.SpecReport{NumAttempts: 3},
+						types.SpecReport{NumAttempts: 4},
+					},
+				}
+
+				reportB := types.Report{
+					SuitePath:      "bar",
+					SuiteSucceeded: false,
+					StartTime:      t.Add(-2 * time.Minute),
+					EndTime:        t.Add(time.Minute),
+					SpecReports: types.SpecReports{
+						types.SpecReport{NumAttempts: 5},
+						types.SpecReport{NumAttempts: 6},
+					},
+				}
+
+				composite := reportA.Add(reportB)
+				Ω(composite).Should(Equal(types.Report{
+					SuitePath:      "foo",
+					SuiteSucceeded: false,
+					StartTime:      t.Add(-2 * time.Minute),
+					EndTime:        t.Add(2 * time.Minute),
+					RunTime:        4 * time.Minute,
+					SpecReports: types.SpecReports{
+						types.SpecReport{NumAttempts: 3},
+						types.SpecReport{NumAttempts: 4},
+						types.SpecReport{NumAttempts: 5},
+						types.SpecReport{NumAttempts: 6},
+					},
+				}))
+
+			})
+		})
+	})
+
 	Describe("NodeType", func() {
 		Describe("Is", func() {
 			It("returns true when the NodeType is in the passed-in list", func() {
@@ -124,6 +171,72 @@ var _ = Describe("Types", func() {
 				Failure: types.Failure{Location: cl},
 			}
 			Ω(report.FailureLocation()).Should(Equal(cl))
+		})
+	})
+
+	Describe("SpecReports", func() {
+		Describe("WithLeafNodeType", func() {
+			It("returns reports with the matching LeafNodeTypes", func() {
+				reports := types.SpecReports{
+					{LeafNodeType: types.NodeTypeIt, NumAttempts: 2},
+					{LeafNodeType: types.NodeTypeIt, NumAttempts: 3},
+					{LeafNodeType: types.NodeTypeBeforeSuite, NumAttempts: 4},
+					{LeafNodeType: types.NodeTypeAfterSuite, NumAttempts: 5},
+					{LeafNodeType: types.NodeTypeSynchronizedAfterSuite, NumAttempts: 6},
+				}
+
+				Ω(reports.WithLeafNodeType(types.NodeTypeIt, types.NodeTypeAfterSuite)).Should(Equal(types.SpecReports{
+					{LeafNodeType: types.NodeTypeIt, NumAttempts: 2},
+					{LeafNodeType: types.NodeTypeIt, NumAttempts: 3},
+					{LeafNodeType: types.NodeTypeAfterSuite, NumAttempts: 5},
+				}))
+			})
+		})
+
+		Describe("WithState", func() {
+			It("returns reports with the matching SpecStates", func() {
+				reports := types.SpecReports{
+					{State: types.SpecStatePassed, NumAttempts: 2},
+					{State: types.SpecStatePassed, NumAttempts: 3},
+					{State: types.SpecStateFailed, NumAttempts: 4},
+					{State: types.SpecStatePending, NumAttempts: 5},
+					{State: types.SpecStateSkipped, NumAttempts: 6},
+				}
+
+				Ω(reports.WithState(types.SpecStatePassed, types.SpecStatePending)).Should(Equal(types.SpecReports{
+					{State: types.SpecStatePassed, NumAttempts: 2},
+					{State: types.SpecStatePassed, NumAttempts: 3},
+					{State: types.SpecStatePending, NumAttempts: 5},
+				}))
+			})
+		})
+
+		Describe("CountWithState", func() {
+			It("returns the number with the matching SpecStates", func() {
+				reports := types.SpecReports{
+					{State: types.SpecStatePassed, NumAttempts: 2},
+					{State: types.SpecStatePassed, NumAttempts: 3},
+					{State: types.SpecStateFailed, NumAttempts: 4},
+					{State: types.SpecStatePending, NumAttempts: 5},
+					{State: types.SpecStateSkipped, NumAttempts: 6},
+				}
+
+				Ω(reports.CountWithState(types.SpecStatePassed, types.SpecStatePending)).Should(Equal(3))
+			})
+		})
+
+		Describe("CountOfFlakedSpecs", func() {
+			It("returns the number of passing specs with NumAttempts > 1", func() {
+				reports := types.SpecReports{
+					{State: types.SpecStatePassed, NumAttempts: 2},
+					{State: types.SpecStatePassed, NumAttempts: 2},
+					{State: types.SpecStatePassed, NumAttempts: 1},
+					{State: types.SpecStatePassed, NumAttempts: 1},
+					{State: types.SpecStateFailed, NumAttempts: 2},
+				}
+
+				Ω(reports.CountOfFlakedSpecs()).Should(Equal(2))
+			})
 		})
 	})
 })

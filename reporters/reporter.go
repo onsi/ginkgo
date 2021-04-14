@@ -6,10 +6,10 @@ import (
 )
 
 type Reporter interface {
-	SpecSuiteWillBegin(suiteConfig types.SuiteConfig, summary types.SuiteSummary)
+	SpecSuiteWillBegin(report types.Report)
 	WillRun(report types.SpecReport)
 	DidRun(report types.SpecReport)
-	SpecSuiteDidEnd(summary types.SuiteSummary)
+	SpecSuiteDidEnd(report types.Report)
 }
 
 // TODO: FIX

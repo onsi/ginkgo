@@ -73,26 +73,24 @@ var _ = Describe("Running Tests in Series - the happy path", func() {
 	Describe("reporting", func() {
 		It("reports the suite summary correctly when starting", func() {
 			Ω(reporter.Begin).Should(MatchFields(IgnoreExtras, Fields{
-				"SuiteDescription":           Equal("happy-path run suite"),
-				"SuiteSucceeded":             BeFalse(),
-				"NumberOfTotalSpecs":         Equal(4),
-				"NumberOfSpecsThatWillBeRun": Equal(4),
+				"SuitePath":        Equal("/path/to/suite"),
+				"SuiteDescription": Equal("happy-path run suite"),
+				"SuiteSucceeded":   BeFalse(),
 			}))
+			Ω(reporter.Begin.PreRunStats.TotalSpecs).Should(Equal(4))
+			Ω(reporter.Begin.PreRunStats.SpecsThatWillRun).Should(Equal(4))
 		})
 
 		It("reports the suite summary correctly when complete", func() {
 			Ω(reporter.End).Should(MatchFields(IgnoreExtras, Fields{
-				"SuiteDescription":           Equal("happy-path run suite"),
-				"SuiteSucceeded":             BeTrue(),
-				"NumberOfTotalSpecs":         Equal(4),
-				"NumberOfSpecsThatWillBeRun": Equal(4),
-				"NumberOfSkippedSpecs":       Equal(0),
-				"NumberOfPassedSpecs":        Equal(4),
-				"NumberOfFailedSpecs":        Equal(0),
-				"NumberOfPendingSpecs":       Equal(0),
-				"NumberOfFlakedSpecs":        Equal(0),
-				"RunTime":                    BeNumerically(">=", time.Millisecond*(10+20+10+20)),
+				"SuitePath":        Equal("/path/to/suite"),
+				"SuiteDescription": Equal("happy-path run suite"),
+				"SuiteSucceeded":   BeTrue(),
+				"RunTime":          BeNumerically(">=", time.Millisecond*(10+20+10+20)),
 			}))
+			Ω(reporter.End.PreRunStats.TotalSpecs).Should(Equal(4))
+			Ω(reporter.End.PreRunStats.SpecsThatWillRun).Should(Equal(4))
+			Ω(reporter.End.SpecReports.WithLeafNodeType(types.NodeTypeIt).CountWithState(types.SpecStatePassed)).Should(Equal(4))
 		})
 
 		It("reports the correct suite node summaries", func() {
@@ -103,7 +101,11 @@ var _ = Describe("Running Tests in Series - the happy path", func() {
 				"Failure":                    BeZero(),
 				"CapturedGinkgoWriterOutput": Equal("before-suite\n"),
 				"CapturedStdOutErr":          Equal("output-intercepted-in-before-suite"),
+				"GinkgoParallelNode":         Equal(1),
 			}))
+
+			beforeSuiteReport := reporter.Did.FindByLeafNodeType(types.NodeTypeBeforeSuite)
+			Ω(beforeSuiteReport.EndTime.Sub(beforeSuiteReport.StartTime)).Should(BeNumerically("~", beforeSuiteReport.RunTime))
 
 			Ω(reporter.Did.FindByLeafNodeType(types.NodeTypeAfterSuite)).Should(MatchFields(IgnoreExtras, Fields{
 				"LeafNodeType":               Equal(types.NodeTypeAfterSuite),
@@ -112,7 +114,11 @@ var _ = Describe("Running Tests in Series - the happy path", func() {
 				"Failure":                    BeZero(),
 				"CapturedGinkgoWriterOutput": BeZero(),
 				"CapturedStdOutErr":          Equal("output-intercepted-in-after-suite"),
+				"GinkgoParallelNode":         Equal(1),
 			}))
+
+			afterSuiteReport := reporter.Did.FindByLeafNodeType(types.NodeTypeAfterSuite)
+			Ω(afterSuiteReport.EndTime.Sub(afterSuiteReport.StartTime)).Should(BeNumerically("~", afterSuiteReport.RunTime))
 		})
 
 		It("reports about each just before it runs", func() {
@@ -132,12 +138,17 @@ var _ = Describe("Running Tests in Series - the happy path", func() {
 				"NumAttempts":                Equal(1),
 				"CapturedGinkgoWriterOutput": Equal("before-each\nC\n"),
 				"CapturedStdOutErr":          Equal("output-intercepted-in-C"),
+				"GinkgoParallelNode":         Equal(1),
 			}))
+
 		})
 
-		It("computes run times", func() {
+		It("computes start times, end times, and run times", func() {
 			Ω(reporter.Did.Find("A").RunTime).Should(BeNumerically(">=", 10*time.Millisecond))
 			Ω(reporter.Did.Find("B").RunTime).Should(BeNumerically(">=", 20*time.Millisecond))
+
+			reportA := reporter.Did.Find("A")
+			Ω(reportA.EndTime.Sub(reportA.StartTime)).Should(BeNumerically("~", reportA.RunTime))
 		})
 	})
 })

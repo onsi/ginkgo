@@ -99,7 +99,7 @@ var _ = Describe("Running tests in parallel", func() {
 		finished := make(chan bool)
 		//now launch suite 1...
 		go func() {
-			success, _ := suite1.Run("node 1", failer, reporter, writer, outputInterceptor, interruptHandler, conf)
+			success, _ := suite1.Run("node 1", "/path/to/suite", failer, reporter, writer, outputInterceptor, interruptHandler, conf)
 			finished <- success
 			aliveState.Store(1, false)
 		}()
@@ -107,7 +107,7 @@ var _ = Describe("Running tests in parallel", func() {
 		//and launch suite 2...
 		reporter2 = &FakeReporter{}
 		go func() {
-			success, _ := suite2.Run("node 2", internal.NewFailer(), reporter2, writer, outputInterceptor, interruptHandler, conf2)
+			success, _ := suite2.Run("node 2", "/path/to/suite", internal.NewFailer(), reporter2, writer, outputInterceptor, interruptHandler, conf2)
 			finished <- success
 			aliveState.Store(2, false)
 		}()
@@ -146,11 +146,12 @@ var _ = Describe("Running tests in parallel", func() {
 	})
 
 	It("reports the correct statistics", func() {
-		Ω(reporter.End.NumberOfTotalSpecs).Should(Equal(6))
-		Ω(reporter2.End.NumberOfTotalSpecs).Should(Equal(6))
-		Ω(reporter.End.NumberOfSpecsThatWillBeRun).Should(Equal(6))
-		Ω(reporter2.End.NumberOfSpecsThatWillBeRun).Should(Equal(6))
+		Ω(reporter.End.PreRunStats.TotalSpecs).Should(Equal(6))
+		Ω(reporter2.End.PreRunStats.TotalSpecs).Should(Equal(6))
+		Ω(reporter.End.PreRunStats.SpecsThatWillRun).Should(Equal(6))
+		Ω(reporter2.End.PreRunStats.SpecsThatWillRun).Should(Equal(6))
 
-		Ω(reporter.End.NumberOfPassedSpecs + reporter2.End.NumberOfPassedSpecs).Should(Equal(6))
+		Ω(reporter.End.SpecReports.WithLeafNodeType(types.NodeTypeIt).CountWithState(types.SpecStatePassed) +
+			reporter2.End.SpecReports.WithLeafNodeType(types.NodeTypeIt).CountWithState(types.SpecStatePassed)).Should(Equal(6))
 	})
 })
