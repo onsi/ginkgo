@@ -1,22 +1,26 @@
-package config_test
+package types_test
 
 import (
 	"flag"
 	"net/http"
 
 	. "github.com/onsi/ginkgo"
-	"github.com/onsi/ginkgo/config"
-	"github.com/onsi/ginkgo/internal/test_helpers"
 	"github.com/onsi/ginkgo/types"
 	. "github.com/onsi/gomega"
 	"github.com/onsi/gomega/ghttp"
 )
 
-var DEPRECATION_ANCHORS = test_helpers.LoadMarkdownHeadingAnchors("../docs/MIGRATING_TO_V2.md")
-
 var _ = Describe("Config", func() {
 	It("has valid deprecation doc links", func() {
-		flags := config.GinkgoConfigFlags.CopyAppend(config.GinkgoParallelConfigFlags...).CopyAppend(config.ReporterConfigFlags...)
+		flags := types.SuiteConfigFlags
+		flags = flags.CopyAppend(types.ParallelConfigFlags...)
+		flags = flags.CopyAppend(types.ReporterConfigFlags...)
+		flags = flags.CopyAppend(types.GinkgoCLISharedFlags...)
+		flags = flags.CopyAppend(types.GinkgoCLIRunAndWatchFlags...)
+		flags = flags.CopyAppend(types.GinkgoCLIRunFlags...)
+		flags = flags.CopyAppend(types.GinkgoCLIWatchFlags...)
+		flags = flags.CopyAppend(types.GoBuildFlags...)
+		flags = flags.CopyAppend(types.GoRunFlags...)
 		for _, flag := range flags {
 			if flag.DeprecatedDocLink != "" {
 				Ω(flag.DeprecatedDocLink).Should(BeElementOf(DEPRECATION_ANCHORS))
@@ -25,9 +29,9 @@ var _ = Describe("Config", func() {
 	})
 
 	Describe("VetConfig", func() {
-		var conf config.GinkgoConfigType
-		var repConf config.DefaultReporterConfigType
-		var flagSet config.GinkgoFlagSet
+		var suiteConf types.SuiteConfig
+		var repConf types.ReporterConfig
+		var flagSet types.GinkgoFlagSet
 		var goFlagSet *flag.FlagSet
 
 		BeforeEach(func() {
@@ -35,16 +39,16 @@ var _ = Describe("Config", func() {
 			goFlagSet = flag.NewFlagSet("test", flag.ContinueOnError)
 			goFlagSet.Bool("count", false, "")
 			goFlagSet.Int("parallel", 0, "")
-			flagSet, err = config.NewAttachedGinkgoFlagSet(goFlagSet, config.GinkgoFlags{}, nil, config.GinkgoFlagSections{}, config.GinkgoFlagSection{})
+			flagSet, err = types.NewAttachedGinkgoFlagSet(goFlagSet, types.GinkgoFlags{}, nil, types.GinkgoFlagSections{}, types.GinkgoFlagSection{})
 			Ω(err).ShouldNot(HaveOccurred())
 
-			conf = config.NewDefaultGinkgoConfig()
-			repConf = config.NewDefaultReporterConfig()
+			suiteConf = types.NewDefaultSuiteConfig()
+			repConf = types.NewDefaultReporterConfig()
 		})
 
 		Context("when all is well", func() {
 			It("retuns no errors", func() {
-				errors := config.VetConfig(flagSet, conf, repConf)
+				errors := types.VetConfig(flagSet, suiteConf, repConf)
 				Ω(errors).Should(BeEmpty())
 			})
 		})
@@ -54,7 +58,7 @@ var _ = Describe("Config", func() {
 				goFlagSet.Parse([]string{"-count", "-parallel=2"})
 			})
 			It("returns errors when unsupported go flags are set", func() {
-				errors := config.VetConfig(flagSet, conf, repConf)
+				errors := types.VetConfig(flagSet, suiteConf, repConf)
 				Ω(errors).Should(ConsistOf(types.GinkgoErrors.InvalidGoFlagCount(), types.GinkgoErrors.InvalidGoFlagParallel()))
 			})
 		})
@@ -62,33 +66,33 @@ var _ = Describe("Config", func() {
 		Describe("errors related to parallelism", func() {
 			Context("when parallel total is less than one", func() {
 				BeforeEach(func() {
-					conf.ParallelTotal = 0
+					suiteConf.ParallelTotal = 0
 				})
 
 				It("errors", func() {
-					errors := config.VetConfig(flagSet, conf, repConf)
+					errors := types.VetConfig(flagSet, suiteConf, repConf)
 					Ω(errors).Should(ContainElement(types.GinkgoErrors.InvalidParallelTotalConfiguration()))
 				})
 			})
 
 			Context("when parallel node is less than one", func() {
 				BeforeEach(func() {
-					conf.ParallelNode = 0
+					suiteConf.ParallelNode = 0
 				})
 
 				It("errors", func() {
-					errors := config.VetConfig(flagSet, conf, repConf)
+					errors := types.VetConfig(flagSet, suiteConf, repConf)
 					Ω(errors).Should(ConsistOf(types.GinkgoErrors.InvalidParallelNodeConfiguration()))
 				})
 			})
 
 			Context("when parallel node is greater than parallel total", func() {
 				BeforeEach(func() {
-					conf.ParallelNode = conf.ParallelTotal + 1
+					suiteConf.ParallelNode = suiteConf.ParallelTotal + 1
 				})
 
 				It("errors", func() {
-					errors := config.VetConfig(flagSet, conf, repConf)
+					errors := types.VetConfig(flagSet, suiteConf, repConf)
 					Ω(errors).Should(ConsistOf(types.GinkgoErrors.InvalidParallelNodeConfiguration()))
 				})
 			})
@@ -100,8 +104,8 @@ var _ = Describe("Config", func() {
 					server.SetAllowUnhandledRequests(true)
 					server.SetUnhandledRequestStatusCode(http.StatusOK)
 
-					conf.ParallelTotal = 2
-					conf.ParallelHost = server.URL()
+					suiteConf.ParallelTotal = 2
+					suiteConf.ParallelHost = server.URL()
 				})
 
 				AfterEach(func() {
@@ -110,10 +114,10 @@ var _ = Describe("Config", func() {
 
 				Context("and parallel host is not set", func() {
 					BeforeEach(func() {
-						conf.ParallelHost = ""
+						suiteConf.ParallelHost = ""
 					})
 					It("errors", func() {
-						errors := config.VetConfig(flagSet, conf, repConf)
+						errors := types.VetConfig(flagSet, suiteConf, repConf)
 						Ω(errors).Should(ConsistOf(types.GinkgoErrors.MissingParallelHostConfiguration()))
 					})
 				})
@@ -123,17 +127,17 @@ var _ = Describe("Config", func() {
 						server.SetUnhandledRequestStatusCode(http.StatusGone)
 					})
 					It("errors", func() {
-						errors := config.VetConfig(flagSet, conf, repConf)
+						errors := types.VetConfig(flagSet, suiteConf, repConf)
 						Ω(errors).Should(ConsistOf(types.GinkgoErrors.UnreachableParallelHost(server.URL())))
 					})
 				})
 
 				Context("when trying to dry run in parallel", func() {
 					BeforeEach(func() {
-						conf.DryRun = true
+						suiteConf.DryRun = true
 					})
 					It("errors", func() {
-						errors := config.VetConfig(flagSet, conf, repConf)
+						errors := types.VetConfig(flagSet, suiteConf, repConf)
 						Ω(errors).Should(ConsistOf(types.GinkgoErrors.DryRunInParallelConfiguration()))
 					})
 				})
@@ -146,7 +150,7 @@ var _ = Describe("Config", func() {
 				repConf.Verbose = true
 			})
 			It("errors", func() {
-				errors := config.VetConfig(flagSet, conf, repConf)
+				errors := types.VetConfig(flagSet, suiteConf, repConf)
 				Ω(errors).Should(ConsistOf(types.GinkgoErrors.ConflictingVerboseSuccinctConfiguration()))
 			})
 		})

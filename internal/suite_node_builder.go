@@ -8,7 +8,6 @@ import (
 	"net/http"
 	"time"
 
-	"github.com/onsi/ginkgo/config"
 	"github.com/onsi/ginkgo/types"
 )
 
@@ -18,11 +17,11 @@ var SUITE_NODE_POLLING_INTERVAL = 50 * time.Millisecond
 The family of SuiteNodes - i.e. BeforeSuite, AfterSuite, SynchronizedBeforeSuite, and SynchronizedAfterSuite
 have a set of properties and behaviors that cannot be determined until PhaseRun.
 
-Specifically, the Synchronized* family need information about parallelism (config.ParallelTotal, config.ParallelNode, config.ParallelHost)
-that can only be obtained after the config object has been populated and this only happens once the test suite has begun.
+Specifically, the Synchronized* family need information about parallelism (suiteConfig.ParallelTotal, suiteConfig.ParallelNode, suiteConfig.ParallelHost)
+that can only be obtained after the suiteConfig object has been populated and this only happens once the test suite has begun.
 Of course the suite DSl functions are typicaly called in PhaseBuildTopLevel.  Given that, we use
 this factory approach to save off information about the suite node at PhaseBuildTopLevel and then construct
-the actual nodes when we have the config information in PhaseRun.
+the actual nodes when we have the suiteConfig information in PhaseRun.
 
 Note that SuiteNodeBuilder takes care of packaging all the parallelisum behavior into the single node.Body().  This pushes
 all the complexity of the suite node's behavior into this builder class.
@@ -40,7 +39,7 @@ type SuiteNodeBuilder struct {
 	SynchronizedAfterSuiteNode1Body    func()
 }
 
-func (s SuiteNodeBuilder) BuildNode(config config.GinkgoConfigType, failer *Failer) Node {
+func (s SuiteNodeBuilder) BuildNode(suiteConfig types.SuiteConfig, failer *Failer) Node {
 	node := Node{
 		ID:           UniqueNodeID(),
 		NodeType:     s.NodeType,
@@ -50,11 +49,11 @@ func (s SuiteNodeBuilder) BuildNode(config config.GinkgoConfigType, failer *Fail
 	case types.NodeTypeBeforeSuite:
 		node.Body = s.BeforeSuiteBody
 	case types.NodeTypeSynchronizedBeforeSuite:
-		node.Body = s.buildSynchronizedBeforeSuiteBody(config, failer)
+		node.Body = s.buildSynchronizedBeforeSuiteBody(suiteConfig, failer)
 	case types.NodeTypeAfterSuite:
 		node.Body = s.AfterSuiteBody
 	case types.NodeTypeSynchronizedAfterSuite:
-		node.Body = s.buildSynchronizedAfterSuiteBody(config, failer)
+		node.Body = s.buildSynchronizedAfterSuiteBody(suiteConfig, failer)
 	default:
 		return Node{}
 	}
@@ -62,15 +61,15 @@ func (s SuiteNodeBuilder) BuildNode(config config.GinkgoConfigType, failer *Fail
 	return node
 }
 
-func (s SuiteNodeBuilder) buildSynchronizedBeforeSuiteBody(config config.GinkgoConfigType, failer *Failer) func() {
-	if config.ParallelTotal == 1 {
+func (s SuiteNodeBuilder) buildSynchronizedBeforeSuiteBody(suiteConfig types.SuiteConfig, failer *Failer) func() {
+	if suiteConfig.ParallelTotal == 1 {
 		return func() {
 			data := s.SynchronizedBeforeSuiteNode1Body()
 			s.SynchronizedBeforeSuiteAllNodesBody(data)
 		}
 	}
 
-	if config.ParallelNode == 1 {
+	if suiteConfig.ParallelNode == 1 {
 		return func() {
 			result := func() (result types.RemoteBeforeSuiteData) {
 				defer func() {
@@ -85,7 +84,7 @@ func (s SuiteNodeBuilder) buildSynchronizedBeforeSuiteBody(config config.GinkgoC
 				return
 			}()
 
-			resp, err := http.Post(config.ParallelHost+"/BeforeSuiteState", "application/json", bytes.NewBuffer(result.ToJSON()))
+			resp, err := http.Post(suiteConfig.ParallelHost+"/BeforeSuiteState", "application/json", bytes.NewBuffer(result.ToJSON()))
 			if err != nil || resp.StatusCode != http.StatusOK {
 				failer.Fail("SynchronizedBeforeSuite failed to send data to other nodes", s.CodeLocation)
 				return
@@ -101,7 +100,7 @@ func (s SuiteNodeBuilder) buildSynchronizedBeforeSuiteBody(config config.GinkgoC
 			var result types.RemoteBeforeSuiteData
 			for {
 				result = types.RemoteBeforeSuiteData{}
-				err := s.pollEndpoint(config.ParallelHost+"/BeforeSuiteState", &result)
+				err := s.pollEndpoint(suiteConfig.ParallelHost+"/BeforeSuiteState", &result)
 				if err != nil {
 					failer.Fail("SynchronizedBeforeSuite Server Communication Issue:\n"+err.Error(), s.CodeLocation)
 					return
@@ -124,15 +123,15 @@ func (s SuiteNodeBuilder) buildSynchronizedBeforeSuiteBody(config config.GinkgoC
 	}
 }
 
-func (s SuiteNodeBuilder) buildSynchronizedAfterSuiteBody(config config.GinkgoConfigType, failer *Failer) func() {
-	if config.ParallelTotal == 1 {
+func (s SuiteNodeBuilder) buildSynchronizedAfterSuiteBody(suiteConfig types.SuiteConfig, failer *Failer) func() {
+	if suiteConfig.ParallelTotal == 1 {
 		return func() {
 			s.SynchronizedAfterSuiteAllNodesBody()
 			s.SynchronizedAfterSuiteNode1Body()
 		}
 	}
 
-	if config.ParallelNode > 1 {
+	if suiteConfig.ParallelNode > 1 {
 		return func() {
 			s.SynchronizedAfterSuiteAllNodesBody()
 		}
@@ -142,7 +141,7 @@ func (s SuiteNodeBuilder) buildSynchronizedAfterSuiteBody(config config.GinkgoCo
 
 			for {
 				afterSuiteData := types.RemoteAfterSuiteData{}
-				err := s.pollEndpoint(config.ParallelHost+"/AfterSuiteState", &afterSuiteData)
+				err := s.pollEndpoint(suiteConfig.ParallelHost+"/AfterSuiteState", &afterSuiteData)
 				if err != nil {
 					failer.Fail("SynchronizedAfterSuite Server Communication Issue:\n"+err.Error(), s.CodeLocation)
 					break

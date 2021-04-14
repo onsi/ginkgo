@@ -10,7 +10,6 @@ import (
 	. "github.com/onsi/ginkgo/internal/test_helpers"
 	"github.com/onsi/ginkgo/types"
 
-	"github.com/onsi/ginkgo/config"
 	"github.com/onsi/ginkgo/internal"
 )
 
@@ -24,7 +23,7 @@ var _ = Describe("Suite", func() {
 	var writer *internal.Writer
 	var outputInterceptor *FakeOutputInterceptor
 	var interruptHandler *internal.InterruptHandler
-	var conf config.GinkgoConfigType
+	var conf types.SuiteConfig
 	var rt *RunTracker
 
 	BeforeEach(func() {
@@ -33,7 +32,7 @@ var _ = Describe("Suite", func() {
 		writer = internal.NewWriter(ioutil.Discard)
 		outputInterceptor = NewFakeOutputInterceptor()
 		interruptHandler = internal.NewInterruptHandler()
-		conf = config.GinkgoConfigType{
+		conf = types.SuiteConfig{
 			ParallelTotal: 1,
 			ParallelNode:  1,
 		}

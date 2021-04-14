@@ -13,7 +13,6 @@ import (
 	"io"
 	"strings"
 
-	"github.com/onsi/ginkgo/config"
 	"github.com/onsi/ginkgo/types"
 )
 
@@ -24,7 +23,7 @@ const (
 type TeamCityReporter struct {
 	writer         io.Writer
 	testSuiteName  string
-	ReporterConfig config.DefaultReporterConfigType
+	ReporterConfig types.ReporterConfig
 }
 
 func NewTeamCityReporter(writer io.Writer) *TeamCityReporter {
@@ -33,9 +32,9 @@ func NewTeamCityReporter(writer io.Writer) *TeamCityReporter {
 	}
 }
 
-func (reporter *TeamCityReporter) SpecSuiteWillBegin(conf config.GinkgoConfigType, summary types.SuiteSummary) {
+func (reporter *TeamCityReporter) SpecSuiteWillBegin(conf types.SuiteConfig, summary types.SuiteSummary) {
 	reporter.testSuiteName = reporter.escape(summary.SuiteDescription)
-	reporter.ReporterConfig = config.DefaultReporterConfig
+	// reporter.ReporterConfig = config.DefaultReporterConfig //TODO: NEED TO REPLICATE THIS LESS TERRIBLY
 
 	fmt.Fprintf(reporter.writer, "%s[testSuiteStarted name='%s']\n", teamcityMessageId, reporter.testSuiteName)
 }

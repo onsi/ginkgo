@@ -6,7 +6,6 @@ import (
 	. "github.com/onsi/gomega"
 	. "github.com/onsi/gomega/gstruct"
 
-	"github.com/onsi/ginkgo/config"
 	"github.com/onsi/ginkgo/types"
 )
 
@@ -59,14 +58,14 @@ func (s Reports) WithState(state types.SpecState) Reports {
 }
 
 type FakeReporter struct {
-	Config config.GinkgoConfigType
+	Config types.SuiteConfig
 	Begin  types.SuiteSummary
 	Will   Reports
 	Did    Reports
 	End    types.SuiteSummary
 }
 
-func (r *FakeReporter) SpecSuiteWillBegin(conf config.GinkgoConfigType, summary types.SuiteSummary) {
+func (r *FakeReporter) SpecSuiteWillBegin(conf types.SuiteConfig, summary types.SuiteSummary) {
 	r.Begin = summary
 	r.Config = conf
 }

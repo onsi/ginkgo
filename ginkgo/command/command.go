@@ -5,13 +5,13 @@ import (
 	"io"
 	"strings"
 
-	"github.com/onsi/ginkgo/config"
 	"github.com/onsi/ginkgo/formatter"
+	"github.com/onsi/ginkgo/types"
 )
 
 type Command struct {
 	Name          string
-	Flags         config.GinkgoFlagSet
+	Flags         types.GinkgoFlagSet
 	Usage         string
 	ShortDoc      string
 	Documentation string

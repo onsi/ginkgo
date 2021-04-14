@@ -16,7 +16,6 @@ import (
 	"path/filepath"
 	"strings"
 
-	"github.com/onsi/ginkgo/config"
 	"github.com/onsi/ginkgo/types"
 )
 
@@ -52,7 +51,7 @@ type JUnitReporter struct {
 	suite          JUnitTestSuite
 	filename       string
 	testSuiteName  string
-	ReporterConfig config.DefaultReporterConfigType
+	ReporterConfig types.ReporterConfig
 }
 
 //NewJUnitReporter creates a new JUnit XML reporter.  The XML will be stored in the passed in filename.
@@ -62,13 +61,13 @@ func NewJUnitReporter(filename string) *JUnitReporter {
 	}
 }
 
-func (reporter *JUnitReporter) SpecSuiteWillBegin(ginkgoConfig config.GinkgoConfigType, summary types.SuiteSummary) {
+func (reporter *JUnitReporter) SpecSuiteWillBegin(ginkgoConfig types.SuiteConfig, summary types.SuiteSummary) {
 	reporter.suite = JUnitTestSuite{
 		Name:      summary.SuiteDescription,
 		TestCases: []JUnitTestCase{},
 	}
 	reporter.testSuiteName = summary.SuiteDescription
-	reporter.ReporterConfig = config.DefaultReporterConfig
+	//	reporter.ReporterConfig = config.DefaultReporterConfig //TODO - need to pass this in, not pull it out of thin air
 }
 
 func (reporter *JUnitReporter) WillRun(_ types.SpecReport) {

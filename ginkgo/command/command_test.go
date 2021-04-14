@@ -4,10 +4,10 @@ import (
 	"strings"
 
 	. "github.com/onsi/ginkgo"
-	"github.com/onsi/ginkgo/config"
 	"github.com/onsi/ginkgo/formatter"
 	"github.com/onsi/ginkgo/ginkgo/command"
 	. "github.com/onsi/ginkgo/internal/test_helpers"
+	"github.com/onsi/ginkgo/types"
 	. "github.com/onsi/gomega"
 	"github.com/onsi/gomega/gbytes"
 	"github.com/onsi/gomega/gstruct"
@@ -19,12 +19,12 @@ var _ = Describe("Command", func() {
 
 	BeforeEach(func() {
 		rt = NewRunTracker()
-		fs, err := config.NewGinkgoFlagSet(
-			config.GinkgoFlags{
+		fs, err := types.NewGinkgoFlagSet(
+			types.GinkgoFlags{
 				{Name: "contrabulaturally", KeyPath: "C", Usage: "with irridiacy"},
 			},
 			&(struct{ C int }{C: 17}),
-			config.GinkgoFlagSections{},
+			types.GinkgoFlagSections{},
 		)
 		Ω(err).ShouldNot(HaveOccurred())
 		c = command.Command{
