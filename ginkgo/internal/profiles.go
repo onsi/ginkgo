@@ -11,10 +11,10 @@ import (
 	"strconv"
 
 	"github.com/google/pprof/profile"
-	"github.com/onsi/ginkgo/config"
+	"github.com/onsi/ginkgo/types"
 )
 
-func FinalizeProfilesForSuites(suites []TestSuite, cliConfig config.GinkgoCLIConfigType, goFlagsConfig config.GoFlagsConfigType) ([]string, error) {
+func FinalizeProfilesForSuites(suites []TestSuite, cliConfig types.CLIConfig, goFlagsConfig types.GoFlagsConfig) ([]string, error) {
 	messages := []string{}
 	if goFlagsConfig.Cover {
 		if cliConfig.KeepSeparateCoverprofiles {

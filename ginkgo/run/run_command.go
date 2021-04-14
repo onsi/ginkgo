@@ -7,7 +7,6 @@ import (
 	"strings"
 	"time"
 
-	"github.com/onsi/ginkgo/config"
 	"github.com/onsi/ginkgo/formatter"
 	"github.com/onsi/ginkgo/ginkgo/command"
 	"github.com/onsi/ginkgo/ginkgo/internal"
@@ -16,12 +15,12 @@ import (
 )
 
 func BuildRunCommand() command.Command {
-	var ginkgoConfig = config.NewDefaultGinkgoConfig()
-	var reporterConfig = config.NewDefaultReporterConfig()
-	var cliConfig = config.NewDefaultGinkgoCLIConfig()
-	var goFlagsConfig = config.NewDefaultGoFlagsConfig()
+	var ginkgoConfig = types.NewDefaultSuiteConfig()
+	var reporterConfig = types.NewDefaultReporterConfig()
+	var cliConfig = types.NewDefaultCLIConfig()
+	var goFlagsConfig = types.NewDefaultGoFlagsConfig()
 
-	flags, err := config.BuildRunCommandFlagSet(&ginkgoConfig, &reporterConfig, &cliConfig, &goFlagsConfig)
+	flags, err := types.BuildRunCommandFlagSet(&ginkgoConfig, &reporterConfig, &cliConfig, &goFlagsConfig)
 	if err != nil {
 		panic(err)
 	}
@@ -37,8 +36,8 @@ func BuildRunCommand() command.Command {
 		DocLink:       "running-tests",
 		Command: func(args []string, additionalArgs []string) {
 			var errors []error
-			cliConfig, goFlagsConfig, errors = config.VetAndInitializeCLIAndGoConfig(cliConfig, goFlagsConfig)
-			command.AbortIfErrors("Ginkgo detected configuraiotn issues:", errors)
+			cliConfig, goFlagsConfig, errors = types.VetAndInitializeCLIAndGoConfig(cliConfig, goFlagsConfig)
+			command.AbortIfErrors("Ginkgo detected configuration issues:", errors)
 
 			runner := &SpecRunner{
 				cliConfig:      cliConfig,
@@ -56,11 +55,11 @@ func BuildRunCommand() command.Command {
 }
 
 type SpecRunner struct {
-	ginkgoConfig   config.GinkgoConfigType
-	reporterConfig config.DefaultReporterConfigType
-	cliConfig      config.GinkgoCLIConfigType
-	goFlagsConfig  config.GoFlagsConfigType
-	flags          config.GinkgoFlagSet
+	ginkgoConfig   types.SuiteConfig
+	reporterConfig types.ReporterConfig
+	cliConfig      types.CLIConfig
+	goFlagsConfig  types.GoFlagsConfig
+	flags          types.GinkgoFlagSet
 
 	interruptHandler *interrupthandler.InterruptHandler
 }

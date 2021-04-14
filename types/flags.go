@@ -1,4 +1,4 @@
-package config
+package types
 
 import (
 	"flag"
@@ -9,7 +9,6 @@ import (
 	"time"
 
 	"github.com/onsi/ginkgo/formatter"
-	"github.com/onsi/ginkgo/types"
 )
 
 type GinkgoFlag struct {
@@ -218,7 +217,7 @@ func (f GinkgoFlagSet) Parse(args []string) ([]string, error) {
 	return f.flagSet.Args(), nil
 }
 
-func (f GinkgoFlagSet) ValidateDeprecations(deprecationTracker *types.DeprecationTracker) {
+func (f GinkgoFlagSet) ValidateDeprecations(deprecationTracker *DeprecationTracker) {
 	if f.IsZero() {
 		return
 	}
@@ -230,7 +229,7 @@ func (f GinkgoFlagSet) ValidateDeprecations(deprecationTracker *types.Deprecatio
 					message = fmt.Sprintf("--%s is deprecated, use --%s instead", ginkgoFlag.DeprecatedName, ginkgoFlag.Name)
 				}
 
-				deprecationTracker.TrackDeprecation(types.Deprecation{
+				deprecationTracker.TrackDeprecation(Deprecation{
 					Message: message,
 					DocLink: ginkgoFlag.DeprecatedDocLink,
 				})

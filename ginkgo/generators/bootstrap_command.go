@@ -8,16 +8,16 @@ import (
 	"text/template"
 
 	sprig "github.com/go-task/slim-sprig"
-	"github.com/onsi/ginkgo/config"
 	"github.com/onsi/ginkgo/ginkgo/command"
 	"github.com/onsi/ginkgo/ginkgo/internal"
 	"github.com/onsi/ginkgo/ginkgo/nodot"
+	"github.com/onsi/ginkgo/types"
 )
 
 func BuildBootstrapCommand() command.Command {
 	conf := GeneratorsConfig{}
-	flags, err := config.NewGinkgoFlagSet(
-		config.GinkgoFlags{
+	flags, err := types.NewGinkgoFlagSet(
+		types.GinkgoFlags{
 			{Name: "agouti", KeyPath: "Agouti",
 				Usage: "If set, bootstrap will generate a bootstrap file for writing Agouti tests"},
 			{Name: "nodot", KeyPath: "NoDot",
@@ -29,7 +29,7 @@ func BuildBootstrapCommand() command.Command {
 				Usage:         "If specified, generate will use the contents of the file passed as the bootstrap template"},
 		},
 		&conf,
-		config.GinkgoFlagSections{},
+		types.GinkgoFlagSections{},
 	)
 
 	if err != nil {

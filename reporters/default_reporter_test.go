@@ -7,7 +7,6 @@ import (
 	"time"
 
 	. "github.com/onsi/ginkgo"
-	"github.com/onsi/ginkgo/config"
 	. "github.com/onsi/ginkgo/extensions/table"
 	"github.com/onsi/ginkgo/reporters"
 	"github.com/onsi/ginkgo/types"
@@ -100,13 +99,13 @@ const (
 
 func (cf ConfigFlags) Has(flag ConfigFlags) bool { return cf&flag != 0 }
 
-func C(flags ...ConfigFlags) config.DefaultReporterConfigType {
+func C(flags ...ConfigFlags) types.ReporterConfig {
 	f := ConfigFlags(0)
 	if len(flags) > 0 {
 		f = flags[0]
 	}
 	Ω(f.Has(Verbose) && f.Has(Succinct)).Should(BeFalse(), "Being both verbose and succinct is a configuration error")
-	return config.DefaultReporterConfigType{
+	return types.ReporterConfig{
 		NoColor:           true,
 		SlowSpecThreshold: SlowSpecThreshold,
 		Succinct:          f.Has(Succinct),
@@ -141,14 +140,14 @@ var _ = Describe("DefaultReporter", func() {
 	})
 
 	DescribeTable("Rendering SpecSuiteWillBegin",
-		func(conf config.DefaultReporterConfigType, gConf config.GinkgoConfigType, summary types.SuiteSummary, expected ...string) {
+		func(conf types.ReporterConfig, gConf types.SuiteConfig, summary types.SuiteSummary, expected ...string) {
 			reporter := reporters.NewDefaultReporterUnderTest(conf, buf)
 			reporter.SpecSuiteWillBegin(gConf, summary)
 			verifyExpectedOutput(expected)
 		},
 		Entry("Default Behavior",
 			C(),
-			config.GinkgoConfigType{RandomSeed: 17, ParallelTotal: 1},
+			types.SuiteConfig{RandomSeed: 17, ParallelTotal: 1},
 			types.SuiteSummary{SuiteDescription: "My Suite", NumberOfSpecsThatWillBeRun: 15, NumberOfTotalSpecs: 20},
 			"Running Suite: My Suite",
 			"=======================",
@@ -159,7 +158,7 @@ var _ = Describe("DefaultReporter", func() {
 		),
 		Entry("When configured to randomize all specs",
 			C(),
-			config.GinkgoConfigType{RandomSeed: 17, ParallelTotal: 1, RandomizeAllSpecs: true},
+			types.SuiteConfig{RandomSeed: 17, ParallelTotal: 1, RandomizeAllSpecs: true},
 			types.SuiteSummary{SuiteDescription: "My Suite", NumberOfSpecsThatWillBeRun: 15, NumberOfTotalSpecs: 20},
 			"Running Suite: My Suite",
 			"=======================",
@@ -170,7 +169,7 @@ var _ = Describe("DefaultReporter", func() {
 		),
 		Entry("when configured to run in parallel",
 			C(),
-			config.GinkgoConfigType{RandomSeed: 17, ParallelTotal: 3},
+			types.SuiteConfig{RandomSeed: 17, ParallelTotal: 3},
 			types.SuiteSummary{SuiteDescription: "My Suite", NumberOfSpecsThatWillBeRun: 15, NumberOfTotalSpecs: 20},
 			"Running Suite: My Suite",
 			"=======================",
@@ -182,20 +181,20 @@ var _ = Describe("DefaultReporter", func() {
 		),
 		Entry("when succinct and in series",
 			C(Succinct),
-			config.GinkgoConfigType{RandomSeed: 17, ParallelTotal: 1},
+			types.SuiteConfig{RandomSeed: 17, ParallelTotal: 1},
 			types.SuiteSummary{SuiteDescription: "My Suite", NumberOfSpecsThatWillBeRun: 15, NumberOfTotalSpecs: 20},
 			"[17] {{bold}}My Suite{{/}} - 15/20 specs ",
 		),
 		Entry("when succinct and in parallel",
 			C(Succinct),
-			config.GinkgoConfigType{RandomSeed: 17, ParallelTotal: 3},
+			types.SuiteConfig{RandomSeed: 17, ParallelTotal: 3},
 			types.SuiteSummary{SuiteDescription: "My Suite", NumberOfSpecsThatWillBeRun: 15, NumberOfTotalSpecs: 20},
 			"[17] {{bold}}My Suite{{/}} - 15/20 specs - 3 nodes ",
 		),
 	)
 
 	DescribeTable("WillRun",
-		func(conf config.DefaultReporterConfigType, report types.SpecReport, output ...string) {
+		func(conf types.ReporterConfig, report types.SpecReport, output ...string) {
 			reporter := reporters.NewDefaultReporterUnderTest(conf, buf)
 			reporter.WillRun(report)
 			verifyExpectedOutput(output)
@@ -228,7 +227,7 @@ var _ = Describe("DefaultReporter", func() {
 	)
 
 	DescribeTable("DidRun",
-		func(conf config.DefaultReporterConfigType, report types.SpecReport, output ...string) {
+		func(conf types.ReporterConfig, report types.SpecReport, output ...string) {
 			reporter := reporters.NewDefaultReporterUnderTest(conf, buf)
 			reporter.DidRun(report)
 			verifyExpectedOutput(output)
@@ -700,7 +699,7 @@ var _ = Describe("DefaultReporter", func() {
 	)
 
 	DescribeTable("Rendering SpecSuiteDidEnd",
-		func(conf config.DefaultReporterConfigType, reports []types.SpecReport, summary types.SuiteSummary, expected ...string) {
+		func(conf types.ReporterConfig, reports []types.SpecReport, summary types.SuiteSummary, expected ...string) {
 			reporter := reporters.NewDefaultReporterUnderTest(conf, buf)
 			for _, report := range reports {
 				reporter.WillRun(report)
@@ -861,7 +860,7 @@ var _ = Describe("DefaultReporter", func() {
 	Describe("with failOnPending set to true", func() {
 		It("notifies the user when the suite failed due to pending tests", func() {
 			reporter := reporters.NewDefaultReporterUnderTest(C(), buf)
-			reporter.SpecSuiteWillBegin(config.GinkgoConfigType{
+			reporter.SpecSuiteWillBegin(types.SuiteConfig{
 				FailOnPending: true,
 			}, types.SuiteSummary{SuiteDescription: "My Suite", NumberOfSpecsThatWillBeRun: 20, NumberOfTotalSpecs: 20})
 			buf.Clear()

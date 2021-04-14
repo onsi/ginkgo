@@ -6,12 +6,13 @@ import (
 )
 
 type Reporter interface {
-	SpecSuiteWillBegin(config config.GinkgoConfigType, summary types.SuiteSummary)
+	SpecSuiteWillBegin(suiteConfig types.SuiteConfig, summary types.SuiteSummary)
 	WillRun(report types.SpecReport)
 	DidRun(report types.SpecReport)
 	SpecSuiteDidEnd(summary types.SuiteSummary)
 }
 
+// TODO: FIX
 // Deprecated Custom Reporters in V2
 
 // Deprecated: DeprecatedReporter was how Ginkgo V1 provided support for CustomReporters
@@ -44,7 +45,7 @@ func ReportViaDeprecatedReporter(reporter DeprecatedReporter, report types.Suite
 
 	// func (cs *compatiblityShim) IsDeprecatedReporter() {}
 
-	// func (cs *compatiblityShim) SpecSuiteWillBegin(config config.GinkgoConfigType, summary types.SuiteSummary) {
+	// func (cs *compatiblityShim) SpecSuiteWillBegin(config types.SuiteConfig, summary types.SuiteSummary) {
 	// 	s := summary
 	// 	cs.reporter.SpecSuiteWillBegin(config, &s)
 	// }

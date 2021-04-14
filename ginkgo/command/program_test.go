@@ -5,7 +5,6 @@ import (
 	"strings"
 
 	. "github.com/onsi/ginkgo"
-	"github.com/onsi/ginkgo/config"
 	. "github.com/onsi/ginkgo/extensions/table"
 	"github.com/onsi/ginkgo/formatter"
 	. "github.com/onsi/ginkgo/internal/test_helpers"
@@ -25,8 +24,8 @@ var _ = Describe("Program", func() {
 		rt = NewRunTracker()
 		defaultCommand := command.Command{Name: "alpha", Usage: "alpha usage", ShortDoc: "such usage!", Command: rt.C("alpha")}
 
-		fs, err := config.NewGinkgoFlagSet(
-			config.GinkgoFlags{
+		fs, err := types.NewGinkgoFlagSet(
+			types.GinkgoFlags{
 				{Name: "decay-rate", KeyPath: "Rate", Usage: "set the decay rate, in years"},
 				{DeprecatedName: "old", KeyPath: "Old"},
 			},
@@ -34,7 +33,7 @@ var _ = Describe("Program", func() {
 				Rate float64
 				Old  bool
 			}{Rate: 17.0}),
-			config.GinkgoFlagSections{},
+			types.GinkgoFlagSections{},
 		)
 		Ω(err).ShouldNot(HaveOccurred())
 		commands := []command.Command{

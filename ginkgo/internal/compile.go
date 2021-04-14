@@ -6,10 +6,10 @@ import (
 	"os/exec"
 	"path/filepath"
 
-	"github.com/onsi/ginkgo/config"
+	"github.com/onsi/ginkgo/types"
 )
 
-func CompileSuite(suite TestSuite, goFlagsConfig config.GoFlagsConfigType) TestSuite {
+func CompileSuite(suite TestSuite, goFlagsConfig types.GoFlagsConfig) TestSuite {
 	if suite.PathToCompiledTest != "" {
 		return suite
 	}
@@ -22,7 +22,7 @@ func CompileSuite(suite TestSuite, goFlagsConfig config.GoFlagsConfigType) TestS
 		return suite
 	}
 
-	args, err := config.GenerateGoTestCompileArgs(goFlagsConfig, path, suite.Path)
+	args, err := types.GenerateGoTestCompileArgs(goFlagsConfig, path, suite.Path)
 	if err != nil {
 		suite.CompilationError = fmt.Errorf("Failed to generate go test compile flags:\n%s", err.Error())
 		return suite
@@ -52,7 +52,7 @@ func CompileSuite(suite TestSuite, goFlagsConfig config.GoFlagsConfigType) TestS
 	return suite
 }
 
-func Cleanup(goFlagsConfig config.GoFlagsConfigType, suites ...TestSuite) {
+func Cleanup(goFlagsConfig types.GoFlagsConfig, suites ...TestSuite) {
 	if goFlagsConfig.BinaryMustBePreserved() {
 		return
 	}

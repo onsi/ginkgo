@@ -103,7 +103,7 @@ func (server *Server) specSuiteWillBegin(writer http.ResponseWriter, request *ht
 
 	server.numSuiteDidBegins += 1
 
-	var data ConfigAndSummary
+	var data SuiteConfigAndSummary
 	err := server.decode(request, &data)
 	if err != nil {
 		writer.WriteHeader(http.StatusBadRequest)
@@ -112,7 +112,7 @@ func (server *Server) specSuiteWillBegin(writer http.ResponseWriter, request *ht
 
 	// all summaries are identical, so it's fine to simply emit the last one of these
 	if server.numSuiteDidBegins == server.parallelTotal {
-		server.reporter.SpecSuiteWillBegin(data.Config, data.Summary)
+		server.reporter.SpecSuiteWillBegin(data.SuiteConfig, data.Summary)
 
 		for _, summary := range server.reportHoldingArea {
 			server.reporter.WillRun(summary)

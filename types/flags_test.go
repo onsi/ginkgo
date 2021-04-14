@@ -1,11 +1,10 @@
-package config_test
+package types_test
 
 import (
 	"flag"
 	"strings"
 
 	. "github.com/onsi/ginkgo"
-	"github.com/onsi/ginkgo/config"
 	"github.com/onsi/ginkgo/formatter"
 	"github.com/onsi/ginkgo/types"
 	. "github.com/onsi/gomega"
@@ -22,10 +21,10 @@ var _ = Describe("Flags", func() {
 	Describe("GinkgoFlags", func() {
 		Describe("CopyAppend", func() {
 			It("concatenates the flags together, making a copy as it does so", func() {
-				A := config.GinkgoFlags{{Name: "A"}, {Name: "B"}, {Name: "C"}}
-				B := config.GinkgoFlags{{Name: "1"}, {Name: "2"}, {Name: "3"}}
+				A := types.GinkgoFlags{{Name: "A"}, {Name: "B"}, {Name: "C"}}
+				B := types.GinkgoFlags{{Name: "1"}, {Name: "2"}, {Name: "3"}}
 
-				Ω(A.CopyAppend(B...)).Should(Equal(config.GinkgoFlags{{Name: "A"}, {Name: "B"}, {Name: "C"}, {Name: "1"}, {Name: "2"}, {Name: "3"}}))
+				Ω(A.CopyAppend(B...)).Should(Equal(types.GinkgoFlags{{Name: "A"}, {Name: "B"}, {Name: "C"}, {Name: "1"}, {Name: "2"}, {Name: "3"}}))
 				Ω(A).Should(HaveLen(3))
 				Ω(B).Should(HaveLen(3))
 			})
@@ -33,13 +32,13 @@ var _ = Describe("Flags", func() {
 
 		Describe("WithPrefix", func() {
 			It("attaches the passed in prefi to the Name, DeprecatedName and ExportAs fields", func() {
-				flags := config.GinkgoFlags{
+				flags := types.GinkgoFlags{
 					{Name: "A"},
 					{DeprecatedName: "B"},
 					{ExportAs: "C"},
 				}
 				prefixed := flags.WithPrefix("hello")
-				Ω(prefixed).Should(Equal(config.GinkgoFlags{
+				Ω(prefixed).Should(Equal(types.GinkgoFlags{
 					{Name: "hello.A"},
 					{DeprecatedName: "hello.B"},
 					{ExportAs: "hello.C"},
@@ -50,9 +49,9 @@ var _ = Describe("Flags", func() {
 
 	Describe("GinkgoFlagSections", func() {
 		Describe("Lookup", func() {
-			var sections config.GinkgoFlagSections
+			var sections types.GinkgoFlagSections
 			BeforeEach(func() {
-				sections = config.GinkgoFlagSections{
+				sections = types.GinkgoFlagSections{
 					{Key: "A", Heading: "Aft"},
 					{Key: "B", Heading: "Starboard"},
 				}
@@ -74,22 +73,22 @@ var _ = Describe("Flags", func() {
 
 	Describe("The zero GinkgoFlagSet", func() {
 		It("returns true for IsZero", func() {
-			Ω(config.GinkgoFlagSet{}.IsZero()).Should(BeTrue())
+			Ω(types.GinkgoFlagSet{}.IsZero()).Should(BeTrue())
 		})
 
 		It("returns the passed in args when asked to parse", func() {
 			args := []string{"-a=1", "-b=2", "-c=3"}
-			Ω(config.GinkgoFlagSet{}.Parse(args)).Should(Equal(args))
+			Ω(types.GinkgoFlagSet{}.Parse(args)).Should(Equal(args))
 		})
 
 		It("does not validate any deprecations", func() {
 			deprecationTracker := types.NewDeprecationTracker()
-			config.GinkgoFlagSet{}.ValidateDeprecations(deprecationTracker)
+			types.GinkgoFlagSet{}.ValidateDeprecations(deprecationTracker)
 			Ω(deprecationTracker.DidTrackDeprecations()).Should(BeFalse())
 		})
 
 		It("emits an empty string for usage", func() {
-			Ω(config.GinkgoFlagSet{}.Usage()).Should(Equal(""))
+			Ω(types.GinkgoFlagSet{}.Usage()).Should(Equal(""))
 		})
 	})
 
@@ -107,10 +106,10 @@ var _ = Describe("Flags", func() {
 		}
 		var A StructA
 		var B StructB
-		var flags config.GinkgoFlags
+		var flags types.GinkgoFlags
 		var bindings map[string]interface{}
-		var sections config.GinkgoFlagSections
-		var flagSet config.GinkgoFlagSet
+		var sections types.GinkgoFlagSections
+		var flagSet types.GinkgoFlagSet
 
 		BeforeEach(func() {
 			A = StructA{
@@ -128,11 +127,11 @@ var _ = Describe("Flags", func() {
 				"A": &A,
 				"B": &B,
 			}
-			sections = config.GinkgoFlagSections{
+			sections = types.GinkgoFlagSections{
 				{Key: "candy", Style: "{{red}}", Heading: "Candy Section", Description: "So sweet."},
 				{Key: "dairy", Style: "{{blue}}", Heading: "Dairy Section", Description: "Abbreviated section", Succinct: true},
 			}
-			flags = config.GinkgoFlags{
+			flags = types.GinkgoFlags{
 				{Name: "string-flag", SectionKey: "candy", Usage: "string-usage", UsageArgument: "name", UsageDefaultValue: "Gerald", KeyPath: "A.StringProperty", DeprecatedName: "stringFlag"},
 				{Name: "int-64-flag", SectionKey: "candy", Usage: "int-64-usage", KeyPath: "A.Int64Property", DeprecatedName: "int64Flag", DeprecatedDocLink: "no-more-camel-case"},
 				{Name: "float-64-flag", SectionKey: "dairy", Usage: "float-64-usage", KeyPath: "A.Float64Property"},
@@ -160,7 +159,7 @@ var _ = Describe("Flags", func() {
 				})
 
 				It("errors", func() {
-					flagSet, err := config.NewGinkgoFlagSet(flags, bindings, sections)
+					flagSet, err := types.NewGinkgoFlagSet(flags, bindings, sections)
 					Ω(flagSet.IsZero()).Should(BeTrue())
 					Ω(err).Should(HaveOccurred())
 				})
@@ -168,11 +167,11 @@ var _ = Describe("Flags", func() {
 
 			Context("when the flags point to an invalid keypath in the map", func() {
 				BeforeEach(func() {
-					flags = append(flags, config.GinkgoFlag{Name: "welp-flag", Usage: "welp-usage", KeyPath: "A.WelpProperty"})
+					flags = append(flags, types.GinkgoFlag{Name: "welp-flag", Usage: "welp-usage", KeyPath: "A.WelpProperty"})
 				})
 
 				It("errors", func() {
-					flagSet, err := config.NewGinkgoFlagSet(flags, bindings, sections)
+					flagSet, err := types.NewGinkgoFlagSet(flags, bindings, sections)
 					Ω(flagSet.IsZero()).Should(BeTrue())
 					Ω(err).Should(HaveOccurred())
 				})
@@ -182,7 +181,7 @@ var _ = Describe("Flags", func() {
 		Describe("A stand-alone GinkgoFlagSet", func() {
 			BeforeEach(func() {
 				var err error
-				flagSet, err = config.NewGinkgoFlagSet(flags, bindings, sections)
+				flagSet, err = types.NewGinkgoFlagSet(flags, bindings, sections)
 				Ω(flagSet.IsZero()).Should(BeFalse())
 				Ω(err).ShouldNot(HaveOccurred())
 			})
@@ -318,7 +317,7 @@ var _ = Describe("Flags", func() {
 				goIntFlag := 0
 				goFlagSet.StringVar(&goStringFlag, "go-string-flag", "bob", "sets via `go`")
 				goFlagSet.IntVar(&goIntFlag, "go-int-flag", 0, "an integer, please")
-				flagSet, err = config.NewAttachedGinkgoFlagSet(goFlagSet, flags, bindings, sections, config.GinkgoFlagSection{
+				flagSet, err = types.NewAttachedGinkgoFlagSet(goFlagSet, flags, bindings, sections, types.GinkgoFlagSection{
 					Heading: "The go flags...",
 				})
 				Ω(err).ShouldNot(HaveOccurred())
@@ -399,7 +398,7 @@ var _ = Describe("Flags", func() {
 		}
 		var A StructA
 		var B StructB
-		var flags config.GinkgoFlags
+		var flags types.GinkgoFlags
 		var bindings map[string]interface{}
 
 		BeforeEach(func() {
@@ -418,7 +417,7 @@ var _ = Describe("Flags", func() {
 				"A": &A,
 				"B": &B,
 			}
-			flags = config.GinkgoFlags{
+			flags = types.GinkgoFlags{
 				{Name: "string-flag", KeyPath: "A.StringProperty", DeprecatedName: "stringFlag"},
 				{Name: "int-64-flag", KeyPath: "A.Int64Property"},
 				{Name: "float-64-flag", KeyPath: "A.Float64Property"},
@@ -430,7 +429,7 @@ var _ = Describe("Flags", func() {
 		})
 
 		It("generates an array of flag arguments that, if parsed, reproduce the values in the passed-in bindings", func() {
-			args, err := config.GenerateFlagArgs(flags, bindings)
+			args, err := types.GenerateFlagArgs(flags, bindings)
 			Ω(err).ShouldNot(HaveOccurred())
 
 			Ω(args).Should(Equal([]string{
@@ -446,13 +445,13 @@ var _ = Describe("Flags", func() {
 		})
 
 		It("errors if there is a keypath issue", func() {
-			flags[0] = config.GinkgoFlag{Name: "unsupported-type", KeyPath: "A.UnsupportedInt32"}
-			args, err := config.GenerateFlagArgs(flags, bindings)
+			flags[0] = types.GinkgoFlag{Name: "unsupported-type", KeyPath: "A.UnsupportedInt32"}
+			args, err := types.GenerateFlagArgs(flags, bindings)
 			Ω(err).Should(MatchError("unsupported type int32"))
 			Ω(args).Should(BeEmpty())
 
-			flags[0] = config.GinkgoFlag{Name: "bad-keypath", KeyPath: "A.StringProoperty"}
-			args, err = config.GenerateFlagArgs(flags, bindings)
+			flags[0] = types.GinkgoFlag{Name: "bad-keypath", KeyPath: "A.StringProoperty"}
+			args, err = types.GenerateFlagArgs(flags, bindings)
 			Ω(err).Should(MatchError("could not load KeyPath: A.StringProoperty"))
 			Ω(args).Should(BeEmpty())
 		})

@@ -120,7 +120,6 @@ import (
 	"fmt"
 	"os"
 
-	"github.com/onsi/ginkgo/config"
 	"github.com/onsi/ginkgo/ginkgo/build"
 	"github.com/onsi/ginkgo/ginkgo/command"
 	"github.com/onsi/ginkgo/ginkgo/generators"
@@ -150,7 +149,7 @@ func GenerateCommands() []command.Command {
 func main() {
 	program = command.Program{
 		Name:           "ginkgo",
-		Heading:        fmt.Sprintf("Ginkgo Version %s", config.VERSION),
+		Heading:        fmt.Sprintf("Ginkgo Version %s", types.VERSION),
 		Commands:       GenerateCommands(),
 		DefaultCommand: run.BuildRunCommand(),
 		DeprecatedCommands: []command.DeprecatedCommand{
@@ -168,7 +167,7 @@ func BuildVersionCommand() command.Command {
 		Usage:    "ginkgo version",
 		ShortDoc: "Print Ginkgo's version",
 		Command: func(_ []string, _ []string) {
-			fmt.Printf("Ginkgo Version %s\n", config.VERSION)
+			fmt.Printf("Ginkgo Version %s\n", types.VERSION)
 		},
 	}
 }

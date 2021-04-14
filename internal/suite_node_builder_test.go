@@ -4,7 +4,6 @@ import (
 	"net/http"
 
 	. "github.com/onsi/ginkgo"
-	"github.com/onsi/ginkgo/config"
 	"github.com/onsi/ginkgo/internal"
 	. "github.com/onsi/ginkgo/internal/test_helpers"
 	"github.com/onsi/ginkgo/types"
@@ -16,12 +15,12 @@ var _ = Describe("SuiteNodeBuilder", func() {
 	var rt *RunTracker
 	var builder internal.SuiteNodeBuilder
 	var node Node
-	var conf config.GinkgoConfigType
+	var conf types.SuiteConfig
 	var failer *internal.Failer
 
 	BeforeEach(func() {
 		rt = NewRunTracker()
-		conf = config.GinkgoConfigType{}
+		conf = types.SuiteConfig{}
 		conf.ParallelTotal = 1
 		conf.ParallelNode = 1
 		failer = internal.NewFailer()

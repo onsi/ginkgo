@@ -6,15 +6,15 @@ import (
 	"time"
 
 	. "github.com/onsi/ginkgo"
-	"github.com/onsi/ginkgo/config"
 	"github.com/onsi/ginkgo/internal"
 	"github.com/onsi/ginkgo/internal/parallel_support"
 	. "github.com/onsi/ginkgo/internal/test_helpers"
+	"github.com/onsi/ginkgo/types"
 	. "github.com/onsi/gomega"
 )
 
 var _ = Describe("Running tests in parallel", func() {
-	var conf2 config.GinkgoConfigType
+	var conf2 types.SuiteConfig
 	var reporter2 *FakeReporter
 	var rt2 *RunTracker
 
@@ -52,7 +52,7 @@ var _ = Describe("Running tests in parallel", func() {
 		//set up configuration for node 1 and node 2
 		conf.ParallelTotal = 2
 		conf.ParallelNode = 1
-		conf2 = config.GinkgoConfigType{
+		conf2 = types.SuiteConfig{
 			ParallelTotal: 2,
 			ParallelNode:  2,
 		}

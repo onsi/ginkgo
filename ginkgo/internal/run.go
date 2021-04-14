@@ -12,7 +12,6 @@ import (
 	"syscall"
 	"time"
 
-	"github.com/onsi/ginkgo/config"
 	"github.com/onsi/ginkgo/formatter"
 	"github.com/onsi/ginkgo/ginkgo/command"
 	"github.com/onsi/ginkgo/internal/parallel_support"
@@ -20,7 +19,7 @@ import (
 	"github.com/onsi/ginkgo/types"
 )
 
-func RunCompiledSuite(suite TestSuite, ginkgoConfig config.GinkgoConfigType, reporterConfig config.DefaultReporterConfigType, cliConfig config.GinkgoCLIConfigType, goFlagsConfig config.GoFlagsConfigType, additionalArgs []string) TestSuite {
+func RunCompiledSuite(suite TestSuite, ginkgoConfig types.SuiteConfig, reporterConfig types.ReporterConfig, cliConfig types.CLIConfig, goFlagsConfig types.GoFlagsConfig, additionalArgs []string) TestSuite {
 	suite.Passed = false
 	suite.HasProgrammaticFocus = false
 
@@ -64,7 +63,7 @@ func checkForNoTestsWarning(buf *bytes.Buffer) bool {
 	return false
 }
 
-func runGoTest(suite TestSuite, cliConfig config.GinkgoCLIConfigType) TestSuite {
+func runGoTest(suite TestSuite, cliConfig types.CLIConfig) TestSuite {
 	cmd, buf := buildAndStartCommand(suite, []string{"-test.v"}, true)
 
 	cmd.Wait()
@@ -76,8 +75,8 @@ func runGoTest(suite TestSuite, cliConfig config.GinkgoCLIConfigType) TestSuite 
 	return suite
 }
 
-func runSerial(suite TestSuite, ginkgoConfig config.GinkgoConfigType, reporterConfig config.DefaultReporterConfigType, cliConfig config.GinkgoCLIConfigType, goFlagsConfig config.GoFlagsConfigType, additionalArgs []string) TestSuite {
-	args, err := config.GenerateTestRunArgs(ginkgoConfig, reporterConfig, goFlagsConfig)
+func runSerial(suite TestSuite, ginkgoConfig types.SuiteConfig, reporterConfig types.ReporterConfig, cliConfig types.CLIConfig, goFlagsConfig types.GoFlagsConfig, additionalArgs []string) TestSuite {
+	args, err := types.GenerateTestRunArgs(ginkgoConfig, reporterConfig, goFlagsConfig)
 	command.AbortIfError("Failed to generate test run arguments", err)
 	args = append([]string{"--test.timeout=0"}, args...)
 	args = append(args, additionalArgs...)
@@ -94,7 +93,7 @@ func runSerial(suite TestSuite, ginkgoConfig config.GinkgoConfigType, reporterCo
 	return suite
 }
 
-func runParallel(suite TestSuite, ginkgoConfig config.GinkgoConfigType, reporterConfig config.DefaultReporterConfigType, cliConfig config.GinkgoCLIConfigType, goFlagsConfig config.GoFlagsConfigType, additionalArgs []string) TestSuite {
+func runParallel(suite TestSuite, ginkgoConfig types.SuiteConfig, reporterConfig types.ReporterConfig, cliConfig types.CLIConfig, goFlagsConfig types.GoFlagsConfig, additionalArgs []string) TestSuite {
 	type nodeResult struct {
 		passed               bool
 		hasProgrammaticFocus bool
@@ -142,7 +141,7 @@ func runParallel(suite TestSuite, ginkgoConfig config.GinkgoConfigType, reporter
 			mutexProfiles = append(mutexProfiles, filepath.Join(suite.Path, nodeGoFlagsConfig.MutexProfile))
 		}
 
-		args, err := config.GenerateTestRunArgs(nodeGinkgoConfig, reporterConfig, nodeGoFlagsConfig)
+		args, err := types.GenerateTestRunArgs(nodeGinkgoConfig, reporterConfig, nodeGoFlagsConfig)
 		command.AbortIfError("Failed to generate test run argumnets", err)
 		args = append([]string{"--test.timeout=0"}, args...)
 		args = append(args, additionalArgs...)
