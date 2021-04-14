@@ -4,8 +4,8 @@ import (
 	. "github.com/onsi/ginkgo"
 	. "github.com/onsi/gomega"
 
-	"github.com/onsi/ginkgo/config"
 	"github.com/onsi/ginkgo/internal"
+	"github.com/onsi/ginkgo/types"
 )
 
 var _ = Describe("Focus", func() {
@@ -78,7 +78,7 @@ var _ = Describe("Focus", func() {
 	Describe("ApplyFocusToSpecs", func() {
 		var specs Specs
 		var description string
-		var conf config.GinkgoConfigType
+		var conf types.SuiteConfig
 
 		harvestSkips := func(specs Specs) []bool {
 			out := []bool{}
@@ -90,7 +90,7 @@ var _ = Describe("Focus", func() {
 
 		BeforeEach(func() {
 			description = "Silmarillion Suite"
-			conf = config.GinkgoConfigType{}
+			conf = types.SuiteConfig{}
 		})
 
 		Context("when there are specs with nodes marked pending", func() {

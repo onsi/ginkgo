@@ -6,8 +6,8 @@ import (
 	. "github.com/onsi/ginkgo"
 	. "github.com/onsi/gomega"
 
-	"github.com/onsi/ginkgo/config"
 	"github.com/onsi/ginkgo/internal"
+	"github.com/onsi/ginkgo/types"
 )
 
 type SpecTexts []string
@@ -25,11 +25,11 @@ func (tt SpecTexts) Join() string {
 }
 
 var _ = Describe("Shuffle", func() {
-	var conf config.GinkgoConfigType
+	var conf types.SuiteConfig
 	var specs Specs
 
 	BeforeEach(func() {
-		conf = config.GinkgoConfigType{}
+		conf = types.SuiteConfig{}
 		conf.RandomSeed = 1
 
 		con1 := N(ntCon)

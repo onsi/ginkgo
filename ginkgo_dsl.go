@@ -19,7 +19,6 @@ import (
 	"strings"
 	"time"
 
-	"github.com/onsi/ginkgo/config"
 	"github.com/onsi/ginkgo/formatter"
 	"github.com/onsi/ginkgo/internal"
 	"github.com/onsi/ginkgo/internal/global"
@@ -29,16 +28,17 @@ import (
 	"github.com/onsi/ginkgo/types"
 )
 
-const GINKGO_VERSION = config.VERSION
+const GINKGO_VERSION = types.VERSION
 
-var flagSet config.GinkgoFlagSet
+var flagSet types.GinkgoFlagSet
 var deprecationTracker = types.NewDeprecationTracker()
-
+var suiteConfig = types.NewDefaultSuiteConfig()
+var reporterConfig = types.NewDefaultReporterConfig()
 var suiteDidRun = false
 
 func init() {
 	var err error
-	flagSet, err = config.BuildTestSuiteFlagSet()
+	flagSet, err = types.BuildTestSuiteFlagSet(&suiteConfig, &reporterConfig)
 	if err != nil {
 		panic(err)
 	}
@@ -73,18 +73,23 @@ type GinkgoTestingT interface {
 	Fail()
 }
 
+//GinkgoConfiguration returns the configuration of the currenty running test suite
+func GinkgoConfiguration() (types.SuiteConfig, types.ReporterConfig) {
+	return suiteConfig, reporterConfig
+}
+
 //GinkgoRandomSeed returns the seed used to randomize spec execution order.  It is
 //useful for seeding your own pseudorandom number generators (PRNGs) to ensure
 //consistent executions from run to run, where your tests contain variability (for
 //example, when selecting random test data).
 func GinkgoRandomSeed() int64 {
-	return config.GinkgoConfig.RandomSeed
+	return suiteConfig.RandomSeed
 }
 
 //GinkgoParallelNode returns the parallel node number for the current ginkgo process
 //The node number is 1-indexed
 func GinkgoParallelNode() int {
-	return config.GinkgoConfig.ParallelNode
+	return suiteConfig.ParallelNode
 }
 
 //Some matcher libraries or legacy codebases require a *testing.T
@@ -159,22 +164,22 @@ func RunSpecs(t GinkgoTestingT, description string) bool {
 
 	var reporter reporters.Reporter
 	var outputInterceptor internal.OutputInterceptor
-	if config.GinkgoConfig.ParallelTotal == 1 {
-		reporter = reporters.NewDefaultReporter(config.DefaultReporterConfig, formatter.ColorableStdOut)
+	if suiteConfig.ParallelTotal == 1 {
+		reporter = reporters.NewDefaultReporter(reporterConfig, formatter.ColorableStdOut)
 		outputInterceptor = internal.NewNoopOutputInterceptor()
 	} else {
-		reporter = parallel_support.NewForwardingReporter(config.DefaultReporterConfig, config.GinkgoConfig.ParallelHost, GinkgoWriter.(*internal.Writer))
+		reporter = parallel_support.NewForwardingReporter(reporterConfig, suiteConfig.ParallelHost, GinkgoWriter.(*internal.Writer))
 		outputInterceptor = internal.NewOutputInterceptor()
 	}
 
 	writer := GinkgoWriter.(*internal.Writer)
-	if config.DefaultReporterConfig.Verbose && config.GinkgoConfig.ParallelTotal == 1 {
+	if reporterConfig.Verbose && suiteConfig.ParallelTotal == 1 {
 		writer.SetMode(internal.WriterModeStreamAndBuffer)
 	} else {
 		writer.SetMode(internal.WriterModeBufferOnly)
 	}
 
-	configErrors := config.VetConfig(flagSet, config.GinkgoConfig, config.DefaultReporterConfig)
+	configErrors := types.VetConfig(flagSet, suiteConfig, reporterConfig)
 	if len(configErrors) > 0 {
 		fmt.Fprintf(formatter.ColorableStdErr, formatter.F("{{red}}Ginkgo detected configuration issues:{{/}}\n"))
 		for _, err := range configErrors {
@@ -186,7 +191,7 @@ func RunSpecs(t GinkgoTestingT, description string) bool {
 	err := global.Suite.BuildTree()
 	exitIfErr(err)
 
-	passed, hasFocusedTests := global.Suite.Run(description, global.Failer, reporter, writer, outputInterceptor, internal.NewInterruptHandler(), config.GinkgoConfig)
+	passed, hasFocusedTests := global.Suite.Run(description, global.Failer, reporter, writer, outputInterceptor, internal.NewInterruptHandler(), suiteConfig)
 
 	flagSet.ValidateDeprecations(deprecationTracker)
 	if deprecationTracker.DidTrackDeprecations() {
@@ -389,7 +394,7 @@ func XSpecify(text string, _ ...interface{}) bool {
 //By will simply log the passed in text to the GinkgoWriter.  If By is handed a function it will immediately run the function.
 func By(text string, callbacks ...func()) {
 	preamble := "\x1b[1mSTEP\x1b[0m"
-	if config.DefaultReporterConfig.NoColor {
+	if reporterConfig.NoColor {
 		preamble = "STEP"
 	}
 	fmt.Fprintln(GinkgoWriter, preamble+": "+text)
@@ -534,7 +539,11 @@ func exitIfErr(err error) {
 	}
 }
 
-// Deprecations for v2
+/*
+===================================================
+   Deprecations for v2
+===================================================
+*/
 
 // Deprecated Done Channel for asynchronous testing
 type Done chan<- interface{}

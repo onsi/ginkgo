@@ -7,8 +7,8 @@ import (
 	"go/token"
 	"os"
 
-	"github.com/onsi/ginkgo/config"
 	"github.com/onsi/ginkgo/ginkgo/command"
+	"github.com/onsi/ginkgo/types"
 )
 
 const (
@@ -28,8 +28,8 @@ func BuildOutlineCommand() command.Command {
 	conf := outlineConfig{
 		Format: "csv",
 	}
-	flags, err := config.NewGinkgoFlagSet(
-		config.GinkgoFlags{
+	flags, err := types.NewGinkgoFlagSet(
+		types.GinkgoFlags{
 			{Name: "format", KeyPath: "Format",
 				Usage:             "Format of outline",
 				UsageArgument:     "one of 'csv', 'indent', or 'json'",
@@ -37,7 +37,7 @@ func BuildOutlineCommand() command.Command {
 			},
 		},
 		&conf,
-		config.GinkgoFlagSections{},
+		types.GinkgoFlagSections{},
 	)
 	if err != nil {
 		panic(err)

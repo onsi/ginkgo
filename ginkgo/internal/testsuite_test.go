@@ -6,8 +6,8 @@ import (
 	"path/filepath"
 
 	. "github.com/onsi/ginkgo"
-	"github.com/onsi/ginkgo/config"
 	. "github.com/onsi/ginkgo/ginkgo/internal"
+	"github.com/onsi/ginkgo/types"
 	. "github.com/onsi/gomega"
 )
 
@@ -33,7 +33,7 @@ func PTS(path string, pkgName string, isGinkgo bool, pathToCompiledTest string) 
 var _ = Describe("TestSuite", func() {
 	var tmpDir string
 	var origWd string
-	var cliConf config.GinkgoCLIConfigType
+	var cliConf types.CLIConfig
 
 	writeFile := func(folder string, filename string, content string, mode os.FileMode) {
 		path := filepath.Join(tmpDir, folder)
@@ -45,7 +45,7 @@ var _ = Describe("TestSuite", func() {
 	}
 
 	BeforeEach(func() {
-		cliConf = config.GinkgoCLIConfigType{}
+		cliConf = types.CLIConfig{}
 
 		var err error
 		tmpDir, err = ioutil.TempDir("/tmp", "ginkgo")

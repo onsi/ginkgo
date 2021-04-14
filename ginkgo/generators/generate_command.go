@@ -11,15 +11,15 @@ import (
 	"text/template"
 
 	sprig "github.com/go-task/slim-sprig"
-	"github.com/onsi/ginkgo/config"
 	"github.com/onsi/ginkgo/ginkgo/command"
 	"github.com/onsi/ginkgo/ginkgo/internal"
+	"github.com/onsi/ginkgo/types"
 )
 
 func BuildGenerateCommand() command.Command {
 	conf := GeneratorsConfig{}
-	flags, err := config.NewGinkgoFlagSet(
-		config.GinkgoFlags{
+	flags, err := types.NewGinkgoFlagSet(
+		types.GinkgoFlags{
 			{Name: "agouti", KeyPath: "Agouti",
 				Usage: "If set, generate will create a test file for writing Agouti tests"},
 			{Name: "nodot", KeyPath: "NoDot",
@@ -31,7 +31,7 @@ func BuildGenerateCommand() command.Command {
 				Usage:         "If specified, generate will use the contents of the file passed as the test file template"},
 		},
 		&conf,
-		config.GinkgoFlagSections{},
+		types.GinkgoFlagSections{},
 	)
 
 	if err != nil {
