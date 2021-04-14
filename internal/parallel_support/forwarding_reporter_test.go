@@ -25,19 +25,16 @@ var _ = Describe("ForwardingReporter", func() {
 
 	Context("When a suite begins", func() {
 		BeforeEach(func() {
-			suiteSummary := types.SuiteSummary{
+			report := types.Report{
 				SuiteDescription: "My Test Suite",
 			}
 
 			server.AppendHandlers(ghttp.CombineHandlers(
 				ghttp.VerifyRequest("POST", "/SpecSuiteWillBegin"),
-				ghttp.VerifyJSONRepresenting(SuiteConfigAndSummary{
-					SuiteConfig: types.SuiteConfig{RandomSeed: 17},
-					Summary:     suiteSummary,
-				}),
+				ghttp.VerifyJSONRepresenting(report),
 			))
 
-			reporter.SpecSuiteWillBegin(types.SuiteConfig{RandomSeed: 17}, suiteSummary)
+			reporter.SpecSuiteWillBegin(report)
 		})
 
 		It("should POST the SuiteSummary and Ginkgo Config to the Ginkgo server", func() {
@@ -85,18 +82,17 @@ var _ = Describe("ForwardingReporter", func() {
 
 	Context("When a suite ends", func() {
 		BeforeEach(func() {
-			suiteSummary := types.SuiteSummary{
-				SuiteDescription:    "My Test Suite",
-				SuiteSucceeded:      true,
-				NumberOfPassedSpecs: 10,
+			report := types.Report{
+				SuiteDescription: "My Test Suite",
+				SuiteSucceeded:   true,
 			}
 
 			server.AppendHandlers(ghttp.CombineHandlers(
 				ghttp.VerifyRequest("POST", "/SpecSuiteDidEnd"),
-				ghttp.VerifyJSONRepresenting(suiteSummary),
+				ghttp.VerifyJSONRepresenting(report),
 			))
 
-			reporter.SpecSuiteDidEnd(suiteSummary)
+			reporter.SpecSuiteDidEnd(report)
 		})
 
 		It("should POST the SuiteSummary to the Ginkgo server", func() {

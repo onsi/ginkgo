@@ -36,7 +36,7 @@ var _ = Describe("When a test suite is interrupted", func() {
 		})
 
 		It("reports the correct statistics", func() {
-			Ω(reporter.End).Should(BeASuiteSummary(false, NSpecs(2), NWillRun(2), NPassed(0), NSkipped(2), NFailed(0)))
+			Ω(reporter.End).Should(BeASuiteSummary(false, NSpecs(2), NWillRun(2), NPassed(0), NSkipped(0), NFailed(0)))
 		})
 	})
 

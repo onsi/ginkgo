@@ -140,17 +140,19 @@ var _ = Describe("DefaultReporter", func() {
 	})
 
 	DescribeTable("Rendering SpecSuiteWillBegin",
-		func(conf types.ReporterConfig, gConf types.SuiteConfig, summary types.SuiteSummary, expected ...string) {
+		func(conf types.ReporterConfig, report types.Report, expected ...string) {
 			reporter := reporters.NewDefaultReporterUnderTest(conf, buf)
-			reporter.SpecSuiteWillBegin(gConf, summary)
+			reporter.SpecSuiteWillBegin(report)
 			verifyExpectedOutput(expected)
 		},
 		Entry("Default Behavior",
 			C(),
-			types.SuiteConfig{RandomSeed: 17, ParallelTotal: 1},
-			types.SuiteSummary{SuiteDescription: "My Suite", NumberOfSpecsThatWillBeRun: 15, NumberOfTotalSpecs: 20},
-			"Running Suite: My Suite",
-			"=======================",
+			types.Report{
+				SuiteDescription: "My Suite", SuitePath: "/path/to/suite", PreRunStats: types.PreRunStats{SpecsThatWillRun: 15, TotalSpecs: 20},
+				SuiteConfig: types.SuiteConfig{RandomSeed: 17, ParallelTotal: 1},
+			},
+			"Running Suite: My Suite - /path/to/suite",
+			"========================================",
 			"Random Seed: {{bold}}17{{/}}",
 			"",
 			"Will run {{bold}}15{{/}} of {{bold}}20{{/}} specs",
@@ -158,10 +160,12 @@ var _ = Describe("DefaultReporter", func() {
 		),
 		Entry("When configured to randomize all specs",
 			C(),
-			types.SuiteConfig{RandomSeed: 17, ParallelTotal: 1, RandomizeAllSpecs: true},
-			types.SuiteSummary{SuiteDescription: "My Suite", NumberOfSpecsThatWillBeRun: 15, NumberOfTotalSpecs: 20},
-			"Running Suite: My Suite",
-			"=======================",
+			types.Report{
+				SuiteDescription: "My Suite", SuitePath: "/path/to/suite", PreRunStats: types.PreRunStats{SpecsThatWillRun: 15, TotalSpecs: 20},
+				SuiteConfig: types.SuiteConfig{RandomSeed: 17, ParallelTotal: 1, RandomizeAllSpecs: true},
+			},
+			"Running Suite: My Suite - /path/to/suite",
+			"========================================",
 			"Random Seed: {{bold}}17{{/}} - will randomize all specs",
 			"",
 			"Will run {{bold}}15{{/}} of {{bold}}20{{/}} specs",
@@ -169,10 +173,12 @@ var _ = Describe("DefaultReporter", func() {
 		),
 		Entry("when configured to run in parallel",
 			C(),
-			types.SuiteConfig{RandomSeed: 17, ParallelTotal: 3},
-			types.SuiteSummary{SuiteDescription: "My Suite", NumberOfSpecsThatWillBeRun: 15, NumberOfTotalSpecs: 20},
-			"Running Suite: My Suite",
-			"=======================",
+			types.Report{
+				SuiteDescription: "My Suite", SuitePath: "/path/to/suite", PreRunStats: types.PreRunStats{SpecsThatWillRun: 15, TotalSpecs: 20},
+				SuiteConfig: types.SuiteConfig{RandomSeed: 17, ParallelTotal: 3},
+			},
+			"Running Suite: My Suite - /path/to/suite",
+			"========================================",
 			"Random Seed: {{bold}}17{{/}}",
 			"",
 			"Will run {{bold}}15{{/}} of {{bold}}20{{/}} specs",
@@ -181,14 +187,18 @@ var _ = Describe("DefaultReporter", func() {
 		),
 		Entry("when succinct and in series",
 			C(Succinct),
-			types.SuiteConfig{RandomSeed: 17, ParallelTotal: 1},
-			types.SuiteSummary{SuiteDescription: "My Suite", NumberOfSpecsThatWillBeRun: 15, NumberOfTotalSpecs: 20},
+			types.Report{
+				SuiteDescription: "My Suite", SuitePath: "/path/to/suite", PreRunStats: types.PreRunStats{SpecsThatWillRun: 15, TotalSpecs: 20},
+				SuiteConfig: types.SuiteConfig{RandomSeed: 17, ParallelTotal: 1},
+			},
 			"[17] {{bold}}My Suite{{/}} - 15/20 specs ",
 		),
 		Entry("when succinct and in parallel",
 			C(Succinct),
-			types.SuiteConfig{RandomSeed: 17, ParallelTotal: 3},
-			types.SuiteSummary{SuiteDescription: "My Suite", NumberOfSpecsThatWillBeRun: 15, NumberOfTotalSpecs: 20},
+			types.Report{
+				SuiteDescription: "My Suite", SuitePath: "/path/to/suite", PreRunStats: types.PreRunStats{SpecsThatWillRun: 15, TotalSpecs: 20},
+				SuiteConfig: types.SuiteConfig{RandomSeed: 17, ParallelTotal: 3},
+			},
 			"[17] {{bold}}My Suite{{/}} - 15/20 specs - 3 nodes ",
 		),
 	)
@@ -699,114 +709,110 @@ var _ = Describe("DefaultReporter", func() {
 	)
 
 	DescribeTable("Rendering SpecSuiteDidEnd",
-		func(conf types.ReporterConfig, reports []types.SpecReport, summary types.SuiteSummary, expected ...string) {
+		func(conf types.ReporterConfig, report types.Report, expected ...string) {
 			reporter := reporters.NewDefaultReporterUnderTest(conf, buf)
-			for _, report := range reports {
-				reporter.WillRun(report)
-				reporter.DidRun(report)
-			}
-			buf.Clear()
-			reporter.SpecSuiteDidEnd(summary)
+			reporter.SpecSuiteDidEnd(report)
 			verifyExpectedOutput(expected)
 		},
 
 		Entry("when configured to be succinct",
 			C(Succinct),
-			[]types.SpecReport{S()},
-			types.SuiteSummary{
+			types.Report{
 				SuiteSucceeded: true,
 				RunTime:        time.Minute,
+				SpecReports:    types.SpecReports{S()},
 			},
 			" {{green}}SUCCESS!{{/}} 1m0s ",
 		),
 		Entry("the suite passes",
 			C(),
-			[]types.SpecReport{S()},
-			types.SuiteSummary{
-				SuiteSucceeded:             true,
-				RunTime:                    time.Minute,
-				NumberOfSpecsThatWillBeRun: 20,
-				NumberOfTotalSpecs:         30,
-				NumberOfPassedSpecs:        18,
-				NumberOfSkippedSpecs:       12,
-				NumberOfPendingSpecs:       10,
-				NumberOfFailedSpecs:        0,
-				NumberOfFlakedSpecs:        0,
+			types.Report{
+				SuiteSucceeded: true,
+				PreRunStats:    types.PreRunStats{TotalSpecs: 8, SpecsThatWillRun: 8},
+				RunTime:        time.Minute,
+				SpecReports: types.SpecReports{
+					S(types.NodeTypeBeforeSuite),
+					S(types.SpecStatePassed), S(types.SpecStatePassed), S(types.SpecStatePassed),
+					S(types.SpecStatePending), S(types.SpecStatePending),
+					S(types.SpecStateSkipped), S(types.SpecStateSkipped), S(types.SpecStateSkipped),
+					S(types.NodeTypeAfterSuite),
+				},
 			},
 			"",
-			"",
-			"{{green}}{{bold}}Ran 18 of 30 Specs in 60.000 seconds{{/}}",
-			"{{green}}{{bold}}SUCCESS!{{/}} -- {{green}}{{bold}}18 Passed{{/}} | {{red}}{{bold}}0 Failed{{/}} | {{yellow}}{{bold}}10 Pending{{/}} | {{cyan}}{{bold}}12 Skipped{{/}}",
+			"{{green}}{{bold}}Ran 3 of 8 Specs in 60.000 seconds{{/}}",
+			"{{green}}{{bold}}SUCCESS!{{/}} -- {{green}}{{bold}}3 Passed{{/}} | {{red}}{{bold}}0 Failed{{/}} | {{yellow}}{{bold}}2 Pending{{/}} | {{cyan}}{{bold}}3 Skipped{{/}}",
 			"",
 		),
 		Entry("the suite passes and has flaky specs",
 			C(),
-			[]types.SpecReport{S()},
-			types.SuiteSummary{
-				SuiteSucceeded:             true,
-				RunTime:                    time.Minute,
-				NumberOfSpecsThatWillBeRun: 20,
-				NumberOfTotalSpecs:         30,
-				NumberOfPassedSpecs:        18,
-				NumberOfSkippedSpecs:       12,
-				NumberOfPendingSpecs:       10,
-				NumberOfFailedSpecs:        0,
-				NumberOfFlakedSpecs:        4,
+			types.Report{
+				SuiteSucceeded: true,
+				PreRunStats:    types.PreRunStats{TotalSpecs: 10, SpecsThatWillRun: 8},
+				RunTime:        time.Minute,
+				SpecReports: types.SpecReports{
+					S(types.NodeTypeBeforeSuite),
+					S(types.SpecStatePassed), S(types.SpecStatePassed), S(types.SpecStatePassed),
+					S(types.SpecStatePassed, 3), S(types.SpecStatePassed, 4), //flakey
+					S(types.SpecStatePending), S(types.SpecStatePending),
+					S(types.SpecStateSkipped), S(types.SpecStateSkipped), S(types.SpecStateSkipped),
+					S(types.NodeTypeAfterSuite),
+				},
 			},
 			"",
-			"",
-			"{{green}}{{bold}}Ran 18 of 30 Specs in 60.000 seconds{{/}}",
-			"{{green}}{{bold}}SUCCESS!{{/}} -- {{green}}{{bold}}18 Passed{{/}} | {{red}}{{bold}}0 Failed{{/}} | {{light-yellow}}{{bold}}4 Flaked{{/}} | {{yellow}}{{bold}}10 Pending{{/}} | {{cyan}}{{bold}}12 Skipped{{/}}",
+			"{{green}}{{bold}}Ran 5 of 10 Specs in 60.000 seconds{{/}}",
+			"{{green}}{{bold}}SUCCESS!{{/}} -- {{green}}{{bold}}5 Passed{{/}} | {{red}}{{bold}}0 Failed{{/}} | {{light-yellow}}{{bold}}2 Flaked{{/}} | {{yellow}}{{bold}}2 Pending{{/}} | {{cyan}}{{bold}}3 Skipped{{/}}",
 			"",
 		),
 		Entry("the suite fails with one failed test",
 			C(),
-			[]types.SpecReport{S(CTS("Describe A", "Context B", "The Test"), CLS(cl0, cl1, cl2),
-				types.SpecStateFailed, 2,
-				F("FAILURE MESSAGE\nWITH DETAILS", Location(cl3), types.NodeTypeJustBeforeEach, 1),
-			)},
-			types.SuiteSummary{
-				SuiteSucceeded:             false,
-				RunTime:                    time.Minute,
-				NumberOfSpecsThatWillBeRun: 20,
-				NumberOfTotalSpecs:         30,
-				NumberOfPassedSpecs:        17,
-				NumberOfSkippedSpecs:       12,
-				NumberOfPendingSpecs:       10,
-				NumberOfFailedSpecs:        1,
-				NumberOfFlakedSpecs:        4,
+			types.Report{
+				SuiteSucceeded: false,
+				PreRunStats:    types.PreRunStats{TotalSpecs: 11, SpecsThatWillRun: 9},
+				RunTime:        time.Minute,
+				SpecReports: types.SpecReports{
+					S(types.NodeTypeBeforeSuite),
+					S(types.SpecStatePassed), S(types.SpecStatePassed), S(types.SpecStatePassed),
+					S(types.SpecStatePassed, 3), S(types.SpecStatePassed, 4), //flakey
+					S(types.SpecStatePending), S(types.SpecStatePending),
+					S(types.SpecStateSkipped), S(types.SpecStateSkipped), S(types.SpecStateSkipped),
+					S(CTS("Describe A", "Context B", "The Test"), CLS(cl0, cl1, cl2),
+						types.SpecStateFailed, 2,
+						F("FAILURE MESSAGE\nWITH DETAILS", Location(cl3), types.NodeTypeJustBeforeEach, 1),
+					),
+					S(types.NodeTypeAfterSuite),
+				},
 			},
 			"",
-			"{{red}}{{bold}}Ran 18 of 30 Specs in 60.000 seconds{{/}}",
-			"{{red}}{{bold}}FAIL!{{/}} -- {{green}}{{bold}}17 Passed{{/}} | {{red}}{{bold}}1 Failed{{/}} | {{light-yellow}}{{bold}}4 Flaked{{/}} | {{yellow}}{{bold}}10 Pending{{/}} | {{cyan}}{{bold}}12 Skipped{{/}}",
+			"{{red}}{{bold}}Ran 6 of 11 Specs in 60.000 seconds{{/}}",
+			"{{red}}{{bold}}FAIL!{{/}} -- {{green}}{{bold}}5 Passed{{/}} | {{red}}{{bold}}1 Failed{{/}} | {{light-yellow}}{{bold}}2 Flaked{{/}} | {{yellow}}{{bold}}2 Pending{{/}} | {{cyan}}{{bold}}3 Skipped{{/}}",
 			"",
 		),
 		Entry("the suite fails with multiple failed tests",
 			C(),
-			[]types.SpecReport{
-				S(CTS("Describe A", "Context B", "The Test"), CLS(cl0, cl1, cl2),
-					types.SpecStateFailed, 2,
-					F("FAILURE MESSAGE\nWITH DETAILS", Location(cl3), types.NodeTypeJustBeforeEach, 1),
-				),
-				S(CTS("Describe A", "The Test"), CLS(cl0, cl1),
-					types.SpecStatePanicked, 2,
-					F("FAILURE MESSAGE\nWITH DETAILS", Location(cl2), types.NodeTypeIt, 1),
-				),
-				S(CTS("The Test"), CLS(cl0),
-					types.SpecStateInterrupted, 2,
-					F("FAILURE MESSAGE\nWITH DETAILS", Location(cl1), types.NodeTypeIt, 0),
-				),
-			},
-			types.SuiteSummary{
-				SuiteSucceeded:             false,
-				RunTime:                    time.Minute,
-				NumberOfSpecsThatWillBeRun: 20,
-				NumberOfTotalSpecs:         30,
-				NumberOfPassedSpecs:        15,
-				NumberOfSkippedSpecs:       12,
-				NumberOfPendingSpecs:       10,
-				NumberOfFailedSpecs:        3,
-				NumberOfFlakedSpecs:        4,
+			types.Report{
+				SuiteSucceeded: false,
+				PreRunStats:    types.PreRunStats{TotalSpecs: 13, SpecsThatWillRun: 9},
+				RunTime:        time.Minute,
+				SpecReports: types.SpecReports{
+					S(types.NodeTypeBeforeSuite),
+					S(types.SpecStatePassed), S(types.SpecStatePassed), S(types.SpecStatePassed),
+					S(types.SpecStatePassed, 3), S(types.SpecStatePassed, 4), //flakey
+					S(types.SpecStatePending), S(types.SpecStatePending),
+					S(types.SpecStateSkipped), S(types.SpecStateSkipped), S(types.SpecStateSkipped),
+					S(CTS("Describe A", "Context B", "The Test"), CLS(cl0, cl1, cl2),
+						types.SpecStateFailed, 2,
+						F("FAILURE MESSAGE\nWITH DETAILS", Location(cl3), types.NodeTypeJustBeforeEach, 1),
+					),
+					S(CTS("Describe A", "The Test"), CLS(cl0, cl1),
+						types.SpecStatePanicked, 2,
+						F("FAILURE MESSAGE\nWITH DETAILS", Location(cl2), types.NodeTypeIt, 1),
+					),
+					S(CTS("The Test"), CLS(cl0),
+						types.SpecStateInterrupted, 2,
+						F("FAILURE MESSAGE\nWITH DETAILS", Location(cl1), types.NodeTypeIt, 0),
+					),
+					S(types.NodeTypeAfterSuite),
+				},
 			},
 			"",
 			"",
@@ -818,30 +824,24 @@ var _ = Describe("DefaultReporter", func() {
 			"  {{orange}}[INTERRUPTED]{{/}} {{/}}{{orange}}{{bold}}[It] The Test{{/}}{{/}}",
 			"  {{gray}}"+cl1.String()+"{{/}}",
 			"",
-			"{{red}}{{bold}}Ran 18 of 30 Specs in 60.000 seconds{{/}}",
-			"{{red}}{{bold}}FAIL!{{/}} -- {{green}}{{bold}}15 Passed{{/}} | {{red}}{{bold}}3 Failed{{/}} | {{light-yellow}}{{bold}}4 Flaked{{/}} | {{yellow}}{{bold}}10 Pending{{/}} | {{cyan}}{{bold}}12 Skipped{{/}}",
+			"{{red}}{{bold}}Ran 8 of 13 Specs in 60.000 seconds{{/}}",
+			"{{red}}{{bold}}FAIL!{{/}} -- {{green}}{{bold}}5 Passed{{/}} | {{red}}{{bold}}3 Failed{{/}} | {{light-yellow}}{{bold}}2 Flaked{{/}} | {{yellow}}{{bold}}2 Pending{{/}} | {{cyan}}{{bold}}3 Skipped{{/}}",
 			"",
 		),
 		Entry("the suite fails with failed suite setups",
 			C(),
-			[]types.SpecReport{
-				S(types.NodeTypeBeforeSuite, cl0, types.SpecStateFailed, 2,
-					F("FAILURE MESSAGE\nWITH DETAILS", Location(cl1), types.NodeTypeBeforeSuite, 0),
-				),
-				S(types.NodeTypeAfterSuite, cl2, types.SpecStateFailed, 2,
-					F("FAILURE MESSAGE\nWITH DETAILS", Location(cl3), types.NodeTypeAfterSuite, 0),
-				),
-			},
-			types.SuiteSummary{
-				SuiteSucceeded:             false,
-				RunTime:                    time.Minute,
-				NumberOfSpecsThatWillBeRun: 20,
-				NumberOfTotalSpecs:         30,
-				NumberOfPassedSpecs:        0,
-				NumberOfSkippedSpecs:       30,
-				NumberOfPendingSpecs:       10,
-				NumberOfFailedSpecs:        0,
-				NumberOfFlakedSpecs:        0,
+			types.Report{
+				SuiteSucceeded: false,
+				PreRunStats:    types.PreRunStats{TotalSpecs: 10, SpecsThatWillRun: 5},
+				RunTime:        time.Minute,
+				SpecReports: types.SpecReports{
+					S(types.NodeTypeBeforeSuite, cl0, types.SpecStateFailed, 2,
+						F("FAILURE MESSAGE\nWITH DETAILS", Location(cl1), types.NodeTypeBeforeSuite, 0),
+					),
+					S(types.NodeTypeAfterSuite, cl2, types.SpecStateFailed, 2,
+						F("FAILURE MESSAGE\nWITH DETAILS", Location(cl3), types.NodeTypeAfterSuite, 0),
+					),
+				},
 			},
 			"",
 			"",
@@ -851,36 +851,27 @@ var _ = Describe("DefaultReporter", func() {
 			"  {{red}}[FAIL]{{/}} {{red}}{{bold}}[AfterSuite]{{/}}",
 			"  {{gray}}"+cl3.String()+"{{/}}",
 			"",
-			"{{red}}{{bold}}Ran 0 of 30 Specs in 60.000 seconds{{/}}",
-			"{{red}}{{bold}}FAIL!{{/}} -- {{green}}{{bold}}0 Passed{{/}} | {{red}}{{bold}}0 Failed{{/}} | {{yellow}}{{bold}}10 Pending{{/}} | {{cyan}}{{bold}}30 Skipped{{/}}",
+			"{{red}}{{bold}}Ran 0 of 10 Specs in 60.000 seconds{{/}}",
+			"{{red}}{{bold}}FAIL!{{/}} -- {{cyan}}{{bold}}A BeforeSuite node failed so all tests were skipped.{{/}}",
+			"",
+		),
+
+		Entry("with failOnPending set to true",
+			C(),
+			types.Report{
+				SuiteSucceeded: false,
+				SuiteConfig:    types.SuiteConfig{FailOnPending: true},
+				PreRunStats:    types.PreRunStats{TotalSpecs: 5, SpecsThatWillRun: 3},
+				RunTime:        time.Minute,
+				SpecReports: types.SpecReports{
+					S(types.SpecStatePassed), S(types.SpecStatePassed), S(types.SpecStatePassed),
+					S(types.SpecStatePending), S(types.SpecStatePending),
+				},
+			},
+			"",
+			"{{yellow}}{{bold}}Ran 3 of 5 Specs in 60.000 seconds{{/}}",
+			"{{yellow}}{{bold}}FAIL! - Detected pending specs and --fail-on-pending is set{{/}} -- {{green}}{{bold}}3 Passed{{/}} | {{red}}{{bold}}0 Failed{{/}} | {{yellow}}{{bold}}2 Pending{{/}} | {{cyan}}{{bold}}0 Skipped{{/}}",
 			"",
 		),
 	)
-
-	Describe("with failOnPending set to true", func() {
-		It("notifies the user when the suite failed due to pending tests", func() {
-			reporter := reporters.NewDefaultReporterUnderTest(C(), buf)
-			reporter.SpecSuiteWillBegin(types.SuiteConfig{
-				FailOnPending: true,
-			}, types.SuiteSummary{SuiteDescription: "My Suite", NumberOfSpecsThatWillBeRun: 20, NumberOfTotalSpecs: 20})
-			buf.Clear()
-			reporter.SpecSuiteDidEnd(types.SuiteSummary{
-				SuiteSucceeded:             false,
-				RunTime:                    time.Minute,
-				NumberOfSpecsThatWillBeRun: 20,
-				NumberOfTotalSpecs:         20,
-				NumberOfPassedSpecs:        19,
-				NumberOfSkippedSpecs:       0,
-				NumberOfPendingSpecs:       1,
-				NumberOfFailedSpecs:        0,
-				NumberOfFlakedSpecs:        0,
-			})
-			verifyExpectedOutput([]string{
-				"",
-				"{{yellow}}{{bold}}Ran 19 of 20 Specs in 60.000 seconds{{/}}",
-				"{{yellow}}{{bold}}FAIL! - Detected pending specs and --fail-on-pending is set{{/}} -- {{green}}{{bold}}19 Passed{{/}} | {{red}}{{bold}}0 Failed{{/}} | {{yellow}}{{bold}}1 Pending{{/}} | {{cyan}}{{bold}}0 Skipped{{/}}",
-				"",
-			})
-		})
-	})
 })
