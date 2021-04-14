@@ -9,7 +9,7 @@ import (
 	"regexp"
 	"strings"
 
-	"github.com/onsi/ginkgo/config"
+	"github.com/onsi/ginkgo/types"
 )
 
 type TestSuite struct {
@@ -35,7 +35,7 @@ func (ts TestSuite) NamespacedName() string {
 	return name
 }
 
-func FindSuites(args []string, cliConfig config.GinkgoCLIConfigType, allowPrecompiled bool) ([]TestSuite, []string) {
+func FindSuites(args []string, cliConfig types.CLIConfig, allowPrecompiled bool) ([]TestSuite, []string) {
 	suites := []TestSuite{}
 
 	if len(args) > 0 {

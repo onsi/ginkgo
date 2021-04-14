@@ -144,6 +144,11 @@ It has been replaced with `CurrentSpecReport()` which returns the full-fledge `t
 #### Migration Strategy:
 Replace any calls to `CurrentGinkgoTestDescription()` with `CurrentSpecReport()` and use the struct fields or helper methods on the returned `types.SpecReport` to get the information you need about the current test.
 
+### Changed: availability of Ginkgo's configuration
+In v1 Ginkgo's configuration could be accessed by importing the `config` package and accessing the globally available `GinkgoConfig` and `DefaultReporterConfig` objects.  This is no longer supported in V2.
+
+#### Migration Strategy:
+Instead, configuration can be accessed using the DSL's `GinkgoConfiguration()` function.  This will return a `types.SuiteConfig` and `types.ReporterConfig`.  Users generally don't need to access this configuration - the most commonly used fields by end users are already made available via `GinkgoRandomSeed()` and `GinkgoParallelNode()`.
 
 ### Changed: Command Line Flags
 All camel case flags (e.g. `-randomizeAllSpecs`) are replaced with kebab case flags (e.g. `-randomize-all-specs`) in Ginkgo 2.0.  The camel case versions continue to work but emit a deprecation warning.

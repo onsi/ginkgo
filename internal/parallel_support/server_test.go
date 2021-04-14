@@ -11,7 +11,6 @@ import (
 	"encoding/json"
 	"net/http"
 
-	"github.com/onsi/ginkgo/config"
 	. "github.com/onsi/ginkgo/internal/test_helpers"
 	"github.com/onsi/ginkgo/types"
 )
@@ -32,7 +31,7 @@ var _ = Describe("Server", func() {
 		server.Start()
 		Eventually(StatusCodePoller(server.Address() + "/up")).Should(Equal(http.StatusOK))
 
-		forwardingReporter = NewForwardingReporter(config.DefaultReporterConfigType{}, server.Address(), nil)
+		forwardingReporter = NewForwardingReporter(types.ReporterConfig{}, server.Address(), nil)
 	})
 
 	AfterEach(func() {
@@ -63,9 +62,9 @@ var _ = Describe("Server", func() {
 
 		Context("before all nodes have reported SpecSuiteWillBegin", func() {
 			BeforeEach(func() {
-				forwardingReporter.SpecSuiteWillBegin(config.GinkgoConfig, beginSummary)
+				forwardingReporter.SpecSuiteWillBegin(types.SuiteConfig{RandomSeed: 17}, beginSummary)
 				forwardingReporter.DidRun(reportA)
-				forwardingReporter.SpecSuiteWillBegin(config.GinkgoConfig, beginSummary)
+				forwardingReporter.SpecSuiteWillBegin(types.SuiteConfig{RandomSeed: 17}, beginSummary)
 				forwardingReporter.DidRun(reportB)
 			})
 
@@ -78,11 +77,11 @@ var _ = Describe("Server", func() {
 
 			Context("when the final node reports SpecSuiteWillBegin", func() {
 				BeforeEach(func() {
-					forwardingReporter.SpecSuiteWillBegin(config.GinkgoConfig, thirdBeginSummary)
+					forwardingReporter.SpecSuiteWillBegin(types.SuiteConfig{RandomSeed: 3}, thirdBeginSummary)
 				})
 
 				It("forwards to SpecSuiteWillBegin and catches up on any received summareis", func() {
-					Ω(reporter.Config).Should(Equal(config.GinkgoConfig))
+					Ω(reporter.Config).Should(Equal(types.SuiteConfig{RandomSeed: 3}))
 					Ω(reporter.Begin).Should(Equal(thirdBeginSummary))
 					Ω(reporter.Will.Names()).Should(ConsistOf("A", "B"))
 					Ω(reporter.Did.Names()).Should(ConsistOf("A", "B"))

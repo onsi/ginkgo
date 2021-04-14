@@ -7,13 +7,12 @@ import (
 
 	"github.com/onsi/ginkgo/internal"
 
-	"github.com/onsi/ginkgo/config"
 	"github.com/onsi/ginkgo/types"
 )
 
-type ConfigAndSummary struct {
-	Config  config.GinkgoConfigType `json:"config"`
-	Summary types.SuiteSummary      `json:"suite-summary"`
+type SuiteConfigAndSummary struct {
+	SuiteConfig types.SuiteConfig  `json:"suite-config"`
+	Summary     types.SuiteSummary `json:"suite-summary"`
 }
 
 /*
@@ -31,7 +30,7 @@ type ForwardingReporter struct {
 	serverHost string
 }
 
-func NewForwardingReporter(config config.DefaultReporterConfigType, serverHost string, ginkgoWriter *internal.Writer) *ForwardingReporter {
+func NewForwardingReporter(config types.ReporterConfig, serverHost string, ginkgoWriter *internal.Writer) *ForwardingReporter {
 	reporter := &ForwardingReporter{
 		serverHost: serverHost,
 	}
@@ -45,8 +44,8 @@ func (reporter *ForwardingReporter) post(path string, data interface{}) {
 	http.Post(reporter.serverHost+path, "application/json", buffer)
 }
 
-func (reporter *ForwardingReporter) SpecSuiteWillBegin(conf config.GinkgoConfigType, summary types.SuiteSummary) {
-	reporter.post("/SpecSuiteWillBegin", ConfigAndSummary{Config: conf, Summary: summary})
+func (reporter *ForwardingReporter) SpecSuiteWillBegin(suiteConfig types.SuiteConfig, summary types.SuiteSummary) {
+	reporter.post("/SpecSuiteWillBegin", SuiteConfigAndSummary{SuiteConfig: suiteConfig, Summary: summary})
 }
 
 func (reporter *ForwardingReporter) WillRun(report types.SpecReport) {

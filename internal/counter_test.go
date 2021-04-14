@@ -7,16 +7,16 @@ import (
 	. "github.com/onsi/gomega"
 	"github.com/onsi/gomega/ghttp"
 
-	"github.com/onsi/ginkgo/config"
 	"github.com/onsi/ginkgo/internal"
+	"github.com/onsi/ginkgo/types"
 )
 
 var _ = Describe("Counter", func() {
 	var counter func() (int, error)
-	var conf config.GinkgoConfigType
+	var conf types.SuiteConfig
 
 	BeforeEach(func() {
-		conf = config.GinkgoConfigType{}
+		conf = types.SuiteConfig{}
 	})
 
 	JustBeforeEach(func() {

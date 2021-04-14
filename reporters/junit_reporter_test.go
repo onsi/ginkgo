@@ -7,7 +7,6 @@ import (
 	"time"
 
 	. "github.com/onsi/ginkgo"
-	"github.com/onsi/ginkgo/config"
 	"github.com/onsi/ginkgo/reporters"
 	"github.com/onsi/ginkgo/types"
 	. "github.com/onsi/gomega"
@@ -38,7 +37,7 @@ var _ = Describe("JUnit Reporter", func() {
 
 		reporter = reporters.NewJUnitReporter(outputFile)
 
-		reporter.SpecSuiteWillBegin(config.GinkgoConfigType{}, types.SuiteSummary{
+		reporter.SpecSuiteWillBegin(types.SuiteConfig{}, types.SuiteSummary{
 			SuiteDescription:           "My test suite",
 			NumberOfSpecsThatWillBeRun: 1,
 		})

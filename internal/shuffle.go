@@ -4,11 +4,10 @@ import (
 	"math/rand"
 	"sort"
 
-	"github.com/onsi/ginkgo/config"
 	"github.com/onsi/ginkgo/types"
 )
 
-func ShuffleSpecs(specs Specs, config config.GinkgoConfigType) Specs {
+func ShuffleSpecs(specs Specs, suiteConfig types.SuiteConfig) Specs {
 	/*
 		Ginkgo has sophisticated suport for randomizing specs.  Specs are guaranteed to have the same
 		order for a given seed across test runs.
@@ -18,13 +17,13 @@ func ShuffleSpecs(specs Specs, config config.GinkgoConfigType) Specs {
 
 		Developers can set -randomizeAllSpecs to shuffle _all_ specs.
 	*/
-	r := rand.New(rand.NewSource(config.RandomSeed))
+	r := rand.New(rand.NewSource(suiteConfig.RandomSeed))
 
 	// We shuffle by partitioning specs by the id of the first node of a given type, then shuffling that partition
 	// When -randomizeAllSpecs is set we partition the specs by the id of the `It` - i.e. each spec has a unique id and this is equivalent to sorting all specs
 	// Otherwise, we partition by the id of the first container (or It if there is no container).  This preserves the spec grouping by top-level container.
 	nodeTypesToShuffle := types.NodeTypesForContainerAndIt
-	if config.RandomizeAllSpecs {
+	if suiteConfig.RandomizeAllSpecs {
 		nodeTypesToShuffle = []types.NodeType{types.NodeTypeIt}
 	}
 

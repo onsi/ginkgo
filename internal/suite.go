@@ -4,7 +4,6 @@ import (
 	"fmt"
 	"time"
 
-	"github.com/onsi/ginkgo/config"
 	"github.com/onsi/ginkgo/formatter"
 	"github.com/onsi/ginkgo/reporters"
 	"github.com/onsi/ginkgo/types"
@@ -51,18 +50,18 @@ func (suite *Suite) BuildTree() error {
 	return nil
 }
 
-func (suite *Suite) Run(description string, failer *Failer, reporter reporters.Reporter, writer WriterInterface, outputInterceptor OutputInterceptor, interruptHandler InterruptHandlerInterface, config config.GinkgoConfigType) (bool, bool) {
+func (suite *Suite) Run(description string, failer *Failer, reporter reporters.Reporter, writer WriterInterface, outputInterceptor OutputInterceptor, interruptHandler InterruptHandlerInterface, suiteConfig types.SuiteConfig) (bool, bool) {
 	if suite.phase != PhaseBuildTree {
 		panic("cannot run before building the tree = call suite.BuildTree() first")
 	}
 	tree := ApplyNestedFocusPolicyToTree(suite.tree)
 	specs := GenerateSpecsFromTreeRoot(tree)
-	specs = ShuffleSpecs(specs, config)
-	specs, hasProgrammaticFocus := ApplyFocusToSpecs(specs, description, config)
+	specs = ShuffleSpecs(specs, suiteConfig)
+	specs, hasProgrammaticFocus := ApplyFocusToSpecs(specs, description, suiteConfig)
 
 	suite.phase = PhaseRun
 
-	success := suite.runSpecs(description, specs, failer, reporter, writer, outputInterceptor, interruptHandler, config)
+	success := suite.runSpecs(description, specs, failer, reporter, writer, outputInterceptor, interruptHandler, suiteConfig)
 	return success, hasProgrammaticFocus
 }
 
@@ -82,7 +81,7 @@ func (suite *Suite) PushNode(node Node) error {
 		// We only enter the top level container nodes during PhaseBuildTree
 		//
 		// This ensures the tree is only constructed after `go spec` has called `flag.Parse()` and gives
-		// the user an opportunity to load configuration information in the `TestX` go spec hook just before `RunSpecs`
+		// the user an opportunity to load suiteConfiguration information in the `TestX` go spec hook just before `RunSpecs`
 		// is invoked.  This makes the lifecycle easier to reason about and solves issues like #693.
 		if suite.phase == PhaseBuildTopLevel {
 			suite.topLevelContainers = append(suite.topLevelContainers, node)
@@ -132,7 +131,7 @@ func (suite *Suite) PushSuiteNodeBuilder(nodeBuilder SuiteNodeBuilder) error {
 		}
 		suite.afterSuiteNodeBuilder = nodeBuilder
 	default:
-		panic("invalid configuration of SuiteNodeBuilder")
+		panic("invalid suiteConfiguration of SuiteNodeBuilder")
 	}
 
 	return nil
@@ -149,13 +148,13 @@ func (suite *Suite) CurrentSpecReport() types.SpecReport {
 	return report
 }
 
-func (suite *Suite) runSpecs(description string, specs Specs, failer *Failer, reporter reporters.Reporter, writer WriterInterface, outputInterceptor OutputInterceptor, interruptHandler InterruptHandlerInterface, config config.GinkgoConfigType) bool {
+func (suite *Suite) runSpecs(description string, specs Specs, failer *Failer, reporter reporters.Reporter, writer WriterInterface, outputInterceptor OutputInterceptor, interruptHandler InterruptHandlerInterface, suiteConfig types.SuiteConfig) bool {
 	suite.writer = writer
 
 	suiteStartTime := time.Now()
 
-	beforeSuiteNode := suite.beforeSuiteNodeBuilder.BuildNode(config, failer)
-	afterSuiteNode := suite.afterSuiteNodeBuilder.BuildNode(config, failer)
+	beforeSuiteNode := suite.beforeSuiteNodeBuilder.BuildNode(suiteConfig, failer)
+	afterSuiteNode := suite.afterSuiteNodeBuilder.BuildNode(suiteConfig, failer)
 
 	numSpecsThatWillBeRun := specs.CountWithoutSkip()
 	suiteSummary := types.SuiteSummary{
@@ -164,7 +163,7 @@ func (suite *Suite) runSpecs(description string, specs Specs, failer *Failer, re
 		NumberOfSpecsThatWillBeRun: numSpecsThatWillBeRun,
 	}
 
-	reporter.SpecSuiteWillBegin(config, suiteSummary)
+	reporter.SpecSuiteWillBegin(suiteConfig, suiteSummary)
 
 	suitePassed := true
 
@@ -173,7 +172,7 @@ func (suite *Suite) runSpecs(description string, specs Specs, failer *Failer, re
 		report := types.SpecReport{LeafNodeType: beforeSuiteNode.NodeType, LeafNodeLocation: beforeSuiteNode.CodeLocation}
 		reporter.WillRun(report)
 
-		report = suite.runSuiteNode(report, beforeSuiteNode, failer, interruptStatus.Channel, writer, outputInterceptor, config)
+		report = suite.runSuiteNode(report, beforeSuiteNode, failer, interruptStatus.Channel, writer, outputInterceptor, suiteConfig)
 		reporter.DidRun(report)
 
 		if report.State != types.SpecStatePassed {
@@ -182,7 +181,7 @@ func (suite *Suite) runSpecs(description string, specs Specs, failer *Failer, re
 	}
 
 	if suitePassed {
-		nextIndex := MakeNextIndexCounter(config)
+		nextIndex := MakeNextIndexCounter(suiteConfig)
 
 		for {
 			idx, err := nextIndex()
@@ -204,7 +203,7 @@ func (suite *Suite) runSpecs(description string, specs Specs, failer *Failer, re
 				LeafNodeType:     types.NodeTypeIt,
 			}
 
-			if (config.FailFast && !suitePassed) || interruptHandler.Status().Interrupted {
+			if (suiteConfig.FailFast && !suitePassed) || interruptHandler.Status().Interrupted {
 				spec.Skip = true
 			}
 
@@ -219,11 +218,11 @@ func (suite *Suite) runSpecs(description string, specs Specs, failer *Failer, re
 
 			if !spec.Skip {
 				//runSpec updates suite.currentSpecReport directly
-				suite.runSpec(spec, failer, interruptHandler, writer, outputInterceptor, config)
+				suite.runSpec(spec, failer, interruptHandler, writer, outputInterceptor, suiteConfig)
 			}
 
 			//send the spec report to any attached ReportAFterEach blocks - this will update sutie.currentSpecReport of failures occur in these blocks
-			suite.reportAfterEach(suite.currentSpecReport, spec, failer, interruptHandler, writer, outputInterceptor, config)
+			suite.reportAfterEach(suite.currentSpecReport, spec, failer, interruptHandler, writer, outputInterceptor, suiteConfig)
 			reporter.DidRun(suite.currentSpecReport)
 
 			switch suite.currentSpecReport.State {
@@ -246,7 +245,7 @@ func (suite *Suite) runSpecs(description string, specs Specs, failer *Failer, re
 			suite.currentSpecReport = types.SpecReport{}
 		}
 
-		if specs.HasAnySpecsMarkedPending() && config.FailOnPending {
+		if specs.HasAnySpecsMarkedPending() && suiteConfig.FailOnPending {
 			suitePassed = false
 		}
 	} else {
@@ -257,7 +256,7 @@ func (suite *Suite) runSpecs(description string, specs Specs, failer *Failer, re
 		report := types.SpecReport{LeafNodeType: afterSuiteNode.NodeType, LeafNodeLocation: afterSuiteNode.CodeLocation}
 		reporter.WillRun(report)
 
-		report = suite.runSuiteNode(report, afterSuiteNode, failer, interruptHandler.Status().Channel, writer, outputInterceptor, config)
+		report = suite.runSuiteNode(report, afterSuiteNode, failer, interruptHandler.Status().Channel, writer, outputInterceptor, suiteConfig)
 		reporter.DidRun(report)
 		if report.State != types.SpecStatePassed {
 			suitePassed = false
@@ -274,8 +273,8 @@ func (suite *Suite) runSpecs(description string, specs Specs, failer *Failer, re
 // runSpec(spec) mutates currentSpecReport.  this is ugly
 // but it allows the user to call CurrentGinkgoSpecDescription and get
 // an up-to-date state of the spec **from within a running spec**
-func (suite *Suite) runSpec(spec Spec, failer *Failer, interruptHandler InterruptHandlerInterface, writer WriterInterface, outputInterceptor OutputInterceptor, config config.GinkgoConfigType) {
-	if config.DryRun {
+func (suite *Suite) runSpec(spec Spec, failer *Failer, interruptHandler InterruptHandlerInterface, writer WriterInterface, outputInterceptor OutputInterceptor, suiteConfig types.SuiteConfig) {
+	if suiteConfig.DryRun {
 		suite.currentSpecReport.State = types.SpecStatePassed
 		return
 	}
@@ -283,7 +282,7 @@ func (suite *Suite) runSpec(spec Spec, failer *Failer, interruptHandler Interrup
 	writer.Truncate()
 	outputInterceptor.StartInterceptingOutput()
 	t := time.Now()
-	maxAttempts := max(1, config.FlakeAttempts)
+	maxAttempts := max(1, suiteConfig.FlakeAttempts)
 
 	for attempt := 0; attempt < maxAttempts; attempt++ {
 		suite.currentSpecReport.NumAttempts = attempt + 1
@@ -300,7 +299,7 @@ func (suite *Suite) runSpec(spec Spec, failer *Failer, interruptHandler Interrup
 
 		for _, node := range nodes {
 			deepestNestingLevelAttained = max(deepestNestingLevelAttained, node.NestingLevel)
-			suite.currentSpecReport.State, suite.currentSpecReport.Failure = suite.runNode(node, failer, interruptStatus.Channel, spec.Nodes.BestTextFor(node), writer, config)
+			suite.currentSpecReport.State, suite.currentSpecReport.Failure = suite.runNode(node, failer, interruptStatus.Channel, spec.Nodes.BestTextFor(node), writer, suiteConfig)
 			suite.currentSpecReport.RunTime = time.Since(t)
 			if suite.currentSpecReport.State != types.SpecStatePassed {
 				break
@@ -311,7 +310,7 @@ func (suite *Suite) runSpec(spec Spec, failer *Failer, interruptHandler Interrup
 		cleanUpNodes = cleanUpNodes.CopyAppend(spec.Nodes.WithType(types.NodeTypeAfterEach).SortedByDescendingNestingLevel()...)
 		cleanUpNodes = cleanUpNodes.WithinNestingLevel(deepestNestingLevelAttained)
 		for _, node := range cleanUpNodes {
-			state, failure := suite.runNode(node, failer, interruptHandler.Status().Channel, spec.Nodes.BestTextFor(node), writer, config)
+			state, failure := suite.runNode(node, failer, interruptHandler.Status().Channel, spec.Nodes.BestTextFor(node), writer, suiteConfig)
 			suite.currentSpecReport.RunTime = time.Since(t)
 			if suite.currentSpecReport.State == types.SpecStatePassed {
 				suite.currentSpecReport.State = state
@@ -332,7 +331,7 @@ func (suite *Suite) runSpec(spec Spec, failer *Failer, interruptHandler Interrup
 	}
 }
 
-func (suite *Suite) reportAfterEach(report types.SpecReport, spec Spec, failer *Failer, interruptHandler InterruptHandlerInterface, writer WriterInterface, outputInterceptor OutputInterceptor, config config.GinkgoConfigType) {
+func (suite *Suite) reportAfterEach(report types.SpecReport, spec Spec, failer *Failer, interruptHandler InterruptHandlerInterface, writer WriterInterface, outputInterceptor OutputInterceptor, suiteConfig types.SuiteConfig) {
 	nodes := spec.Nodes.WithType(types.NodeTypeReportAfterEach).SortedByDescendingNestingLevel()
 	if len(nodes) == 0 {
 		return
@@ -348,7 +347,7 @@ func (suite *Suite) reportAfterEach(report types.SpecReport, spec Spec, failer *
 			"{{yellow}}Ginkgo received an interrupt signal but is currently running a ReportAfterEach node.  To avoid an invalid report the ReportAfterEach node will not be interrupted however subsequent tests will be skipped.{{/}}\n\n{{bold}}The running ReportAfterEach node is at:\n%s.{{/}}",
 			node.CodeLocation,
 		))
-		state, failure := suite.runNode(node, failer, nil, spec.Nodes.BestTextFor(node), writer, config)
+		state, failure := suite.runNode(node, failer, nil, spec.Nodes.BestTextFor(node), writer, suiteConfig)
 		interruptHandler.ClearInterruptMessage()
 		if suite.currentSpecReport.State == types.SpecStatePassed {
 			suite.currentSpecReport.State = state
@@ -359,8 +358,8 @@ func (suite *Suite) reportAfterEach(report types.SpecReport, spec Spec, failer *
 	suite.currentSpecReport.CapturedStdOutErr += outputInterceptor.StopInterceptingAndReturnOutput()
 }
 
-func (suite *Suite) runSuiteNode(report types.SpecReport, node Node, failer *Failer, interruptChannel chan interface{}, writer WriterInterface, outputInterceptor OutputInterceptor, config config.GinkgoConfigType) types.SpecReport {
-	if config.DryRun {
+func (suite *Suite) runSuiteNode(report types.SpecReport, node Node, failer *Failer, interruptChannel chan interface{}, writer WriterInterface, outputInterceptor OutputInterceptor, suiteConfig types.SuiteConfig) types.SpecReport {
+	if suiteConfig.DryRun {
 		report.State = types.SpecStatePassed
 		return report
 	}
@@ -368,7 +367,7 @@ func (suite *Suite) runSuiteNode(report types.SpecReport, node Node, failer *Fai
 	writer.Truncate()
 	outputInterceptor.StartInterceptingOutput()
 	t := time.Now()
-	report.State, report.Failure = suite.runNode(node, failer, interruptChannel, "", writer, config)
+	report.State, report.Failure = suite.runNode(node, failer, interruptChannel, "", writer, suiteConfig)
 	report.RunTime = time.Since(t)
 	report.CapturedGinkgoWriterOutput = string(writer.Bytes())
 	report.CapturedStdOutErr = outputInterceptor.StopInterceptingAndReturnOutput()
@@ -376,8 +375,8 @@ func (suite *Suite) runSuiteNode(report types.SpecReport, node Node, failer *Fai
 	return report
 }
 
-func (suite *Suite) runNode(node Node, failer *Failer, interruptChannel chan interface{}, text string, writer WriterInterface, config config.GinkgoConfigType) (types.SpecState, types.Failure) {
-	if config.EmitSpecProgress {
+func (suite *Suite) runNode(node Node, failer *Failer, interruptChannel chan interface{}, text string, writer WriterInterface, suiteConfig types.SuiteConfig) (types.SpecState, types.Failure) {
+	if suiteConfig.EmitSpecProgress {
 		if text == "" {
 			text = "TOP-LEVEL"
 		}
