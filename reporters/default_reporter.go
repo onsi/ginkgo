@@ -18,11 +18,8 @@ import (
 )
 
 type DefaultReporter struct {
-	conf             types.ReporterConfig
-	hasFailOnPending bool
-	writer           io.Writer
-
-	failures []types.SpecReport
+	conf   types.ReporterConfig
+	writer io.Writer
 
 	// managing the emission stream
 	lastChar                 string
@@ -63,28 +60,27 @@ func NewDefaultReporter(conf types.ReporterConfig, writer io.Writer) *DefaultRep
 
 /* The Reporter Interface */
 
-func (r *DefaultReporter) SpecSuiteWillBegin(suiteConfig types.SuiteConfig, summary types.SuiteSummary) {
-	r.hasFailOnPending = suiteConfig.FailOnPending
+func (r *DefaultReporter) SpecSuiteWillBegin(report types.Report) {
 	if r.conf.Succinct {
-		r.emit(r.f("[%d] {{bold}}%s{{/}} ", suiteConfig.RandomSeed, summary.SuiteDescription))
-		r.emit(r.f("- %d/%d specs ", summary.NumberOfSpecsThatWillBeRun, summary.NumberOfTotalSpecs))
-		if suiteConfig.ParallelTotal > 1 {
-			r.emit(r.f("- %d nodes ", suiteConfig.ParallelTotal))
+		r.emit(r.f("[%d] {{bold}}%s{{/}} ", report.SuiteConfig.RandomSeed, report.SuiteDescription))
+		r.emit(r.f("- %d/%d specs ", report.PreRunStats.SpecsThatWillRun, report.PreRunStats.TotalSpecs))
+		if report.SuiteConfig.ParallelTotal > 1 {
+			r.emit(r.f("- %d nodes ", report.SuiteConfig.ParallelTotal))
 		}
 	} else {
-		banner := r.f("Running Suite: %s", summary.SuiteDescription)
+		banner := r.f("Running Suite: %s - %s", report.SuiteDescription, report.SuitePath)
 		r.emitBlock(banner)
 		r.emitBlock(strings.Repeat("=", len(banner)))
 
-		out := r.f("Random Seed: {{bold}}%d{{/}}", suiteConfig.RandomSeed)
-		if suiteConfig.RandomizeAllSpecs {
+		out := r.f("Random Seed: {{bold}}%d{{/}}", report.SuiteConfig.RandomSeed)
+		if report.SuiteConfig.RandomizeAllSpecs {
 			out += r.f(" - will randomize all specs")
 		}
 		r.emitBlock(out)
 		r.emit("\n")
-		r.emitBlock(r.f("Will run {{bold}}%d{{/}} of {{bold}}%d{{/}} specs", summary.NumberOfSpecsThatWillBeRun, summary.NumberOfTotalSpecs))
-		if suiteConfig.ParallelTotal > 1 {
-			r.emitBlock(r.f("Running in parallel across {{bold}}%d{{/}} nodes", suiteConfig.ParallelTotal))
+		r.emitBlock(r.f("Will run {{bold}}%d{{/}} of {{bold}}%d{{/}} specs", report.PreRunStats.SpecsThatWillRun, report.PreRunStats.TotalSpecs))
+		if report.SuiteConfig.ParallelTotal > 1 {
+			r.emitBlock(r.f("Running in parallel across {{bold}}%d{{/}} nodes", report.SuiteConfig.ParallelTotal))
 		}
 	}
 }
@@ -163,13 +159,10 @@ func (r *DefaultReporter) DidRun(report types.SpecReport) {
 		}
 	case types.SpecStateFailed:
 		highlightColor, header = "{{red}}", fmt.Sprintf("%s [FAILED]", denoter)
-		r.failures = append(r.failures, report)
 	case types.SpecStatePanicked:
 		highlightColor, header = "{{magenta}}", fmt.Sprintf("%s! [PANICKED]", denoter)
-		r.failures = append(r.failures, report)
 	case types.SpecStateInterrupted:
 		highlightColor, header = "{{orange}}", fmt.Sprintf("%s! [INTERRUPTED]", denoter)
-		r.failures = append(r.failures, report)
 	}
 
 	// Emit stream and return
@@ -224,50 +217,61 @@ func (r *DefaultReporter) DidRun(report types.SpecReport) {
 	r.emitDelimiter()
 }
 
-func (r *DefaultReporter) SpecSuiteDidEnd(summary types.SuiteSummary) {
-	if len(r.failures) > 1 {
+func (r *DefaultReporter) SpecSuiteDidEnd(report types.Report) {
+	failures := report.SpecReports.WithState(types.SpecStateFailureStates...)
+	if len(failures) > 1 {
 		r.emitBlock("\n\n")
-		r.emitBlock(r.f("{{red}}{{bold}}Summarizing %d Failures:{{/}}", len(r.failures)))
-		for _, summary := range r.failures {
+		r.emitBlock(r.f("{{red}}{{bold}}Summarizing %d Failures:{{/}}", len(failures)))
+		for _, specReport := range failures {
 			highlightColor, heading := "{{red}}", "[FAIL]"
-			if summary.State.Is(types.SpecStateInterrupted) {
+			if specReport.State.Is(types.SpecStateInterrupted) {
 				highlightColor, heading = "{{orange}}", "[INTERRUPTED]"
-			} else if summary.State.Is(types.SpecStatePanicked) {
+			} else if specReport.State.Is(types.SpecStatePanicked) {
 				highlightColor, heading = "{{magenta}}", "[PANICKED!]"
 			}
 
-			locationBlock := r.codeLocationBlock(summary, highlightColor, true)
+			locationBlock := r.codeLocationBlock(specReport, highlightColor, true)
 			r.emitBlock(r.fi(1, highlightColor+"%s{{/}} %s", heading, locationBlock))
 		}
 	}
 
 	//summarize the suite
-	if r.conf.Succinct && summary.SuiteSucceeded {
-		r.emit(r.f(" {{green}}SUCCESS!{{/}} %s ", summary.RunTime))
+	if r.conf.Succinct && report.SuiteSucceeded {
+		r.emit(r.f(" {{green}}SUCCESS!{{/}} %s ", report.RunTime))
 		return
 	}
 
 	r.emitBlock("\n")
 	color, status := "{{green}}{{bold}}", "SUCCESS!"
-	if !summary.SuiteSucceeded {
+	if !report.SuiteSucceeded {
 		color, status = "{{red}}{{bold}}", "FAIL!"
-		if r.hasFailOnPending && len(r.failures) == 0 && summary.NumberOfPendingSpecs > 0 {
+		if report.SuiteConfig.FailOnPending && len(failures) == 0 && report.SpecReports.CountWithState(types.SpecStatePending) > 0 {
 			color, status = "{{yellow}}{{bold}}", "FAIL! - Detected pending specs and --fail-on-pending is set"
 		}
 	}
-	r.emitBlock(r.f(color+"Ran %d of %d Specs in %.3f seconds{{/}}", summary.NumberOfSpecsThatRan(), summary.NumberOfTotalSpecs, summary.RunTime.Seconds()))
+
+	specs := report.SpecReports.WithLeafNodeType(types.NodeTypeIt) //exclude any suite setup nodes
+	r.emitBlock(r.f(color+"Ran %d of %d Specs in %.3f seconds{{/}}",
+		specs.CountWithState(types.SpecStatePassed)+specs.CountWithState(types.SpecStateFailureStates...),
+		report.PreRunStats.TotalSpecs,
+		report.RunTime.Seconds()),
+	)
 	r.emit(r.f(color+"%s{{/}} -- ", status))
-	r.emit(r.f("{{green}}{{bold}}%d Passed{{/}} | ", summary.NumberOfPassedSpecs))
-	r.emit(r.f("{{red}}{{bold}}%d Failed{{/}} | ", summary.NumberOfFailedSpecs))
-	if summary.NumberOfFlakedSpecs > 0 {
-		r.emit(r.f("{{light-yellow}}{{bold}}%d Flaked{{/}} | ", summary.NumberOfFlakedSpecs))
+
+	if len(specs) == 0 && report.SpecReports.WithLeafNodeType(types.NodeTypeBeforeSuite, types.NodeTypeSynchronizedBeforeSuite).CountWithState(types.SpecStateFailureStates...) > 0 {
+		r.emit(r.f("{{cyan}}{{bold}}A BeforeSuite node failed so all tests were skipped.{{/}}\n"))
+	} else {
+		r.emit(r.f("{{green}}{{bold}}%d Passed{{/}} | ", specs.CountWithState(types.SpecStatePassed)))
+		r.emit(r.f("{{red}}{{bold}}%d Failed{{/}} | ", specs.CountWithState(types.SpecStateFailureStates...)))
+		if specs.CountOfFlakedSpecs() > 0 {
+			r.emit(r.f("{{light-yellow}}{{bold}}%d Flaked{{/}} | ", specs.CountOfFlakedSpecs()))
+		}
+		r.emit(r.f("{{yellow}}{{bold}}%d Pending{{/}} | ", specs.CountWithState(types.SpecStatePending)))
+		r.emit(r.f("{{cyan}}{{bold}}%d Skipped{{/}}\n", specs.CountWithState(types.SpecStateSkipped)))
 	}
-	r.emit(r.f("{{yellow}}{{bold}}%d Pending{{/}} | ", summary.NumberOfPendingSpecs))
-	r.emit(r.f("{{cyan}}{{bold}}%d Skipped{{/}}\n", summary.NumberOfSkippedSpecs))
 }
 
 /* Emitting to the writer */
-
 func (r *DefaultReporter) emit(s string) {
 	if len(s) > 0 {
 		r.lastChar = s[len(s)-1:]
@@ -297,7 +301,6 @@ func (r *DefaultReporter) emitDelimiter() {
 }
 
 /* Rendering text */
-
 func (r *DefaultReporter) f(format string, args ...interface{}) string {
 	return r.formatter.F(format, args...)
 }

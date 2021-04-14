@@ -24,7 +24,7 @@ var _ = Describe("handling test failures", func() {
 		})
 
 		It("reports a suite failure", func() {
-			Ω(reporter.End).Should(BeASuiteSummary(false, NSpecs(2), NSkipped(2)))
+			Ω(reporter.End).Should(BeASuiteSummary(false, NSpecs(2), NSkipped(0)))
 		})
 
 		It("reports a failure for the BeforeSuite", func() {
@@ -57,7 +57,7 @@ var _ = Describe("handling test failures", func() {
 		})
 
 		It("reports a suite failure", func() {
-			Ω(reporter.End).Should(BeASuiteSummary(false, NSpecs(2), NSkipped(2)))
+			Ω(reporter.End).Should(BeASuiteSummary(false, NSpecs(2), NSkipped(0)))
 		})
 
 		It("reports a failure for the BeforeSuite", func() {

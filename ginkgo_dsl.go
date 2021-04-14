@@ -15,6 +15,7 @@ import (
 	"fmt"
 	"io"
 	"os"
+	"path/filepath"
 	"reflect"
 	"strings"
 	"time"
@@ -191,7 +192,12 @@ func RunSpecs(t GinkgoTestingT, description string) bool {
 	err := global.Suite.BuildTree()
 	exitIfErr(err)
 
-	passed, hasFocusedTests := global.Suite.Run(description, global.Failer, reporter, writer, outputInterceptor, internal.NewInterruptHandler(), suiteConfig)
+	suitePath, err := os.Getwd()
+	exitIfErr(err)
+	suitePath, err = filepath.Abs(suitePath)
+	exitIfErr(err)
+
+	passed, hasFocusedTests := global.Suite.Run(description, suitePath, global.Failer, reporter, writer, outputInterceptor, internal.NewInterruptHandler(), suiteConfig)
 
 	flagSet.ValidateDeprecations(deprecationTracker)
 	if deprecationTracker.DidTrackDeprecations() {

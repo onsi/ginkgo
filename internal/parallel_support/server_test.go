@@ -39,21 +39,25 @@ var _ = Describe("Server", func() {
 	})
 
 	Describe("Streaming endpoints", func() {
-		var beginSummary, thirdBeginSummary types.SuiteSummary
-		var endSummary1, endSummary2, endSummary3 types.SuiteSummary
-		var reportA, reportB, reportC types.SpecReport
+		var beginReport, thirdBeginReport types.Report
+		var endReport1, endReport2, endReport3 types.Report
+		var specReportA, specReportB, specReportC types.SpecReport
+
+		var t time.Time
 
 		BeforeEach(func() {
-			beginSummary = types.SuiteSummary{SuiteDescription: "my sweet suite"}
-			thirdBeginSummary = types.SuiteSummary{SuiteDescription: "laste one in gets forwarded"}
+			beginReport = types.Report{SuiteDescription: "my sweet suite"}
+			thirdBeginReport = types.Report{SuiteDescription: "laste one in gets forwarded"}
 
-			reportA = types.SpecReport{NodeTexts: []string{"A"}}
-			reportB = types.SpecReport{NodeTexts: []string{"B"}}
-			reportC = types.SpecReport{NodeTexts: []string{"C"}}
+			specReportA = types.SpecReport{NodeTexts: []string{"A"}}
+			specReportB = types.SpecReport{NodeTexts: []string{"B"}}
+			specReportC = types.SpecReport{NodeTexts: []string{"C"}}
 
-			endSummary1 = types.SuiteSummary{NumberOfPassedSpecs: 2, RunTime: time.Second, SuiteSucceeded: true}
-			endSummary2 = types.SuiteSummary{NumberOfPassedSpecs: 3, RunTime: time.Minute, NumberOfSkippedSpecs: 2, SuiteSucceeded: true}
-			endSummary3 = types.SuiteSummary{NumberOfPassedSpecs: 1, RunTime: time.Second, NumberOfFailedSpecs: 3, SuiteSucceeded: false}
+			t = time.Now()
+
+			endReport1 = types.Report{StartTime: t.Add(-time.Second), EndTime: t.Add(time.Second), SuiteSucceeded: true, SpecReports: types.SpecReports{specReportA}}
+			endReport2 = types.Report{StartTime: t.Add(-2 * time.Second), EndTime: t.Add(time.Second), SuiteSucceeded: true, SpecReports: types.SpecReports{specReportB}}
+			endReport3 = types.Report{StartTime: t.Add(-time.Second), EndTime: t.Add(2 * time.Second), SuiteSucceeded: false, SpecReports: types.SpecReports{specReportC}}
 		})
 
 		It("should make its address available", func() {
@@ -62,14 +66,13 @@ var _ = Describe("Server", func() {
 
 		Context("before all nodes have reported SpecSuiteWillBegin", func() {
 			BeforeEach(func() {
-				forwardingReporter.SpecSuiteWillBegin(types.SuiteConfig{RandomSeed: 17}, beginSummary)
-				forwardingReporter.DidRun(reportA)
-				forwardingReporter.SpecSuiteWillBegin(types.SuiteConfig{RandomSeed: 17}, beginSummary)
-				forwardingReporter.DidRun(reportB)
+				forwardingReporter.SpecSuiteWillBegin(beginReport)
+				forwardingReporter.DidRun(specReportA)
+				forwardingReporter.SpecSuiteWillBegin(beginReport)
+				forwardingReporter.DidRun(specReportB)
 			})
 
 			It("should not forward anything to the attached reporter", func() {
-				Ω(reporter.Config).Should(BeZero())
 				Ω(reporter.Begin).Should(BeZero())
 				Ω(reporter.Will).Should(BeEmpty())
 				Ω(reporter.Did).Should(BeEmpty())
@@ -77,19 +80,18 @@ var _ = Describe("Server", func() {
 
 			Context("when the final node reports SpecSuiteWillBegin", func() {
 				BeforeEach(func() {
-					forwardingReporter.SpecSuiteWillBegin(types.SuiteConfig{RandomSeed: 3}, thirdBeginSummary)
+					forwardingReporter.SpecSuiteWillBegin(thirdBeginReport)
 				})
 
 				It("forwards to SpecSuiteWillBegin and catches up on any received summareis", func() {
-					Ω(reporter.Config).Should(Equal(types.SuiteConfig{RandomSeed: 3}))
-					Ω(reporter.Begin).Should(Equal(thirdBeginSummary))
+					Ω(reporter.Begin).Should(Equal(thirdBeginReport))
 					Ω(reporter.Will.Names()).Should(ConsistOf("A", "B"))
 					Ω(reporter.Did.Names()).Should(ConsistOf("A", "B"))
 				})
 
 				Context("any subsequent summaries", func() {
 					BeforeEach(func() {
-						forwardingReporter.DidRun(reportC)
+						forwardingReporter.DidRun(specReportC)
 					})
 
 					It("are forwarded immediately", func() {
@@ -100,8 +102,8 @@ var _ = Describe("Server", func() {
 
 				Context("when SpecSuiteDidEnd start arriving", func() {
 					BeforeEach(func() {
-						forwardingReporter.SpecSuiteDidEnd(endSummary1)
-						forwardingReporter.SpecSuiteDidEnd(endSummary2)
+						forwardingReporter.SpecSuiteDidEnd(endReport1)
+						forwardingReporter.SpecSuiteDidEnd(endReport2)
 					})
 
 					It("does not forward them yet...", func() {
@@ -114,17 +116,15 @@ var _ = Describe("Server", func() {
 
 					Context("when the final SpecSuiteDidEnd arrive", func() {
 						BeforeEach(func() {
-							forwardingReporter.SpecSuiteDidEnd(endSummary3)
+							forwardingReporter.SpecSuiteDidEnd(endReport3)
 						})
 
 						It("forwards the aggregation of all received end summaries", func() {
-							Ω(reporter.End).Should(Equal(types.SuiteSummary{
-								SuiteSucceeded:       false,
-								NumberOfPassedSpecs:  6,
-								NumberOfSkippedSpecs: 2,
-								NumberOfFailedSpecs:  3,
-								RunTime:              time.Minute,
-							}))
+							Ω(reporter.End.StartTime.Unix()).Should(BeNumerically("~", t.Add(-2*time.Second).Unix()))
+							Ω(reporter.End.EndTime.Unix()).Should(BeNumerically("~", t.Add(2*time.Second).Unix()))
+							Ω(reporter.End.RunTime).Should(BeNumerically("~", 4*time.Second))
+							Ω(reporter.End.SuiteSucceeded).Should(BeFalse())
+							Ω(reporter.End.SpecReports).Should(ConsistOf(specReportA, specReportB, specReportC))
 						})
 
 						It("should signal it's done", func() {
