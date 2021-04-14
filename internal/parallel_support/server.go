@@ -34,10 +34,10 @@ type Server struct {
 	parallelTotal   int
 	counter         int
 
-	numSuiteDidBegins         int
-	numSuiteDidEnds           int
-	aggregatedSuiteEndSummary types.SuiteSummary
-	reportHoldingArea         []types.SpecReport
+	numSuiteDidBegins int
+	numSuiteDidEnds   int
+	aggregatedReport  types.Report
+	reportHoldingArea []types.SpecReport
 }
 
 //Create a new server, automatically selecting a port
@@ -103,8 +103,8 @@ func (server *Server) specSuiteWillBegin(writer http.ResponseWriter, request *ht
 
 	server.numSuiteDidBegins += 1
 
-	var data SuiteConfigAndSummary
-	err := server.decode(request, &data)
+	var report types.Report
+	err := server.decode(request, &report)
 	if err != nil {
 		writer.WriteHeader(http.StatusBadRequest)
 		return
@@ -112,7 +112,7 @@ func (server *Server) specSuiteWillBegin(writer http.ResponseWriter, request *ht
 
 	// all summaries are identical, so it's fine to simply emit the last one of these
 	if server.numSuiteDidBegins == server.parallelTotal {
-		server.reporter.SpecSuiteWillBegin(data.SuiteConfig, data.Summary)
+		server.reporter.SpecSuiteWillBegin(report)
 
 		for _, summary := range server.reportHoldingArea {
 			server.reporter.WillRun(summary)
@@ -148,21 +148,21 @@ func (server *Server) specSuiteDidEnd(writer http.ResponseWriter, request *http.
 
 	server.numSuiteDidEnds += 1
 
-	var summary types.SuiteSummary
-	err := server.decode(request, &summary)
+	var report types.Report
+	err := server.decode(request, &report)
 	if err != nil {
 		writer.WriteHeader(http.StatusBadRequest)
 		return
 	}
 
 	if server.numSuiteDidEnds == 1 {
-		server.aggregatedSuiteEndSummary = summary
+		server.aggregatedReport = report
 	} else {
-		server.aggregatedSuiteEndSummary = server.aggregatedSuiteEndSummary.Add(summary)
+		server.aggregatedReport = server.aggregatedReport.Add(report)
 	}
 
 	if server.numSuiteDidEnds == server.parallelTotal {
-		server.reporter.SpecSuiteDidEnd(server.aggregatedSuiteEndSummary)
+		server.reporter.SpecSuiteDidEnd(server.aggregatedReport)
 		close(server.Done)
 	}
 }

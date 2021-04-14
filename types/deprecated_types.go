@@ -9,6 +9,7 @@ import (
 	A set of deprecations to make the transition from v1 to v2 easier for users who have written custom reporters.
 */
 
+type SuiteSummary = DeprecatedSuiteSummary
 type SetupSummary = DeprecatedSetupSummary
 type SpecSummary = DeprecatedSpecSummary
 type SpecMeasurement = DeprecatedSpecMeasurement
@@ -28,6 +29,22 @@ var (
 	SpecComponentTypeAfterSuite              = NodeTypeAfterSuite
 	SpecComponentTypeSynchronizedAfterSuite  = NodeTypeSynchronizedAfterSuite
 )
+
+type DeprecatedSuiteSummary struct {
+	SuiteDescription string
+	SuiteSucceeded   bool
+	SuiteID          string
+
+	NumberOfSpecsBeforeParallelization int
+	NumberOfTotalSpecs                 int
+	NumberOfSpecsThatWillBeRun         int
+	NumberOfPendingSpecs               int
+	NumberOfSkippedSpecs               int
+	NumberOfPassedSpecs                int
+	NumberOfFailedSpecs                int
+	NumberOfFlakedSpecs                int
+	RunTime                            time.Duration
+}
 
 type DeprecatedSetupSummary struct {
 	ComponentType SpecComponentType

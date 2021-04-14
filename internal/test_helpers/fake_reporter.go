@@ -58,16 +58,14 @@ func (s Reports) WithState(state types.SpecState) Reports {
 }
 
 type FakeReporter struct {
-	Config types.SuiteConfig
-	Begin  types.SuiteSummary
-	Will   Reports
-	Did    Reports
-	End    types.SuiteSummary
+	Begin types.Report
+	Will  Reports
+	Did   Reports
+	End   types.Report
 }
 
-func (r *FakeReporter) SpecSuiteWillBegin(conf types.SuiteConfig, summary types.SuiteSummary) {
-	r.Begin = summary
-	r.Config = conf
+func (r *FakeReporter) SpecSuiteWillBegin(report types.Report) {
+	r.Begin = report
 }
 
 func (r *FakeReporter) WillRun(report types.SpecReport) {
@@ -78,8 +76,8 @@ func (r *FakeReporter) DidRun(report types.SpecReport) {
 	r.Did = append(r.Did, report)
 }
 
-func (r *FakeReporter) SpecSuiteDidEnd(summary types.SuiteSummary) {
-	r.End = summary
+func (r *FakeReporter) SpecSuiteDidEnd(report types.Report) {
+	r.End = report
 }
 
 type NSpecs int
@@ -91,40 +89,61 @@ type NPending int
 type NFlaked int
 
 func BeASuiteSummary(options ...interface{}) OmegaMatcher {
-	fields := Fields{}
-	fields["NumberOfTotalSpecs"] = Equal(0)
-	fields["NumberOfPassedSpecs"] = Equal(0)
-	fields["NumberOfSkippedSpecs"] = Equal(0)
-	fields["NumberOfFailedSpecs"] = Equal(0)
-	fields["NumberOfPendingSpecs"] = Equal(0)
-	fields["NumberOfFlakedSpecs"] = Equal(0)
-
+	type ReportStats struct {
+		Succeeded    bool
+		TotalSpecs   int
+		WillRunSpecs int
+		Passed       int
+		Skipped      int
+		Failed       int
+		Pending      int
+		Flaked       int
+	}
+	fields := Fields{
+		"Passed":     Equal(0),
+		"Skipped":    Equal(0),
+		"Failed":     Equal(0),
+		"Pending":    Equal(0),
+		"Flaked":     Equal(0),
+		"TotalSpecs": Equal(0),
+	}
 	for _, option := range options {
 		t := reflect.TypeOf(option)
 		if t.Kind() == reflect.Bool {
 			if option.(bool) {
-				fields["SuiteSucceeded"] = BeTrue()
+				fields["Succeeded"] = BeTrue()
 			} else {
-				fields["SuiteSucceeded"] = BeFalse()
+				fields["Succeeded"] = BeFalse()
 			}
 		} else if t == reflect.TypeOf(NSpecs(0)) {
-			fields["NumberOfTotalSpecs"] = Equal(int(option.(NSpecs)))
+			fields["TotalSpecs"] = Equal(int(option.(NSpecs)))
 		} else if t == reflect.TypeOf(NWillRun(0)) {
-			fields["NumberOfSpecsThatWillBeRun"] = Equal(int(option.(NWillRun)))
+			fields["WillRunSpecs"] = Equal(int(option.(NWillRun)))
 		} else if t == reflect.TypeOf(NPassed(0)) {
-			fields["NumberOfPassedSpecs"] = Equal(int(option.(NPassed)))
+			fields["Passed"] = Equal(int(option.(NPassed)))
 		} else if t == reflect.TypeOf(NSkipped(0)) {
-			fields["NumberOfSkippedSpecs"] = Equal(int(option.(NSkipped)))
+			fields["Skipped"] = Equal(int(option.(NSkipped)))
 		} else if t == reflect.TypeOf(NFailed(0)) {
-			fields["NumberOfFailedSpecs"] = Equal(int(option.(NFailed)))
+			fields["Failed"] = Equal(int(option.(NFailed)))
 		} else if t == reflect.TypeOf(NPending(0)) {
-			fields["NumberOfPendingSpecs"] = Equal(int(option.(NPending)))
+			fields["Pending"] = Equal(int(option.(NPending)))
 		} else if t == reflect.TypeOf(NFlaked(0)) {
-			fields["NumberOfFlakedSpecs"] = Equal(int(option.(NFlaked)))
+			fields["Flaked"] = Equal(int(option.(NFlaked)))
 		}
 	}
-
-	return MatchFields(IgnoreExtras, fields)
+	return WithTransform(func(report types.Report) ReportStats {
+		specs := report.SpecReports.WithLeafNodeType(types.NodeTypeIt)
+		return ReportStats{
+			Succeeded:    report.SuiteSucceeded,
+			TotalSpecs:   report.PreRunStats.TotalSpecs,
+			WillRunSpecs: report.PreRunStats.SpecsThatWillRun,
+			Passed:       specs.CountWithState(types.SpecStatePassed),
+			Skipped:      specs.CountWithState(types.SpecStateSkipped),
+			Failed:       specs.CountWithState(types.SpecStateFailureStates...),
+			Pending:      specs.CountWithState(types.SpecStatePending),
+			Flaked:       specs.CountOfFlakedSpecs(),
+		}
+	}, MatchFields(IgnoreExtras, fields))
 }
 
 type CapturedOutput string

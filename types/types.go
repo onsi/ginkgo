@@ -8,55 +8,61 @@ import (
 
 const GINKGO_FOCUS_EXIT_CODE = 197
 
-type SuiteSummary struct {
+type Report struct {
+	SuitePath        string
 	SuiteDescription string
 	SuiteSucceeded   bool
 
-	NumberOfTotalSpecs         int
-	NumberOfSpecsThatWillBeRun int
+	PreRunStats PreRunStats
 
-	NumberOfSkippedSpecs int
-	NumberOfPassedSpecs  int
-	NumberOfFailedSpecs  int
-	NumberOfPendingSpecs int
-	NumberOfFlakedSpecs  int
-	RunTime              time.Duration
+	StartTime time.Time
+	EndTime   time.Time
+	RunTime   time.Duration
+
+	SuiteConfig SuiteConfig
+	SpecReports SpecReports
 }
 
-func (summary SuiteSummary) NumberOfSpecsThatRan() int {
-	return summary.NumberOfPassedSpecs + summary.NumberOfFailedSpecs
+type PreRunStats struct {
+	TotalSpecs       int
+	SpecsThatWillRun int
 }
 
-func (summary SuiteSummary) Add(other SuiteSummary) SuiteSummary {
-	out := SuiteSummary{}
-	out.SuiteDescription = summary.SuiteDescription
-	out.SuiteSucceeded = summary.SuiteSucceeded && other.SuiteSucceeded
-	out.NumberOfTotalSpecs = summary.NumberOfTotalSpecs
-	out.NumberOfSpecsThatWillBeRun = summary.NumberOfSpecsThatWillBeRun
+func (report Report) Add(other Report) Report {
+	report.SuiteSucceeded = report.SuiteSucceeded && other.SuiteSucceeded
 
-	out.NumberOfSkippedSpecs = summary.NumberOfSkippedSpecs + other.NumberOfSkippedSpecs
-	out.NumberOfPassedSpecs = summary.NumberOfPassedSpecs + other.NumberOfPassedSpecs
-	out.NumberOfFailedSpecs = summary.NumberOfFailedSpecs + other.NumberOfFailedSpecs
-	out.NumberOfPendingSpecs = summary.NumberOfPendingSpecs + other.NumberOfPendingSpecs
-	out.NumberOfFlakedSpecs = summary.NumberOfFlakedSpecs + other.NumberOfFlakedSpecs
-	if summary.RunTime > other.RunTime {
-		out.RunTime = summary.RunTime
-	} else {
-		out.RunTime = other.RunTime
+	if other.StartTime.Before(report.StartTime) {
+		report.StartTime = other.StartTime
 	}
 
-	return out
+	if other.EndTime.After(report.EndTime) {
+		report.EndTime = other.EndTime
+	}
+
+	report.RunTime = report.EndTime.Sub(report.StartTime)
+
+	reports := make(SpecReports, len(report.SpecReports)+len(other.SpecReports))
+	for i := range report.SpecReports {
+		reports[i] = report.SpecReports[i]
+	}
+	offset := len(report.SpecReports)
+	for i := range other.SpecReports {
+		reports[i+offset] = other.SpecReports[i]
+	}
+
+	report.SpecReports = reports
+	return report
 }
 
 // SpecReport captures information about a Ginkgo spec.
 type SpecReport struct {
 	// NodeTexts is a slice containing the text strings of
-	// all Describe/Context/When containers in this test's hierarchy.
+	// all Describe/Context/When containers in this spec's hierarchy.
 	// The last element in NodeTexts is the string of the It itself.
 	NodeTexts []string
 
 	// NodeLocations is a slice containing the CodeLocations of
-	// all Describe/Context/When containers in this test's hirerachy.
+	// all Describe/Context/When containers in this spec's hirerachy.
 	// The last element in NodeLcoations is the CodeLocation of the It itself
 	NodeLocations []CodeLocation
 
@@ -66,17 +72,24 @@ type SpecReport struct {
 	LeafNodeType     NodeType
 	LeafNodeLocation CodeLocation
 
-	// State captures whether the test has passed, failed, etc.
+	// State captures whether the spec has passed, failed, etc.
 	State SpecState
 
-	// RunTime captures the duration of the test
+	// StartTime and Entime capture the start and end time of the spec
+	StartTime time.Time
+	EndTime   time.Time
+
+	// RunTime captures the duration of the spec
 	RunTime time.Duration
 
-	//Failure is populated if a test has failed, panicked, been interrupted, or skipped by the user (e.g. calling Skip())
+	// GinkgoParallelNode captures the parallel node that this spec ran on
+	GinkgoParallelNode int
+
+	//Failure is populated if a spec has failed, panicked, been interrupted, or skipped by the user (e.g. calling Skip())
 	//It includes detailed information about the Failure
 	Failure Failure
 
-	// NumAttempts captures the number of times this Spec was run.  Flakey tests can be retried with
+	// NumAttempts captures the number of times this Spec was run.  Flakey specs can be retried with
 	// ginkgo --flake-attempts=N
 	NumAttempts int
 
@@ -139,6 +152,48 @@ func (report SpecReport) FailureMessage() string {
 //FailureLocation() returns the location of the failure (or an empty CodeLocation if the test hasn't failed)
 func (report SpecReport) FailureLocation() CodeLocation {
 	return report.Failure.Location
+}
+
+type SpecReports []SpecReport
+
+func (reports SpecReports) WithLeafNodeType(nodeType ...NodeType) SpecReports {
+	out := SpecReports{}
+	for _, report := range reports {
+		if report.LeafNodeType.Is(nodeType...) {
+			out = append(out, report)
+		}
+	}
+	return out
+}
+
+func (reports SpecReports) WithState(states ...SpecState) SpecReports {
+	out := SpecReports{}
+	for _, report := range reports {
+		if report.State.Is(states...) {
+			out = append(out, report)
+		}
+	}
+	return out
+}
+
+func (reports SpecReports) CountWithState(states ...SpecState) int {
+	n := 0
+	for _, report := range reports {
+		if report.State.Is(states...) {
+			n += 1
+		}
+	}
+	return n
+}
+
+func (reports SpecReports) CountOfFlakedSpecs() int {
+	n := 0
+	for _, report := range reports.WithState(SpecStatePassed) {
+		if report.NumAttempts > 1 {
+			n += 1
+		}
+	}
+	return n
 }
 
 // Failure captures failure information for an individual test
