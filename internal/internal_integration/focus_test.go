@@ -39,7 +39,7 @@ var _ = Describe("Focus", func() {
 			})
 
 			It("reports on the suite with accurate numbers", func() {
-				Ω(reporter.End).Should(BeASuiteSummary(true, NSpecs(6), NPassed(3), NPending(3), NWillRun(3), NSkipped(3)))
+				Ω(reporter.End).Should(BeASuiteSummary(true, NSpecs(6), NPassed(3), NPending(3), NWillRun(3), NSkipped(0)))
 			})
 		})
 
@@ -52,7 +52,7 @@ var _ = Describe("Focus", func() {
 			})
 
 			It("reports on the suite with accurate numbers", func() {
-				Ω(reporter.End).Should(BeASuiteSummary(false, NPassed(3), NSpecs(6), NPending(3), NWillRun(3), NSkipped(3)))
+				Ω(reporter.End).Should(BeASuiteSummary(false, NPassed(3), NSpecs(6), NPending(3), NWillRun(3), NSkipped(0)))
 			})
 		})
 	})
@@ -96,7 +96,7 @@ var _ = Describe("Focus", func() {
 		})
 
 		It("report on the suite with accurate numbers", func() {
-			Ω(reporter.End).Should(BeASuiteSummary(true, NPassed(4), NSkipped(5), NPending(1), NSpecs(9), NWillRun(4)))
+			Ω(reporter.End).Should(BeASuiteSummary(true, NPassed(4), NSkipped(4), NPending(1), NSpecs(9), NWillRun(4)))
 		})
 	})
 
@@ -135,7 +135,7 @@ var _ = Describe("Focus", func() {
 		})
 
 		It("report on the suite with accurate numbers", func() {
-			Ω(reporter.End).Should(BeASuiteSummary(true, NPassed(5), NSkipped(4), NPending(1), NSpecs(9), NWillRun(5)))
+			Ω(reporter.End).Should(BeASuiteSummary(true, NPassed(5), NSkipped(3), NPending(1), NSpecs(9), NWillRun(5)))
 		})
 	})
 
@@ -173,7 +173,7 @@ var _ = Describe("Focus", func() {
 			Ω(rt.TrackedRuns()).Should(ConsistOf("A", "B"))
 			Ω(reporter.Did.WithState(types.SpecStatePending).Names()).Should(ConsistOf("C"))
 			Ω(reporter.Did.WithState(types.SpecStatePassed).Names()).Should(ConsistOf("A", "B"))
-			Ω(reporter.End).Should(BeASuiteSummary(true, NPassed(2), NSkipped(1), NPending(1), NSpecs(3), NWillRun(2)))
+			Ω(reporter.End).Should(BeASuiteSummary(true, NPassed(2), NSkipped(0), NPending(1), NSpecs(3), NWillRun(2)))
 		})
 	})
 

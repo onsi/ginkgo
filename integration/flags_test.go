@@ -26,7 +26,7 @@ var _ = Describe("Flags Specs", func() {
 		Ω(output).Should(ContainSubstring("10 Passed"))
 		Ω(output).Should(ContainSubstring("0 Failed"))
 		Ω(output).Should(ContainSubstring("1 Pending"))
-		Ω(output).Should(ContainSubstring("4 Skipped"))
+		Ω(output).Should(ContainSubstring("3 Skipped"))
 		Ω(output).Should(ContainSubstring("[PENDING]"))
 		Ω(output).Should(ContainSubstring("marshmallow"))
 		Ω(output).Should(ContainSubstring("chocolate"))
@@ -64,7 +64,7 @@ var _ = Describe("Flags Specs", func() {
 		Ω(output).Should(ContainSubstring("3 Passed"))
 		Ω(output).Should(ContainSubstring("0 Failed"))
 		Ω(output).Should(ContainSubstring("1 Pending"))
-		Ω(output).Should(ContainSubstring("11 Skipped"))
+		Ω(output).Should(ContainSubstring("10 Skipped"))
 	})
 
 	It("should override the programmatic focus when told to skip", func() {
@@ -78,7 +78,7 @@ var _ = Describe("Flags Specs", func() {
 		Ω(output).Should(ContainSubstring("10 Passed"))
 		Ω(output).Should(ContainSubstring("0 Failed"))
 		Ω(output).Should(ContainSubstring("1 Pending"))
-		Ω(output).Should(ContainSubstring("4 Skipped"))
+		Ω(output).Should(ContainSubstring("3 Skipped"))
 	})
 
 	It("should override the programmatic focus when told to skip (multiple options)", func() {
@@ -92,7 +92,7 @@ var _ = Describe("Flags Specs", func() {
 		Ω(output).Should(ContainSubstring("10 Passed"))
 		Ω(output).Should(ContainSubstring("0 Failed"))
 		Ω(output).Should(ContainSubstring("1 Pending"))
-		Ω(output).Should(ContainSubstring("4 Skipped"))
+		Ω(output).Should(ContainSubstring("3 Skipped"))
 	})
 
 	It("should ignore empty skip and focus variables", func() {

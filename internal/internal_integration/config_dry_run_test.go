@@ -44,6 +44,6 @@ var _ = Describe("when config.DryRun is enabled", func() {
 	})
 
 	It("reports the correct statistics", func() {
-		Ω(reporter.End).Should(BeASuiteSummary(NSpecs(5), NPassed(3), NPending(1), NSkipped(2)))
+		Ω(reporter.End).Should(BeASuiteSummary(NSpecs(5), NPassed(3), NPending(1), NSkipped(1)))
 	})
 })
