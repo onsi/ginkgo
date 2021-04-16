@@ -60,7 +60,7 @@ func NewDefaultReporter(conf types.ReporterConfig, writer io.Writer) *DefaultRep
 
 /* The Reporter Interface */
 
-func (r *DefaultReporter) SpecSuiteWillBegin(report types.Report) {
+func (r *DefaultReporter) SuiteWillBegin(report types.Report) {
 	if r.conf.Succinct {
 		r.emit(r.f("[%d] {{bold}}%s{{/}} ", report.SuiteConfig.RandomSeed, report.SuiteDescription))
 		r.emit(r.f("- %d/%d specs ", report.PreRunStats.SpecsThatWillRun, report.PreRunStats.TotalSpecs))
@@ -217,7 +217,7 @@ func (r *DefaultReporter) DidRun(report types.SpecReport) {
 	r.emitDelimiter()
 }
 
-func (r *DefaultReporter) SpecSuiteDidEnd(report types.Report) {
+func (r *DefaultReporter) SuiteDidEnd(report types.Report) {
 	failures := report.SpecReports.WithState(types.SpecStateFailureStates...)
 	if len(failures) > 1 {
 		r.emitBlock("\n\n")

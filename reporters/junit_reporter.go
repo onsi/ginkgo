@@ -61,7 +61,7 @@ func NewJUnitReporter(filename string) *JUnitReporter {
 	}
 }
 
-func (reporter *JUnitReporter) SpecSuiteWillBegin(ginkgoConfig types.SuiteConfig, summary types.SuiteSummary) {
+func (reporter *JUnitReporter) SuiteWillBegin(ginkgoConfig types.SuiteConfig, summary types.SuiteSummary) {
 	reporter.suite = JUnitTestSuite{
 		Name:      summary.SuiteDescription,
 		TestCases: []JUnitTestCase{},
@@ -110,7 +110,7 @@ func (reporter *JUnitReporter) DidRun(report types.SpecReport) {
 	reporter.suite.TestCases = append(reporter.suite.TestCases, testCase)
 }
 
-func (reporter *JUnitReporter) SpecSuiteDidEnd(summary types.SuiteSummary) {
+func (reporter *JUnitReporter) SuiteDidEnd(summary types.SuiteSummary) {
 	reporter.suite.Tests = summary.NumberOfSpecsThatWillBeRun
 	reporter.suite.Time = math.Trunc(summary.RunTime.Seconds()*1000) / 1000
 	reporter.suite.Failures = summary.NumberOfFailedSpecs

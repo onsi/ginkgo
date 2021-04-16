@@ -124,41 +124,29 @@ var _ = Describe("Suite", func() {
 		Describe("Suite Nodes", func() {
 			Context("when pushing suite nodes at the top level", func() {
 				BeforeEach(func() {
-					err := suite.PushSuiteNodeBuilder(internal.SuiteNodeBuilder{
-						NodeType: types.NodeTypeBeforeSuite,
-					})
+					err := suite.PushNode(N(types.NodeTypeBeforeSuite))
 					Ω(err).ShouldNot(HaveOccurred())
 
-					err = suite.PushSuiteNodeBuilder(internal.SuiteNodeBuilder{
-						NodeType: types.NodeTypeAfterSuite,
-					})
+					err = suite.PushNode(N(types.NodeTypeAfterSuite))
 					Ω(err).ShouldNot(HaveOccurred())
 				})
 
 				Context("when pushing more than one BeforeSuite node", func() {
 					It("errors", func() {
-						err := suite.PushSuiteNodeBuilder(internal.SuiteNodeBuilder{
-							NodeType: types.NodeTypeBeforeSuite,
-						})
+						err := suite.PushNode(N(types.NodeTypeBeforeSuite))
 						Ω(err).Should(HaveOccurred())
 
-						err = suite.PushSuiteNodeBuilder(internal.SuiteNodeBuilder{
-							NodeType: types.NodeTypeSynchronizedBeforeSuite,
-						})
+						err = suite.PushNode(N(types.NodeTypeSynchronizedBeforeSuite))
 						Ω(err).Should(HaveOccurred())
 					})
 				})
 
 				Context("when pushing more than one AfterSuite node", func() {
 					It("errors", func() {
-						err := suite.PushSuiteNodeBuilder(internal.SuiteNodeBuilder{
-							NodeType: types.NodeTypeAfterSuite,
-						})
+						err := suite.PushNode(N(types.NodeTypeAfterSuite))
 						Ω(err).Should(HaveOccurred())
 
-						err = suite.PushSuiteNodeBuilder(internal.SuiteNodeBuilder{
-							NodeType: types.NodeTypeSynchronizedAfterSuite,
-						})
+						err = suite.PushNode(N(types.NodeTypeSynchronizedAfterSuite))
 						Ω(err).Should(HaveOccurred())
 					})
 				})
@@ -169,12 +157,7 @@ var _ = Describe("Suite", func() {
 				It("errors", func() {
 					var pushSuiteNodeErr error
 					err := suite.PushNode(N(ntCon, "top-level-container", func() {
-						pushSuiteNodeErr = suite.PushSuiteNodeBuilder(internal.SuiteNodeBuilder{
-							NodeType:        types.NodeTypeBeforeSuite,
-							CodeLocation:    cl,
-							BeforeSuiteBody: func() {},
-						})
-
+						pushSuiteNodeErr = suite.PushNode(N(types.NodeTypeBeforeSuite, cl))
 					}))
 
 					Ω(err).ShouldNot(HaveOccurred())
@@ -187,27 +170,13 @@ var _ = Describe("Suite", func() {
 				It("errors", func() {
 					var pushSuiteNodeErr error
 					err := suite.PushNode(N(ntIt, "top-level it", func() {
-						pushSuiteNodeErr = suite.PushSuiteNodeBuilder(internal.SuiteNodeBuilder{
-							NodeType:        types.NodeTypeBeforeSuite,
-							CodeLocation:    cl,
-							BeforeSuiteBody: func() {},
-						})
+						pushSuiteNodeErr = suite.PushNode(N(types.NodeTypeBeforeSuite, cl))
 					}))
 
 					Ω(err).ShouldNot(HaveOccurred())
 					Ω(suite.BuildTree()).Should(Succeed())
 					suite.Run("suite", "/path/to/suite", failer, reporter, writer, outputInterceptor, interruptHandler, conf)
 					Ω(pushSuiteNodeErr).Should(HaveOccurred())
-				})
-			})
-
-			Context("when pushing a busted suite node", func() {
-				It("panics", func() {
-					Ω(func() {
-						suite.PushSuiteNodeBuilder(internal.SuiteNodeBuilder{
-							NodeType: types.NodeTypeIt,
-						})
-					}).Should(Panic())
 				})
 			})
 		})

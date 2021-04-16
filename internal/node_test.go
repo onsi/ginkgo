@@ -15,11 +15,11 @@ var _ = Describe("UniqueNodeID", func() {
 })
 
 var _ = Describe("Node", func() {
-	Describe("The NewNode constructor", func() {
+	Describe("The primary NewNode constructor", func() {
 		It("creates a node with a non-zero id", func() {
 			var didRun bool
 			node := internal.NewNode(ntIt, "hummus", func() { didRun = true }, cl, true, false)
-			Ω(node.ID).ShouldNot(BeZero())
+			Ω(node.ID).Should(BeNumerically(">", 0))
 			Ω(node.NodeType).Should(Equal(ntIt))
 			Ω(node.Text).Should(Equal("hummus"))
 			node.Body()
@@ -28,6 +28,82 @@ var _ = Describe("Node", func() {
 			Ω(node.MarkedFocus).Should(BeTrue())
 			Ω(node.MarkedPending).Should(BeFalse())
 			Ω(node.NestingLevel).Should(Equal(-1))
+		})
+	})
+
+	Describe("The other node constructors", func() {
+		Describe("NewSynchronizedBeforeSuiteNode", func() {
+			It("returns a correctly configured node", func() {
+				var ranNode1, ranAllNodes bool
+				node1Body := func() []byte { ranNode1 = true; return nil }
+				allNodesBody := func(_ []byte) { ranAllNodes = true }
+				node := internal.NewSynchronizedBeforeSuiteNode(node1Body, allNodesBody, cl)
+				Ω(node.ID).Should(BeNumerically(">", 0))
+				Ω(node.NodeType).Should(Equal(types.NodeTypeSynchronizedBeforeSuite))
+
+				node.SynchronizedBeforeSuiteNode1Body()
+				Ω(ranNode1).Should(BeTrue())
+
+				node.SynchronizedBeforeSuiteAllNodesBody(nil)
+				Ω(ranAllNodes).Should(BeTrue())
+
+				Ω(node.CodeLocation).Should(Equal(cl))
+				Ω(node.NestingLevel).Should(Equal(-1))
+			})
+		})
+
+		Describe("NewSynchronizedAfterSuiteNode", func() {
+			It("returns a correctly configured node", func() {
+				var ranNode1, ranAllNodes bool
+				allNodesBody := func() { ranAllNodes = true }
+				node1Body := func() { ranNode1 = true }
+
+				node := internal.NewSynchronizedAfterSuiteNode(allNodesBody, node1Body, cl)
+				Ω(node.ID).Should(BeNumerically(">", 0))
+				Ω(node.NodeType).Should(Equal(types.NodeTypeSynchronizedAfterSuite))
+
+				node.SynchronizedAfterSuiteAllNodesBody()
+				Ω(ranAllNodes).Should(BeTrue())
+
+				node.SynchronizedAfterSuiteNode1Body()
+				Ω(ranNode1).Should(BeTrue())
+
+				Ω(node.CodeLocation).Should(Equal(cl))
+				Ω(node.NestingLevel).Should(Equal(-1))
+			})
+		})
+
+		Describe("NewReportAfterSuiteNode", func() {
+			It("returns a correctly configured node", func() {
+				var didRun bool
+				body := func(types.Report) { didRun = true }
+				node := internal.NewReportAfterSuiteNode(body, cl)
+				Ω(node.ID).Should(BeNumerically(">", 0))
+				Ω(node.NodeType).Should(Equal(types.NodeTypeReportAfterSuite))
+
+				node.ReportAfterSuiteBody(types.Report{})
+				Ω(didRun).Should(BeTrue())
+
+				Ω(node.CodeLocation).Should(Equal(cl))
+				Ω(node.NestingLevel).Should(Equal(-1))
+			})
+		})
+
+		Describe("NewReportAfterEachNode", func() {
+			It("returns a correctly configured node", func() {
+				var didRun bool
+				body := func(types.SpecReport) { didRun = true }
+
+				node := internal.NewReportAfterEachNode(body, cl)
+				Ω(node.ID).Should(BeNumerically(">", 0))
+				Ω(node.NodeType).Should(Equal(types.NodeTypeReportAfterEach))
+
+				node.ReportAfterEachBody(types.SpecReport{})
+				Ω(didRun).Should(BeTrue())
+
+				Ω(node.CodeLocation).Should(Equal(cl))
+				Ω(node.NestingLevel).Should(Equal(-1))
+			})
 		})
 	})
 
