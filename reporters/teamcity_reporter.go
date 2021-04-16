@@ -32,7 +32,7 @@ func NewTeamCityReporter(writer io.Writer) *TeamCityReporter {
 	}
 }
 
-func (reporter *TeamCityReporter) SpecSuiteWillBegin(conf types.SuiteConfig, summary types.SuiteSummary) {
+func (reporter *TeamCityReporter) SuiteWillBegin(conf types.SuiteConfig, summary types.SuiteSummary) {
 	reporter.testSuiteName = reporter.escape(summary.SuiteDescription)
 	// reporter.ReporterConfig = config.DefaultReporterConfig //TODO: NEED TO REPLICATE THIS LESS TERRIBLY
 
@@ -71,7 +71,7 @@ func (reporter *TeamCityReporter) DidRun(report types.SpecReport) {
 	fmt.Fprintf(reporter.writer, "%s[testFinished name='%s' duration='%v']\n", teamcityMessageId, testName, durationInMilliseconds)
 }
 
-func (reporter *TeamCityReporter) SpecSuiteDidEnd(summary types.SuiteSummary) {
+func (reporter *TeamCityReporter) SuiteDidEnd(summary types.SuiteSummary) {
 	fmt.Fprintf(reporter.writer, "%s[testSuiteFinished name='%s']\n", teamcityMessageId, reporter.testSuiteName)
 }
 

@@ -9,15 +9,23 @@ package parallel_support
 
 import (
 	"encoding/json"
+	"io/ioutil"
 	"net"
 	"net/http"
 	"sync"
 
-	"github.com/onsi/ginkgo/internal"
-
 	"github.com/onsi/ginkgo/reporters"
 	"github.com/onsi/ginkgo/types"
 )
+
+type beforeSuiteState struct {
+	Data  []byte
+	State types.SpecState
+}
+
+type ParallelIndexCounter struct {
+	Index int
+}
 
 /*
 Server spins up on an automatically selected port and listens for communication from the forwarding reporter.
@@ -26,13 +34,13 @@ It then forwards that communication to attached reporters.
 type Server struct {
 	Done chan interface{}
 
-	listener        net.Listener
-	reporter        reporters.Reporter
-	alives          []func() bool
-	lock            *sync.Mutex
-	beforeSuiteData types.RemoteBeforeSuiteData
-	parallelTotal   int
-	counter         int
+	listener         net.Listener
+	reporter         reporters.Reporter
+	alives           []func() bool
+	lock             *sync.Mutex
+	beforeSuiteState beforeSuiteState
+	parallelTotal    int
+	counter          int
 
 	numSuiteDidBegins int
 	numSuiteDidEnds   int
@@ -47,13 +55,13 @@ func NewServer(parallelTotal int, reporter reporters.Reporter) (*Server, error) 
 		return nil, err
 	}
 	return &Server{
-		listener:        listener,
-		reporter:        reporter,
-		lock:            &sync.Mutex{},
-		alives:          make([]func() bool, parallelTotal),
-		beforeSuiteData: types.RemoteBeforeSuiteData{Data: nil, State: types.RemoteBeforeSuiteStatePending},
-		parallelTotal:   parallelTotal,
-		Done:            make(chan interface{}),
+		listener:         listener,
+		reporter:         reporter,
+		lock:             &sync.Mutex{},
+		alives:           make([]func() bool, parallelTotal),
+		beforeSuiteState: beforeSuiteState{Data: nil, State: types.SpecStateInvalid},
+		parallelTotal:    parallelTotal,
+		Done:             make(chan interface{}),
 	}, nil
 }
 
@@ -64,13 +72,16 @@ func (server *Server) Start() {
 	httpServer.Handler = mux
 
 	//streaming endpoints
-	mux.HandleFunc("/SpecSuiteWillBegin", server.specSuiteWillBegin)
-	mux.HandleFunc("/DidRun", server.didRun)
-	mux.HandleFunc("/SpecSuiteDidEnd", server.specSuiteDidEnd)
+	mux.HandleFunc("/suite-will-begin", server.specSuiteWillBegin)
+	mux.HandleFunc("/did-run", server.didRun)
+	mux.HandleFunc("/suite-did-end", server.specSuiteDidEnd)
 
 	//synchronization endpoints
-	mux.HandleFunc("/BeforeSuiteState", server.handleBeforeSuiteState)
-	mux.HandleFunc("/AfterSuiteState", server.handleRemoteAfterSuiteData)
+	mux.HandleFunc("/before-suite-failed", server.handleBeforeSuiteFailed)
+	mux.HandleFunc("/before-suite-succeeded", server.handleBeforeSuiteSucceeded)
+	mux.HandleFunc("/before-suite-state", server.handleBeforeSuiteState)
+	mux.HandleFunc("/have-nonprimary-nodes-finished", server.handleHaveNonprimaryNodesFinished)
+	// mux.HandleFunc("/report", server.handleReport)
 	mux.HandleFunc("/counter", server.handleCounter)
 	mux.HandleFunc("/up", server.handleUp)
 
@@ -112,7 +123,7 @@ func (server *Server) specSuiteWillBegin(writer http.ResponseWriter, request *ht
 
 	// all summaries are identical, so it's fine to simply emit the last one of these
 	if server.numSuiteDidBegins == server.parallelTotal {
-		server.reporter.SpecSuiteWillBegin(report)
+		server.reporter.SuiteWillBegin(report)
 
 		for _, summary := range server.reportHoldingArea {
 			server.reporter.WillRun(summary)
@@ -162,7 +173,7 @@ func (server *Server) specSuiteDidEnd(writer http.ResponseWriter, request *http.
 	}
 
 	if server.numSuiteDidEnds == server.parallelTotal {
-		server.reporter.SpecSuiteDidEnd(server.aggregatedReport)
+		server.reporter.SuiteDidEnd(server.aggregatedReport)
 		close(server.Done)
 	}
 }
@@ -187,38 +198,75 @@ func (server *Server) nodeIsAlive(node int) bool {
 	return alive()
 }
 
-func (server *Server) handleBeforeSuiteState(writer http.ResponseWriter, request *http.Request) {
-	if request.Method == "POST" {
-		server.lock.Lock()
-		dec := json.NewDecoder(request.Body)
-		dec.Decode(&(server.beforeSuiteData))
-		server.lock.Unlock()
-	} else {
-		server.lock.Lock()
-		beforeSuiteData := server.beforeSuiteData
-		server.lock.Unlock()
-		if beforeSuiteData.State == types.RemoteBeforeSuiteStatePending && !server.nodeIsAlive(1) {
-			beforeSuiteData.State = types.RemoteBeforeSuiteStateDisappeared
-		}
-		enc := json.NewEncoder(writer)
-		enc.Encode(beforeSuiteData)
-	}
-}
-
-func (server *Server) handleRemoteAfterSuiteData(writer http.ResponseWriter, request *http.Request) {
-	afterSuiteData := types.RemoteAfterSuiteData{
-		CanRun: true,
-	}
+func (server *Server) haveNoneprimaryNodesFinished() bool {
 	for i := 2; i <= server.parallelTotal; i++ {
-		afterSuiteData.CanRun = afterSuiteData.CanRun && !server.nodeIsAlive(i)
+		if server.nodeIsAlive(i) {
+			return false
+		}
 	}
-
-	enc := json.NewEncoder(writer)
-	enc.Encode(afterSuiteData)
+	return true
 }
+
+func (server *Server) handleBeforeSuiteFailed(writer http.ResponseWriter, request *http.Request) {
+	server.lock.Lock()
+	defer server.lock.Unlock()
+	server.beforeSuiteState.State = types.SpecStateFailed
+}
+
+func (server *Server) handleBeforeSuiteSucceeded(writer http.ResponseWriter, request *http.Request) {
+	server.lock.Lock()
+	defer server.lock.Unlock()
+	server.beforeSuiteState.State = types.SpecStatePassed
+	var err error
+	server.beforeSuiteState.Data, err = ioutil.ReadAll(request.Body)
+	if err != nil {
+		writer.WriteHeader(http.StatusInternalServerError)
+	}
+}
+
+func (server *Server) handleBeforeSuiteState(writer http.ResponseWriter, request *http.Request) {
+	node1IsAlive := server.nodeIsAlive(1)
+	server.lock.Lock()
+	defer server.lock.Unlock()
+	beforeSuiteState := server.beforeSuiteState
+	switch beforeSuiteState.State {
+	case types.SpecStatePassed:
+		writer.Write(beforeSuiteState.Data)
+	case types.SpecStateFailed:
+		writer.WriteHeader(http.StatusFailedDependency)
+	case types.SpecStateInvalid:
+		if node1IsAlive {
+			writer.WriteHeader(http.StatusTooEarly)
+		} else {
+			writer.WriteHeader(http.StatusGone)
+		}
+	}
+}
+
+func (server *Server) handleHaveNonprimaryNodesFinished(writer http.ResponseWriter, request *http.Request) {
+	if server.haveNoneprimaryNodesFinished() {
+		writer.WriteHeader(http.StatusOK)
+	} else {
+		writer.WriteHeader(http.StatusTooEarly)
+	}
+}
+
+// func (server *Server) handleReport(writer http.ResponseWriter, request *http.Request) {
+// 	if server.haveNonePrimaryNodesFinished() {
+// 		server.lock.Lock()
+// 		defer server.lock.Unlock()
+// 		if server.numSuiteDidEnds == server.parallelTotal {
+// 			json.NewEncoder(writer).Encode(server.aggregatedReport)
+// 		} else {
+// 			writer.WriteHeader(http.StatusGone)
+// 		}
+// 	} else {
+// 		writer.WriteHeader(http.StatusTooEarly)
+// 	}
+// }
 
 func (server *Server) handleCounter(writer http.ResponseWriter, request *http.Request) {
-	c := internal.Counter{}
+	c := ParallelIndexCounter{}
 	server.lock.Lock()
 	c.Index = server.counter
 	server.counter++
