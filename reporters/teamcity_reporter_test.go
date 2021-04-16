@@ -20,7 +20,7 @@ var _ = Describe("TeamCity Reporter", func() {
 	BeforeEach(func() {
 		buffer.Truncate(0)
 		reporter = reporters.NewTeamCityReporter(&buffer)
-		reporter.SpecSuiteWillBegin(types.SuiteConfig{}, types.SuiteSummary{
+		reporter.SuiteWillBegin(types.SuiteConfig{}, types.SuiteSummary{
 			SuiteDescription:           "Foo's test suite",
 			NumberOfSpecsThatWillBeRun: 1,
 		})
@@ -40,7 +40,7 @@ var _ = Describe("TeamCity Reporter", func() {
 			reporter.WillRun(report)
 			reporter.DidRun(report)
 
-			reporter.SpecSuiteDidEnd(types.SuiteSummary{
+			reporter.SuiteDidEnd(types.SuiteSummary{
 				NumberOfSpecsThatWillBeRun: 1,
 				NumberOfFailedSpecs:        0,
 				RunTime:                    10 * time.Second,
@@ -76,7 +76,7 @@ var _ = Describe("TeamCity Reporter", func() {
 			reporter.WillRun(beforeSuite)
 			reporter.DidRun(beforeSuite)
 
-			reporter.SpecSuiteDidEnd(types.SuiteSummary{
+			reporter.SuiteDidEnd(types.SuiteSummary{
 				NumberOfSpecsThatWillBeRun: 1,
 				NumberOfFailedSpecs:        1,
 				RunTime:                    10 * time.Second,
@@ -124,7 +124,7 @@ var _ = Describe("TeamCity Reporter", func() {
 				reporter.WillRun(report)
 				reporter.DidRun(report)
 
-				reporter.SpecSuiteDidEnd(types.SuiteSummary{
+				reporter.SuiteDidEnd(types.SuiteSummary{
 					NumberOfSpecsThatWillBeRun: 1,
 					NumberOfFailedSpecs:        1,
 					RunTime:                    10 * time.Second,
@@ -159,7 +159,7 @@ var _ = Describe("TeamCity Reporter", func() {
 				reporter.WillRun(report)
 				reporter.DidRun(report)
 
-				reporter.SpecSuiteDidEnd(types.SuiteSummary{
+				reporter.SuiteDidEnd(types.SuiteSummary{
 					NumberOfSpecsThatWillBeRun: 1,
 					NumberOfFailedSpecs:        0,
 					RunTime:                    10 * time.Second,

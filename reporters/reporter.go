@@ -6,14 +6,18 @@ import (
 )
 
 type Reporter interface {
-	SpecSuiteWillBegin(report types.Report)
+	SuiteWillBegin(report types.Report)
 	WillRun(report types.SpecReport)
 	DidRun(report types.SpecReport)
-	SpecSuiteDidEnd(report types.Report)
+	SuiteDidEnd(report types.Report)
 }
 
-// TODO: FIX
-// Deprecated Custom Reporters in V2
+type NoopReporter struct{}
+
+func (n NoopReporter) SuiteWillBegin(report types.Report) {}
+func (n NoopReporter) WillRun(report types.SpecReport)    {}
+func (n NoopReporter) DidRun(report types.SpecReport)     {}
+func (n NoopReporter) SuiteDidEnd(report types.Report)    {}
 
 // Deprecated: DeprecatedReporter was how Ginkgo V1 provided support for CustomReporters
 // this has been removed in V2.
@@ -21,12 +25,12 @@ type Reporter interface {
 // https://github.com/onsi/ginkgo/blob/v2/docs/MIGRATING_TO_V2.md#removed-custom-reporters
 // for Ginkgo's new behavior and for a migration path.
 type DeprecatedReporter interface {
-	SpecSuiteWillBegin(config config.GinkgoConfigType, summary *types.SuiteSummary)
+	SuiteWillBegin(config config.GinkgoConfigType, summary *types.SuiteSummary)
 	BeforeSuiteDidRun(setupSummary *types.SetupSummary)
 	SpecWillRun(specSummary *types.SpecSummary)
 	SpecDidComplete(specSummary *types.SpecSummary)
 	AfterSuiteDidRun(setupSummary *types.SetupSummary)
-	SpecSuiteDidEnd(summary *types.SuiteSummary)
+	SuiteDidEnd(summary *types.SuiteSummary)
 }
 
 // ReportViaDeprecatedReporter takes a V1 custom reporter and a V2 report and
@@ -45,9 +49,9 @@ func ReportViaDeprecatedReporter(reporter DeprecatedReporter, report types.Suite
 
 	// func (cs *compatiblityShim) IsDeprecatedReporter() {}
 
-	// func (cs *compatiblityShim) SpecSuiteWillBegin(config types.SuiteConfig, summary types.SuiteSummary) {
+	// func (cs *compatiblityShim) SuiteWillBegin(config types.SuiteConfig, summary types.SuiteSummary) {
 	// 	s := summary
-	// 	cs.reporter.SpecSuiteWillBegin(config, &s)
+	// 	cs.reporter.SuiteWillBegin(config, &s)
 	// }
 
 	// func (cs *compatiblityShim) WillRun(summary types.Summary) {
@@ -69,8 +73,8 @@ func ReportViaDeprecatedReporter(reporter DeprecatedReporter, report types.Suite
 	// 	}
 	// }
 
-	// func (cs *compatiblityShim) SpecSuiteDidEnd(summary types.SuiteSummary) {
+	// func (cs *compatiblityShim) SuiteDidEnd(summary types.SuiteSummary) {
 	// 	s := summary
-	// 	cs.reporter.SpecSuiteDidEnd(&s)
+	// 	cs.reporter.SuiteDidEnd(&s)
 	// }
 }

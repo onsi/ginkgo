@@ -37,7 +37,7 @@ var _ = Describe("JUnit Reporter", func() {
 
 		reporter = reporters.NewJUnitReporter(outputFile)
 
-		reporter.SpecSuiteWillBegin(types.SuiteConfig{}, types.SuiteSummary{
+		reporter.SuiteWillBegin(types.SuiteConfig{}, types.SuiteSummary{
 			SuiteDescription:           "My test suite",
 			NumberOfSpecsThatWillBeRun: 1,
 		})
@@ -60,7 +60,7 @@ var _ = Describe("JUnit Reporter", func() {
 			reporter.WillRun(report)
 			reporter.DidRun(report)
 
-			reporter.SpecSuiteDidEnd(types.SuiteSummary{
+			reporter.SuiteDidEnd(types.SuiteSummary{
 				NumberOfSpecsThatWillBeRun: 1,
 				NumberOfFailedSpecs:        0,
 				RunTime:                    testSuiteTime,
@@ -101,7 +101,7 @@ var _ = Describe("JUnit Reporter", func() {
 			reporter.WillRun(beforeSuite)
 			reporter.DidRun(beforeSuite)
 
-			reporter.SpecSuiteDidEnd(types.SuiteSummary{
+			reporter.SuiteDidEnd(types.SuiteSummary{
 				NumberOfSpecsThatWillBeRun: 1,
 				NumberOfFailedSpecs:        1,
 				RunTime:                    testSuiteTime,
@@ -157,7 +157,7 @@ var _ = Describe("JUnit Reporter", func() {
 				reporter.WillRun(report)
 				reporter.DidRun(report)
 
-				reporter.SpecSuiteDidEnd(types.SuiteSummary{
+				reporter.SuiteDidEnd(types.SuiteSummary{
 					NumberOfSpecsThatWillBeRun: 1,
 					NumberOfFailedSpecs:        1,
 					RunTime:                    testSuiteTime,
@@ -202,7 +202,7 @@ var _ = Describe("JUnit Reporter", func() {
 				reporter.WillRun(report)
 				reporter.DidRun(report)
 
-				reporter.SpecSuiteDidEnd(types.SuiteSummary{
+				reporter.SuiteDidEnd(types.SuiteSummary{
 					NumberOfSpecsThatWillBeRun: 1,
 					NumberOfFailedSpecs:        0,
 					RunTime:                    testSuiteTime,
