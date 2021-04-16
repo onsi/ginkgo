@@ -17,10 +17,10 @@ A FakeReporter and collection of matchers to match against reported suite and sp
 
 type Reports []types.SpecReport
 
-func (s Reports) FindByLeafNodeType(nodeType ...types.NodeType) types.SpecReport {
-	for _, summary := range s {
-		if summary.LeafNodeType.Is(nodeType...) {
-			return summary
+func (s Reports) FindByLeafNodeType(nodeTypes ...types.NodeType) types.SpecReport {
+	for _, report := range s {
+		if report.LeafNodeType.Is(nodeTypes...) {
+			return report
 		}
 	}
 
@@ -28,9 +28,9 @@ func (s Reports) FindByLeafNodeType(nodeType ...types.NodeType) types.SpecReport
 }
 
 func (s Reports) Find(name string) types.SpecReport {
-	for _, summary := range s {
-		if len(summary.NodeTexts) > 0 && summary.NodeTexts[len(summary.NodeTexts)-1] == name {
-			return summary
+	for _, report := range s {
+		if len(report.NodeTexts) > 0 && report.NodeTexts[len(report.NodeTexts)-1] == name {
+			return report
 		}
 	}
 
@@ -39,9 +39,9 @@ func (s Reports) Find(name string) types.SpecReport {
 
 func (s Reports) Names() []string {
 	out := []string{}
-	for _, summary := range s {
-		if len(summary.NodeTexts) > 0 {
-			out = append(out, summary.NodeTexts[len(summary.NodeTexts)-1])
+	for _, report := range s {
+		if len(report.NodeTexts) > 0 {
+			out = append(out, report.NodeTexts[len(report.NodeTexts)-1])
 		}
 	}
 	return out
@@ -49,9 +49,19 @@ func (s Reports) Names() []string {
 
 func (s Reports) WithState(state types.SpecState) Reports {
 	out := Reports{}
-	for _, summary := range s {
-		if summary.State == state {
-			out = append(out, summary)
+	for _, report := range s {
+		if report.State == state {
+			out = append(out, report)
+		}
+	}
+	return out
+}
+
+func (s Reports) WithLeafNodeType(nodeTypes ...types.NodeType) Reports {
+	out := Reports{}
+	for _, report := range s {
+		if report.LeafNodeType.Is(nodeTypes...) {
+			out = append(out, report)
 		}
 	}
 	return out
@@ -64,7 +74,7 @@ type FakeReporter struct {
 	End   types.Report
 }
 
-func (r *FakeReporter) SpecSuiteWillBegin(report types.Report) {
+func (r *FakeReporter) SuiteWillBegin(report types.Report) {
 	r.Begin = report
 }
 
@@ -76,7 +86,7 @@ func (r *FakeReporter) DidRun(report types.SpecReport) {
 	r.Did = append(r.Did, report)
 }
 
-func (r *FakeReporter) SpecSuiteDidEnd(report types.Report) {
+func (r *FakeReporter) SuiteDidEnd(report types.Report) {
 	r.End = report
 }
 
