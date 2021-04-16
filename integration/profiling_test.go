@@ -227,9 +227,10 @@ var _ = Describe("Profiling Specs", func() {
 				// block_contest.ReadTheChannel is called 10 times and takes ~5ms per call
 				// block_contest.SlowReadTheChannel is called once and teakes ~500ms per call
 				// Asserting that both times are within a range should be stable across tests
-				Ω(blockProfile.FindCaller("block_contest.ReadTheChannel").CumStat).Should(BeNumerically(">=", 50))
+				// Note: these numbers are adjusted slightly to tolerate variance during test runs
+				Ω(blockProfile.FindCaller("block_contest.ReadTheChannel").CumStat).Should(BeNumerically(">=", 45))
 				Ω(blockProfile.FindCaller("block_contest.ReadTheChannel").CumStat).Should(BeNumerically("<", 500))
-				Ω(blockProfile.FindCaller("block_contest.SlowReadTheChannel").CumStat).Should(BeNumerically(">=", 500))
+				Ω(blockProfile.FindCaller("block_contest.SlowReadTheChannel").CumStat).Should(BeNumerically(">=", 450))
 
 				mutexProfile := ParseProfile(pathToBinary("lock_contest"), pathToProfile("lock_contest", "mutex.out"))
 				// The MutexProfile for the lock_contest test should list two functions that wait on a lock.
@@ -238,9 +239,10 @@ var _ = Describe("Profiling Specs", func() {
 				// lock_contest_test.glob..func2.1 is called once and teakes ~500ms per call
 				// Asserting that both times are within a range should be stable across tests.  The function names should be as well
 				// but that might become a source of failure in the future
-				Ω(mutexProfile.FindCaller("lock_contest_test.glob..func1.1").CumStat).Should(BeNumerically(">=", 50))
+				// Note: these numbers are adjusted slightly to tolerate variance during test runs
+				Ω(mutexProfile.FindCaller("lock_contest_test.glob..func1.1").CumStat).Should(BeNumerically(">=", 45))
 				Ω(mutexProfile.FindCaller("lock_contest_test.glob..func1.1").CumStat).Should(BeNumerically("<", 500))
-				Ω(mutexProfile.FindCaller("lock_contest_test.glob..func2.1").CumStat).Should(BeNumerically(">=", 500))
+				Ω(mutexProfile.FindCaller("lock_contest_test.glob..func2.1").CumStat).Should(BeNumerically(">=", 450))
 			},
 
 			Entry("when running in series",
