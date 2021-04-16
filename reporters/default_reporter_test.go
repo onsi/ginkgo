@@ -139,10 +139,10 @@ var _ = Describe("DefaultReporter", func() {
 		format.CharactersAroundMismatchToInclude = 100
 	})
 
-	DescribeTable("Rendering SpecSuiteWillBegin",
+	DescribeTable("Rendering SuiteWillBegin",
 		func(conf types.ReporterConfig, report types.Report, expected ...string) {
 			reporter := reporters.NewDefaultReporterUnderTest(conf, buf)
-			reporter.SpecSuiteWillBegin(report)
+			reporter.SuiteWillBegin(report)
 			verifyExpectedOutput(expected)
 		},
 		Entry("Default Behavior",
@@ -708,10 +708,10 @@ var _ = Describe("DefaultReporter", func() {
 		),
 	)
 
-	DescribeTable("Rendering SpecSuiteDidEnd",
+	DescribeTable("Rendering SuiteDidEnd",
 		func(conf types.ReporterConfig, report types.Report, expected ...string) {
 			reporter := reporters.NewDefaultReporterUnderTest(conf, buf)
-			reporter.SpecSuiteDidEnd(report)
+			reporter.SuiteDidEnd(report)
 			verifyExpectedOutput(expected)
 		},
 

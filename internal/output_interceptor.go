@@ -9,11 +9,7 @@ type OutputInterceptor interface {
 	StopInterceptingAndReturnOutput() string
 }
 
-func NewNoopOutputInterceptor() OutputInterceptor {
-	return noopOutputInterceptor{}
-}
+type NoopOutputInterceptor struct{}
 
-type noopOutputInterceptor struct{}
-
-func (interceptor noopOutputInterceptor) StartInterceptingOutput()                {}
-func (interceptor noopOutputInterceptor) StopInterceptingAndReturnOutput() string { return "" }
+func (interceptor NoopOutputInterceptor) StartInterceptingOutput()                {}
+func (interceptor NoopOutputInterceptor) StopInterceptingAndReturnOutput() string { return "" }

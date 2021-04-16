@@ -33,7 +33,14 @@ type Node struct {
 	MarkedFocus   bool
 	MarkedPending bool
 
-	ReportAfterEachBody func(types.SpecReport)
+	SynchronizedBeforeSuiteNode1Body    func() []byte
+	SynchronizedBeforeSuiteAllNodesBody func([]byte)
+
+	SynchronizedAfterSuiteAllNodesBody func()
+	SynchronizedAfterSuiteNode1Body    func()
+
+	ReportAfterEachBody  func(types.SpecReport)
+	ReportAfterSuiteBody func(types.Report)
 }
 
 func NewNode(nodeType types.NodeType, text string, body func(), codeLocation types.CodeLocation, markedFocus bool, markedPending bool) Node {
@@ -49,6 +56,28 @@ func NewNode(nodeType types.NodeType, text string, body func(), codeLocation typ
 	}
 }
 
+func NewSynchronizedBeforeSuiteNode(node1Body func() []byte, allNodesBody func([]byte), codeLocation types.CodeLocation) Node {
+	return Node{
+		ID:                                  UniqueNodeID(),
+		NodeType:                            types.NodeTypeSynchronizedBeforeSuite,
+		SynchronizedBeforeSuiteNode1Body:    node1Body,
+		SynchronizedBeforeSuiteAllNodesBody: allNodesBody,
+		CodeLocation:                        codeLocation,
+		NestingLevel:                        -1,
+	}
+}
+
+func NewSynchronizedAfterSuiteNode(allNodesBody func(), node1Body func(), codeLocation types.CodeLocation) Node {
+	return Node{
+		ID:                                 UniqueNodeID(),
+		NodeType:                           types.NodeTypeSynchronizedAfterSuite,
+		SynchronizedAfterSuiteAllNodesBody: allNodesBody,
+		SynchronizedAfterSuiteNode1Body:    node1Body,
+		CodeLocation:                       codeLocation,
+		NestingLevel:                       -1,
+	}
+}
+
 func NewReportAfterEachNode(body func(types.SpecReport), codeLocation types.CodeLocation) Node {
 	return Node{
 		ID:                  UniqueNodeID(),
@@ -56,6 +85,16 @@ func NewReportAfterEachNode(body func(types.SpecReport), codeLocation types.Code
 		ReportAfterEachBody: body,
 		CodeLocation:        codeLocation,
 		NestingLevel:        -1,
+	}
+}
+
+func NewReportAfterSuiteNode(body func(types.Report), codeLocation types.CodeLocation) Node {
+	return Node{
+		ID:                   UniqueNodeID(),
+		NodeType:             types.NodeTypeReportAfterSuite,
+		ReportAfterSuiteBody: body,
+		CodeLocation:         codeLocation,
+		NestingLevel:         -1,
 	}
 }
 

@@ -5,6 +5,7 @@ import (
 	"time"
 
 	"github.com/onsi/ginkgo/formatter"
+	"github.com/onsi/ginkgo/internal/parallel_support"
 	"github.com/onsi/ginkgo/reporters"
 	"github.com/onsi/ginkgo/types"
 )
@@ -23,12 +24,13 @@ type Suite struct {
 
 	phase Phase
 
-	beforeSuiteNodeBuilder SuiteNodeBuilder
-	afterSuiteNodeBuilder  SuiteNodeBuilder
+	suiteNodes Nodes
 
 	writer WriterInterface
 	outputInterceptor
 	currentSpecReport types.SpecReport
+
+	client parallel_support.Client
 }
 
 func NewSuite() *Suite {
@@ -60,6 +62,9 @@ func (suite *Suite) Run(description string, suitePath string, failer *Failer, re
 	specs, hasProgrammaticFocus := ApplyFocusToSpecs(specs, description, suiteConfig)
 
 	suite.phase = PhaseRun
+	if suiteConfig.ParallelTotal > 1 {
+		suite.client = parallel_support.NewClient(suiteConfig.ParallelHost)
+	}
 
 	success := suite.runSpecs(description, suitePath, specs, failer, reporter, writer, outputInterceptor, interruptHandler, suiteConfig)
 	return success, hasProgrammaticFocus
@@ -68,10 +73,14 @@ func (suite *Suite) Run(description string, suitePath string, failer *Failer, re
 /*
   Tree Construction methods
 
-  PushNode and PushSuiteNodeBuilder are used during PhaseBuildTopLevel and PhaseBuildTree
+  PushNode is used during PhaseBuildTopLevel and PhaseBuildTree
 */
 
 func (suite *Suite) PushNode(node Node) error {
+	if node.NodeType.Is(types.NodeTypeBeforeSuite, types.NodeTypeAfterSuite, types.NodeTypeSynchronizedBeforeSuite, types.NodeTypeSynchronizedAfterSuite, types.NodeTypeReportAfterSuite) {
+		return suite.pushSuiteNode(node)
+	}
+
 	if suite.phase == PhaseRun {
 		return types.GinkgoErrors.PushingNodeInRunPhase(node.NodeType, node.CodeLocation)
 	}
@@ -110,30 +119,29 @@ func (suite *Suite) PushNode(node Node) error {
 	return nil
 }
 
-func (suite *Suite) PushSuiteNodeBuilder(nodeBuilder SuiteNodeBuilder) error {
+func (suite *Suite) pushSuiteNode(node Node) error {
 	if suite.phase == PhaseBuildTree {
-		return types.GinkgoErrors.SetupNodeInNestedContext(nodeBuilder.NodeType, nodeBuilder.CodeLocation)
+		return types.GinkgoErrors.SuiteNodeInNestedContext(node.NodeType, node.CodeLocation)
 	}
 
 	if suite.phase == PhaseRun {
-		return types.GinkgoErrors.SetupNodeDuringRunPhase(nodeBuilder.NodeType, nodeBuilder.CodeLocation)
+		return types.GinkgoErrors.SuiteNodeDuringRunPhase(node.NodeType, node.CodeLocation)
 	}
 
-	switch nodeBuilder.NodeType {
+	switch node.NodeType {
 	case types.NodeTypeBeforeSuite, types.NodeTypeSynchronizedBeforeSuite:
-		if suite.beforeSuiteNodeBuilder.NodeType != types.NodeTypeInvalid {
-			return types.GinkgoErrors.MultipleBeforeSuiteNodes(nodeBuilder.NodeType, nodeBuilder.CodeLocation, suite.beforeSuiteNodeBuilder.NodeType, suite.beforeSuiteNodeBuilder.CodeLocation)
+		existingBefores := suite.suiteNodes.WithType(types.NodeTypeBeforeSuite, types.NodeTypeSynchronizedBeforeSuite)
+		if len(existingBefores) > 0 {
+			return types.GinkgoErrors.MultipleBeforeSuiteNodes(node.NodeType, node.CodeLocation, existingBefores[0].NodeType, existingBefores[0].CodeLocation)
 		}
-		suite.beforeSuiteNodeBuilder = nodeBuilder
 	case types.NodeTypeAfterSuite, types.NodeTypeSynchronizedAfterSuite:
-		if suite.afterSuiteNodeBuilder.NodeType != types.NodeTypeInvalid {
-			return types.GinkgoErrors.MultipleAfterSuiteNodes(nodeBuilder.NodeType, nodeBuilder.CodeLocation, suite.beforeSuiteNodeBuilder.NodeType, suite.beforeSuiteNodeBuilder.CodeLocation)
+		existingAfters := suite.suiteNodes.WithType(types.NodeTypeAfterSuite, types.NodeTypeSynchronizedAfterSuite)
+		if len(existingAfters) > 0 {
+			return types.GinkgoErrors.MultipleAfterSuiteNodes(node.NodeType, node.CodeLocation, existingAfters[0].NodeType, existingAfters[0].CodeLocation)
 		}
-		suite.afterSuiteNodeBuilder = nodeBuilder
-	default:
-		panic("invalid suiteConfiguration of SuiteNodeBuilder")
 	}
 
+	suite.suiteNodes = append(suite.suiteNodes, node)
 	return nil
 }
 
@@ -151,9 +159,6 @@ func (suite *Suite) CurrentSpecReport() types.SpecReport {
 func (suite *Suite) runSpecs(description string, suitePath string, specs Specs, failer *Failer, reporter reporters.Reporter, writer WriterInterface, outputInterceptor OutputInterceptor, interruptHandler InterruptHandlerInterface, suiteConfig types.SuiteConfig) bool {
 	suite.writer = writer
 
-	beforeSuiteNode := suite.beforeSuiteNodeBuilder.BuildNode(suiteConfig, failer)
-	afterSuiteNode := suite.afterSuiteNodeBuilder.BuildNode(suiteConfig, failer)
-
 	numSpecsThatWillBeRun := specs.CountWithoutSkip()
 
 	report := types.Report{
@@ -167,17 +172,24 @@ func (suite *Suite) runSpecs(description string, suitePath string, specs Specs, 
 		StartTime: time.Now(),
 	}
 
-	reporter.SpecSuiteWillBegin(report)
+	reporter.SuiteWillBegin(report)
+	if suiteConfig.ParallelTotal > 1 {
+		suite.client.PostSuiteWillBegin(report)
+	}
 
 	suitePassed := true
 
 	interruptStatus := interruptHandler.Status()
+	beforeSuiteNode := suite.suiteNodes.FirstNodeWithType(types.NodeTypeBeforeSuite, types.NodeTypeSynchronizedBeforeSuite)
 	if !beforeSuiteNode.IsZero() && !interruptStatus.Interrupted && numSpecsThatWillBeRun > 0 {
 		specReport := types.SpecReport{LeafNodeType: beforeSuiteNode.NodeType, LeafNodeLocation: beforeSuiteNode.CodeLocation, GinkgoParallelNode: suiteConfig.ParallelNode}
 		reporter.WillRun(specReport)
 
 		specReport = suite.runSuiteNode(specReport, beforeSuiteNode, failer, interruptStatus.Channel, writer, outputInterceptor, suiteConfig)
 		reporter.DidRun(specReport)
+		if suiteConfig.ParallelTotal > 1 {
+			suite.client.PostDidRun(specReport)
+		}
 
 		if specReport.State != types.SpecStatePassed {
 			suitePassed = false
@@ -227,9 +239,12 @@ func (suite *Suite) runSpecs(description string, suitePath string, specs Specs, 
 				suite.runSpec(spec, failer, interruptHandler, writer, outputInterceptor, suiteConfig)
 			}
 
-			//send the spec report to any attached ReportAFterEach blocks - this will update sutie.currentSpecReport of failures occur in these blocks
+			//send the spec report to any attached ReportAFterEach blocks - this will update suite.currentSpecReport of failures occur in these blocks
 			suite.reportAfterEach(suite.currentSpecReport, spec, failer, interruptHandler, writer, outputInterceptor, suiteConfig)
 			reporter.DidRun(suite.currentSpecReport)
+			if suiteConfig.ParallelTotal > 1 {
+				suite.client.PostDidRun(suite.currentSpecReport)
+			}
 
 			if suite.currentSpecReport.State.Is(types.SpecStateFailureStates...) {
 				suitePassed = false
@@ -243,12 +258,17 @@ func (suite *Suite) runSpecs(description string, suitePath string, specs Specs, 
 		}
 	}
 
+	afterSuiteNode := suite.suiteNodes.FirstNodeWithType(types.NodeTypeAfterSuite, types.NodeTypeSynchronizedAfterSuite)
 	if !afterSuiteNode.IsZero() && numSpecsThatWillBeRun > 0 {
 		specReport := types.SpecReport{LeafNodeType: afterSuiteNode.NodeType, LeafNodeLocation: afterSuiteNode.CodeLocation, GinkgoParallelNode: suiteConfig.ParallelNode}
 		reporter.WillRun(specReport)
 
 		specReport = suite.runSuiteNode(specReport, afterSuiteNode, failer, interruptHandler.Status().Channel, writer, outputInterceptor, suiteConfig)
 		reporter.DidRun(specReport)
+		if suiteConfig.ParallelTotal > 1 {
+			suite.client.PostDidRun(specReport)
+		}
+
 		if specReport.State != types.SpecStatePassed {
 			suitePassed = false
 		}
@@ -258,7 +278,12 @@ func (suite *Suite) runSpecs(description string, suitePath string, specs Specs, 
 	report.SuiteSucceeded = suitePassed
 	report.EndTime = time.Now()
 	report.RunTime = report.EndTime.Sub(report.StartTime)
-	reporter.SpecSuiteDidEnd(report)
+
+	// err := suite.reportAfterSuite(report, failer, interruptHandler, writer, outputInterceptor, suiteConfig)
+	reporter.SuiteDidEnd(report)
+	if suiteConfig.ParallelTotal > 1 {
+		suite.client.PostSuiteDidEnd(report)
+	}
 
 	return suitePassed
 }
@@ -361,13 +386,96 @@ func (suite *Suite) runSuiteNode(report types.SpecReport, node Node, failer *Fai
 	writer.Truncate()
 	outputInterceptor.StartInterceptingOutput()
 	report.StartTime = time.Now()
-	report.State, report.Failure = suite.runNode(node, failer, interruptChannel, "", writer, suiteConfig)
+
+	var err error
+	switch node.NodeType {
+	case types.NodeTypeBeforeSuite, types.NodeTypeAfterSuite:
+		report.State, report.Failure = suite.runNode(node, failer, interruptChannel, "", writer, suiteConfig)
+	case types.NodeTypeSynchronizedBeforeSuite:
+		var data []byte
+		var runAllNodes bool
+		if suiteConfig.ParallelNode == 1 {
+			node.Body = func() { data = node.SynchronizedBeforeSuiteNode1Body() }
+			report.State, report.Failure = suite.runNode(node, failer, interruptChannel, "", writer, suiteConfig)
+			if suiteConfig.ParallelTotal > 1 && report.State.Is(types.SpecStatePassed) {
+				err = suite.client.PostSynchronizedBeforeSuiteSucceeded(data)
+			} else if suiteConfig.ParallelTotal > 1 {
+				err = suite.client.PostSynchronizedBeforeSuiteFailed()
+			}
+			runAllNodes = report.State.Is(types.SpecStatePassed) && err == nil
+		} else {
+			data, err = suite.client.BlockUntilSynchronizedBeforeSuiteData()
+			runAllNodes = err == nil
+		}
+		if runAllNodes {
+			node.Body = func() { node.SynchronizedBeforeSuiteAllNodesBody(data) }
+			report.State, report.Failure = suite.runNode(node, failer, interruptChannel, "", writer, suiteConfig)
+		}
+	case types.NodeTypeSynchronizedAfterSuite:
+		node.Body = node.SynchronizedAfterSuiteAllNodesBody
+		report.State, report.Failure = suite.runNode(node, failer, interruptChannel, "", writer, suiteConfig)
+		if suiteConfig.ParallelNode == 1 {
+			if suiteConfig.ParallelTotal > 1 {
+				err = suite.client.BlockUntilNonprimaryNodesHaveFinished()
+			}
+			if err == nil {
+				node.Body = node.SynchronizedAfterSuiteNode1Body
+				state, failure := suite.runNode(node, failer, interruptChannel, "", writer, suiteConfig)
+				if report.State.Is(types.SpecStatePassed) {
+					report.State, report.Failure = state, failure
+				}
+			}
+		}
+	}
+
+	if err != nil && report.State.Is(types.SpecStateInvalid, types.SpecStatePassed) {
+		report.State = types.SpecStateFailed
+		report.Failure = types.Failure{
+			Message:   err.Error(),
+			Location:  node.CodeLocation,
+			NodeIndex: node.NestingLevel,
+			NodeType:  node.NodeType,
+		}
+	}
+
 	report.EndTime = time.Now()
 	report.RunTime = report.EndTime.Sub(report.StartTime)
 	report.CapturedGinkgoWriterOutput = string(writer.Bytes())
 	report.CapturedStdOutErr = outputInterceptor.StopInterceptingAndReturnOutput()
 
 	return report
+}
+
+func (suite *Suite) reportAfterSuite(report types.Report, failer *Failer, interruptHandler InterruptHandlerInterface, writer WriterInterface, outputInterceptor OutputInterceptor, suiteConfig types.SuiteConfig) {
+	// if len(suite.reportAfterSuiteNodes) == 0 {
+	// 	return
+	// }
+	// if suiteConfig.ParallelNode != 1 {
+	// 	return
+	// }
+	// if suiteConfig.ParallelTotal > 1 {
+	// 	var err error
+	// 	report, err = suite.client.BlockUntilAggregatedReport()
+	// 	if err != nil {
+	// 		return err
+	// 	}
+	// }
+
+	// for _, node := range suite.reportAfterSuiteNodes {
+	// 	writer.Truncate()
+	// 	node.Body = func() {
+	// 		node.ReportAfterSuiteBody(report)
+	// 	}
+	// 	interruptHandler.SetInterruptMessage(formatter.Fiw(0, formatter.COLS,
+	// 		"{{yellow}}Ginkgo received an interrupt signal but is currently running a ReportAfterSuite node.  To avoid an invalid report the ReportAfterSuite node will not be interrupted.{{/}}\n\n{{bold}}The running ReportAfterSuite node is at:\n%s.{{/}}",
+	// 		node.CodeLocation,
+	// 	))
+	// 	state, failure := suite.runNode(node, failer, nil, "", writer, suiteConfig)
+	// 	interruptHandler.ClearInterruptMessage()
+	// 	if state != types.SpecStatePassed {
+	// 		return types.GinkgoErrors.UnexpectedFailureInReportAfterSuiteNode(node.CodeLocation, state, failure, writer.Bytes())
+	// 	}
+	// }
 }
 
 func (suite *Suite) runNode(node Node, failer *Failer, interruptChannel chan interface{}, text string, writer WriterInterface, suiteConfig types.SuiteConfig) (types.SpecState, types.Failure) {

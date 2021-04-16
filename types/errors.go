@@ -90,7 +90,21 @@ Please ensure all assertions are inside leaf nodes such as {{bold}}BeforeEach{{/
 	}
 }
 
-func (g ginkgoErrors) SetupNodeInNestedContext(nodeType NodeType, cl CodeLocation) error {
+func (g ginkgoErrors) SynchronizedBeforeSuiteFailedOnNode1() error {
+	return GinkgoError{
+		Heading: "SynchronizedBeforeSuite failed on Node 1",
+		Message: formatter.F("The first SynchronizedBeforeSuite function running on Ginkgo parallel node #1 failed.  This test suite will now abort."),
+	}
+}
+
+func (g ginkgoErrors) SynchronizedBeforeSuiteDisappearedOnNode1() error {
+	return GinkgoError{
+		Heading: "Node 1 disappeard before SynchronizedBeforeSuite could report back",
+		Message: formatter.F("Ginkgo parallel node #1 disappeared before the first SynchronizedBeforeSuite function completed.  This test suite will now abort."),
+	}
+}
+
+func (g ginkgoErrors) SuiteNodeInNestedContext(nodeType NodeType, cl CodeLocation) error {
 	return GinkgoError{
 		Heading: "Ginkgo detected an issue with your test structure",
 		Message: formatter.F(
@@ -102,7 +116,7 @@ func (g ginkgoErrors) SetupNodeInNestedContext(nodeType NodeType, cl CodeLocatio
 	}
 }
 
-func (g ginkgoErrors) SetupNodeDuringRunPhase(nodeType NodeType, cl CodeLocation) error {
+func (g ginkgoErrors) SuiteNodeDuringRunPhase(nodeType NodeType, cl CodeLocation) error {
 	return GinkgoError{
 		Heading: "Ginkgo detected an issue with your test structure",
 		Message: formatter.F(

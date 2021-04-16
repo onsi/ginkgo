@@ -23,7 +23,6 @@ import (
 	"github.com/onsi/ginkgo/formatter"
 	"github.com/onsi/ginkgo/internal"
 	"github.com/onsi/ginkgo/internal/global"
-	"github.com/onsi/ginkgo/internal/parallel_support"
 	"github.com/onsi/ginkgo/internal/testingtproxy"
 	"github.com/onsi/ginkgo/reporters"
 	"github.com/onsi/ginkgo/types"
@@ -142,6 +141,7 @@ type GinkgoTInterface interface {
 	TempDir() string
 }
 
+type Report = types.Report
 type SpecReport = types.SpecReport
 
 // CurrentSpecReport returns information about the current running test.
@@ -167,9 +167,9 @@ func RunSpecs(t GinkgoTestingT, description string) bool {
 	var outputInterceptor internal.OutputInterceptor
 	if suiteConfig.ParallelTotal == 1 {
 		reporter = reporters.NewDefaultReporter(reporterConfig, formatter.ColorableStdOut)
-		outputInterceptor = internal.NewNoopOutputInterceptor()
+		outputInterceptor = internal.NoopOutputInterceptor{}
 	} else {
-		reporter = parallel_support.NewForwardingReporter(reporterConfig, suiteConfig.ParallelHost, GinkgoWriter.(*internal.Writer))
+		reporter = reporters.NoopReporter{}
 		outputInterceptor = internal.NewOutputInterceptor()
 	}
 
@@ -255,17 +255,10 @@ func GinkgoRecover() {
 	}
 }
 
-// pushNode and pushSuiteNodeBuilder are used by the various test construction DSL methods to push nodes onto the suite
+// pushNode  are used by the various test construction DSL methods to push nodes onto the suite
 // it handles returned errors, emits a detailed error message to help the user learn what they may have done wrong, then exits
 func pushNode(node internal.Node) bool {
-	err := global.Suite.PushNode(node)
-	exitIfErr(err)
-	return true
-}
-
-func pushSuiteNodeBuilder(suiteNodeBuilder internal.SuiteNodeBuilder) bool {
-	err := global.Suite.PushSuiteNodeBuilder(suiteNodeBuilder)
-	exitIfErr(err)
+	exitIfErr(global.Suite.PushNode(node))
 	return true
 }
 
@@ -417,11 +410,8 @@ func By(text string, callbacks ...func()) {
 //
 //You may only register *one* BeforeSuite handler per test suite.  You typically do so in your bootstrap file at the top level.
 func BeforeSuite(body func()) bool {
-	return pushSuiteNodeBuilder(internal.SuiteNodeBuilder{
-		NodeType:        types.NodeTypeBeforeSuite,
-		CodeLocation:    types.NewCodeLocation(1),
-		BeforeSuiteBody: body,
-	})
+	cl := types.NewCodeLocation(1)
+	return pushNode(internal.NewNode(types.NodeTypeBeforeSuite, "", validateBodyFunc(body, cl), cl, false, false))
 }
 
 //AfterSuite blocks are *always* run after all the specs regardless of whether specs have passed or failed.
@@ -431,11 +421,8 @@ func BeforeSuite(body func()) bool {
 //
 //You may only register *one* AfterSuite handler per test suite.  You typically do so in your bootstrap file at the top level.
 func AfterSuite(body func()) bool {
-	return pushSuiteNodeBuilder(internal.SuiteNodeBuilder{
-		NodeType:       types.NodeTypeAfterSuite,
-		CodeLocation:   types.NewCodeLocation(1),
-		AfterSuiteBody: body,
-	})
+	cl := types.NewCodeLocation(1)
+	return pushNode(internal.NewNode(types.NodeTypeAfterSuite, "", validateBodyFunc(body, cl), cl, false, false))
 }
 
 //SynchronizedBeforeSuite blocks are primarily meant to solve the problem of setting up singleton external resources shared across
@@ -471,12 +458,7 @@ func AfterSuite(body func()) bool {
 //		Ω(err).ShouldNot(HaveOccurred())
 //	})
 func SynchronizedBeforeSuite(node1Body func() []byte, allNodesBody func([]byte)) bool {
-	return pushSuiteNodeBuilder(internal.SuiteNodeBuilder{
-		NodeType:                            types.NodeTypeSynchronizedBeforeSuite,
-		CodeLocation:                        types.NewCodeLocation(1),
-		SynchronizedBeforeSuiteNode1Body:    node1Body,
-		SynchronizedBeforeSuiteAllNodesBody: allNodesBody,
-	})
+	return pushNode(internal.NewSynchronizedBeforeSuiteNode(node1Body, allNodesBody, types.NewCodeLocation(1)))
 }
 
 //SynchronizedAfterSuite blocks complement the SynchronizedBeforeSuite blocks in solving the problem of setting up
@@ -495,12 +477,7 @@ func SynchronizedBeforeSuite(node1Body func() []byte, allNodesBody func([]byte))
 //		dbRunner.Stop()
 //	})
 func SynchronizedAfterSuite(allNodesBody func(), node1Body func()) bool {
-	return pushSuiteNodeBuilder(internal.SuiteNodeBuilder{
-		NodeType:                           types.NodeTypeSynchronizedAfterSuite,
-		CodeLocation:                       types.NewCodeLocation(1),
-		SynchronizedAfterSuiteAllNodesBody: allNodesBody,
-		SynchronizedAfterSuiteNode1Body:    node1Body,
-	})
+	return pushNode(internal.NewSynchronizedAfterSuiteNode(allNodesBody, node1Body, types.NewCodeLocation(1)))
 }
 
 //BeforeEach blocks are run before It blocks.  When multiple BeforeEach blocks are defined in nested
@@ -536,6 +513,18 @@ func AfterEach(body interface{}, _ ...interface{}) bool {
 func ReportAfterEach(body func(SpecReport)) bool {
 	cl := types.NewCodeLocation(1)
 	return pushNode(internal.NewReportAfterEachNode(body, cl))
+}
+
+// ReportAfterSuite nodes are run at the end of the suite.  ReportAfterSuite nodes take a function that receives a types.Report.
+// They are called at the end of the suite, after all specs have run and any AfterSuite or SynchronizedAfterSuite nodes, and are passed in the final report for the test suite.
+// ReportAftersuite nodes must be created at the top-level (i.e. not nested in a Context/Describe/When node)
+// The behavior of a failure in a ReportAfterSuite is undefined.  If you need to meke assertions do so in an AfterSuite
+//
+// When running in parallel, Ginkgo ensures that only one of the parallel nodes runs the ReportAfterSuite and that it is passed a report that is aggregated across
+// all parallel nodes
+func ReportAfterSuite(body func(Report)) bool {
+	cl := types.NewCodeLocation(1)
+	return pushNode(internal.NewReportAfterSuiteNode(body, cl))
 }
 
 func exitIfErr(err error) {
