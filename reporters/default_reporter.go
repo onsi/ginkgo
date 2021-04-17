@@ -91,8 +91,12 @@ func (r *DefaultReporter) WillRun(report types.SpecReport) {
 	}
 
 	r.emitDelimiter()
-	if report.LeafNodeType.Is(types.NodeTypesForSuiteSetup...) {
-		r.emitBlock(r.f("{{bold}}[%s]{{/}}", report.LeafNodeType.String()))
+	if report.LeafNodeType.Is(types.NodeTypesForSuiteLevelNodes...) {
+		text := ""
+		if len(report.NodeTexts) > 0 {
+			text = " " + report.NodeTexts[0]
+		}
+		r.emitBlock(r.f("{{bold}}[%s]%s{{/}}", report.LeafNodeType.String(), text))
 		r.emitBlock(r.f("{{gray}}%s{{/}}", report.LeafNodeLocation))
 	} else {
 		lastIndex := len(report.NodeTexts) - 1
@@ -116,7 +120,7 @@ func (r *DefaultReporter) DidRun(report types.SpecReport) {
 	hasGW := report.CapturedGinkgoWriterOutput != ""
 	hasStd := report.CapturedStdOutErr != ""
 
-	if report.LeafNodeType.Is(types.NodeTypesForSuiteSetup...) {
+	if report.LeafNodeType.Is(types.NodeTypesForSuiteLevelNodes...) {
 		denoter = fmt.Sprintf("[%s]", report.LeafNodeType)
 	}
 
@@ -124,7 +128,7 @@ func (r *DefaultReporter) DidRun(report types.SpecReport) {
 	case types.SpecStatePassed:
 		highlightColor, succinctLocationBlock = "{{green}}", !r.conf.Verbose
 		emitGinkgoWriterOutput = (r.conf.ReportPassed || r.conf.Verbose) && hasGW
-		if report.LeafNodeType.Is(types.NodeTypesForSuiteSetup...) {
+		if report.LeafNodeType.Is(types.NodeTypesForSuiteLevelNodes...) {
 			if r.conf.Verbose || hasStd {
 				header = fmt.Sprintf("%s PASSED", denoter)
 			} else {
@@ -245,8 +249,8 @@ func (r *DefaultReporter) SuiteDidEnd(report types.Report) {
 	color, status := "{{green}}{{bold}}", "SUCCESS!"
 	if !report.SuiteSucceeded {
 		color, status = "{{red}}{{bold}}", "FAIL!"
-		if report.SuiteConfig.FailOnPending && len(failures) == 0 && report.SpecReports.CountWithState(types.SpecStatePending) > 0 {
-			color, status = "{{yellow}}{{bold}}", "FAIL! - Detected pending specs and --fail-on-pending is set"
+		if report.SpecialSuiteFailureReason != "" {
+			status = fmt.Sprintf("%s - %s", status, report.SpecialSuiteFailureReason)
 		}
 	}
 
@@ -316,13 +320,17 @@ func (r *DefaultReporter) cycleJoin(elements []string, joiner string) string {
 func (r *DefaultReporter) codeLocationBlock(report types.SpecReport, highlightColor string, succinct bool) string {
 	out := ""
 
-	if report.LeafNodeType.Is(types.NodeTypesForSuiteSetup...) {
-		out = r.f(highlightColor+"{{bold}}[%s]{{/}}\n", report.LeafNodeType)
-		if report.Failure.IsZero() {
-			out += r.f("{{gray}}%s{{/}}\n", report.LeafNodeLocation)
-		} else {
-			out += r.f("{{gray}}%s{{/}}\n", report.Failure.Location)
+	if report.LeafNodeType.Is(types.NodeTypesForSuiteLevelNodes...) {
+		text := ""
+		if len(report.NodeTexts) > 0 {
+			text = " " + report.NodeTexts[0]
 		}
+		out = r.f(highlightColor+"{{bold}}[%s]%s{{/}}\n", report.LeafNodeType, text)
+		location := report.LeafNodeLocation
+		if succinct && !report.Failure.IsZero() {
+			location = report.Failure.Location
+		}
+		out += r.f("{{gray}}%s{{/}}\n", location)
 		return out
 	}
 

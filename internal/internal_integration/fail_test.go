@@ -28,7 +28,7 @@ var _ = Describe("handling test failures", func() {
 		})
 
 		It("reports a failure for the BeforeSuite", func() {
-			Ω(reporter.Did.FindByLeafNodeType(types.NodeTypeBeforeSuite)).Should(HaveFailed("fail", cl, CapturedOutput("before-suite")))
+			Ω(reporter.Did.FindByLeafNodeType(types.NodeTypeBeforeSuite)).Should(HaveFailed("fail", cl, CapturedGinkgoWriterOutput("before-suite")))
 			Ω(reporter.Did.FindByLeafNodeType(types.NodeTypeAfterSuite)).Should(HavePassed())
 		})
 
@@ -61,7 +61,7 @@ var _ = Describe("handling test failures", func() {
 		})
 
 		It("reports a failure for the BeforeSuite", func() {
-			Ω(reporter.Did.FindByLeafNodeType(types.NodeTypeBeforeSuite)).Should(HavePanicked("boom", CapturedOutput("before-suite")))
+			Ω(reporter.Did.FindByLeafNodeType(types.NodeTypeBeforeSuite)).Should(HavePanicked("boom", CapturedGinkgoWriterOutput("before-suite")))
 		})
 
 		It("does not run any of the Its", func() {
@@ -99,7 +99,7 @@ var _ = Describe("handling test failures", func() {
 			Ω(reporter.Did.FindByLeafNodeType(types.NodeTypeBeforeSuite)).Should(HavePassed())
 			Ω(reporter.Did.Find("A")).Should(HavePassed())
 			Ω(reporter.Did.Find("B")).Should(HavePassed())
-			Ω(reporter.Did.FindByLeafNodeType(types.NodeTypeAfterSuite)).Should(HaveFailed("fail", cl, CapturedOutput("after-suite")))
+			Ω(reporter.Did.FindByLeafNodeType(types.NodeTypeAfterSuite)).Should(HaveFailed("fail", cl, CapturedGinkgoWriterOutput("after-suite")))
 		})
 	})
 
@@ -133,8 +133,8 @@ var _ = Describe("handling test failures", func() {
 			})
 
 			It("reports the It's failure", func() {
-				Ω(reporter.Did.Find("A")).Should(HavePassed(CapturedOutput("running A")))
-				Ω(reporter.Did.Find("B")).Should(HaveFailed("fail", cl, CapturedOutput("running B")))
+				Ω(reporter.Did.Find("A")).Should(HavePassed(CapturedGinkgoWriterOutput("running A")))
+				Ω(reporter.Did.Find("B")).Should(HaveFailed("fail", cl, CapturedGinkgoWriterOutput("running B")))
 				Ω(reporter.Did.Find("C")).Should(HavePassed())
 			})
 
@@ -172,8 +172,8 @@ var _ = Describe("handling test failures", func() {
 			})
 
 			It("reports the It's failure", func() {
-				Ω(reporter.Did.Find("A")).Should(HavePassed(CapturedOutput("running A")))
-				Ω(reporter.Did.Find("B")).Should(HavePanicked("boom", CapturedOutput("running B")))
+				Ω(reporter.Did.Find("A")).Should(HavePassed(CapturedGinkgoWriterOutput("running A")))
+				Ω(reporter.Did.Find("B")).Should(HavePanicked("boom", CapturedGinkgoWriterOutput("running B")))
 				Ω(reporter.Did.Find("C")).Should(HavePassed())
 			})
 
@@ -215,7 +215,7 @@ var _ = Describe("handling test failures", func() {
 			It("reports a suite failure and a spec failure", func() {
 				Ω(reporter.End).Should(BeASuiteSummary(false, NSpecs(1), NPassed(0), NFailed(1)))
 				specReport := reporter.Did.Find("the test")
-				Ω(specReport).Should(HaveFailed("fail", cl), CapturedOutput("bef-2 is runningaft-2 is running"))
+				Ω(specReport).Should(HaveFailed("fail", cl), CapturedGinkgoWriterOutput("bef-2 is runningaft-2 is running"))
 				Ω(specReport.Failure.NodeType).Should(Equal(types.NodeTypeBeforeEach))
 			})
 
@@ -275,7 +275,7 @@ var _ = Describe("handling test failures", func() {
 			It("reports a suite failure and a spec failure", func() {
 				Ω(reporter.End).Should(BeASuiteSummary(false, NSpecs(1), NPassed(0), NFailed(1)))
 				specReport := reporter.Did.Find("the test")
-				Ω(specReport).Should(HaveFailed("fail", cl), CapturedOutput("aft-2 is running"))
+				Ω(specReport).Should(HaveFailed("fail", cl), CapturedGinkgoWriterOutput("aft-2 is running"))
 				Ω(specReport.Failure.NodeType).Should(Equal(types.NodeTypeAfterEach))
 			})
 
@@ -311,7 +311,7 @@ var _ = Describe("handling test failures", func() {
 			It("reports a suite failure and a spec failure and only tracks the first failure", func() {
 				Ω(reporter.End).Should(BeASuiteSummary(false, NSpecs(1), NPassed(0), NFailed(1)))
 				specReport := reporter.Did.Find("the test")
-				Ω(specReport).Should(HaveFailed("fail-A", clA), CapturedOutput("run Arun B"))
+				Ω(specReport).Should(HaveFailed("fail-A", clA), CapturedGinkgoWriterOutput("run Arun B"))
 				Ω(specReport.Failure.NodeType).Should(Equal(types.NodeTypeBeforeEach))
 				Ω(rt).Should(HaveTracked("bef-1", "aft-1"))
 			})

@@ -48,7 +48,7 @@ var _ = Describe("Node", func() {
 				Ω(ranAllNodes).Should(BeTrue())
 
 				Ω(node.CodeLocation).Should(Equal(cl))
-				Ω(node.NestingLevel).Should(Equal(-1))
+				Ω(node.NestingLevel).Should(Equal(0))
 			})
 		})
 
@@ -69,7 +69,7 @@ var _ = Describe("Node", func() {
 				Ω(ranNode1).Should(BeTrue())
 
 				Ω(node.CodeLocation).Should(Equal(cl))
-				Ω(node.NestingLevel).Should(Equal(-1))
+				Ω(node.NestingLevel).Should(Equal(0))
 			})
 		})
 
@@ -77,7 +77,8 @@ var _ = Describe("Node", func() {
 			It("returns a correctly configured node", func() {
 				var didRun bool
 				body := func(types.Report) { didRun = true }
-				node := internal.NewReportAfterSuiteNode(body, cl)
+				node := internal.NewReportAfterSuiteNode("my custom report", body, cl)
+				Ω(node.Text).Should(Equal("my custom report"))
 				Ω(node.ID).Should(BeNumerically(">", 0))
 				Ω(node.NodeType).Should(Equal(types.NodeTypeReportAfterSuite))
 
@@ -85,7 +86,7 @@ var _ = Describe("Node", func() {
 				Ω(didRun).Should(BeTrue())
 
 				Ω(node.CodeLocation).Should(Equal(cl))
-				Ω(node.NestingLevel).Should(Equal(-1))
+				Ω(node.NestingLevel).Should(Equal(0))
 			})
 		})
 

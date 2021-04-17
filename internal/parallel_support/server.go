@@ -81,7 +81,7 @@ func (server *Server) Start() {
 	mux.HandleFunc("/before-suite-succeeded", server.handleBeforeSuiteSucceeded)
 	mux.HandleFunc("/before-suite-state", server.handleBeforeSuiteState)
 	mux.HandleFunc("/have-nonprimary-nodes-finished", server.handleHaveNonprimaryNodesFinished)
-	// mux.HandleFunc("/report", server.handleReport)
+	mux.HandleFunc("/aggregated-nonprimary-nodes-report", server.handleAggregatedNonprimaryNodesReport)
 	mux.HandleFunc("/counter", server.handleCounter)
 	mux.HandleFunc("/up", server.handleUp)
 
@@ -198,7 +198,7 @@ func (server *Server) nodeIsAlive(node int) bool {
 	return alive()
 }
 
-func (server *Server) haveNoneprimaryNodesFinished() bool {
+func (server *Server) haveNonprimaryNodesFinished() bool {
 	for i := 2; i <= server.parallelTotal; i++ {
 		if server.nodeIsAlive(i) {
 			return false
@@ -244,26 +244,26 @@ func (server *Server) handleBeforeSuiteState(writer http.ResponseWriter, request
 }
 
 func (server *Server) handleHaveNonprimaryNodesFinished(writer http.ResponseWriter, request *http.Request) {
-	if server.haveNoneprimaryNodesFinished() {
+	if server.haveNonprimaryNodesFinished() {
 		writer.WriteHeader(http.StatusOK)
 	} else {
 		writer.WriteHeader(http.StatusTooEarly)
 	}
 }
 
-// func (server *Server) handleReport(writer http.ResponseWriter, request *http.Request) {
-// 	if server.haveNonePrimaryNodesFinished() {
-// 		server.lock.Lock()
-// 		defer server.lock.Unlock()
-// 		if server.numSuiteDidEnds == server.parallelTotal {
-// 			json.NewEncoder(writer).Encode(server.aggregatedReport)
-// 		} else {
-// 			writer.WriteHeader(http.StatusGone)
-// 		}
-// 	} else {
-// 		writer.WriteHeader(http.StatusTooEarly)
-// 	}
-// }
+func (server *Server) handleAggregatedNonprimaryNodesReport(writer http.ResponseWriter, request *http.Request) {
+	if server.haveNonprimaryNodesFinished() {
+		server.lock.Lock()
+		defer server.lock.Unlock()
+		if server.numSuiteDidEnds == server.parallelTotal-1 {
+			json.NewEncoder(writer).Encode(server.aggregatedReport)
+		} else {
+			writer.WriteHeader(http.StatusGone)
+		}
+	} else {
+		writer.WriteHeader(http.StatusTooEarly)
+	}
+}
 
 func (server *Server) handleCounter(writer http.ResponseWriter, request *http.Request) {
 	c := ParallelIndexCounter{}

@@ -90,17 +90,24 @@ Please ensure all assertions are inside leaf nodes such as {{bold}}BeforeEach{{/
 	}
 }
 
+func (g ginkgoErrors) AggregatedReportUnavailableDueToNodeDisappearing() error {
+	return GinkgoError{
+		Heading: "Test Report unavailable because a Ginkgo parallel process disappeared",
+		Message: "The aggregated report could not be fetched for a ReportAfterSuite node.  A Ginkgo parallel process disappeared before it could finish reporting.",
+	}
+}
+
 func (g ginkgoErrors) SynchronizedBeforeSuiteFailedOnNode1() error {
 	return GinkgoError{
-		Heading: "SynchronizedBeforeSuite failed on Node 1",
-		Message: formatter.F("The first SynchronizedBeforeSuite function running on Ginkgo parallel node #1 failed.  This test suite will now abort."),
+		Heading: "SynchronizedBeforeSuite failed on Ginkgo parallel process #1",
+		Message: "The first SynchronizedBeforeSuite function running on Ginkgo parallel process #1 failed.  This test suite will now abort.",
 	}
 }
 
 func (g ginkgoErrors) SynchronizedBeforeSuiteDisappearedOnNode1() error {
 	return GinkgoError{
 		Heading: "Node 1 disappeard before SynchronizedBeforeSuite could report back",
-		Message: formatter.F("Ginkgo parallel node #1 disappeared before the first SynchronizedBeforeSuite function completed.  This test suite will now abort."),
+		Message: "Ginkgo parallel process #1 disappeared before the first SynchronizedBeforeSuite function completed.  This test suite will now abort.",
 	}
 }
 

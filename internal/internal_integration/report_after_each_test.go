@@ -9,7 +9,7 @@ import (
 	. "github.com/onsi/gomega"
 )
 
-var _ = Describe("Sending reports to ReportAfterEach and ReportAfterSuite nodes", func() {
+var _ = Describe("Sending reports to ReportAfterEach nodes", func() {
 	var reports map[string]Reports
 	BeforeEach(func() {
 		conf.SkipStrings = []string{"flag-skipped"}
@@ -63,9 +63,9 @@ var _ = Describe("Sending reports to ReportAfterEach and ReportAfterSuite nodes"
 					It("passes yet again", rt.T("passes-yet-again"))
 					It("skipped by interrupt", rt.T("skipped-by-interrupt"))
 					ReportAfterEach(func(report types.SpecReport) {
-						rt.Run("interrupt-reporter")
 						interruptHandler.Interrupt()
 						time.Sleep(100 * time.Millisecond)
+						rt.RunWithData("interrupt-reporter", "interrupt-message", interruptHandler.EmittedInterruptMessage())
 						reports["interrupt"] = append(reports["interrupt"], report)
 					})
 				})
@@ -151,6 +151,6 @@ var _ = Describe("Sending reports to ReportAfterEach and ReportAfterSuite nodes"
 		Ω(reports["interrupt"].Find("skipped by interrupt")).Should(Equal(reports["outer"].Find("skipped by interrupt")))
 
 		cl := types.NewCodeLocation(0)
-		Ω(interruptHandler.EmittedInterruptMessage()).Should(ContainSubstring("The running ReportAfterEach node is at:\n%s", cl.FileName))
+		Ω(rt.DataFor("interrupt-reporter")["interrupt-message"]).Should(ContainSubstring("The running ReportAfterEach node is at:\n%s", cl.FileName))
 	})
 })
