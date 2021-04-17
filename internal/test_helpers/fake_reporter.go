@@ -156,7 +156,8 @@ func BeASuiteSummary(options ...interface{}) OmegaMatcher {
 	}, MatchFields(IgnoreExtras, fields))
 }
 
-type CapturedOutput string
+type CapturedGinkgoWriterOutput string
+type CapturedStdOutput string
 type NumAttempts int
 
 func HavePassed(options ...interface{}) OmegaMatcher {
@@ -166,10 +167,14 @@ func HavePassed(options ...interface{}) OmegaMatcher {
 	}
 	for _, option := range options {
 		t := reflect.TypeOf(option)
-		if t == reflect.TypeOf(CapturedOutput("")) {
-			fields["CapturedGinkgoWriterOutput"] = Equal(string(option.(CapturedOutput)))
+		if t == reflect.TypeOf(CapturedGinkgoWriterOutput("")) {
+			fields["CapturedGinkgoWriterOutput"] = Equal(string(option.(CapturedGinkgoWriterOutput)))
+		} else if t == reflect.TypeOf(CapturedStdOutput("")) {
+			fields["CapturedStdOutErr"] = Equal(string(option.(CapturedStdOutput)))
 		} else if t == reflect.TypeOf(NumAttempts(0)) {
 			fields["NumAttempts"] = Equal(int(option.(NumAttempts)))
+		} else if t == reflect.TypeOf(types.NodeTypeIt) {
+			fields["LeafNodeType"] = Equal(option.(types.NodeType))
 		}
 	}
 	return MatchFields(IgnoreExtras, fields)
@@ -196,8 +201,12 @@ func HaveFailed(options ...interface{}) OmegaMatcher {
 	failureFields := Fields{}
 	for _, option := range options {
 		t := reflect.TypeOf(option)
-		if t == reflect.TypeOf(CapturedOutput("")) {
-			fields["CapturedGinkgoWriterOutput"] = Equal(string(option.(CapturedOutput)))
+		if t == reflect.TypeOf(CapturedGinkgoWriterOutput("")) {
+			fields["CapturedGinkgoWriterOutput"] = Equal(string(option.(CapturedGinkgoWriterOutput)))
+		} else if t == reflect.TypeOf(CapturedStdOutput("")) {
+			fields["CapturedStdOutErr"] = Equal(string(option.(CapturedStdOutput)))
+		} else if t == reflect.TypeOf(types.NodeTypeIt) {
+			fields["LeafNodeType"] = Equal(option.(types.NodeType))
 		} else if t.Kind() == reflect.String {
 			failureFields["Message"] = Equal(option.(string))
 		} else if t == reflect.TypeOf(types.CodeLocation{}) {
@@ -219,10 +228,14 @@ func HavePanicked(options ...interface{}) OmegaMatcher {
 	failureFields := Fields{}
 	for _, option := range options {
 		t := reflect.TypeOf(option)
-		if t == reflect.TypeOf(CapturedOutput("")) {
-			fields["CapturedGinkgoWriterOutput"] = Equal(string(option.(CapturedOutput)))
+		if t == reflect.TypeOf(CapturedGinkgoWriterOutput("")) {
+			fields["CapturedGinkgoWriterOutput"] = Equal(string(option.(CapturedGinkgoWriterOutput)))
+		} else if t == reflect.TypeOf(CapturedStdOutput("")) {
+			fields["CapturedStdOutErr"] = Equal(string(option.(CapturedStdOutput)))
 		} else if t.Kind() == reflect.String {
 			failureFields["ForwardedPanic"] = Equal(option.(string))
+		} else if t == reflect.TypeOf(types.NodeTypeIt) {
+			fields["LeafNodeType"] = Equal(option.(types.NodeType))
 		} else if t == reflect.TypeOf(NumAttempts(0)) {
 			fields["NumAttempts"] = Equal(int(option.(NumAttempts)))
 		}

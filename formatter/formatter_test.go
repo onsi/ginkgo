@@ -1,7 +1,10 @@
 package formatter_test
 
 import (
+	"strings"
+
 	. "github.com/onsi/ginkgo"
+	. "github.com/onsi/ginkgo/extensions/table"
 	"github.com/onsi/ginkgo/formatter"
 	. "github.com/onsi/gomega"
 )
@@ -77,6 +80,46 @@ var _ = Describe("Formatter", func() {
 			))
 		})
 	})
+
+	DescribeTable("Fiw",
+		func(indentation int, maxWidth int, input string, expected ...string) {
+			Ω(f.Fiw(uint(indentation), uint(maxWidth), input)).Should(Equal(strings.Join(expected, "\n")))
+		},
+		Entry("basic case", 0, 0, "a really long string is fine", "a really long string is fine"),
+		Entry("indentation is accounted for in width",
+			1, 10,
+			"1234 678",
+			"  1234 678",
+		),
+		Entry("indentation is accounted for in width",
+			1, 10,
+			"1234 6789",
+			"  1234",
+			"  6789",
+		),
+		Entry("when there is a nice long sentence",
+			0, 10,
+			"12 456 890 1234 5",
+			"12 456 890",
+			"1234 5",
+		),
+		Entry("when a word in a sentence intersects the boundary",
+			0, 10,
+			"12 456 8901 123 45",
+			"12 456",
+			"8901 123",
+			"45",
+		),
+		Entry("when a word in a sentence is just too long",
+			0, 10,
+			"12 12345678901 12 12345 678901 12345678901",
+			"12",
+			"12345678901",
+			"12 12345",
+			"678901",
+			"12345678901",
+		),
+	)
 
 	Describe("CycleJoin", func() {
 		It("combines elements, cycling through styles as it goes", func() {

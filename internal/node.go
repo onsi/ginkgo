@@ -63,7 +63,7 @@ func NewSynchronizedBeforeSuiteNode(node1Body func() []byte, allNodesBody func([
 		SynchronizedBeforeSuiteNode1Body:    node1Body,
 		SynchronizedBeforeSuiteAllNodesBody: allNodesBody,
 		CodeLocation:                        codeLocation,
-		NestingLevel:                        -1,
+		NestingLevel:                        0,
 	}
 }
 
@@ -74,7 +74,7 @@ func NewSynchronizedAfterSuiteNode(allNodesBody func(), node1Body func(), codeLo
 		SynchronizedAfterSuiteAllNodesBody: allNodesBody,
 		SynchronizedAfterSuiteNode1Body:    node1Body,
 		CodeLocation:                       codeLocation,
-		NestingLevel:                       -1,
+		NestingLevel:                       0,
 	}
 }
 
@@ -88,13 +88,14 @@ func NewReportAfterEachNode(body func(types.SpecReport), codeLocation types.Code
 	}
 }
 
-func NewReportAfterSuiteNode(body func(types.Report), codeLocation types.CodeLocation) Node {
+func NewReportAfterSuiteNode(text string, body func(types.Report), codeLocation types.CodeLocation) Node {
 	return Node{
 		ID:                   UniqueNodeID(),
+		Text:                 text,
 		NodeType:             types.NodeTypeReportAfterSuite,
 		ReportAfterSuiteBody: body,
 		CodeLocation:         codeLocation,
-		NestingLevel:         -1,
+		NestingLevel:         0,
 	}
 }
 

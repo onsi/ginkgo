@@ -511,20 +511,17 @@ func AfterEach(body interface{}, _ ...interface{}) bool {
 //ReportAfterEach nodes are run for each test, even if the test is skipped or pending.  ReportAfterEach nodes take a function that
 //receives a types.SpecReport.  They are called after the test has completed and are passed in the final report for the test.
 func ReportAfterEach(body func(SpecReport)) bool {
-	cl := types.NewCodeLocation(1)
-	return pushNode(internal.NewReportAfterEachNode(body, cl))
+	return pushNode(internal.NewReportAfterEachNode(body, types.NewCodeLocation(1)))
 }
 
 // ReportAfterSuite nodes are run at the end of the suite.  ReportAfterSuite nodes take a function that receives a types.Report.
 // They are called at the end of the suite, after all specs have run and any AfterSuite or SynchronizedAfterSuite nodes, and are passed in the final report for the test suite.
 // ReportAftersuite nodes must be created at the top-level (i.e. not nested in a Context/Describe/When node)
-// The behavior of a failure in a ReportAfterSuite is undefined.  If you need to meke assertions do so in an AfterSuite
 //
 // When running in parallel, Ginkgo ensures that only one of the parallel nodes runs the ReportAfterSuite and that it is passed a report that is aggregated across
 // all parallel nodes
-func ReportAfterSuite(body func(Report)) bool {
-	cl := types.NewCodeLocation(1)
-	return pushNode(internal.NewReportAfterSuiteNode(body, cl))
+func ReportAfterSuite(text string, body func(Report)) bool {
+	return pushNode(internal.NewReportAfterSuiteNode(text, body, types.NewCodeLocation(1)))
 }
 
 func exitIfErr(err error) {
