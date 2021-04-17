@@ -41,6 +41,10 @@ var _ = Describe("Focus", func() {
 			It("reports on the suite with accurate numbers", func() {
 				Ω(reporter.End).Should(BeASuiteSummary(true, NSpecs(6), NPassed(3), NPending(3), NWillRun(3), NSkipped(0)))
 			})
+
+			It("does not include a special suite failure reason", func() {
+				Ω(reporter.End.SpecialSuiteFailureReason).Should(BeZero())
+			})
 		})
 
 		Context("with config.FailOnPending", func() {
@@ -53,6 +57,10 @@ var _ = Describe("Focus", func() {
 
 			It("reports on the suite with accurate numbers", func() {
 				Ω(reporter.End).Should(BeASuiteSummary(false, NPassed(3), NSpecs(6), NPending(3), NWillRun(3), NSkipped(0)))
+			})
+
+			It("includes a special suite failure reason", func() {
+				Ω(reporter.End.SpecialSuiteFailureReason).Should(Equal("Detected pending specs and --fail-on-pending is set"))
 			})
 		})
 	})

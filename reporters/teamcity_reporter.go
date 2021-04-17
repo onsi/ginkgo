@@ -40,7 +40,7 @@ func (reporter *TeamCityReporter) SuiteWillBegin(conf types.SuiteConfig, summary
 }
 
 func (reporter *TeamCityReporter) testNameFor(report types.SpecReport) string {
-	if report.LeafNodeType.Is(types.NodeTypesForSuiteSetup...) {
+	if report.LeafNodeType.Is(types.NodeTypesForSuiteLevelNodes...) {
 		return reporter.escape(report.LeafNodeType.String())
 	} else {
 		return reporter.escape(strings.Join(report.NodeTexts, " "))
