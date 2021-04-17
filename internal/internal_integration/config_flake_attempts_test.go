@@ -45,7 +45,7 @@ var _ = Describe("when config.FlakeAttempts is greater than 1", func() {
 			Ω(reporter.Did.Find("A")).Should(HavePassed(NumAttempts(2)))
 			Ω(reporter.Did.Find("B")).Should(HavePassed(NumAttempts(1)))
 			Ω(reporter.Did.Find("C")).Should(HavePassed(NumAttempts(3),
-				CapturedOutput("C - attempt #1\n\nGinkgo: Attempt #1 Failed.  Retrying...\nC - attempt #2\n\nGinkgo: Attempt #2 Failed.  Retrying...\nC - attempt #3\n")))
+				CapturedGinkgoWriterOutput("C - attempt #1\n\nGinkgo: Attempt #1 Failed.  Retrying...\nC - attempt #2\n\nGinkgo: Attempt #2 Failed.  Retrying...\nC - attempt #3\n")))
 		})
 	})
 
@@ -63,7 +63,7 @@ var _ = Describe("when config.FlakeAttempts is greater than 1", func() {
 			Ω(reporter.Did.Find("A")).Should(HavePassed(NumAttempts(2)))
 			Ω(reporter.Did.Find("B")).Should(HavePassed(NumAttempts(1)))
 			Ω(reporter.Did.Find("C")).Should(HaveFailed("C - 2", NumAttempts(2),
-				CapturedOutput("C - attempt #1\n\nGinkgo: Attempt #1 Failed.  Retrying...\nC - attempt #2\n")))
+				CapturedGinkgoWriterOutput("C - attempt #1\n\nGinkgo: Attempt #1 Failed.  Retrying...\nC - attempt #2\n")))
 		})
 	})
 })

@@ -4,7 +4,7 @@ import (
 	. "github.com/onsi/ginkgo"
 )
 
-var _ = Describe("ReportAfterEach", func() {
+var _ = Describe("reporting test", func() {
 	It("passes", func() {
 
 	})

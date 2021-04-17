@@ -8,9 +8,10 @@ import (
 const GINKGO_FOCUS_EXIT_CODE = 197
 
 type Report struct {
-	SuitePath        string
-	SuiteDescription string
-	SuiteSucceeded   bool
+	SuitePath                 string
+	SuiteDescription          string
+	SuiteSucceeded            bool
+	SpecialSuiteFailureReason string
 
 	PreRunStats PreRunStats
 
@@ -36,6 +37,10 @@ func (report Report) Add(other Report) Report {
 
 	if other.EndTime.After(report.EndTime) {
 		report.EndTime = other.EndTime
+	}
+
+	if other.SpecialSuiteFailureReason != "" && report.SpecialSuiteFailureReason == "" {
+		report.SpecialSuiteFailureReason = other.SpecialSuiteFailureReason
 	}
 
 	report.RunTime = report.EndTime.Sub(report.StartTime)
@@ -290,7 +295,7 @@ const (
 )
 
 var NodeTypesForContainerAndIt = []NodeType{NodeTypeContainer, NodeTypeIt}
-var NodeTypesForSuiteSetup = []NodeType{NodeTypeBeforeSuite, NodeTypeSynchronizedBeforeSuite, NodeTypeAfterSuite, NodeTypeSynchronizedAfterSuite}
+var NodeTypesForSuiteLevelNodes = []NodeType{NodeTypeBeforeSuite, NodeTypeSynchronizedBeforeSuite, NodeTypeAfterSuite, NodeTypeSynchronizedAfterSuite, NodeTypeReportAfterSuite}
 
 func (nt NodeType) Is(nodeTypes ...NodeType) bool {
 	for _, nodeType := range nodeTypes {
@@ -326,6 +331,8 @@ func (nt NodeType) String() string {
 		return "SynchronizedAfterSuite"
 	case NodeTypeReportAfterEach:
 		return "ReportAfterEach"
+	case NodeTypeReportAfterSuite:
+		return "ReportAfterSuite"
 	}
 
 	return "INVALID NODE TYPE"

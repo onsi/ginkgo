@@ -77,7 +77,7 @@ func (reporter *JUnitReporter) DidRun(report types.SpecReport) {
 	testCase := JUnitTestCase{
 		ClassName: reporter.testSuiteName,
 	}
-	if report.LeafNodeType.Is(types.NodeTypesForSuiteSetup...) {
+	if report.LeafNodeType.Is(types.NodeTypesForSuiteLevelNodes...) {
 		if report.State.Is(types.SpecStatePassed) {
 			return
 		}
