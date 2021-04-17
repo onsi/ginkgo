@@ -495,7 +495,7 @@ func (suite *Suite) runNode(node Node, failer *Failer, interruptChannel chan int
 		finished := false
 		defer func() {
 			if e := recover(); e != nil || !finished {
-				failer.Panic(types.NewCodeLocation(2), e)
+				failer.Panic(types.NewCodeLocationWithStackTrace(2), e)
 			}
 
 			outcome, failure := failer.Drain()

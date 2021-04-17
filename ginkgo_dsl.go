@@ -222,7 +222,7 @@ func Skip(message string, callerSkip ...int) {
 	if len(callerSkip) > 0 {
 		skip = callerSkip[0]
 	}
-	cl := types.NewCodeLocation(skip + 1)
+	cl := types.NewCodeLocationWithStackTrace(skip + 1)
 	global.Failer.Skip(message, cl)
 	panic(types.GinkgoErrors.UncaughtGinkgoPanic(cl))
 }
@@ -234,7 +234,7 @@ func Fail(message string, callerSkip ...int) {
 		skip = callerSkip[0]
 	}
 
-	cl := types.NewCodeLocation(skip + 1)
+	cl := types.NewCodeLocationWithStackTrace(skip + 1)
 	global.Failer.Fail(message, cl)
 	panic(types.GinkgoErrors.UncaughtGinkgoPanic(cl))
 }
@@ -252,7 +252,7 @@ func Fail(message string, callerSkip ...int) {
 func GinkgoRecover() {
 	e := recover()
 	if e != nil {
-		global.Failer.Panic(types.NewCodeLocation(1), e)
+		global.Failer.Panic(types.NewCodeLocationWithStackTrace(1), e)
 	}
 }
 
