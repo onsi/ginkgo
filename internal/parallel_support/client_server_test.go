@@ -214,6 +214,59 @@ var _ = Describe("The Parallel Support Client & Server", func() {
 			})
 		})
 
+		Describe("BlockUntilAggregatedNonprimaryNodesReport", func() {
+			var specReportA, specReportB types.SpecReport
+			var endReport2, endReport3 types.Report
+
+			BeforeEach(func() {
+				specReportA = types.SpecReport{NodeTexts: []string{"A"}}
+				specReportB = types.SpecReport{NodeTexts: []string{"B"}}
+				endReport2 = types.Report{SpecReports: types.SpecReports{specReportA}}
+				endReport3 = types.Report{SpecReports: types.SpecReports{specReportB}}
+			})
+
+			It("blocks until all non-primary nodes exit, then returns the aggregated report", func() {
+				done := make(chan interface{})
+				go func() {
+					defer GinkgoRecover()
+					report, err := client.BlockUntilAggregatedNonprimaryNodesReport()
+					Ω(err).ShouldNot(HaveOccurred())
+					Ω(report.SpecReports).Should(ConsistOf(specReportA, specReportB))
+					close(done)
+				}()
+				Consistently(done).ShouldNot(BeClosed())
+
+				client.PostSuiteDidEnd(endReport2)
+				close(node2Exited)
+				Consistently(done).ShouldNot(BeClosed())
+
+				client.PostSuiteDidEnd(endReport3)
+				close(node3Exited)
+				Eventually(done).Should(BeClosed())
+			})
+
+			Context("when a non-primary node disappears without reporting back", func() {
+				It("blocks returns an appropriate error", func() {
+					done := make(chan interface{})
+					go func() {
+						defer GinkgoRecover()
+						report, err := client.BlockUntilAggregatedNonprimaryNodesReport()
+						Ω(err).Should(Equal(types.GinkgoErrors.AggregatedReportUnavailableDueToNodeDisappearing()))
+						Ω(report).Should(BeZero())
+						close(done)
+					}()
+					Consistently(done).ShouldNot(BeClosed())
+
+					client.PostSuiteDidEnd(endReport2)
+					close(node2Exited)
+					Consistently(done).ShouldNot(BeClosed())
+
+					close(node3Exited)
+					Eventually(done).Should(BeClosed())
+				})
+			})
+		})
+
 		Describe("Fetching counters", func() {
 			It("returns ascending counters", func() {
 				Ω(client.FetchNextCounter()).Should(Equal(0))

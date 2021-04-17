@@ -55,14 +55,14 @@ func ReportViaDeprecatedReporter(reporter DeprecatedReporter, report types.Suite
 	// }
 
 	// func (cs *compatiblityShim) WillRun(summary types.Summary) {
-	// 	if summary.LeafNodeType.Is(types.NodeTypesForSuiteSetup...) {
+	// 	if summary.LeafNodeType.Is(types.NodeTypesForSuiteLevelNodes...) {
 	// 		return
 	// 	}
 	// 	cs.reporter.SpecWillRun(types.DeprecatedSpecSummaryFromSummary(summary))
 	// }
 
 	// func (cs *compatiblityShim) DidRun(summary types.Summary) {
-	// 	if summary.LeafNodeType.Is(types.NodeTypesForSuiteSetup...) {
+	// 	if summary.LeafNodeType.Is(types.NodeTypesForSuiteLevelNodes...) {
 	// 		if summary.LeafNodeType.Is(types.NodeTypeBeforeSuite, types.NodeTypeSynchronizedBeforeSuite) {
 	// 			cs.reporter.BeforeSuiteDidRun(types.DeprecatedSetupSummaryFromSummary(summary))
 	// 		} else {

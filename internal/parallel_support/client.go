@@ -109,14 +109,14 @@ func (client Client) BlockUntilNonprimaryNodesHaveFinished() error {
 	return client.poll("/have-nonprimary-nodes-finished", nil)
 }
 
-// func (client Client) BlockUntilAggregatedReport() (types.Report, error) {
-// 	var report types.Report
-// 	_, err := client.poll("/report", &report)
-// 	if err == ErrorGone {
-// 		return types.Report{}, fmt.Errorf("Aggregated report could not be fetched because a parallel node disappeared before it could finish reporting")
-// 	}
-// 	return report, err
-// }
+func (client Client) BlockUntilAggregatedNonprimaryNodesReport() (types.Report, error) {
+	var report types.Report
+	err := client.poll("/aggregated-nonprimary-nodes-report", &report)
+	if err == ErrorGone {
+		return types.Report{}, types.GinkgoErrors.AggregatedReportUnavailableDueToNodeDisappearing()
+	}
+	return report, err
+}
 
 func (client Client) FetchNextCounter() (int, error) {
 	var counter ParallelIndexCounter
