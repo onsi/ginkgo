@@ -20,6 +20,11 @@ func (codeLocation CodeLocation) String() string {
 
 func NewCodeLocation(skip int) CodeLocation {
 	_, file, line, _ := runtime.Caller(skip + 1)
+	return CodeLocation{FileName: file, LineNumber: line}
+}
+
+func NewCodeLocationWithStackTrace(skip int) CodeLocation {
+	_, file, line, _ := runtime.Caller(skip + 1)
 	stackTrace := PruneStack(string(debug.Stack()), skip+1)
 	return CodeLocation{FileName: file, LineNumber: line, FullStackTrace: stackTrace}
 }
