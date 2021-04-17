@@ -30,6 +30,7 @@ var _ = Describe("CodeLocation", func() {
 	It("should use the passed in skip parameter to pick out the correct file & line number", func() {
 		Ω(codeLocation.FileName).Should(Equal(expectedFileName))
 		Ω(codeLocation.LineNumber).Should(Equal(expectedLineNumber))
+		Ω(codeLocation.FullStackTrace).Should(BeZero())
 	})
 
 	Describe("stringer behavior", func() {
