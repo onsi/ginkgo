@@ -28,7 +28,7 @@ var _ = AfterSuite(func() {
 })
 
 var _ = ReportAfterEach(func(report SpecReport) {
-	fmt.Fprintf(f, "%s - %s\n", report.SpecText(), report.State)
+	fmt.Fprintf(f, "%s - %s\n", report.LeafNodeText, report.State)
 })
 
 var _ = ReportAfterSuite("my report", func(report Report) {
@@ -40,7 +40,7 @@ var _ = ReportAfterSuite("my report", func(report Report) {
 		if specReport.LeafNodeType.Is(types.NodeTypesForSuiteLevelNodes...) {
 			fmt.Fprintf(f, "%d: [%s] - %s\n", specReport.GinkgoParallelNode, specReport.LeafNodeType, specReport.State)
 		} else {
-			fmt.Fprintf(f, "%s - %s\n", specReport.SpecText(), specReport.State)
+			fmt.Fprintf(f, "%s - %s\n", specReport.LeafNodeText, specReport.State)
 		}
 	}
 
