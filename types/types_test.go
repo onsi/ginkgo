@@ -16,10 +16,11 @@ var _ = Describe("Types", func() {
 			It("concatenates spec reports, combines success, and computes a new RunTime", func() {
 				t := time.Now()
 				reportA := types.Report{
-					SuitePath:      "foo",
-					SuiteSucceeded: true,
-					StartTime:      t.Add(-time.Minute),
-					EndTime:        t.Add(2 * time.Minute),
+					SuitePath:                 "foo",
+					SuiteSucceeded:            true,
+					StartTime:                 t.Add(-time.Minute),
+					EndTime:                   t.Add(2 * time.Minute),
+					SpecialSuiteFailureReason: "",
 					SpecReports: types.SpecReports{
 						types.SpecReport{NumAttempts: 3},
 						types.SpecReport{NumAttempts: 4},
@@ -27,10 +28,11 @@ var _ = Describe("Types", func() {
 				}
 
 				reportB := types.Report{
-					SuitePath:      "bar",
-					SuiteSucceeded: false,
-					StartTime:      t.Add(-2 * time.Minute),
-					EndTime:        t.Add(time.Minute),
+					SuitePath:                 "bar",
+					SuiteSucceeded:            false,
+					StartTime:                 t.Add(-2 * time.Minute),
+					EndTime:                   t.Add(time.Minute),
+					SpecialSuiteFailureReason: "blame bob",
 					SpecReports: types.SpecReports{
 						types.SpecReport{NumAttempts: 5},
 						types.SpecReport{NumAttempts: 6},
@@ -39,11 +41,12 @@ var _ = Describe("Types", func() {
 
 				composite := reportA.Add(reportB)
 				Ω(composite).Should(Equal(types.Report{
-					SuitePath:      "foo",
-					SuiteSucceeded: false,
-					StartTime:      t.Add(-2 * time.Minute),
-					EndTime:        t.Add(2 * time.Minute),
-					RunTime:        4 * time.Minute,
+					SuitePath:                 "foo",
+					SuiteSucceeded:            false,
+					StartTime:                 t.Add(-2 * time.Minute),
+					EndTime:                   t.Add(2 * time.Minute),
+					RunTime:                   4 * time.Minute,
+					SpecialSuiteFailureReason: "blame bob",
 					SpecReports: types.SpecReports{
 						types.SpecReport{NumAttempts: 3},
 						types.SpecReport{NumAttempts: 4},
@@ -142,10 +145,6 @@ var _ = Describe("Types", func() {
 
 		It("can return a concatenated set of texts", func() {
 			Ω(CurrentSpecReport().FullText()).Should(Equal("Types SpecReport Helper Functions can return a concatenated set of texts"))
-		})
-
-		It("can return the text of the Spec itself", func() {
-			Ω(CurrentSpecReport().SpecText()).Should(Equal("can return the text of the Spec itself"))
 		})
 
 		It("can return the name of the file it's spec is in", func() {
