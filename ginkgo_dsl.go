@@ -628,11 +628,14 @@ func CurrentGinkgoTestDescription() DeprecatedGinkgoTestDescription {
 	if report.State == types.SpecStateInvalid {
 		return GinkgoTestDescription{}
 	}
+	componentTexts := []string{}
+	componentTexts = append(componentTexts, report.ContainerHierarchyTexts...)
+	componentTexts = append(componentTexts, report.LeafNodeText)
 
 	return DeprecatedGinkgoTestDescription{
-		ComponentTexts: report.NodeTexts,
-		FullTestText:   strings.Join(report.NodeTexts, " "),
-		TestText:       report.NodeTexts[len(report.NodeTexts)-1],
+		ComponentTexts: componentTexts,
+		FullTestText:   report.FullText(),
+		TestText:       report.LeafNodeText,
 		FileName:       report.LeafNodeLocation.FileName,
 		LineNumber:     report.LeafNodeLocation.LineNumber,
 		Failed:         report.State.Is(types.SpecStateFailureStates...),

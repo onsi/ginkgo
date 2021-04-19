@@ -29,7 +29,7 @@ func (s Reports) FindByLeafNodeType(nodeTypes ...types.NodeType) types.SpecRepor
 
 func (s Reports) Find(name string) types.SpecReport {
 	for _, report := range s {
-		if len(report.NodeTexts) > 0 && report.NodeTexts[len(report.NodeTexts)-1] == name {
+		if report.LeafNodeText == name {
 			return report
 		}
 	}
@@ -40,8 +40,8 @@ func (s Reports) Find(name string) types.SpecReport {
 func (s Reports) Names() []string {
 	out := []string{}
 	for _, report := range s {
-		if len(report.NodeTexts) > 0 {
-			out = append(out, report.NodeTexts[len(report.NodeTexts)-1])
+		if report.LeafNodeText != "" {
+			out = append(out, report.LeafNodeText)
 		}
 	}
 	return out
@@ -207,6 +207,8 @@ func HaveFailed(options ...interface{}) OmegaMatcher {
 			fields["CapturedStdOutErr"] = Equal(string(option.(CapturedStdOutput)))
 		} else if t == reflect.TypeOf(types.NodeTypeIt) {
 			fields["LeafNodeType"] = Equal(option.(types.NodeType))
+		} else if t == reflect.TypeOf(types.FailureNodeIsLeafNode) {
+			fields["FailureNodeContext"] = Equal(option.(types.FailureNodeContext))
 		} else if t.Kind() == reflect.String {
 			failureFields["Message"] = Equal(option.(string))
 		} else if t == reflect.TypeOf(types.CodeLocation{}) {
@@ -234,6 +236,8 @@ func HavePanicked(options ...interface{}) OmegaMatcher {
 			fields["CapturedStdOutErr"] = Equal(string(option.(CapturedStdOutput)))
 		} else if t.Kind() == reflect.String {
 			failureFields["ForwardedPanic"] = Equal(option.(string))
+		} else if t == reflect.TypeOf(types.FailureNodeIsLeafNode) {
+			fields["FailureNodeContext"] = Equal(option.(types.FailureNodeContext))
 		} else if t == reflect.TypeOf(types.NodeTypeIt) {
 			fields["LeafNodeType"] = Equal(option.(types.NodeType))
 		} else if t == reflect.TypeOf(NumAttempts(0)) {

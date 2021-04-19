@@ -7,6 +7,7 @@ import (
 
 const GINKGO_FOCUS_EXIT_CODE = 197
 
+// TODO - document Report
 type Report struct {
 	SuitePath                 string
 	SuiteDescription          string
@@ -60,21 +61,20 @@ func (report Report) Add(other Report) Report {
 
 // SpecReport captures information about a Ginkgo spec.
 type SpecReport struct {
-	// NodeTexts is a slice containing the text strings of
+	// ContainerHierarchyTexts is a slice containing the text strings of
 	// all Describe/Context/When containers in this spec's hierarchy.
-	// The last element in NodeTexts is the string of the It itself.
-	NodeTexts []string
+	ContainerHierarchyTexts []string
 
-	// NodeLocations is a slice containing the CodeLocations of
+	// ContainerHierarchyLocations is a slice containing the CodeLocations of
 	// all Describe/Context/When containers in this spec's hirerachy.
-	// The last element in NodeLcoations is the CodeLocation of the It itself
-	NodeLocations []CodeLocation
+	ContainerHierarchyLocations []CodeLocation
 
-	// LeafNodeType and LeadNodeLocation capture the NodeType and CodeLocation
+	// LeafNodeType, LeadNodeLocation, and LeafNodeText capture the NodeType, CodeLocation, and text
 	// of the Ginkgo node being tested (typically an NodeTypeIt node, though this can also be
-	// one of the NodeTypeBeforeSuite or NodeTypeAfterSuite node types)
+	// one of the NodeTypesForSuiteLevelNodes node types)
 	LeafNodeType     NodeType
 	LeafNodeLocation CodeLocation
+	LeafNodeText     string
 
 	// State captures whether the spec has passed, failed, etc.
 	State SpecState
@@ -127,15 +127,12 @@ func (report SpecReport) Failed() bool {
 
 //FullText returns a concatenation of all the report.NodeTexts
 func (report SpecReport) FullText() string {
-	return strings.Join(report.NodeTexts, " ")
-}
-
-//SpecText returns the text of the spec node (i.e. the string passed into It())
-func (report SpecReport) SpecText() string {
-	if len(report.NodeTexts) == 0 {
-		return ""
+	texts := []string{}
+	texts = append(texts, report.ContainerHierarchyTexts...)
+	if report.LeafNodeText != "" {
+		texts = append(texts, report.LeafNodeText)
 	}
-	return report.NodeTexts[len(report.NodeTexts)-1]
+	return strings.Join(texts, " ")
 }
 
 //FileName() returns the name of the file containing the spec
@@ -200,6 +197,16 @@ func (reports SpecReports) CountOfFlakedSpecs() int {
 	return n
 }
 
+type FailureNodeContext uint
+
+const (
+	FailureNodeContextInvalid FailureNodeContext = iota
+
+	FailureNodeIsLeafNode
+	FailureNodeAtTopLevel
+	FailureNodeInContainer
+)
+
 // Failure captures failure information for an individual test
 type Failure struct {
 	// Message - the failure message passed into Fail(...).  When using a matcher library
@@ -207,21 +214,25 @@ type Failure struct {
 	Message string
 
 	// Location - the CodeLocation where the failure occurred
+	// This CodeLocation will include a fully-populated StackTrace
 	Location CodeLocation
 
 	// ForwardedPanic - if the failure represents a captured panic (i.e. Summary.State == SpecStatePanicked)
 	// then ForwardedPanic will be populated with a string representation of the captured panic.
 	ForwardedPanic string
 
-	// NodeIndex - the index into Summary.NodeTexts and Summary.NodeLocation that represents the
-	// container node where this failure took place.  If NodeIndex is -1 then the failure occured at the top level
-	// (i.e. outside of any container node).
-	NodeIndex int
-
-	// NodeType - the NodeType of the node where the failure occured.  For example, a failure occurring in a
-	// BeforeEach in a Describe container nested within a top-level Describe would have a NodeType of NodeTypeBeforeEach
-	// and a NodeIndex of 1.
-	NodeType NodeType
+	// FailureNodeContext - one of three contexts describing the node in which the failure occured:
+	// FailureNodeIsLeafNode means the failure occured in the leaf node of the associated SpecReport. None of the other FailureNode fields will be populated
+	// FailureNodeAtTopLevel means the failure occured in a non-leaf node that is defined at the top-level of the spec (i.e. not in a container). FailureNodeType and FailureNodeLocation will be populated.
+	// FailureNodeInContainer means the failure occured in a non-leaf node that is defined within a container.  FailureNodeType, FailureNodeLocaiton, and FailureNodeContainerIndex will be populated.
+	//
+	//  FailureNodeType will contain the NodeType of the node in which the failure occurred.
+	//  FailureNodeLocation will contain the CodeLocation of the node in which the failure occurred.
+	// If populated, FailureNodeContainerIndex will be the index into SpecReport.ContainerHierarchyTexts and SpecReport.ContainerHierarchyLocations that represents the parent container of the node in which the failure occurred.
+	FailureNodeContext        FailureNodeContext
+	FailureNodeType           NodeType
+	FailureNodeLocation       CodeLocation
+	FailureNodeContainerIndex int
 }
 
 func (f Failure) IsZero() bool {
