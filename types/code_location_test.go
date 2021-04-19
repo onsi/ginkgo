@@ -39,6 +39,16 @@ var _ = Describe("CodeLocation", func() {
 		})
 	})
 
+	Describe("with a custom message", func() {
+		BeforeEach(func() {
+			codeLocation = types.NewCustomCodeLocation("I'm right here.")
+		})
+
+		It("emits the custom message", func() {
+			Ω(codeLocation.String()).Should(Equal("I'm right here."))
+		})
+	})
+
 	Describe("PruneStack", func() {
 		It("should remove any references to ginkgo and pkg/testing and pkg/runtime", func() {
 			// Hard-coded string, loosely based on what debug.Stack() produces.
