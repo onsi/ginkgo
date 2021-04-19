@@ -82,11 +82,10 @@ var _ = Describe("CurrentSpecReport", func() {
 
 	It("captures test details correctly", func() {
 		spec := specs["aft-A"]
-		Ω(spec.NodeTexts).Should(Equal([]string{"a passing test", "A"}))
+		Ω(spec.ContainerHierarchyTexts).Should(Equal([]string{"a passing test"}))
+		Ω(spec.LeafNodeText).Should(Equal("A"))
 		Ω(spec.FullText()).Should(Equal("a passing test A"))
-		Ω(spec.SpecText()).Should(Equal("A"))
-		locations := reporter.Did.Find("A").NodeLocations
-		location := locations[len(locations)-1]
+		location := reporter.Did.Find("A").LeafNodeLocation
 		Ω(spec.FileName()).Should(Equal(location.FileName))
 		Ω(spec.LineNumber()).Should(Equal(location.LineNumber))
 		Ω(spec.RunTime).Should(BeNumerically(">=", time.Millisecond*20))

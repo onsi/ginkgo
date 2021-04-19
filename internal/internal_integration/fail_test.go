@@ -138,9 +138,11 @@ var _ = Describe("handling test failures", func() {
 				Ω(reporter.Did.Find("C")).Should(HavePassed())
 			})
 
-			It("matches up the nesting level correctly", func() {
+			It("sets up the failure node location correctly", func() {
 				report := reporter.Did.Find("B")
-				Ω(report.NodeTexts[report.Failure.NodeIndex]).Should(Equal("B"))
+				Ω(report.Failure.FailureNodeContext).Should(Equal(types.FailureNodeIsLeafNode))
+				Ω(report.Failure.FailureNodeType).Should(Equal(types.NodeTypeIt))
+				Ω(report.Failure.FailureNodeLocation).Should(Equal(report.LeafNodeLocation))
 			})
 		})
 
@@ -177,9 +179,11 @@ var _ = Describe("handling test failures", func() {
 				Ω(reporter.Did.Find("C")).Should(HavePassed())
 			})
 
-			It("matches up the nesting level correctly", func() {
+			It("sets up the failure node location correctly", func() {
 				report := reporter.Did.Find("B")
-				Ω(report.NodeTexts[report.Failure.NodeIndex]).Should(Equal("B"))
+				Ω(report.Failure.FailureNodeContext).Should(Equal(types.FailureNodeIsLeafNode))
+				Ω(report.Failure.FailureNodeType).Should(Equal(types.NodeTypeIt))
+				Ω(report.Failure.FailureNodeLocation).Should(Equal(report.LeafNodeLocation))
 			})
 		})
 
@@ -216,12 +220,13 @@ var _ = Describe("handling test failures", func() {
 				Ω(reporter.End).Should(BeASuiteSummary(false, NSpecs(1), NPassed(0), NFailed(1)))
 				specReport := reporter.Did.Find("the test")
 				Ω(specReport).Should(HaveFailed("fail", cl), CapturedGinkgoWriterOutput("bef-2 is runningaft-2 is running"))
-				Ω(specReport.Failure.NodeType).Should(Equal(types.NodeTypeBeforeEach))
 			})
 
-			It("matches up the nesting level correctly", func() {
+			It("sets up the failure node location correctly", func() {
 				report := reporter.Did.Find("the test")
-				Ω(report.NodeTexts[report.Failure.NodeIndex]).Should(Equal("top-level"))
+				Ω(report.Failure.FailureNodeContext).Should(Equal(types.FailureNodeInContainer))
+				Ω(report.Failure.FailureNodeType).Should(Equal(types.NodeTypeBeforeEach))
+				Ω(report.Failure.FailureNodeContainerIndex).Should(Equal(0))
 			})
 
 			It("runs the JustAfterEaches and AfterEaches at the same or lesser nesting level", func() {
@@ -240,9 +245,10 @@ var _ = Describe("handling test failures", func() {
 				Ω(success).Should(BeFalse())
 			})
 
-			It("matches up the nesting level correctly", func() {
+			It("sets up the failure node location correctly", func() {
 				report := reporter.Did.Find("the test")
-				Ω(report.Failure.NodeIndex).Should(Equal(-1))
+				Ω(report.Failure.FailureNodeContext).Should(Equal(types.FailureNodeAtTopLevel))
+				Ω(report.Failure.FailureNodeType).Should(Equal(types.NodeTypeBeforeEach))
 			})
 		})
 
@@ -258,7 +264,7 @@ var _ = Describe("handling test failures", func() {
 							It("the test", rt.T("it"))
 							JustAfterEach(rt.T("jus-aft-3"))
 							AfterEach(rt.T("aft-3", func() {
-								F("fail", cl)
+								F("fail", types.NewCodeLocation(0))
 							}))
 						})
 						JustAfterEach(rt.T("jus-aft-2"))
@@ -275,13 +281,17 @@ var _ = Describe("handling test failures", func() {
 			It("reports a suite failure and a spec failure", func() {
 				Ω(reporter.End).Should(BeASuiteSummary(false, NSpecs(1), NPassed(0), NFailed(1)))
 				specReport := reporter.Did.Find("the test")
-				Ω(specReport).Should(HaveFailed("fail", cl), CapturedGinkgoWriterOutput("aft-2 is running"))
-				Ω(specReport.Failure.NodeType).Should(Equal(types.NodeTypeAfterEach))
+				Ω(specReport).Should(HaveFailed("fail"), CapturedGinkgoWriterOutput("aft-2 is running"))
 			})
 
-			It("matches up the nesting level correctly", func() {
+			It("sets up the failure node location correctly", func() {
 				report := reporter.Did.Find("the test")
-				Ω(report.NodeTexts[report.Failure.NodeIndex]).Should(Equal("nested"))
+				Ω(report.Failure.FailureNodeContext).Should(Equal(types.FailureNodeInContainer))
+				Ω(report.Failure.FailureNodeType).Should(Equal(types.NodeTypeAfterEach))
+				location := report.Failure.Location
+				location.LineNumber = location.LineNumber - 1
+				Ω(report.Failure.FailureNodeLocation).Should(Equal(location))
+				Ω(report.Failure.FailureNodeContainerIndex).Should(Equal(1))
 			})
 
 			It("runs the subsequent after eaches", func() {
@@ -312,7 +322,7 @@ var _ = Describe("handling test failures", func() {
 				Ω(reporter.End).Should(BeASuiteSummary(false, NSpecs(1), NPassed(0), NFailed(1)))
 				specReport := reporter.Did.Find("the test")
 				Ω(specReport).Should(HaveFailed("fail-A", clA), CapturedGinkgoWriterOutput("run Arun B"))
-				Ω(specReport.Failure.NodeType).Should(Equal(types.NodeTypeBeforeEach))
+				Ω(specReport.Failure.FailureNodeType).Should(Equal(types.NodeTypeBeforeEach))
 				Ω(rt).Should(HaveTracked("bef-1", "aft-1"))
 			})
 		})

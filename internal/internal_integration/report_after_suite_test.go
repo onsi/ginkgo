@@ -175,8 +175,8 @@ var _ = Describe("Sending reports to ReportAfterSuite nodes", func() {
 
 			otherNodeReport = types.Report{
 				SpecReports: types.SpecReports{
-					types.SpecReport{NodeTexts: []string{"E"}, NodeLocations: []types.CodeLocation{cl}, State: types.SpecStatePassed, LeafNodeType: types.NodeTypeIt, LeafNodeLocation: cl},
-					types.SpecReport{NodeTexts: []string{"F"}, NodeLocations: []types.CodeLocation{cl}, State: types.SpecStateSkipped, LeafNodeType: types.NodeTypeIt, LeafNodeLocation: cl},
+					types.SpecReport{LeafNodeText: "E", LeafNodeLocation: cl, State: types.SpecStatePassed, LeafNodeType: types.NodeTypeIt},
+					types.SpecReport{LeafNodeText: "F", LeafNodeLocation: cl, State: types.SpecStateSkipped, LeafNodeType: types.NodeTypeIt},
 				},
 			}
 		})
