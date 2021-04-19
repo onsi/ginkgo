@@ -132,7 +132,8 @@ var _ = Describe("Running Tests in Series - the happy path", func() {
 			//spot-check
 			Ω(reporter.Did.Find("C")).Should(MatchFields(IgnoreExtras, Fields{
 				"LeafNodeType":               Equal(types.NodeTypeIt),
-				"NodeTexts":                  Equal([]string{"top-level-container", "nested-container", "C"}),
+				"LeafNodeText":               Equal("C"),
+				"ContainerHierarchyTexts":    Equal([]string{"top-level-container", "nested-container"}),
 				"State":                      Equal(types.SpecStatePassed),
 				"Failure":                    BeZero(),
 				"NumAttempts":                Equal(1),

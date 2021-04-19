@@ -48,9 +48,9 @@ var _ = Describe("The Parallel Support Client & Server", func() {
 			beginReport = types.Report{SuiteDescription: "my sweet suite"}
 			thirdBeginReport = types.Report{SuiteDescription: "last one in gets forwarded"}
 
-			specReportA = types.SpecReport{NodeTexts: []string{"A"}}
-			specReportB = types.SpecReport{NodeTexts: []string{"B"}}
-			specReportC = types.SpecReport{NodeTexts: []string{"C"}}
+			specReportA = types.SpecReport{LeafNodeText: "A"}
+			specReportB = types.SpecReport{LeafNodeText: "B"}
+			specReportC = types.SpecReport{LeafNodeText: "C"}
 
 			t = time.Now()
 
@@ -219,8 +219,8 @@ var _ = Describe("The Parallel Support Client & Server", func() {
 			var endReport2, endReport3 types.Report
 
 			BeforeEach(func() {
-				specReportA = types.SpecReport{NodeTexts: []string{"A"}}
-				specReportB = types.SpecReport{NodeTexts: []string{"B"}}
+				specReportA = types.SpecReport{LeafNodeText: "A"}
+				specReportB = types.SpecReport{LeafNodeText: "B"}
 				endReport2 = types.Report{SpecReports: types.SpecReports{specReportA}}
 				endReport3 = types.Report{SpecReports: types.SpecReports{specReportB}}
 			})

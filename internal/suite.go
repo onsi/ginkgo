@@ -216,11 +216,12 @@ func (suite *Suite) runSpecs(description string, suitePath string, specs Specs, 
 			spec := specs[idx]
 
 			suite.currentSpecReport = types.SpecReport{
-				NodeTexts:          spec.Nodes.WithType(types.NodeTypesForContainerAndIt...).Texts(),
-				NodeLocations:      spec.Nodes.WithType(types.NodeTypesForContainerAndIt...).CodeLocations(),
-				LeafNodeLocation:   spec.FirstNodeWithType(types.NodeTypeIt).CodeLocation,
-				LeafNodeType:       types.NodeTypeIt,
-				GinkgoParallelNode: suiteConfig.ParallelNode,
+				ContainerHierarchyTexts:     spec.Nodes.WithType(types.NodeTypeContainer).Texts(),
+				ContainerHierarchyLocations: spec.Nodes.WithType(types.NodeTypeContainer).CodeLocations(),
+				LeafNodeLocation:            spec.FirstNodeWithType(types.NodeTypeIt).CodeLocation,
+				LeafNodeType:                types.NodeTypeIt,
+				LeafNodeText:                spec.FirstNodeWithType(types.NodeTypeIt).Text,
+				GinkgoParallelNode:          suiteConfig.ParallelNode,
 			}
 
 			if (suiteConfig.FailFast && !report.SuiteSucceeded) || interruptHandler.Status().Interrupted {
@@ -267,10 +268,9 @@ func (suite *Suite) runSpecs(description string, suitePath string, specs Specs, 
 	if suiteConfig.ParallelNode == 1 {
 		for _, node := range suite.suiteNodes.WithType(types.NodeTypeReportAfterSuite) {
 			specReport := types.SpecReport{
-				NodeTexts:          []string{node.Text},
-				NodeLocations:      []types.CodeLocation{node.CodeLocation},
 				LeafNodeType:       node.NodeType,
 				LeafNodeLocation:   node.CodeLocation,
+				LeafNodeText:       node.Text,
 				GinkgoParallelNode: suiteConfig.ParallelNode,
 			}
 			reporter.WillRun(specReport)
@@ -428,7 +428,7 @@ func (suite *Suite) runSuiteNode(report types.SpecReport, node Node, failer *Fai
 	}
 
 	if err != nil && report.State.Is(types.SpecStateInvalid, types.SpecStatePassed) {
-		report.State, report.Failure = suite.failureForNodeWithError(node, err)
+		report.State, report.Failure = suite.failureForLeafNodeWithError(node, err)
 	}
 
 	report.EndTime = time.Now()
@@ -452,7 +452,7 @@ func (suite *Suite) runReportAfterSuiteNode(specReport types.SpecReport, node No
 	if suiteConfig.ParallelTotal > 1 {
 		aggregatedReport, err := suite.client.BlockUntilAggregatedNonprimaryNodesReport()
 		if err != nil {
-			specReport.State, specReport.Failure = suite.failureForNodeWithError(node, err)
+			specReport.State, specReport.Failure = suite.failureForLeafNodeWithError(node, err)
 			return specReport
 		}
 		report = report.Add(aggregatedReport)
@@ -483,9 +483,14 @@ func (suite *Suite) runNode(node Node, failer *Failer, interruptChannel chan int
 		writer.Write([]byte(s))
 	}
 
-	failureNestingLevel := node.NestingLevel - 1
-	if node.NodeType.Is(types.NodeTypeIt, types.NodeTypeReportAfterSuite) {
-		failureNestingLevel = node.NestingLevel
+	var failure types.Failure
+	failure.FailureNodeType, failure.FailureNodeLocation = node.NodeType, node.CodeLocation
+	if node.NodeType.Is(types.NodeTypeIt) || node.NodeType.Is(types.NodeTypesForSuiteLevelNodes...) {
+		failure.FailureNodeContext = types.FailureNodeIsLeafNode
+	} else if node.NestingLevel <= 0 {
+		failure.FailureNodeContext = types.FailureNodeAtTopLevel
+	} else {
+		failure.FailureNodeContext, failure.FailureNodeContainerIndex = types.FailureNodeInContainer, node.NestingLevel-1
 	}
 
 	outcomeC := make(chan types.SpecState)
@@ -498,14 +503,9 @@ func (suite *Suite) runNode(node Node, failer *Failer, interruptChannel chan int
 				failer.Panic(types.NewCodeLocationWithStackTrace(2), e)
 			}
 
-			outcome, failure := failer.Drain()
-			if outcome != types.SpecStatePassed {
-				failure.NodeType = node.NodeType
-				failure.NodeIndex = failureNestingLevel
-			}
-
+			outcome, failureFromRun := failer.Drain()
 			outcomeC <- outcome
-			failureC <- failure
+			failureC <- failureFromRun
 		}()
 
 		node.Body()
@@ -514,24 +514,25 @@ func (suite *Suite) runNode(node Node, failer *Failer, interruptChannel chan int
 
 	select {
 	case outcome := <-outcomeC:
-		failure := <-failureC
+		failureFromRun := <-failureC
+		if outcome == types.SpecStatePassed {
+			return outcome, types.Failure{}
+		}
+		failure.Message, failure.Location, failure.ForwardedPanic = failureFromRun.Message, failureFromRun.Location, failureFromRun.ForwardedPanic
 		return outcome, failure
 	case <-interruptChannel:
-		return types.SpecStateInterrupted, types.Failure{
-			Message:   interruptMessageWithStackTraces(),
-			Location:  node.CodeLocation,
-			NodeType:  node.NodeType,
-			NodeIndex: failureNestingLevel,
-		}
+		failure.Message, failure.Location = interruptMessageWithStackTraces(), node.CodeLocation
+		return types.SpecStateInterrupted, failure
 	}
 }
 
-func (suite *Suite) failureForNodeWithError(node Node, err error) (types.SpecState, types.Failure) {
+func (suite *Suite) failureForLeafNodeWithError(node Node, err error) (types.SpecState, types.Failure) {
 	return types.SpecStateFailed, types.Failure{
-		Message:   err.Error(),
-		Location:  node.CodeLocation,
-		NodeIndex: node.NestingLevel - 1,
-		NodeType:  node.NodeType,
+		Message:             err.Error(),
+		Location:            node.CodeLocation,
+		FailureNodeContext:  types.FailureNodeIsLeafNode,
+		FailureNodeType:     node.NodeType,
+		FailureNodeLocation: node.CodeLocation,
 	}
 }
 
