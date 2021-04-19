@@ -12,10 +12,20 @@ type CodeLocation struct {
 	FileName       string
 	LineNumber     int
 	FullStackTrace string
+	CustomMessage  string
 }
 
 func (codeLocation CodeLocation) String() string {
+	if codeLocation.CustomMessage != "" {
+		return codeLocation.CustomMessage
+	}
 	return fmt.Sprintf("%s:%d", codeLocation.FileName, codeLocation.LineNumber)
+}
+
+func NewCustomCodeLocation(message string) CodeLocation {
+	return CodeLocation{
+		CustomMessage: message,
+	}
 }
 
 func NewCodeLocation(skip int) CodeLocation {
