@@ -9,10 +9,10 @@ import (
 )
 
 type CodeLocation struct {
-	FileName       string
-	LineNumber     int
-	FullStackTrace string
-	CustomMessage  string
+	FileName       string `json:",omitempty"`
+	LineNumber     int    `json:",omitempty"`
+	FullStackTrace string `json:",omitempty"`
+	CustomMessage  string `json:",omitempty"`
 }
 
 func (codeLocation CodeLocation) String() string {

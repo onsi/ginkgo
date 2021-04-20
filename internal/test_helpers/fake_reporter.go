@@ -208,7 +208,7 @@ func HaveFailed(options ...interface{}) OmegaMatcher {
 		} else if t == reflect.TypeOf(types.NodeTypeIt) {
 			fields["LeafNodeType"] = Equal(option.(types.NodeType))
 		} else if t == reflect.TypeOf(types.FailureNodeIsLeafNode) {
-			fields["FailureNodeContext"] = Equal(option.(types.FailureNodeContext))
+			failureFields["FailureNodeContext"] = Equal(option.(types.FailureNodeContext))
 		} else if t.Kind() == reflect.String {
 			failureFields["Message"] = Equal(option.(string))
 		} else if t == reflect.TypeOf(types.CodeLocation{}) {
@@ -237,7 +237,7 @@ func HavePanicked(options ...interface{}) OmegaMatcher {
 		} else if t.Kind() == reflect.String {
 			failureFields["ForwardedPanic"] = Equal(option.(string))
 		} else if t == reflect.TypeOf(types.FailureNodeIsLeafNode) {
-			fields["FailureNodeContext"] = Equal(option.(types.FailureNodeContext))
+			failureFields["FailureNodeContext"] = Equal(option.(types.FailureNodeContext))
 		} else if t == reflect.TypeOf(types.NodeTypeIt) {
 			fields["LeafNodeType"] = Equal(option.(types.NodeType))
 		} else if t == reflect.TypeOf(NumAttempts(0)) {

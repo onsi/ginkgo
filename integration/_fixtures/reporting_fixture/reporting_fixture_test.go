@@ -6,10 +6,10 @@ import (
 
 var _ = Describe("reporting test", func() {
 	It("passes", func() {
-
 	})
 
 	It("fails", func() {
+		GinkgoWriter.Print("some ginkgo-writer output")
 		Fail("fail!")
 	})
 

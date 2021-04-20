@@ -109,6 +109,12 @@ func (f FixtureManager) copyAndRewrite(src string, dst string) {
 	}
 }
 
+func (f FixtureManager) AbsPathTo(pkg string, target ...string) string {
+	path, err := filepath.Abs(f.PathTo(pkg, target...))
+	ExpectWithOffset(1, err).NotTo(HaveOccurred())
+	return path
+}
+
 func (f FixtureManager) PathTo(pkg string, target ...string) string {
 	if len(target) == 0 {
 		return filepath.Join(f.TmpDir, pkg)
