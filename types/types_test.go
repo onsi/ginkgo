@@ -1,6 +1,7 @@
 package types_test
 
 import (
+	"encoding/json"
 	"time"
 
 	. "github.com/onsi/ginkgo"
@@ -70,8 +71,14 @@ var _ = Describe("Types", func() {
 			})
 		})
 
-		DescribeTable("String", func(nodeType types.NodeType, expectedString string) {
+		DescribeTable("Representation and Encoding", func(nodeType types.NodeType, expectedString string) {
 			Ω(nodeType.String()).Should(Equal(expectedString))
+
+			marshalled, err := json.Marshal(nodeType)
+			Ω(err).ShouldNot(HaveOccurred())
+			var unmarshalled types.NodeType
+			json.Unmarshal(marshalled, &unmarshalled)
+			Ω(unmarshalled).Should(Equal(nodeType))
 		},
 			Entry("Container", types.NodeTypeContainer, "Container"),
 			Entry("It", types.NodeTypeIt, "It"),
@@ -87,9 +94,30 @@ var _ = Describe("Types", func() {
 		)
 	})
 
+	Describe("FailureNodeContext", func() {
+		DescribeTable("Representation and Encoding", func(context types.FailureNodeContext) {
+			marshalled, err := json.Marshal(context)
+			Ω(err).ShouldNot(HaveOccurred())
+			var unmarshalled types.FailureNodeContext
+			json.Unmarshal(marshalled, &unmarshalled)
+			Ω(unmarshalled).Should(Equal(context))
+		},
+			Entry("LeafNode", types.FailureNodeIsLeafNode),
+			Entry("TopLevel", types.FailureNodeAtTopLevel),
+			Entry("InContainer", types.FailureNodeInContainer),
+			Entry("Invalid", types.FailureNodeContextInvalid),
+		)
+	})
+
 	Describe("SpecState", func() {
-		DescribeTable("String", func(specState types.SpecState, expectedString string) {
+		DescribeTable("Representation and Encoding", func(specState types.SpecState, expectedString string) {
 			Ω(specState.String()).Should(Equal(expectedString))
+
+			marshalled, err := json.Marshal(specState)
+			Ω(err).ShouldNot(HaveOccurred())
+			var unmarshalled types.SpecState
+			json.Unmarshal(marshalled, &unmarshalled)
+			Ω(unmarshalled).Should(Equal(specState))
 		},
 			Entry("Pending", types.SpecStatePending, "pending"),
 			Entry("Skipped", types.SpecStateSkipped, "skipped"),
@@ -97,6 +125,7 @@ var _ = Describe("Types", func() {
 			Entry("Failed", types.SpecStateFailed, "failed"),
 			Entry("Panicked", types.SpecStatePanicked, "panicked"),
 			Entry("Interrupted", types.SpecStateInterrupted, "interrupted"),
+			Entry("Invalid", types.SpecStateInvalid, "INVALID SPEC STATE"),
 		)
 	})
 
@@ -174,6 +203,66 @@ var _ = Describe("Types", func() {
 	})
 
 	Describe("SpecReports", func() {
+		Describe("Encoding to JSON", func() {
+			var report types.SpecReport
+			BeforeEach(func() {
+				report = types.SpecReport{
+					ContainerHierarchyTexts: []string{"A", "B"},
+					ContainerHierarchyLocations: []types.CodeLocation{
+						types.NewCodeLocation(0),
+						types.NewCodeLocationWithStackTrace(0),
+						types.NewCustomCodeLocation("welp"),
+					},
+					LeafNodeType:               types.NodeTypeIt,
+					LeafNodeLocation:           types.NewCodeLocation(0),
+					LeafNodeText:               "C",
+					State:                      types.SpecStateFailed,
+					StartTime:                  time.Date(2012, 06, 19, 05, 32, 12, 0, time.UTC),
+					EndTime:                    time.Date(2012, 06, 19, 05, 33, 12, 0, time.UTC),
+					RunTime:                    time.Minute,
+					GinkgoParallelNode:         2,
+					NumAttempts:                3,
+					CapturedGinkgoWriterOutput: "gw",
+					CapturedStdOutErr:          "std",
+					Failure: types.Failure{
+						Message:                   "boom",
+						Location:                  types.NewCodeLocation(1),
+						ForwardedPanic:            "bam",
+						FailureNodeContext:        types.FailureNodeInContainer,
+						FailureNodeType:           types.NodeTypeBeforeEach,
+						FailureNodeLocation:       types.NewCodeLocation(0),
+						FailureNodeContainerIndex: 1,
+					},
+				}
+			})
+
+			Context("with a failure", func() {
+				It("round-trips correctly", func() {
+					marshalled, err := json.Marshal(report)
+					Ω(err).ShouldNot(HaveOccurred())
+					unmarshalled := types.SpecReport{}
+					err = json.Unmarshal(marshalled, &unmarshalled)
+					Ω(err).ShouldNot(HaveOccurred())
+					Ω(unmarshalled).Should(Equal(report))
+				})
+			})
+
+			Context("without a failure", func() {
+				BeforeEach(func() {
+					report.Failure = types.Failure{}
+				})
+				It("round-trips correclty and doesn't include the Failure struct", func() {
+					marshalled, err := json.Marshal(report)
+					Ω(string(marshalled)).ShouldNot(ContainSubstring("Failure"))
+					Ω(err).ShouldNot(HaveOccurred())
+					unmarshalled := types.SpecReport{}
+					err = json.Unmarshal(marshalled, &unmarshalled)
+					Ω(err).ShouldNot(HaveOccurred())
+					Ω(unmarshalled).Should(Equal(report))
+				})
+			})
+		})
+
 		Describe("WithLeafNodeType", func() {
 			It("returns reports with the matching LeafNodeTypes", func() {
 				reports := types.SpecReports{

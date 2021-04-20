@@ -47,7 +47,14 @@ type ReporterConfig struct {
 	Verbose           bool
 	FullTrace         bool
 	ReportPassed      bool
-	JUnitReportFile   string
+
+	JSONReport     string
+	JUnitReport    string
+	TeamcityReport string
+}
+
+func (rc ReporterConfig) WillGenerateReport() bool {
+	return rc.JSONReport != "" || rc.JUnitReport != "" || rc.TeamcityReport != ""
 }
 
 func NewDefaultReporterConfig() ReporterConfig {
@@ -71,6 +78,7 @@ type CLIConfig struct {
 	Timeout                   time.Duration
 	OutputDir                 string
 	KeepSeparateCoverprofiles bool
+	KeepSeparateReports       bool
 
 	//for run only
 	KeepGoing       bool
@@ -242,8 +250,13 @@ var ReporterConfigFlags = GinkgoFlags{
 		Usage: "If set, default reporter prints out the full stack trace when a failure occurs"},
 	{KeyPath: "R.ReportPassed", Name: "report-passed", SectionKey: "output", DeprecatedName: "reportPassed", DeprecatedDocLink: "changed-command-line-flags",
 		Usage: "If set, default reporter prints out captured output of passed tests."},
-	{KeyPath: "R.JUnitReportFile", Name: "junit-report", SectionKey: "output", DeprecatedName: "reportFile", DeprecatedDocLink: "changed-command-line-flags",
-		Usage: "If set, Ginkgo will generate a junit test report at the specified destination."},
+
+	{KeyPath: "R.JSONReport", Name: "json-report", UsageArgument: "filename.json", SectionKey: "output",
+		Usage: "If set, Ginkgo will generate a JSON-formatted test report at the specified location."},
+	{KeyPath: "R.JUnitReport", Name: "junit-report", UsageArgument: "filename.xml", SectionKey: "output", DeprecatedName: "reportFile", DeprecatedDocLink: "improved-reporting-infrastructure",
+		Usage: "If set, Ginkgo will generate a conformant junit test report in the specified file."},
+	{KeyPath: "R.TeamcityReport", Name: "teamcity-report", UsageArgument: "filename", SectionKey: "output",
+		Usage: "If set, Ginkgo will generate a Teamcity-formatted test report at the specified location."},
 
 	{KeyPath: "D.NoisyPendings", DeprecatedName: "noisyPendings", DeprecatedDocLink: "removed--noisypendings-and--noisyskippings"},
 	{KeyPath: "D.NoisySkippings", DeprecatedName: "noisySkippings", DeprecatedDocLink: "removed--noisypendings-and--noisyskippings"},
@@ -334,7 +347,9 @@ var GinkgoCLIRunAndWatchFlags = GinkgoFlags{
 	{KeyPath: "C.OutputDir", Name: "output-dir", SectionKey: "output", UsageArgument: "directory", DeprecatedName: "outputdir", DeprecatedDocLink: "improved-profiling-support",
 		Usage: "A location to place all generated profiles and reports."},
 	{KeyPath: "C.KeepSeparateCoverprofiles", Name: "keep-separate-coverprofiles", SectionKey: "code-and-coverage-analysis",
-		Usage: "If set, Ginkgo does not merge coverprofiles into one monolithic coverprofile.  The coverprofiles will remain in their respective package direcotries or in -output-dir if set."},
+		Usage: "If set, Ginkgo does not merge coverprofiles into one monolithic coverprofile.  The coverprofiles will remain in their respective package directories or in -output-dir if set."},
+	{KeyPath: "C.KeepSeparateReports", Name: "keep-separate-reports", SectionKey: "output",
+		Usage: "If set, Ginkgo does not merge per-suite reports (e.g. -json-report) into one monolithic report for the entire testrun.  The reports will remain in their respective package directories or in -output-dir if set."},
 
 	{KeyPath: "D.Stream", DeprecatedName: "stream", DeprecatedDocLink: "removed--stream"},
 	{KeyPath: "D.Notify", DeprecatedName: "notify", DeprecatedDocLink: "removed--notify"},

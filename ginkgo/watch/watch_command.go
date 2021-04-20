@@ -139,7 +139,7 @@ func (w *SpecWatcher) WatchSpecs(args []string, additionalArgs []string) {
 			}
 			fmt.Fprintln(coloredStream, formatter.F(color+"\nDone.  Resuming watch...{{/}}"))
 
-			messages, err := internal.FinalizeProfilesForSuites(suites, w.cliConfig, w.goFlagsConfig)
+			messages, err := internal.FinalizeProfilesAndReportsForSuites(suites, w.cliConfig, w.reporterConfig, w.goFlagsConfig)
 			command.AbortIfError("could not finalize profiles:", err)
 			for _, message := range messages {
 				fmt.Println(message)

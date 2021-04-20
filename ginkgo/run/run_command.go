@@ -152,7 +152,7 @@ OUTER_LOOP:
 
 	internal.Cleanup(r.goFlagsConfig, suites...)
 
-	messages, err := internal.FinalizeProfilesForSuites(suites, r.cliConfig, r.goFlagsConfig)
+	messages, err := internal.FinalizeProfilesAndReportsForSuites(suites, r.cliConfig, r.reporterConfig, r.goFlagsConfig)
 	command.AbortIfError("could not finalize profiles:", err)
 	for _, message := range messages {
 		fmt.Println(message)
