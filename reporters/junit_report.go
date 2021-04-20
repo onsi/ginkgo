@@ -8,6 +8,12 @@ For usage instructions: http://onsi.github.io/ginkgo/#generating_junit_xml_outpu
 
 package reporters
 
+import "github.com/onsi/ginkgo/types"
+
+func GenerateJUnitReport(report types.Report, dst string) error {
+	return nil
+}
+
 // type JUnitTestSuite struct {
 // 	XMLName   xml.Name        `xml:"testsuite"`
 // 	TestCases []JUnitTestCase `xml:"testcase"`
