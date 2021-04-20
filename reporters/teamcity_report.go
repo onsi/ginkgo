@@ -8,6 +8,12 @@ http://confluence.jetbrains.com/display/TCD7/Build+Script+Interaction+with+TeamC
 
 package reporters
 
+import "github.com/onsi/ginkgo/types"
+
+func GenerateTeamcityReport(report types.Report, dst string) error {
+	return nil
+}
+
 // import (
 // 	"fmt"
 // 	"io"

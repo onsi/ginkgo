@@ -28,6 +28,24 @@ var _ = Describe("Config", func() {
 		}
 	})
 
+	Describe("ReporterConfig", func() {
+		Describe("WillGenerateReport", func() {
+			It("returns true if it will generate a report", func() {
+				repConf := types.ReporterConfig{}
+				Ω(repConf.WillGenerateReport()).Should(BeFalse())
+
+				repConf = types.ReporterConfig{JSONReport: "foo"}
+				Ω(repConf.WillGenerateReport()).Should(BeTrue())
+
+				repConf = types.ReporterConfig{JUnitReport: "foo"}
+				Ω(repConf.WillGenerateReport()).Should(BeTrue())
+
+				repConf = types.ReporterConfig{TeamcityReport: "foo"}
+				Ω(repConf.WillGenerateReport()).Should(BeTrue())
+			})
+		})
+	})
+
 	Describe("VetConfig", func() {
 		var suiteConf types.SuiteConfig
 		var repConf types.ReporterConfig

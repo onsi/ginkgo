@@ -11,10 +11,11 @@ import (
 	"strconv"
 
 	"github.com/google/pprof/profile"
+	"github.com/onsi/ginkgo/reporters"
 	"github.com/onsi/ginkgo/types"
 )
 
-func FinalizeProfilesForSuites(suites []TestSuite, cliConfig types.CLIConfig, goFlagsConfig types.GoFlagsConfig) ([]string, error) {
+func FinalizeProfilesAndReportsForSuites(suites []TestSuite, cliConfig types.CLIConfig, reporterConfig types.ReporterConfig, goFlagsConfig types.GoFlagsConfig) ([]string, error) {
 	messages := []string{}
 	if goFlagsConfig.Cover {
 		if cliConfig.KeepSeparateCoverprofiles {
@@ -53,7 +54,6 @@ func FinalizeProfilesForSuites(suites []TestSuite, cliConfig types.CLIConfig, go
 			} else {
 				messages = append(messages, fmt.Sprintf("composite coverage: %.1f%% of statements", coverage))
 			}
-
 		}
 	}
 
@@ -78,6 +78,37 @@ func FinalizeProfilesForSuites(suites []TestSuite, cliConfig types.CLIConfig, go
 						return messages, err
 					}
 				}
+			}
+		}
+	}
+
+	if reporterConfig.JSONReport != "" {
+		if cliConfig.KeepSeparateReports {
+			if cliConfig.OutputDir != "" {
+				// move separate reports to the output directory, appropriately namespaced
+				for _, suite := range suites {
+					src := filepath.Join(suite.Path, reporterConfig.JSONReport)
+					dst := filepath.Join(cliConfig.OutputDir, suite.NamespacedName()+"_"+reporterConfig.JSONReport)
+					err := os.Rename(src, dst)
+					if err != nil {
+						return messages, err
+					}
+				}
+			}
+		} else {
+			//merge reports
+			reports := []string{}
+			for _, suite := range suites {
+				reports = append(reports, filepath.Join(suite.Path, reporterConfig.JSONReport))
+			}
+			dst := reporterConfig.JSONReport
+			if cliConfig.OutputDir != "" {
+				dst = filepath.Join(cliConfig.OutputDir, reporterConfig.JSONReport)
+			}
+			mergeMessages, err := reporters.MergeAndCleanupJSONReports(reports, dst)
+			messages = append(messages, mergeMessages...)
+			if err != nil {
+				return messages, err
 			}
 		}
 	}
