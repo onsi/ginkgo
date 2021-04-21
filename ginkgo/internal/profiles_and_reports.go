@@ -15,7 +15,7 @@ import (
 	"github.com/onsi/ginkgo/types"
 )
 
-func FinalizeProfilesAndReportsForSuites(suites []TestSuite, cliConfig types.CLIConfig, reporterConfig types.ReporterConfig, goFlagsConfig types.GoFlagsConfig) ([]string, error) {
+func FinalizeProfilesAndReportsForSuites(suites []TestSuite, cliConfig types.CLIConfig, suiteConfig types.SuiteConfig, reporterConfig types.ReporterConfig, goFlagsConfig types.GoFlagsConfig) ([]string, error) {
 	messages := []string{}
 	if goFlagsConfig.Cover {
 		if cliConfig.KeepSeparateCoverprofiles {
@@ -82,11 +82,40 @@ func FinalizeProfilesAndReportsForSuites(suites []TestSuite, cliConfig types.CLI
 		}
 	}
 
+	reportableSuites := []TestSuite{}
+	for _, suite := range suites {
+		if suite.IsGinkgo {
+			reportableSuites = append(reportableSuites, suite)
+		}
+	}
+
+	if reporterConfig.WillGenerateReport() {
+		for _, suite := range reportableSuites {
+			if suite.CompilationError != nil {
+				report := types.Report{
+					SuitePath:                 suite.AbsPath(),
+					SuiteConfig:               suiteConfig,
+					SuiteSucceeded:            false,
+					SpecialSuiteFailureReason: fmt.Sprintf(suite.CompilationError.Error()),
+				}
+				if reporterConfig.JSONReport != "" {
+					reporters.GenerateJSONReport(report, filepath.Join(suite.Path, reporterConfig.JSONReport))
+				}
+				if reporterConfig.JUnitReport != "" {
+					reporters.GenerateJUnitReport(report, filepath.Join(suite.Path, reporterConfig.JUnitReport))
+				}
+				if reporterConfig.TeamcityReport != "" {
+					reporters.GenerateTeamcityReport(report, filepath.Join(suite.Path, reporterConfig.TeamcityReport))
+				}
+			}
+		}
+	}
+
 	if reporterConfig.JSONReport != "" {
 		if cliConfig.KeepSeparateReports {
 			if cliConfig.OutputDir != "" {
 				// move separate reports to the output directory, appropriately namespaced
-				for _, suite := range suites {
+				for _, suite := range reportableSuites {
 					src := filepath.Join(suite.Path, reporterConfig.JSONReport)
 					dst := filepath.Join(cliConfig.OutputDir, suite.NamespacedName()+"_"+reporterConfig.JSONReport)
 					err := os.Rename(src, dst)
@@ -98,7 +127,7 @@ func FinalizeProfilesAndReportsForSuites(suites []TestSuite, cliConfig types.CLI
 		} else {
 			//merge reports
 			reports := []string{}
-			for _, suite := range suites {
+			for _, suite := range reportableSuites {
 				reports = append(reports, filepath.Join(suite.Path, reporterConfig.JSONReport))
 			}
 			dst := reporterConfig.JSONReport

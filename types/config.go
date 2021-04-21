@@ -146,7 +146,7 @@ type GoFlagsConfig struct {
 	InstallSuffix string
 	LDFlags       string
 	LinkShared    bool
-	Mod           bool
+	Mod           string
 	N             bool
 	ModFile       string
 	ModCacheRW    bool
@@ -406,7 +406,7 @@ var GoBuildFlags = GinkgoFlags{
 		Usage: "arguments to pass on each go tool link invocation."},
 	{KeyPath: "Go.LinkShared", Name: "linkshared", SectionKey: "go-build",
 		Usage: "build code that will be linked against shared libraries previously created with -buildmode=shared."},
-	{KeyPath: "Go.Mod", Name: "mod", UsageArgument: "mode (readonly, vender, or mod)", SectionKey: "go-build",
+	{KeyPath: "Go.Mod", Name: "mod", UsageArgument: "mode (readonly, vendor, or mod)", SectionKey: "go-build",
 		Usage: "module download mode to use: readonly, vendor, or mod.  See 'go help modules' for more."},
 	{KeyPath: "Go.ModCacheRW", Name: "modcacherw", SectionKey: "go-build",
 		Usage: "leave newly-created directories in the module cache read-write instead of making them read-only."},

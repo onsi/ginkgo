@@ -66,7 +66,7 @@ func (suite *Suite) Run(description string, suitePath string, failer *Failer, re
 		suite.client = parallel_support.NewClient(suiteConfig.ParallelHost)
 	}
 
-	success := suite.runSpecs(description, suitePath, specs, failer, reporter, writer, outputInterceptor, interruptHandler, suiteConfig)
+	success := suite.runSpecs(description, suitePath, hasProgrammaticFocus, specs, failer, reporter, writer, outputInterceptor, interruptHandler, suiteConfig)
 	return success, hasProgrammaticFocus
 }
 
@@ -156,15 +156,16 @@ func (suite *Suite) CurrentSpecReport() types.SpecReport {
 	return report
 }
 
-func (suite *Suite) runSpecs(description string, suitePath string, specs Specs, failer *Failer, reporter reporters.Reporter, writer WriterInterface, outputInterceptor OutputInterceptor, interruptHandler InterruptHandlerInterface, suiteConfig types.SuiteConfig) bool {
+func (suite *Suite) runSpecs(description string, suitePath string, hasProgrammaticFocus bool, specs Specs, failer *Failer, reporter reporters.Reporter, writer WriterInterface, outputInterceptor OutputInterceptor, interruptHandler InterruptHandlerInterface, suiteConfig types.SuiteConfig) bool {
 	suite.writer = writer
 
 	numSpecsThatWillBeRun := specs.CountWithoutSkip()
 
 	report := types.Report{
-		SuitePath:        suitePath,
-		SuiteDescription: description,
-		SuiteConfig:      suiteConfig,
+		SuitePath:                 suitePath,
+		SuiteDescription:          description,
+		SuiteConfig:               suiteConfig,
+		SuiteHasProgrammaticFocus: hasProgrammaticFocus,
 		PreRunStats: types.PreRunStats{
 			TotalSpecs:       len(specs),
 			SpecsThatWillRun: numSpecsThatWillBeRun,

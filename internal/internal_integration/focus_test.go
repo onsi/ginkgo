@@ -29,6 +29,11 @@ var _ = Describe("Focus", func() {
 				Ω(hPF).Should(BeFalse())
 			})
 
+			It("should not report that the suite hasProgrammaticFocus", func() {
+				Ω(reporter.Begin.SuiteHasProgrammaticFocus).Should(BeFalse())
+				Ω(reporter.End.SuiteHasProgrammaticFocus).Should(BeFalse())
+			})
+
 			It("does not run the pending tests", func() {
 				Ω(rt.TrackedRuns()).Should(ConsistOf("A", "B", "D"))
 			})
@@ -91,6 +96,11 @@ var _ = Describe("Focus", func() {
 
 		It("should return true for hasProgrammaticFocus", func() {
 			Ω(hasProgrammaticFocus).Should(BeTrue())
+		})
+
+		It("should report that the suite hasProgrammaticFocus", func() {
+			Ω(reporter.Begin.SuiteHasProgrammaticFocus).Should(BeTrue())
+			Ω(reporter.End.SuiteHasProgrammaticFocus).Should(BeTrue())
 		})
 
 		It("should run the focused tests, honoring the nested focus policy", func() {
