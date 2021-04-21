@@ -9,6 +9,7 @@ import (
 	. "github.com/onsi/ginkgo/internal/test_helpers"
 	"github.com/onsi/ginkgo/types"
 	. "github.com/onsi/gomega"
+	"github.com/onsi/gomega/gbytes"
 	"github.com/onsi/gomega/gexec"
 )
 
@@ -128,38 +129,51 @@ var _ = Describe("Reporting", func() {
 			Ω(specReports.Find("panics here too")).Should(HavePanicked("bam!"))
 		}
 
+		checkFailedCompilationReport := func(report types.Report) {
+			Ω(report.SuitePath).Should(Equal(fm.AbsPathTo("reporting", "malformed_sub_package")))
+			Ω(report.SuiteDescription).Should(Equal(""))
+			Ω(report.SuiteConfig.RandomSeed).Should(Equal(int64(17)))
+			Ω(report.SpecialSuiteFailureReason).Should(ContainSubstring("Failed to compile malformed_sub_package:"))
+			Ω(report.SpecReports).Should(HaveLen(0))
+		}
+
 		Context("the default behavior", func() {
 			BeforeEach(func() {
-				session := startGinkgo(fm.PathTo("reporting"), "--no-color", "-r", "--keep-going", "--nodes=2", "--json-report=out.json")
+				session := startGinkgo(fm.PathTo("reporting"), "--no-color", "-r", "--keep-going", "--nodes=2", "--json-report=out.json", "-seed=17")
 				Eventually(session).Should(gexec.Exit(1))
+				Ω(session).ShouldNot(gbytes.Say("Could not open"))
 			})
 
 			It("generates a single unified json report", func() {
 				reports := loadReports("reporting", "out.json")
-				Ω(reports).Should(HaveLen(2))
+				Ω(reports).Should(HaveLen(3))
 				checkReport(reports[0])
-				checkSubpackageReport(reports[1])
+				checkFailedCompilationReport(reports[1])
+				checkSubpackageReport(reports[2])
 			})
 		})
 
 		Context("with -output-dir", func() {
 			BeforeEach(func() {
-				session := startGinkgo(fm.PathTo("reporting"), "--no-color", "-r", "--keep-going", "--nodes=2", "--json-report=out.json", "--output-dir=./reports")
+				session := startGinkgo(fm.PathTo("reporting"), "--no-color", "-r", "--keep-going", "--nodes=2", "--json-report=out.json", "--output-dir=./reports", "-seed=17")
 				Eventually(session).Should(gexec.Exit(1))
+				Ω(session).ShouldNot(gbytes.Say("Could not open"))
 			})
 
 			It("places the single unified json report in output-dir", func() {
 				reports := loadReports("reporting", "reports/out.json")
-				Ω(reports).Should(HaveLen(2))
+				Ω(reports).Should(HaveLen(3))
 				checkReport(reports[0])
-				checkSubpackageReport(reports[1])
+				checkFailedCompilationReport(reports[1])
+				checkSubpackageReport(reports[2])
 			})
 		})
 
 		Context("with -keep-separate-reports", func() {
 			BeforeEach(func() {
-				session := startGinkgo(fm.PathTo("reporting"), "--no-color", "-r", "--keep-going", "--nodes=2", "--json-report=out.json", "--keep-separate-reports")
+				session := startGinkgo(fm.PathTo("reporting"), "--no-color", "-r", "--keep-going", "--nodes=2", "--json-report=out.json", "--keep-separate-reports", "-seed=17")
 				Eventually(session).Should(gexec.Exit(1))
+				Ω(session).ShouldNot(gbytes.Say("Could not open"))
 			})
 
 			It("keeps the separate reports in their respective packages", func() {
@@ -170,13 +184,20 @@ var _ = Describe("Reporting", func() {
 				reports = loadReports("reporting", "reporting_sub_package/out.json")
 				Ω(reports).Should(HaveLen(1))
 				checkSubpackageReport(reports[0])
+
+				reports = loadReports("reporting", "malformed_sub_package/out.json")
+				Ω(reports).Should(HaveLen(1))
+				checkFailedCompilationReport(reports[0])
+
+				Ω(fm.PathTo("reporting", "nonginkgo_sub_package/out.json")).ShouldNot(BeAnExistingFile())
 			})
 		})
 
 		Context("with -keep-separate-reports and -output-dir", func() {
 			BeforeEach(func() {
-				session := startGinkgo(fm.PathTo("reporting"), "--no-color", "-r", "--keep-going", "--nodes=2", "--json-report=out.json", "--keep-separate-reports", "--output-dir=./reports")
+				session := startGinkgo(fm.PathTo("reporting"), "--no-color", "-r", "--keep-going", "--nodes=2", "--json-report=out.json", "--keep-separate-reports", "--output-dir=./reports", "-seed=17")
 				Eventually(session).Should(gexec.Exit(1))
+				Ω(session).ShouldNot(gbytes.Say("Could not open"))
 			})
 
 			It("places the separate reports in the -output-dir", func() {
@@ -188,6 +209,11 @@ var _ = Describe("Reporting", func() {
 				Ω(reports).Should(HaveLen(1))
 				checkSubpackageReport(reports[0])
 
+				reports = loadReports("reporting", "reports/malformed_sub_package_out.json")
+				Ω(reports).Should(HaveLen(1))
+				checkFailedCompilationReport(reports[0])
+
+				Ω(fm.PathTo("reporting", "reports/nonginkgo_sub_package_out.json")).ShouldNot(BeAnExistingFile())
 			})
 		})
 	})

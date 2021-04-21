@@ -21,6 +21,10 @@ type Report struct {
 	//If false, the test run is considered unsucccessful
 	SuiteSucceeded bool
 
+	//SuiteHasProgrammaticFocus captures whether the test suite has a test or set of tests that are programatically focused
+	//(i.e an `FIt` or an `FDescribe`
+	SuiteHasProgrammaticFocus bool
+
 	//SpecialSuiteFailureReason may contain a special failure reason
 	//For example, a test suite might be considered "failed" even if none of the individual specs
 	//have a failure state.  For example, if the user has configured --fail-on-pending the test suite
