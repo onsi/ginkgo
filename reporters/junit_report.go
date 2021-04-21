@@ -14,6 +14,9 @@ func GenerateJUnitReport(report types.Report, dst string) error {
 	return nil
 }
 
+//https://llg.cubic.org/docs/junit/
+//https://github.com/junit-team/junit5/blob/main/platform-tests/src/test/resources/jenkins-junit.xsd
+
 // type JUnitTestSuite struct {
 // 	XMLName   xml.Name        `xml:"testsuite"`
 // 	TestCases []JUnitTestCase `xml:"testcase"`
