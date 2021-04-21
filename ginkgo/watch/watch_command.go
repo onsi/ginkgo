@@ -13,12 +13,12 @@ import (
 )
 
 func BuildWatchCommand() command.Command {
-	var ginkgoConfig = types.NewDefaultSuiteConfig()
+	var suiteConfig = types.NewDefaultSuiteConfig()
 	var reporterConfig = types.NewDefaultReporterConfig()
 	var cliConfig = types.NewDefaultCLIConfig()
 	var goFlagsConfig = types.NewDefaultGoFlagsConfig()
 
-	flags, err := types.BuildWatchCommandFlagSet(&ginkgoConfig, &reporterConfig, &cliConfig, &goFlagsConfig)
+	flags, err := types.BuildWatchCommandFlagSet(&suiteConfig, &reporterConfig, &cliConfig, &goFlagsConfig)
 	if err != nil {
 		panic(err)
 	}
@@ -39,7 +39,7 @@ func BuildWatchCommand() command.Command {
 			watcher := &SpecWatcher{
 				cliConfig:      cliConfig,
 				goFlagsConfig:  goFlagsConfig,
-				ginkgoConfig:   ginkgoConfig,
+				suiteConfig:    suiteConfig,
 				reporterConfig: reporterConfig,
 				flags:          flags,
 
@@ -52,7 +52,7 @@ func BuildWatchCommand() command.Command {
 }
 
 type SpecWatcher struct {
-	ginkgoConfig   types.SuiteConfig
+	suiteConfig    types.SuiteConfig
 	reporterConfig types.ReporterConfig
 	cliConfig      types.CLIConfig
 	goFlagsConfig  types.GoFlagsConfig
@@ -139,7 +139,7 @@ func (w *SpecWatcher) WatchSpecs(args []string, additionalArgs []string) {
 			}
 			fmt.Fprintln(coloredStream, formatter.F(color+"\nDone.  Resuming watch...{{/}}"))
 
-			messages, err := internal.FinalizeProfilesAndReportsForSuites(suites, w.cliConfig, w.reporterConfig, w.goFlagsConfig)
+			messages, err := internal.FinalizeProfilesAndReportsForSuites(suites, w.cliConfig, w.suiteConfig, w.reporterConfig, w.goFlagsConfig)
 			command.AbortIfError("could not finalize profiles:", err)
 			for _, message := range messages {
 				fmt.Println(message)
@@ -159,7 +159,7 @@ func (w *SpecWatcher) compileAndRun(suite internal.TestSuite, additionalArgs []s
 	if w.interruptHandler.WasInterrupted() {
 		return false
 	}
-	suite = internal.RunCompiledSuite(suite, w.ginkgoConfig, w.reporterConfig, w.cliConfig, w.goFlagsConfig, additionalArgs)
+	suite = internal.RunCompiledSuite(suite, w.suiteConfig, w.reporterConfig, w.cliConfig, w.goFlagsConfig, additionalArgs)
 	internal.Cleanup(w.goFlagsConfig, suite)
 	return suite.Passed
 }
@@ -185,6 +185,6 @@ func (w *SpecWatcher) computeSuccinctMode(numSuites int) {
 
 func (w *SpecWatcher) updateSeed() {
 	if !w.flags.WasSet("seed") {
-		w.ginkgoConfig.RandomSeed = time.Now().Unix()
+		w.suiteConfig.RandomSeed = time.Now().Unix()
 	}
 }

@@ -15,12 +15,12 @@ import (
 )
 
 func BuildRunCommand() command.Command {
-	var ginkgoConfig = types.NewDefaultSuiteConfig()
+	var suiteConfig = types.NewDefaultSuiteConfig()
 	var reporterConfig = types.NewDefaultReporterConfig()
 	var cliConfig = types.NewDefaultCLIConfig()
 	var goFlagsConfig = types.NewDefaultGoFlagsConfig()
 
-	flags, err := types.BuildRunCommandFlagSet(&ginkgoConfig, &reporterConfig, &cliConfig, &goFlagsConfig)
+	flags, err := types.BuildRunCommandFlagSet(&suiteConfig, &reporterConfig, &cliConfig, &goFlagsConfig)
 	if err != nil {
 		panic(err)
 	}
@@ -42,7 +42,7 @@ func BuildRunCommand() command.Command {
 			runner := &SpecRunner{
 				cliConfig:      cliConfig,
 				goFlagsConfig:  goFlagsConfig,
-				ginkgoConfig:   ginkgoConfig,
+				suiteConfig:    suiteConfig,
 				reporterConfig: reporterConfig,
 				flags:          flags,
 
@@ -55,7 +55,7 @@ func BuildRunCommand() command.Command {
 }
 
 type SpecRunner struct {
-	ginkgoConfig   types.SuiteConfig
+	suiteConfig    types.SuiteConfig
 	reporterConfig types.ReporterConfig
 	cliConfig      types.CLIConfig
 	goFlagsConfig  types.GoFlagsConfig
@@ -100,7 +100,7 @@ func (r *SpecRunner) RunSpecs(args []string, additionalArgs []string) {
 OUTER_LOOP:
 	for {
 		if !r.flags.WasSet("seed") {
-			r.ginkgoConfig.RandomSeed = time.Now().Unix()
+			r.suiteConfig.RandomSeed = time.Now().Unix()
 		}
 		if r.cliConfig.RandomizeSuites && len(suites) > 1 {
 			suites = r.randomize(suites)
@@ -129,7 +129,7 @@ OUTER_LOOP:
 				break OUTER_LOOP
 			}
 
-			suites[suiteIdx] = internal.RunCompiledSuite(suites[suiteIdx], r.ginkgoConfig, r.reporterConfig, r.cliConfig, r.goFlagsConfig, additionalArgs)
+			suites[suiteIdx] = internal.RunCompiledSuite(suites[suiteIdx], r.suiteConfig, r.reporterConfig, r.cliConfig, r.goFlagsConfig, additionalArgs)
 			hasProgrammaticFocus = hasProgrammaticFocus || suites[suiteIdx].HasProgrammaticFocus
 			if !suites[suiteIdx].Passed {
 				failedSuites = append(failedSuites, suites[suiteIdx])
@@ -152,7 +152,7 @@ OUTER_LOOP:
 
 	internal.Cleanup(r.goFlagsConfig, suites...)
 
-	messages, err := internal.FinalizeProfilesAndReportsForSuites(suites, r.cliConfig, r.reporterConfig, r.goFlagsConfig)
+	messages, err := internal.FinalizeProfilesAndReportsForSuites(suites, r.cliConfig, r.suiteConfig, r.reporterConfig, r.goFlagsConfig)
 	command.AbortIfError("could not finalize profiles:", err)
 	for _, message := range messages {
 		fmt.Println(message)
@@ -182,7 +182,7 @@ OUTER_LOOP:
 
 func (r *SpecRunner) randomize(suites []internal.TestSuite) []internal.TestSuite {
 	randomized := make([]internal.TestSuite, len(suites))
-	randomizer := rand.New(rand.NewSource(r.ginkgoConfig.RandomSeed))
+	randomizer := rand.New(rand.NewSource(r.suiteConfig.RandomSeed))
 	permutation := randomizer.Perm(len(suites))
 	for i, j := range permutation {
 		randomized[i] = suites[j]

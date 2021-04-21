@@ -24,6 +24,11 @@ type TestSuite struct {
 	HasProgrammaticFocus bool
 }
 
+func (ts TestSuite) AbsPath() string {
+	path, _ := filepath.Abs(ts.Path)
+	return path
+}
+
 func (ts TestSuite) NamespacedName() string {
 	name := relPath(ts.Path)
 	name = strings.TrimLeft(name, "."+string(filepath.Separator))
