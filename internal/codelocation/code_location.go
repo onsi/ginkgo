@@ -1,6 +1,7 @@
 package codelocation
 
 import (
+	"go/build"
 	"regexp"
 	"runtime"
 	"runtime/debug"
@@ -12,6 +13,7 @@ import (
 func New(skip int) types.CodeLocation {
 	_, file, line, _ := runtime.Caller(skip + 1)
 	stackTrace := PruneStack(string(debug.Stack()), skip+1)
+	file = strings.TrimPrefix(file, build.Default.GOPATH+"/src/")
 	return types.CodeLocation{FileName: file, LineNumber: line, FullStackTrace: stackTrace}
 }
 
