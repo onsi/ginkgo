@@ -4,145 +4,270 @@ JUnit XML Reporter for Ginkgo
 
 For usage instructions: http://onsi.github.io/ginkgo/#generating_junit_xml_output
 
+The schema used for the generated JUnit xml file was adapted from https://llg.cubic.org/docs/junit/
+
 */
 
 package reporters
 
-import "github.com/onsi/ginkgo/types"
+import (
+	"encoding/xml"
+	"fmt"
+	"os"
+	"strings"
 
-func GenerateJUnitReport(report types.Report, dst string) error {
-	return nil
+	"github.com/onsi/ginkgo/config"
+	"github.com/onsi/ginkgo/types"
+)
+
+type JUnitTestSuites struct {
+	XMLName xml.Name `xml:"testsuites"`
+	// Tests maps onto the total number of specs in all test suites (this includes any suite nodes such as BeforeSuite)
+	Tests int `xml:"tests,attr"`
+	// Disabled maps onto specs that are pending and/or skipped
+	Disabled int `xml:"disabled,attr"`
+	// Errors maps onto specs that panicked or were interrupted
+	Errors int `xml:"errors,attr"`
+	// Failures maps onto specs that failed
+	Failures int `xml:"failures,attr"`
+	// Time is the time in seconds to execute all test suites
+	Time float64 `xml:"time,attr"`
+
+	//The set of all test suites
+	TestSuites []JUnitTestSuite `xml:"testsuite"`
 }
 
-//https://llg.cubic.org/docs/junit/
-//https://github.com/junit-team/junit5/blob/main/platform-tests/src/test/resources/jenkins-junit.xsd
+type JUnitTestSuite struct {
+	// Name maps onto the description of the test suite - maps onto Report.SuiteDescription
+	Name string `xml:"name,attr"`
+	// Package maps onto the aboslute path to the test suite - maps onto Report.SuitePath
+	Package string `xml:"package,attr"`
+	// Tests maps onto the total number of specs in the test suite (this includes any suite nodes such as BeforeSuite)
+	Tests int `xml:"tests,attr"`
+	// Disabled maps onto specs that are pending
+	Disabled int `xml:"disabled,attr"`
+	// Skiped maps onto specs that are skipped
+	Skipped int `xml:"skipped,attr"`
+	// Errors maps onto specs that panicked or were interrupted
+	Errors int `xml:"errors,attr"`
+	// Failures maps onto specs that failed
+	Failures int `xml:"failures,attr"`
+	// Time is the time in seconds to execute all the test suite - maps onto Report.RunTime
+	Time float64 `xml:"time,attr"`
+	// Timestamp is the ISO 8601 formatted start-time of the suite - maps onto Report.StartTime
+	Timestamp string `xml:"timestamp,attr"`
 
-// type JUnitTestSuite struct {
-// 	XMLName   xml.Name        `xml:"testsuite"`
-// 	TestCases []JUnitTestCase `xml:"testcase"`
-// 	Name      string          `xml:"name,attr"`
-// 	Tests     int             `xml:"tests,attr"`
-// 	Failures  int             `xml:"failures,attr"`
-// 	Errors    int             `xml:"errors,attr"`
-// 	Time      float64         `xml:"time,attr"`
-// }
+	//Properties captures the information stored in the rest of the Report type (including SuiteConfig) as key-value pairs
+	Properties JUnitProperties `xml:"properties"`
 
-// type JUnitTestCase struct {
-// 	Name           string               `xml:"name,attr"`
-// 	ClassName      string               `xml:"classname,attr"`
-// 	FailureMessage *JUnitFailureMessage `xml:"failure,omitempty"`
-// 	Skipped        *JUnitSkipped        `xml:"skipped,omitempty"`
-// 	Time           float64              `xml:"time,attr"`
-// 	SystemOut      string               `xml:"system-out,omitempty"`
-// }
+	//TestCases capture the individual specs
+	TestCases []JUnitTestCase `xml:"testcase"`
+}
 
-// type JUnitFailureMessage struct {
-// 	Type    string `xml:"type,attr"`
-// 	Message string `xml:",chardata"`
-// }
+type JUnitProperties struct {
+	Properties []JUnitProperty `xml:"property"`
+}
 
-// type JUnitSkipped struct {
-// 	Message string `xml:",chardata"`
-// }
+func (jup JUnitProperties) WithName(name string) string {
+	for _, property := range jup.Properties {
+		if property.Name == name {
+			return property.Value
+		}
+	}
+	return ""
+}
 
-// type JUnitReporter struct {
-// 	suite          JUnitTestSuite
-// 	filename       string
-// 	testSuiteName  string
-// 	ReporterConfig types.ReporterConfig
-// }
+type JUnitProperty struct {
+	Name  string `xml:"name,attr"`
+	Value string `xml:"value,attr"`
+}
 
-// //NewJUnitReporter creates a new JUnit XML reporter.  The XML will be stored in the passed in filename.
-// func NewJUnitReporter(filename string) *JUnitReporter {
-// 	return &JUnitReporter{
-// 		filename: filename,
-// 	}
-// }
+type JUnitTestCase struct {
+	// Name maps onto the full text of the spec - equivalent to "[SpecReport.LeafNodeType] SpecReport.FullText()"
+	Name string `xml:"name,attr"`
+	// Classname maps onto the name of the test suite - equivalent to Report.SuiteDescription
+	Classname string `xml:"classname,attr"`
+	// Status maps onto the string representation of SpecReport.State
+	Status string `xml:"status,attr"`
+	// Time is the time in seconds to execute the spec - maps onto SpecReport.RunTime
+	Time float64 `xml:"time,attr"`
+	//Skipped is populated with a message if the test was skipped or pending
+	Skipped *JUnitSkipped `xml:"skipped,omitempty"`
+	//Error is populated if the test panicked or was interrupted
+	Error *JUnitError `xml:"error,omitempty"`
+	//Failure is populated if the test failed
+	Failure *JUnitFailure `xml:"failure,omitempty"`
+	//SystemOut maps onto any captured stdout/stderr output - maps onto SpecReport.CapturedStdOutErr
+	SystemOut string `xml:"system-out,omitempty"`
+	//SystemOut maps onto any captured GinkgoWriter output - maps onto SpecReport.CapturedGinkgoWriterOutput
+	SystemErr string `xml:"system-err,omitempty"`
+}
 
-// func (reporter *JUnitReporter) SuiteWillBegin(ginkgoConfig types.SuiteConfig, summary types.SuiteSummary) {
-// 	reporter.suite = JUnitTestSuite{
-// 		Name:      summary.SuiteDescription,
-// 		TestCases: []JUnitTestCase{},
-// 	}
-// 	reporter.testSuiteName = summary.SuiteDescription
-// 	//	reporter.ReporterConfig = config.DefaultReporterConfig //TODO - need to pass this in, not pull it out of thin air
-// }
+type JUnitSkipped struct {
+	// Message maps onto "pending" if the test was marked pending, "skipped" if the test was marked skipped, and "skipped - REASON" if the user called Skip(REASON)
+	Message string `xml:"message,attr"`
+}
 
-// func (reporter *JUnitReporter) WillRun(_ types.SpecReport) {
-// }
+type JUnitError struct {
+	//Message maps onto the panic/exception thrown - equivalent to SpecReport.Failure.ForwardedPanic - or to "interupted"
+	Message string `xml:"message,attr"`
+	//Type is one of "panicked" or "interrupted"
+	Type string `xml:"type,attr"`
+	//Description maps onto the captured stack trace for a panic, or the failure message for an interrupt which will include the dump of running goroutines
+	Description string `xml:",chardata"`
+}
 
-// func (reporter *JUnitReporter) DidRun(report types.SpecReport) {
-// 	testCase := JUnitTestCase{
-// 		ClassName: reporter.testSuiteName,
-// 	}
-// 	if report.LeafNodeType.Is(types.NodeTypesForSuiteLevelNodes...) {
-// 		if report.State.Is(types.SpecStatePassed) {
-// 			return
-// 		}
-// 		testCase.Name = report.LeafNodeType.String()
-// 	} else {
-// 		testCase.Name = strings.Join(report.NodeTexts, " ")
-// 	}
-// 	if reporter.ReporterConfig.ReportPassed && report.State == types.SpecStatePassed {
-// 		testCase.SystemOut = report.CombinedOutput()
-// 	}
-// 	if report.State.Is(types.SpecStateFailureStates...) {
-// 		testCase.FailureMessage = &JUnitFailureMessage{
-// 			Type:    reporter.failureTypeForState(report.State),
-// 			Message: reporter.failureMessage(report.Failure),
-// 		}
-// 		if report.State.Is(types.SpecStatePanicked) {
-// 			testCase.FailureMessage.Message += fmt.Sprintf("\n\nPanic: %s\n\nFull stack:\n%s",
-// 				report.Failure.ForwardedPanic,
-// 				report.Failure.Location.FullStackTrace)
-// 		}
-// 		testCase.SystemOut = report.CombinedOutput()
-// 	}
-// 	if report.State == types.SpecStateSkipped || report.State == types.SpecStatePending {
-// 		testCase.Skipped = &JUnitSkipped{}
-// 		if report.Failure.Message != "" {
-// 			testCase.Skipped.Message = reporter.failureMessage(report.Failure)
-// 		}
-// 	}
-// 	testCase.Time = report.RunTime.Seconds()
-// 	reporter.suite.TestCases = append(reporter.suite.TestCases, testCase)
-// }
+type JUnitFailure struct {
+	//Message maps onto the failure message - equivalent to SpecReport.Failure.Message
+	Message string `xml:"message,attr"`
+	//Type is "failed"
+	Type string `xml:"type,attr"`
+	//Description maps onto the location and stack trace of the failure
+	Description string `xml:",chardata"`
+}
 
-// func (reporter *JUnitReporter) SuiteDidEnd(summary types.SuiteSummary) {
-// 	reporter.suite.Tests = summary.NumberOfSpecsThatWillBeRun
-// 	reporter.suite.Time = math.Trunc(summary.RunTime.Seconds()*1000) / 1000
-// 	reporter.suite.Failures = summary.NumberOfFailedSpecs
-// 	reporter.suite.Errors = 0
-// 	filePath, _ := filepath.Abs(reporter.filename)
-// 	dirPath := filepath.Dir(filePath)
-// 	err := os.MkdirAll(dirPath, os.ModePerm)
-// 	if err != nil {
-// 		return
-// 	}
-// 	file, err := os.Create(filePath)
-// 	if err != nil {
-// 		return
-// 	}
-// 	defer file.Close()
-// 	file.WriteString(xml.Header)
-// 	encoder := xml.NewEncoder(file)
-// 	encoder.Indent("  ", "    ")
-// 	encoder.Encode(reporter.suite)
-// }
+func GenerateJUnitReport(report types.Report, dst string) error {
+	suite := JUnitTestSuite{
+		Name:      report.SuiteDescription,
+		Package:   report.SuitePath,
+		Time:      report.RunTime.Seconds(),
+		Timestamp: report.StartTime.Format("2006-01-02T15:04:05"),
+		Properties: JUnitProperties{
+			Properties: []JUnitProperty{
+				{"SuiteSucceeded", fmt.Sprintf("%t", report.SuiteSucceeded)},
+				{"SuiteHasProgrammaticFocus", fmt.Sprintf("%t", report.SuiteHasProgrammaticFocus)},
+				{"SpecialSuiteFailureReason", report.SpecialSuiteFailureReason},
+				{"RandomSeed", fmt.Sprintf("%d", report.SuiteConfig.RandomSeed)},
+				{"RandomizeAllSpecs", fmt.Sprintf("%t", report.SuiteConfig.RandomizeAllSpecs)},
+				{"RegexScansFilePath", fmt.Sprintf("%t", report.SuiteConfig.RegexScansFilePath)},
+				{"FocusStrings", strings.Join(report.SuiteConfig.FocusStrings, ",")},
+				{"SkipStrings", strings.Join(report.SuiteConfig.SkipStrings, ",")},
+				{"FailOnPending", fmt.Sprintf("%t", report.SuiteConfig.FailOnPending)},
+				{"FailFast", fmt.Sprintf("%t", report.SuiteConfig.FailFast)},
+				{"FlakeAttempts", fmt.Sprintf("%d", report.SuiteConfig.FlakeAttempts)},
+				{"EmitSpecProgress", fmt.Sprintf("%t", report.SuiteConfig.EmitSpecProgress)},
+				{"DryRun", fmt.Sprintf("%t", report.SuiteConfig.DryRun)},
+				{"ParallelTotal", fmt.Sprintf("%d", report.SuiteConfig.ParallelTotal)},
+			},
+		},
+	}
+	for _, spec := range report.SpecReports {
+		name := fmt.Sprintf("[%s]", spec.LeafNodeType)
+		if spec.FullText() != "" {
+			name = name + " " + spec.FullText()
+		}
+		test := JUnitTestCase{
+			Name:      name,
+			Classname: report.SuiteDescription,
+			Status:    spec.State.String(),
+			Time:      spec.RunTime.Seconds(),
+			SystemOut: spec.CapturedStdOutErr,
+			SystemErr: spec.CapturedGinkgoWriterOutput,
+		}
+		suite.Tests += 1
 
-// func (reporter *JUnitReporter) failureMessage(failure types.Failure) string {
-// 	return fmt.Sprintf("%s\n%s\n%s", failure.NodeType.String(), failure.Message, failure.Location.String())
-// }
+		switch spec.State {
+		case types.SpecStateSkipped:
+			message := "skipped"
+			if spec.Failure.Message != "" {
+				message += " - " + spec.Failure.Message
+			}
+			test.Skipped = &JUnitSkipped{Message: message}
+			suite.Skipped += 1
+		case types.SpecStatePending:
+			test.Skipped = &JUnitSkipped{Message: "pending"}
+			suite.Disabled += 1
+		case types.SpecStateFailed:
+			test.Failure = &JUnitFailure{
+				Message:     spec.Failure.Message,
+				Type:        "failed",
+				Description: fmt.Sprintf("%s\n%s", spec.Failure.Location.String(), spec.Failure.Location.FullStackTrace),
+			}
+			suite.Failures += 1
+		case types.SpecStateInterrupted:
+			test.Error = &JUnitError{
+				Message:     "interrupted",
+				Type:        "interrupted",
+				Description: spec.Failure.Message,
+			}
+			suite.Errors += 1
+		case types.SpecStatePanicked:
+			test.Error = &JUnitError{
+				Message:     spec.Failure.ForwardedPanic,
+				Type:        "panicked",
+				Description: fmt.Sprintf("%s\n%s", spec.Failure.Location.String(), spec.Failure.Location.FullStackTrace),
+			}
+			suite.Errors += 1
+		}
 
-// func (reporter *JUnitReporter) failureTypeForState(state types.SpecState) string {
-// 	switch state {
-// 	case types.SpecStateFailed:
-// 		return "Failure"
-// 	case types.SpecStatePanicked:
-// 		return "Panicked"
-// 	case types.SpecStateInterrupted:
-// 		return "Interrupted"
-// 	default:
-// 		return ""
-// 	}
-// }
+		suite.TestCases = append(suite.TestCases, test)
+	}
+
+	junitReport := JUnitTestSuites{
+		Tests:      suite.Tests,
+		Disabled:   suite.Disabled + suite.Skipped,
+		Errors:     suite.Errors,
+		Failures:   suite.Failures,
+		Time:       suite.Time,
+		TestSuites: []JUnitTestSuite{suite},
+	}
+
+	f, err := os.Create(dst)
+	if err != nil {
+		return err
+	}
+	f.WriteString(xml.Header)
+	encoder := xml.NewEncoder(f)
+	encoder.Indent("  ", "    ")
+	encoder.Encode(junitReport)
+
+	return f.Close()
+}
+
+func MergeAndCleanupJUnitReports(sources []string, dst string) ([]string, error) {
+	messages := []string{}
+	mergedReport := JUnitTestSuites{}
+	for _, source := range sources {
+		report := JUnitTestSuites{}
+		f, err := os.Open(source)
+		if err != nil {
+			messages = append(messages, fmt.Sprintf("Could not open %s:\n%s", source, err.Error()))
+			continue
+		}
+		err = xml.NewDecoder(f).Decode(&report)
+		if err != nil {
+			messages = append(messages, fmt.Sprintf("Could not decode %s:\n%s", source, err.Error()))
+			continue
+		}
+		os.Remove(source)
+
+		mergedReport.Tests += report.Tests
+		mergedReport.Disabled += report.Disabled
+		mergedReport.Errors += report.Errors
+		mergedReport.Failures += report.Failures
+		mergedReport.Time += report.Time
+		mergedReport.TestSuites = append(mergedReport.TestSuites, report.TestSuites...)
+	}
+
+	f, err := os.Create(dst)
+	if err != nil {
+		return messages, err
+	}
+	f.WriteString(xml.Header)
+	encoder := xml.NewEncoder(f)
+	encoder.Indent("  ", "    ")
+	encoder.Encode(mergedReport)
+
+	return messages, f.Close()
+}
+
+// Deprecated JUnitReporter (so folks can still compile their suites)
+type JUnitReporter struct{}
+
+func NewJUnitReporter(_ string) *JUnitReporter                                                  { return &JUnitReporter{} }
+func (reporter *JUnitReporter) SuiteWillBegin(_ config.GinkgoConfigType, _ *types.SuiteSummary) {}
+func (reporter *JUnitReporter) BeforeSuiteDidRun(_ *types.SetupSummary)                         {}
+func (reporter *JUnitReporter) SpecWillRun(_ *types.SpecSummary)                                {}
+func (reporter *JUnitReporter) SpecDidComplete(_ *types.SpecSummary)                            {}
+func (reporter *JUnitReporter) AfterSuiteDidRun(_ *types.SetupSummary)                          {}
+func (reporter *JUnitReporter) SuiteDidEnd(_ *types.SuiteSummary)                               {}
