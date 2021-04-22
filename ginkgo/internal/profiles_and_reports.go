@@ -142,6 +142,36 @@ func FinalizeProfilesAndReportsForSuites(suites []TestSuite, cliConfig types.CLI
 		}
 	}
 
+	if reporterConfig.JUnitReport != "" {
+		if cliConfig.KeepSeparateReports {
+			if cliConfig.OutputDir != "" {
+				// move separate reports to the output directory, appropriately namespaced
+				for _, suite := range reportableSuites {
+					src := filepath.Join(suite.Path, reporterConfig.JUnitReport)
+					dst := filepath.Join(cliConfig.OutputDir, suite.NamespacedName()+"_"+reporterConfig.JUnitReport)
+					err := os.Rename(src, dst)
+					if err != nil {
+						return messages, err
+					}
+				}
+			}
+		} else {
+			//merge reports
+			reports := []string{}
+			for _, suite := range reportableSuites {
+				reports = append(reports, filepath.Join(suite.Path, reporterConfig.JUnitReport))
+			}
+			dst := reporterConfig.JUnitReport
+			if cliConfig.OutputDir != "" {
+				dst = filepath.Join(cliConfig.OutputDir, reporterConfig.JUnitReport)
+			}
+			mergeMessages, err := reporters.MergeAndCleanupJUnitReports(reports, dst)
+			messages = append(messages, mergeMessages...)
+			if err != nil {
+				return messages, err
+			}
+		}
+	}
 	return messages, nil
 }
 
