@@ -217,9 +217,51 @@ var _ = Describe("Reporting", func() {
 			checkJUnitSubpackageReport(report.TestSuites[2])
 		}
 
+		checkTeamcityReport := func(data string) {
+			lines := strings.Split(data, "\n")
+			Ω(lines).Should(ContainElement("##teamcity[testSuiteStarted name='ReportingFixture Suite']"))
+
+			Ω(lines).Should(ContainElement("##teamcity[testStarted name='|[BeforeSuite|]']"))
+			Ω(lines).Should(ContainElement(HavePrefix("##teamcity[testFinished name='|[BeforeSuite|]'")))
+
+			Ω(lines).Should(ContainElement("##teamcity[testStarted name='|[It|] reporting test passes']"))
+			Ω(lines).Should(ContainElement(HavePrefix("##teamcity[testFinished name='|[It|] reporting test passes'")))
+
+			Ω(lines).Should(ContainElement("##teamcity[testStarted name='|[It|] reporting test panics']"))
+			Ω(lines).Should(ContainElement(HavePrefix("##teamcity[testFailed name='|[It|] reporting test panics' message='panicked - boom'")))
+			Ω(lines).Should(ContainElement(HavePrefix("##teamcity[testFinished name='|[It|] reporting test panics'")))
+
+			Ω(lines).Should(ContainElement("##teamcity[testStarted name='|[It|] reporting test fails']"))
+			Ω(lines).Should(ContainElement(HavePrefix("##teamcity[testFailed name='|[It|] reporting test fails' message='failed - fail!'")))
+			Ω(lines).Should(ContainElement(HavePrefix("##teamcity[testStdErr name='|[It|] reporting test fails' out='some ginkgo-writer output")))
+			Ω(lines).Should(ContainElement(HavePrefix("##teamcity[testFinished name='|[It|] reporting test fails'")))
+
+			Ω(lines).Should(ContainElement("##teamcity[testStarted name='|[It|] reporting test is pending']"))
+			Ω(lines).Should(ContainElement("##teamcity[testIgnored name='|[It|] reporting test is pending' message='pending']"))
+			Ω(lines).Should(ContainElement(HavePrefix("##teamcity[testFinished name='|[It|] reporting test is pending'")))
+
+			Ω(lines).Should(ContainElement("##teamcity[testStarted name='|[It|] reporting test is skipped']"))
+			Ω(lines).Should(ContainElement("##teamcity[testIgnored name='|[It|] reporting test is skipped' message='skipped - skip']"))
+			Ω(lines).Should(ContainElement(HavePrefix("##teamcity[testFinished name='|[It|] reporting test is skipped'")))
+
+			Ω(lines).Should(ContainElement("##teamcity[testSuiteFinished name='ReportingFixture Suite']"))
+		}
+
+		checkTeamcitySubpackageReport := func(data string) {
+			lines := strings.Split(data, "\n")
+			Ω(lines).Should(ContainElement("##teamcity[testSuiteStarted name='Reporting SubPackage Suite']"))
+			Ω(lines).Should(ContainElement("##teamcity[testSuiteFinished name='Reporting SubPackage Suite']"))
+		}
+
+		checkTeamcityFailedCompilationReport := func(data string) {
+			lines := strings.Split(data, "\n")
+			Ω(lines).Should(ContainElement("##teamcity[testSuiteStarted name='']"))
+			Ω(lines).Should(ContainElement("##teamcity[testSuiteFinished name='']"))
+		}
+
 		Context("the default behavior", func() {
 			BeforeEach(func() {
-				session := startGinkgo(fm.PathTo("reporting"), "--no-color", "-r", "--keep-going", "--nodes=2", "--json-report=out.json", "--junit-report=out.xml", "-seed=17")
+				session := startGinkgo(fm.PathTo("reporting"), "--no-color", "-r", "--keep-going", "--nodes=2", "--json-report=out.json", "--junit-report=out.xml", "--teamcity-report=out.tc", "-seed=17")
 				Eventually(session).Should(gexec.Exit(1))
 				Ω(session).ShouldNot(gbytes.Say("Could not open"))
 			})
@@ -233,12 +275,16 @@ var _ = Describe("Reporting", func() {
 
 				junitReport := loadJUnitReport("reporting", "out.xml")
 				checkUnifiedJUnitReport(junitReport)
+
+				checkTeamcityReport(fm.ContentOf("reporting", "out.tc"))
+				checkTeamcitySubpackageReport(fm.ContentOf("reporting", "out.tc"))
+				checkTeamcityFailedCompilationReport(fm.ContentOf("reporting", "out.tc"))
 			})
 		})
 
 		Context("with -output-dir", func() {
 			BeforeEach(func() {
-				session := startGinkgo(fm.PathTo("reporting"), "--no-color", "-r", "--keep-going", "--nodes=2", "--json-report=out.json", "--junit-report=out.xml", "--output-dir=./reports", "-seed=17")
+				session := startGinkgo(fm.PathTo("reporting"), "--no-color", "-r", "--keep-going", "--nodes=2", "--json-report=out.json", "--junit-report=out.xml", "--teamcity-report=out.tc", "--output-dir=./reports", "-seed=17")
 				Eventually(session).Should(gexec.Exit(1))
 				Ω(session).ShouldNot(gbytes.Say("Could not open"))
 			})
@@ -252,12 +298,16 @@ var _ = Describe("Reporting", func() {
 
 				junitReport := loadJUnitReport("reporting", "reports/out.xml")
 				checkUnifiedJUnitReport(junitReport)
+
+				checkTeamcityReport(fm.ContentOf("reporting", "reports/out.tc"))
+				checkTeamcitySubpackageReport(fm.ContentOf("reporting", "reports/out.tc"))
+				checkTeamcityFailedCompilationReport(fm.ContentOf("reporting", "reports/out.tc"))
 			})
 		})
 
 		Context("with -keep-separate-reports", func() {
 			BeforeEach(func() {
-				session := startGinkgo(fm.PathTo("reporting"), "--no-color", "-r", "--keep-going", "--nodes=2", "--json-report=out.json", "--junit-report=out.xml", "--keep-separate-reports", "-seed=17")
+				session := startGinkgo(fm.PathTo("reporting"), "--no-color", "-r", "--keep-going", "--nodes=2", "--json-report=out.json", "--junit-report=out.xml", "--teamcity-report=out.tc", "--keep-separate-reports", "-seed=17")
 				Eventually(session).Should(gexec.Exit(1))
 				Ω(session).ShouldNot(gbytes.Say("Could not open"))
 			})
@@ -267,26 +317,29 @@ var _ = Describe("Reporting", func() {
 				Ω(reports).Should(HaveLen(1))
 				checkJSONReport(reports[0])
 				checkJUnitReport(loadJUnitReport("reporting", "out.xml").TestSuites[0])
+				checkTeamcityReport(fm.ContentOf("reporting", "out.tc"))
 
 				reports = loadJSONReports("reporting", "reporting_sub_package/out.json")
 				Ω(reports).Should(HaveLen(1))
 				checkJSONSubpackageReport(reports[0])
 				checkJUnitSubpackageReport(loadJUnitReport("reporting", "reporting_sub_package/out.xml").TestSuites[0])
+				checkTeamcitySubpackageReport(fm.ContentOf("reporting", "reporting_sub_package/out.tc"))
 
 				reports = loadJSONReports("reporting", "malformed_sub_package/out.json")
 				Ω(reports).Should(HaveLen(1))
 				checkJSONFailedCompilationReport(reports[0])
 				checkJUnitFailedCompilationReport(loadJUnitReport("reporting", "malformed_sub_package/out.xml").TestSuites[0])
+				checkTeamcityFailedCompilationReport(fm.ContentOf("reporting", "malformed_sub_package/out.tc"))
 
 				Ω(fm.PathTo("reporting", "nonginkgo_sub_package/out.json")).ShouldNot(BeAnExistingFile())
 				Ω(fm.PathTo("reporting", "nonginkgo_sub_package/out.xml")).ShouldNot(BeAnExistingFile())
-
+				Ω(fm.PathTo("reporting", "nonginkgo_sub_package/out.tc")).ShouldNot(BeAnExistingFile())
 			})
 		})
 
 		Context("with -keep-separate-reports and -output-dir", func() {
 			BeforeEach(func() {
-				session := startGinkgo(fm.PathTo("reporting"), "--no-color", "-r", "--keep-going", "--nodes=2", "--json-report=out.json", "--junit-report=out.xml", "--keep-separate-reports", "--output-dir=./reports", "-seed=17")
+				session := startGinkgo(fm.PathTo("reporting"), "--no-color", "-r", "--keep-going", "--nodes=2", "--json-report=out.json", "--junit-report=out.xml", "--teamcity-report=out.tc", "--keep-separate-reports", "--output-dir=./reports", "-seed=17")
 				Eventually(session).Should(gexec.Exit(1))
 				Ω(session).ShouldNot(gbytes.Say("Could not open"))
 			})
@@ -296,16 +349,19 @@ var _ = Describe("Reporting", func() {
 				Ω(reports).Should(HaveLen(1))
 				checkJSONReport(reports[0])
 				checkJUnitReport(loadJUnitReport("reporting", "reports/reporting_out.xml").TestSuites[0])
+				checkTeamcityReport(fm.ContentOf("reporting", "reports/reporting_out.tc"))
 
 				reports = loadJSONReports("reporting", "reports/reporting_sub_package_out.json")
 				Ω(reports).Should(HaveLen(1))
 				checkJSONSubpackageReport(reports[0])
 				checkJUnitSubpackageReport(loadJUnitReport("reporting", "reports/reporting_sub_package_out.xml").TestSuites[0])
+				checkTeamcitySubpackageReport(fm.ContentOf("reporting", "reports/reporting_sub_package_out.tc"))
 
 				reports = loadJSONReports("reporting", "reports/malformed_sub_package_out.json")
 				Ω(reports).Should(HaveLen(1))
 				checkJSONFailedCompilationReport(reports[0])
 				checkJUnitFailedCompilationReport(loadJUnitReport("reporting", "reports/malformed_sub_package_out.xml").TestSuites[0])
+				checkTeamcityFailedCompilationReport(fm.ContentOf("reporting", "reports/malformed_sub_package_out.tc"))
 
 				Ω(fm.PathTo("reporting", "reports/nonginkgo_sub_package_out.json")).ShouldNot(BeAnExistingFile())
 			})
