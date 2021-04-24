@@ -89,35 +89,44 @@ func FinalizeProfilesAndReportsForSuites(suites []TestSuite, cliConfig types.CLI
 		}
 	}
 
-	if reporterConfig.WillGenerateReport() {
-		for _, suite := range reportableSuites {
-			if suite.CompilationError != nil {
-				report := types.Report{
-					SuitePath:                 suite.AbsPath(),
-					SuiteConfig:               suiteConfig,
-					SuiteSucceeded:            false,
-					SpecialSuiteFailureReason: fmt.Sprintf(suite.CompilationError.Error()),
-				}
-				if reporterConfig.JSONReport != "" {
-					reporters.GenerateJSONReport(report, filepath.Join(suite.Path, reporterConfig.JSONReport))
-				}
-				if reporterConfig.JUnitReport != "" {
-					reporters.GenerateJUnitReport(report, filepath.Join(suite.Path, reporterConfig.JUnitReport))
-				}
-				if reporterConfig.TeamcityReport != "" {
-					reporters.GenerateTeamcityReport(report, filepath.Join(suite.Path, reporterConfig.TeamcityReport))
+	type reportFormat struct {
+		Filename     string
+		GenerateFunc func(types.Report, string) error
+		MergeFunc    func([]string, string) ([]string, error)
+	}
+	reportFormats := []reportFormat{
+		{Filename: reporterConfig.JSONReport, GenerateFunc: reporters.GenerateJSONReport, MergeFunc: reporters.MergeAndCleanupJSONReports},
+		{Filename: reporterConfig.JUnitReport, GenerateFunc: reporters.GenerateJUnitReport, MergeFunc: reporters.MergeAndCleanupJUnitReports},
+		{Filename: reporterConfig.TeamcityReport, GenerateFunc: reporters.GenerateTeamcityReport, MergeFunc: reporters.MergeAndCleanupTeamcityReports},
+	}
+
+	for _, suite := range reportableSuites {
+		if suite.CompilationError != nil {
+			report := types.Report{
+				SuitePath:                 suite.AbsPath(),
+				SuiteConfig:               suiteConfig,
+				SuiteSucceeded:            false,
+				SpecialSuiteFailureReason: fmt.Sprintf(suite.CompilationError.Error()),
+			}
+			for _, format := range reportFormats {
+				if format.Filename != "" {
+					format.GenerateFunc(report, filepath.Join(suite.Path, format.Filename))
 				}
 			}
 		}
 	}
 
-	if reporterConfig.JSONReport != "" {
+	for _, format := range reportFormats {
+		if format.Filename == "" {
+			continue
+		}
+
 		if cliConfig.KeepSeparateReports {
 			if cliConfig.OutputDir != "" {
 				// move separate reports to the output directory, appropriately namespaced
 				for _, suite := range reportableSuites {
-					src := filepath.Join(suite.Path, reporterConfig.JSONReport)
-					dst := filepath.Join(cliConfig.OutputDir, suite.NamespacedName()+"_"+reporterConfig.JSONReport)
+					src := filepath.Join(suite.Path, format.Filename)
+					dst := filepath.Join(cliConfig.OutputDir, suite.NamespacedName()+"_"+format.Filename)
 					err := os.Rename(src, dst)
 					if err != nil {
 						return messages, err
@@ -128,13 +137,13 @@ func FinalizeProfilesAndReportsForSuites(suites []TestSuite, cliConfig types.CLI
 			//merge reports
 			reports := []string{}
 			for _, suite := range reportableSuites {
-				reports = append(reports, filepath.Join(suite.Path, reporterConfig.JSONReport))
+				reports = append(reports, filepath.Join(suite.Path, format.Filename))
 			}
-			dst := reporterConfig.JSONReport
+			dst := format.Filename
 			if cliConfig.OutputDir != "" {
-				dst = filepath.Join(cliConfig.OutputDir, reporterConfig.JSONReport)
+				dst = filepath.Join(cliConfig.OutputDir, format.Filename)
 			}
-			mergeMessages, err := reporters.MergeAndCleanupJSONReports(reports, dst)
+			mergeMessages, err := format.MergeFunc(reports, dst)
 			messages = append(messages, mergeMessages...)
 			if err != nil {
 				return messages, err
@@ -142,36 +151,6 @@ func FinalizeProfilesAndReportsForSuites(suites []TestSuite, cliConfig types.CLI
 		}
 	}
 
-	if reporterConfig.JUnitReport != "" {
-		if cliConfig.KeepSeparateReports {
-			if cliConfig.OutputDir != "" {
-				// move separate reports to the output directory, appropriately namespaced
-				for _, suite := range reportableSuites {
-					src := filepath.Join(suite.Path, reporterConfig.JUnitReport)
-					dst := filepath.Join(cliConfig.OutputDir, suite.NamespacedName()+"_"+reporterConfig.JUnitReport)
-					err := os.Rename(src, dst)
-					if err != nil {
-						return messages, err
-					}
-				}
-			}
-		} else {
-			//merge reports
-			reports := []string{}
-			for _, suite := range reportableSuites {
-				reports = append(reports, filepath.Join(suite.Path, reporterConfig.JUnitReport))
-			}
-			dst := reporterConfig.JUnitReport
-			if cliConfig.OutputDir != "" {
-				dst = filepath.Join(cliConfig.OutputDir, reporterConfig.JUnitReport)
-			}
-			mergeMessages, err := reporters.MergeAndCleanupJUnitReports(reports, dst)
-			messages = append(messages, mergeMessages...)
-			if err != nil {
-				return messages, err
-			}
-		}
-	}
 	return messages, nil
 }
 
