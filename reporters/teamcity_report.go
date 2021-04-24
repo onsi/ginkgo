@@ -8,93 +8,78 @@ http://confluence.jetbrains.com/display/TCD7/Build+Script+Interaction+with+TeamC
 
 package reporters
 
-import "github.com/onsi/ginkgo/types"
+import (
+	"fmt"
+	"io/ioutil"
+	"os"
+	"strings"
 
-func GenerateTeamcityReport(report types.Report, dst string) error {
-	return nil
+	"github.com/onsi/ginkgo/types"
+)
+
+func tcEscape(s string) string {
+	s = strings.Replace(s, "|", "||", -1)
+	s = strings.Replace(s, "'", "|'", -1)
+	s = strings.Replace(s, "\n", "|n", -1)
+	s = strings.Replace(s, "\r", "|r", -1)
+	s = strings.Replace(s, "[", "|[", -1)
+	s = strings.Replace(s, "]", "|]", -1)
+	return s
 }
 
-// import (
-// 	"fmt"
-// 	"io"
-// 	"strings"
+func GenerateTeamcityReport(report types.Report, dst string) error {
+	f, err := os.Create(dst)
+	if err != nil {
+		return err
+	}
 
-// 	"github.com/onsi/ginkgo/types"
-// )
+	fmt.Fprintf(f, "##teamcity[testSuiteStarted name='%s']\n", tcEscape(report.SuiteDescription))
+	for _, spec := range report.SpecReports {
+		name := fmt.Sprintf("[%s]", spec.LeafNodeType)
+		if spec.FullText() != "" {
+			name = name + " " + spec.FullText()
+		}
+		name = tcEscape(name)
+		fmt.Fprintf(f, "##teamcity[testStarted name='%s']\n", name)
+		switch spec.State {
+		case types.SpecStatePending:
+			fmt.Fprintf(f, "##teamcity[testIgnored name='%s' message='pending']\n", name)
+		case types.SpecStateSkipped:
+			message := "skipped"
+			if spec.Failure.Message != "" {
+				message += " - " + spec.Failure.Message
+			}
+			fmt.Fprintf(f, "##teamcity[testIgnored name='%s' message='%s']\n", name, tcEscape(message))
+		case types.SpecStateFailed:
+			details := fmt.Sprintf("%s\n%s", spec.Failure.Location.String(), spec.Failure.Location.FullStackTrace)
+			fmt.Fprintf(f, "##teamcity[testFailed name='%s' message='failed - %s' details='%s']\n", name, tcEscape(spec.Failure.Message), tcEscape(details))
+		case types.SpecStatePanicked:
+			details := fmt.Sprintf("%s\n%s", spec.Failure.Location.String(), spec.Failure.Location.FullStackTrace)
+			fmt.Fprintf(f, "##teamcity[testFailed name='%s' message='panicked - %s' details='%s']\n", name, tcEscape(spec.Failure.ForwardedPanic), tcEscape(details))
+		case types.SpecStateInterrupted:
+			fmt.Fprintf(f, "##teamcity[testFailed name='%s' message='interrupted' details='%s']\n", name, tcEscape(spec.Failure.Message))
+		}
 
-// const (
-// 	teamcityMessageId = "##teamcity"
-// )
+		fmt.Fprintf(f, "##teamcity[testStdOut name='%s' out='%s']\n", name, tcEscape(spec.CapturedStdOutErr))
+		fmt.Fprintf(f, "##teamcity[testStdErr name='%s' out='%s']\n", name, tcEscape(spec.CapturedGinkgoWriterOutput))
+		fmt.Fprintf(f, "##teamcity[testFinished name='%s' duration='%d']\n", name, int(spec.RunTime.Seconds()*1000.0))
+	}
+	fmt.Fprintf(f, "##teamcity[testSuiteFinished name='%s']\n", tcEscape(report.SuiteDescription))
 
-// type TeamCityReporter struct {
-// 	writer         io.Writer
-// 	testSuiteName  string
-// 	ReporterConfig types.ReporterConfig
-// }
+	return f.Close()
+}
 
-// func NewTeamCityReporter(writer io.Writer) *TeamCityReporter {
-// 	return &TeamCityReporter{
-// 		writer: writer,
-// 	}
-// }
-
-// func (reporter *TeamCityReporter) SuiteWillBegin(conf types.SuiteConfig, summary types.SuiteSummary) {
-// 	reporter.testSuiteName = reporter.escape(summary.SuiteDescription)
-// 	// reporter.ReporterConfig = config.DefaultReporterConfig //TODO: NEED TO REPLICATE THIS LESS TERRIBLY
-
-// 	fmt.Fprintf(reporter.writer, "%s[testSuiteStarted name='%s']\n", teamcityMessageId, reporter.testSuiteName)
-// }
-
-// func (reporter *TeamCityReporter) testNameFor(report types.SpecReport) string {
-// 	if report.LeafNodeType.Is(types.NodeTypesForSuiteLevelNodes...) {
-// 		return reporter.escape(report.LeafNodeType.String())
-// 	} else {
-// 		return reporter.escape(strings.Join(report.NodeTexts, " "))
-// 	}
-// }
-
-// func (reporter *TeamCityReporter) WillRun(report types.SpecReport) {
-// 	fmt.Fprintf(reporter.writer, "%s[testStarted name='%s']\n", teamcityMessageId, reporter.testNameFor(report))
-// }
-
-// func (reporter *TeamCityReporter) DidRun(report types.SpecReport) {
-// 	testName := reporter.testNameFor(report)
-
-// 	if reporter.ReporterConfig.ReportPassed && report.State == types.SpecStatePassed {
-// 		details := reporter.escape(report.CombinedOutput())
-// 		fmt.Fprintf(reporter.writer, "%s[testPassed name='%s' details='%s']\n", teamcityMessageId, testName, details)
-// 	}
-// 	if report.State.Is(types.SpecStateFailureStates...) {
-// 		message := reporter.failureMessage(report.Failure)
-// 		details := reporter.failureDetails(report.Failure)
-// 		fmt.Fprintf(reporter.writer, "%s[testFailed name='%s' message='%s' details='%s']\n", teamcityMessageId, testName, message, details)
-// 	}
-// 	if report.State == types.SpecStateSkipped || report.State == types.SpecStatePending {
-// 		fmt.Fprintf(reporter.writer, "%s[testIgnored name='%s']\n", teamcityMessageId, testName)
-// 	}
-
-// 	durationInMilliseconds := report.RunTime.Seconds() * 1000
-// 	fmt.Fprintf(reporter.writer, "%s[testFinished name='%s' duration='%v']\n", teamcityMessageId, testName, durationInMilliseconds)
-// }
-
-// func (reporter *TeamCityReporter) SuiteDidEnd(summary types.SuiteSummary) {
-// 	fmt.Fprintf(reporter.writer, "%s[testSuiteFinished name='%s']\n", teamcityMessageId, reporter.testSuiteName)
-// }
-
-// func (reporter *TeamCityReporter) failureMessage(failure types.Failure) string {
-// 	return reporter.escape(failure.NodeType.String())
-// }
-
-// func (reporter *TeamCityReporter) failureDetails(failure types.Failure) string {
-// 	return reporter.escape(fmt.Sprintf("%s\n%s", failure.Message, failure.Location.String()))
-// }
-
-// func (reporter *TeamCityReporter) escape(output string) string {
-// 	output = strings.Replace(output, "|", "||", -1)
-// 	output = strings.Replace(output, "'", "|'", -1)
-// 	output = strings.Replace(output, "\n", "|n", -1)
-// 	output = strings.Replace(output, "\r", "|r", -1)
-// 	output = strings.Replace(output, "[", "|[", -1)
-// 	output = strings.Replace(output, "]", "|]", -1)
-// 	return output
-// }
+func MergeAndCleanupTeamcityReports(sources []string, dst string) ([]string, error) {
+	messages := []string{}
+	merged := []byte{}
+	for _, source := range sources {
+		data, err := ioutil.ReadFile(source)
+		if err != nil {
+			messages = append(messages, fmt.Sprintf("Could not open %s:\n%s", source, err.Error()))
+			continue
+		}
+		os.Remove(source)
+		merged = append(merged, data...)
+	}
+	return messages, ioutil.WriteFile(dst, merged, 0666)
+}
