@@ -58,17 +58,6 @@ type DeprecatedSetupSummary struct {
 	SuiteID        string
 }
 
-// func DeprecatedSetupSummaryFromSpecReport(report SpecReport) *DeprecatedSetupSummary {
-// 	return &DeprecatedSetupSummary{
-// 		ComponentType:  report.LeafNodeType,
-// 		CodeLocation:   report.LeafNodeLocation,
-// 		State:          report.State,
-// 		RunTime:        report.RunTime,
-// 		Failure:        deprecatedSpecFailureFromFailure(report.Failure),
-// 		CapturedOutput: report.CombinedOutput(),
-// 	}
-// }
-
 type DeprecatedSpecSummary struct {
 	ComponentTexts         []string
 	ComponentCodeLocations []CodeLocation
@@ -83,20 +72,6 @@ type DeprecatedSpecSummary struct {
 	CapturedOutput string
 	SuiteID        string
 }
-
-// func DeprecatedSpecSummaryFromSpecReport(report SpecReport) *DeprecatedSpecSummary {
-// 	return &DeprecatedSpecSummary{
-// 		ComponentTexts:         report.NodeTexts,
-// 		ComponentCodeLocations: report.NodeLocations,
-// 		State:                  report.State,
-// 		RunTime:                report.RunTime,
-// 		Failure:                deprecatedSpecFailureFromFailure(report.Failure),
-// 		IsMeasurement:          false,
-// 		NumberOfSamples:        0,
-// 		Measurements:           map[string]*DeprecatedSpecMeasurement{},
-// 		CapturedOutput:         report.CombinedOutput(),
-// 	}
-// }
 
 func (s DeprecatedSpecSummary) HasFailureState() bool {
 	return s.State.Is(SpecStateFailureStates...)
@@ -135,17 +110,6 @@ type DeprecatedSpecFailure struct {
 	ComponentType         SpecComponentType
 	ComponentCodeLocation CodeLocation
 }
-
-// func deprecatedSpecFailureFromFailure(failure Failure) SpecFailure {
-// 	return SpecFailure{
-// 		Message:               failure.Message,
-// 		Location:              failure.Location,
-// 		ForwardedPanic:        failure.ForwardedPanic,
-// 		ComponentIndex:        failure.NodeIndex,
-// 		ComponentType:         failure.NodeType,
-// 		ComponentCodeLocation: failure.Location,
-// 	}
-// }
 
 type DeprecatedSpecMeasurement struct {
 	Name  string

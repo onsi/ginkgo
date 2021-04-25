@@ -23,7 +23,7 @@ var cl0 = types.CodeLocation{FileName: "cl0.go", LineNumber: 12, FullStackTrace:
 var cl1 = types.CodeLocation{FileName: "cl1.go", LineNumber: 37, FullStackTrace: "full-trace\ncl-1"}
 var cl2 = types.CodeLocation{FileName: "cl2.go", LineNumber: 80, FullStackTrace: "full-trace\ncl-2"}
 var cl3 = types.CodeLocation{FileName: "cl3.go", LineNumber: 103, FullStackTrace: "full-trace\ncl-3"}
-var cl4 = types.CodeLocation{FileName: "cl3.go", LineNumber: 144, FullStackTrace: "full-trace\ncl-4"}
+var cl4 = types.CodeLocation{FileName: "cl4.go", LineNumber: 144, FullStackTrace: "full-trace\ncl-4"}
 
 func CLS(cls ...types.CodeLocation) []types.CodeLocation { return cls }
 func CTS(componentTexts ...string) []string              { return componentTexts }
