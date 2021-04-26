@@ -112,6 +112,11 @@ func (g ginkgoErrors) SynchronizedBeforeSuiteDisappearedOnNode1() error {
 }
 
 func (g ginkgoErrors) SuiteNodeInNestedContext(nodeType NodeType, cl CodeLocation) error {
+	docLink := "global-setup-and-teardown-beforesuite-and-aftersuite"
+	if nodeType.Is(NodeTypeReportAfterSuite) {
+		docLink = "generating-custom-reports-when-a-test-suite-completes"
+	}
+
 	return GinkgoError{
 		Heading: "Ginkgo detected an issue with your test structure",
 		Message: formatter.F(
@@ -119,11 +124,16 @@ func (g ginkgoErrors) SuiteNodeInNestedContext(nodeType NodeType, cl CodeLocatio
 
 {{bold}}%s{{/}} can only be called at the top level.`, nodeType, nodeType),
 		CodeLocation: cl,
-		DocLink:      "global-setup-and-teardown-beforesuite-and-aftersuite",
+		DocLink:      docLink,
 	}
 }
 
 func (g ginkgoErrors) SuiteNodeDuringRunPhase(nodeType NodeType, cl CodeLocation) error {
+	docLink := "global-setup-and-teardown-beforesuite-and-aftersuite"
+	if nodeType.Is(NodeTypeReportAfterSuite) {
+		docLink = "generating-custom-reports-when-a-test-suite-completes"
+	}
+
 	return GinkgoError{
 		Heading: "Ginkgo detected an issue with your test structure",
 		Message: formatter.F(
@@ -131,7 +141,7 @@ func (g ginkgoErrors) SuiteNodeDuringRunPhase(nodeType NodeType, cl CodeLocation
 
 {{bold}}%s{{/}} can only be called at the top level.`, nodeType, nodeType),
 		CodeLocation: cl,
-		DocLink:      "global-setup-and-teardown-beforesuite-and-aftersuite",
+		DocLink:      docLink,
 	}
 }
 
