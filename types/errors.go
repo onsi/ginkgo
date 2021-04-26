@@ -234,13 +234,20 @@ func (g ginkgoErrors) ConflictingVerboseSuccinctConfiguration() error {
 func (g ginkgoErrors) InvalidGoFlagCount() error {
 	return GinkgoError{
 		Heading: "Use of go test -count",
-		Message: "Ginkgo does not support using go test -count to rerun test suites.  Please use the ginkgo cli and `ginkgo -until-it-fails` or `ginkgo -repeat`.",
+		Message: "Ginkgo does not support using go test -count to rerun test suites.  Please use the ginkgo cli and `ginkgo -until-it-fails` or `ginkgo -repeat=N`.",
 	}
 }
 
 func (g ginkgoErrors) InvalidGoFlagParallel() error {
 	return GinkgoError{
 		Heading: "Use of go test -parallel",
-		Message: "Go test's implementation of parallelization does not actually parallelize Ginkgo tests.  Please use the ginkgo cli and `ginkgo -p` or `ginkgo -nodes=N` instad.",
+		Message: "Go test's implementation of parallelization does not actually parallelize Ginkgo tests.  Please use the ginkgo cli and `ginkgo -p` or `ginkgo -nodes=N` instead.",
+	}
+}
+
+func (g ginkgoErrors) BothRepeatAndUntilItFails() error {
+	return GinkgoError{
+		Heading: "--repeat and --until-it-fails are both set",
+		Message: "--until-it-fails directs Ginkgo to rerun tests indefinitely until they fail.  --repeat directs Ginkgo to rerun tests a set number of times.  You can't set both... which would you like?",
 	}
 }
