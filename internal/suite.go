@@ -243,8 +243,8 @@ func (suite *Suite) runSpecs(description string, suitePath string, hasProgrammat
 				suite.runSpec(spec, failer, interruptHandler, writer, outputInterceptor, suiteConfig)
 			}
 
-			//send the spec report to any attached ReportAFterEach blocks - this will update suite.currentSpecReport of failures occur in these blocks
-			suite.reportAfterEach(suite.currentSpecReport, spec, failer, interruptHandler, writer, outputInterceptor, suiteConfig)
+			//send the spec report to any attached ReportAfterEach blocks - this will update suite.currentSpecReport of failures occur in these blocks
+			suite.reportAfterEach(spec, failer, interruptHandler, writer, outputInterceptor, suiteConfig)
 			processSpecReport(suite.currentSpecReport)
 			suite.currentSpecReport = types.SpecReport{}
 		}
@@ -350,15 +350,16 @@ func (suite *Suite) runSpec(spec Spec, failer *Failer, interruptHandler Interrup
 	}
 }
 
-func (suite *Suite) reportAfterEach(report types.SpecReport, spec Spec, failer *Failer, interruptHandler InterruptHandlerInterface, writer WriterInterface, outputInterceptor OutputInterceptor, suiteConfig types.SuiteConfig) {
+func (suite *Suite) reportAfterEach(spec Spec, failer *Failer, interruptHandler InterruptHandlerInterface, writer WriterInterface, outputInterceptor OutputInterceptor, suiteConfig types.SuiteConfig) {
 	nodes := spec.Nodes.WithType(types.NodeTypeReportAfterEach).SortedByDescendingNestingLevel()
 	if len(nodes) == 0 {
 		return
 	}
 
-	writer.Truncate()
-	outputInterceptor.StartInterceptingOutput()
 	for _, node := range nodes {
+		writer.Truncate()
+		outputInterceptor.StartInterceptingOutput()
+		report := suite.currentSpecReport
 		node.Body = func() {
 			node.ReportAfterEachBody(report)
 		}
@@ -372,9 +373,9 @@ func (suite *Suite) reportAfterEach(report types.SpecReport, spec Spec, failer *
 			suite.currentSpecReport.State = state
 			suite.currentSpecReport.Failure = failure
 		}
+		suite.currentSpecReport.CapturedGinkgoWriterOutput += string(writer.Bytes())
+		suite.currentSpecReport.CapturedStdOutErr += outputInterceptor.StopInterceptingAndReturnOutput()
 	}
-	suite.currentSpecReport.CapturedGinkgoWriterOutput += string(writer.Bytes())
-	suite.currentSpecReport.CapturedStdOutErr += outputInterceptor.StopInterceptingAndReturnOutput()
 }
 
 func (suite *Suite) runSuiteNode(report types.SpecReport, node Node, failer *Failer, interruptChannel chan interface{}, writer WriterInterface, outputInterceptor OutputInterceptor, suiteConfig types.SuiteConfig) types.SpecReport {
