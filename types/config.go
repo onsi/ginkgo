@@ -83,6 +83,7 @@ type CLIConfig struct {
 	//for run only
 	KeepGoing       bool
 	UntilItFails    bool
+	Repeat          int
 	RandomizeSuites bool
 
 	//for watch only
@@ -361,6 +362,8 @@ var GinkgoCLIRunFlags = GinkgoFlags{
 		Usage: "If set, failures from earlier test suites do not prevent later test suites from running."},
 	{KeyPath: "C.UntilItFails", Name: "until-it-fails", SectionKey: "debug", DeprecatedName: "untilItFails", DeprecatedDocLink: "changed-command-line-flags",
 		Usage: "If set, ginkgo will keep rerunning test suites until a failure occurs."},
+	{KeyPath: "C.Repeat", Name: "repeat", SectionKey: "debug", UsageArgument: "n", UsageDefaultValue: "0 - i.e. no repetition, run only once",
+		Usage: "The number of times to re-run a test-suite.  Useful for debugging flaky tests.  If set to N the suite will be run N+1 times and will be required to pass each time."},
 	{KeyPath: "C.RandomizeSuites", Name: "randomize-suites", SectionKey: "order", DeprecatedName: "randomizeSuites", DeprecatedDocLink: "changed-command-line-flags",
 		Usage: "If set, ginkgo will randomize the order in which test suites run."},
 }
@@ -456,6 +459,10 @@ var GoRunFlags = GinkgoFlags{
 // It returns a potentially mutated copy of the config that rationalizes the configuraiton to ensure consistency for downstream consumers
 func VetAndInitializeCLIAndGoConfig(cliConfig CLIConfig, goFlagsConfig GoFlagsConfig) (CLIConfig, GoFlagsConfig, []error) {
 	errors := []error{}
+
+	if cliConfig.Repeat > 0 && cliConfig.UntilItFails {
+		errors = append(errors, GinkgoErrors.BothRepeatAndUntilItFails())
+	}
 
 	//initialize the output directory
 	if cliConfig.OutputDir != "" {
