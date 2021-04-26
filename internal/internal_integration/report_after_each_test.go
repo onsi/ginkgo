@@ -113,26 +113,19 @@ var _ = Describe("Sending reports to ReportAfterEach nodes", func() {
 	})
 
 	It("handles reporters that fail", func() {
-		//The "failing" reporter actually fails
-		//the identical passing report will be send to all reporters in the chain...
 		Ω(reports["failing"].Find("also passes")).Should(HavePassed())
-		Ω(reports["outer"].Find("also passes")).Should(HavePassed())
-		Ω(reports["inner"].Find("also passes")).Should(HavePassed())
-		Ω(reports["failing"].Find("also passes")).Should(Equal(reports["outer"].Find("also passes")))
-		Ω(reports["failing"].Find("also passes")).Should(Equal(reports["inner"].Find("also passes")))
-
-		//but the failing report will be sent to Ginkgo's reporter...
+		Ω(reports["outer"].Find("also passes")).Should(HaveFailed("fail"))
+		Ω(reports["inner"].Find("also passes")).Should(HaveFailed("fail"))
 		Ω(reporter.Did.Find("also passes")).Should(HaveFailed("fail"))
 	})
 
 	It("captures output from reporter nodes, but only sends them to the DefaultReporter, not the subsequent nodes", func() {
-		//The "writing" reporter follows a test that wrote to the GinkgoWriter and stdout/err
-		//But the reporter, itself, emits things to GinkgoWriter and stdout/err
-		//the identical report containing only the test content will be send to all reporters in the chain...
 		Ω(reports["writing"].Find("writes stuff").CapturedGinkgoWriterOutput).Should((Equal("GinkgoWriter from It\n")))
 		Ω(reports["writing"].Find("writes stuff").CapturedStdOutErr).Should((Equal("Output from It\n")))
-		Ω(reports["writing"].Find("writes stuff")).Should(Equal(reports["outer"].Find("writes stuff")))
-		Ω(reports["writing"].Find("writes stuff")).Should(Equal(reports["inner"].Find("writes stuff")))
+		Ω(reports["outer"].Find("writes stuff").CapturedGinkgoWriterOutput).Should(Equal("GinkgoWriter from It\nGinkgoWriter from ReportAfterEach\n"))
+		Ω(reports["outer"].Find("writes stuff").CapturedStdOutErr).Should(Equal("Output from It\nOutput from ReportAfterEach\n"))
+		Ω(reports["inner"].Find("writes stuff").CapturedGinkgoWriterOutput).Should(Equal("GinkgoWriter from It\nGinkgoWriter from ReportAfterEach\n"))
+		Ω(reports["inner"].Find("writes stuff").CapturedStdOutErr).Should(Equal("Output from It\nOutput from ReportAfterEach\n"))
 
 		//but a report containing the additional output will be send to Ginkgo's reporter...
 		Ω(reporter.Did.Find("writes stuff").CapturedGinkgoWriterOutput).Should((Equal("GinkgoWriter from It\nGinkgoWriter from ReportAfterEach\n")))
