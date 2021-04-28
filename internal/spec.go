@@ -11,9 +11,9 @@ type Spec struct {
 	Skip  bool
 }
 
-func (t Spec) Text() string {
+func (s Spec) Text() string {
 	texts := []string{}
-	for _, node := range t.Nodes {
+	for _, node := range s.Nodes {
 		if node.Text != "" {
 			texts = append(texts, node.Text)
 		}
@@ -21,15 +21,26 @@ func (t Spec) Text() string {
 	return strings.Join(texts, " ")
 }
 
-func (t Spec) FirstNodeWithType(nodeTypes ...types.NodeType) Node {
-	return t.Nodes.FirstNodeWithType(nodeTypes...)
+func (s Spec) FirstNodeWithType(nodeTypes ...types.NodeType) Node {
+	return s.Nodes.FirstNodeWithType(nodeTypes...)
+}
+
+func (s Spec) FlakeAttempts() int {
+	flakeAttempts := 0
+	for _, node := range s.Nodes {
+		if node.FlakeAttempts > 0 {
+			flakeAttempts = node.FlakeAttempts
+		}
+	}
+
+	return flakeAttempts
 }
 
 type Specs []Spec
 
-func (t Specs) HasAnySpecsMarkedPending() bool {
-	for _, test := range t {
-		if test.Nodes.HasNodeMarkedPending() {
+func (s Specs) HasAnySpecsMarkedPending() bool {
+	for _, spec := range s {
+		if spec.Nodes.HasNodeMarkedPending() {
 			return true
 		}
 	}
@@ -37,21 +48,21 @@ func (t Specs) HasAnySpecsMarkedPending() bool {
 	return false
 }
 
-func (t Specs) CountWithoutSkip() int {
+func (s Specs) CountWithoutSkip() int {
 	n := 0
-	for _, test := range t {
-		if !test.Skip {
+	for _, spec := range s {
+		if !spec.Skip {
 			n += 1
 		}
 	}
 	return n
 }
 
-func (t Specs) PartitionByFirstNodeWithType(nodeTypes ...types.NodeType) []Specs {
+func (s Specs) PartitionByFirstNodeWithType(nodeTypes ...types.NodeType) []Specs {
 	indexById := map[uint]int{}
 	partition := []Specs{}
-	for _, test := range t {
-		id := test.FirstNodeWithType(nodeTypes...).ID
+	for _, spec := range s {
+		id := spec.FirstNodeWithType(nodeTypes...).ID
 		if id == 0 {
 			continue
 		}
@@ -61,7 +72,7 @@ func (t Specs) PartitionByFirstNodeWithType(nodeTypes ...types.NodeType) []Specs
 			idx = len(partition) - 1
 			indexById[id] = idx
 		}
-		partition[idx] = append(partition[idx], test)
+		partition[idx] = append(partition[idx], spec)
 	}
 
 	return partition
