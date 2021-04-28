@@ -1,6 +1,8 @@
 package internal_test
 
 import (
+	"reflect"
+
 	. "github.com/onsi/ginkgo"
 	"github.com/onsi/ginkgo/types"
 	. "github.com/onsi/gomega"
@@ -14,30 +16,236 @@ var _ = Describe("UniqueNodeID", func() {
 	})
 })
 
-var _ = Describe("Node", func() {
-	Describe("The primary NewNode constructor", func() {
+var _ = Describe("Construcing nodes", func() {
+	var dt *types.DeprecationTracker
+	var didRun bool
+	var body func()
+	BeforeEach(func() {
+		dt = types.NewDeprecationTracker()
+		body = func() { didRun = true }
+	})
+
+	ExpectAllWell := func(errors []error) {
+		ExpectWithOffset(1, errors).Should(BeEmpty())
+		ExpectWithOffset(1, dt.DidTrackDeprecations()).Should(BeFalse())
+	}
+
+	Describe("happy path", func() {
 		It("creates a node with a non-zero id", func() {
-			var didRun bool
-			node := internal.NewNode(ntIt, "hummus", func() { didRun = true }, cl, true, false)
+			node, errors := internal.NewNode(dt, ntIt, "text", body, cl, Focus)
 			Ω(node.ID).Should(BeNumerically(">", 0))
 			Ω(node.NodeType).Should(Equal(ntIt))
-			Ω(node.Text).Should(Equal("hummus"))
+			Ω(node.Text).Should(Equal("text"))
 			node.Body()
 			Ω(didRun).Should(BeTrue())
 			Ω(node.CodeLocation).Should(Equal(cl))
 			Ω(node.MarkedFocus).Should(BeTrue())
 			Ω(node.MarkedPending).Should(BeFalse())
 			Ω(node.NestingLevel).Should(Equal(-1))
+			ExpectAllWell(errors)
 		})
 	})
 
+	Describe("Assigning CodeLocation", func() {
+		Context("with nothing explicitly specified ", func() {
+			It("assumes a base-offset of 2", func() {
+				cl := types.NewCodeLocation(1)
+				node, errors := internal.NewNode(dt, ntIt, "text", body)
+				Ω(node.CodeLocation.FileName).Should(Equal(cl.FileName))
+				ExpectAllWell(errors)
+			})
+		})
+
+		Context("specifying code locations", func() {
+			It("uses the last passed-in code location", func() {
+				cl2 := types.NewCustomCodeLocation("hi")
+				node, errors := internal.NewNode(dt, ntIt, "text", body, cl, cl2)
+				Ω(node.CodeLocation).Should(Equal(cl2))
+				ExpectAllWell(errors)
+			})
+		})
+
+		Context("specifying offets", func() {
+			It("takes the offset and adds it to the base-offset of 2 to compute the code location", func() {
+				cl := types.NewCodeLocation(2)
+				cl2 := types.NewCustomCodeLocation("hi")
+				node, errors := internal.NewNode(dt, ntIt, "text", body, cl2, Offset(1))
+				//note that Offset overrides cl2
+				Ω(node.CodeLocation.FileName).Should(Equal(cl.FileName))
+				ExpectAllWell(errors)
+			})
+		})
+	})
+
+	Describe("ignoring deprecated timeouts", func() {
+		It("ignores any float64s", func() {
+			node, errors := internal.NewNode(dt, ntIt, "text", body, 3.141, 2.71)
+			node.Body()
+			Ω(didRun).Should(BeTrue())
+			ExpectAllWell(errors)
+		})
+	})
+
+	Describe("the Focus and Pending decorations", func() {
+		It("the node is neither Focused nor Pending by default", func() {
+			node, errors := internal.NewNode(dt, ntIt, "text", body)
+			Ω(node.MarkedFocus).Should(BeFalse())
+			Ω(node.MarkedPending).Should(BeFalse())
+			ExpectAllWell(errors)
+		})
+		It("marks the node as focused", func() {
+			node, errors := internal.NewNode(dt, ntIt, "text", body, Focus)
+			Ω(node.MarkedFocus).Should(BeTrue())
+			Ω(node.MarkedPending).Should(BeFalse())
+			ExpectAllWell(errors)
+		})
+		It("marks the node as pending", func() {
+			node, errors := internal.NewNode(dt, ntIt, "text", body, Pending)
+			Ω(node.MarkedFocus).Should(BeFalse())
+			Ω(node.MarkedPending).Should(BeTrue())
+			ExpectAllWell(errors)
+		})
+		It("errors when both Focus and Pending are set", func() {
+			node, errors := internal.NewNode(dt, ntIt, "text", body, cl, Focus, Pending)
+			Ω(node).Should(BeZero())
+			Ω(errors).Should(ConsistOf(types.GinkgoErrors.InvalidDeclarationOfFocusedAndPending(cl, ntIt)))
+		})
+		It("allows containers to be marked", func() {
+			node, errors := internal.NewNode(dt, ntCon, "text", body, Focus)
+			Ω(node.MarkedFocus).Should(BeTrue())
+			Ω(node.MarkedPending).Should(BeFalse())
+			ExpectAllWell(errors)
+
+			node, errors = internal.NewNode(dt, ntCon, "text", body, Pending)
+			Ω(node.MarkedFocus).Should(BeFalse())
+			Ω(node.MarkedPending).Should(BeTrue())
+			ExpectAllWell(errors)
+		})
+		It("does not allow non-container/it nodes to be marked", func() {
+			node, errors := internal.NewNode(dt, ntBef, "", body, cl, Focus)
+			Ω(node).Should(BeZero())
+			Ω(errors).Should(ConsistOf(types.GinkgoErrors.InvalidDecorationForNodeType(cl, ntBef, "Focus")))
+
+			node, errors = internal.NewNode(dt, ntAf, "", body, cl, Pending)
+			Ω(node).Should(BeZero())
+			Ω(errors).Should(ConsistOf(types.GinkgoErrors.InvalidDecorationForNodeType(cl, ntAf, "Pending")))
+
+			Ω(dt.DidTrackDeprecations()).Should(BeFalse())
+		})
+	})
+
+	Describe("The FlakeAttempts decoration", func() {
+		It("is zero by default", func() {
+			node, errors := internal.NewNode(dt, ntIt, "text", body)
+			Ω(node).ShouldNot(BeZero())
+			Ω(node.FlakeAttempts).Should(Equal(0))
+			ExpectAllWell(errors)
+		})
+		It("sets the FlakeAttempts field", func() {
+			node, errors := internal.NewNode(dt, ntIt, "text", body, FlakeAttempts(2))
+			Ω(node.FlakeAttempts).Should(Equal(2))
+			ExpectAllWell(errors)
+		})
+		It("can be applied to containers", func() {
+			node, errors := internal.NewNode(dt, ntCon, "text", body, FlakeAttempts(2))
+			Ω(node.FlakeAttempts).Should(Equal(2))
+			ExpectAllWell(errors)
+		})
+		It("cannot be applied to non-container/it nodes", func() {
+			node, errors := internal.NewNode(dt, ntBef, "", body, cl, FlakeAttempts(2))
+			Ω(node).Should(BeZero())
+			Ω(errors).Should(ConsistOf(types.GinkgoErrors.InvalidDecorationForNodeType(cl, ntBef, "FlakeAttempts")))
+			Ω(dt.DidTrackDeprecations()).Should(BeFalse())
+		})
+	})
+
+	Describe("passing in functions", func() {
+		It("works when a single function is passed in", func() {
+			node, errors := internal.NewNode(dt, ntIt, "text", body, cl)
+			node.Body()
+			Ω(didRun).Should(BeTrue())
+			ExpectAllWell(errors)
+		})
+
+		It("allows deprecated async functions and registers a deprecation warning", func() {
+			node, errors := internal.NewNode(dt, ntIt, "text", func(done Done) {
+				didRun = true
+				Ω(done).ShouldNot(BeNil())
+				close(done)
+			}, cl)
+			node.Body()
+			Ω(didRun).Should(BeTrue())
+			Ω(errors).Should(BeEmpty())
+			Ω(dt.DeprecationsReport()).Should(ContainSubstring(types.Deprecations.Async().Message))
+		})
+
+		It("errors if more than one function is provided", func() {
+			node, errors := internal.NewNode(dt, ntIt, "text", body, body, cl)
+			Ω(node).Should(BeZero())
+			Ω(errors).Should(ConsistOf(types.GinkgoErrors.MultipleBodyFunctions(cl, ntIt)))
+			Ω(dt.DidTrackDeprecations()).Should(BeFalse())
+		})
+
+		It("errors if the function has a return value", func() {
+			f := func() string { return "" }
+			node, errors := internal.NewNode(dt, ntIt, "text", f, cl)
+			Ω(node).Should(BeZero())
+			Ω(errors).Should(ConsistOf(types.GinkgoErrors.InvalidBodyType(reflect.TypeOf(f), cl, ntIt)))
+			Ω(dt.DidTrackDeprecations()).Should(BeFalse())
+		})
+
+		It("errors if the function takes more than one argument", func() {
+			f := func(Done, string) {}
+			node, errors := internal.NewNode(dt, ntIt, "text", f, cl)
+			Ω(node).Should(BeZero())
+			Ω(errors).Should(ConsistOf(types.GinkgoErrors.InvalidBodyType(reflect.TypeOf(f), cl, ntIt)))
+			Ω(dt.DidTrackDeprecations()).Should(BeFalse())
+		})
+
+		It("errors if the function takes one argument and that argument is not the deprecated Done channel", func() {
+			f := func(chan interface{}) {}
+			node, errors := internal.NewNode(dt, ntIt, "text", f, cl)
+			Ω(node).Should(BeZero())
+			Ω(errors).Should(ConsistOf(types.GinkgoErrors.InvalidBodyType(reflect.TypeOf(f), cl, ntIt)))
+			Ω(dt.DidTrackDeprecations()).Should(BeFalse())
+		})
+
+		It("errors if no function is passed in", func() {
+			node, errors := internal.NewNode(dt, ntIt, "text", cl)
+			Ω(node).Should(BeZero())
+			Ω(errors).Should(ConsistOf(types.GinkgoErrors.MissingBodyFunction(cl, ntIt)))
+			Ω(dt.DidTrackDeprecations()).Should(BeFalse())
+		})
+
+		It("is ok if no function is passed in but it is marked pending", func() {
+			node, errors := internal.NewNode(dt, ntIt, "text", cl, Pending)
+			Ω(node.IsZero()).Should(BeFalse())
+			ExpectAllWell(errors)
+		})
+	})
+
+	Describe("non-recognized decorations", func() {
+		It("errors when a non-recognized decoration is provided", func() {
+			node, errors := internal.NewNode(dt, ntIt, "text", cl, body, Focus, "aardvark", 5)
+			Ω(node).Should(BeZero())
+			Ω(errors).Should(ConsistOf(
+				types.GinkgoErrors.UnknownDecoration(cl, ntIt, "aardvark"),
+				types.GinkgoErrors.UnknownDecoration(cl, ntIt, 5),
+			))
+			Ω(dt.DidTrackDeprecations()).Should(BeFalse())
+		})
+	})
+})
+
+var _ = Describe("Node", func() {
 	Describe("The other node constructors", func() {
 		Describe("NewSynchronizedBeforeSuiteNode", func() {
 			It("returns a correctly configured node", func() {
 				var ranNode1, ranAllNodes bool
 				node1Body := func() []byte { ranNode1 = true; return nil }
 				allNodesBody := func(_ []byte) { ranAllNodes = true }
-				node := internal.NewSynchronizedBeforeSuiteNode(node1Body, allNodesBody, cl)
+				node, errors := internal.NewSynchronizedBeforeSuiteNode(node1Body, allNodesBody, cl)
+				Ω(errors).Should(BeEmpty())
 				Ω(node.ID).Should(BeNumerically(">", 0))
 				Ω(node.NodeType).Should(Equal(types.NodeTypeSynchronizedBeforeSuite))
 
@@ -58,7 +266,8 @@ var _ = Describe("Node", func() {
 				allNodesBody := func() { ranAllNodes = true }
 				node1Body := func() { ranNode1 = true }
 
-				node := internal.NewSynchronizedAfterSuiteNode(allNodesBody, node1Body, cl)
+				node, errors := internal.NewSynchronizedAfterSuiteNode(allNodesBody, node1Body, cl)
+				Ω(errors).Should(BeEmpty())
 				Ω(node.ID).Should(BeNumerically(">", 0))
 				Ω(node.NodeType).Should(Equal(types.NodeTypeSynchronizedAfterSuite))
 
@@ -77,7 +286,8 @@ var _ = Describe("Node", func() {
 			It("returns a correctly configured node", func() {
 				var didRun bool
 				body := func(types.Report) { didRun = true }
-				node := internal.NewReportAfterSuiteNode("my custom report", body, cl)
+				node, errors := internal.NewReportAfterSuiteNode("my custom report", body, cl)
+				Ω(errors).Should(BeEmpty())
 				Ω(node.Text).Should(Equal("my custom report"))
 				Ω(node.ID).Should(BeNumerically(">", 0))
 				Ω(node.NodeType).Should(Equal(types.NodeTypeReportAfterSuite))
@@ -95,7 +305,8 @@ var _ = Describe("Node", func() {
 				var didRun bool
 				body := func(types.SpecReport) { didRun = true }
 
-				node := internal.NewReportAfterEachNode(body, cl)
+				node, errors := internal.NewReportAfterEachNode(body, cl)
+				Ω(errors).Should(BeEmpty())
 				Ω(node.ID).Should(BeNumerically(">", 0))
 				Ω(node.NodeType).Should(Equal(types.NodeTypeReportAfterEach))
 
@@ -114,7 +325,8 @@ var _ = Describe("Node", func() {
 		})
 
 		It("returns false if the node is non-zero", func() {
-			node := internal.NewNode(ntIt, "hummus", func() {}, cl, false, false)
+			node, errors := internal.NewNode(nil, ntIt, "hummus", func() {}, cl)
+			Ω(errors).Should(BeEmpty())
 			Ω(node.IsZero()).Should(BeFalse())
 		})
 	})
@@ -370,7 +582,7 @@ var _ = Describe("Nodes", func() {
 	Describe("HasNodeMarkedPending", func() {
 		Context("when there is a node marked pending", func() {
 			It("returns true", func() {
-				nodes := Nodes{N(), N(), N(MarkedPending(true)), N()}
+				nodes := Nodes{N(), N(), N(Pending), N()}
 				Ω(nodes.HasNodeMarkedPending()).Should(BeTrue())
 			})
 		})
@@ -386,7 +598,7 @@ var _ = Describe("Nodes", func() {
 	Describe("HasNodeMarkedFocus", func() {
 		Context("when there is a node marked focus", func() {
 			It("returns true", func() {
-				nodes := Nodes{N(), N(), N(MarkedFocus(true)), N()}
+				nodes := Nodes{N(), N(), N(Focus), N()}
 				Ω(nodes.HasNodeMarkedFocus()).Should(BeTrue())
 			})
 		})

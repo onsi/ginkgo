@@ -1,6 +1,7 @@
 package internal
 
 import (
+	"reflect"
 	"sort"
 
 	"sync"
@@ -20,7 +21,6 @@ func UniqueNodeID() uint {
 	return _global_node_id_counter
 }
 
-/* Node */
 type Node struct {
 	ID       uint
 	NodeType types.NodeType
@@ -30,9 +30,6 @@ type Node struct {
 	CodeLocation types.CodeLocation
 	NestingLevel int
 
-	MarkedFocus   bool
-	MarkedPending bool
-
 	SynchronizedBeforeSuiteNode1Body    func() []byte
 	SynchronizedBeforeSuiteAllNodesBody func([]byte)
 
@@ -41,62 +38,144 @@ type Node struct {
 
 	ReportAfterEachBody  func(types.SpecReport)
 	ReportAfterSuiteBody func(types.Report)
+
+	MarkedFocus   bool
+	MarkedPending bool
+	FlakeAttempts int
 }
 
-func NewNode(nodeType types.NodeType, text string, body func(), codeLocation types.CodeLocation, markedFocus bool, markedPending bool) Node {
-	return Node{
-		ID:            UniqueNodeID(),
-		NodeType:      nodeType,
-		Text:          text,
-		Body:          body,
-		CodeLocation:  codeLocation,
-		MarkedFocus:   markedFocus,
-		MarkedPending: markedPending,
-		NestingLevel:  -1,
+// Decoration Types
+type focusType bool
+type pendingType bool
+
+const Focus = focusType(true)
+const Pending = pendingType(true)
+
+type FlakeAttempts uint
+type Offset uint
+type Done chan<- interface{} // Deprecated Done Channel for asynchronous testing
+
+func NewNode(deprecationTracker *types.DeprecationTracker, nodeType types.NodeType, text string, args ...interface{}) (Node, []error) {
+	baseOffset := 2
+	node := Node{
+		ID:           UniqueNodeID(),
+		NodeType:     nodeType,
+		Text:         text,
+		CodeLocation: types.NewCodeLocation(baseOffset),
+		NestingLevel: -1,
 	}
+	errors := []error{}
+	appendErrorIf := func(predicate bool, err error) bool {
+		if predicate {
+			errors = append(errors, err)
+		}
+		return predicate
+	}
+
+	remainingArgs := []interface{}{}
+	//First get the CodeLocation up-to-date
+	for _, arg := range args {
+		switch t := reflect.TypeOf(arg); {
+		case t == reflect.TypeOf(Offset(0)):
+			node.CodeLocation = types.NewCodeLocation(baseOffset + int(arg.(Offset)))
+		case t == reflect.TypeOf(types.CodeLocation{}):
+			node.CodeLocation = arg.(types.CodeLocation)
+		default:
+			remainingArgs = append(remainingArgs, arg)
+		}
+	}
+
+	trackedFunctionError := false
+	args = remainingArgs
+	remainingArgs = []interface{}{}
+	//now process the rest of the args
+	for _, arg := range args {
+		switch t := reflect.TypeOf(arg); {
+		case t == reflect.TypeOf(float64(0)):
+			break //ignore deprecated timeouts
+		case t == reflect.TypeOf(Focus):
+			node.MarkedFocus = bool(arg.(focusType))
+			appendErrorIf(!nodeType.Is(types.NodeTypesForContainerAndIt...), types.GinkgoErrors.InvalidDecorationForNodeType(node.CodeLocation, nodeType, "Focus"))
+		case t == reflect.TypeOf(Pending):
+			node.MarkedPending = bool(arg.(pendingType))
+			appendErrorIf(!nodeType.Is(types.NodeTypesForContainerAndIt...), types.GinkgoErrors.InvalidDecorationForNodeType(node.CodeLocation, nodeType, "Pending"))
+		case t == reflect.TypeOf(FlakeAttempts(0)):
+			node.FlakeAttempts = int(arg.(FlakeAttempts))
+			appendErrorIf(!nodeType.Is(types.NodeTypesForContainerAndIt...), types.GinkgoErrors.InvalidDecorationForNodeType(node.CodeLocation, nodeType, "FlakeAttempts"))
+		case t.Kind() == reflect.Func:
+			if appendErrorIf(node.Body != nil, types.GinkgoErrors.MultipleBodyFunctions(node.CodeLocation, nodeType)) {
+				trackedFunctionError = true
+				break
+			}
+			isValid := (t.NumOut() == 0) && (t.NumIn() <= 1) && (t.NumIn() == 0 || t.In(0) == reflect.TypeOf(make(Done)))
+			if appendErrorIf(!isValid, types.GinkgoErrors.InvalidBodyType(t, node.CodeLocation, nodeType)) {
+				trackedFunctionError = true
+				break
+			}
+			if t.NumIn() == 0 {
+				node.Body = arg.(func())
+			} else {
+				deprecationTracker.TrackDeprecation(types.Deprecations.Async(), node.CodeLocation)
+				deprecatedAsyncBody := arg.(func(Done))
+				node.Body = func() { deprecatedAsyncBody(make(Done)) }
+			}
+		default:
+			remainingArgs = append(remainingArgs, arg)
+		}
+	}
+
+	//validations
+	appendErrorIf(node.MarkedPending && node.MarkedFocus, types.GinkgoErrors.InvalidDeclarationOfFocusedAndPending(node.CodeLocation, nodeType))
+	appendErrorIf(node.Body == nil && !node.MarkedPending && !trackedFunctionError, types.GinkgoErrors.MissingBodyFunction(node.CodeLocation, nodeType))
+	for _, arg := range remainingArgs {
+		errors = append(errors, types.GinkgoErrors.UnknownDecoration(node.CodeLocation, nodeType, arg))
+	}
+
+	if len(errors) > 0 {
+		return Node{}, errors
+	}
+
+	return node, errors
 }
 
-func NewSynchronizedBeforeSuiteNode(node1Body func() []byte, allNodesBody func([]byte), codeLocation types.CodeLocation) Node {
+func NewSynchronizedBeforeSuiteNode(node1Body func() []byte, allNodesBody func([]byte), codeLocation types.CodeLocation) (Node, []error) {
 	return Node{
 		ID:                                  UniqueNodeID(),
 		NodeType:                            types.NodeTypeSynchronizedBeforeSuite,
 		SynchronizedBeforeSuiteNode1Body:    node1Body,
 		SynchronizedBeforeSuiteAllNodesBody: allNodesBody,
 		CodeLocation:                        codeLocation,
-		NestingLevel:                        0,
-	}
+	}, nil
 }
 
-func NewSynchronizedAfterSuiteNode(allNodesBody func(), node1Body func(), codeLocation types.CodeLocation) Node {
+func NewSynchronizedAfterSuiteNode(allNodesBody func(), node1Body func(), codeLocation types.CodeLocation) (Node, []error) {
 	return Node{
 		ID:                                 UniqueNodeID(),
 		NodeType:                           types.NodeTypeSynchronizedAfterSuite,
 		SynchronizedAfterSuiteAllNodesBody: allNodesBody,
 		SynchronizedAfterSuiteNode1Body:    node1Body,
 		CodeLocation:                       codeLocation,
-		NestingLevel:                       0,
-	}
+	}, nil
 }
 
-func NewReportAfterEachNode(body func(types.SpecReport), codeLocation types.CodeLocation) Node {
+func NewReportAfterEachNode(body func(types.SpecReport), codeLocation types.CodeLocation) (Node, []error) {
 	return Node{
 		ID:                  UniqueNodeID(),
 		NodeType:            types.NodeTypeReportAfterEach,
 		ReportAfterEachBody: body,
 		CodeLocation:        codeLocation,
 		NestingLevel:        -1,
-	}
+	}, nil
 }
 
-func NewReportAfterSuiteNode(text string, body func(types.Report), codeLocation types.CodeLocation) Node {
+func NewReportAfterSuiteNode(text string, body func(types.Report), codeLocation types.CodeLocation) (Node, []error) {
 	return Node{
 		ID:                   UniqueNodeID(),
 		Text:                 text,
 		NodeType:             types.NodeTypeReportAfterSuite,
 		ReportAfterSuiteBody: body,
 		CodeLocation:         codeLocation,
-		NestingLevel:         0,
-	}
+	}, nil
 }
 
 func (n Node) IsZero() bool {

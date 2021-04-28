@@ -13,7 +13,7 @@ var _ = Describe("Focus", func() {
 		fixture := func() {
 			It("A", rt.T("A"))
 			It("B", rt.T("B"))
-			PIt("C", rt.T("C"))
+			It("C", rt.T("C"), Pending)
 			Describe("container", func() {
 				It("D", rt.T("D"))
 			})
@@ -84,7 +84,7 @@ var _ = Describe("Focus", func() {
 				})
 				FDescribe("focused container with focused child", func() {
 					It("F", rt.T("F"))
-					FIt("G", rt.T("G"))
+					It("G", Focus, rt.T("G"))
 				})
 				Describe("container", func() {
 					It("H", rt.T("H"))

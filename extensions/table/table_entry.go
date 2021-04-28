@@ -40,17 +40,25 @@ func (t TableEntry) generateIt(itBody reflect.Value) {
 		panic(fmt.Sprintf("Description can either be a string or a function, got %#v", descriptionValue))
 	}
 
+	args := []interface{}{t.codeLocation}
+
 	if t.Pending {
-		global.Suite.PushNode(internal.NewNode(types.NodeTypeIt, description, func() {}, t.codeLocation, false, true))
-		return
+		args = append(args, internal.Pending)
+	} else {
+		values := castParameters(itBody, t.Parameters)
+		body := func() {
+			itBody.Call(values)
+		}
+		args = append(args, body)
 	}
-
-	values := castParameters(itBody, t.Parameters)
-	body := func() {
-		itBody.Call(values)
+	if t.Focused {
+		args = append(args, internal.Focus)
 	}
-
-	global.Suite.PushNode(internal.NewNode(types.NodeTypeIt, description, body, t.codeLocation, t.Focused, false))
+	node, errors := internal.NewNode(nil, types.NodeTypeIt, description, args...)
+	if len(errors) > 0 {
+		panic(errors)
+	}
+	global.Suite.PushNode(node)
 }
 
 func castParameters(function reflect.Value, parameters []interface{}) []reflect.Value {
