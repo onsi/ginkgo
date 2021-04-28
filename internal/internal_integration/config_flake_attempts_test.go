@@ -21,7 +21,7 @@ var _ = Describe("when config.FlakeAttempts is greater than 1", func() {
 				}
 			}))
 			It("B", func() {})
-			It("C", rt.T("C", func() {
+			It("C", FlakeAttempts(1), rt.T("C", func() { //the config flag overwrites the individual test annotations
 				counterC += 1
 				writer.Write([]byte(fmt.Sprintf("C - attempt #%d\n", counterC)))
 				if counterC < 3 {

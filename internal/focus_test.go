@@ -11,33 +11,33 @@ import (
 var _ = Describe("Focus", func() {
 	Describe("ApplyNestedFocusToTree", func() {
 		It("unfocuses parent nodes that have a focused child node somewhere in their tree", func() {
-			tree := TN(N(ntCon, "root", MarkedFocus(true)), //should lose focus
-				TN(N(ntCon, "A", MarkedFocus(true)), //should stay focused
+			tree := TN(N(ntCon, "root", Focus), //should lose focus
+				TN(N(ntCon, "A", Focus), //should stay focused
 					TN(N(ntIt)),
 					TN(N(ntIt)),
 				),
 				TN(N(ntCon),
 					TN(N(ntIt)),
-					TN(N(ntIt, "B", MarkedFocus(true))), //should stay focused
+					TN(N(ntIt, "B", Focus)), //should stay focused
 				),
-				TN(N(ntCon, "C", MarkedFocus(true)), //should lose focus
+				TN(N(ntCon, "C", Focus), //should lose focus
 					TN(N(ntIt)),
-					TN(N(ntIt, "D", MarkedFocus(true))), //should stay focused
+					TN(N(ntIt, "D", Focus)), //should stay focused
 				),
-				TN(N(ntCon, "E", MarkedFocus(true)), //should lose focus
+				TN(N(ntCon, "E", Focus), //should lose focus
 					TN(N(ntIt)),
 					TN(N(ntCon),
 						TN(N(ntIt)),
-						TN(N(ntIt, "F", MarkedFocus(true))), // should stay focused
+						TN(N(ntIt, "F", Focus)), // should stay focused
 					),
 				),
-				TN(N(ntCon, "G", MarkedFocus(true)), //should lose focus
+				TN(N(ntCon, "G", Focus), //should lose focus
 					TN(N(ntIt)),
-					TN(N(ntCon, "H", MarkedFocus(true)), //should lose focus
+					TN(N(ntCon, "H", Focus), //should lose focus
 						TN(N(ntIt)),
-						TN(N(ntIt, "I", MarkedFocus(true))), //should stay focused
+						TN(N(ntIt, "I", Focus)), //should stay focused
 					),
-					TN(N(ntCon, "J", MarkedFocus(true)), // should stay focused
+					TN(N(ntCon, "J", Focus), // should stay focused
 						TN(N(ntIt)),
 					),
 				),
@@ -59,11 +59,11 @@ var _ = Describe("Focus", func() {
 
 		It("does not unfocus parent nodes if a focused child is the child of a pending child", func() {
 			tree := TN(N(ntCon),
-				TN(N(ntCon, "A", MarkedFocus(true)), //should stay focused
+				TN(N(ntCon, "A", Focus), //should stay focused
 					TN(N(ntIt)),
-					TN(N(ntCon, "B", MarkedPending(true)), //should stay pending
+					TN(N(ntCon, "B", Pending), //should stay pending
 						TN(N(ntIt)),
-						TN(N(ntIt, "C", MarkedFocus(true))), //should stay focused
+						TN(N(ntIt, "C", Focus)), //should stay focused
 					),
 				),
 			)
@@ -98,9 +98,9 @@ var _ = Describe("Focus", func() {
 				specs = Specs{
 					S(N(), N()),
 					S(N(), N()),
-					S(N(), N(MarkedPending(true))),
+					S(N(), N(Pending)),
 					S(N(), N()),
-					S(N(MarkedPending(true))),
+					S(N(Pending)),
 				}
 			})
 
@@ -116,9 +116,9 @@ var _ = Describe("Focus", func() {
 				specs = Specs{
 					S(N(), N()),
 					S(N(), N()),
-					S(N(), N(MarkedFocus(true))),
+					S(N(), N(Focus)),
 					S(N()),
-					S(N(MarkedFocus(true))),
+					S(N(Focus)),
 				}
 			})
 			It("skips any other specs and notes that it has programmatic focus", func() {
@@ -132,7 +132,7 @@ var _ = Describe("Focus", func() {
 					specs = Specs{
 						S(N(), N()),
 						S(N(), N()),
-						S(N(MarkedPending(true)), N(MarkedFocus(true))),
+						S(N(Pending), N(Focus)),
 						S(N()),
 					}
 				})
@@ -151,9 +151,9 @@ var _ = Describe("Focus", func() {
 					S(N("blue"), N("Dragon")),
 					S(N("red dragon"), N()),
 					S(N("green dragon"), N()),
-					S(N(MarkedPending(true)), N("blue Dragon")),
+					S(N(Pending), N("blue Dragon")),
 					S(N("yellow dragon")),
-					S(N(MarkedFocus(true), "yellow dragon")),
+					S(N(Focus, "yellow dragon")),
 				}
 			})
 
@@ -214,8 +214,8 @@ var _ = Describe("Focus", func() {
 				specs = Specs{
 					S(N(CL("file_a"))),
 					S(N(CL("file_b"))),
-					S(N(CL("file_b"), MarkedPending(true))),
-					S(N(CL("c", MarkedFocus(true)))),
+					S(N(CL("file_b"), Pending)),
+					S(N(CL("c", Focus))),
 				}
 
 				conf.RegexScansFilePath = true

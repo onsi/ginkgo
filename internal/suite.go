@@ -300,7 +300,10 @@ func (suite *Suite) runSpec(spec Spec, failer *Failer, interruptHandler Interrup
 	writer.Truncate()
 	outputInterceptor.StartInterceptingOutput()
 	suite.currentSpecReport.StartTime = time.Now()
-	maxAttempts := max(1, suiteConfig.FlakeAttempts)
+	maxAttempts := max(1, spec.FlakeAttempts())
+	if suiteConfig.FlakeAttempts > 0 {
+		maxAttempts = suiteConfig.FlakeAttempts
+	}
 
 	for attempt := 0; attempt < maxAttempts; attempt++ {
 		suite.currentSpecReport.NumAttempts = attempt + 1
