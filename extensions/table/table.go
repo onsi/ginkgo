@@ -97,9 +97,24 @@ func describeTable(description string, itBody interface{}, entries []TableEntry,
 		panic(fmt.Sprintf("DescribeTable expects a function, got %#v", itBody))
 	}
 
-	global.Suite.PushNode(internal.NewNode(types.NodeTypeContainer, description, func() {
-		for _, entry := range entries {
-			entry.generateIt(itBodyValue)
-		}
-	}, types.NewCodeLocation(2), markedFocus, markedPending))
+	args := []interface{}{
+		func() {
+			for _, entry := range entries {
+				entry.generateIt(itBodyValue)
+			}
+		},
+		types.NewCodeLocation(2),
+	}
+	if markedFocus {
+		args = append(args, internal.Focus)
+	}
+	if markedPending {
+		args = append(args, internal.Pending)
+	}
+
+	node, errors := internal.NewNode(nil, types.NodeTypeContainer, description, args...)
+	if len(errors) != 0 {
+		panic(errors)
+	}
+	global.Suite.PushNode(node)
 }

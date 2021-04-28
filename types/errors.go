@@ -56,6 +56,16 @@ an appropriate Ginkgo node (e.g. a BeforeSuite, BeforeEach, It, etc...).`,
 	}
 }
 
+func (g ginkgoErrors) RerunningSuite() error {
+	return GinkgoError{
+		Heading: "Rerunning Suite",
+		Message: formatter.F(`It looks like you are calling RunSpecs more than once. Ginkgo does not support rerunning suites.  If you want to rerun a suite try {{bold}}ginkgo --repeat=N{{/}} or {{bold}}ginkgo --until-it-fails{{/}}`),
+		DocLink: "repeating-test-runs-and-managing-flakey-tests",
+	}
+}
+
+/* Tree construction errors */
+
 func (g ginkgoErrors) PushingNodeInRunPhase(nodeType NodeType, cl CodeLocation) error {
 	return GinkgoError{
 		Heading: "Ginkgo detected an issue with your test structure",
@@ -87,27 +97,6 @@ Please ensure all assertions are inside leaf nodes such as {{bold}}BeforeEach{{/
 %v`, caughtPanic),
 		CodeLocation: cl,
 		DocLink:      "do-not-make-assertions-in-container-node-functions",
-	}
-}
-
-func (g ginkgoErrors) AggregatedReportUnavailableDueToNodeDisappearing() error {
-	return GinkgoError{
-		Heading: "Test Report unavailable because a Ginkgo parallel process disappeared",
-		Message: "The aggregated report could not be fetched for a ReportAfterSuite node.  A Ginkgo parallel process disappeared before it could finish reporting.",
-	}
-}
-
-func (g ginkgoErrors) SynchronizedBeforeSuiteFailedOnNode1() error {
-	return GinkgoError{
-		Heading: "SynchronizedBeforeSuite failed on Ginkgo parallel process #1",
-		Message: "The first SynchronizedBeforeSuite function running on Ginkgo parallel process #1 failed.  This test suite will now abort.",
-	}
-}
-
-func (g ginkgoErrors) SynchronizedBeforeSuiteDisappearedOnNode1() error {
-	return GinkgoError{
-		Heading: "Node 1 disappeard before SynchronizedBeforeSuite could report back",
-		Message: "Ginkgo parallel process #1 disappeared before the first SynchronizedBeforeSuite function completed.  This test suite will now abort.",
 	}
 }
 
@@ -166,22 +155,87 @@ Ginkgo only allows you to define one suite %s node.`, nodeType, earlierNodeType,
 	}
 }
 
-func (g ginkgoErrors) InvalidBodyType(t reflect.Type, cl CodeLocation) error {
+/* Decoration errors */
+
+func (g ginkgoErrors) InvalidDecorationForNodeType(cl CodeLocation, nodeType NodeType, decoration string) error {
 	return GinkgoError{
-		Heading: "Invalid Parameter",
-		Message: formatter.F(`Ginkgo nodes must be passed {{bold}}func(){{/}} - i.e. functions that take nothing and return nothing.
-You passed {{bold}}%s{{/}} instead.`, t),
+		Heading:      "Invalid Decoration",
+		Message:      formatter.F(`[%s] node cannot be passed a '%s' decoration`, nodeType, decoration),
 		CodeLocation: cl,
+		DocLink:      "node-decoration-reference",
 	}
 }
 
-func (g ginkgoErrors) RerunningSuite() error {
+func (g ginkgoErrors) InvalidDeclarationOfFocusedAndPending(cl CodeLocation, nodeType NodeType) error {
 	return GinkgoError{
-		Heading: "Rerunning Suite",
-		Message: formatter.F(`It looks like you are calling RunSpecs more than once. Ginkgo does not support rerunning suites.  If you want to rerun a suite try {{bold}}ginkgo --repeat=N{{/}} or {{bold}}ginkgo --until-it-fails{{/}}`),
-		DocLink: "repeating-test-runs-and-managing-flakey-tests",
+		Heading:      "Invalid Combination of Decorations: Focused and Pending",
+		Message:      formatter.F(`[%s] node was decorated with both Focus and Pending.  At most one is allowed.`, nodeType),
+		CodeLocation: cl,
+		DocLink:      "node-decoration-reference",
 	}
 }
+
+func (g ginkgoErrors) UnknownDecoration(cl CodeLocation, nodeType NodeType, decoration interface{}) error {
+	return GinkgoError{
+		Heading:      "Unkown Decoration",
+		Message:      formatter.F(`[%s] node was passed an unkown decoration: '%#v'`, nodeType, decoration),
+		CodeLocation: cl,
+		DocLink:      "node-decoration-reference",
+	}
+}
+
+func (g ginkgoErrors) InvalidBodyType(t reflect.Type, cl CodeLocation, nodeType NodeType) error {
+	return GinkgoError{
+		Heading: "Invalid Function",
+		Message: formatter.F(`[%s] node must be passed {{bold}}func(){{/}} - i.e. functions that take nothing and return nothing.
+You passed {{bold}}%s{{/}} instead.`, nodeType, t),
+		CodeLocation: cl,
+		DocLink:      "node-decoration-reference",
+	}
+}
+
+func (g ginkgoErrors) MultipleBodyFunctions(cl CodeLocation, nodeType NodeType) error {
+	return GinkgoError{
+		Heading:      "Multiple Functions",
+		Message:      formatter.F(`[%s] node must be passed a single {{bold}}func(){{/}} - but more than one was passed in.`, nodeType),
+		CodeLocation: cl,
+		DocLink:      "node-decoration-reference",
+	}
+}
+
+func (g ginkgoErrors) MissingBodyFunction(cl CodeLocation, nodeType NodeType) error {
+	return GinkgoError{
+		Heading:      "Missing Functions",
+		Message:      formatter.F(`[%s] node must be passed a single {{bold}}func(){{/}} - but none was passed in.`, nodeType),
+		CodeLocation: cl,
+		DocLink:      "node-decoration-reference",
+	}
+}
+
+/* Parallel Synchronization errors */
+
+func (g ginkgoErrors) AggregatedReportUnavailableDueToNodeDisappearing() error {
+	return GinkgoError{
+		Heading: "Test Report unavailable because a Ginkgo parallel process disappeared",
+		Message: "The aggregated report could not be fetched for a ReportAfterSuite node.  A Ginkgo parallel process disappeared before it could finish reporting.",
+	}
+}
+
+func (g ginkgoErrors) SynchronizedBeforeSuiteFailedOnNode1() error {
+	return GinkgoError{
+		Heading: "SynchronizedBeforeSuite failed on Ginkgo parallel process #1",
+		Message: "The first SynchronizedBeforeSuite function running on Ginkgo parallel process #1 failed.  This test suite will now abort.",
+	}
+}
+
+func (g ginkgoErrors) SynchronizedBeforeSuiteDisappearedOnNode1() error {
+	return GinkgoError{
+		Heading: "Node 1 disappeard before SynchronizedBeforeSuite could report back",
+		Message: "Ginkgo parallel process #1 disappeared before the first SynchronizedBeforeSuite function completed.  This test suite will now abort.",
+	}
+}
+
+/* Configuration errors */
 
 var sharedParallelErrorMessage = "It looks like you are trying to run tests in parallel with go test.\nThis is unsupported and you should use the ginkgo CLI instead."
 

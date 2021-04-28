@@ -698,7 +698,7 @@ It is sometimes useful to rerun a test suite repeatedly - for example, to ensure
 
 > Note, you should not call `RunSpecs` more than once in your test suite.  Ginkgo will exit with an error if you attempt to do so - use `--repeat` or `--until-it-fails` instead.
 
-It is strongly recommended that flakey tests be identified quickly and fixed.  Sometimes, however, flakey tests can't be prevented and retries are necessary.  The `ginkgo` CLI supports this at a global level with `ginkgo --flake-attempts=N`.  Any individual test that fails will be rerun up-to `N` times.  If it succeeds in any of those tries the test suite is considered successful.
+It is strongly recommended that flakey tests be identified quickly and fixed.  Sometimes, however, flakey tests can't be prevented and retries are necessary.  The `ginkgo` CLI supports this at a global level with `ginkgo --flake-attempts=N`.  Any individual test that fails will be run up-to `N` times.  If it succeeds in any of those tries the test suite is considered successful.  For a more granular approach you can decorate individual tests or test containers with [the `FlakeAttempts(N)` decoration](#the-flakeattempts-decoration)
 
 ### Parallel Specs
 
@@ -821,6 +821,109 @@ With `SynchronizedAfterSuite` the *first* function is run on *all* nodes (includ
 Finally, all of these function can be passed an additional `Done` parameter to run asynchronously.  When running asynchronously, an optional timeout can be provided as a third parameter to `SynchronizedBeforeSuite` and `SynchronizedAfterSuite`.  The same timeout is applied to both functions.
 
 > Note an important subtelty:  The `dbRunner` variable is *only* populated on Node 1.  No other node should attempt to touch the data in that variable (it will be nil on the other nodes).  The `dbClient` variable, which is populated in the second `SynchronizedBeforeSuite` function is, of course, available across all nodes.
+
+### Node Decoration Reference
+We've seen a number of node decorations detailed throughout this documentation.  This reference collects them all in one place.
+
+#### Node Decorations Overview
+The Ginkgo container nodes (`Describe`, `Context`, `When`), Ginkgo subject nodes (`It`, `Specify`), and Ginkgo setup nodes (`BeforeEach`, `AfterEach`, `JustBeforeEach`, `JustAfterEach`) can all be decorated.  Decorations are specially typed arguments passed into the node constructors.  They can appear anywhere in the `args ...interface{}` list in the constructor signatures:
+
+```go
+func Describe(text string, args ...interface{})
+func It(text string, args ...interface{})
+func BeforeEach(args ...interface{})
+```
+
+Ginkgo will vet the passed in decorations and exit with a clear error message if it detects any invalid configurations. 
+
+#### The Focus and Pending Decoration
+The `Focus` and `Pending` decorations apply to container nodes and subject nodes only.  It is an error to try to `Focus` or `Pending` a setup node.
+
+Using these decorators is identical to using the `FX` or `PX` form of the node constructor.  For example:
+
+```go
+FDescribe("container", func() {
+    It("runs", func() {})
+    PIt("is pending", func() {})
+})
+```
+
+and
+
+```go
+Describe("container", Focus, func() {
+    It("runs", func() {})
+    It("is pending", Pending, func() {})
+})
+```
+
+are equivalent.
+
+It is an error to decorate a node as both `Pending` and `Focus`:
+```go
+It("is invalid", Focus, Pending, func() {}) //this will cause Ginkgo to exit with an error
+```
+
+The `Focus` and `Pending` decorations are propagated through the test hierarchy as described in [Pending Specs](#pending-specs) and [Focused Specs](#focused-specs)
+
+#### The `Offset` Decoration
+The `Offset(uint)` decoration applies to all decorable nodes.  The `Offset(uint)` decoration allows the user to change the stack-frame offset used to compute the location of the test node.  This is useful when building shared test behaviors.  For example:
+
+```
+SharedBehaviorIt := func() {
+    It("does something common and complicated", Offset(1), func() {
+        ...
+    })
+}
+
+Describe("thing A", func() {
+    SharedBehaviorIt()
+})
+
+Describe("thing B", func() {
+    SharedBehaviorIt()
+})
+```
+
+now, if the `It` defined in `SharedBehaviorIt` the location reported by Ginkgo will point to the line where `SharedBehaviorIt` is *invoked*.
+
+`Offset`s only apply to the node that they decorate.  Setting the `Offset` for a container node does not affect the `Offset`s computed in its child nodes.
+
+If multiple `Offset`s are provided on a given node, only the last one is used.
+
+#### The `CodeLocation` Decoration
+In addition to `Offset`, users can decorate nodes with a `types.CodeLocation`.  `CodeLocation`s are the structs Ginkgo uses to capture location information.  You can, for example, set a custom location using `types.NewCustomCodeLocation(message string)`.  Now when the location of the node is emitted the passed in `message` will be printed out instead of the usual `file:line` location.
+
+Passing a `types.CodeLocation` decoraiton in has the same semantics as passing `Offset` in: it only applies to the node in question.
+
+#### The `FlakeAttempts` Decoration
+The `FlakeAttempts(uint)` decoration applies container and subject nodes.  It is an error to apply `FlakeAttempts` to a setup node.
+
+`FlakeAttempts` allows the user to flag specific tests or groups of tests as potentially flaky.  Ginkgo will run tests up to the number of times specified in `FlakeAttempts` until they pass.  For example:
+
+```
+Describe("flaky tests", FlakeAttempts(3), func() {
+    It("is flaky", func() {
+        ...
+    })
+
+    It("is also flaky", func() {
+        ...
+    })
+
+    It("is _really_ flaky", FlakeAttempts(5) func() {
+        ...
+    })
+
+    It("is _not_ flaky", FlakeAttempts(1), func() {
+        ...
+    })
+})
+```
+
+With this setup, `"is flaky"` and `"is also flaky"` will run up to 3 times.  `"is _really_ flaky"` will run up to 5 times.  `"is _not_ flaky"` will run only once.  Note that if multiple `FlakeAttempts` appear in a spec's hierarchy, the most deeply nested `FlakeAttempts` wins.  If multiple `FlakeAttempts` are passed into a given node, the last one wins.
+
+If `ginkgo --flake-attempts=N` is set the value passed in by the CLI will override all the decorated values.  Every test will now run up to `N` times.
 
 ### Interrupting and Aborting Test Runs
 
