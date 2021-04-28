@@ -32,8 +32,39 @@ var _ = Describe("Spec and Specs", func() {
 		})
 
 		Context("when no nodes match", func() {
-			spec := S(N(ntCon), N(ntIt), N(ntAf))
-			Ω(spec.FirstNodeWithType(ntBef)).Should(BeZero())
+			It("returns zero", func() {
+				spec := S(N(ntCon), N(ntIt), N(ntAf))
+				Ω(spec.FirstNodeWithType(ntBef)).Should(BeZero())
+			})
+		})
+	})
+
+	Describe("spec.FlakeAttempts", func() {
+		Context("when none of the nodes have FlakeAttempt", func() {
+			It("returns 0", func() {
+				spec := S(N(ntCon), N(ntCon), N(ntIt))
+				Ω(spec.FlakeAttempts()).Should(Equal(0))
+			})
+		})
+
+		Context("when a node has FlakeAttempt set", func() {
+			It("returns that FlakeAttempt", func() {
+				spec := S(N(ntCon, FlakeAttempts(3)), N(ntCon), N(ntIt))
+				Ω(spec.FlakeAttempts()).Should(Equal(3))
+
+				spec = S(N(ntCon), N(ntCon, FlakeAttempts(2)), N(ntIt))
+				Ω(spec.FlakeAttempts()).Should(Equal(2))
+
+				spec = S(N(ntCon), N(ntCon), N(ntIt, FlakeAttempts(4)))
+				Ω(spec.FlakeAttempts()).Should(Equal(4))
+			})
+		})
+
+		Context("when multiple nodes have FlakeAttempt", func() {
+			It("returns the inner-most nested FlakeAttempt", func() {
+				spec := S(N(ntCon, FlakeAttempts(3)), N(ntCon, FlakeAttempts(4)), N(ntIt, FlakeAttempts(2)))
+				Ω(spec.FlakeAttempts()).Should(Equal(2))
+			})
 		})
 	})
 
@@ -53,7 +84,7 @@ var _ = Describe("Spec and Specs", func() {
 			It("returns true", func() {
 				specs := Specs{
 					S(N(), N(), N()),
-					S(N(), N(MarkedPending(true)), N()),
+					S(N(), N(Pending), N()),
 					S(N(), N()),
 				}
 

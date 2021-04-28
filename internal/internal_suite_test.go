@@ -32,28 +32,39 @@ var ntJusAf = types.NodeTypeJustAfterEach
 var ntJusBef = types.NodeTypeJustBeforeEach
 
 type NestingLevel int
-type MarkedPending bool
-type MarkedFocus bool
 
 // convenience helper to quickly make nodes
-func N(options ...interface{}) Node {
-	node := internal.NewNode(types.NodeTypeIt, "", nil, cl, false, false)
-	for _, option := range options {
-		if reflect.TypeOf(option).Kind() == reflect.String {
-			node.Text = option.(string)
-		} else if reflect.TypeOf(option) == reflect.TypeOf(types.NodeTypeInvalid) {
-			node.NodeType = option.(NodeType)
-		} else if reflect.TypeOf(option) == reflect.TypeOf(NestingLevel(1)) {
-			node.NestingLevel = int(option.(NestingLevel))
-		} else if reflect.TypeOf(option) == reflect.TypeOf(cl) {
-			node.CodeLocation = option.(types.CodeLocation)
-		} else if reflect.TypeOf(option) == reflect.TypeOf(MarkedFocus(true)) {
-			node.MarkedFocus = bool(option.(MarkedFocus))
-		} else if reflect.TypeOf(option) == reflect.TypeOf(MarkedPending(true)) {
-			node.MarkedPending = bool(option.(MarkedPending))
-		} else if reflect.TypeOf(option).Kind() == reflect.Func {
-			node.Body = option.(func())
+// assumes they are correctly configured and no errors occur
+func N(args ...interface{}) Node {
+	nodeType, text, nestingLevel, hasBody := types.NodeTypeIt, "", -1, false
+	remainingArgs := []interface{}{cl}
+	for _, arg := range args {
+		switch t := reflect.TypeOf(arg); {
+		case t == reflect.TypeOf(NestingLevel(1)):
+			nestingLevel = int(arg.(NestingLevel))
+		case t == reflect.TypeOf(text):
+			text = arg.(string)
+		case t == reflect.TypeOf(nodeType):
+			nodeType = arg.(types.NodeType)
+		case t.Kind() == reflect.Func:
+			hasBody = true
+			remainingArgs = append(remainingArgs, arg)
+		default:
+			remainingArgs = append(remainingArgs, arg)
 		}
+	}
+	//the hasBody dance is necessary to (a) make sure internal.NewNode is happy (it requires a body) and (b) to then nil out the resulting body to ensure node comparisons work
+	//as reflect.DeepEqual cannot compare functions.  Even by pointer.  'Cause.  You know.
+	if !hasBody {
+		remainingArgs = append(remainingArgs, func() {})
+	}
+	node, errors := internal.NewNode(nil, nodeType, text, remainingArgs...)
+	if nestingLevel != -1 {
+		node.NestingLevel = nestingLevel
+	}
+	ExpectWithOffset(1, errors).Should(BeEmpty())
+	if !hasBody {
+		node.Body = nil
 	}
 	return node
 }

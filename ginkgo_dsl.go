@@ -16,7 +16,6 @@ import (
 	"io"
 	"os"
 	"path/filepath"
-	"reflect"
 	"strings"
 	"time"
 
@@ -259,12 +258,25 @@ func GinkgoRecover() {
 	}
 }
 
-// pushNode  are used by the various test construction DSL methods to push nodes onto the suite
+// pushNode is used by the various test construction DSL methods to push nodes onto the suite
 // it handles returned errors, emits a detailed error message to help the user learn what they may have done wrong, then exits
-func pushNode(node internal.Node) bool {
+func pushNode(node internal.Node, errors []error) bool {
+	exitIfErrors(errors)
 	exitIfErr(global.Suite.PushNode(node))
 	return true
 }
+
+//Offset(uint) is a decorator that allows you to change the stack-frame offset used when computing the line number of the node in question.
+type Offset = internal.Offset
+
+//FlakeAttempts(uint N) is a decorator that allows you to mark individual tests or test containers as flaky.  Ginkgo will run them up to `N` times until they pass.
+type FlakeAttempts = internal.FlakeAttempts
+
+//Focus is a decorator that allows you to mark a test or container as focused.  Identical to FIt and FDescribe.
+const Focus = internal.Focus
+
+//Pending is a decorator that allows you to mark a test or container as pending.  Identical to PIt and PDescribe.
+const Pending = internal.Pending
 
 //Describe blocks allow you to organize your specs.  A Describe block can contain any number of
 //BeforeEach, AfterEach, JustBeforeEach, and It blocks.
@@ -272,24 +284,24 @@ func pushNode(node internal.Node) bool {
 //In addition you can nest Describe, Context and When blocks.  Describe, Context and When blocks are functionally
 //equivalent.  The difference is purely semantic -- you typically Describe the behavior of an object
 //or method and, within that Describe, outline a number of Contexts and Whens.
-func Describe(text string, body func()) bool {
-	return pushNode(internal.NewNode(types.NodeTypeContainer, text, body, types.NewCodeLocation(1), false, false))
+func Describe(text string, args ...interface{}) bool {
+	return pushNode(internal.NewNode(deprecationTracker, types.NodeTypeContainer, text, args...))
 }
 
 //You can focus the tests within a describe block using FDescribe
-func FDescribe(text string, body func()) bool {
-	return pushNode(internal.NewNode(types.NodeTypeContainer, text, body, types.NewCodeLocation(1), true, false))
+func FDescribe(text string, args ...interface{}) bool {
+	args = append(args, internal.Focus)
+	return pushNode(internal.NewNode(deprecationTracker, types.NodeTypeContainer, text, args...))
 }
 
 //You can mark the tests within a describe block as pending using PDescribe
-func PDescribe(text string, body func()) bool {
-	return pushNode(internal.NewNode(types.NodeTypeContainer, text, body, types.NewCodeLocation(1), false, true))
+func PDescribe(text string, args ...interface{}) bool {
+	args = append(args, internal.Pending)
+	return pushNode(internal.NewNode(deprecationTracker, types.NodeTypeContainer, text, args...))
 }
 
 //You can mark the tests within a describe block as pending using XDescribe
-func XDescribe(text string, body func()) bool {
-	return pushNode(internal.NewNode(types.NodeTypeContainer, text, body, types.NewCodeLocation(1), false, true))
-}
+var XDescribe = PDescribe
 
 //Context blocks allow you to organize your specs.  A Context block can contain any number of
 //BeforeEach, AfterEach, JustBeforeEach, and It blocks.
@@ -297,24 +309,7 @@ func XDescribe(text string, body func()) bool {
 //In addition you can nest Describe, Context and When blocks.  Describe, Context and When blocks are functionally
 //equivalent.  The difference is purely semantic -- you typical Describe the behavior of an object
 //or method and, within that Describe, outline a number of Contexts and Whens.
-func Context(text string, body func()) bool {
-	return pushNode(internal.NewNode(types.NodeTypeContainer, text, body, types.NewCodeLocation(1), false, false))
-}
-
-//You can focus the tests within a describe block using FContext
-func FContext(text string, body func()) bool {
-	return pushNode(internal.NewNode(types.NodeTypeContainer, text, body, types.NewCodeLocation(1), true, false))
-}
-
-//You can mark the tests within a describe block as pending using PContext
-func PContext(text string, body func()) bool {
-	return pushNode(internal.NewNode(types.NodeTypeContainer, text, body, types.NewCodeLocation(1), false, true))
-}
-
-//You can mark the tests within a describe block as pending using XContext
-func XContext(text string, body func()) bool {
-	return pushNode(internal.NewNode(types.NodeTypeContainer, text, body, types.NewCodeLocation(1), false, true))
-}
+var Context, FContext, PContext, XContext = Describe, FDescribe, PDescribe, XDescribe
 
 //When blocks allow you to organize your specs.  A When block can contain any number of
 //BeforeEach, AfterEach, JustBeforeEach, and It blocks.
@@ -322,71 +317,33 @@ func XContext(text string, body func()) bool {
 //In addition you can nest Describe, Context and When blocks.  Describe, Context and When blocks are functionally
 //equivalent.  The difference is purely semantic -- you typical Describe the behavior of an object
 //or method and, within that Describe, outline a number of Contexts and Whens.
-func When(text string, body func()) bool {
-	return pushNode(internal.NewNode(types.NodeTypeContainer, "when "+text, body, types.NewCodeLocation(1), false, false))
-}
-
-//You can focus the tests within a describe block using FWhen
-func FWhen(text string, body func()) bool {
-	return pushNode(internal.NewNode(types.NodeTypeContainer, "when "+text, body, types.NewCodeLocation(1), true, false))
-}
-
-//You can mark the tests within a describe block as pending using PWhen
-func PWhen(text string, body func()) bool {
-	return pushNode(internal.NewNode(types.NodeTypeContainer, "when "+text, body, types.NewCodeLocation(1), false, true))
-}
-
-//You can mark the tests within a describe block as pending using XWhen
-func XWhen(text string, body func()) bool {
-	return pushNode(internal.NewNode(types.NodeTypeContainer, "when "+text, body, types.NewCodeLocation(1), false, true))
-}
+var When, FWhen, PWhen, XWhen = Describe, FDescribe, PDescribe, XDescribe
 
 //It blocks contain your test code and assertions.  You cannot nest any other Ginkgo blocks
 //within an It block.
-func It(text string, body interface{}, _ ...interface{}) bool {
-	cl := types.NewCodeLocation(1)
-	return pushNode(internal.NewNode(types.NodeTypeIt, text, validateBodyFunc(body, cl), cl, false, false))
+func It(text string, args ...interface{}) bool {
+	return pushNode(internal.NewNode(deprecationTracker, types.NodeTypeIt, text, args...))
 }
 
 //You can focus individual Its using FIt
-func FIt(text string, body interface{}, _ ...interface{}) bool {
-	cl := types.NewCodeLocation(1)
-	return pushNode(internal.NewNode(types.NodeTypeIt, text, validateBodyFunc(body, cl), cl, true, false))
+func FIt(text string, args ...interface{}) bool {
+	args = append(args, internal.Focus)
+	return pushNode(internal.NewNode(deprecationTracker, types.NodeTypeIt, text, args...))
 }
 
 //You can mark Its as pending using PIt
-func PIt(text string, _ ...interface{}) bool {
-	return pushNode(internal.NewNode(types.NodeTypeIt, text, nil, types.NewCodeLocation(1), false, true))
+func PIt(text string, args ...interface{}) bool {
+	args = append(args, internal.Pending)
+	return pushNode(internal.NewNode(deprecationTracker, types.NodeTypeIt, text, args...))
 }
 
 //You can mark Its as pending using XIt
-func XIt(text string, _ ...interface{}) bool {
-	return pushNode(internal.NewNode(types.NodeTypeIt, text, nil, types.NewCodeLocation(1), false, true))
-}
+var XIt = PIt
 
 //Specify blocks are aliases for It blocks and allow for more natural wording in situations
 //which "It" does not fit into a natural sentence flow. All the same protocols apply for Specify blocks
 //which apply to It blocks.
-func Specify(text string, body interface{}, _ ...interface{}) bool {
-	cl := types.NewCodeLocation(1)
-	return pushNode(internal.NewNode(types.NodeTypeIt, text, validateBodyFunc(body, cl), cl, false, false))
-}
-
-//You can focus individual Specifys using FSpecify
-func FSpecify(text string, body interface{}, _ ...interface{}) bool {
-	cl := types.NewCodeLocation(1)
-	return pushNode(internal.NewNode(types.NodeTypeIt, text, validateBodyFunc(body, cl), cl, true, false))
-}
-
-//You can mark Specifys as pending using PSpecify
-func PSpecify(text string, _ ...interface{}) bool {
-	return pushNode(internal.NewNode(types.NodeTypeIt, text, nil, types.NewCodeLocation(1), false, true))
-}
-
-//You can mark Specifys as pending using XSpecify
-func XSpecify(text string, _ ...interface{}) bool {
-	return pushNode(internal.NewNode(types.NodeTypeIt, text, nil, types.NewCodeLocation(1), false, true))
-}
+var Specify, FSpecify, PSpecify, XSpecify = It, FIt, PIt, XIt
 
 //By allows you to better document large Its.
 //
@@ -414,8 +371,7 @@ func By(text string, callbacks ...func()) {
 //
 //You may only register *one* BeforeSuite handler per test suite.  You typically do so in your bootstrap file at the top level.
 func BeforeSuite(body func()) bool {
-	cl := types.NewCodeLocation(1)
-	return pushNode(internal.NewNode(types.NodeTypeBeforeSuite, "", validateBodyFunc(body, cl), cl, false, false))
+	return pushNode(internal.NewNode(deprecationTracker, types.NodeTypeBeforeSuite, "", body))
 }
 
 //AfterSuite blocks are *always* run after all the specs regardless of whether specs have passed or failed.
@@ -425,8 +381,7 @@ func BeforeSuite(body func()) bool {
 //
 //You may only register *one* AfterSuite handler per test suite.  You typically do so in your bootstrap file at the top level.
 func AfterSuite(body func()) bool {
-	cl := types.NewCodeLocation(1)
-	return pushNode(internal.NewNode(types.NodeTypeAfterSuite, "", validateBodyFunc(body, cl), cl, false, false))
+	return pushNode(internal.NewNode(deprecationTracker, types.NodeTypeAfterSuite, "", body))
 }
 
 //SynchronizedBeforeSuite blocks are primarily meant to solve the problem of setting up singleton external resources shared across
@@ -484,40 +439,6 @@ func SynchronizedAfterSuite(allNodesBody func(), node1Body func()) bool {
 	return pushNode(internal.NewSynchronizedAfterSuiteNode(allNodesBody, node1Body, types.NewCodeLocation(1)))
 }
 
-//BeforeEach blocks are run before It blocks.  When multiple BeforeEach blocks are defined in nested
-//Describe and Context blocks the outermost BeforeEach blocks are run first.
-func BeforeEach(body interface{}, _ ...interface{}) bool {
-	cl := types.NewCodeLocation(1)
-	return pushNode(internal.NewNode(types.NodeTypeBeforeEach, "", validateBodyFunc(body, cl), cl, false, false))
-}
-
-//JustBeforeEach blocks are run before It blocks but *after* all BeforeEach blocks.  For more details,
-//read the [documentation](http://onsi.github.io/ginkgo/#separating_creation_and_configuration_)
-func JustBeforeEach(body interface{}, _ ...interface{}) bool {
-	cl := types.NewCodeLocation(1)
-	return pushNode(internal.NewNode(types.NodeTypeJustBeforeEach, "", validateBodyFunc(body, cl), cl, false, false))
-}
-
-//JustAfterEach blocks are run after It blocks but *before* all AfterEach blocks.  For more details,
-//read the [documentation](http://onsi.github.io/ginkgo/#separating_creation_and_configuration_)
-func JustAfterEach(body interface{}, _ ...interface{}) bool {
-	cl := types.NewCodeLocation(1)
-	return pushNode(internal.NewNode(types.NodeTypeJustAfterEach, "", validateBodyFunc(body, cl), cl, false, false))
-}
-
-//AfterEach blocks are run after It blocks.   When multiple AfterEach blocks are defined in nested
-//Describe and Context blocks the innermost AfterEach blocks are run first.
-func AfterEach(body interface{}, _ ...interface{}) bool {
-	cl := types.NewCodeLocation(1)
-	return pushNode(internal.NewNode(types.NodeTypeAfterEach, "", validateBodyFunc(body, cl), cl, false, false))
-}
-
-//ReportAfterEach nodes are run for each test, even if the test is skipped or pending.  ReportAfterEach nodes take a function that
-//receives a types.SpecReport.  They are called after the test has completed and are passed in the final report for the test.
-func ReportAfterEach(body func(SpecReport)) bool {
-	return pushNode(internal.NewReportAfterEachNode(body, types.NewCodeLocation(1)))
-}
-
 // ReportAfterSuite nodes are run at the end of the suite.  ReportAfterSuite nodes take a function that receives a types.Report.
 // They are called at the end of the suite, after all specs have run and any AfterSuite or SynchronizedAfterSuite nodes, and are passed in the final report for the test suite.
 // ReportAftersuite nodes must be created at the top-level (i.e. not nested in a Context/Describe/When node)
@@ -526,6 +447,36 @@ func ReportAfterEach(body func(SpecReport)) bool {
 // all parallel nodes
 func ReportAfterSuite(text string, body func(Report)) bool {
 	return pushNode(internal.NewReportAfterSuiteNode(text, body, types.NewCodeLocation(1)))
+}
+
+//BeforeEach blocks are run before It blocks.  When multiple BeforeEach blocks are defined in nested
+//Describe and Context blocks the outermost BeforeEach blocks are run first.
+func BeforeEach(args ...interface{}) bool {
+	return pushNode(internal.NewNode(deprecationTracker, types.NodeTypeBeforeEach, "", args...))
+}
+
+//JustBeforeEach blocks are run before It blocks but *after* all BeforeEach blocks.  For more details,
+//read the [documentation](http://onsi.github.io/ginkgo/#separating_creation_and_configuration_)
+func JustBeforeEach(args ...interface{}) bool {
+	return pushNode(internal.NewNode(deprecationTracker, types.NodeTypeJustBeforeEach, "", args...))
+}
+
+//JustAfterEach blocks are run after It blocks but *before* all AfterEach blocks.  For more details,
+//read the [documentation](http://onsi.github.io/ginkgo/#separating_creation_and_configuration_)
+func JustAfterEach(args ...interface{}) bool {
+	return pushNode(internal.NewNode(deprecationTracker, types.NodeTypeJustAfterEach, "", args...))
+}
+
+//AfterEach blocks are run after It blocks.   When multiple AfterEach blocks are defined in nested
+//Describe and Context blocks the innermost AfterEach blocks are run first.
+func AfterEach(args ...interface{}) bool {
+	return pushNode(internal.NewNode(deprecationTracker, types.NodeTypeAfterEach, "", args...))
+}
+
+//ReportAfterEach nodes are run for each test, even if the test is skipped or pending.  ReportAfterEach nodes take a function that
+//receives a types.SpecReport.  They are called after the test has completed and are passed in the final report for the test.
+func ReportAfterEach(body func(SpecReport)) bool {
+	return pushNode(internal.NewReportAfterEachNode(body, types.NewCodeLocation(1)))
 }
 
 func registerReportAfterSuiteNodeForAutogeneratedReports(reporterConfig types.ReporterConfig) {
@@ -574,6 +525,15 @@ func exitIfErr(err error) {
 	}
 }
 
+func exitIfErrors(errors []error) {
+	if len(errors) > 0 {
+		for _, err := range errors {
+			fmt.Fprintln(formatter.ColorableStdErr, err.Error())
+		}
+		os.Exit(1)
+	}
+}
+
 /*
 ===================================================
    Deprecations for v2
@@ -581,36 +541,7 @@ func exitIfErr(err error) {
 */
 
 // Deprecated Done Channel for asynchronous testing
-type Done chan<- interface{}
-
-func validateBodyFunc(body interface{}, cl types.CodeLocation) func() {
-	t := reflect.TypeOf(body)
-	if t.Kind() != reflect.Func {
-		exitIfErr(types.GinkgoErrors.InvalidBodyType(t, cl))
-	}
-
-	if t.NumOut() > 0 {
-		exitIfErr(types.GinkgoErrors.InvalidBodyType(t, cl))
-	}
-
-	if t.NumIn() == 0 {
-		return body.(func())
-	}
-
-	if t.NumIn() > 1 {
-		exitIfErr(types.GinkgoErrors.InvalidBodyType(t, cl))
-	}
-
-	if t.In(0) != reflect.TypeOf(make(Done)) {
-		exitIfErr(types.GinkgoErrors.InvalidBodyType(t, cl))
-	}
-
-	deprecationTracker.TrackDeprecation(types.Deprecations.Async(), cl)
-
-	return func() {
-		body.(func(Done))(make(Done))
-	}
-}
+type Done = internal.Done
 
 //Deprecated: Custom Ginkgo test reporters are no longer supported
 //Please read the documentation at:
