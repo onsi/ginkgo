@@ -124,7 +124,7 @@ var _ = Describe("Flags Specs", func() {
 	})
 
 	It("should watch for slow specs", func() {
-		session := startGinkgo(fm.PathTo("flags"), "--slow-spec-threshold=0.05")
+		session := startGinkgo(fm.PathTo("flags"), "--slow-spec-threshold=50ms")
 		Eventually(session).Should(gexec.Exit(types.GINKGO_FOCUS_EXIT_CODE))
 		output := string(session.Out.Contents())
 

@@ -131,7 +131,7 @@ func (r *DefaultReporter) DidRun(report types.SpecReport) {
 			if report.NumAttempts > 1 {
 				header, stream = fmt.Sprintf("%s [FLAKEY TEST - TOOK %d ATTEMPTS TO PASS]", r.retryDenoter, report.NumAttempts), false
 			}
-			if report.RunTime.Seconds() > r.conf.SlowSpecThreshold {
+			if report.RunTime > r.conf.SlowSpecThreshold {
 				header, stream = fmt.Sprintf("%s [SLOW TEST]", header), false
 			}
 		}
