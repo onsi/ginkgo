@@ -30,6 +30,9 @@ Interrupt behavior is substantially improved, sending an interrupt signal will n
 
 Previously, sending a second interrupt signal would cause Ginkgo to exit immediately.  With the improved interrupt behavior this is no longer necessary and Ginkgo will not exit until the test suite has unwound and completed.
 
+### Timeout Behavior
+- default has changed to 1h
+
 ### Spec Decorations
 Specs can now be decorated with a series of new spec decorators.  These decorators enable fine-grained control over certain aspects of the spec's creation and lifecycle. 
 

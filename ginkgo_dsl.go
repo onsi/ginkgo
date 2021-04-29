@@ -201,7 +201,7 @@ func RunSpecs(t GinkgoTestingT, description string) bool {
 	suitePath, err = filepath.Abs(suitePath)
 	exitIfErr(err)
 
-	passed, hasFocusedTests := global.Suite.Run(description, suitePath, global.Failer, reporter, writer, outputInterceptor, internal.NewInterruptHandler(), suiteConfig)
+	passed, hasFocusedTests := global.Suite.Run(description, suitePath, global.Failer, reporter, writer, outputInterceptor, internal.NewInterruptHandler(suiteConfig.Timeout), suiteConfig)
 
 	flagSet.ValidateDeprecations(deprecationTracker)
 	if deprecationTracker.DidTrackDeprecations() {
