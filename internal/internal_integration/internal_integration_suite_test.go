@@ -43,6 +43,10 @@ var _ = BeforeEach(func() {
 	conf.ParallelNode = 1
 })
 
+var _ = AfterEach(func() {
+	interruptHandler.Stop()
+})
+
 /* Helpers to set up and run test fixtures using the Ginkgo DSL */
 func WithSuite(suite *internal.Suite, callback func()) {
 	originalSuite := global.Suite

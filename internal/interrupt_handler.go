@@ -7,19 +7,25 @@ import (
 	"runtime"
 	"sync"
 	"syscall"
+	"time"
 
 	"github.com/onsi/ginkgo/formatter"
 )
 
+const TIMEOUT_REPEAT_INTERRUPT_MAXIMUM_DURATION = 30 * time.Second
+const TIMEOUT_REPEAT_INTERRUPT_FRACTION_OF_TIMEOUT = 10
+
 type InterruptStatus struct {
 	Interrupted bool
 	Channel     chan interface{}
+	Cause       string
 }
 
 type InterruptHandlerInterface interface {
 	Status() InterruptStatus
 	SetInterruptMessage(string)
 	ClearInterruptMessage()
+	InterruptMessageWithStackTraces() string
 }
 
 type InterruptHandler struct {
@@ -27,25 +33,57 @@ type InterruptHandler struct {
 	lock             *sync.Mutex
 	interrupted      bool
 	interruptMessage string
+	interruptCause   string
+	stop             chan interface{}
 }
 
-func NewInterruptHandler() *InterruptHandler {
+func NewInterruptHandler(timeout time.Duration) *InterruptHandler {
 	handler := &InterruptHandler{
 		c:           make(chan interface{}),
 		lock:        &sync.Mutex{},
 		interrupted: false,
+		stop:        make(chan interface{}),
 	}
-	handler.registerForInterrupts()
+	handler.registerForInterrupts(timeout)
 	return handler
 }
 
-func (handler *InterruptHandler) registerForInterrupts() {
-	c := make(chan os.Signal, 1)
-	signal.Notify(c, os.Interrupt, syscall.SIGTERM)
+func (handler *InterruptHandler) Stop() {
+	close(handler.stop)
+}
+
+func (handler *InterruptHandler) registerForInterrupts(timeout time.Duration) {
+	signalChannel := make(chan os.Signal, 1)
+	signal.Notify(signalChannel, os.Interrupt, syscall.SIGTERM)
+	var timeoutChannel <-chan time.Time
+	var timer *time.Timer
+	if timeout > 0 {
+		timer = time.NewTimer(timeout)
+		timeoutChannel = timer.C
+	}
 	go func() {
 		for {
-			<-c
+			var interruptCause string
+			select {
+			case <-signalChannel:
+				interruptCause = "Interrupted by User"
+			case <-timeoutChannel:
+				interruptCause = "Interrupted by Timeout"
+				repeatInterruptTimeout := timeout / time.Duration(TIMEOUT_REPEAT_INTERRUPT_FRACTION_OF_TIMEOUT)
+				if repeatInterruptTimeout > TIMEOUT_REPEAT_INTERRUPT_MAXIMUM_DURATION {
+					repeatInterruptTimeout = TIMEOUT_REPEAT_INTERRUPT_MAXIMUM_DURATION
+				}
+				timer = time.NewTimer(repeatInterruptTimeout)
+				timeoutChannel = timer.C
+			case <-handler.stop:
+				if timer != nil {
+					timer.Stop()
+				}
+				signal.Stop(signalChannel)
+				return
+			}
 			handler.lock.Lock()
+			handler.interruptCause = interruptCause
 			if handler.interruptMessage != "" {
 				fmt.Println(handler.interruptMessage)
 			}
@@ -64,6 +102,7 @@ func (handler *InterruptHandler) Status() InterruptStatus {
 	return InterruptStatus{
 		Interrupted: handler.interrupted,
 		Channel:     handler.c,
+		Cause:       handler.interruptCause,
 	}
 }
 
@@ -81,8 +120,10 @@ func (handler *InterruptHandler) ClearInterruptMessage() {
 	handler.interruptMessage = ""
 }
 
-func interruptMessageWithStackTraces() string {
-	out := "Interrupted by User\n\n"
+func (handler *InterruptHandler) InterruptMessageWithStackTraces() string {
+	handler.lock.Lock()
+	out := fmt.Sprintf("%s\n\n", handler.interruptCause)
+	defer handler.lock.Unlock()
 	out += "Here's a stack trace of all running goroutines:\n"
 	buf := make([]byte, 8192)
 	for {

@@ -135,7 +135,7 @@ var _ = Describe("Reporting", func() {
 			Ω(report.SuitePath).Should(Equal(fm.AbsPathTo("reporting", "malformed_sub_package")))
 			Ω(report.SuiteDescription).Should(Equal(""))
 			Ω(report.SuiteConfig.RandomSeed).Should(Equal(int64(17)))
-			Ω(report.SpecialSuiteFailureReason).Should(ContainSubstring("Failed to compile malformed_sub_package:"))
+			Ω(report.SpecialSuiteFailureReasons).Should(ContainElement(ContainSubstring("Failed to compile malformed_sub_package:")))
 			Ω(report.SpecReports).Should(HaveLen(0))
 		}
 
