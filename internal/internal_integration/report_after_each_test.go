@@ -63,7 +63,7 @@ var _ = Describe("Sending reports to ReportAfterEach nodes", func() {
 					It("passes yet again", rt.T("passes-yet-again"))
 					It("skipped by interrupt", rt.T("skipped-by-interrupt"))
 					ReportAfterEach(func(report types.SpecReport) {
-						interruptHandler.Interrupt()
+						interruptHandler.Interrupt("Interrupted by Tester")
 						time.Sleep(100 * time.Millisecond)
 						rt.RunWithData("interrupt-reporter", "interrupt-message", interruptHandler.EmittedInterruptMessage())
 						reports["interrupt"] = append(reports["interrupt"], report)

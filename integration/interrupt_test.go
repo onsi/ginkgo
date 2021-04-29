@@ -9,7 +9,7 @@ import (
 	"github.com/onsi/gomega/gexec"
 )
 
-var _ = Describe("Interrupt", func() {
+var _ = Describe("Interrupt and Timeout", func() {
 	BeforeEach(func() {
 		fm.MountFixture("hanging")
 	})
@@ -43,6 +43,7 @@ var _ = Describe("Interrupt", func() {
 
 		It("should report where the suite was interrupted", func() {
 			Ω(session).Should(gbytes.Say(`\[INTERRUPTED\]`))
+			Ω(session).Should(gbytes.Say(`Interrupted by User`))
 			Ω(session).Should(gbytes.Say(`Here's a stack trace of all running goroutines:`))
 			Ω(session).Should(gbytes.Say(`\[It\] .*hanging_test.go:24`))
 		})
@@ -52,6 +53,35 @@ var _ = Describe("Interrupt", func() {
 			Ω(session).Should(gbytes.Say("Cleaning up twice..."))
 			Ω(session).Should(gbytes.Say("Cleaning up thrice..."))
 			Ω(session).Should(gbytes.Say("Heading Out After Suite"))
+		})
+		It("should emit a special failure reason", func() {
+			Ω(session).Should(gbytes.Say("FAIL! - Interrupted by User"))
+		})
+	})
+
+	Context("when the suite times out", func() {
+		var session *gexec.Session
+		BeforeEach(func() {
+			session = startGinkgo(fm.PathTo("hanging"), "--no-color", "--timeout=3s")
+			Eventually(session).Should(gexec.Exit(1))
+		})
+
+		It("should report where and why the suite was interrupted", func() {
+			Ω(session).Should(gbytes.Say(`\[INTERRUPTED\]`))
+			Ω(session).Should(gbytes.Say(`Interrupted by Timeout`))
+			Ω(session).Should(gbytes.Say(`Here's a stack trace of all running goroutines:`))
+			Ω(session).Should(gbytes.Say(`\[It\] .*hanging_test.go:24`))
+		})
+
+		It("should run the AfterEach and the AfterSuite", func() {
+			Ω(session).Should(gbytes.Say("Cleaning up once..."))
+			Ω(session).Should(gbytes.Say("Cleaning up twice..."))
+			Ω(session).Should(gbytes.Say("Cleaning up thrice..."))
+			Ω(session).Should(gbytes.Say("Heading Out After Suite"))
+		})
+
+		It("should emit a special failure reason", func() {
+			Ω(session).Should(gbytes.Say("FAIL! - Interrupted by Timeout"))
 		})
 	})
 })

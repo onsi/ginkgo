@@ -25,12 +25,14 @@ type Report struct {
 	//(i.e an `FIt` or an `FDescribe`
 	SuiteHasProgrammaticFocus bool
 
-	//SpecialSuiteFailureReason may contain a special failure reason
+	//SpecialSuiteFailureReasons may contain special failure reasons
 	//For example, a test suite might be considered "failed" even if none of the individual specs
 	//have a failure state.  For example, if the user has configured --fail-on-pending the test suite
 	//will have failed if there are pending tests even though all non-pending tests may have passed.  In such
-	//cases, Ginkgo populates SpecialSuiteFailureReason with a clear message indicating the reason for the failure.
-	SpecialSuiteFailureReason string
+	//cases, Ginkgo populates SpecialSuiteFailureReasons with a clear message indicating the reason for the failure.
+	//SpecialSuiteFailureReasons is also populated if the test suite is interrupted by the user.
+	//Since multiple special failure reasons can occur, this field is a slice.
+	SpecialSuiteFailureReasons []string
 
 	//PreRunStats contains a set of stats captured before the test run begins.  This is primarily used
 	//by Ginkgo's reporter to tell the user how many specs are in the current suite (PreRunStats.TotalSpecs)
@@ -74,10 +76,17 @@ func (report Report) Add(other Report) Report {
 		report.EndTime = other.EndTime
 	}
 
-	if other.SpecialSuiteFailureReason != "" && report.SpecialSuiteFailureReason == "" {
-		report.SpecialSuiteFailureReason = other.SpecialSuiteFailureReason
+	specialSuiteFailureReasons := []string{}
+	reasonsLookup := map[string]bool{}
+	for _, reasons := range [][]string{report.SpecialSuiteFailureReasons, other.SpecialSuiteFailureReasons} {
+		for _, reason := range reasons {
+			if !reasonsLookup[reason] {
+				reasonsLookup[reason] = true
+				specialSuiteFailureReasons = append(specialSuiteFailureReasons, reason)
+			}
+		}
 	}
-
+	report.SpecialSuiteFailureReasons = specialSuiteFailureReasons
 	report.RunTime = report.EndTime.Sub(report.StartTime)
 
 	reports := make(SpecReports, len(report.SpecReports)+len(other.SpecReports))
