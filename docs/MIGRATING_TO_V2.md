@@ -294,6 +294,9 @@ Users should update any scripts they have that invoke the `ginkgo` cli from came
 ### Removed: `-noisyPendings` and `-noisySkippings`
 Both these flags tweaked the reporter's behavior for pending and skipped tests.  A similar, and more intuitive, outcome is possible using `--succinct` and `-v`.
 
+### Changed: `-slowSpecThreshold`
+`-slowSpecThreshold` is now `-slow-spec-threshold` and takes a `time.Duration` (e.g. `5s` or `3m`) instead of a `float64` number of seconds.
+
 ### Removed: `-debug`
 The `-debug` flag has been removed.  It functioned primarily as a band-aid to Ginkgo V1's poor handling of stuck parallel tests. The new [interrupt behavior](#interrupt-behavior) in V2 resolves the root issues behind the `-debug` flag.
 

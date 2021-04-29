@@ -123,6 +123,8 @@ func bindFlagSet(f GinkgoFlagSet, flagSet *flag.FlagSet) (GinkgoFlagSet, error) 
 		deprecatedName := flag.DeprecatedName
 		if name != "" {
 			deprecatedUsage = fmt.Sprintf("[DEPRECATED] use --%s instead", name)
+		} else if flag.Usage != "" {
+			deprecatedUsage += " " + flag.Usage
 		}
 
 		value, ok := valueAtKeyPath(f.bindings, flag.KeyPath)
@@ -227,6 +229,8 @@ func (f GinkgoFlagSet) ValidateDeprecations(deprecationTracker *DeprecationTrack
 				message := fmt.Sprintf("--%s is deprecated", ginkgoFlag.DeprecatedName)
 				if ginkgoFlag.Name != "" {
 					message = fmt.Sprintf("--%s is deprecated, use --%s instead", ginkgoFlag.DeprecatedName, ginkgoFlag.Name)
+				} else if ginkgoFlag.Usage != "" {
+					message += " " + ginkgoFlag.Usage
 				}
 
 				deprecationTracker.TrackDeprecation(Deprecation{
