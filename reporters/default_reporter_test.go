@@ -122,7 +122,7 @@ func C(flags ...ConfigFlags) types.ReporterConfig {
 	}
 }
 
-const SlowSpecThreshold = 3.0
+const SlowSpecThreshold = 3 * time.Second
 
 var _ = Describe("DefaultReporter", func() {
 	var DENOTER = "•"
