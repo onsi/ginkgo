@@ -103,10 +103,10 @@ func FinalizeProfilesAndReportsForSuites(suites []TestSuite, cliConfig types.CLI
 	for _, suite := range reportableSuites {
 		if suite.CompilationError != nil {
 			report := types.Report{
-				SuitePath:                 suite.AbsPath(),
-				SuiteConfig:               suiteConfig,
-				SuiteSucceeded:            false,
-				SpecialSuiteFailureReason: fmt.Sprintf(suite.CompilationError.Error()),
+				SuitePath:                  suite.AbsPath(),
+				SuiteConfig:                suiteConfig,
+				SuiteSucceeded:             false,
+				SpecialSuiteFailureReasons: []string{fmt.Sprintf(suite.CompilationError.Error())},
 			}
 			for _, format := range reportFormats {
 				if format.Filename != "" {

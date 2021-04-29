@@ -48,7 +48,7 @@ var _ = Describe("Focus", func() {
 			})
 
 			It("does not include a special suite failure reason", func() {
-				Ω(reporter.End.SpecialSuiteFailureReason).Should(BeZero())
+				Ω(reporter.End.SpecialSuiteFailureReasons).Should(BeEmpty())
 			})
 		})
 
@@ -65,7 +65,7 @@ var _ = Describe("Focus", func() {
 			})
 
 			It("includes a special suite failure reason", func() {
-				Ω(reporter.End.SpecialSuiteFailureReason).Should(Equal("Detected pending specs and --fail-on-pending is set"))
+				Ω(reporter.End.SpecialSuiteFailureReasons).Should(ContainElement("Detected pending specs and --fail-on-pending is set"))
 			})
 		})
 	})

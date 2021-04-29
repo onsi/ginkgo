@@ -10,8 +10,10 @@ type FakeInterruptHandler struct {
 	triggerInterrupt chan bool
 
 	c                       chan interface{}
+	stop                    chan interface{}
 	lock                    *sync.Mutex
 	interrupted             bool
+	cause                   string
 	interruptMessage        string
 	emittedInterruptMessage string
 }
@@ -22,15 +24,24 @@ func NewFakeInterruptHandler() *FakeInterruptHandler {
 		c:                make(chan interface{}),
 		lock:             &sync.Mutex{},
 		interrupted:      false,
+		stop:             make(chan interface{}),
 	}
 	handler.registerForInterrupts()
 	return handler
 }
 
+func (handler *FakeInterruptHandler) Stop() {
+	close(handler.stop)
+}
+
 func (handler *FakeInterruptHandler) registerForInterrupts() {
 	go func() {
 		for {
-			<-handler.triggerInterrupt
+			select {
+			case <-handler.triggerInterrupt:
+			case <-handler.stop:
+				return
+			}
 			handler.lock.Lock()
 			handler.interrupted = true
 			handler.emittedInterruptMessage = handler.interruptMessage
@@ -41,7 +52,11 @@ func (handler *FakeInterruptHandler) registerForInterrupts() {
 	}()
 }
 
-func (handler *FakeInterruptHandler) Interrupt() {
+func (handler *FakeInterruptHandler) Interrupt(cause string) {
+	handler.lock.Lock()
+	handler.cause = cause
+	handler.lock.Unlock()
+
 	handler.triggerInterrupt <- true
 }
 
@@ -52,6 +67,7 @@ func (handler *FakeInterruptHandler) Status() internal.InterruptStatus {
 	return internal.InterruptStatus{
 		Interrupted: handler.interrupted,
 		Channel:     handler.c,
+		Cause:       handler.cause,
 	}
 }
 
@@ -73,4 +89,11 @@ func (handler *FakeInterruptHandler) EmittedInterruptMessage() string {
 	handler.lock.Lock()
 	defer handler.lock.Unlock()
 	return handler.emittedInterruptMessage
+}
+
+func (handler *FakeInterruptHandler) InterruptMessageWithStackTraces() string {
+	handler.lock.Lock()
+	defer handler.lock.Unlock()
+
+	return handler.cause + "\nstack trace"
 }
