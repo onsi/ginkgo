@@ -14,7 +14,7 @@ var _ = Describe("When a test suite is interrupted", func() {
 		BeforeEach(func() {
 			success, _ := RunFixture("interrupted test", func() {
 				BeforeSuite(rt.T("before-suite", func() {
-					interruptHandler.Interrupt()
+					interruptHandler.Interrupt("Interrupted by Tester")
 					time.Sleep(time.Hour)
 				}))
 				AfterSuite(rt.T("after-suite"))
@@ -32,11 +32,15 @@ var _ = Describe("When a test suite is interrupted", func() {
 		It("reports the correct failure", func() {
 			summary := reporter.Did.FindByLeafNodeType(types.NodeTypeBeforeSuite)
 			Ω(summary.State).Should(Equal(types.SpecStateInterrupted))
-			Ω(summary.Failure.Message).Should(ContainSubstring("Interrupted by User"))
+			Ω(summary.Failure.Message).Should(ContainSubstring("Interrupted by Tester\nstack trace"))
 		})
 
 		It("reports the correct statistics", func() {
 			Ω(reporter.End).Should(BeASuiteSummary(false, NSpecs(2), NWillRun(2), NPassed(0), NSkipped(0), NFailed(0)))
+		})
+
+		It("reports the correct special failure reason", func() {
+			Ω(reporter.End.SpecialSuiteFailureReasons).Should(ContainElement("Interrupted by Tester"))
 		})
 	})
 
@@ -54,12 +58,12 @@ var _ = Describe("When a test suite is interrupted", func() {
 					It("runs", rt.T("runs"))
 					Describe("nested-container", func() {
 						BeforeEach(rt.T("bef.3-interrupt!", func() {
-							interruptHandler.Interrupt()
+							interruptHandler.Interrupt("Interrupted by Tester")
 							time.Sleep(time.Hour)
 						}))
 						AfterEach(rt.T("aft.3a"))
 						AfterEach(rt.T("aft.3b", func() {
-							interruptHandler.Interrupt()
+							interruptHandler.Interrupt("Interrupted by Tester")
 							time.Sleep(time.Hour)
 						}))
 						Describe("deeply-nested-container", func() {
@@ -90,13 +94,12 @@ var _ = Describe("When a test suite is interrupted", func() {
 
 		It("reports the interrupted test as interrupted and emits a stack trace", func() {
 			message := reporter.Did.Find("the interrupted test").Failure.Message
-			Ω(message).Should(ContainSubstring("Interrupted by User"))
-			Ω(message).Should(ContainSubstring("Here's a stack trace of all running goroutines:"))
-			Ω(message).Should(ContainSubstring("internal.interruptMessageWithStackTraces"))
+			Ω(message).Should(ContainSubstring("Interrupted by Tester\nstack trace"))
 		})
 
 		It("reports the correct statistics", func() {
 			Ω(reporter.End).Should(BeASuiteSummary(false, NSpecs(4), NWillRun(4), NPassed(1), NSkipped(2), NFailed(1)))
+			Ω(reporter.End.SpecialSuiteFailureReasons).Should(ContainElement("Interrupted by Tester"))
 		})
 	})
 })

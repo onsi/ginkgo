@@ -25,6 +25,7 @@ type SuiteConfig struct {
 	FlakeAttempts      int
 	EmitSpecProgress   bool
 	DryRun             bool
+	Timeout            time.Duration
 
 	ParallelNode  int
 	ParallelTotal int
@@ -34,6 +35,7 @@ type SuiteConfig struct {
 func NewDefaultSuiteConfig() SuiteConfig {
 	return SuiteConfig{
 		RandomSeed:    time.Now().Unix(),
+		Timeout:       time.Hour,
 		ParallelNode:  1,
 		ParallelTotal: 1,
 	}
@@ -75,7 +77,6 @@ type CLIConfig struct {
 	Nodes                     int
 	Parallel                  bool
 	AfterRunHook              string
-	Timeout                   time.Duration
 	OutputDir                 string
 	KeepSeparateCoverprofiles bool
 	KeepSeparateReports       bool
@@ -93,7 +94,6 @@ type CLIConfig struct {
 
 func NewDefaultCLIConfig() CLIConfig {
 	return CLIConfig{
-		Timeout:     time.Hour * 24,
 		Depth:       1,
 		WatchRegExp: `\.go$`,
 	}
@@ -217,6 +217,8 @@ var SuiteConfigFlags = GinkgoFlags{
 		Usage: "If set, ginkgo will walk the test hierarchy without actually running anything.  Best paired with -v."},
 	{KeyPath: "S.EmitSpecProgress", Name: "progress", SectionKey: "debug",
 		Usage: "If set, ginkgo will emit progress information as each spec runs to the GinkgoWriter."},
+	{KeyPath: "S.Timeout", Name: "timeout", SectionKey: "debug", UsageDefaultValue: "1h",
+		Usage: "Test suite fails if it does not complete within the specified timeout."},
 
 	{KeyPath: "S.FocusStrings", Name: "focus", SectionKey: "filter",
 		Usage: "If set, ginkgo will only run specs that match this regular expression. Can be specified multiple times, values are ORed."},
@@ -346,8 +348,6 @@ var GinkgoCLIRunAndWatchFlags = GinkgoFlags{
 		Usage: "If set, ginkgo will run in parallel with an auto-detected number of nodes."},
 	{KeyPath: "C.AfterRunHook", Name: "after-run-hook", SectionKey: "misc", DeprecatedName: "afterSuiteHook", DeprecatedDocLink: "changed-command-line-flags",
 		Usage: "Command to run when a test suite completes."},
-	{KeyPath: "C.Timeout", Name: "timeout", SectionKey: "debug", UsageDefaultValue: "24h",
-		Usage: "Test suite fails if it does not complete within the specified timeout."},
 	{KeyPath: "C.OutputDir", Name: "output-dir", SectionKey: "output", UsageArgument: "directory", DeprecatedName: "outputdir", DeprecatedDocLink: "improved-profiling-support",
 		Usage: "A location to place all generated profiles and reports."},
 	{KeyPath: "C.KeepSeparateCoverprofiles", Name: "keep-separate-coverprofiles", SectionKey: "code-and-coverage-analysis",

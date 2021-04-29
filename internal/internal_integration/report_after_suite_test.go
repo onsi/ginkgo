@@ -40,7 +40,7 @@ var _ = Describe("Sending reports to ReportAfterSuite nodes", func() {
 			})
 			ReportAfterSuite("Report B", func(report Report) {
 				if interruptSuiteB {
-					interruptHandler.Interrupt()
+					interruptHandler.Interrupt("Interrupted by Tester")
 					time.Sleep(100 * time.Millisecond)
 				}
 				rt.RunWithData("report-B", "report", report, "emitted-interrupt", interruptHandler.EmittedInterruptMessage())

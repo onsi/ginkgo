@@ -241,9 +241,6 @@ func (r *DefaultReporter) SuiteDidEnd(report types.Report) {
 	color, status := "{{green}}{{bold}}", "SUCCESS!"
 	if !report.SuiteSucceeded {
 		color, status = "{{red}}{{bold}}", "FAIL!"
-		if report.SpecialSuiteFailureReason != "" {
-			status = fmt.Sprintf("%s - %s", status, report.SpecialSuiteFailureReason)
-		}
 	}
 
 	specs := report.SpecReports.WithLeafNodeType(types.NodeTypeIt) //exclude any suite setup nodes
@@ -252,7 +249,15 @@ func (r *DefaultReporter) SuiteDidEnd(report types.Report) {
 		report.PreRunStats.TotalSpecs,
 		report.RunTime.Seconds()),
 	)
-	r.emit(r.f(color+"%s{{/}} -- ", status))
+
+	switch len(report.SpecialSuiteFailureReasons) {
+	case 0:
+		r.emit(r.f(color+"%s{{/}} -- ", status))
+	case 1:
+		r.emit(r.f(color+"%s - %s{{/}} -- ", status, report.SpecialSuiteFailureReasons[0]))
+	default:
+		r.emitBlock(r.f(color+"%s - %s{{/}}\n", status, strings.Join(report.SpecialSuiteFailureReasons, ", ")))
+	}
 
 	if len(specs) == 0 && report.SpecReports.WithLeafNodeType(types.NodeTypeBeforeSuite, types.NodeTypeSynchronizedBeforeSuite).CountWithState(types.SpecStateFailureStates...) > 0 {
 		r.emit(r.f("{{cyan}}{{bold}}A BeforeSuite node failed so all tests were skipped.{{/}}\n"))

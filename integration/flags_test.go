@@ -48,11 +48,6 @@ var _ = Describe("Flags Specs", func() {
 		Ω(output).Should(ContainSubstring("Detected pending specs and --fail-on-pending is set"))
 	})
 
-	PIt("should fail if the test suite takes longer than the timeout", func() {
-		session := startGinkgo(fm.PathTo("flags"), "--no-color", "--timeout=1ms")
-		Eventually(session).Should(gexec.Exit(1))
-	})
-
 	It("should override the programmatic focus when told to focus", func() {
 		session := startGinkgo(fm.PathTo("flags"), "--no-color", "--focus=smores")
 		Eventually(session).Should(gexec.Exit(0))

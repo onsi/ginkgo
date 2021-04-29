@@ -196,7 +196,7 @@ func (suite *Suite) runSpecs(description string, suitePath string, hasProgrammat
 	if !beforeSuiteNode.IsZero() && !interruptStatus.Interrupted && numSpecsThatWillBeRun > 0 {
 		specReport := types.SpecReport{LeafNodeType: beforeSuiteNode.NodeType, LeafNodeLocation: beforeSuiteNode.CodeLocation, GinkgoParallelNode: suiteConfig.ParallelNode}
 		reporter.WillRun(specReport)
-		specReport = suite.runSuiteNode(specReport, beforeSuiteNode, failer, interruptStatus.Channel, writer, outputInterceptor, suiteConfig)
+		specReport = suite.runSuiteNode(specReport, beforeSuiteNode, failer, interruptStatus.Channel, interruptHandler, writer, outputInterceptor, suiteConfig)
 		processSpecReport(specReport)
 	}
 
@@ -206,7 +206,7 @@ func (suite *Suite) runSpecs(description string, suitePath string, hasProgrammat
 		for {
 			idx, err := nextIndex()
 			if err != nil {
-				report.SpecialSuiteFailureReason = fmt.Sprintf("Failed to iterate over specs:\n%s", err.Error())
+				report.SpecialSuiteFailureReasons = append(report.SpecialSuiteFailureReasons, fmt.Sprintf("Failed to iterate over specs:\n%s", err.Error()))
 				report.SuiteSucceeded = false
 				break
 			}
@@ -250,7 +250,7 @@ func (suite *Suite) runSpecs(description string, suitePath string, hasProgrammat
 		}
 
 		if specs.HasAnySpecsMarkedPending() && suiteConfig.FailOnPending {
-			report.SpecialSuiteFailureReason = "Detected pending specs and --fail-on-pending is set"
+			report.SpecialSuiteFailureReasons = append(report.SpecialSuiteFailureReasons, "Detected pending specs and --fail-on-pending is set")
 			report.SuiteSucceeded = false
 		}
 	}
@@ -259,10 +259,15 @@ func (suite *Suite) runSpecs(description string, suitePath string, hasProgrammat
 	if !afterSuiteNode.IsZero() && numSpecsThatWillBeRun > 0 {
 		specReport := types.SpecReport{LeafNodeType: afterSuiteNode.NodeType, LeafNodeLocation: afterSuiteNode.CodeLocation, GinkgoParallelNode: suiteConfig.ParallelNode}
 		reporter.WillRun(specReport)
-		specReport = suite.runSuiteNode(specReport, afterSuiteNode, failer, interruptHandler.Status().Channel, writer, outputInterceptor, suiteConfig)
+		specReport = suite.runSuiteNode(specReport, afterSuiteNode, failer, interruptHandler.Status().Channel, interruptHandler, writer, outputInterceptor, suiteConfig)
 		processSpecReport(specReport)
 	}
 
+	interruptStatus = interruptHandler.Status()
+	if interruptStatus.Interrupted {
+		report.SpecialSuiteFailureReasons = append(report.SpecialSuiteFailureReasons, interruptStatus.Cause)
+		report.SuiteSucceeded = false
+	}
 	report.EndTime = time.Now()
 	report.RunTime = report.EndTime.Sub(report.StartTime)
 
@@ -320,7 +325,7 @@ func (suite *Suite) runSpec(spec Spec, failer *Failer, interruptHandler Interrup
 
 		for _, node := range nodes {
 			deepestNestingLevelAttained = max(deepestNestingLevelAttained, node.NestingLevel)
-			suite.currentSpecReport.State, suite.currentSpecReport.Failure = suite.runNode(node, failer, interruptStatus.Channel, spec.Nodes.BestTextFor(node), writer, suiteConfig)
+			suite.currentSpecReport.State, suite.currentSpecReport.Failure = suite.runNode(node, failer, interruptStatus.Channel, interruptHandler, spec.Nodes.BestTextFor(node), writer, suiteConfig)
 			suite.currentSpecReport.RunTime = time.Since(suite.currentSpecReport.StartTime)
 			if suite.currentSpecReport.State != types.SpecStatePassed {
 				break
@@ -331,7 +336,7 @@ func (suite *Suite) runSpec(spec Spec, failer *Failer, interruptHandler Interrup
 		cleanUpNodes = cleanUpNodes.CopyAppend(spec.Nodes.WithType(types.NodeTypeAfterEach).SortedByDescendingNestingLevel()...)
 		cleanUpNodes = cleanUpNodes.WithinNestingLevel(deepestNestingLevelAttained)
 		for _, node := range cleanUpNodes {
-			state, failure := suite.runNode(node, failer, interruptHandler.Status().Channel, spec.Nodes.BestTextFor(node), writer, suiteConfig)
+			state, failure := suite.runNode(node, failer, interruptHandler.Status().Channel, interruptHandler, spec.Nodes.BestTextFor(node), writer, suiteConfig)
 			suite.currentSpecReport.RunTime = time.Since(suite.currentSpecReport.StartTime)
 			if suite.currentSpecReport.State == types.SpecStatePassed {
 				suite.currentSpecReport.State = state
@@ -370,7 +375,7 @@ func (suite *Suite) reportAfterEach(spec Spec, failer *Failer, interruptHandler 
 			"{{yellow}}Ginkgo received an interrupt signal but is currently running a ReportAfterEach node.  To avoid an invalid report the ReportAfterEach node will not be interrupted however subsequent tests will be skipped.{{/}}\n\n{{bold}}The running ReportAfterEach node is at:\n%s.{{/}}",
 			node.CodeLocation,
 		))
-		state, failure := suite.runNode(node, failer, nil, spec.Nodes.BestTextFor(node), writer, suiteConfig)
+		state, failure := suite.runNode(node, failer, nil, nil, spec.Nodes.BestTextFor(node), writer, suiteConfig)
 		interruptHandler.ClearInterruptMessage()
 		if suite.currentSpecReport.State == types.SpecStatePassed {
 			suite.currentSpecReport.State = state
@@ -381,7 +386,7 @@ func (suite *Suite) reportAfterEach(spec Spec, failer *Failer, interruptHandler 
 	}
 }
 
-func (suite *Suite) runSuiteNode(report types.SpecReport, node Node, failer *Failer, interruptChannel chan interface{}, writer WriterInterface, outputInterceptor OutputInterceptor, suiteConfig types.SuiteConfig) types.SpecReport {
+func (suite *Suite) runSuiteNode(report types.SpecReport, node Node, failer *Failer, interruptChannel chan interface{}, interruptHandler InterruptHandlerInterface, writer WriterInterface, outputInterceptor OutputInterceptor, suiteConfig types.SuiteConfig) types.SpecReport {
 	if suiteConfig.DryRun {
 		report.State = types.SpecStatePassed
 		return report
@@ -394,13 +399,13 @@ func (suite *Suite) runSuiteNode(report types.SpecReport, node Node, failer *Fai
 	var err error
 	switch node.NodeType {
 	case types.NodeTypeBeforeSuite, types.NodeTypeAfterSuite:
-		report.State, report.Failure = suite.runNode(node, failer, interruptChannel, "", writer, suiteConfig)
+		report.State, report.Failure = suite.runNode(node, failer, interruptChannel, interruptHandler, "", writer, suiteConfig)
 	case types.NodeTypeSynchronizedBeforeSuite:
 		var data []byte
 		var runAllNodes bool
 		if suiteConfig.ParallelNode == 1 {
 			node.Body = func() { data = node.SynchronizedBeforeSuiteNode1Body() }
-			report.State, report.Failure = suite.runNode(node, failer, interruptChannel, "", writer, suiteConfig)
+			report.State, report.Failure = suite.runNode(node, failer, interruptChannel, interruptHandler, "", writer, suiteConfig)
 			if suiteConfig.ParallelTotal > 1 && report.State.Is(types.SpecStatePassed) {
 				err = suite.client.PostSynchronizedBeforeSuiteSucceeded(data)
 			} else if suiteConfig.ParallelTotal > 1 {
@@ -413,18 +418,18 @@ func (suite *Suite) runSuiteNode(report types.SpecReport, node Node, failer *Fai
 		}
 		if runAllNodes {
 			node.Body = func() { node.SynchronizedBeforeSuiteAllNodesBody(data) }
-			report.State, report.Failure = suite.runNode(node, failer, interruptChannel, "", writer, suiteConfig)
+			report.State, report.Failure = suite.runNode(node, failer, interruptChannel, interruptHandler, "", writer, suiteConfig)
 		}
 	case types.NodeTypeSynchronizedAfterSuite:
 		node.Body = node.SynchronizedAfterSuiteAllNodesBody
-		report.State, report.Failure = suite.runNode(node, failer, interruptChannel, "", writer, suiteConfig)
+		report.State, report.Failure = suite.runNode(node, failer, interruptChannel, interruptHandler, "", writer, suiteConfig)
 		if suiteConfig.ParallelNode == 1 {
 			if suiteConfig.ParallelTotal > 1 {
 				err = suite.client.BlockUntilNonprimaryNodesHaveFinished()
 			}
 			if err == nil {
 				node.Body = node.SynchronizedAfterSuiteNode1Body
-				state, failure := suite.runNode(node, failer, interruptChannel, "", writer, suiteConfig)
+				state, failure := suite.runNode(node, failer, interruptChannel, interruptHandler, "", writer, suiteConfig)
 				if report.State.Is(types.SpecStatePassed) {
 					report.State, report.Failure = state, failure
 				}
@@ -468,7 +473,7 @@ func (suite *Suite) runReportAfterSuiteNode(specReport types.SpecReport, node No
 		"{{yellow}}Ginkgo received an interrupt signal but is currently running a ReportAfterSuite node.  To avoid an invalid report the ReportAfterSuite node will not be interrupted.{{/}}\n\n{{bold}}The running ReportAfterSuite node is at:\n%s.{{/}}",
 		node.CodeLocation,
 	))
-	specReport.State, specReport.Failure = suite.runNode(node, failer, nil, "", writer, suiteConfig)
+	specReport.State, specReport.Failure = suite.runNode(node, failer, nil, nil, "", writer, suiteConfig)
 	interruptHandler.ClearInterruptMessage()
 
 	specReport.EndTime = time.Now()
@@ -479,7 +484,7 @@ func (suite *Suite) runReportAfterSuiteNode(specReport types.SpecReport, node No
 	return specReport
 }
 
-func (suite *Suite) runNode(node Node, failer *Failer, interruptChannel chan interface{}, text string, writer WriterInterface, suiteConfig types.SuiteConfig) (types.SpecState, types.Failure) {
+func (suite *Suite) runNode(node Node, failer *Failer, interruptChannel chan interface{}, interruptHandler InterruptHandlerInterface, text string, writer WriterInterface, suiteConfig types.SuiteConfig) (types.SpecState, types.Failure) {
 	if suiteConfig.EmitSpecProgress {
 		if text == "" {
 			text = "TOP-LEVEL"
@@ -526,7 +531,7 @@ func (suite *Suite) runNode(node Node, failer *Failer, interruptChannel chan int
 		failure.Message, failure.Location, failure.ForwardedPanic = failureFromRun.Message, failureFromRun.Location, failureFromRun.ForwardedPanic
 		return outcome, failure
 	case <-interruptChannel:
-		failure.Message, failure.Location = interruptMessageWithStackTraces(), node.CodeLocation
+		failure.Message, failure.Location = interruptHandler.InterruptMessageWithStackTraces(), node.CodeLocation
 		return types.SpecStateInterrupted, failure
 	}
 }

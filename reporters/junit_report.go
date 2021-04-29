@@ -136,7 +136,7 @@ func GenerateJUnitReport(report types.Report, dst string) error {
 			Properties: []JUnitProperty{
 				{"SuiteSucceeded", fmt.Sprintf("%t", report.SuiteSucceeded)},
 				{"SuiteHasProgrammaticFocus", fmt.Sprintf("%t", report.SuiteHasProgrammaticFocus)},
-				{"SpecialSuiteFailureReason", report.SpecialSuiteFailureReason},
+				{"SpecialSuiteFailureReason", strings.Join(report.SpecialSuiteFailureReasons, ",")},
 				{"RandomSeed", fmt.Sprintf("%d", report.SuiteConfig.RandomSeed)},
 				{"RandomizeAllSpecs", fmt.Sprintf("%t", report.SuiteConfig.RandomizeAllSpecs)},
 				{"RegexScansFilePath", fmt.Sprintf("%t", report.SuiteConfig.RegexScansFilePath)},
