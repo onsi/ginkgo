@@ -42,7 +42,7 @@ func NewDefaultSuiteConfig() SuiteConfig {
 // Configuration for Ginkgo's reporter
 type ReporterConfig struct {
 	NoColor           bool
-	SlowSpecThreshold float64
+	SlowSpecThreshold time.Duration
 	Succinct          bool
 	Verbose           bool
 	FullTrace         bool
@@ -59,7 +59,7 @@ func (rc ReporterConfig) WillGenerateReport() bool {
 
 func NewDefaultReporterConfig() ReporterConfig {
 	return ReporterConfig{
-		SlowSpecThreshold: 5.0,
+		SlowSpecThreshold: 5 * time.Second,
 	}
 }
 
@@ -170,11 +170,12 @@ func (g GoFlagsConfig) BinaryMustBePreserved() bool {
 
 // Configuration that were deprecated in 2.0
 type deprecatedConfig struct {
-	DebugParallel  bool
-	NoisySkippings bool
-	NoisyPendings  bool
-	Stream         bool
-	Notify         bool
+	DebugParallel                   bool
+	NoisySkippings                  bool
+	NoisyPendings                   bool
+	SlowSpecThresholdWithFLoatUnits float64
+	Stream                          bool
+	Notify                          bool
 }
 
 // Flags
@@ -241,7 +242,7 @@ var ParallelConfigFlags = GinkgoFlags{
 var ReporterConfigFlags = GinkgoFlags{
 	{KeyPath: "R.NoColor", Name: "no-color", SectionKey: "output", DeprecatedName: "noColor", DeprecatedDocLink: "changed-command-line-flags",
 		Usage: "If set, suppress color output in default reporter."},
-	{KeyPath: "R.SlowSpecThreshold", Name: "slow-spec-threshold", SectionKey: "output", UsageArgument: "float, in seconds", UsageDefaultValue: "5.0", DeprecatedName: "slowSpecThreshold", DeprecatedDocLink: "changed-command-line-flags",
+	{KeyPath: "R.SlowSpecThreshold", Name: "slow-spec-threshold", SectionKey: "output", UsageArgument: "duration", UsageDefaultValue: "5s",
 		Usage: "Specs that take longer to run than this threshold are flagged as slow by the default reporter."},
 	{KeyPath: "R.Verbose", Name: "v", SectionKey: "output",
 		Usage: "If set, default reporter print out all specs as they begin."},
@@ -259,6 +260,8 @@ var ReporterConfigFlags = GinkgoFlags{
 	{KeyPath: "R.TeamcityReport", Name: "teamcity-report", UsageArgument: "filename", SectionKey: "output",
 		Usage: "If set, Ginkgo will generate a Teamcity-formatted test report at the specified location."},
 
+	{KeyPath: "D.SlowSpecThresholdWithFLoatUnits", DeprecatedName: "slowSpecThreshold", DeprecatedDocLink: "changed--slowspecthreshold",
+		Usage: "use --slow-spec-threshold instead and pass in a duration string (e.g. '5s', not '5.0')"},
 	{KeyPath: "D.NoisyPendings", DeprecatedName: "noisyPendings", DeprecatedDocLink: "removed--noisypendings-and--noisyskippings"},
 	{KeyPath: "D.NoisySkippings", DeprecatedName: "noisySkippings", DeprecatedDocLink: "removed--noisypendings-and--noisyskippings"},
 }

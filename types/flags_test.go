@@ -138,7 +138,7 @@ var _ = Describe("Flags", func() {
 				{Name: "int-flag", SectionKey: "invalid", Usage: "int-usage", KeyPath: "B.IntProperty"},
 				{Name: "bool-flag", SectionKey: "candy", Usage: "bool-usage", KeyPath: "B.BoolProperty"},
 				{Name: "string-slice-flag", SectionKey: "dairy", Usage: "string-slice-usage", KeyPath: "B.StringSliceProperty"},
-				{SectionKey: "candy", DeprecatedName: "deprecated-flag", KeyPath: "B.DeprecatedProperty"},
+				{SectionKey: "candy", DeprecatedName: "deprecated-flag", KeyPath: "B.DeprecatedProperty", Usage: "deprecated-usage"},
 			}
 		})
 
@@ -342,7 +342,7 @@ var _ = Describe("Flags", func() {
 				Ω(registeredFlags["bool-flag"].DefValue).Should(Equal("true"))
 				Ω(registeredFlags["stringFlag"].Usage).Should(Equal("[DEPRECATED] use --string-flag instead"))
 				Ω(registeredFlags["int64Flag"].Usage).Should(Equal("[DEPRECATED] use --int-64-flag instead"))
-				Ω(registeredFlags["deprecated-flag"].Usage).Should(Equal("[DEPRECATED]"))
+				Ω(registeredFlags["deprecated-flag"].Usage).Should(Equal("[DEPRECATED] deprecated-usage"))
 			})
 
 			It("overrides the goFlagSet's usage", func() {
