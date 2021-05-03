@@ -15,13 +15,13 @@ import (
 	"github.com/onsi/ginkgo/types"
 )
 
-func FinalizeProfilesAndReportsForSuites(suites []TestSuite, cliConfig types.CLIConfig, suiteConfig types.SuiteConfig, reporterConfig types.ReporterConfig, goFlagsConfig types.GoFlagsConfig) ([]string, error) {
+func FinalizeProfilesAndReportsForSuites(suites TestSuites, cliConfig types.CLIConfig, suiteConfig types.SuiteConfig, reporterConfig types.ReporterConfig, goFlagsConfig types.GoFlagsConfig) ([]string, error) {
 	messages := []string{}
 	if goFlagsConfig.Cover {
+		suitesWithCoverProfiles := suites.WithState(TestSuiteStatePassed, TestSuiteStateFailed) //anything else won't have actually run and generated a cover-profile
 		if cliConfig.KeepSeparateCoverprofiles {
 			if cliConfig.OutputDir != "" {
-				// move separate cover profiles to the output directory, appropriately namespaced
-				for _, suite := range suites {
+				for _, suite := range suitesWithCoverProfiles {
 					src := filepath.Join(suite.Path, goFlagsConfig.CoverProfile)
 					dst := filepath.Join(cliConfig.OutputDir, suite.NamespacedName()+"_"+goFlagsConfig.CoverProfile)
 					err := os.Rename(src, dst)
@@ -33,7 +33,7 @@ func FinalizeProfilesAndReportsForSuites(suites []TestSuite, cliConfig types.CLI
 		} else {
 			// merge cover profiles
 			coverProfiles := []string{}
-			for _, suite := range suites {
+			for _, suite := range suitesWithCoverProfiles {
 				coverProfiles = append(coverProfiles, filepath.Join(suite.Path, goFlagsConfig.CoverProfile))
 			}
 			dst := goFlagsConfig.CoverProfile
@@ -58,8 +58,9 @@ func FinalizeProfilesAndReportsForSuites(suites []TestSuite, cliConfig types.CLI
 	}
 
 	if cliConfig.OutputDir != "" {
-		//we need to do some relocation if we've generated other profiles
-		for _, suite := range suites {
+		suitesWithProfiles := suites.WithState(TestSuiteStatePassed, TestSuiteStateFailed) //anything else won't have actually run and generated a profile
+
+		for _, suite := range suitesWithProfiles {
 			if goFlagsConfig.BinaryMustBePreserved() {
 				src := suite.PathToCompiledTest
 				dst := filepath.Join(cliConfig.OutputDir, suite.NamespacedName()+".test")
@@ -82,45 +83,44 @@ func FinalizeProfilesAndReportsForSuites(suites []TestSuite, cliConfig types.CLI
 		}
 	}
 
-	reportableSuites := []TestSuite{}
-	for _, suite := range suites {
-		if suite.IsGinkgo {
-			reportableSuites = append(reportableSuites, suite)
-		}
-	}
-
 	type reportFormat struct {
 		Filename     string
 		GenerateFunc func(types.Report, string) error
 		MergeFunc    func([]string, string) ([]string, error)
 	}
-	reportFormats := []reportFormat{
-		{Filename: reporterConfig.JSONReport, GenerateFunc: reporters.GenerateJSONReport, MergeFunc: reporters.MergeAndCleanupJSONReports},
-		{Filename: reporterConfig.JUnitReport, GenerateFunc: reporters.GenerateJUnitReport, MergeFunc: reporters.MergeAndCleanupJUnitReports},
-		{Filename: reporterConfig.TeamcityReport, GenerateFunc: reporters.GenerateTeamcityReport, MergeFunc: reporters.MergeAndCleanupTeamcityReports},
+	reportFormats := []reportFormat{}
+	if reporterConfig.JSONReport != "" {
+		reportFormats = append(reportFormats, reportFormat{Filename: reporterConfig.JSONReport, GenerateFunc: reporters.GenerateJSONReport, MergeFunc: reporters.MergeAndCleanupJSONReports})
+	}
+	if reporterConfig.JUnitReport != "" {
+		reportFormats = append(reportFormats, reportFormat{Filename: reporterConfig.JUnitReport, GenerateFunc: reporters.GenerateJUnitReport, MergeFunc: reporters.MergeAndCleanupJUnitReports})
+	}
+	if reporterConfig.TeamcityReport != "" {
+		reportFormats = append(reportFormats, reportFormat{Filename: reporterConfig.TeamcityReport, GenerateFunc: reporters.GenerateTeamcityReport, MergeFunc: reporters.MergeAndCleanupTeamcityReports})
 	}
 
-	for _, suite := range reportableSuites {
-		if suite.CompilationError != nil {
-			report := types.Report{
-				SuitePath:                  suite.AbsPath(),
-				SuiteConfig:                suiteConfig,
-				SuiteSucceeded:             false,
-				SpecialSuiteFailureReasons: []string{fmt.Sprintf(suite.CompilationError.Error())},
-			}
-			for _, format := range reportFormats {
-				if format.Filename != "" {
-					format.GenerateFunc(report, filepath.Join(suite.Path, format.Filename))
-				}
-			}
+	reportableSuites := suites.ThatAreGinkgoSuites()
+	for _, suite := range reportableSuites.WithState(TestSuiteStateFailedToCompile, TestSuiteStateFailedDueToTimeout, TestSuiteStateSkippedDueToPriorFailures) {
+		report := types.Report{
+			SuitePath:      suite.AbsPath(),
+			SuiteConfig:    suiteConfig,
+			SuiteSucceeded: false,
+		}
+		switch suite.State {
+		case TestSuiteStateFailedToCompile:
+			report.SpecialSuiteFailureReasons = append(report.SpecialSuiteFailureReasons, suite.CompilationError.Error())
+		case TestSuiteStateFailedDueToTimeout:
+			report.SpecialSuiteFailureReasons = append(report.SpecialSuiteFailureReasons, TIMEOUT_ELAPSED_FAILURE_REASON)
+		case TestSuiteStateSkippedDueToPriorFailures:
+			report.SpecialSuiteFailureReasons = append(report.SpecialSuiteFailureReasons, PRIOR_FAILURES_FAILURE_REASON)
+		}
+
+		for _, format := range reportFormats {
+			format.GenerateFunc(report, filepath.Join(suite.Path, format.Filename))
 		}
 	}
 
 	for _, format := range reportFormats {
-		if format.Filename == "" {
-			continue
-		}
-
 		if cliConfig.KeepSeparateReports {
 			if cliConfig.OutputDir != "" {
 				// move separate reports to the output directory, appropriately namespaced

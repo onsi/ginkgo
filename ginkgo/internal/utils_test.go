@@ -58,15 +58,19 @@ var _ = Describe("Utils", func() {
 
 		It("generates a nicely frormatter report", func() {
 			suites := []internal.TestSuite{
-				TS("path-A", "package-A", true),
-				TS("path-B", "B", true),
-				TS("path-to/package-C", "the-C-package", true),
+				TS("path-A", "package-A", true, internal.TestSuiteStateFailed),
+				TS("path-B", "B", true, internal.TestSuiteStateFailedToCompile),
+				TS("path-to/package-C", "the-C-package", true, internal.TestSuiteStateFailedDueToTimeout),
+				TS("path-D", "D", true, internal.TestSuiteStatePassed),
+				TS("path-F", "E", true, internal.TestSuiteStateSkippedByFilter),
+				TS("path-F", "E", true, internal.TestSuiteStateSkippedDueToPriorFailures),
 			}
+
 			Ω(internal.FailedSuitesReport(suites, f)).Should(HavePrefix(strings.Join([]string{
 				"There were failures detected in the following suites:",
 				"  {{red}}    package-A {{gray}}path-A{{/}}",
-				"  {{red}}            B {{gray}}path-B{{/}}",
-				"  {{red}}the-C-package {{gray}}path-to/package-C{{/}}",
+				"  {{red}}            B {{gray}}path-B {{magenta}}[Compilation failure]{{/}}",
+				"  {{red}}the-C-package {{gray}}path-to/package-C {{orange}}[Suite did not run because the timeout elapsed]{{/}}",
 			}, "\n")))
 		})
 	})
