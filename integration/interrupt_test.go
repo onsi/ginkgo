@@ -1,22 +1,22 @@
 package integration_test
 
 import (
+	"encoding/json"
 	"os/exec"
 
 	. "github.com/onsi/ginkgo"
+	"github.com/onsi/ginkgo/types"
 	. "github.com/onsi/gomega"
 	"github.com/onsi/gomega/gbytes"
 	"github.com/onsi/gomega/gexec"
 )
 
 var _ = Describe("Interrupt and Timeout", func() {
-	BeforeEach(func() {
-		fm.MountFixture("hanging")
-	})
-
 	Context("when interrupting a suite", func() {
 		var session *gexec.Session
 		BeforeEach(func() {
+			fm.MountFixture("hanging")
+
 			//we need to signal the actual process, so we must compile the test first
 			session = startGinkgo(fm.PathTo("hanging"), "build")
 			Eventually(session).Should(gexec.Exit(0))
@@ -62,7 +62,9 @@ var _ = Describe("Interrupt and Timeout", func() {
 	Context("when the suite times out", func() {
 		var session *gexec.Session
 		BeforeEach(func() {
-			session = startGinkgo(fm.PathTo("hanging"), "--no-color", "--timeout=3s")
+			fm.MountFixture("hanging")
+
+			session = startGinkgo(fm.PathTo("hanging"), "--no-color", "--timeout=5s")
 			Eventually(session).Should(gexec.Exit(1))
 		})
 
@@ -82,6 +84,21 @@ var _ = Describe("Interrupt and Timeout", func() {
 
 		It("should emit a special failure reason", func() {
 			Ω(session).Should(gbytes.Say("FAIL! - Interrupted by Timeout"))
+		})
+	})
+
+	Describe("applying the timeout to multiple suites", func() {
+		It("tracks the timeout across the suites, decrementing the available timeout for each individual suite, and reports on any suites that did not run because the timeout elapsed", func() {
+			fm.MountFixture("timeout")
+			session := startGinkgo(fm.PathTo("timeout"), "--no-color", "-r", "--timeout=10s", "--keep-going", "--json-report=out.json")
+			Eventually(session).Should(gbytes.Say("TimeoutA Suite"))
+			Eventually(session, "15s").Should(gexec.Exit(1))
+			Ω(session).Should(gbytes.Say(`timeout_D ./timeout_D \[Suite did not run because the timeout elapsed\]`))
+
+			data := []byte(fm.ContentOf("timeout", "out.json"))
+			reports := []types.Report{}
+			Ω(json.Unmarshal(data, &reports)).Should(Succeed())
+			Ω(reports[3].SpecialSuiteFailureReasons).Should(ContainElement("Suite did not run because the timeout elapsed"))
 		})
 	})
 })

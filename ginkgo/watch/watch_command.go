@@ -62,7 +62,7 @@ type SpecWatcher struct {
 }
 
 func (w *SpecWatcher) WatchSpecs(args []string, additionalArgs []string) {
-	suites, _ := internal.FindSuites(args, w.cliConfig, false)
+	suites := internal.FindSuites(args, w.cliConfig, false).WithoutState(internal.TestSuiteStateSkippedByFilter)
 
 	if len(suites) == 0 {
 		command.AbortWith("Found no test suites")
@@ -91,11 +91,11 @@ func (w *SpecWatcher) WatchSpecs(args []string, additionalArgs []string) {
 	for {
 		select {
 		case <-ticker.C:
-			suites, _ := internal.FindSuites(args, w.cliConfig, false)
+			suites := internal.FindSuites(args, w.cliConfig, false).WithoutState(internal.TestSuiteStateSkippedByFilter)
 			delta, _ := deltaTracker.Delta(suites)
 			coloredStream := formatter.ColorableStdOut
 
-			suites = []internal.TestSuite{}
+			suites = internal.TestSuites{}
 
 			if len(delta.NewSuites) > 0 {
 				fmt.Fprintln(coloredStream, formatter.F("{{green}}Detected %d new %s:{{/}}", len(delta.NewSuites), internal.PluralizedWord("suite", "suites", len(delta.NewSuites))))
@@ -125,17 +125,16 @@ func (w *SpecWatcher) WatchSpecs(args []string, additionalArgs []string) {
 
 			w.updateSeed()
 			w.computeSuccinctMode(len(suites))
-			passed := true
-			for _, suite := range suites {
+			for idx := range suites {
 				if w.interruptHandler.WasInterrupted() {
 					return
 				}
-				deltaTracker.WillRun(suite)
-				passed = w.compileAndRun(suite, additionalArgs) && passed
+				deltaTracker.WillRun(suites[idx])
+				suites[idx] = w.compileAndRun(suites[idx], additionalArgs)
 			}
-			color := "{{red}}"
-			if passed {
-				color = "{{green}}"
+			color := "{{green}}"
+			if suites.CountWithState(internal.TestSuiteStateFailureStates...) > 0 {
+				color = "{{red}}"
 			}
 			fmt.Fprintln(coloredStream, formatter.F(color+"\nDone.  Resuming watch...{{/}}"))
 
@@ -150,18 +149,18 @@ func (w *SpecWatcher) WatchSpecs(args []string, additionalArgs []string) {
 	}
 }
 
-func (w *SpecWatcher) compileAndRun(suite internal.TestSuite, additionalArgs []string) bool {
+func (w *SpecWatcher) compileAndRun(suite internal.TestSuite, additionalArgs []string) internal.TestSuite {
 	suite = internal.CompileSuite(suite, w.goFlagsConfig)
-	if suite.CompilationError != nil {
+	if suite.State.Is(internal.TestSuiteStateFailedToCompile) {
 		fmt.Println(suite.CompilationError.Error())
-		return false
+		return suite
 	}
 	if w.interruptHandler.WasInterrupted() {
-		return false
+		return suite
 	}
 	suite = internal.RunCompiledSuite(suite, w.suiteConfig, w.reporterConfig, w.cliConfig, w.goFlagsConfig, additionalArgs)
 	internal.Cleanup(w.goFlagsConfig, suite)
-	return suite.Passed
+	return suite
 }
 
 func (w *SpecWatcher) computeSuccinctMode(numSuites int) {

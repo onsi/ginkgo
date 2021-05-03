@@ -2,7 +2,6 @@ package run
 
 import (
 	"fmt"
-	"math/rand"
 	"os"
 	"strings"
 	"time"
@@ -68,15 +67,18 @@ type SpecRunner struct {
 //COMPILATION AND RUNNING AND SERIALIZED.  IN TIME WE'LL RUN EXPERIMENTS TO FIND THE OPTIMAL WAY TO
 //IMPROVE PERFORMANCE
 func (r *SpecRunner) RunSpecs(args []string, additionalArgs []string) {
-	suites, skippedPackages := internal.FindSuites(args, r.cliConfig, true)
-	if len(skippedPackages) > 0 {
+	suites := internal.FindSuites(args, r.cliConfig, true)
+	skippedSuites := suites.WithState(internal.TestSuiteStateSkippedByFilter)
+	suites = suites.WithoutState(internal.TestSuiteStateSkippedByFilter)
+
+	if len(skippedSuites) > 0 {
 		fmt.Println("Will skip:")
-		for _, skippedPackage := range skippedPackages {
-			fmt.Println("  " + skippedPackage)
+		for _, skippedSuite := range skippedSuites {
+			fmt.Println("  " + skippedSuite.Path)
 		}
 	}
 
-	if len(skippedPackages) > 0 && len(suites) == 0 {
+	if len(skippedSuites) > 0 && len(suites) == 0 {
 		command.Abort(command.AbortDetails{
 			ExitCode: 0,
 			Error:    fmt.Errorf("All tests skipped! Exiting..."),
@@ -92,10 +94,12 @@ func (r *SpecRunner) RunSpecs(args []string, additionalArgs []string) {
 	}
 
 	t := time.Now()
-	iteration := 0
+	var endTime time.Time
+	if r.suiteConfig.Timeout > 0 {
+		endTime = t.Add(r.suiteConfig.Timeout)
+	}
 
-	var failedSuites []internal.TestSuite
-	var hasProgrammaticFocus = false
+	iteration := 0
 
 OUTER_LOOP:
 	for {
@@ -103,10 +107,8 @@ OUTER_LOOP:
 			r.suiteConfig.RandomSeed = time.Now().Unix()
 		}
 		if r.cliConfig.RandomizeSuites && len(suites) > 1 {
-			suites = r.randomize(suites)
+			suites = suites.ShuffledCopy(r.suiteConfig.RandomSeed)
 		}
-		failedSuites = []internal.TestSuite{}
-		hasProgrammaticFocus = false
 
 	SUITE_LOOP:
 		for suiteIdx := range suites {
@@ -114,32 +116,38 @@ OUTER_LOOP:
 				break OUTER_LOOP
 			}
 
+			if !endTime.IsZero() && time.Now().After(endTime) {
+				suites[suiteIdx].State = internal.TestSuiteStateFailedDueToTimeout
+				continue SUITE_LOOP
+			}
+
+			if suites.CountWithState(internal.TestSuiteStateFailureStates...) > 0 && !r.cliConfig.KeepGoing {
+				suites[suiteIdx].State = internal.TestSuiteStateSkippedDueToPriorFailures
+				continue SUITE_LOOP
+			}
+
 			suites[suiteIdx] = internal.CompileSuite(suites[suiteIdx], r.goFlagsConfig)
-			if suites[suiteIdx].CompilationError != nil {
+			if suites[suiteIdx].State.Is(internal.TestSuiteStateFailedToCompile) {
 				fmt.Println(suites[suiteIdx].CompilationError.Error())
-				failedSuites = append(failedSuites, suites[suiteIdx])
-				if r.cliConfig.KeepGoing {
-					continue SUITE_LOOP
-				} else {
-					break SUITE_LOOP
-				}
+				continue SUITE_LOOP
 			}
 
 			if r.interruptHandler.WasInterrupted() {
 				break OUTER_LOOP
 			}
 
-			suites[suiteIdx] = internal.RunCompiledSuite(suites[suiteIdx], r.suiteConfig, r.reporterConfig, r.cliConfig, r.goFlagsConfig, additionalArgs)
-			hasProgrammaticFocus = hasProgrammaticFocus || suites[suiteIdx].HasProgrammaticFocus
-			if !suites[suiteIdx].Passed {
-				failedSuites = append(failedSuites, suites[suiteIdx])
-				if !r.cliConfig.KeepGoing {
-					break SUITE_LOOP
+			if !endTime.IsZero() {
+				r.suiteConfig.Timeout = endTime.Sub(time.Now())
+				if r.suiteConfig.Timeout <= 0 {
+					suites[suiteIdx].State = internal.TestSuiteStateFailedDueToTimeout
+					continue SUITE_LOOP
 				}
 			}
+
+			suites[suiteIdx] = internal.RunCompiledSuite(suites[suiteIdx], r.suiteConfig, r.reporterConfig, r.cliConfig, r.goFlagsConfig, additionalArgs)
 		}
 
-		if len(failedSuites) > 0 {
+		if suites.CountWithState(internal.TestSuiteStateFailureStates...) > 0 {
 			if iteration > 0 {
 				fmt.Printf("\nTests failed on attempt #%d\n\n", iteration+1)
 			}
@@ -166,8 +174,8 @@ OUTER_LOOP:
 
 	fmt.Printf("\nGinkgo ran %d %s in %s\n", len(suites), internal.PluralizedWord("suite", "suites", len(suites)), time.Since(t))
 
-	if len(failedSuites) == 0 {
-		if hasProgrammaticFocus && strings.TrimSpace(os.Getenv("GINKGO_EDITOR_INTEGRATION")) == "" {
+	if suites.CountWithState(internal.TestSuiteStateFailureStates...) == 0 {
+		if suites.AnyHaveProgrammaticFocus() && strings.TrimSpace(os.Getenv("GINKGO_EDITOR_INTEGRATION")) == "" {
 			fmt.Printf("Test Suite Passed\n")
 			fmt.Printf("Detected Programmatic Focus - setting exit status to %d\n", types.GINKGO_FOCUS_EXIT_CODE)
 			command.Abort(command.AbortDetails{ExitCode: types.GINKGO_FOCUS_EXIT_CODE})
@@ -177,23 +185,13 @@ OUTER_LOOP:
 		}
 	} else {
 		fmt.Fprintln(formatter.ColorableStdOut, "")
-		if len(failedSuites) > 1 {
+		if suites.CountWithState(internal.TestSuiteStateFailureStates...) > 1 {
 			fmt.Fprintln(formatter.ColorableStdOut,
-				internal.FailedSuitesReport(failedSuites, formatter.NewWithNoColorBool(r.reporterConfig.NoColor)))
+				internal.FailedSuitesReport(suites, formatter.NewWithNoColorBool(r.reporterConfig.NoColor)))
 		}
 		fmt.Printf("Test Suite Failed\n")
 		command.Abort(command.AbortDetails{ExitCode: 1})
 	}
-}
-
-func (r *SpecRunner) randomize(suites []internal.TestSuite) []internal.TestSuite {
-	randomized := make([]internal.TestSuite, len(suites))
-	randomizer := rand.New(rand.NewSource(r.suiteConfig.RandomSeed))
-	permutation := randomizer.Perm(len(suites))
-	for i, j := range permutation {
-		randomized[i] = suites[j]
-	}
-	return randomized
 }
 
 func orcMessage(iteration int) string {

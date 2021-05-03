@@ -18,12 +18,14 @@ func CompileSuite(suite TestSuite, goFlagsConfig types.GoFlagsConfig) TestSuite 
 
 	path, err := filepath.Abs(filepath.Join(suite.Path, suite.PackageName+".test"))
 	if err != nil {
+		suite.State = TestSuiteStateFailedToCompile
 		suite.CompilationError = fmt.Errorf("Failed to compute compilation target path:\n%s", err.Error())
 		return suite
 	}
 
 	args, err := types.GenerateGoTestCompileArgs(goFlagsConfig, path, suite.Path)
 	if err != nil {
+		suite.State = TestSuiteStateFailedToCompile
 		suite.CompilationError = fmt.Errorf("Failed to generate go test compile flags:\n%s", err.Error())
 		return suite
 	}
@@ -32,8 +34,10 @@ func CompileSuite(suite TestSuite, goFlagsConfig types.GoFlagsConfig) TestSuite 
 	output, err := cmd.CombinedOutput()
 	if err != nil {
 		if len(output) > 0 {
+			suite.State = TestSuiteStateFailedToCompile
 			suite.CompilationError = fmt.Errorf("Failed to compile %s:\n\n%s", suite.PackageName, output)
 		} else {
+			suite.State = TestSuiteStateFailedToCompile
 			suite.CompilationError = fmt.Errorf("Failed to compile %s\n%s", suite.PackageName, err.Error())
 		}
 		return suite
@@ -44,10 +48,12 @@ func CompileSuite(suite TestSuite, goFlagsConfig types.GoFlagsConfig) TestSuite 
 	}
 
 	if !FileExists(path) {
+		suite.State = TestSuiteStateFailedToCompile
 		suite.CompilationError = fmt.Errorf("Failed to compile %s:\nOutput file %s could not be found", suite.PackageName, path)
 		return suite
 	}
 
+	suite.State = TestSuiteStateCompiled
 	suite.PathToCompiledTest = path
 	return suite
 }

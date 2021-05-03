@@ -204,7 +204,7 @@ func (report SpecReport) CombinedOutput() string {
 }
 
 //Failed returns true if report.State is one of the SpecStateFailureStates
-// (SpecStateFAiled, SpecStatePanicked, SpecStateinterrupted)
+// (SpecStateFailed, SpecStatePanicked, SpecStateinterrupted)
 func (report SpecReport) Failed() bool {
 	return report.State.Is(SpecStateFailureStates...)
 }

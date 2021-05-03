@@ -1542,7 +1542,7 @@ Here are the flags that Ginkgo accepts:
 
 - `-timeout=DURATION`
 
-    Ginkgo will fail the test suite if it takes longer than `DURATION` to run.  The default value is 24 hours.
+    Ginkgo will fail the test suite if it takes longer than `DURATION` to run.  The default value is 1 hour.
 
 - `--afterSuiteHook=HOOK_COMMAND`
 
