@@ -20,7 +20,7 @@ import (
 )
 
 func RunCompiledSuite(suite TestSuite, ginkgoConfig types.SuiteConfig, reporterConfig types.ReporterConfig, cliConfig types.CLIConfig, goFlagsConfig types.GoFlagsConfig, additionalArgs []string) TestSuite {
-	suite.Passed = false
+	suite.State = TestSuiteStateFailed
 	suite.HasProgrammaticFocus = false
 
 	if suite.PathToCompiledTest == "" {
@@ -69,8 +69,13 @@ func runGoTest(suite TestSuite, cliConfig types.CLIConfig) TestSuite {
 	cmd.Wait()
 
 	exitStatus := cmd.ProcessState.Sys().(syscall.WaitStatus).ExitStatus()
-	suite.Passed = (exitStatus == 0) || (exitStatus == types.GINKGO_FOCUS_EXIT_CODE)
-	suite.Passed = !(checkForNoTestsWarning(buf) && cliConfig.RequireSuite) && suite.Passed
+	passed := (exitStatus == 0) || (exitStatus == types.GINKGO_FOCUS_EXIT_CODE)
+	passed = !(checkForNoTestsWarning(buf) && cliConfig.RequireSuite) && passed
+	if passed {
+		suite.State = TestSuiteStatePassed
+	} else {
+		suite.State = TestSuiteStateFailed
+	}
 
 	return suite
 }
@@ -87,8 +92,13 @@ func runSerial(suite TestSuite, ginkgoConfig types.SuiteConfig, reporterConfig t
 
 	exitStatus := cmd.ProcessState.Sys().(syscall.WaitStatus).ExitStatus()
 	suite.HasProgrammaticFocus = (exitStatus == types.GINKGO_FOCUS_EXIT_CODE)
-	suite.Passed = (exitStatus == 0) || (exitStatus == types.GINKGO_FOCUS_EXIT_CODE)
-	suite.Passed = !(checkForNoTestsWarning(buf) && cliConfig.RequireSuite) && suite.Passed
+	passed := (exitStatus == 0) || (exitStatus == types.GINKGO_FOCUS_EXIT_CODE)
+	passed = !(checkForNoTestsWarning(buf) && cliConfig.RequireSuite) && passed
+	if passed {
+		suite.State = TestSuiteStatePassed
+	} else {
+		suite.State = TestSuiteStateFailed
+	}
 
 	return suite
 }
@@ -160,11 +170,16 @@ func runParallel(suite TestSuite, ginkgoConfig types.SuiteConfig, reporterConfig
 		}()
 	}
 
-	suite.Passed = true
+	passed := true
 	for node := 1; node <= cliConfig.ComputedNodes(); node++ {
 		result := <-nodeResults
-		suite.Passed = suite.Passed && result.passed
+		passed = passed && result.passed
 		suite.HasProgrammaticFocus = suite.HasProgrammaticFocus || result.hasProgrammaticFocus
+	}
+	if passed {
+		suite.State = TestSuiteStatePassed
+	} else {
+		suite.State = TestSuiteStateFailed
 	}
 
 	select {
@@ -182,8 +197,8 @@ func runParallel(suite TestSuite, ginkgoConfig types.SuiteConfig, reporterConfig
 
 	for node := 1; node <= cliConfig.ComputedNodes(); node++ {
 		output := nodeOutput[node-1].String()
-		if node == 1 {
-			suite.Passed = !(checkForNoTestsWarning(nodeOutput[node-1]) && cliConfig.RequireSuite) && suite.Passed
+		if node == 1 && checkForNoTestsWarning(nodeOutput[0]) && cliConfig.RequireSuite {
+			suite.State = TestSuiteStateFailed
 		}
 		if strings.Contains(output, "deprecated Ginkgo functionality") {
 			fmt.Fprintln(os.Stderr, output)
@@ -235,7 +250,7 @@ func runAfterRunHook(command string, noColor bool, suite TestSuite) {
 
 	// Allow for string replacement to pass input to the command
 	passed := "[FAIL]"
-	if suite.Passed {
+	if suite.State.Is(TestSuiteStatePassed) {
 		passed = "[PASS]"
 	}
 	command = strings.Replace(command, "(ginkgo-suite-passed)", passed, -1)

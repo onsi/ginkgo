@@ -26,7 +26,7 @@ func NewDeltaTracker(maxDepth int, watchRegExp *regexp.Regexp) *DeltaTracker {
 	}
 }
 
-func (d *DeltaTracker) Delta(suites []internal.TestSuite) (delta Delta, errors SuiteErrors) {
+func (d *DeltaTracker) Delta(suites internal.TestSuites) (delta Delta, errors SuiteErrors) {
 	errors = SuiteErrors{}
 	delta.ModifiedPackages = d.packageHashes.CheckForChanges()
 

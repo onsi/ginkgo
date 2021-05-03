@@ -34,24 +34,22 @@ func BuildBuildCommand() command.Command {
 }
 
 func buildSpecs(args []string, cliConfig types.CLIConfig, goFlagsConfig types.GoFlagsConfig) {
-	suites, _ := internal.FindSuites(args, cliConfig, false)
+	suites := internal.FindSuites(args, cliConfig, false).WithoutState(internal.TestSuiteStateSkippedByFilter)
 	if len(suites) == 0 {
 		command.AbortWith("Found no test suites")
 	}
 
-	passed := true
-	for _, suite := range suites {
-		fmt.Printf("Compiling %s...\n", suite.PackageName)
-		suite = internal.CompileSuite(suite, goFlagsConfig)
-		if suite.CompilationError != nil {
-			fmt.Println(suite.CompilationError.Error())
-			passed = false
+	for idx := range suites {
+		fmt.Printf("Compiling %s...\n", suites[idx].PackageName)
+		suites[idx] = internal.CompileSuite(suites[idx], goFlagsConfig)
+		if suites[idx].State.Is(internal.TestSuiteStateFailedToCompile) {
+			fmt.Println(suites[idx].CompilationError.Error())
 		} else {
-			fmt.Printf("  compiled %s.test\n", suite.PackageName)
+			fmt.Printf("  compiled %s.test\n", suites[idx].PackageName)
 		}
 	}
 
-	if !passed {
+	if suites.CountWithState(internal.TestSuiteStateFailedToCompile) > 0 {
 		command.AbortWith("Failed to compile all tests")
 	}
 }
