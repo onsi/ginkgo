@@ -366,5 +366,21 @@ var _ = Describe("Reporting", func() {
 				Ω(fm.PathTo("reporting", "reports/nonginkgo_sub_package_out.json")).ShouldNot(BeAnExistingFile())
 			})
 		})
+
+		Context("when keep-going is not set and a suite fails", func() {
+			BeforeEach(func() {
+				session := startGinkgo(fm.PathTo("reporting"), "--no-color", "-r", "--nodes=2", "--json-report=out.json", "--junit-report=out.xml", "--teamcity-report=out.tc", "-coverprofile=cover.out", "-cpuprofile=cpu.out", "-seed=17", "--output-dir=./reports")
+				Eventually(session).Should(gexec.Exit(1))
+				Ω(session).ShouldNot(gbytes.Say("Could not open"))
+			})
+
+			It("reports about the suites that did not run", func() {
+				reports := loadJSONReports("reporting", "reports/out.json")
+				Ω(reports).Should(HaveLen(3))
+				checkJSONReport(reports[0])
+				Ω(reports[1].SpecialSuiteFailureReasons).Should(ContainElement("Suite did not run because prior suites failed and --keep-going is not set"))
+				Ω(reports[2].SpecialSuiteFailureReasons).Should(ContainElement("Suite did not run because prior suites failed and --keep-going is not set"))
+			})
+		})
 	})
 })
