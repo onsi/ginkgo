@@ -31,7 +31,11 @@ Interrupt behavior is substantially improved, sending an interrupt signal will n
 Previously, sending a second interrupt signal would cause Ginkgo to exit immediately.  With the improved interrupt behavior this is no longer necessary and Ginkgo will not exit until the test suite has unwound and completed.
 
 ### Timeout Behavior
-- default has changed to 1h
+In Ginkgo V1.x, Gingko's timeout was managed by `go test`.  This meant that timeouts exited the test suite abruptly with no opportunity for custom reporters or clean up code (e.g. `AfterEach`, `AfterSuite`) to run.  This is fixed in V2.  Ginkgo now manages its own timeout and when a timeout triggers the test winds down gracefully.  In fact, a timeout is now functionally equivalen to a user-initiated interrupt.
+
+In addition, in V1.x when running multiple test suites Ginkgo would give each suite the full timeout allotment (so `ginkgo -r -timeout=1h` would give _each_ test suite one hour to complete).  In V2 the timeout now applies to the entire test suite run so that `ginkgo -r -timeout=1h` is now guaranteed to exit after (about) one hour.
+
+**Finally, the default timeout has been reduced from `24h` down to `1h`.**  Users with long-running tests may need to adjust the timeout in their CI scripts.
 
 ### Spec Decorations
 Specs can now be decorated with a series of new spec decorators.  These decorators enable fine-grained control over certain aspects of the spec's creation and lifecycle. 

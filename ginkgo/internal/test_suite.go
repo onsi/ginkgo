@@ -3,6 +3,7 @@ package internal
 import (
 	"errors"
 	"io/ioutil"
+	"math/rand"
 	"os"
 	"path"
 	"path/filepath"
@@ -12,16 +13,50 @@ import (
 	"github.com/onsi/ginkgo/types"
 )
 
+const TIMEOUT_ELAPSED_FAILURE_REASON = "Suite did not run because the timeout elapsed"
+const PRIOR_FAILURES_FAILURE_REASON = "Suite did not run because prior suites failed and --keep-going is not set"
+
+type TestSuiteState uint
+
+const (
+	TestSuiteStateInvalid TestSuiteState = iota
+
+	TestSuiteStateUncompiled
+	TestSuiteStateCompiled
+
+	TestSuiteStatePassed
+
+	TestSuiteStateSkippedByFilter
+	TestSuiteStateSkippedDueToPriorFailures
+
+	TestSuiteStateFailed
+	TestSuiteStateFailedDueToTimeout
+	TestSuiteStateFailedToCompile
+)
+
+var TestSuiteStateFailureStates = []TestSuiteState{TestSuiteStateFailed, TestSuiteStateFailedDueToTimeout, TestSuiteStateFailedToCompile}
+
+func (state TestSuiteState) Is(states ...TestSuiteState) bool {
+	for _, suiteState := range states {
+		if suiteState == state {
+			return true
+		}
+	}
+
+	return false
+}
+
 type TestSuite struct {
 	Path        string
 	PackageName string
 	IsGinkgo    bool
-	Precompiled bool
 
-	PathToCompiledTest   string
-	CompilationError     error
-	Passed               bool
+	Precompiled        bool
+	PathToCompiledTest string
+	CompilationError   error
+
 	HasProgrammaticFocus bool
+	State                TestSuiteState
 }
 
 func (ts TestSuite) AbsPath() string {
@@ -40,8 +75,73 @@ func (ts TestSuite) NamespacedName() string {
 	return name
 }
 
-func FindSuites(args []string, cliConfig types.CLIConfig, allowPrecompiled bool) ([]TestSuite, []string) {
-	suites := []TestSuite{}
+type TestSuites []TestSuite
+
+func (ts TestSuites) AnyHaveProgrammaticFocus() bool {
+	for _, suite := range ts {
+		if suite.HasProgrammaticFocus {
+			return true
+		}
+	}
+
+	return false
+}
+
+func (ts TestSuites) ThatAreGinkgoSuites() TestSuites {
+	out := TestSuites{}
+	for _, suite := range ts {
+		if suite.IsGinkgo {
+			out = append(out, suite)
+		}
+	}
+	return out
+}
+
+func (ts TestSuites) CountWithState(states ...TestSuiteState) int {
+	n := 0
+	for _, suite := range ts {
+		if suite.State.Is(states...) {
+			n += 1
+		}
+	}
+
+	return n
+}
+
+func (ts TestSuites) WithState(states ...TestSuiteState) TestSuites {
+	out := TestSuites{}
+	for _, suite := range ts {
+		if suite.State.Is(states...) {
+			out = append(out, suite)
+		}
+	}
+
+	return out
+}
+
+func (ts TestSuites) WithoutState(states ...TestSuiteState) TestSuites {
+	out := TestSuites{}
+	for _, suite := range ts {
+		if !suite.State.Is(states...) {
+			out = append(out, suite)
+		}
+	}
+
+	return out
+}
+
+func (ts TestSuites) ShuffledCopy(seed int64) TestSuites {
+	out := make(TestSuites, len(ts))
+	permutation := rand.New(rand.NewSource(seed)).Perm(len(ts))
+	for i, j := range permutation {
+		out[i] = ts[j]
+	}
+	return out
+
+}
+
+func FindSuites(args []string, cliConfig types.CLIConfig, allowPrecompiled bool) TestSuites {
+	suites := TestSuites{}
 
 	if len(args) > 0 {
 		for _, arg := range args {
@@ -63,28 +163,19 @@ func FindSuites(args []string, cliConfig types.CLIConfig, allowPrecompiled bool)
 		suites = suitesInDir(".", cliConfig.Recurse)
 	}
 
-	skippedPackages := []string{}
 	if cliConfig.SkipPackage != "" {
 		skipFilters := strings.Split(cliConfig.SkipPackage, ",")
-		filteredSuites := []TestSuite{}
-		for _, suite := range suites {
-			skip := false
+		for idx := range suites {
 			for _, skipFilter := range skipFilters {
-				if strings.Contains(suite.Path, skipFilter) {
-					skip = true
+				if strings.Contains(suites[idx].Path, skipFilter) {
+					suites[idx].State = TestSuiteStateSkippedByFilter
 					break
 				}
 			}
-			if skip {
-				skippedPackages = append(skippedPackages, suite.Path)
-			} else {
-				filteredSuites = append(filteredSuites, suite)
-			}
 		}
-		suites = filteredSuites
 	}
 
-	return suites, skippedPackages
+	return suites
 }
 
 func precompiledTestSuite(path string) (TestSuite, error) {
@@ -119,11 +210,12 @@ func precompiledTestSuite(path string) (TestSuite, error) {
 		IsGinkgo:           true,
 		Precompiled:        true,
 		PathToCompiledTest: path,
+		State:              TestSuiteStateCompiled,
 	}, nil
 }
 
-func suitesInDir(dir string, recurse bool) []TestSuite {
-	suites := []TestSuite{}
+func suitesInDir(dir string, recurse bool) TestSuites {
+	suites := TestSuites{}
 
 	if path.Base(dir) == "vendor" {
 		return suites
@@ -137,6 +229,7 @@ func suitesInDir(dir string, recurse bool) []TestSuite {
 				Path:        relPath(dir),
 				PackageName: packageNameForSuite(dir),
 				IsGinkgo:    filesHaveGinkgoSuite(dir, files),
+				State:       TestSuiteStateUncompiled,
 			}
 			suites = append(suites, suite)
 			break
