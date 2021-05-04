@@ -227,7 +227,7 @@ var SuiteConfigFlags = GinkgoFlags{
 	{KeyPath: "S.RegexScansFilePath", Name: "regex-scans-filepath", SectionKey: "filter", DeprecatedName: "regexScansFilePath", DeprecatedDocLink: "changed-command-line-flags",
 		Usage: "If set, ginkgo regex matching also will look at the file path (code location)."},
 
-	{KeyPath: "D.DebugParallel", DeprecatedName: "debug", DeprecatedDocLink: "removed--debug"},
+	{KeyPath: "D.DebugParallel", DeprecatedName: "debug", DeprecatedDocLink: "removed--debug", DeprecatedVersion: "2.0.0",},
 }
 
 // ParallelConfigFlags provides flags for the Ginkgo test process (not the CLI)
@@ -264,8 +264,8 @@ var ReporterConfigFlags = GinkgoFlags{
 
 	{KeyPath: "D.SlowSpecThresholdWithFLoatUnits", DeprecatedName: "slowSpecThreshold", DeprecatedDocLink: "changed--slowspecthreshold",
 		Usage: "use --slow-spec-threshold instead and pass in a duration string (e.g. '5s', not '5.0')"},
-	{KeyPath: "D.NoisyPendings", DeprecatedName: "noisyPendings", DeprecatedDocLink: "removed--noisypendings-and--noisyskippings"},
-	{KeyPath: "D.NoisySkippings", DeprecatedName: "noisySkippings", DeprecatedDocLink: "removed--noisypendings-and--noisyskippings"},
+	{KeyPath: "D.NoisyPendings", DeprecatedName: "noisyPendings", DeprecatedDocLink: "removed--noisypendings-and--noisyskippings", DeprecatedVersion: "2.0.0",},
+	{KeyPath: "D.NoisySkippings", DeprecatedName: "noisySkippings", DeprecatedDocLink: "removed--noisypendings-and--noisyskippings", DeprecatedVersion: "2.0.0",},
 }
 
 // BuildTestSuiteFlagSet attaches to the CommandLine flagset and provides flags for the Ginkgo test process
@@ -355,8 +355,8 @@ var GinkgoCLIRunAndWatchFlags = GinkgoFlags{
 	{KeyPath: "C.KeepSeparateReports", Name: "keep-separate-reports", SectionKey: "output",
 		Usage: "If set, Ginkgo does not merge per-suite reports (e.g. -json-report) into one monolithic report for the entire testrun.  The reports will remain in their respective package directories or in -output-dir if set."},
 
-	{KeyPath: "D.Stream", DeprecatedName: "stream", DeprecatedDocLink: "removed--stream"},
-	{KeyPath: "D.Notify", DeprecatedName: "notify", DeprecatedDocLink: "removed--notify"},
+	{KeyPath: "D.Stream", DeprecatedName: "stream", DeprecatedDocLink: "removed--stream", DeprecatedVersion: "2.0.0",},
+	{KeyPath: "D.Notify", DeprecatedName: "notify", DeprecatedDocLink: "removed--notify", DeprecatedVersion: "2.0.0",},
 }
 
 // GinkgoCLIRunFlags provides flags for Ginkgo CLI's run command that aren't shared by any other commands
