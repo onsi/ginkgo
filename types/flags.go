@@ -22,6 +22,7 @@ type GinkgoFlag struct {
 
 	DeprecatedName    string
 	DeprecatedDocLink string
+	DeprecatedVersion string
 
 	ExportAs string
 }
@@ -236,6 +237,7 @@ func (f GinkgoFlagSet) ValidateDeprecations(deprecationTracker *DeprecationTrack
 				deprecationTracker.TrackDeprecation(Deprecation{
 					Message: message,
 					DocLink: ginkgoFlag.DeprecatedDocLink,
+					Version: ginkgoFlag.DeprecatedVersion,
 				})
 			}
 		}
