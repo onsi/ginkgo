@@ -1,6 +1,7 @@
 package types_test
 
 import (
+	"os"
 	"reflect"
 	"strings"
 
@@ -85,6 +86,41 @@ var _ = Describe("Deprecation Support", func() {
 						Ω(deprecation.DocLink).Should(BeElementOf(DEPRECATION_ANCHORS))
 					}
 				}
+			})
+		})
+
+		Context("when ACK_GINKGO_DEPRECATIONS is set", func() {
+			var origEnv string
+			BeforeEach(func() {
+				origEnv = os.Getenv("ACK_GINKGO_DEPRECATIONS")
+				os.Setenv("ACK_GINKGO_DEPRECATIONS", "v1.18.3-boop")
+			})
+
+			AfterEach(func() {
+				os.Setenv("ACK_GINKGO_DEPRECATIONS", origEnv)
+			})
+
+			It("does not track deprecations with lower version numbers", func() {
+				tracker.TrackDeprecation(types.Deprecation{Message: "Deprecation A", Version: "0.19.2"})
+				tracker.TrackDeprecation(types.Deprecation{Message: "Deprecation B", Version: "1.17.4"})
+				tracker.TrackDeprecation(types.Deprecation{Message: "Deprecation C", Version: "1.18.2"})
+				tracker.TrackDeprecation(types.Deprecation{Message: "Deprecation D", Version: "1.18.3"})
+				tracker.TrackDeprecation(types.Deprecation{Message: "Deprecation E", Version: "1.18.4"})
+				tracker.TrackDeprecation(types.Deprecation{Message: "Deprecation F", Version: "1.19.2"})
+				tracker.TrackDeprecation(types.Deprecation{Message: "Deprecation G", Version: "2.0.0"})
+				tracker.TrackDeprecation(types.Deprecation{Message: "Deprecation H"})
+
+				report := tracker.DeprecationsReport()
+				Ω(report).ShouldNot(ContainSubstring("Deprecation A"))
+				Ω(report).ShouldNot(ContainSubstring("Deprecation B"))
+				Ω(report).ShouldNot(ContainSubstring("Deprecation C"))
+				Ω(report).ShouldNot(ContainSubstring("Deprecation D"))
+				Ω(report).Should(ContainSubstring("Deprecation E"))
+				Ω(report).Should(ContainSubstring("Deprecation F"))
+				Ω(report).Should(ContainSubstring("Deprecation G"))
+				Ω(report).Should(ContainSubstring("Deprecation H"))
+
+				Ω(report).Should(ContainSubstring("ACK_GINKGO_DEPRECATIONS="))
 			})
 		})
 	})
