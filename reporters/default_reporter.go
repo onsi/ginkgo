@@ -159,6 +159,8 @@ func (r *DefaultReporter) DidRun(report types.SpecReport) {
 		highlightColor, header = "{{magenta}}", fmt.Sprintf("%s! [PANICKED]", denoter)
 	case types.SpecStateInterrupted:
 		highlightColor, header = "{{orange}}", fmt.Sprintf("%s! [INTERRUPTED]", denoter)
+	case types.SpecStateAborted:
+		highlightColor, header = "{{coral}}", fmt.Sprintf("%s! [ABORTED]", denoter)
 	}
 
 	// Emit stream and return
@@ -220,12 +222,14 @@ func (r *DefaultReporter) SuiteDidEnd(report types.Report) {
 		r.emitBlock(r.f("{{red}}{{bold}}Summarizing %d Failures:{{/}}", len(failures)))
 		for _, specReport := range failures {
 			highlightColor, heading := "{{red}}", "[FAIL]"
-			if specReport.State.Is(types.SpecStateInterrupted) {
-				highlightColor, heading = "{{orange}}", "[INTERRUPTED]"
-			} else if specReport.State.Is(types.SpecStatePanicked) {
+			switch specReport.State {
+			case types.SpecStatePanicked:
 				highlightColor, heading = "{{magenta}}", "[PANICKED!]"
+			case types.SpecStateAborted:
+				highlightColor, heading = "{{coral}}", "[ABORTED]"
+			case types.SpecStateInterrupted:
+				highlightColor, heading = "{{orange}}", "[INTERRUPTED]"
 			}
-
 			locationBlock := r.codeLocationBlock(specReport, highlightColor, true, true)
 			r.emitBlock(r.fi(1, highlightColor+"%s{{/}} %s", heading, locationBlock))
 		}

@@ -1,8 +1,6 @@
 package integration_test
 
 import (
-	"encoding/json"
-	"encoding/xml"
 	"io/ioutil"
 	"strings"
 
@@ -94,13 +92,6 @@ var _ = Describe("Reporting", func() {
 	})
 
 	Describe("JSON and JUnit reporting", func() {
-		loadJSONReports := func(pkg string, target string) []types.Report {
-			data := []byte(fm.ContentOf(pkg, target))
-			reports := []types.Report{}
-			Ω(json.Unmarshal(data, &reports)).Should(Succeed())
-			return reports
-		}
-
 		checkJSONReport := func(report types.Report) {
 			Ω(report.SuitePath).Should(Equal(fm.AbsPathTo("reporting")))
 			Ω(report.SuiteDescription).Should(Equal("ReportingFixture Suite"))
@@ -137,13 +128,6 @@ var _ = Describe("Reporting", func() {
 			Ω(report.SuiteConfig.RandomSeed).Should(Equal(int64(17)))
 			Ω(report.SpecialSuiteFailureReasons).Should(ContainElement(ContainSubstring("Failed to compile malformed_sub_package:")))
 			Ω(report.SpecReports).Should(HaveLen(0))
-		}
-
-		loadJUnitReport := func(pkg string, target string) reporters.JUnitTestSuites {
-			data := []byte(fm.ContentOf(pkg, target))
-			reports := reporters.JUnitTestSuites{}
-			Ω(xml.Unmarshal(data, &reports)).Should(Succeed())
-			return reports
 		}
 
 		getTestCase := func(name string, tests []reporters.JUnitTestCase) reporters.JUnitTestCase {
@@ -267,13 +251,13 @@ var _ = Describe("Reporting", func() {
 			})
 
 			It("generates single unified json and junit reports", func() {
-				reports := loadJSONReports("reporting", "out.json")
+				reports := fm.LoadJSONReports("reporting", "out.json")
 				Ω(reports).Should(HaveLen(3))
 				checkJSONReport(reports[0])
 				checkJSONFailedCompilationReport(reports[1])
 				checkJSONSubpackageReport(reports[2])
 
-				junitReport := loadJUnitReport("reporting", "out.xml")
+				junitReport := fm.LoadJUnitReport("reporting", "out.xml")
 				checkUnifiedJUnitReport(junitReport)
 
 				checkTeamcityReport(fm.ContentOf("reporting", "out.tc"))
@@ -290,13 +274,13 @@ var _ = Describe("Reporting", func() {
 			})
 
 			It("places the single unified json and junit reports in output-dir", func() {
-				reports := loadJSONReports("reporting", "reports/out.json")
+				reports := fm.LoadJSONReports("reporting", "reports/out.json")
 				Ω(reports).Should(HaveLen(3))
 				checkJSONReport(reports[0])
 				checkJSONFailedCompilationReport(reports[1])
 				checkJSONSubpackageReport(reports[2])
 
-				junitReport := loadJUnitReport("reporting", "reports/out.xml")
+				junitReport := fm.LoadJUnitReport("reporting", "reports/out.xml")
 				checkUnifiedJUnitReport(junitReport)
 
 				checkTeamcityReport(fm.ContentOf("reporting", "reports/out.tc"))
@@ -313,22 +297,22 @@ var _ = Describe("Reporting", func() {
 			})
 
 			It("keeps the separate reports in their respective packages", func() {
-				reports := loadJSONReports("reporting", "out.json")
+				reports := fm.LoadJSONReports("reporting", "out.json")
 				Ω(reports).Should(HaveLen(1))
 				checkJSONReport(reports[0])
-				checkJUnitReport(loadJUnitReport("reporting", "out.xml").TestSuites[0])
+				checkJUnitReport(fm.LoadJUnitReport("reporting", "out.xml").TestSuites[0])
 				checkTeamcityReport(fm.ContentOf("reporting", "out.tc"))
 
-				reports = loadJSONReports("reporting", "reporting_sub_package/out.json")
+				reports = fm.LoadJSONReports("reporting", "reporting_sub_package/out.json")
 				Ω(reports).Should(HaveLen(1))
 				checkJSONSubpackageReport(reports[0])
-				checkJUnitSubpackageReport(loadJUnitReport("reporting", "reporting_sub_package/out.xml").TestSuites[0])
+				checkJUnitSubpackageReport(fm.LoadJUnitReport("reporting", "reporting_sub_package/out.xml").TestSuites[0])
 				checkTeamcitySubpackageReport(fm.ContentOf("reporting", "reporting_sub_package/out.tc"))
 
-				reports = loadJSONReports("reporting", "malformed_sub_package/out.json")
+				reports = fm.LoadJSONReports("reporting", "malformed_sub_package/out.json")
 				Ω(reports).Should(HaveLen(1))
 				checkJSONFailedCompilationReport(reports[0])
-				checkJUnitFailedCompilationReport(loadJUnitReport("reporting", "malformed_sub_package/out.xml").TestSuites[0])
+				checkJUnitFailedCompilationReport(fm.LoadJUnitReport("reporting", "malformed_sub_package/out.xml").TestSuites[0])
 				checkTeamcityFailedCompilationReport(fm.ContentOf("reporting", "malformed_sub_package/out.tc"))
 
 				Ω(fm.PathTo("reporting", "nonginkgo_sub_package/out.json")).ShouldNot(BeAnExistingFile())
@@ -345,22 +329,22 @@ var _ = Describe("Reporting", func() {
 			})
 
 			It("places the separate reports in the -output-dir", func() {
-				reports := loadJSONReports("reporting", "reports/reporting_out.json")
+				reports := fm.LoadJSONReports("reporting", "reports/reporting_out.json")
 				Ω(reports).Should(HaveLen(1))
 				checkJSONReport(reports[0])
-				checkJUnitReport(loadJUnitReport("reporting", "reports/reporting_out.xml").TestSuites[0])
+				checkJUnitReport(fm.LoadJUnitReport("reporting", "reports/reporting_out.xml").TestSuites[0])
 				checkTeamcityReport(fm.ContentOf("reporting", "reports/reporting_out.tc"))
 
-				reports = loadJSONReports("reporting", "reports/reporting_sub_package_out.json")
+				reports = fm.LoadJSONReports("reporting", "reports/reporting_sub_package_out.json")
 				Ω(reports).Should(HaveLen(1))
 				checkJSONSubpackageReport(reports[0])
-				checkJUnitSubpackageReport(loadJUnitReport("reporting", "reports/reporting_sub_package_out.xml").TestSuites[0])
+				checkJUnitSubpackageReport(fm.LoadJUnitReport("reporting", "reports/reporting_sub_package_out.xml").TestSuites[0])
 				checkTeamcitySubpackageReport(fm.ContentOf("reporting", "reports/reporting_sub_package_out.tc"))
 
-				reports = loadJSONReports("reporting", "reports/malformed_sub_package_out.json")
+				reports = fm.LoadJSONReports("reporting", "reports/malformed_sub_package_out.json")
 				Ω(reports).Should(HaveLen(1))
 				checkJSONFailedCompilationReport(reports[0])
-				checkJUnitFailedCompilationReport(loadJUnitReport("reporting", "reports/malformed_sub_package_out.xml").TestSuites[0])
+				checkJUnitFailedCompilationReport(fm.LoadJUnitReport("reporting", "reports/malformed_sub_package_out.xml").TestSuites[0])
 				checkTeamcityFailedCompilationReport(fm.ContentOf("reporting", "reports/malformed_sub_package_out.tc"))
 
 				Ω(fm.PathTo("reporting", "reports/nonginkgo_sub_package_out.json")).ShouldNot(BeAnExistingFile())
@@ -375,7 +359,7 @@ var _ = Describe("Reporting", func() {
 			})
 
 			It("reports about the suites that did not run", func() {
-				reports := loadJSONReports("reporting", "reports/out.json")
+				reports := fm.LoadJSONReports("reporting", "reports/out.json")
 				Ω(reports).Should(HaveLen(3))
 				checkJSONReport(reports[0])
 				Ω(reports[1].SpecialSuiteFailureReasons).Should(ContainElement("Suite did not run because prior suites failed and --keep-going is not set"))

@@ -200,6 +200,7 @@ func (suite *Suite) runSpecs(description string, suitePath string, hasProgrammat
 		processSpecReport(specReport)
 	}
 
+	suiteAborted := false
 	if report.SuiteSucceeded {
 		nextIndex := MakeNextIndexCounter(suiteConfig)
 
@@ -225,7 +226,7 @@ func (suite *Suite) runSpecs(description string, suitePath string, hasProgrammat
 				GinkgoParallelNode:          suiteConfig.ParallelNode,
 			}
 
-			if (suiteConfig.FailFast && !report.SuiteSucceeded) || interruptHandler.Status().Interrupted {
+			if (suiteConfig.FailFast && !report.SuiteSucceeded) || interruptHandler.Status().Interrupted || suiteAborted {
 				spec.Skip = true
 			}
 
@@ -246,6 +247,9 @@ func (suite *Suite) runSpecs(description string, suitePath string, hasProgrammat
 			//send the spec report to any attached ReportAfterEach blocks - this will update suite.currentSpecReport of failures occur in these blocks
 			suite.reportAfterEach(spec, failer, interruptHandler, writer, outputInterceptor, suiteConfig)
 			processSpecReport(suite.currentSpecReport)
+			if suite.currentSpecReport.State == types.SpecStateAborted {
+				suiteAborted = true
+			}
 			suite.currentSpecReport = types.SpecReport{}
 		}
 
@@ -338,7 +342,7 @@ func (suite *Suite) runSpec(spec Spec, failer *Failer, interruptHandler Interrup
 		for _, node := range cleanUpNodes {
 			state, failure := suite.runNode(node, failer, interruptHandler.Status().Channel, interruptHandler, spec.Nodes.BestTextFor(node), writer, suiteConfig)
 			suite.currentSpecReport.RunTime = time.Since(suite.currentSpecReport.StartTime)
-			if suite.currentSpecReport.State == types.SpecStatePassed {
+			if suite.currentSpecReport.State == types.SpecStatePassed || state == types.SpecStateAborted {
 				suite.currentSpecReport.State = state
 				suite.currentSpecReport.Failure = failure
 			}
@@ -377,7 +381,7 @@ func (suite *Suite) reportAfterEach(spec Spec, failer *Failer, interruptHandler 
 		))
 		state, failure := suite.runNode(node, failer, nil, nil, spec.Nodes.BestTextFor(node), writer, suiteConfig)
 		interruptHandler.ClearInterruptMessage()
-		if suite.currentSpecReport.State == types.SpecStatePassed {
+		if suite.currentSpecReport.State == types.SpecStatePassed || state == types.SpecStateAborted {
 			suite.currentSpecReport.State = state
 			suite.currentSpecReport.Failure = failure
 		}
