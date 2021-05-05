@@ -191,6 +191,13 @@ func GenerateJUnitReport(report types.Report, dst string) error {
 				Description: spec.Failure.Message,
 			}
 			suite.Errors += 1
+		case types.SpecStateAborted:
+			test.Failure = &JUnitFailure{
+				Message:     spec.Failure.Message,
+				Type:        "aborted",
+				Description: fmt.Sprintf("%s\n%s", spec.Failure.Location.String(), spec.Failure.Location.FullStackTrace),
+			}
+			suite.Errors += 1
 		case types.SpecStatePanicked:
 			test.Error = &JUnitError{
 				Message:     spec.Failure.ForwardedPanic,
