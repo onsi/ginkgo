@@ -219,7 +219,7 @@ func RunSpecs(t GinkgoTestingT, description string) bool {
 	return passed
 }
 
-//Skip notifies Ginkgo that the current spec was skipped.
+//Skip instructs Ginkgo to skip the current spec
 func Skip(message string, callerSkip ...int) {
 	skip := 0
 	if len(callerSkip) > 0 {
@@ -239,6 +239,18 @@ func Fail(message string, callerSkip ...int) {
 
 	cl := types.NewCodeLocationWithStackTrace(skip + 1)
 	global.Failer.Fail(message, cl)
+	panic(types.GinkgoErrors.UncaughtGinkgoPanic(cl))
+}
+
+//AbortSuite instruct Ginkgo to fail the current test and skip all subsequent tests
+func AbortSuite(message string, callerSkip ...int) {
+	skip := 0
+	if len(callerSkip) > 0 {
+		skip = callerSkip[0]
+	}
+
+	cl := types.NewCodeLocationWithStackTrace(skip + 1)
+	global.Failer.AbortSuite(message, cl)
 	panic(types.GinkgoErrors.UncaughtGinkgoPanic(cl))
 }
 

@@ -124,6 +124,7 @@ var _ = Describe("Types", func() {
 			Entry("Passed", types.SpecStatePassed, "passed"),
 			Entry("Failed", types.SpecStateFailed, "failed"),
 			Entry("Panicked", types.SpecStatePanicked, "panicked"),
+			Entry("Aborted", types.SpecStateAborted, "aborted"),
 			Entry("Interrupted", types.SpecStateInterrupted, "interrupted"),
 			Entry("Invalid", types.SpecStateInvalid, "INVALID SPEC STATE"),
 		)
@@ -169,6 +170,7 @@ var _ = Describe("Types", func() {
 			Ω(types.SpecReport{State: types.SpecStatePassed}.Failed()).Should(BeFalse())
 			Ω(types.SpecReport{State: types.SpecStateFailed}.Failed()).Should(BeTrue())
 			Ω(types.SpecReport{State: types.SpecStatePanicked}.Failed()).Should(BeTrue())
+			Ω(types.SpecReport{State: types.SpecStateAborted}.Failed()).Should(BeTrue())
 			Ω(types.SpecReport{State: types.SpecStateInterrupted}.Failed()).Should(BeTrue())
 		})
 

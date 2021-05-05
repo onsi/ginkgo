@@ -72,6 +72,19 @@ func (f *Failer) Skip(message string, location types.CodeLocation) {
 	}
 }
 
+func (f *Failer) AbortSuite(message string, location types.CodeLocation) {
+	f.lock.Lock()
+	defer f.lock.Unlock()
+
+	if f.state == types.SpecStatePassed {
+		f.state = types.SpecStateAborted
+		f.failure = types.Failure{
+			Message:  message,
+			Location: location,
+		}
+	}
+}
+
 func (f *Failer) Drain() (types.SpecState, types.Failure) {
 	f.lock.Lock()
 	defer f.lock.Unlock()
