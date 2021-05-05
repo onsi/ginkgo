@@ -2,6 +2,8 @@ package integration_test
 
 import (
 	"bytes"
+	"encoding/json"
+	"encoding/xml"
 	"flag"
 	"fmt"
 	"io/ioutil"
@@ -11,6 +13,8 @@ import (
 	"runtime"
 
 	. "github.com/onsi/ginkgo"
+	"github.com/onsi/ginkgo/reporters"
+	"github.com/onsi/ginkgo/types"
 	. "github.com/onsi/gomega"
 	"github.com/onsi/gomega/format"
 	"github.com/onsi/gomega/gexec"
@@ -136,6 +140,20 @@ func (f FixtureManager) ContentOf(pkg string, target string) string {
 	content, err := ioutil.ReadFile(f.PathTo(pkg, target))
 	ExpectWithOffset(1, err).NotTo(HaveOccurred())
 	return string(content)
+}
+
+func (f FixtureManager) LoadJSONReports(pkg string, target string) []types.Report {
+	data := []byte(f.ContentOf(pkg, target))
+	reports := []types.Report{}
+	ExpectWithOffset(1, json.Unmarshal(data, &reports)).Should(Succeed())
+	return reports
+}
+
+func (f FixtureManager) LoadJUnitReport(pkg string, target string) reporters.JUnitTestSuites {
+	data := []byte(f.ContentOf(pkg, target))
+	reports := reporters.JUnitTestSuites{}
+	ExpectWithOffset(1, xml.Unmarshal(data, &reports)).Should(Succeed())
+	return reports
 }
 
 func (f FixtureManager) ContentOfFixture(pkg string, target string) string {

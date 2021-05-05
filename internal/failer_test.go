@@ -84,6 +84,36 @@ var _ = Describe("Failer", func() {
 		})
 	})
 
+	Describe("when told to abort", func() {
+		Context("when no failure has occured", func() {
+			It("registers the test as aborted", func() {
+				failer.AbortSuite("something aborted", clA)
+				state, failure := failer.Drain()
+				Ω(state).Should(Equal(types.SpecStateAborted))
+				Ω(failure).Should(Equal(types.Failure{
+					Message:  "something aborted",
+					Location: clA,
+				}))
+			})
+		})
+
+		Context("when a failure has already occured", func() {
+			BeforeEach(func() {
+				failer.Fail("something failed", clA)
+			})
+
+			It("does not modify the failure", func() {
+				failer.AbortSuite("something aborted", clA)
+				state, failure := failer.Drain()
+				Ω(state).Should(Equal(types.SpecStateFailed))
+				Ω(failure).Should(Equal(types.Failure{
+					Message:  "something failed",
+					Location: clA,
+				}))
+			})
+		})
+	})
+
 	Describe("when told to panic", func() {
 		BeforeEach(func() {
 			failer.Panic(clA, 17)

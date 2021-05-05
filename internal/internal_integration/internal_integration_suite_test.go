@@ -81,6 +81,21 @@ func F(options ...interface{}) {
 	panic("panic to simulate how ginkgo's Fail works")
 }
 
+func Abort(options ...interface{}) {
+	location := cl
+	message := "abort"
+	for _, option := range options {
+		if reflect.TypeOf(option).Kind() == reflect.String {
+			message = option.(string)
+		} else if reflect.TypeOf(option) == reflect.TypeOf(cl) {
+			location = option.(types.CodeLocation)
+		}
+	}
+
+	failer.AbortSuite(message, location)
+	panic("panic to simulate how ginkgo's AbortSuite works")
+}
+
 func FixtureSkip(options ...interface{}) {
 	location := cl
 	message := "skip"

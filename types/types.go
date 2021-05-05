@@ -369,6 +369,7 @@ const (
 	SpecStateSkipped
 	SpecStatePassed
 	SpecStateFailed
+	SpecStateAborted
 	SpecStatePanicked
 	SpecStateInterrupted
 )
@@ -385,6 +386,8 @@ func (s SpecState) String() string {
 		return "failed"
 	case SpecStatePanicked:
 		return "panicked"
+	case SpecStateAborted:
+		return "aborted"
 	case SpecStateInterrupted:
 		return "interrupted"
 	}
@@ -410,6 +413,8 @@ func (s *SpecState) UnmarshalJSON(b []byte) error {
 		*s = SpecStateFailed
 	case "panicked":
 		*s = SpecStatePanicked
+	case "aborted":
+		*s = SpecStateAborted
 	case "interrupted":
 		*s = SpecStateInterrupted
 	}
@@ -423,7 +428,7 @@ func (s SpecState) MarshalJSON() ([]byte, error) {
 	return json.Marshal(s.String())
 }
 
-var SpecStateFailureStates = []SpecState{SpecStateFailed, SpecStatePanicked, SpecStateInterrupted}
+var SpecStateFailureStates = []SpecState{SpecStateFailed, SpecStateAborted, SpecStatePanicked, SpecStateInterrupted}
 
 func (state SpecState) Is(states ...SpecState) bool {
 	for _, testState := range states {
