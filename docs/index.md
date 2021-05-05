@@ -836,6 +836,18 @@ func BeforeEach(args ...interface{})
 
 Ginkgo will vet the passed in decorations and exit with a clear error message if it detects any invalid configurations. 
 
+
+Moreover, Ginkgo also supports passing in arbitrarily nested slices of decorators.  Ginkgo will unroll these slices and process the flattened list.  This makes it easier to pass around groups of decorators.  For example, this is valid:
+
+```go
+flakyDecorations := []interface{}{Label("flaky"), FlakeAttempts(3)}
+
+var _ = Describe("a bunch of flaky controller tests", flakyDecorations, Label("controller"), func() {
+    ...
+}
+```
+The resulting tests will be decorated with `FlakAttempts(3)` and the two labels `flaky` and `controller`.
+
 #### The Focus and Pending Decoration
 The `Focus` and `Pending` decorations apply to container nodes and subject nodes only.  It is an error to try to `Focus` or `Pending` a setup node.
 
