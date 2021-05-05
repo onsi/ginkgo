@@ -72,6 +72,8 @@ func NewNode(deprecationTracker *types.DeprecationTracker, nodeType types.NodeTy
 		return predicate
 	}
 
+	args = unrollInterfaceSlice(args)
+
 	remainingArgs := []interface{}{}
 	//First get the CodeLocation up-to-date
 	for _, arg := range args {
@@ -320,4 +322,21 @@ func (n Nodes) HasNodeMarkedFocus() bool {
 		}
 	}
 	return false
+}
+
+func unrollInterfaceSlice(args interface{}) []interface{} {
+	v := reflect.ValueOf(args)
+	if v.Kind() != reflect.Slice {
+		return []interface{}{args}
+	}
+	out := []interface{}{}
+	for i := 0; i < v.Len(); i++ {
+		el := reflect.ValueOf(v.Index(i).Interface())
+		if el.Kind() == reflect.Slice {
+			out = append(out, unrollInterfaceSlice(el.Interface())...)
+		} else {
+			out = append(out, v.Index(i).Interface())
+		}
+	}
+	return out
 }
