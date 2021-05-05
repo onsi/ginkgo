@@ -46,7 +46,9 @@ func Describe(text string, args ...interface{})
 func It(text string, args ...interface{})
 func BeforeEach(args ...interface{})
 ```
-Note that this change is backwards compatible with v1.X
+Note that this change is backwards compatible with v1.X.
+
+Ginkgo supports passing in decorators _and_ arbitrarily nested slices of decorators.  Ginkgo will unroll any slices and process the flattened list of decorators.  This makes it easier to pass around and combine groups of decorators.
 
 Here's a list of new decorators.  They are documented in more detail in the [Node Decoration Reference](https://github.com/onsi/ginkgo/blob/v2/docs/index.md#node-decoration-reference) section of the documentation.
 

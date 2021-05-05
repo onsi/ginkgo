@@ -22,6 +22,7 @@ var _ = Describe("Construcing nodes", func() {
 	var body func()
 	BeforeEach(func() {
 		dt = types.NewDeprecationTracker()
+		didRun = false
 		body = func() { didRun = true }
 	})
 
@@ -233,6 +234,17 @@ var _ = Describe("Construcing nodes", func() {
 				types.GinkgoErrors.UnknownDecoration(cl, ntIt, 5),
 			))
 			Ω(dt.DidTrackDeprecations()).Should(BeFalse())
+		})
+	})
+
+	Describe("when decorations are nested in slices", func() {
+		It("unrolls them first", func() {
+			node, errors := internal.NewNode(dt, ntIt, "text", []interface{}{body, []interface{}{Focus, FlakeAttempts(3)}, FlakeAttempts(2)})
+			Ω(node.FlakeAttempts).Should(Equal(2))
+			Ω(node.MarkedFocus).Should(BeTrue())
+			node.Body()
+			Ω(didRun).Should(BeTrue())
+			ExpectAllWell(errors)
 		})
 	})
 })
