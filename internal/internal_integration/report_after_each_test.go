@@ -4,6 +4,7 @@ import (
 	"time"
 
 	. "github.com/onsi/ginkgo"
+	"github.com/onsi/ginkgo/internal"
 	. "github.com/onsi/ginkgo/internal/test_helpers"
 	"github.com/onsi/ginkgo/types"
 	. "github.com/onsi/gomega"
@@ -63,9 +64,9 @@ var _ = Describe("Sending reports to ReportAfterEach nodes", func() {
 					It("passes yet again", rt.T("passes-yet-again"))
 					It("skipped by interrupt", rt.T("skipped-by-interrupt"))
 					ReportAfterEach(func(report types.SpecReport) {
-						interruptHandler.Interrupt("Interrupted by Tester")
+						interruptHandler.Interrupt(internal.InterruptCauseTimeout)
 						time.Sleep(100 * time.Millisecond)
-						rt.RunWithData("interrupt-reporter", "interrupt-message", interruptHandler.EmittedInterruptMessage())
+						rt.RunWithData("interrupt-reporter", "interrupt-message", interruptHandler.EmittedInterruptPlaceholderMessage())
 						reports["interrupt"] = append(reports["interrupt"], report)
 					})
 				})

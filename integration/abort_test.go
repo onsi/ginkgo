@@ -6,7 +6,9 @@ import (
 	"github.com/onsi/gomega/gbytes"
 	"github.com/onsi/gomega/gexec"
 
+	"github.com/onsi/ginkgo/internal"
 	. "github.com/onsi/ginkgo/internal/test_helpers"
+	"github.com/onsi/ginkgo/reporters"
 	"github.com/onsi/ginkgo/types"
 )
 
@@ -14,7 +16,7 @@ var _ = Describe("Abort", func() {
 	var session *gexec.Session
 	BeforeEach(func() {
 		fm.MountFixture("abort")
-		session = startGinkgo(fm.PathTo("abort"), "--no-color", "--json-report=out.json", "--junit-report=out.xml")
+		session = startGinkgo(fm.PathTo("abort"), "--no-color", "--json-report=out.json", "--junit-report=out.xml", "--nodes=2")
 		Eventually(session).Should(gexec.Exit(1))
 	})
 
@@ -28,17 +30,18 @@ var _ = Describe("Abort", func() {
 		specs := Reports(report.SpecReports)
 		Ω(specs.Find("runs and passes")).Should(HavePassed())
 		Ω(specs.Find("aborts")).Should(HaveAborted("this suite needs to end now!"))
-		Ω(specs.Find("never runs")).Should(HaveBeenSkipped())
+		Ω(specs.Find("never runs")).Should(HaveBeenInterrupted(internal.InterruptCauseAbortByOtherProcess))
 		Ω(specs.Find("never runs either")).Should(HaveBeenSkipped())
 
 		junitSuites := fm.LoadJUnitReport("abort", "out.xml")
 		cases := junitSuites.TestSuites[0].TestCases
-		Ω(cases[0].Status).Should(Equal(types.SpecStatePassed.String()))
-		Ω(cases[1].Status).Should(Equal(types.SpecStateAborted.String()))
-		Ω(cases[1].Failure.Message).Should(Equal("this suite needs to end now!"))
-		Ω(cases[1].Failure.Type).Should(Equal("aborted"))
-		Ω(cases[2].Status).Should(Equal(types.SpecStateSkipped.String()))
-		Ω(cases[3].Status).Should(Equal(types.SpecStateSkipped.String()))
+		var abortCase reporters.JUnitTestCase
+		for _, testCase := range cases {
+			if testCase.Status == types.SpecStateAborted.String() {
+				abortCase = testCase
+			}
+		}
+		Ω(abortCase.Failure.Message).Should(Equal("this suite needs to end now!"))
+		Ω(abortCase.Failure.Type).Should(Equal("aborted"))
 	})
-
 })
