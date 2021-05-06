@@ -4,6 +4,7 @@ import (
 	"time"
 
 	. "github.com/onsi/ginkgo"
+	"github.com/onsi/ginkgo/internal"
 	. "github.com/onsi/ginkgo/internal/test_helpers"
 	"github.com/onsi/ginkgo/types"
 	. "github.com/onsi/gomega"
@@ -14,7 +15,7 @@ var _ = Describe("When a test suite is interrupted", func() {
 		BeforeEach(func() {
 			success, _ := RunFixture("interrupted test", func() {
 				BeforeSuite(rt.T("before-suite", func() {
-					interruptHandler.Interrupt("Interrupted by Tester")
+					interruptHandler.Interrupt(internal.InterruptCauseTimeout)
 					time.Sleep(time.Hour)
 				}))
 				AfterSuite(rt.T("after-suite"))
@@ -32,7 +33,7 @@ var _ = Describe("When a test suite is interrupted", func() {
 		It("reports the correct failure", func() {
 			summary := reporter.Did.FindByLeafNodeType(types.NodeTypeBeforeSuite)
 			Ω(summary.State).Should(Equal(types.SpecStateInterrupted))
-			Ω(summary.Failure.Message).Should(ContainSubstring("Interrupted by Tester\nstack trace"))
+			Ω(summary.Failure.Message).Should(ContainSubstring("Interrupted by Timeout\nstack trace"))
 		})
 
 		It("reports the correct statistics", func() {
@@ -40,7 +41,7 @@ var _ = Describe("When a test suite is interrupted", func() {
 		})
 
 		It("reports the correct special failure reason", func() {
-			Ω(reporter.End.SpecialSuiteFailureReasons).Should(ContainElement("Interrupted by Tester"))
+			Ω(reporter.End.SpecialSuiteFailureReasons).Should(ContainElement("Interrupted by Timeout"))
 		})
 	})
 
@@ -58,12 +59,12 @@ var _ = Describe("When a test suite is interrupted", func() {
 					It("runs", rt.T("runs"))
 					Describe("nested-container", func() {
 						BeforeEach(rt.T("bef.3-interrupt!", func() {
-							interruptHandler.Interrupt("Interrupted by Tester")
+							interruptHandler.Interrupt(internal.InterruptCauseTimeout)
 							time.Sleep(time.Hour)
 						}))
 						AfterEach(rt.T("aft.3a"))
 						AfterEach(rt.T("aft.3b", func() {
-							interruptHandler.Interrupt("Interrupted by Tester")
+							interruptHandler.Interrupt(internal.InterruptCauseTimeout)
 							time.Sleep(time.Hour)
 						}))
 						Describe("deeply-nested-container", func() {
@@ -94,12 +95,12 @@ var _ = Describe("When a test suite is interrupted", func() {
 
 		It("reports the interrupted test as interrupted and emits a stack trace", func() {
 			message := reporter.Did.Find("the interrupted test").Failure.Message
-			Ω(message).Should(ContainSubstring("Interrupted by Tester\nstack trace"))
+			Ω(message).Should(ContainSubstring("Interrupted by Timeout\nstack trace"))
 		})
 
 		It("reports the correct statistics", func() {
 			Ω(reporter.End).Should(BeASuiteSummary(false, NSpecs(4), NWillRun(4), NPassed(1), NSkipped(2), NFailed(1)))
-			Ω(reporter.End.SpecialSuiteFailureReasons).Should(ContainElement("Interrupted by Tester"))
+			Ω(reporter.End.SpecialSuiteFailureReasons).Should(ContainElement("Interrupted by Timeout"))
 		})
 	})
 })

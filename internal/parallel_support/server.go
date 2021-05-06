@@ -41,6 +41,7 @@ type Server struct {
 	beforeSuiteState beforeSuiteState
 	parallelTotal    int
 	counter          int
+	shouldAbort      bool
 
 	numSuiteDidBegins int
 	numSuiteDidEnds   int
@@ -84,6 +85,7 @@ func (server *Server) Start() {
 	mux.HandleFunc("/aggregated-nonprimary-nodes-report", server.handleAggregatedNonprimaryNodesReport)
 	mux.HandleFunc("/counter", server.handleCounter)
 	mux.HandleFunc("/up", server.handleUp)
+	mux.HandleFunc("/abort", server.handleAbort)
 
 	go httpServer.Serve(server.listener)
 }
@@ -277,4 +279,18 @@ func (server *Server) handleCounter(writer http.ResponseWriter, request *http.Re
 
 func (server *Server) handleUp(writer http.ResponseWriter, request *http.Request) {
 	writer.WriteHeader(http.StatusOK)
+}
+
+func (server *Server) handleAbort(writer http.ResponseWriter, request *http.Request) {
+	server.lock.Lock()
+	defer server.lock.Unlock()
+	if request.Method == "GET" {
+		if server.shouldAbort {
+			writer.WriteHeader(http.StatusGone)
+		} else {
+			writer.WriteHeader(http.StatusOK)
+		}
+	} else {
+		server.shouldAbort = true
+	}
 }
