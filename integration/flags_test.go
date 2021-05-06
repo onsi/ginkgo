@@ -143,14 +143,32 @@ var _ = Describe("Flags Specs", func() {
 		Ω(output).Should(ContainSubstring("Full Stack Trace"))
 	})
 
-	It("should fail fast when told to", func() {
-		fm.MountFixture("fail")
-		session := startGinkgo(fm.PathTo("fail"), "--fail-fast")
-		Eventually(session).Should(gexec.Exit(1))
-		output := string(session.Out.Contents())
+	Describe("--fail-fast", func() {
+		BeforeEach(func() {
+			fm.MountFixture("fail_then_hang")
+		})
 
-		Ω(output).Should(ContainSubstring("1 Failed"))
-		Ω(output).Should(ContainSubstring("6 Skipped"))
+		Context("when running in series", func() {
+			It("should fail fast when told to", func() {
+				session := startGinkgo(fm.PathTo("fail_then_hang"), "--fail-fast")
+				Eventually(session).Should(gexec.Exit(1))
+				output := string(session.Out.Contents())
+
+				Ω(output).Should(ContainSubstring("1 Failed"))
+				Ω(output).Should(ContainSubstring("2 Skipped"))
+			})
+		})
+
+		Context("when running in parallel", func() {
+			It("should fail fast when told to", func() {
+				session := startGinkgo(fm.PathTo("fail_then_hang"), "--fail-fast", "--nodes=2")
+				Eventually(session).Should(gexec.Exit(1))
+				output := string(session.Out.Contents())
+
+				Ω(output).Should(ContainSubstring("2 Failed")) //one fails, the other is interrupted
+				Ω(output).Should(ContainSubstring("1 Skipped"))
+			})
+		})
 	})
 
 	Context("with a flaky test", func() {

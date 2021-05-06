@@ -250,6 +250,9 @@ func (suite *Suite) runSpecs(description string, suitePath string, hasProgrammat
 			if suite.currentSpecReport.State == types.SpecStateAborted {
 				suiteAborted = true
 			}
+			if suiteConfig.ParallelTotal > 1 && (suiteAborted || (suiteConfig.FailFast && !report.SuiteSucceeded)) {
+				suite.client.PostAbort()
+			}
 			suite.currentSpecReport = types.SpecReport{}
 		}
 
@@ -269,7 +272,7 @@ func (suite *Suite) runSpecs(description string, suitePath string, hasProgrammat
 
 	interruptStatus = interruptHandler.Status()
 	if interruptStatus.Interrupted {
-		report.SpecialSuiteFailureReasons = append(report.SpecialSuiteFailureReasons, interruptStatus.Cause)
+		report.SpecialSuiteFailureReasons = append(report.SpecialSuiteFailureReasons, interruptStatus.Cause.String())
 		report.SuiteSucceeded = false
 	}
 	report.EndTime = time.Now()
@@ -375,12 +378,12 @@ func (suite *Suite) reportAfterEach(spec Spec, failer *Failer, interruptHandler 
 		node.Body = func() {
 			node.ReportAfterEachBody(report)
 		}
-		interruptHandler.SetInterruptMessage(formatter.Fiw(0, formatter.COLS,
+		interruptHandler.SetInterruptPlaceholderMessage(formatter.Fiw(0, formatter.COLS,
 			"{{yellow}}Ginkgo received an interrupt signal but is currently running a ReportAfterEach node.  To avoid an invalid report the ReportAfterEach node will not be interrupted however subsequent tests will be skipped.{{/}}\n\n{{bold}}The running ReportAfterEach node is at:\n%s.{{/}}",
 			node.CodeLocation,
 		))
 		state, failure := suite.runNode(node, failer, nil, nil, spec.Nodes.BestTextFor(node), writer, suiteConfig)
-		interruptHandler.ClearInterruptMessage()
+		interruptHandler.ClearInterruptPlaceholderMessage()
 		if suite.currentSpecReport.State == types.SpecStatePassed || state == types.SpecStateAborted {
 			suite.currentSpecReport.State = state
 			suite.currentSpecReport.Failure = failure
@@ -473,12 +476,12 @@ func (suite *Suite) runReportAfterSuiteNode(specReport types.SpecReport, node No
 	}
 
 	node.Body = func() { node.ReportAfterSuiteBody(report) }
-	interruptHandler.SetInterruptMessage(formatter.Fiw(0, formatter.COLS,
+	interruptHandler.SetInterruptPlaceholderMessage(formatter.Fiw(0, formatter.COLS,
 		"{{yellow}}Ginkgo received an interrupt signal but is currently running a ReportAfterSuite node.  To avoid an invalid report the ReportAfterSuite node will not be interrupted.{{/}}\n\n{{bold}}The running ReportAfterSuite node is at:\n%s.{{/}}",
 		node.CodeLocation,
 	))
 	specReport.State, specReport.Failure = suite.runNode(node, failer, nil, nil, "", writer, suiteConfig)
-	interruptHandler.ClearInterruptMessage()
+	interruptHandler.ClearInterruptPlaceholderMessage()
 
 	specReport.EndTime = time.Now()
 	specReport.RunTime = specReport.EndTime.Sub(specReport.StartTime)

@@ -4,6 +4,7 @@ import (
 	. "github.com/onsi/ginkgo"
 	. "github.com/onsi/gomega"
 
+	"github.com/onsi/ginkgo/internal/parallel_support"
 	. "github.com/onsi/ginkgo/internal/test_helpers"
 	"github.com/onsi/ginkgo/types"
 )
@@ -119,7 +120,7 @@ var _ = Describe("handling test aborts", func() {
 
 	Describe("when a test fails then an AfterEach aborts", func() {
 		BeforeEach(func() {
-			success, _ := RunFixture("failed it", func() {
+			success, _ := RunFixture("failed it then after-each aborts", func() {
 				BeforeSuite(rt.T("before-suite"))
 				Describe("top-level", func() {
 					It("A", rt.T("A"))
@@ -157,4 +158,29 @@ var _ = Describe("handling test aborts", func() {
 		})
 	})
 
+	Describe("when running in parallel and a test aborts", func() {
+		var server *parallel_support.Server
+		var client parallel_support.Client
+
+		BeforeEach(func() {
+			conf.ParallelTotal = 2
+			server, client, _ = SetUpServerAndClient(conf.ParallelTotal)
+			conf.ParallelHost = server.Address()
+		})
+
+		AfterEach(func() {
+			server.Close()
+		})
+
+		It("notifies the server of the abort", func() {
+			Ω(client.ShouldAbort()).Should(BeFalse())
+			success, _ := RunFixture("aborting in parallel", func() {
+				It("A", func() {
+					Abort("abort")
+				})
+			})
+			Ω(success).Should(BeFalse())
+			Ω(client.ShouldAbort()).Should(BeTrue())
+		})
+	})
 })
