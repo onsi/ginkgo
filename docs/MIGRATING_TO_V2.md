@@ -207,6 +207,9 @@ Ginkgo can now repeat a test suite N additional times by running `ginkgo --repea
 
 Ginkgo requires the tests to succeed during each repetition in order to consider the test run a success.
 
+### Improved: windows support for capturing stdout and stderr
+In V1 Ginkgo would run windows tests in parallel with the `--stream` option.  This would result in hard-to-understand interleaved output.  The reason behind this design choice was that it proved challenging to intercept all stdout and stderr output on Windows.  V2 implements a best-effort output interception scheme for windows that entails reassigning the global `os.Stdout` and `os.Stderr` variables.  While not as bullet-proof as the Unix `syscall.Dup2` based implementation, this is likely good enough for most usecases and allows Ginkgo support on Windows to come into parity with unix.
+
 ## Minor Additions and Improvements
 - `BeforeSuite` and `AfterSuite` no longer run if all tests in a suite are skipped.
 - Ginkgo can now catch several common user gotchas and emit a helpful error.

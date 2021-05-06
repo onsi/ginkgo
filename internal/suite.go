@@ -26,8 +26,7 @@ type Suite struct {
 
 	suiteNodes Nodes
 
-	writer WriterInterface
-	outputInterceptor
+	writer            WriterInterface
 	currentSpecReport types.SpecReport
 
 	client parallel_support.Client
