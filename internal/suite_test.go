@@ -31,7 +31,7 @@ var _ = Describe("Suite", func() {
 		reporter = &FakeReporter{}
 		writer = internal.NewWriter(ioutil.Discard)
 		outputInterceptor = NewFakeOutputInterceptor()
-		interruptHandler = internal.NewInterruptHandler(0)
+		interruptHandler = internal.NewInterruptHandler(0, "")
 		conf = types.SuiteConfig{
 			ParallelTotal: 1,
 			ParallelNode:  1,
