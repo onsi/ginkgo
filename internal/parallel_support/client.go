@@ -74,6 +74,10 @@ func (client Client) poll(path string, data interface{}) error {
 	}
 }
 
+func (client Client) IsZero() bool {
+	return client.serverHost == ""
+}
+
 func (client Client) PostSuiteWillBegin(report types.Report) error {
 	return client.post("/suite-will-begin", report)
 }
@@ -131,4 +135,16 @@ func (client Client) CheckServerUp() bool {
 	}
 	resp.Body.Close()
 	return resp.StatusCode == http.StatusOK
+}
+
+func (client Client) PostAbort() error {
+	return client.post("/abort", nil)
+}
+
+func (client Client) ShouldAbort() bool {
+	err := client.poll("/abort", nil)
+	if err == ErrorGone {
+		return true
+	}
+	return false
 }

@@ -276,5 +276,21 @@ var _ = Describe("The Parallel Support Client & Server", func() {
 			})
 		})
 
+		Describe("Aborting", func() {
+			It("should not abort by default", func() {
+				Ω(client.ShouldAbort()).Should(BeFalse())
+			})
+
+			Context("when told to abort", func() {
+				BeforeEach(func() {
+					Ω(client.PostAbort()).Should(Succeed())
+				})
+
+				It("should abort", func() {
+					Ω(client.ShouldAbort()).Should(BeTrue())
+				})
+			})
+		})
+
 	})
 })

@@ -9,13 +9,13 @@ import (
 type FakeInterruptHandler struct {
 	triggerInterrupt chan bool
 
-	c                       chan interface{}
-	stop                    chan interface{}
-	lock                    *sync.Mutex
-	interrupted             bool
-	cause                   string
-	interruptMessage        string
-	emittedInterruptMessage string
+	c                                  chan interface{}
+	stop                               chan interface{}
+	lock                               *sync.Mutex
+	interrupted                        bool
+	cause                              internal.InterruptCause
+	interruptPlaceholderMessage        string
+	emittedInterruptPlaceholderMessage string
 }
 
 func NewFakeInterruptHandler() *FakeInterruptHandler {
@@ -44,7 +44,7 @@ func (handler *FakeInterruptHandler) registerForInterrupts() {
 			}
 			handler.lock.Lock()
 			handler.interrupted = true
-			handler.emittedInterruptMessage = handler.interruptMessage
+			handler.emittedInterruptPlaceholderMessage = handler.interruptPlaceholderMessage
 			close(handler.c)
 			handler.c = make(chan interface{})
 			handler.lock.Unlock()
@@ -52,7 +52,7 @@ func (handler *FakeInterruptHandler) registerForInterrupts() {
 	}()
 }
 
-func (handler *FakeInterruptHandler) Interrupt(cause string) {
+func (handler *FakeInterruptHandler) Interrupt(cause internal.InterruptCause) {
 	handler.lock.Lock()
 	handler.cause = cause
 	handler.lock.Unlock()
@@ -71,29 +71,29 @@ func (handler *FakeInterruptHandler) Status() internal.InterruptStatus {
 	}
 }
 
-func (handler *FakeInterruptHandler) SetInterruptMessage(message string) {
+func (handler *FakeInterruptHandler) SetInterruptPlaceholderMessage(message string) {
 	handler.lock.Lock()
 	defer handler.lock.Unlock()
 
-	handler.interruptMessage = message
+	handler.interruptPlaceholderMessage = message
 }
 
-func (handler *FakeInterruptHandler) ClearInterruptMessage() {
+func (handler *FakeInterruptHandler) ClearInterruptPlaceholderMessage() {
 	handler.lock.Lock()
 	defer handler.lock.Unlock()
 
-	handler.interruptMessage = ""
+	handler.interruptPlaceholderMessage = ""
 }
 
-func (handler *FakeInterruptHandler) EmittedInterruptMessage() string {
+func (handler *FakeInterruptHandler) EmittedInterruptPlaceholderMessage() string {
 	handler.lock.Lock()
 	defer handler.lock.Unlock()
-	return handler.emittedInterruptMessage
+	return handler.emittedInterruptPlaceholderMessage
 }
 
 func (handler *FakeInterruptHandler) InterruptMessageWithStackTraces() string {
 	handler.lock.Lock()
 	defer handler.lock.Unlock()
 
-	return handler.cause + "\nstack trace"
+	return handler.cause.String() + "\nstack trace"
 }
