@@ -2,6 +2,7 @@ package types
 
 import (
 	"encoding/json"
+	"fmt"
 	"strings"
 	"time"
 )
@@ -147,6 +148,9 @@ type SpecReport struct {
 	// This is always empty when running in series or calling CurrentSpecReport()
 	// It is used internally by Ginkgo's reporter
 	CapturedStdOutErr string
+
+	// ReportEntries contains any reports added via `AddReportEntry`
+	ReportEntries ReportEntries
 }
 
 func (report SpecReport) MarshalJSON() ([]byte, error) {
@@ -164,8 +168,9 @@ func (report SpecReport) MarshalJSON() ([]byte, error) {
 		GinkgoParallelNode          int
 		Failure                     *Failure `json:",omitempty"`
 		NumAttempts                 int
-		CapturedGinkgoWriterOutput  string `json:",omitempty"`
-		CapturedStdOutErr           string `json:",omitempty"`
+		CapturedGinkgoWriterOutput  string        `json:",omitempty"`
+		CapturedStdOutErr           string        `json:",omitempty"`
+		ReportEntries               ReportEntries `json:",omitempty"`
 	}{
 		ContainerHierarchyTexts:     report.ContainerHierarchyTexts,
 		ContainerHierarchyLocations: report.ContainerHierarchyLocations,
@@ -178,6 +183,7 @@ func (report SpecReport) MarshalJSON() ([]byte, error) {
 		RunTime:                     report.RunTime,
 		GinkgoParallelNode:          report.GinkgoParallelNode,
 		Failure:                     nil,
+		ReportEntries:               nil,
 		NumAttempts:                 report.NumAttempts,
 		CapturedGinkgoWriterOutput:  report.CapturedGinkgoWriterOutput,
 		CapturedStdOutErr:           report.CapturedStdOutErr,
@@ -185,6 +191,9 @@ func (report SpecReport) MarshalJSON() ([]byte, error) {
 
 	if !report.Failure.IsZero() {
 		out.Failure = &(report.Failure)
+	}
+	if len(report.ReportEntries) > 0 {
+		out.ReportEntries = report.ReportEntries
 	}
 
 	return json.Marshal(out)
@@ -356,6 +365,149 @@ func (fnc FailureNodeContext) MarshalJSON() ([]byte, error) {
 		return json.Marshal("FailureNodeInContainer")
 	}
 	return json.Marshal(nil)
+}
+
+// ReportEntry captures information attached to `SpecReport` via `AddReportEntry`
+type ReportEntry struct {
+	// Visibility captures the visibility policy for this ReportEntry
+	Visibility ReportEntryVisibility
+	// Time captures the time the AddReportEntry was called
+	Time time.Time
+	// Location captures the location of the AddReportEntry call
+	Location CodeLocation
+	// Name captures the name of this report
+	Name string
+	// Value captures the (optional) object passed into AddReportEntry - this can be
+	// anything the user wants.  If Value is a `fmt.Stringer` then Value.String() is called to produce a textual representation
+	Value interface{}
+	// ReportEntry needs to be encoded when generating json-formatted reports.  The concrete type of
+	// Value is lost during the encode/decode round-trip - if Value is a `fmt.Stringer()` that means that we'd
+	// lose the correct string representation of the value.  To circument this, we capture `Value.String()`
+	// in `Representation` when encoding `ReportEntry`.  This is done just before encoding to ensure
+	// we have the latest state of `Value`.
+	Representation string
+}
+
+// StringRepresentation() returns the string representation of the ReportEntry --
+// if Value is nil, empty string is returned
+// if Value is a `fmt.Stringer` then `Value.String()` is returned
+// otherwise the Value is formatted with "%+v"
+func (entry ReportEntry) StringRepresentation() string {
+	if entry.Value == nil {
+		return ""
+	}
+	if stringer, ok := entry.Value.(fmt.Stringer); ok {
+		return stringer.String()
+	}
+	if entry.Representation != "" {
+		return entry.Representation
+	}
+	return fmt.Sprintf("%+v", entry.Value)
+}
+
+func (entry ReportEntry) MarshalJSON() ([]byte, error) {
+	//All this to capture the representaiton at encoding-time, not creating time
+	//This way users can Report on pointers and get their final values at reporting-time
+	out := struct {
+		Visibility     ReportEntryVisibility
+		Time           time.Time
+		Location       CodeLocation
+		Name           string
+		Value          interface{}
+		Representation string `json:",omitempty"`
+	}{
+		Visibility:     entry.Visibility,
+		Time:           entry.Time,
+		Location:       entry.Location,
+		Name:           entry.Name,
+		Value:          entry.Value,
+		Representation: entry.Representation,
+	}
+
+	if entry.Value != nil {
+		if stringer, ok := entry.Value.(fmt.Stringer); ok {
+			out.Representation = stringer.String()
+		}
+	}
+
+	return json.Marshal(out)
+}
+
+type ReportEntries []ReportEntry
+
+func (re ReportEntries) HasVisibility(visibilities ...ReportEntryVisibility) bool {
+	for _, entry := range re {
+		if entry.Visibility.Is(visibilities...) {
+			return true
+		}
+	}
+	return false
+}
+
+func (re ReportEntries) WithVisibility(visibilities ...ReportEntryVisibility) ReportEntries {
+	out := ReportEntries{}
+
+	for _, entry := range re {
+		if entry.Visibility.Is(visibilities...) {
+			out = append(out, entry)
+		}
+	}
+
+	return out
+}
+
+// ReportEntryVisibility governs the visibility of ReportEntries in Ginkgo's console reporter
+type ReportEntryVisibility uint
+
+const (
+	// Always print out this ReportEntry
+	ReportEntryVisibilityAlways ReportEntryVisibility = iota
+	// Only print out this ReportEntry if the spec fails
+	ReportEntryVisibilityFailureOnly
+	// Never print out this ReportEntry (note that ReportEntrys are always encoded in machine readable reports (e.g. JSON, JUnit, etc.))
+	ReportEntryVisibilityNever
+)
+
+func (v ReportEntryVisibility) Is(visibilities ...ReportEntryVisibility) bool {
+	for _, visibility := range visibilities {
+		if v == visibility {
+			return true
+		}
+	}
+
+	return false
+}
+func (v ReportEntryVisibility) String() string {
+	switch v {
+	case ReportEntryVisibilityAlways:
+		return "always"
+	case ReportEntryVisibilityFailureOnly:
+		return "failure-only"
+	case ReportEntryVisibilityNever:
+		return "never"
+	}
+
+	return "INVALID REPORT ENTRY VISIBILITY"
+}
+
+func (v *ReportEntryVisibility) UnmarshalJSON(b []byte) error {
+	var dec string
+	if err := json.Unmarshal(b, &dec); err != nil {
+		return err
+	}
+	switch strings.ToLower(dec) {
+	default:
+		*v = ReportEntryVisibilityAlways
+	case "failure-only":
+		*v = ReportEntryVisibilityFailureOnly
+	case "never":
+		*v = ReportEntryVisibilityNever
+	}
+	return nil
+}
+
+func (v ReportEntryVisibility) MarshalJSON() ([]byte, error) {
+	return json.Marshal(v.String())
 }
 
 // SpecState captures the state of a spec

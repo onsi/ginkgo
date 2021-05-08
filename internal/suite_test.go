@@ -180,5 +180,19 @@ var _ = Describe("Suite", func() {
 				})
 			})
 		})
+
+		Describe("ReportEntries", func() {
+			Context("when adding a report entry outside of the run phase", func() {
+				It("errors", func() {
+					entry, err := internal.NewReportEntry("name", cl)
+					Ω(err).ShouldNot(HaveOccurred())
+					err = suite.AddReportEntry(entry)
+					Ω(err).Should(MatchError(types.GinkgoErrors.AddReportEntryNotDuringRunPhase(cl)))
+					suite.BuildTree()
+					err = suite.AddReportEntry(entry)
+					Ω(err).Should(MatchError(types.GinkgoErrors.AddReportEntryNotDuringRunPhase(cl)))
+				})
+			})
+		})
 	})
 })

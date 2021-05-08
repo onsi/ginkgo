@@ -8,6 +8,7 @@ import (
 
 	. "github.com/onsi/ginkgo"
 	. "github.com/onsi/ginkgo/extensions/table"
+	"github.com/onsi/ginkgo/internal"
 	"github.com/onsi/ginkgo/reporters"
 	"github.com/onsi/ginkgo/types"
 	. "github.com/onsi/gomega"
@@ -30,6 +31,9 @@ func CTS(componentTexts ...string) []string              { return componentTexts
 
 type FailureNodeLocation types.CodeLocation
 type ForwardedPanic string
+
+var PLACEHOLDER_TIME = time.Now()
+var FORMATTED_TIME = PLACEHOLDER_TIME.Format("01/02/06 15:04:05.999")
 
 // convenience helper to quickly make Failures
 func F(options ...interface{}) types.Failure {
@@ -90,9 +94,17 @@ func S(options ...interface{}) types.SpecReport {
 			report.CapturedStdOutErr = string(option.(STD))
 		case reflect.TypeOf(GW("")):
 			report.CapturedGinkgoWriterOutput = string(option.(GW))
+		case reflect.TypeOf(types.ReportEntry{}):
+			report.ReportEntries = append(report.ReportEntries, option.(types.ReportEntry))
 		}
 	}
 	return report
+}
+
+func RE(name string, cl types.CodeLocation, args ...interface{}) types.ReportEntry {
+	entry, _ := internal.NewReportEntry(name, cl, args...)
+	entry.Time = PLACEHOLDER_TIME
+	return entry
 }
 
 type ConfigFlags uint8
@@ -272,9 +284,9 @@ var _ = Describe("DefaultReporter", func() {
 			DELIMITER,
 			"",
 		),
-		Entry("a passing test that has ginkgo writer output",
+		Entry("a passing test that has ginkgo writer output and/or non-visible report entries",
 			C(),
-			S("A", cl0, GW("GINKGO-WRITER-OUTPUT")),
+			S("A", cl0, GW("GINKGO-WRITER-OUTPUT"), RE("fail-report-name", cl1, types.ReportEntryVisibilityFailureOnly), RE("hidden-report-name", cl2, types.ReportEntryVisibilityNever)),
 			"{{green}}"+DENOTER+"{{/}}",
 		),
 		Entry("a passing test that has ginkgo writer output, with ReportPassed configured",
@@ -329,6 +341,22 @@ var _ = Describe("DefaultReporter", func() {
 			"    STD-OUTPUT",
 			"    SHOULD EMIT",
 			"  {{gray}}<< End Captured StdOut/StdErr Output{{/}}",
+			DELIMITER,
+			"",
+		),
+		Entry("a passing test with a ReportEntry that is always visible",
+			C(),
+			S(CTS("A"), "B", CLS(cl0), cl1, GW("GINKGO-WRITER-OUTPUT"), RE("report-name", cl2, "report-content"), RE("other-report-name", cl3), RE("fail-report-name", cl4, types.ReportEntryVisibilityFailureOnly)),
+			DELIMITER,
+			"{{green}}"+DENOTER+" [1.000 seconds]{{/}}",
+			"{{/}}A {{gray}}B{{/}}",
+			"{{gray}}"+cl1.String()+"{{/}}",
+			"",
+			"  {{gray}}Begin Report Entries >>{{/}}",
+			"    {{bold}}report-name{{gray}} - "+cl2.String()+" @ "+FORMATTED_TIME+"{{/}}",
+			"      report-content",
+			"    {{bold}}other-report-name{{gray}} - "+cl3.String()+" @ "+FORMATTED_TIME+"{{/}}",
+			"  {{gray}}<< End Report Entries{{/}}",
 			DELIMITER,
 			"",
 		),
@@ -498,6 +526,9 @@ var _ = Describe("DefaultReporter", func() {
 				types.SpecStateFailed, 2,
 				GW("GW-OUTPUT\nIS EMITTED"), STD("STD-OUTPUT\nIS EMITTED"),
 				F("FAILURE MESSAGE\nWITH DETAILS", types.FailureNodeIsLeafNode, types.NodeTypeIt, FailureNodeLocation(cl2), cl3),
+				RE("report-name", cl4, "report-content"),
+				RE("fail-report-name", cl4, "fail-report-content", types.ReportEntryVisibilityFailureOnly),
+				RE("hidden-report-name", cl4, "hidden-report-content", types.ReportEntryVisibilityNever),
 			),
 			DELIMITER,
 			"{{red}}"+DENOTER+" [FAILED] [1.000 seconds]{{/}}",
@@ -517,6 +548,13 @@ var _ = Describe("DefaultReporter", func() {
 			"    GW-OUTPUT",
 			"    IS EMITTED",
 			"  {{gray}}<< End Captured GinkgoWriter Output{{/}}",
+			"",
+			"  {{gray}}Begin Report Entries >>{{/}}",
+			"    {{bold}}report-name{{gray}} - "+cl4.String()+" @ "+FORMATTED_TIME+"{{/}}",
+			"      report-content",
+			"    {{bold}}fail-report-name{{gray}} - "+cl4.String()+" @ "+FORMATTED_TIME+"{{/}}",
+			"      fail-report-content",
+			"  {{gray}}<< End Report Entries{{/}}",
 			"",
 			"  {{red}}FAILURE MESSAGE",
 			"  WITH DETAILS{{/}}",
