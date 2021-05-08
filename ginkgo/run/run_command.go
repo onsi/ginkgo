@@ -157,7 +157,7 @@ OUTER_LOOP:
 		if r.cliConfig.UntilItFails {
 			fmt.Printf("\nAll tests passed...\nWill keep running them until they fail.\nThis was attempt #%d\n%s\n", iteration+1, orcMessage(iteration+1))
 		} else if r.cliConfig.Repeat > 0 && iteration < r.cliConfig.Repeat {
-			fmt.Printf("\nAll tests passed...\nThis was attempt %d of %d.", iteration+1, r.cliConfig.Repeat+1)
+			fmt.Printf("\nAll tests passed...\nThis was attempt %d of %d.\n", iteration+1, r.cliConfig.Repeat+1)
 		} else {
 			break OUTER_LOOP
 		}

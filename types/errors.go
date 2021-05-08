@@ -212,6 +212,26 @@ func (g ginkgoErrors) MissingBodyFunction(cl CodeLocation, nodeType NodeType) er
 	}
 }
 
+/* ReportEntry errors */
+
+func (g ginkgoErrors) TooManyReportEntryValues(cl CodeLocation, arg interface{}) error {
+	return GinkgoError{
+		Heading:      "Too Many ReportEntry Values",
+		Message:      formatter.F(`{{bold}}AddGinkgoReport{{/}} can only be given one value. Got unexpected value: %#v`, arg),
+		CodeLocation: cl,
+		DocLink:      "attaching-data-to-reports",
+	}
+}
+
+func (g ginkgoErrors) AddReportEntryNotDuringRunPhase(cl CodeLocation) error {
+	return GinkgoError{
+		Heading:      "Ginkgo detected an issue with your test structure",
+		Message:      formatter.F(`It looks like you are calling {{bold}}AddGinkgoReport{{/}} outside of a running test.  Make sure you call {{bold}}AddGinkgoReport{{/}} inside a runnable node such as It or BeforeEach and not inside the body of a container such as Describe or Context.`),
+		CodeLocation: cl,
+		DocLink:      "attaching-data-to-reports",
+	}
+}
+
 /* Parallel Synchronization errors */
 
 func (g ginkgoErrors) AggregatedReportUnavailableDueToNodeDisappearing() error {
