@@ -111,6 +111,7 @@ func (r *DefaultReporter) DidRun(report types.SpecReport) {
 
 	hasGW := report.CapturedGinkgoWriterOutput != ""
 	hasStd := report.CapturedStdOutErr != ""
+	hasEmittableReports := report.ReportEntries.HasVisibility(types.ReportEntryVisibilityAlways) || (report.ReportEntries.HasVisibility(types.ReportEntryVisibilityFailureOnly) && !report.Failure.IsZero())
 
 	if report.LeafNodeType.Is(types.NodeTypesForSuiteLevelNodes...) {
 		denoter = fmt.Sprintf("[%s]", report.LeafNodeType)
@@ -121,7 +122,7 @@ func (r *DefaultReporter) DidRun(report types.SpecReport) {
 		highlightColor, succinctLocationBlock = "{{green}}", !r.conf.Verbose
 		emitGinkgoWriterOutput = (r.conf.ReportPassed || r.conf.Verbose) && hasGW
 		if report.LeafNodeType.Is(types.NodeTypesForSuiteLevelNodes...) {
-			if r.conf.Verbose || hasStd {
+			if r.conf.Verbose || hasStd || hasEmittableReports {
 				header = fmt.Sprintf("%s PASSED", denoter)
 			} else {
 				return
@@ -135,7 +136,7 @@ func (r *DefaultReporter) DidRun(report types.SpecReport) {
 				header, stream = fmt.Sprintf("%s [SLOW TEST]", header), false
 			}
 		}
-		if hasStd || emitGinkgoWriterOutput {
+		if hasStd || emitGinkgoWriterOutput || hasEmittableReports {
 			stream = false
 		}
 	case types.SpecStatePending:
@@ -193,6 +194,22 @@ func (r *DefaultReporter) DidRun(report types.SpecReport) {
 		r.emitBlock(r.fi(1, "{{gray}}Begin Captured GinkgoWriter Output >>{{/}}"))
 		r.emitBlock(r.fi(2, "%s", report.CapturedGinkgoWriterOutput))
 		r.emitBlock(r.fi(1, "{{gray}}<< End Captured GinkgoWriter Output{{/}}"))
+	}
+
+	if hasEmittableReports {
+		r.emitBlock("\n")
+		r.emitBlock(r.fi(1, "{{gray}}Begin Report Entries >>{{/}}"))
+		reportEntries := report.ReportEntries.WithVisibility(types.ReportEntryVisibilityAlways)
+		if !report.Failure.IsZero() {
+			reportEntries = report.ReportEntries.WithVisibility(types.ReportEntryVisibilityAlways, types.ReportEntryVisibilityFailureOnly)
+		}
+		for _, entry := range reportEntries {
+			r.emitBlock(r.fi(2, "{{bold}}"+entry.Name+"{{gray}} - %s @ %s{{/}}", entry.Location, entry.Time.Format("01/02/06 15:04:05.999")))
+			if representation := entry.StringRepresentation(); representation != "" {
+				r.emitBlock(r.fi(3, representation))
+			}
+		}
+		r.emitBlock(r.fi(1, "{{gray}}<< End Report Entries{{/}}"))
 	}
 
 	// Emit Failure Message

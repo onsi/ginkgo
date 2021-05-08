@@ -48,9 +48,9 @@ var _ = Describe("CurrentSpecReport", func() {
 		})
 	})
 
-	It("returns an empty GinkgoTestDescription in the before suite and after suite", func() {
-		Ω(specs["before-suite"]).Should(BeZero())
-		Ω(specs["after-suite"]).Should(BeZero())
+	It("returns an a valid GinkgoTestDescription in the before suite and after suite", func() {
+		Ω(specs["before-suite"].LeafNodeType).Should(Equal(types.NodeTypeBeforeSuite))
+		Ω(specs["after-suite"].LeafNodeType).Should(Equal(types.NodeTypeAfterSuite))
 	})
 
 	It("reports as passed while the test is passing", func() {

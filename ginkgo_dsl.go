@@ -379,6 +379,34 @@ func By(text string, callbacks ...func()) {
 	}
 }
 
+// ReportEntryVisibility governs the visibility of ReportEntries in Ginkgo's console reporter
+//
+//- `ReportEntryVisibilityAlways`: the default behavior - the `ReportEntry` is always emitted.
+//- `ReportEntryVisibilityFailureOnly`: the `ReportEntry` is only emitted if the spec fails (similar to `GinkgoWriter`s behavior).
+//- `ReportEntryVisibilityNever`: the `ReportEntry` is never emitted though it appears in any generated machine-readable reports (e.g. by setting `--json-report`).
+type ReportEntryVisibility = types.ReportEntryVisibility
+
+const ReportEntryVisibilityAlways, ReportEntryVisibilityFailureOnly, ReportEntryVisibilityNever = types.ReportEntryVisibilityAlways, types.ReportEntryVisibilityFailureOnly, types.ReportEntryVisibilityNever
+
+// AddReportEntry generates and a dds a new ReportEntry to the current SpecReport.
+// args can optinally include any of the following:
+//   - A single arbitrary object to attach as the Value of the ReportEntry.  This object will be included in any generated reports and will be emitted to the console when the report is emitted.
+//   - A ReportEntryVisibility enum to control the visibility of the ReportEntry
+//   - An Offset or CodeLocation decoration to control the reported location of the ReportEntry
+//
+// If the Value object implements `fmt.Stringer`, it's `String()` representation is used when emitting to the console.
+func AddReportEntry(name string, args ...interface{}) {
+	cl := types.NewCodeLocation(1)
+	reportEntry, err := internal.NewReportEntry(name, cl, args...)
+	if err != nil {
+		Fail(fmt.Sprintf("Failed to generate Report Entry:\n%s", err.Error()), 1)
+	}
+	err = global.Suite.AddReportEntry(reportEntry)
+	if err != nil {
+		Fail(fmt.Sprintf("Failed to add Report Entry:\n%s", err.Error()), 1)
+	}
+}
+
 //BeforeSuite blocks are run just once before any specs are run.  When running in parallel, each
 //parallel node process will call BeforeSuite.
 //
