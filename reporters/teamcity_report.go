@@ -63,7 +63,7 @@ func GenerateTeamcityReport(report types.Report, dst string) error {
 			fmt.Fprintf(f, "##teamcity[testFailed name='%s' message='aborted - %s' details='%s']\n", name, tcEscape(spec.Failure.Message), tcEscape(details))
 		}
 
-		fmt.Fprintf(f, "##teamcity[testStdOut name='%s' out='%s']\n", name, tcEscape(spec.CapturedStdOutErr))
+		fmt.Fprintf(f, "##teamcity[testStdOut name='%s' out='%s']\n", name, tcEscape(systemOutForUnstructureReporters(spec)))
 		fmt.Fprintf(f, "##teamcity[testStdErr name='%s' out='%s']\n", name, tcEscape(spec.CapturedGinkgoWriterOutput))
 		fmt.Fprintf(f, "##teamcity[testFinished name='%s' duration='%d']\n", name, int(spec.RunTime.Seconds()*1000.0))
 	}

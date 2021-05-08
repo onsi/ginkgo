@@ -15,6 +15,7 @@ import (
 	"fmt"
 	"os"
 	"strings"
+	"time"
 
 	"github.com/onsi/ginkgo/config"
 	"github.com/onsi/ginkgo/types"
@@ -156,12 +157,13 @@ func GenerateJUnitReport(report types.Report, dst string) error {
 		if spec.FullText() != "" {
 			name = name + " " + spec.FullText()
 		}
+
 		test := JUnitTestCase{
 			Name:      name,
 			Classname: report.SuiteDescription,
 			Status:    spec.State.String(),
 			Time:      spec.RunTime.Seconds(),
-			SystemOut: spec.CapturedStdOutErr,
+			SystemOut: systemOutForUnstructureReporters(spec),
 			SystemErr: spec.CapturedGinkgoWriterOutput,
 		}
 		suite.Tests += 1
@@ -266,6 +268,23 @@ func MergeAndCleanupJUnitReports(sources []string, dst string) ([]string, error)
 	encoder.Encode(mergedReport)
 
 	return messages, f.Close()
+}
+
+func systemOutForUnstructureReporters(spec types.SpecReport) string {
+	systemOut := spec.CapturedStdOutErr
+	if len(spec.ReportEntries) > 0 {
+		systemOut += "\nReport Entries:\n"
+		for i, entry := range spec.ReportEntries {
+			systemOut += fmt.Sprintf("%s\n%s\n%s\n", entry.Name, entry.Location, entry.Time.Format(time.RFC3339Nano))
+			if representation := entry.StringRepresentation(); representation != "" {
+				systemOut += representation + "\n"
+			}
+			if i+1 < len(spec.ReportEntries) {
+				systemOut += "--\n"
+			}
+		}
+	}
+	return systemOut
 }
 
 // Deprecated JUnitReporter (so folks can still compile their suites)
