@@ -8,6 +8,7 @@ import (
 )
 
 const GINKGO_FOCUS_EXIT_CODE = 197
+const GINKGO_TIME_FORMAT = "01/02/06 15:04:05.999"
 
 // Report captures information about a Ginkgo test run
 type Report struct {
