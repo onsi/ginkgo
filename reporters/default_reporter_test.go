@@ -33,7 +33,7 @@ type FailureNodeLocation types.CodeLocation
 type ForwardedPanic string
 
 var PLACEHOLDER_TIME = time.Now()
-var FORMATTED_TIME = PLACEHOLDER_TIME.Format("01/02/06 15:04:05.999")
+var FORMATTED_TIME = PLACEHOLDER_TIME.Format(types.GINKGO_TIME_FORMAT)
 
 // convenience helper to quickly make Failures
 func F(options ...interface{}) types.Failure {

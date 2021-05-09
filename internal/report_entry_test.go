@@ -185,6 +185,14 @@ var _ = Describe("ReportEntry and ReportEntries", func() {
 			Ω(reportEntry.Visibility).Should(Equal(types.ReportEntryVisibilityFailureOnly))
 		})
 	})
+	Context("with a time", func() {
+		It("uses the passed in time", func() {
+			t := time.Date(1984, 3, 7, 0, 0, 0, 0, time.Local)
+			reportEntry, err = internal.NewReportEntry("name", cl, t)
+			Ω(reportEntry.Value).Should(BeNil())
+			Ω(reportEntry.Time).Should(Equal(t))
+		})
+	})
 
 	Describe("ReportEntries.HasVisibility", func() {
 		It("is true when the ReportEntries have the requested visibilities", func() {
