@@ -43,6 +43,8 @@ var _ = Describe("ReportEntries", func() {
 		Ω(output).Should(ContainSubstring("failed 4"))
 		Ω(output).Should(ContainSubstring("fails-failure-report"))
 		Ω(output).ShouldNot(ContainSubstring("fails-never-see-report"))
+
+		Ω(output).ShouldNot(ContainSubstring("registers a hidden AddReportEntry"))
 	})
 
 	It("captures all report entries in the JSON report", func() {
@@ -99,6 +101,18 @@ var _ = Describe("ReportEntries", func() {
 		Ω(fails.ReportEntries[5].Name).Should(Equal("fails-never-see-report"))
 		Ω(fails.ReportEntries[5].Value).Should(Equal(float64(6)))
 		Ω(fails.ReportEntries[5].Representation).Should(BeZero())
+
+		by := reports.Find("has By entries")
+		Ω(by.ReportEntries[0].Name).Should(Equal("By Step"))
+		Ω(by.ReportEntries[0].Visibility).Should(Equal(ReportEntryVisibilityNever))
+		value := by.ReportEntries[0].Value.(map[string]interface{})
+		Ω(value["Text"]).Should(Equal("registers a hidden AddReportEntry"))
+		Ω(value["Duration"]).Should(BeZero())
+		Ω(by.ReportEntries[1].Name).Should(Equal("By Step"))
+		Ω(by.ReportEntries[1].Visibility).Should(Equal(ReportEntryVisibilityNever))
+		value = by.ReportEntries[1].Value.(map[string]interface{})
+		Ω(value["Text"]).Should(Equal("includes durations"))
+		Ω(time.Duration(value["Duration"].(float64))).Should(BeNumerically("~", time.Millisecond*100, time.Millisecond*100))
 	})
 
 	It("captures all report entries in the JUnit report", func() {

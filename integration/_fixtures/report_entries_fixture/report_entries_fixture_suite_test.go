@@ -3,6 +3,7 @@ package report_entries_fixture_test
 import (
 	"fmt"
 	"testing"
+	"time"
 
 	. "github.com/onsi/ginkgo"
 	. "github.com/onsi/gomega"
@@ -48,6 +49,13 @@ var _ = Describe("top-level container", func() {
 		AddReportEntry("fails-failure-report", 5, ReportEntryVisibilityFailureOnly)
 		AddReportEntry("fails-never-see-report", 6, ReportEntryVisibilityNever)
 		Fail("boom")
+	})
+
+	It("has By entries", func() {
+		By("registers a hidden AddReportEntry")
+		By("includes durations", func() {
+			time.Sleep(time.Millisecond * 100)
+		})
 	})
 
 	AfterEach(func() {
