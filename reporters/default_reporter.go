@@ -204,7 +204,7 @@ func (r *DefaultReporter) DidRun(report types.SpecReport) {
 			reportEntries = report.ReportEntries.WithVisibility(types.ReportEntryVisibilityAlways, types.ReportEntryVisibilityFailureOnly)
 		}
 		for _, entry := range reportEntries {
-			r.emitBlock(r.fi(2, "{{bold}}"+entry.Name+"{{gray}} - %s @ %s{{/}}", entry.Location, entry.Time.Format("01/02/06 15:04:05.999")))
+			r.emitBlock(r.fi(2, "{{bold}}"+entry.Name+"{{gray}} - %s @ %s{{/}}", entry.Location, entry.Time.Format(types.GINKGO_TIME_FORMAT)))
 			if representation := entry.StringRepresentation(); representation != "" {
 				r.emitBlock(r.fi(3, representation))
 			}

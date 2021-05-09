@@ -24,6 +24,8 @@ func NewReportEntry(name string, cl types.CodeLocation, args ...interface{}) (Re
 			out.Location = arg.(types.CodeLocation)
 		case reflect.TypeOf(Offset(0)):
 			out.Location = types.NewCodeLocation(2 + int(arg.(Offset)))
+		case reflect.TypeOf(out.Time):
+			out.Time = arg.(time.Time)
 		default:
 			if out.Value != nil {
 				return ReportEntry{}, types.GinkgoErrors.TooManyReportEntryValues(out.Location, arg)

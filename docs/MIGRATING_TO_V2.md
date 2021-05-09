@@ -196,7 +196,7 @@ AddReportEntry(name string, args ...interface{})
 `AddReportEntry` generates `ReportEntry` and attaches it to the current running spec.  `ReportEntry` includes the passed in `name` as well as the time and source location at which `AddReportEntry` was called.  Users can also attach a single object of arbitrary type to the `ReportEntry` by passing it into `AddReportEntry` - this object is stored in `ReportEntry.Value` and is always included in the suite's JSON report.
 
 #### Supported Args
-`AddReportEntry` supports the `Offset` and `CodeLocation` decorations.  These will control the source code location associated with the generated `ReportEntry`.  It also supports passing in a `ReportEntryVisibility` enum to control the report's visibility (see below).
+`AddReportEntry` supports the `Offset` and `CodeLocation` decorations.  These will control the source code location associated with the generated `ReportEntry`.  You can also pass in a `time.Time` to override the `ReportEntry`'s timestamp. It also supports passing in a `ReportEntryVisibility` enum to control the report's visibility (see below).
 
 #### Controlling Output
 By default, Ginkgo's console reporter will emit any `ReportEntry` attached to a spec.  It will emit the `ReportEntry` name, location, and time.  If `ReportEntry.Value` is non-nil it will also emit a representation of `Value`.  If `Value` implements `fmt.Stringer` then `Value.String()` is used to generate the representation, otherwise Ginkgo uses `fmt.Sprintf("%#v", Value)`. 
@@ -260,6 +260,7 @@ In V1 Ginkgo would run windows tests in parallel with the `--stream` option.  Th
 - `BeforeSuite` and `AfterSuite` no longer run if all tests in a suite are skipped.
 - Ginkgo can now catch several common user gotchas and emit a helpful error.
 - Error output is clearer and consistently links to relevant sections in the documentation.
+- `By` now emits a timestamp.  It also registers a `ReportEntry` that appears in the suite report as structured data.  If passed a callback, `By` will now time the callback and include the duration in the suite report.
 - Test randomization is now more stable as tests are now sorted deterministcally on file_name:line_number first (previously they were sorted on test text which could not guarantee a stable sort).
 
 # Changes
