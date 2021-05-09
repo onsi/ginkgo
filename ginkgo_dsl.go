@@ -365,13 +365,19 @@ var Specify, FSpecify, PSpecify, XSpecify = It, FIt, PIt, XIt
 //By allows you to document such flows.  By must be called within a runnable node (It, BeforeEach, etc...)
 //By will simply log the passed in text to the GinkgoWriter.  If By is handed a function it will immediately run the function.
 func By(text string, callbacks ...func()) {
-	preamble := "\x1b[1mSTEP\x1b[0m"
-	if reporterConfig.NoColor {
-		preamble = "STEP"
+	value := struct {
+		Text     string
+		Duration time.Duration
+	}{
+		Text: text,
 	}
-	fmt.Fprintln(GinkgoWriter, preamble+": "+text)
+	t := time.Now()
+	AddReportEntry("By Step", ReportEntryVisibilityNever, Offset(1), &value, t)
+	formatter := formatter.NewWithNoColorBool(reporterConfig.NoColor)
+	GinkgoWriter.Println(formatter.F("{{bold}}STEP:{{/}} "+text+" {{gray}}%s{{/}}", t.Format(types.GINKGO_TIME_FORMAT)))
 	if len(callbacks) == 1 {
 		callbacks[0]()
+		value.Duration = time.Since(t)
 	}
 	if len(callbacks) > 1 {
 		panic("just one callback per By, please")
