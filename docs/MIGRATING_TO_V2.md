@@ -199,7 +199,7 @@ AddReportEntry(name string, args ...interface{})
 `AddReportEntry` supports the `Offset` and `CodeLocation` decorations.  These will control the source code location associated with the generated `ReportEntry`.  You can also pass in a `time.Time` to override the `ReportEntry`'s timestamp. It also supports passing in a `ReportEntryVisibility` enum to control the report's visibility (see below).
 
 #### Controlling Output
-By default, Ginkgo's console reporter will emit any `ReportEntry` attached to a spec.  It will emit the `ReportEntry` name, location, and time.  If `ReportEntry.Value` is non-nil it will also emit a representation of `Value`.  If `Value` implements `fmt.Stringer` then `Value.String()` is used to generate the representation, otherwise Ginkgo uses `fmt.Sprintf("%#v", Value)`. 
+By default, Ginkgo's console reporter will emit any `ReportEntry` attached to a spec.  It will emit the `ReportEntry` name, location, and time.  If `ReportEntry.Value` is non-nil it will also emit a representation of `Value`.  If `Value` implements `fmt.Stringer` or `types.ColorableStringer` then `Value.String()` or `Value.ColorableString()` (which takes precedence) is used to generate the representation, otherwise Ginkgo uses `fmt.Sprintf("%#v", Value)`. 
 
 You can modify this default behavior by passing in one of the `ReportEntryVisibility` enum to `AddReportEntry`:
 
@@ -207,7 +207,7 @@ You can modify this default behavior by passing in one of the `ReportEntryVisibi
 - `ReportEntryVisibilityFailureOnly`: the `ReportEntry` is only emitted if the spec fails (similar to `GinkgoWriter`s behavior).
 - `ReportEntryVisibilityNever`: the `ReportEntry` is never emitted though it appears in any generated machine-readable reports (e.g. by setting `--json-report`).
 
-If `ReportEntry.Value` implements `fmt.Stringer` the console reporter passes the resulting string through Ginkgo's `formatter`.  This allows you to generate colorful console output using the color codes documented in `github.com/onsi/ginkgo/formatter/formatter.go`.  For example:
+The console reporter passes the string representation of the `ReportEntry.Value` through Ginkgo's `formatter`.  This allows you to generate colorful console output using the color codes documented in `github.com/onsi/ginkgo/formatter/formatter.go`.  For example:
 
 ```go
 type StringerStruct struct {
@@ -215,8 +215,14 @@ type StringerStruct struct {
 	Count int
 }
 
-func (s StringerStruct) String() string {
+// ColorableString for ReportEntry to use
+func (s StringerStruct) ColorableString() string {
 	return fmt.Sprintf("{{red}}%s {{yellow}}{{bold}}%d{{/}}", s.Label, s.Count)
+}
+
+// non-colorable String() is used by go's string formatting support but ignored by ReportEntry
+func (s StringerStruct) String() string {
+	return fmt.Sprintf("%s %d", s.Label, s.Count)
 }
 
 It("is reported", func() {
@@ -226,7 +232,7 @@ It("is reported", func() {
 
 Will emit a report that has the word "Mahomes" in red and the number 15 in bold and yellow.
 
-Lastly, it is possible to pass a pointer into `AddReportEntry`.  Ginkgo will compute the string representation of the passed in pointer at the last possible moment - so any changes to the object _after_ it is reported will be captured in the final report.  This is useful for building libraries on top of `AddReportEntry` (for example, Gomega's `gmeasure` benchmarking library does this to remove the burden of managing reporting boilerplate from the user).
+Lastly, it is possible to pass a pointer into `AddReportEntry`.  Ginkgo will compute the string representation of the passed in pointer at the last possible moment - so any changes to the object _after_ it is reported will be captured in the final report.  This is useful for building libraries on top of `AddReportEntry` - users can simply register objects when they're created and any subsequent mutations will appear in the generated report.
 
 ### Improved: Profiling Support
 Ginkgo V1 was incorrectly handling Go test's various profiling flags (e.g. -cpuprofile, -memprofile).  This has been fixed in V2.  In fact, V2 can capture profiles for multiple packages (e.g. ginkgo -r -cpuprofile=profile.out will work).
@@ -311,7 +317,7 @@ Measure(..., func(b Benchmarker) {
 will emit a deprecation warning and **will no longer run**.
 
 #### Migration Strategy:
-A new Gomega benchmarking subpackage is being developed to replace Ginkgo's benchmarking capabilities with a more mature, decoupled, and useful implementation.  This section will be updated once the Gomega package is ready.
+Gomega now provides a benchmarking subpackage called `gmeasure`.  Users should migrate to `gmeasure` by replacing `Measure` nodes with `It` nodes that create `gmeasure.Experiment`s and record values/durations.  To generate output in Ginkgo reports add the `experiment` as a `ReportEntry` via `AddReportEntry(experiment.Name, experiment)`.
 
 ### Removed: Custom Reporters
 Ginkgo 2.0 removes support for Ginkgo 1.X's custom reporters - they behaved poorly when running in parallel and represented unnecessary and error-prone boiler plate for users who simply wanted to produce machine-readable reports.  Instead, the reporting infrastructure has been significantly improved to enable simpler support for the most common use-cases and custom reporting needs.

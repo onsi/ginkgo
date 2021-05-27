@@ -19,7 +19,7 @@ type StringerStruct struct {
 	Count int
 }
 
-func (s StringerStruct) String() string {
+func (s StringerStruct) ColorableString() string {
 	return fmt.Sprintf("{{red}}%s {{green}}%d{{/}}", s.Label, s.Count)
 }
 
