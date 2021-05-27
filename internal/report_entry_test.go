@@ -22,6 +22,19 @@ type StringerStruct struct {
 }
 
 func (s StringerStruct) String() string {
+	return fmt.Sprintf("%s %d", s.Label, s.Count)
+}
+
+type ColorableStringerStruct struct {
+	Label string
+	Count int
+}
+
+func (s ColorableStringerStruct) String() string {
+	return fmt.Sprintf("%s %d", s.Label, s.Count)
+}
+
+func (s ColorableStringerStruct) ColorableString() string {
 	return fmt.Sprintf("{{red}}%s {{green}}%d{{/}}", s.Label, s.Count)
 }
 
@@ -77,7 +90,7 @@ var _ = Describe("ReportEntry and ReportEntries", func() {
 			Ω(reportEntry.Value).Should(Equal("bob"))
 		})
 
-		It("has an empty StringRepresentation", func() {
+		It("has the correct StringRepresentation", func() {
 			Ω(reportEntry.StringRepresentation()).Should(Equal("bob"))
 		})
 
@@ -99,7 +112,7 @@ var _ = Describe("ReportEntry and ReportEntries", func() {
 			Ω(reportEntry.Value).Should(Equal(17))
 		})
 
-		It("has an empty StringRepresentation", func() {
+		It("has the correct StringRepresentation", func() {
 			Ω(reportEntry.StringRepresentation()).Should(Equal("17"))
 		})
 
@@ -121,7 +134,7 @@ var _ = Describe("ReportEntry and ReportEntries", func() {
 			Ω(reportEntry.Value).Should(Equal(SomeStruct{"bob", 17}))
 		})
 
-		It("has an empty StringRepresentation", func() {
+		It("has the correct StringRepresentation", func() {
 			Ω(reportEntry.StringRepresentation()).Should(Equal("{Label:bob Count:17}"))
 		})
 
@@ -143,7 +156,29 @@ var _ = Describe("ReportEntry and ReportEntries", func() {
 			Ω(reportEntry.Value).Should(Equal(StringerStruct{"bob", 17}))
 		})
 
-		It("has an empty StringRepresentation", func() {
+		It("has the correct StringRepresentation", func() {
+			Ω(reportEntry.StringRepresentation()).Should(Equal("bob 17"))
+		})
+
+		It("round-trips through JSON correctly", func() {
+			rtEntry := reportEntryJSONRoundTrip(reportEntry)
+			Ω(rtEntry.Representation).Should(Equal("bob 17"))
+			Ω(rtEntry.Value).Should(Equal(map[string]interface{}{"Label": "bob", "Count": float64(17)}))
+			Ω(rtEntry.StringRepresentation()).Should(Equal("bob 17"))
+		})
+	})
+
+	Context("with a ColorableStringer passed-in value", func() {
+		BeforeEach(func() {
+			reportEntry, err = internal.NewReportEntry("name", cl, ColorableStringerStruct{"bob", 17})
+			Ω(err).ShouldNot(HaveOccurred())
+		})
+
+		It("returns a correctly configured ReportEntry", func() {
+			Ω(reportEntry.Value).Should(Equal(ColorableStringerStruct{"bob", 17}))
+		})
+
+		It("has the correct StringRepresentation", func() {
 			Ω(reportEntry.StringRepresentation()).Should(Equal("{{red}}bob {{green}}17{{/}}"))
 		})
 
@@ -226,18 +261,19 @@ var _ = Describe("ReportEntry and ReportEntries", func() {
 	Describe("mini-integration test - validating that the DSL correctly wires into the suite", func() {
 		Context("when passed a value", func() {
 			It("works!", func() {
-				AddReportEntry("A Test ReportEntry", StringerStruct{"bob", 17}, types.ReportEntryVisibilityFailureOnly)
+				AddReportEntry("A Test ReportEntry", ColorableStringerStruct{"bob", 17}, types.ReportEntryVisibilityFailureOnly)
 			})
 
 			ReportAfterEach(func(report SpecReport) {
 				Ω(report.ReportEntries[0].StringRepresentation()).Should(Equal("{{red}}bob {{green}}17{{/}}"))
 			})
 		})
+
 		Context("when passed a pointer that subsequently changes", func() {
-			var obj *StringerStruct
+			var obj *ColorableStringerStruct
 
 			BeforeEach(func() {
-				obj = &StringerStruct{"bob", 17}
+				obj = &ColorableStringerStruct{"bob", 17}
 			})
 
 			It("works!", func() {

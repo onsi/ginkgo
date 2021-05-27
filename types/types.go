@@ -389,14 +389,25 @@ type ReportEntry struct {
 	Representation string
 }
 
+// ColorableStringer is an interface that ReportEntry values can satisfy.  If they do then ColorableStirng() is used to generate their representation.
+type ColorableStringer interface {
+	ColorableString() string
+}
+
 // StringRepresentation() returns the string representation of the ReportEntry --
 // if Value is nil, empty string is returned
+// if Value is a `ColorableStringer` then `Value.ColorableString()` is returned
 // if Value is a `fmt.Stringer` then `Value.String()` is returned
 // otherwise the Value is formatted with "%+v"
 func (entry ReportEntry) StringRepresentation() string {
 	if entry.Value == nil {
 		return ""
 	}
+
+	if colorableStringer, ok := entry.Value.(ColorableStringer); ok {
+		return colorableStringer.ColorableString()
+	}
+
 	if stringer, ok := entry.Value.(fmt.Stringer); ok {
 		return stringer.String()
 	}
@@ -426,7 +437,9 @@ func (entry ReportEntry) MarshalJSON() ([]byte, error) {
 	}
 
 	if entry.Value != nil {
-		if stringer, ok := entry.Value.(fmt.Stringer); ok {
+		if colorableStringer, ok := entry.Value.(ColorableStringer); ok {
+			out.Representation = colorableStringer.ColorableString()
+		} else if stringer, ok := entry.Value.(fmt.Stringer); ok {
 			out.Representation = stringer.String()
 		}
 	}
