@@ -1,3 +1,8 @@
+## 1.16.3
+
+### Features
+- Measure is now deprecated and emits a deprecation warning.
+
 ## 1.16.2
 
 ### Fixes
