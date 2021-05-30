@@ -9,6 +9,7 @@ import (
 	. "github.com/onsi/ginkgo"
 	. "github.com/onsi/ginkgo/extensions/table"
 	"github.com/onsi/ginkgo/internal"
+	"github.com/onsi/ginkgo/internal/test_helpers"
 	"github.com/onsi/ginkgo/reporters"
 	"github.com/onsi/ginkgo/types"
 	. "github.com/onsi/gomega"
@@ -149,7 +150,7 @@ var _ = Describe("DefaultReporter", func() {
 		if len(expected) == 0 {
 			ExpectWithOffset(1, buf.Contents()).Should(BeEmpty())
 		} else {
-			ExpectWithOffset(1, string(buf.Contents())).Should(Equal(strings.Join(expected, "\n")))
+			ExpectWithOffset(1, string(buf.Contents())).Should(Equal(strings.Join(expected, "\n")), test_helpers.MultilneTextHelper(string(buf.Contents())))
 		}
 	}
 
@@ -469,6 +470,20 @@ var _ = Describe("DefaultReporter", func() {
 			C(),
 			S("A", cl0, types.SpecStateSkipped, GW("GW-OUTPUT")),
 			"{{cyan}}S{{/}}",
+		),
+		Entry("a skipped test without a failure message when verbose",
+			C(Verbose),
+			S("A", cl0, types.SpecStateSkipped, GW("GW-OUTPUT")),
+			"{{gray}}------------------------------{{/}}",
+			"{{cyan}}S [SKIPPED] [1.000 seconds]{{/}}",
+			"A",
+			"{{gray}}cl0.go:12{{/}}",
+			"",
+			"  {{gray}}Begin Captured GinkgoWriter Output >>{{/}}",
+			"    GW-OUTPUT",
+			"  {{gray}}<< End Captured GinkgoWriter Output{{/}}",
+			"{{gray}}------------------------------{{/}}",
+			"",
 		),
 		Entry("a skipped test with a failure message and verbose is *not* configured",
 			C(),
