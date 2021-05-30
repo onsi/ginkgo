@@ -338,34 +338,23 @@ const (
 	FailureNodeInContainer
 )
 
-func (fnc *FailureNodeContext) UnmarshalJSON(b []byte) error {
-	var dec string
-	if err := json.Unmarshal(b, &dec); err != nil {
-		return err
-	}
-	switch strings.ToLower(dec) {
-	default:
-		*fnc = FailureNodeContextInvalid
-	case "failurenodeisleafnode":
-		*fnc = FailureNodeIsLeafNode
-	case "failurenodeattoplevel":
-		*fnc = FailureNodeAtTopLevel
-	case "failurenodeincontainer":
-		*fnc = FailureNodeInContainer
-	}
-	return nil
-}
+var fncEnumSupport = NewEnumSupport(map[uint]string{
+	uint(FailureNodeContextInvalid): "INVALID FAILURE NODE CONTEXT",
+	uint(FailureNodeIsLeafNode):     "leaf-node",
+	uint(FailureNodeAtTopLevel):     "top-level",
+	uint(FailureNodeInContainer):    "in-container",
+})
 
+func (fnc FailureNodeContext) String() string {
+	return fncEnumSupport.String(uint(fnc))
+}
+func (fnc *FailureNodeContext) UnmarshalJSON(b []byte) error {
+	out, err := fncEnumSupport.UnmarshJSON(b)
+	*fnc = FailureNodeContext(out)
+	return err
+}
 func (fnc FailureNodeContext) MarshalJSON() ([]byte, error) {
-	switch fnc {
-	case FailureNodeIsLeafNode:
-		return json.Marshal("FailureNodeIsLeafNode")
-	case FailureNodeAtTopLevel:
-		return json.Marshal("FailureNodeAtTopLevel")
-	case FailureNodeInContainer:
-		return json.Marshal("FailureNodeInContainer")
-	}
-	return json.Marshal(nil)
+	return fncEnumSupport.MarshJSON(uint(fnc))
 }
 
 // ReportEntry captures information attached to `SpecReport` via `AddReportEntry`
@@ -482,6 +471,24 @@ const (
 	ReportEntryVisibilityNever
 )
 
+var revEnumSupport = NewEnumSupport(map[uint]string{
+	uint(ReportEntryVisibilityAlways):      "always",
+	uint(ReportEntryVisibilityFailureOnly): "failure-only",
+	uint(ReportEntryVisibilityNever):       "never",
+})
+
+func (rev ReportEntryVisibility) String() string {
+	return revEnumSupport.String(uint(rev))
+}
+func (rev *ReportEntryVisibility) UnmarshalJSON(b []byte) error {
+	out, err := revEnumSupport.UnmarshJSON(b)
+	*rev = ReportEntryVisibility(out)
+	return err
+}
+func (rev ReportEntryVisibility) MarshalJSON() ([]byte, error) {
+	return revEnumSupport.MarshJSON(uint(rev))
+}
+
 func (v ReportEntryVisibility) Is(visibilities ...ReportEntryVisibility) bool {
 	for _, visibility := range visibilities {
 		if v == visibility {
@@ -490,38 +497,6 @@ func (v ReportEntryVisibility) Is(visibilities ...ReportEntryVisibility) bool {
 	}
 
 	return false
-}
-func (v ReportEntryVisibility) String() string {
-	switch v {
-	case ReportEntryVisibilityAlways:
-		return "always"
-	case ReportEntryVisibilityFailureOnly:
-		return "failure-only"
-	case ReportEntryVisibilityNever:
-		return "never"
-	}
-
-	return "INVALID REPORT ENTRY VISIBILITY"
-}
-
-func (v *ReportEntryVisibility) UnmarshalJSON(b []byte) error {
-	var dec string
-	if err := json.Unmarshal(b, &dec); err != nil {
-		return err
-	}
-	switch strings.ToLower(dec) {
-	default:
-		*v = ReportEntryVisibilityAlways
-	case "failure-only":
-		*v = ReportEntryVisibilityFailureOnly
-	case "never":
-		*v = ReportEntryVisibilityNever
-	}
-	return nil
-}
-
-func (v ReportEntryVisibility) MarshalJSON() ([]byte, error) {
-	return json.Marshal(v.String())
 }
 
 // SpecState captures the state of a spec
@@ -540,65 +515,34 @@ const (
 	SpecStateInterrupted
 )
 
-func (s SpecState) String() string {
-	switch s {
-	case SpecStatePending:
-		return "pending"
-	case SpecStateSkipped:
-		return "skipped"
-	case SpecStatePassed:
-		return "passed"
-	case SpecStateFailed:
-		return "failed"
-	case SpecStatePanicked:
-		return "panicked"
-	case SpecStateAborted:
-		return "aborted"
-	case SpecStateInterrupted:
-		return "interrupted"
-	}
+var ssEnumSupport = NewEnumSupport(map[uint]string{
+	uint(SpecStateInvalid):     "INVALID SPEC STATE",
+	uint(SpecStatePending):     "pending",
+	uint(SpecStateSkipped):     "skipped",
+	uint(SpecStatePassed):      "passed",
+	uint(SpecStateFailed):      "failed",
+	uint(SpecStateAborted):     "aborted",
+	uint(SpecStatePanicked):    "panicked",
+	uint(SpecStateInterrupted): "interrupted",
+})
 
-	return "INVALID SPEC STATE"
+func (ss SpecState) String() string {
+	return ssEnumSupport.String(uint(ss))
 }
-
-func (s *SpecState) UnmarshalJSON(b []byte) error {
-	var dec string
-	if err := json.Unmarshal(b, &dec); err != nil {
-		return err
-	}
-	switch strings.ToLower(dec) {
-	default:
-		*s = SpecStateInvalid
-	case "pending":
-		*s = SpecStatePending
-	case "skipped":
-		*s = SpecStateSkipped
-	case "passed":
-		*s = SpecStatePassed
-	case "failed":
-		*s = SpecStateFailed
-	case "panicked":
-		*s = SpecStatePanicked
-	case "aborted":
-		*s = SpecStateAborted
-	case "interrupted":
-		*s = SpecStateInterrupted
-	}
-	return nil
+func (ss *SpecState) UnmarshalJSON(b []byte) error {
+	out, err := ssEnumSupport.UnmarshJSON(b)
+	*ss = SpecState(out)
+	return err
 }
-
-func (s SpecState) MarshalJSON() ([]byte, error) {
-	if s == SpecStateInvalid {
-		return json.Marshal(nil)
-	}
-	return json.Marshal(s.String())
+func (ss SpecState) MarshalJSON() ([]byte, error) {
+	return ssEnumSupport.MarshJSON(uint(ss))
 }
 
 var SpecStateFailureStates = []SpecState{SpecStateFailed, SpecStateAborted, SpecStatePanicked, SpecStateInterrupted}
 
-func (state SpecState) Is(states ...SpecState) bool {
+func (ss SpecState) Is(states ...SpecState) bool {
 	for _, testState := range states {
-		if testState == state {
+		if testState == ss {
 			return true
 		}
 	}
@@ -632,6 +576,34 @@ const (
 var NodeTypesForContainerAndIt = []NodeType{NodeTypeContainer, NodeTypeIt}
 var NodeTypesForSuiteLevelNodes = []NodeType{NodeTypeBeforeSuite, NodeTypeSynchronizedBeforeSuite, NodeTypeAfterSuite, NodeTypeSynchronizedAfterSuite, NodeTypeReportAfterSuite}
 
+var ntEnumSupport = NewEnumSupport(map[uint]string{
+	uint(NodeTypeInvalid):                 "INVALID NODE TYPE",
+	uint(NodeTypeContainer):               "Container",
+	uint(NodeTypeIt):                      "It",
+	uint(NodeTypeBeforeEach):              "BeforeEach",
+	uint(NodeTypeJustBeforeEach):          "JustBeforeEach",
+	uint(NodeTypeAfterEach):               "AfterEach",
+	uint(NodeTypeJustAfterEach):           "JustAfterEach",
+	uint(NodeTypeBeforeSuite):             "BeforeSuite",
+	uint(NodeTypeSynchronizedBeforeSuite): "SynchronizedBeforeSuite",
+	uint(NodeTypeAfterSuite):              "AfterSuite",
+	uint(NodeTypeSynchronizedAfterSuite):  "SynchronizedAfterSuite",
+	uint(NodeTypeReportAfterEach):         "ReportAfterEach",
+	uint(NodeTypeReportAfterSuite):        "ReportAfterSuite",
+})
+
+func (nt NodeType) String() string {
+	return ntEnumSupport.String(uint(nt))
+}
+func (nt *NodeType) UnmarshalJSON(b []byte) error {
+	out, err := ntEnumSupport.UnmarshJSON(b)
+	*nt = NodeType(out)
+	return err
+}
+func (nt NodeType) MarshalJSON() ([]byte, error) {
+	return ntEnumSupport.MarshJSON(uint(nt))
+}
+
 func (nt NodeType) Is(nodeTypes ...NodeType) bool {
 	for _, nodeType := range nodeTypes {
 		if nt == nodeType {
@@ -640,77 +612,4 @@ func (nt NodeType) Is(nodeTypes ...NodeType) bool {
 	}
 
 	return false
-}
-
-func (nt NodeType) String() string {
-	switch nt {
-	case NodeTypeContainer:
-		return "Container"
-	case NodeTypeIt:
-		return "It"
-	case NodeTypeBeforeEach:
-		return "BeforeEach"
-	case NodeTypeJustBeforeEach:
-		return "JustBeforeEach"
-	case NodeTypeAfterEach:
-		return "AfterEach"
-	case NodeTypeJustAfterEach:
-		return "JustAfterEach"
-	case NodeTypeBeforeSuite:
-		return "BeforeSuite"
-	case NodeTypeSynchronizedBeforeSuite:
-		return "SynchronizedBeforeSuite"
-	case NodeTypeAfterSuite:
-		return "AfterSuite"
-	case NodeTypeSynchronizedAfterSuite:
-		return "SynchronizedAfterSuite"
-	case NodeTypeReportAfterEach:
-		return "ReportAfterEach"
-	case NodeTypeReportAfterSuite:
-		return "ReportAfterSuite"
-	}
-	return "INVALID NODE TYPE"
-}
-
-func (nt *NodeType) UnmarshalJSON(b []byte) error {
-	var dec string
-	if err := json.Unmarshal(b, &dec); err != nil {
-		return err
-	}
-	switch strings.ToLower(dec) {
-	default:
-		*nt = NodeTypeInvalid
-	case "container":
-		*nt = NodeTypeContainer
-	case "it":
-		*nt = NodeTypeIt
-	case "beforeeach":
-		*nt = NodeTypeBeforeEach
-	case "justbeforeeach":
-		*nt = NodeTypeJustBeforeEach
-	case "aftereach":
-		*nt = NodeTypeAfterEach
-	case "justaftereach":
-		*nt = NodeTypeJustAfterEach
-	case "beforesuite":
-		*nt = NodeTypeBeforeSuite
-	case "synchronizedbeforesuite":
-		*nt = NodeTypeSynchronizedBeforeSuite
-	case "aftersuite":
-		*nt = NodeTypeAfterSuite
-	case "synchronizedaftersuite":
-		*nt = NodeTypeSynchronizedAfterSuite
-	case "reportaftereach":
-		*nt = NodeTypeReportAfterEach
-	case "reportaftersuite":
-		*nt = NodeTypeReportAfterSuite
-	}
-	return nil
-}
-
-func (nt NodeType) MarshalJSON() ([]byte, error) {
-	if nt == NodeTypeInvalid {
-		return json.Marshal(nil)
-	}
-	return json.Marshal(nt.String())
 }

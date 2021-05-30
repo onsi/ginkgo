@@ -149,7 +149,7 @@ func (r *DefaultReporter) DidRun(report types.SpecReport) {
 		}
 	case types.SpecStateSkipped:
 		highlightColor = "{{cyan}}"
-		if r.conf.Succinct || report.Failure.Message == "" {
+		if r.conf.Succinct || (!r.conf.Verbose && report.Failure.Message == "") {
 			header, stream = "S", true
 		} else {
 			header, succinctLocationBlock = "S [SKIPPED]", !r.conf.Verbose
