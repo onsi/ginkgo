@@ -61,16 +61,14 @@ var _ = SynchronizedAfterSuite(func() {}, func() {
 })
 
 type FixtureManager struct {
-	TmpDir      string
-	FixturePath string
+	TmpDir string
 }
 
 func NewFixtureManager(tmpDir string) FixtureManager {
 	err := os.MkdirAll(tmpDir, 0700)
 	Ω(err).ShouldNot(HaveOccurred())
 	return FixtureManager{
-		TmpDir:      tmpDir,
-		FixturePath: "_fixtures",
+		TmpDir: tmpDir,
 	}
 }
 
@@ -79,7 +77,7 @@ func (f FixtureManager) Cleanup() {
 }
 
 func (f FixtureManager) MountFixture(fixture string, subPackage ...string) {
-	src := filepath.Join(f.FixturePath, fixture+"_fixture")
+	src := filepath.Join("_fixtures", fixture+"_fixture")
 	dst := filepath.Join(f.TmpDir, fixture)
 
 	if len(subPackage) > 0 {
@@ -127,7 +125,7 @@ func (f FixtureManager) PathTo(pkg string, target ...string) string {
 }
 
 func (f FixtureManager) PathToFixtureFile(pkg string, target string) string {
-	return filepath.Join(f.FixturePath, pkg+"_fixture", target)
+	return filepath.Join("_fixtures", pkg+"_fixture", target)
 }
 
 func (f FixtureManager) WriteFile(pkg string, target string, content string) {

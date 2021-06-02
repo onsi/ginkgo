@@ -15,8 +15,7 @@ var _ = Describe("ginkgo build", func() {
 		session := startGinkgo(fm.PathTo("passing_ginkgo_tests"), "build")
 		Eventually(session).Should(gexec.Exit(0))
 		output := string(session.Out.Contents())
-		Ω(output).Should(ContainSubstring("Compiling passing_ginkgo_tests"))
-		Ω(output).Should(ContainSubstring("compiled passing_ginkgo_tests.test"))
+		Ω(output).Should(ContainSubstring("Compiled passing_ginkgo_tests.test"))
 	})
 
 	It("should build a test binary", func() {

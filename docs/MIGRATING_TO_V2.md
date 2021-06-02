@@ -204,7 +204,7 @@ By default, Ginkgo's console reporter will emit any `ReportEntry` attached to a 
 You can modify this default behavior by passing in one of the `ReportEntryVisibility` enum to `AddReportEntry`:
 
 - `ReportEntryVisibilityAlways`: the default behavior - the `ReportEntry` is always emitted.
-- `ReportEntryVisibilityFailureOnly`: the `ReportEntry` is only emitted if the spec fails (similar to `GinkgoWriter`s behavior).
+- `ReportEntryVisibilityFailureOrVerbose`: the `ReportEntry` is only emitted if the spec fails or is run with `-v` (similar to `GinkgoWriter`s behavior).
 - `ReportEntryVisibilityNever`: the `ReportEntry` is never emitted though it appears in any generated machine-readable reports (e.g. by setting `--json-report`).
 
 The console reporter passes the string representation of the `ReportEntry.Value` through Ginkgo's `formatter`.  This allows you to generate colorful console output using the color codes documented in `github.com/onsi/ginkgo/formatter/formatter.go`.  For example:
@@ -264,6 +264,7 @@ In V1 Ginkgo would run windows tests in parallel with the `--stream` option.  Th
 
 ## Minor Additions and Improvements
 - `BeforeSuite` and `AfterSuite` no longer run if all tests in a suite are skipped.
+- Ginkgo's performance should be improved now when running multiple suites in a context where the go mod dependencies have not been fetched yet (e.g. on CI).  Previously, Ginkgo would compile suites in parallel resulting in substantial slowdown when fetching the dependencies in parallel.  In V2, Ginkgo compiles the first suite in series before compiling the remaining suites in parallel.
 - Ginkgo can now catch several common user gotchas and emit a helpful error.
 - Error output is clearer and consistently links to relevant sections in the documentation.
 - `By` now emits a timestamp.  It also registers a `ReportEntry` that appears in the suite report as structured data.  If passed a callback, `By` will now time the callback and include the duration in the suite report.
