@@ -10,6 +10,7 @@ import (
 	"net/http"
 	"os"
 	"runtime"
+	"strconv"
 	"time"
 )
 
@@ -112,6 +113,14 @@ func (g CLIConfig) ComputedNodes() int {
 		}
 	}
 	return n
+}
+
+func (g CLIConfig) ComputedNumCompilers() int {
+	if g.NumCompilers > 0 {
+		return g.NumCompilers
+	}
+
+	return runtime.NumCPU()
 }
 
 // Configuration for the Ginkgo CLI capturing available go flags
@@ -227,7 +236,7 @@ var SuiteConfigFlags = GinkgoFlags{
 	{KeyPath: "S.RegexScansFilePath", Name: "regex-scans-filepath", SectionKey: "filter", DeprecatedName: "regexScansFilePath", DeprecatedDocLink: "changed-command-line-flags",
 		Usage: "If set, ginkgo regex matching also will look at the file path (code location)."},
 
-	{KeyPath: "D.DebugParallel", DeprecatedName: "debug", DeprecatedDocLink: "removed--debug", DeprecatedVersion: "2.0.0",},
+	{KeyPath: "D.DebugParallel", DeprecatedName: "debug", DeprecatedDocLink: "removed--debug", DeprecatedVersion: "2.0.0"},
 }
 
 // ParallelConfigFlags provides flags for the Ginkgo test process (not the CLI)
@@ -264,8 +273,8 @@ var ReporterConfigFlags = GinkgoFlags{
 
 	{KeyPath: "D.SlowSpecThresholdWithFLoatUnits", DeprecatedName: "slowSpecThreshold", DeprecatedDocLink: "changed--slowspecthreshold",
 		Usage: "use --slow-spec-threshold instead and pass in a duration string (e.g. '5s', not '5.0')"},
-	{KeyPath: "D.NoisyPendings", DeprecatedName: "noisyPendings", DeprecatedDocLink: "removed--noisypendings-and--noisyskippings", DeprecatedVersion: "2.0.0",},
-	{KeyPath: "D.NoisySkippings", DeprecatedName: "noisySkippings", DeprecatedDocLink: "removed--noisypendings-and--noisyskippings", DeprecatedVersion: "2.0.0",},
+	{KeyPath: "D.NoisyPendings", DeprecatedName: "noisyPendings", DeprecatedDocLink: "removed--noisypendings-and--noisyskippings", DeprecatedVersion: "2.0.0"},
+	{KeyPath: "D.NoisySkippings", DeprecatedName: "noisySkippings", DeprecatedDocLink: "removed--noisypendings-and--noisyskippings", DeprecatedVersion: "2.0.0"},
 }
 
 // BuildTestSuiteFlagSet attaches to the CommandLine flagset and provides flags for the Ginkgo test process
@@ -287,7 +296,14 @@ func VetConfig(flagSet GinkgoFlagSet, suiteConfig SuiteConfig, reporterConfig Re
 	errors := []error{}
 
 	if flagSet.WasSet("count") || flagSet.WasSet("test.count") {
-		errors = append(errors, GinkgoErrors.InvalidGoFlagCount())
+		flag := flagSet.Lookup("count")
+		if flag == nil {
+			flag = flagSet.Lookup("test.count")
+		}
+		count, err := strconv.Atoi(flag.Value.String())
+		if err != nil || count != 1 {
+			errors = append(errors, GinkgoErrors.InvalidGoFlagCount())
+		}
 	}
 
 	if flagSet.WasSet("parallel") || flagSet.WasSet("test.parallel") {
@@ -355,8 +371,8 @@ var GinkgoCLIRunAndWatchFlags = GinkgoFlags{
 	{KeyPath: "C.KeepSeparateReports", Name: "keep-separate-reports", SectionKey: "output",
 		Usage: "If set, Ginkgo does not merge per-suite reports (e.g. -json-report) into one monolithic report for the entire testrun.  The reports will remain in their respective package directories or in -output-dir if set."},
 
-	{KeyPath: "D.Stream", DeprecatedName: "stream", DeprecatedDocLink: "removed--stream", DeprecatedVersion: "2.0.0",},
-	{KeyPath: "D.Notify", DeprecatedName: "notify", DeprecatedDocLink: "removed--notify", DeprecatedVersion: "2.0.0",},
+	{KeyPath: "D.Stream", DeprecatedName: "stream", DeprecatedDocLink: "removed--stream", DeprecatedVersion: "2.0.0"},
+	{KeyPath: "D.Notify", DeprecatedName: "notify", DeprecatedDocLink: "removed--notify", DeprecatedVersion: "2.0.0"},
 }
 
 // GinkgoCLIRunFlags provides flags for Ginkgo CLI's run command that aren't shared by any other commands

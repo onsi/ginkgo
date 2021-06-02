@@ -215,9 +215,9 @@ var _ = Describe("ReportEntry and ReportEntries", func() {
 	})
 	Context("with a ReportEntryVisibility", func() {
 		It("uses the passed in visibility", func() {
-			reportEntry, err = internal.NewReportEntry("name", cl, types.ReportEntryVisibilityFailureOnly)
+			reportEntry, err = internal.NewReportEntry("name", cl, types.ReportEntryVisibilityFailureOrVerbose)
 			Ω(reportEntry.Value).Should(BeNil())
-			Ω(reportEntry.Visibility).Should(Equal(types.ReportEntryVisibilityFailureOnly))
+			Ω(reportEntry.Visibility).Should(Equal(types.ReportEntryVisibilityFailureOrVerbose))
 		})
 	})
 	Context("with a time", func() {
@@ -237,7 +237,7 @@ var _ = Describe("ReportEntry and ReportEntries", func() {
 			}
 
 			Ω(entries.HasVisibility(types.ReportEntryVisibilityNever, types.ReportEntryVisibilityAlways)).Should(BeTrue())
-			Ω(entries.HasVisibility(types.ReportEntryVisibilityNever, types.ReportEntryVisibilityFailureOnly)).Should(BeFalse())
+			Ω(entries.HasVisibility(types.ReportEntryVisibilityNever, types.ReportEntryVisibilityFailureOrVerbose)).Should(BeFalse())
 		})
 	})
 
@@ -245,13 +245,13 @@ var _ = Describe("ReportEntry and ReportEntries", func() {
 		It("returns the subset of report entries with the requested visibilities", func() {
 			entries := types.ReportEntries{
 				types.ReportEntry{Name: "A", Visibility: types.ReportEntryVisibilityAlways},
-				types.ReportEntry{Name: "B", Visibility: types.ReportEntryVisibilityFailureOnly},
+				types.ReportEntry{Name: "B", Visibility: types.ReportEntryVisibilityFailureOrVerbose},
 				types.ReportEntry{Name: "C", Visibility: types.ReportEntryVisibilityNever},
 			}
-			Ω(entries.WithVisibility(types.ReportEntryVisibilityAlways, types.ReportEntryVisibilityFailureOnly)).Should(Equal(
+			Ω(entries.WithVisibility(types.ReportEntryVisibilityAlways, types.ReportEntryVisibilityFailureOrVerbose)).Should(Equal(
 				types.ReportEntries{
 					types.ReportEntry{Name: "A", Visibility: types.ReportEntryVisibilityAlways},
-					types.ReportEntry{Name: "B", Visibility: types.ReportEntryVisibilityFailureOnly},
+					types.ReportEntry{Name: "B", Visibility: types.ReportEntryVisibilityFailureOrVerbose},
 				},
 			))
 
@@ -261,7 +261,7 @@ var _ = Describe("ReportEntry and ReportEntries", func() {
 	Describe("mini-integration test - validating that the DSL correctly wires into the suite", func() {
 		Context("when passed a value", func() {
 			It("works!", func() {
-				AddReportEntry("A Test ReportEntry", ColorableStringerStruct{"bob", 17}, types.ReportEntryVisibilityFailureOnly)
+				AddReportEntry("A Test ReportEntry", ColorableStringerStruct{"bob", 17}, types.ReportEntryVisibilityFailureOrVerbose)
 			})
 
 			ReportAfterEach(func(report SpecReport) {
@@ -277,7 +277,7 @@ var _ = Describe("ReportEntry and ReportEntries", func() {
 			})
 
 			It("works!", func() {
-				AddReportEntry("A Test ReportEntry", obj, types.ReportEntryVisibilityFailureOnly)
+				AddReportEntry("A Test ReportEntry", obj, types.ReportEntryVisibilityFailureOrVerbose)
 			})
 
 			AfterEach(func() {
