@@ -111,7 +111,7 @@ func (r *DefaultReporter) DidRun(report types.SpecReport) {
 
 	hasGW := report.CapturedGinkgoWriterOutput != ""
 	hasStd := report.CapturedStdOutErr != ""
-	hasEmittableReports := report.ReportEntries.HasVisibility(types.ReportEntryVisibilityAlways) || (report.ReportEntries.HasVisibility(types.ReportEntryVisibilityFailureOnly) && !report.Failure.IsZero())
+	hasEmittableReports := report.ReportEntries.HasVisibility(types.ReportEntryVisibilityAlways) || (report.ReportEntries.HasVisibility(types.ReportEntryVisibilityFailureOrVerbose) && (!report.Failure.IsZero() || r.conf.Verbose))
 
 	if report.LeafNodeType.Is(types.NodeTypesForSuiteLevelNodes...) {
 		denoter = fmt.Sprintf("[%s]", report.LeafNodeType)
@@ -200,8 +200,8 @@ func (r *DefaultReporter) DidRun(report types.SpecReport) {
 		r.emitBlock("\n")
 		r.emitBlock(r.fi(1, "{{gray}}Begin Report Entries >>{{/}}"))
 		reportEntries := report.ReportEntries.WithVisibility(types.ReportEntryVisibilityAlways)
-		if !report.Failure.IsZero() {
-			reportEntries = report.ReportEntries.WithVisibility(types.ReportEntryVisibilityAlways, types.ReportEntryVisibilityFailureOnly)
+		if !report.Failure.IsZero() || r.conf.Verbose {
+			reportEntries = report.ReportEntries.WithVisibility(types.ReportEntryVisibilityAlways, types.ReportEntryVisibilityFailureOrVerbose)
 		}
 		for _, entry := range reportEntries {
 			r.emitBlock(r.fi(2, "{{bold}}"+entry.Name+"{{gray}} - %s @ %s{{/}}", entry.Location, entry.Time.Format(types.GINKGO_TIME_FORMAT)))

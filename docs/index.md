@@ -2288,7 +2288,7 @@ By default, Ginkgo's console reporter will emit any `ReportEntry` attached to a 
 You can modify this default behavior by passing in one of the `ReportEntryVisibility` enum to `AddReportEntry`:
 
 - `ReportEntryVisibilityAlways`: the default behavior - the `ReportEntry` is always emitted.
-- `ReportEntryVisibilityFailureOnly`: the `ReportEntry` is only emitted if the spec fails (similar to `GinkgoWriter`s behavior).
+- `ReportEntryVisibilityFailureOrVerbose`: the `ReportEntry` is only emitted if the spec fails or the tests are run with `-v` (similar to `GinkgoWriter`s behavior).
 - `ReportEntryVisibilityNever`: the `ReportEntry` is never emitted though it appears in any generated machine-readable reports (e.g. by setting `--json-report`).
 
 The console reporter passes the string representation of the `ReportEntry.Value` through Ginkgo's `formatter`.  This allows you to generate colorful console output using the color codes documented in `github.com/onsi/ginkgo/formatter/formatter.go`.  For example:

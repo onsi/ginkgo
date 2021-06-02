@@ -308,7 +308,7 @@ func (g ginkgoErrors) ConflictingVerboseSuccinctConfiguration() error {
 func (g ginkgoErrors) InvalidGoFlagCount() error {
 	return GinkgoError{
 		Heading: "Use of go test -count",
-		Message: "Ginkgo does not support using go test -count to rerun test suites.  Please use the ginkgo cli and `ginkgo -until-it-fails` or `ginkgo -repeat=N`.",
+		Message: "Ginkgo does not support using go test -count to rerun test suites.  Only -count=1 is allowed.  To repeat test runs, please use the ginkgo cli and `ginkgo -until-it-fails` or `ginkgo -repeat=N`.",
 	}
 }
 

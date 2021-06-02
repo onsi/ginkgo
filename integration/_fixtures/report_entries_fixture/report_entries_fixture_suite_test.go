@@ -37,7 +37,7 @@ var _ = Describe("top-level container", func() {
 		AddReportEntry("passes-second-report")
 		AddReportEntry("passes-third-report", 3)
 		AddReportEntry("passes-pointer-report", s)
-		AddReportEntry("passes-failure-report", 5, ReportEntryVisibilityFailureOnly)
+		AddReportEntry("passes-failure-report", 5, ReportEntryVisibilityFailureOrVerbose)
 		AddReportEntry("passes-never-see-report", 6, ReportEntryVisibilityNever)
 	})
 
@@ -46,7 +46,7 @@ var _ = Describe("top-level container", func() {
 		AddReportEntry("fails-second-report")
 		AddReportEntry("fails-third-report", 3)
 		AddReportEntry("fails-pointer-report", s)
-		AddReportEntry("fails-failure-report", 5, ReportEntryVisibilityFailureOnly)
+		AddReportEntry("fails-failure-report", 5, ReportEntryVisibilityFailureOrVerbose)
 		AddReportEntry("fails-never-see-report", 6, ReportEntryVisibilityNever)
 		Fail("boom")
 	})
