@@ -465,16 +465,16 @@ type ReportEntryVisibility uint
 const (
 	// Always print out this ReportEntry
 	ReportEntryVisibilityAlways ReportEntryVisibility = iota
-	// Only print out this ReportEntry if the spec fails
-	ReportEntryVisibilityFailureOnly
+	// Only print out this ReportEntry if the spec fails or if the test is run with -v
+	ReportEntryVisibilityFailureOrVerbose
 	// Never print out this ReportEntry (note that ReportEntrys are always encoded in machine readable reports (e.g. JSON, JUnit, etc.))
 	ReportEntryVisibilityNever
 )
 
 var revEnumSupport = NewEnumSupport(map[uint]string{
-	uint(ReportEntryVisibilityAlways):      "always",
-	uint(ReportEntryVisibilityFailureOnly): "failure-only",
-	uint(ReportEntryVisibilityNever):       "never",
+	uint(ReportEntryVisibilityAlways):           "always",
+	uint(ReportEntryVisibilityFailureOrVerbose): "failure-or-verbose",
+	uint(ReportEntryVisibilityNever):            "never",
 })
 
 func (rev ReportEntryVisibility) String() string {

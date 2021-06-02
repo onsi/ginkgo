@@ -55,7 +55,7 @@ var _ = Describe("Config", func() {
 		BeforeEach(func() {
 			var err error
 			goFlagSet = flag.NewFlagSet("test", flag.ContinueOnError)
-			goFlagSet.Bool("count", false, "")
+			goFlagSet.Int("count", 1, "")
 			goFlagSet.Int("parallel", 0, "")
 			flagSet, err = types.NewAttachedGinkgoFlagSet(goFlagSet, types.GinkgoFlags{}, nil, types.GinkgoFlagSections{}, types.GinkgoFlagSection{})
 			Ω(err).ShouldNot(HaveOccurred())
@@ -73,8 +73,9 @@ var _ = Describe("Config", func() {
 
 		Context("when unsupported go flags are parsed", func() {
 			BeforeEach(func() {
-				goFlagSet.Parse([]string{"-count", "-parallel=2"})
+				goFlagSet.Parse([]string{"-count=2", "-parallel=2"})
 			})
+
 			It("returns errors when unsupported go flags are set", func() {
 				errors := types.VetConfig(flagSet, suiteConf, repConf)
 				Ω(errors).Should(ConsistOf(types.GinkgoErrors.InvalidGoFlagCount(), types.GinkgoErrors.InvalidGoFlagParallel()))

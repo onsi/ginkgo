@@ -39,13 +39,19 @@ func buildSpecs(args []string, cliConfig types.CLIConfig, goFlagsConfig types.Go
 		command.AbortWith("Found no test suites")
 	}
 
-	for idx := range suites {
-		fmt.Printf("Compiling %s...\n", suites[idx].PackageName)
-		suites[idx] = internal.CompileSuite(suites[idx], goFlagsConfig)
-		if suites[idx].State.Is(internal.TestSuiteStateFailedToCompile) {
-			fmt.Println(suites[idx].CompilationError.Error())
+	opc := internal.NewOrderedParallelCompiler(cliConfig.ComputedNumCompilers())
+	opc.StartCompiling(suites, goFlagsConfig)
+
+	for {
+		suiteIdx, suite := opc.Next()
+		if suiteIdx >= len(suites) {
+			break
+		}
+		suites[suiteIdx] = suite
+		if suite.State.Is(internal.TestSuiteStateFailedToCompile) {
+			fmt.Println(suite.CompilationError.Error())
 		} else {
-			fmt.Printf("  compiled %s.test\n", suites[idx].PackageName)
+			fmt.Printf("Compiled %s.test\n", suite.PackageName)
 		}
 	}
 
