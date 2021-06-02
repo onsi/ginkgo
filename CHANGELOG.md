@@ -1,3 +1,8 @@
+## 1.16.4
+
+### Fixes
+1.16.4 retracts 1.16.3.  There are no code changes.  The 1.16.3 tag was associated with the wrong commit and an attempt to change it after-the-fact has proven problematic.  1.16.4 retracts 1.16.3 in Ginkgo's go.mod and creates a new, correctly tagged, release.
+
 ## 1.16.3
 
 ### Features
