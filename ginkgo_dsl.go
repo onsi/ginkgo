@@ -388,11 +388,11 @@ func By(text string, callbacks ...func()) {
 // ReportEntryVisibility governs the visibility of ReportEntries in Ginkgo's console reporter
 //
 //- `ReportEntryVisibilityAlways`: the default behavior - the `ReportEntry` is always emitted.
-//- `ReportEntryVisibilityFailureOnly`: the `ReportEntry` is only emitted if the spec fails (similar to `GinkgoWriter`s behavior).
+//- `ReportEntryVisibilityFailureOrVerbose`: the `ReportEntry` is only emitted if the spec fails or if the tests are run with -v (similar to `GinkgoWriter`s behavior).
 //- `ReportEntryVisibilityNever`: the `ReportEntry` is never emitted though it appears in any generated machine-readable reports (e.g. by setting `--json-report`).
 type ReportEntryVisibility = types.ReportEntryVisibility
 
-const ReportEntryVisibilityAlways, ReportEntryVisibilityFailureOnly, ReportEntryVisibilityNever = types.ReportEntryVisibilityAlways, types.ReportEntryVisibilityFailureOnly, types.ReportEntryVisibilityNever
+const ReportEntryVisibilityAlways, ReportEntryVisibilityFailureOrVerbose, ReportEntryVisibilityNever = types.ReportEntryVisibilityAlways, types.ReportEntryVisibilityFailureOrVerbose, types.ReportEntryVisibilityNever
 
 // AddReportEntry generates and a dds a new ReportEntry to the current SpecReport.
 // args can optinally include any of the following:

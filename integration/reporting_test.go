@@ -362,7 +362,7 @@ var _ = Describe("Reporting", func() {
 				reports := fm.LoadJSONReports("reporting", "reports/out.json")
 				Ω(reports).Should(HaveLen(3))
 				checkJSONReport(reports[0])
-				Ω(reports[1].SpecialSuiteFailureReasons).Should(ContainElement("Suite did not run because prior suites failed and --keep-going is not set"))
+				Ω(reports[1].SpecialSuiteFailureReasons).Should(ContainElement(ContainSubstring("Failed to compile malformed_sub_package")))
 				Ω(reports[2].SpecialSuiteFailureReasons).Should(ContainElement("Suite did not run because prior suites failed and --keep-going is not set"))
 			})
 		})

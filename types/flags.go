@@ -209,6 +209,10 @@ func (f GinkgoFlagSet) WasSet(name string) bool {
 	return found
 }
 
+func (f GinkgoFlagSet) Lookup(name string) *flag.Flag {
+	return f.flagSet.Lookup(name)
+}
+
 func (f GinkgoFlagSet) Parse(args []string) ([]string, error) {
 	if f.IsZero() {
 		return args, nil

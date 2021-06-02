@@ -63,9 +63,6 @@ type SpecRunner struct {
 	interruptHandler *interrupthandler.InterruptHandler
 }
 
-//TODO - THIS IS INTENTIONALLY SLOWER THAN GINKGO V1 FOR NOW
-//COMPILATION AND RUNNING AND SERIALIZED.  IN TIME WE'LL RUN EXPERIMENTS TO FIND THE OPTIMAL WAY TO
-//IMPROVE PERFORMANCE
 func (r *SpecRunner) RunSpecs(args []string, additionalArgs []string) {
 	suites := internal.FindSuites(args, r.cliConfig, true)
 	skippedSuites := suites.WithState(internal.TestSuiteStateSkippedByFilter)
@@ -100,7 +97,6 @@ func (r *SpecRunner) RunSpecs(args []string, additionalArgs []string) {
 	}
 
 	iteration := 0
-
 OUTER_LOOP:
 	for {
 		if !r.flags.WasSet("seed") {
@@ -110,36 +106,41 @@ OUTER_LOOP:
 			suites = suites.ShuffledCopy(r.suiteConfig.RandomSeed)
 		}
 
+		opc := internal.NewOrderedParallelCompiler(r.cliConfig.ComputedNumCompilers())
+		opc.StartCompiling(suites, r.goFlagsConfig)
+
 	SUITE_LOOP:
-		for suiteIdx := range suites {
+		for {
+			suiteIdx, suite := opc.Next()
+			if suiteIdx >= len(suites) {
+				break SUITE_LOOP
+			}
+			suites[suiteIdx] = suite
+
 			if r.interruptHandler.WasInterrupted() {
+				opc.StopAndDrain()
 				break OUTER_LOOP
 			}
 
-			if !endTime.IsZero() && time.Now().After(endTime) {
-				suites[suiteIdx].State = internal.TestSuiteStateFailedDueToTimeout
+			if suites[suiteIdx].State.Is(internal.TestSuiteStateFailedToCompile) {
+				fmt.Println(suites[suiteIdx].CompilationError.Error())
+				if !r.cliConfig.KeepGoing {
+					opc.StopAndDrain()
+				}
 				continue SUITE_LOOP
 			}
 
 			if suites.CountWithState(internal.TestSuiteStateFailureStates...) > 0 && !r.cliConfig.KeepGoing {
 				suites[suiteIdx].State = internal.TestSuiteStateSkippedDueToPriorFailures
+				opc.StopAndDrain()
 				continue SUITE_LOOP
-			}
-
-			suites[suiteIdx] = internal.CompileSuite(suites[suiteIdx], r.goFlagsConfig)
-			if suites[suiteIdx].State.Is(internal.TestSuiteStateFailedToCompile) {
-				fmt.Println(suites[suiteIdx].CompilationError.Error())
-				continue SUITE_LOOP
-			}
-
-			if r.interruptHandler.WasInterrupted() {
-				break OUTER_LOOP
 			}
 
 			if !endTime.IsZero() {
 				r.suiteConfig.Timeout = endTime.Sub(time.Now())
 				if r.suiteConfig.Timeout <= 0 {
 					suites[suiteIdx].State = internal.TestSuiteStateFailedDueToTimeout
+					opc.StopAndDrain()
 					continue SUITE_LOOP
 				}
 			}

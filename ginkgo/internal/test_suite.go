@@ -137,7 +137,6 @@ func (ts TestSuites) ShuffledCopy(seed int64) TestSuites {
 		out[i] = ts[j]
 	}
 	return out
-
 }
 
 func FindSuites(args []string, cliConfig types.CLIConfig, allowPrecompiled bool) TestSuites {
