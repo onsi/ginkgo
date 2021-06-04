@@ -15,6 +15,7 @@ package config
 
 import (
 	"flag"
+	"regexp"
 	"time"
 
 	"fmt"
@@ -139,7 +140,7 @@ func BuildFlagArgs(prefix string, ginkgo GinkgoConfigType, reporter DefaultRepor
 	}
 
 	for _, s := range ginkgo.FocusStrings {
-		result = append(result, fmt.Sprintf("--%sfocus=%s", prefix, s))
+		result = append(result, fmt.Sprintf("--%sfocus=%s", prefix, regexp.QuoteMeta(s)))
 	}
 
 	for _, s := range ginkgo.SkipStrings {

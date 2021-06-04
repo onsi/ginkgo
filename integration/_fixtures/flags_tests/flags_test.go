@@ -44,6 +44,12 @@ var _ = Describe("Testing various flags", func() {
 			})
 		})
 
+		Describe("--focus flag argument contains metacharacters", func() {
+			It("should MyMethod() $called", func() {
+				println("MyMethod")
+			})
+		})
+
 		It("should detect races", func(done Done) {
 			var a string
 			go func() {

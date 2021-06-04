@@ -30,7 +30,7 @@ var _ = Describe("Flags Specs", func() {
 		output := string(session.Out.Contents())
 
 		Ω(output).Should(ContainSubstring("Ran 3 samples:"), "has a measurement")
-		Ω(output).Should(ContainSubstring("11 Passed"))
+		Ω(output).Should(ContainSubstring("12 Passed"))
 		Ω(output).Should(ContainSubstring("0 Failed"))
 		Ω(output).Should(ContainSubstring("1 Pending"))
 		Ω(output).Should(ContainSubstring("3 Skipped"))
@@ -88,7 +88,23 @@ var _ = Describe("Flags Specs", func() {
 		Ω(output).Should(ContainSubstring("3 Passed"))
 		Ω(output).Should(ContainSubstring("0 Failed"))
 		Ω(output).Should(ContainSubstring("0 Pending"))
-		Ω(output).Should(ContainSubstring("12 Skipped"))
+		Ω(output).Should(ContainSubstring("13 Skipped"))
+	})
+
+	It("should override the programmatic focus when the --focus flag argument contains metacharacters", func() {
+		session := startGinkgo(pathToTest, "--noColor", "--focus=should MyMethod() $called")
+		Eventually(session).Should(gexec.Exit(0))
+		output := string(session.Out.Contents())
+
+		Ω(output).Should(ContainSubstring("MyMethod"))
+		Ω(output).Should(ContainSubstring("1 Passed"))
+		Ω(output).Should(ContainSubstring("0 Failed"))
+		Ω(output).Should(ContainSubstring("0 Pending"))
+		Ω(output).Should(ContainSubstring("15 Skipped"))
+	})
+
+	It("should ... when method() ...", func() {
+		Expect(1).To(Equal(1))
 	})
 
 	It("should override the programmatic focus when told to skip", func() {
@@ -99,7 +115,7 @@ var _ = Describe("Flags Specs", func() {
 		Ω(output).ShouldNot(ContainSubstring("marshmallow"))
 		Ω(output).Should(ContainSubstring("chocolate"))
 		Ω(output).Should(ContainSubstring("smores"))
-		Ω(output).Should(ContainSubstring("11 Passed"))
+		Ω(output).Should(ContainSubstring("12 Passed"))
 		Ω(output).Should(ContainSubstring("0 Failed"))
 		Ω(output).Should(ContainSubstring("1 Pending"))
 		Ω(output).Should(ContainSubstring("3 Skipped"))
@@ -113,7 +129,7 @@ var _ = Describe("Flags Specs", func() {
 		Ω(output).ShouldNot(ContainSubstring("marshmallow"))
 		Ω(output).Should(ContainSubstring("chocolate"))
 		Ω(output).Should(ContainSubstring("smores"))
-		Ω(output).Should(ContainSubstring("11 Passed"))
+		Ω(output).Should(ContainSubstring("12 Passed"))
 		Ω(output).Should(ContainSubstring("0 Failed"))
 		Ω(output).Should(ContainSubstring("1 Pending"))
 		Ω(output).Should(ContainSubstring("3 Skipped"))
