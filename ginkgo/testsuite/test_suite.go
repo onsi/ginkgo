@@ -6,6 +6,7 @@ import (
 	"os"
 	"path/filepath"
 	"regexp"
+	"runtime"
 	"strings"
 )
 
@@ -26,16 +27,22 @@ func PrecompiledTestSuite(path string) (TestSuite, error) {
 		return TestSuite{}, errors.New("this is a directory, not a file")
 	}
 
-	if filepath.Ext(path) != ".test" {
-		return TestSuite{}, errors.New("this is not a .test binary")
+	if (runtime.GOOS != "windows" && filepath.Ext(path) != ".test") ||
+		(runtime.GOOS == "windows" && !strings.HasSuffix(path, ".test.exe")) {
+		return TestSuite{}, errors.New("this is not a .test (.test.exe) binary")
 	}
 
-	if info.Mode()&0111 == 0 {
+	if runtime.GOOS != "windows" && info.Mode()&0111 == 0 {
 		return TestSuite{}, errors.New("this is not executable")
 	}
 
 	dir := relPath(filepath.Dir(path))
-	packageName := strings.TrimSuffix(filepath.Base(path), filepath.Ext(path))
+	var packageName string
+	if strings.HasSuffix(path, ".test.exe") {
+		packageName = strings.TrimSuffix(filepath.Base(path), ".test.exe")
+	} else {
+		packageName = strings.TrimSuffix(filepath.Base(path), filepath.Ext(path))
+	}
 
 	return TestSuite{
 		Path:        dir,
