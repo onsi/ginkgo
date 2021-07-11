@@ -6,7 +6,7 @@ import (
 	. "github.com/onsi/gomega"
 	. "github.com/onsi/gomega/gstruct"
 
-	"github.com/onsi/ginkgo/internal"
+	"github.com/onsi/ginkgo/internal/interrupt_handler"
 	"github.com/onsi/ginkgo/types"
 )
 
@@ -195,7 +195,7 @@ func HaveBeenSkipped() OmegaMatcher {
 	})
 }
 
-func HaveBeenInterrupted(cause internal.InterruptCause) OmegaMatcher {
+func HaveBeenInterrupted(cause interrupt_handler.InterruptCause) OmegaMatcher {
 	return MatchFields(IgnoreExtras, Fields{
 		"State": Equal(types.SpecStateInterrupted),
 		"Failure": MatchFields(IgnoreExtras, Fields{

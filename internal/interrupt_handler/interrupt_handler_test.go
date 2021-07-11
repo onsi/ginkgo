@@ -1,20 +1,20 @@
-package internal_test
+package interrupt_handler_test
 
 import (
 	"time"
 
 	. "github.com/onsi/ginkgo"
-	"github.com/onsi/ginkgo/internal"
+	"github.com/onsi/ginkgo/internal/interrupt_handler"
 	"github.com/onsi/ginkgo/internal/parallel_support"
 	. "github.com/onsi/ginkgo/internal/test_helpers"
 	. "github.com/onsi/gomega"
 )
 
 var _ = Describe("InterruptHandler", func() {
-	var interruptHandler *internal.InterruptHandler
+	var interruptHandler *interrupt_handler.InterruptHandler
 	Describe("Timeout interrupts", func() {
 		BeforeEach(func() {
-			interruptHandler = internal.NewInterruptHandler(500*time.Millisecond, "")
+			interruptHandler = interrupt_handler.NewInterruptHandler(500*time.Millisecond, "")
 		})
 
 		AfterEach(func() {
@@ -33,7 +33,7 @@ var _ = Describe("InterruptHandler", func() {
 			status := interruptHandler.Status()
 			Eventually(status.Channel).Should(BeClosed())
 			cause := interruptHandler.Status().Cause
-			Ω(cause).Should(Equal(internal.InterruptCauseTimeout))
+			Ω(cause).Should(Equal(interrupt_handler.InterruptCauseTimeout))
 			Ω(interruptHandler.InterruptMessageWithStackTraces()).Should(HavePrefix("Interrupted by Timeout\n\n"))
 			Ω(interruptHandler.InterruptMessageWithStackTraces()).Should(ContainSubstring("Here's a stack trace"))
 		})
@@ -54,7 +54,7 @@ var _ = Describe("InterruptHandler", func() {
 		var client parallel_support.Client
 		BeforeEach(func() {
 			server, client, _ = SetUpServerAndClient(2)
-			interruptHandler = internal.NewInterruptHandler(0, server.Address())
+			interruptHandler = interrupt_handler.NewInterruptHandler(0, server.Address())
 		})
 
 		AfterEach(func() {
@@ -73,7 +73,7 @@ var _ = Describe("InterruptHandler", func() {
 			client.PostAbort()
 			Eventually(status.Channel).Should(BeClosed())
 			status = interruptHandler.Status()
-			Ω(status.Cause).Should(Equal(internal.InterruptCauseAbortByOtherProcess))
+			Ω(status.Cause).Should(Equal(interrupt_handler.InterruptCauseAbortByOtherProcess))
 			Ω(interruptHandler.InterruptMessageWithStackTraces()).Should(HavePrefix("Interrupted by Other Ginkgo Process"))
 			Ω(interruptHandler.InterruptMessageWithStackTraces()).ShouldNot(ContainSubstring("Here's a stack trace"))
 		})

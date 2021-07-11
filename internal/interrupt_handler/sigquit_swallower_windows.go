@@ -1,7 +1,7 @@
 //go:build windows
 // +build windows
 
-package interrupthandler
+package interrupt_handler
 
 func SwallowSigQuit() {
 	//noop

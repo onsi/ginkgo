@@ -4,7 +4,7 @@ import (
 	"time"
 
 	. "github.com/onsi/ginkgo"
-	"github.com/onsi/ginkgo/internal"
+	"github.com/onsi/ginkgo/internal/interrupt_handler"
 	"github.com/onsi/ginkgo/internal/parallel_support"
 	. "github.com/onsi/ginkgo/internal/test_helpers"
 	"github.com/onsi/ginkgo/types"
@@ -41,7 +41,7 @@ var _ = Describe("Sending reports to ReportAfterSuite nodes", func() {
 			})
 			ReportAfterSuite("Report B", func(report Report) {
 				if interruptSuiteB {
-					interruptHandler.Interrupt(internal.InterruptCauseTimeout)
+					interruptHandler.Interrupt(interrupt_handler.InterruptCauseTimeout)
 					time.Sleep(100 * time.Millisecond)
 				}
 				rt.RunWithData("report-B", "report", report, "emitted-interrupt", interruptHandler.EmittedInterruptPlaceholderMessage())
