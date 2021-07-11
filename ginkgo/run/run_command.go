@@ -9,7 +9,7 @@ import (
 	"github.com/onsi/ginkgo/formatter"
 	"github.com/onsi/ginkgo/ginkgo/command"
 	"github.com/onsi/ginkgo/ginkgo/internal"
-	"github.com/onsi/ginkgo/ginkgo/interrupthandler"
+	"github.com/onsi/ginkgo/internal/interrupt_handler"
 	"github.com/onsi/ginkgo/types"
 )
 
@@ -24,7 +24,8 @@ func BuildRunCommand() command.Command {
 		panic(err)
 	}
 
-	interruptHandler := interrupthandler.NewInterruptHandler()
+	interruptHandler := interrupt_handler.NewInterruptHandler(0, "")
+	interrupt_handler.SwallowSigQuit()
 
 	return command.Command{
 		Name:          "run",
@@ -60,7 +61,7 @@ type SpecRunner struct {
 	goFlagsConfig  types.GoFlagsConfig
 	flags          types.GinkgoFlagSet
 
-	interruptHandler *interrupthandler.InterruptHandler
+	interruptHandler *interrupt_handler.InterruptHandler
 }
 
 func (r *SpecRunner) RunSpecs(args []string, additionalArgs []string) {
@@ -117,7 +118,7 @@ OUTER_LOOP:
 			}
 			suites[suiteIdx] = suite
 
-			if r.interruptHandler.WasInterrupted() {
+			if r.interruptHandler.Status().Interrupted {
 				opc.StopAndDrain()
 				break OUTER_LOOP
 			}

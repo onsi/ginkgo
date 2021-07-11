@@ -4,7 +4,7 @@ import (
 	"time"
 
 	. "github.com/onsi/ginkgo"
-	"github.com/onsi/ginkgo/internal"
+	"github.com/onsi/ginkgo/internal/interrupt_handler"
 	. "github.com/onsi/ginkgo/internal/test_helpers"
 	"github.com/onsi/ginkgo/types"
 	. "github.com/onsi/gomega"
@@ -15,7 +15,7 @@ var _ = Describe("When a test suite is interrupted", func() {
 		BeforeEach(func() {
 			success, _ := RunFixture("interrupted test", func() {
 				BeforeSuite(rt.T("before-suite", func() {
-					interruptHandler.Interrupt(internal.InterruptCauseTimeout)
+					interruptHandler.Interrupt(interrupt_handler.InterruptCauseTimeout)
 					time.Sleep(time.Hour)
 				}))
 				AfterSuite(rt.T("after-suite"))
@@ -59,12 +59,12 @@ var _ = Describe("When a test suite is interrupted", func() {
 					It("runs", rt.T("runs"))
 					Describe("nested-container", func() {
 						BeforeEach(rt.T("bef.3-interrupt!", func() {
-							interruptHandler.Interrupt(internal.InterruptCauseTimeout)
+							interruptHandler.Interrupt(interrupt_handler.InterruptCauseTimeout)
 							time.Sleep(time.Hour)
 						}))
 						AfterEach(rt.T("aft.3a"))
 						AfterEach(rt.T("aft.3b", func() {
-							interruptHandler.Interrupt(internal.InterruptCauseTimeout)
+							interruptHandler.Interrupt(interrupt_handler.InterruptCauseTimeout)
 							time.Sleep(time.Hour)
 						}))
 						Describe("deeply-nested-container", func() {
