@@ -14,7 +14,7 @@ var _ = Describe("Decorations", func() {
 	})
 
 	It("processes the various decorations", func() {
-		session := startGinkgo(fm.PathTo("decorations"), "-v", "--no-color")
+		session := startGinkgo(fm.PathTo("decorations"), "-vv", "--no-color")
 		Eventually(session).Should(gexec.Exit(types.GINKGO_FOCUS_EXIT_CODE))
 
 		out := string(session.Out.Contents())

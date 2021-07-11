@@ -609,8 +609,6 @@ XMeasure("some measurement")
 
 > You don't need to remove the `func() { ... }` when you mark an `It` or `Measure` as pending.  Ginkgo will happily ignore any arguments after the string.
 
-> By default, Ginkgo will print out a description for each pending spec.  You can suppress this by setting the `--noisyPendings=false` flag.
-
 > By default, Ginkgo will not fail a suite for having pending specs.  You can pass the `--failOnPending` flag to reverse this behavior.
 
 Using the `P` and `X` prefixes marks specs as pending at compile time.  If you need to skip a spec at *runtime* (perhaps due to a constraint that can only be known at runtime) you may call `Skip` in your test:
@@ -624,8 +622,6 @@ It("should do something, if it can", func() {
     // assertions go here
 })
 ```
-
-> By default, Ginkgo will print out a description for each skipped spec.  You can suppress this by setting the `--noisySkippings=false` flag.
 
 Note that `Skip(...)` causes the closure to exit so there is no need to return.
 
@@ -1420,13 +1416,11 @@ Here are the flags that Ginkgo accepts:
 
     If present, Ginkgo's default reporter will print out the text and location for each spec before running it.  Also, the GinkgoWriter will flush its output to stdout in realtime.
 
-- `--noisyPendings=false`
 
-    By default, Ginkgo's default reporter will provide detailed output for pending specs.  You can set --noisyPendings=false to suppress this behavior.
+- `--vv`
 
-- `--noisySkippings=false`
+    If present, Ginkgo's default reporter will be even more verbose and will emit texts and locations for skipped tests.  Also implies `-v`.
 
-    By default, Ginkgo's default reporter will provide detailed output for skipped specs.  You can set --noisySkippings=false to suppress this behavior.
 
 - `--reportPassed`
 
