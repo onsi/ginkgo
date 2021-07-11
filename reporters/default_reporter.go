@@ -61,7 +61,7 @@ func NewDefaultReporter(conf types.ReporterConfig, writer io.Writer) *DefaultRep
 /* The Reporter Interface */
 
 func (r *DefaultReporter) SuiteWillBegin(report types.Report) {
-	if r.conf.Succinct {
+	if r.conf.Verbosity().Is(types.VerbosityLevelSuccinct) {
 		r.emit(r.f("[%d] {{bold}}%s{{/}} ", report.SuiteConfig.RandomSeed, report.SuiteDescription))
 		r.emit(r.f("- %d/%d specs ", report.PreRunStats.SpecsThatWillRun, report.PreRunStats.TotalSpecs))
 		if report.SuiteConfig.ParallelTotal > 1 {
@@ -86,7 +86,7 @@ func (r *DefaultReporter) SuiteWillBegin(report types.Report) {
 }
 
 func (r *DefaultReporter) WillRun(report types.SpecReport) {
-	if !r.conf.Verbose || report.State.Is(types.SpecStatePending, types.SpecStateSkipped) {
+	if r.conf.Verbosity().LT(types.VerbosityLevelVerbose) || report.State.Is(types.SpecStatePending, types.SpecStateSkipped) {
 		return
 	}
 
@@ -105,13 +105,14 @@ func (r *DefaultReporter) WillRun(report types.SpecReport) {
 }
 
 func (r *DefaultReporter) DidRun(report types.SpecReport) {
+	v := r.conf.Verbosity()
 	var header, highlightColor string
 	includeRuntime, emitGinkgoWriterOutput, stream, denoter := true, true, false, r.specDenoter
-	succinctLocationBlock := r.conf.Succinct
+	succinctLocationBlock := v.Is(types.VerbosityLevelSuccinct)
 
 	hasGW := report.CapturedGinkgoWriterOutput != ""
 	hasStd := report.CapturedStdOutErr != ""
-	hasEmittableReports := report.ReportEntries.HasVisibility(types.ReportEntryVisibilityAlways) || (report.ReportEntries.HasVisibility(types.ReportEntryVisibilityFailureOrVerbose) && (!report.Failure.IsZero() || r.conf.Verbose))
+	hasEmittableReports := report.ReportEntries.HasVisibility(types.ReportEntryVisibilityAlways) || (report.ReportEntries.HasVisibility(types.ReportEntryVisibilityFailureOrVerbose) && (!report.Failure.IsZero() || v.GTE(types.VerbosityLevelVerbose)))
 
 	if report.LeafNodeType.Is(types.NodeTypesForSuiteLevelNodes...) {
 		denoter = fmt.Sprintf("[%s]", report.LeafNodeType)
@@ -119,10 +120,10 @@ func (r *DefaultReporter) DidRun(report types.SpecReport) {
 
 	switch report.State {
 	case types.SpecStatePassed:
-		highlightColor, succinctLocationBlock = "{{green}}", !r.conf.Verbose
-		emitGinkgoWriterOutput = (r.conf.ReportPassed || r.conf.Verbose) && hasGW
+		highlightColor, succinctLocationBlock = "{{green}}", v.LT(types.VerbosityLevelVerbose)
+		emitGinkgoWriterOutput = (r.conf.ReportPassed || v.GTE(types.VerbosityLevelVerbose)) && hasGW
 		if report.LeafNodeType.Is(types.NodeTypesForSuiteLevelNodes...) {
-			if r.conf.Verbose || hasStd || hasEmittableReports {
+			if v.GTE(types.VerbosityLevelVerbose) || hasStd || hasEmittableReports {
 				header = fmt.Sprintf("%s PASSED", denoter)
 			} else {
 				return
@@ -142,17 +143,17 @@ func (r *DefaultReporter) DidRun(report types.SpecReport) {
 	case types.SpecStatePending:
 		highlightColor = "{{yellow}}"
 		includeRuntime, emitGinkgoWriterOutput = false, false
-		if r.conf.Succinct {
+		if v.Is(types.VerbosityLevelSuccinct) {
 			header, stream = "P", true
 		} else {
-			header, succinctLocationBlock = "P [PENDING]", !r.conf.Verbose
+			header, succinctLocationBlock = "P [PENDING]", v.LT(types.VerbosityLevelVeryVerbose)
 		}
 	case types.SpecStateSkipped:
 		highlightColor = "{{cyan}}"
-		if r.conf.Succinct || (!r.conf.Verbose && report.Failure.Message == "") {
-			header, stream = "S", true
+		if report.Failure.Message != "" || v.Is(types.VerbosityLevelVeryVerbose) {
+			header = "S [SKIPPED]"
 		} else {
-			header, succinctLocationBlock = "S [SKIPPED]", !r.conf.Verbose
+			header, stream = "S", true
 		}
 	case types.SpecStateFailed:
 		highlightColor, header = "{{red}}", fmt.Sprintf("%s [FAILED]", denoter)
@@ -200,7 +201,7 @@ func (r *DefaultReporter) DidRun(report types.SpecReport) {
 		r.emitBlock("\n")
 		r.emitBlock(r.fi(1, "{{gray}}Begin Report Entries >>{{/}}"))
 		reportEntries := report.ReportEntries.WithVisibility(types.ReportEntryVisibilityAlways)
-		if !report.Failure.IsZero() || r.conf.Verbose {
+		if !report.Failure.IsZero() || v.GTE(types.VerbosityLevelVerbose) {
 			reportEntries = report.ReportEntries.WithVisibility(types.ReportEntryVisibilityAlways, types.ReportEntryVisibilityFailureOrVerbose)
 		}
 		for _, entry := range reportEntries {
@@ -253,7 +254,7 @@ func (r *DefaultReporter) SuiteDidEnd(report types.Report) {
 	}
 
 	//summarize the suite
-	if r.conf.Succinct && report.SuiteSucceeded {
+	if r.conf.Verbosity().Is(types.VerbosityLevelSuccinct) && report.SuiteSucceeded {
 		r.emit(r.f(" {{green}}SUCCESS!{{/}} %s ", report.RunTime))
 		return
 	}

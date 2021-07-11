@@ -87,7 +87,7 @@ func (r *SpecRunner) RunSpecs(args []string, additionalArgs []string) {
 		command.AbortWith("Found no test suites")
 	}
 
-	if len(suites) > 1 && !r.flags.WasSet("succinct") && !r.reporterConfig.Verbose {
+	if len(suites) > 1 && !r.flags.WasSet("succinct") && r.reporterConfig.Verbosity().LT(types.VerbosityLevelVerbose) {
 		r.reporterConfig.Succinct = true
 	}
 

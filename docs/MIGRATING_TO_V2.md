@@ -269,6 +269,7 @@ In V1 Ginkgo would run windows tests in parallel with the `--stream` option.  Th
 - Error output is clearer and consistently links to relevant sections in the documentation.
 - `By` now emits a timestamp.  It also registers a `ReportEntry` that appears in the suite report as structured data.  If passed a callback, `By` will now time the callback and include the duration in the suite report.
 - Test randomization is now more stable as tests are now sorted deterministcally on file_name:line_number first (previously they were sorted on test text which could not guarantee a stable sort).
+- A new "very verbose" setting is now available.  Setting `-vv` implies `-v` but also causes skipped tests to be emitted.
 
 # Changes
 
@@ -363,7 +364,7 @@ Users should update any scripts they have that invoke the `ginkgo` cli from came
 `-notify` instructed Ginkgo to emit desktop notifications on linux and MacOS.  This feature was rarely used and has been removed.
 
 ### Removed: `-noisyPendings` and `-noisySkippings`
-Both these flags tweaked the reporter's behavior for pending and skipped tests.  A similar, and more intuitive, outcome is possible using `--succinct` and `-v`.
+Both these flags tweaked the reporter's behavior for pending and skipped tests but never worked quite right.  Now the user can specify between four verbosity levels.  `--succinct`, no verbosity setting, `-v`, and `-vv`.  Specifically, when run with `-vv`  skipped tests will emit their titles and code locations - otherwise skipped tests are silent.
 
 ### Changed: `-slowSpecThreshold`
 `-slowSpecThreshold` is now `-slow-spec-threshold` and takes a `time.Duration` (e.g. `5s` or `3m`) instead of a `float64` number of seconds.
