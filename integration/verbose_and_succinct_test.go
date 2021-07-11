@@ -79,5 +79,27 @@ var _ = Describe("Verbose And Succinct Mode", func() {
 				Ω(output).Should(ContainSubstring("emitting another By"))
 			})
 		})
+
+		Context("with -vv", func() {
+			It("should not be in succinct mode, but should be verbose", func() {
+				session := startGinkgo(fm.TmpDir, "--no-color", "-vv", "passing_ginkgo_tests", "more_ginkgo_tests")
+				Eventually(session).Should(gexec.Exit(0))
+				output := session.Out.Contents()
+
+				Ω(output).Should(ContainSubstring("Running Suite: Passing_ginkgo_tests Suite"))
+				Ω(output).Should(ContainSubstring("Running Suite: More_ginkgo_tests Suite"))
+				Ω(output).Should(ContainSubstring("should proxy strings"))
+				Ω(output).Should(ContainSubstring("should always pass"))
+			})
+
+			It("should emit output from Bys", func() {
+				session := startGinkgo(fm.PathTo("passing_ginkgo_tests"), "--no-color", "-vv")
+				Eventually(session).Should(gexec.Exit(0))
+				output := session.Out.Contents()
+
+				Ω(output).Should(ContainSubstring("emitting one By"))
+				Ω(output).Should(ContainSubstring("emitting another By"))
+			})
+		})
 	})
 })
