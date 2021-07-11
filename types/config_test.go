@@ -44,6 +44,49 @@ var _ = Describe("Config", func() {
 				Ω(repConf.WillGenerateReport()).Should(BeTrue())
 			})
 		})
+
+		Describe("Verbosity", func() {
+			It("returns the appropriate verbosity level", func() {
+				repConf := types.ReporterConfig{}
+				Ω(repConf.Verbosity()).Should(Equal(types.VerbosityLevelNormal))
+
+				repConf = types.ReporterConfig{Succinct: true}
+				Ω(repConf.Verbosity()).Should(Equal(types.VerbosityLevelSuccinct))
+
+				repConf = types.ReporterConfig{Verbose: true}
+				Ω(repConf.Verbosity()).Should(Equal(types.VerbosityLevelVerbose))
+
+				repConf = types.ReporterConfig{VeryVerbose: true}
+				Ω(repConf.Verbosity()).Should(Equal(types.VerbosityLevelVeryVerbose))
+			})
+
+			It("can do verbosity math", func() {
+				Ω(types.VerbosityLevelNormal.LT(types.VerbosityLevelVeryVerbose)).Should(BeTrue())
+				Ω(types.VerbosityLevelNormal.LT(types.VerbosityLevelVerbose)).Should(BeTrue())
+				Ω(types.VerbosityLevelNormal.LT(types.VerbosityLevelNormal)).Should(BeFalse())
+				Ω(types.VerbosityLevelNormal.LT(types.VerbosityLevelSuccinct)).Should(BeFalse())
+
+				Ω(types.VerbosityLevelNormal.LTE(types.VerbosityLevelVeryVerbose)).Should(BeTrue())
+				Ω(types.VerbosityLevelNormal.LTE(types.VerbosityLevelVerbose)).Should(BeTrue())
+				Ω(types.VerbosityLevelNormal.LTE(types.VerbosityLevelNormal)).Should(BeTrue())
+				Ω(types.VerbosityLevelNormal.LTE(types.VerbosityLevelSuccinct)).Should(BeFalse())
+
+				Ω(types.VerbosityLevelNormal.GT(types.VerbosityLevelVeryVerbose)).Should(BeFalse())
+				Ω(types.VerbosityLevelNormal.GT(types.VerbosityLevelVerbose)).Should(BeFalse())
+				Ω(types.VerbosityLevelNormal.GT(types.VerbosityLevelNormal)).Should(BeFalse())
+				Ω(types.VerbosityLevelNormal.GT(types.VerbosityLevelSuccinct)).Should(BeTrue())
+
+				Ω(types.VerbosityLevelNormal.GTE(types.VerbosityLevelVeryVerbose)).Should(BeFalse())
+				Ω(types.VerbosityLevelNormal.GTE(types.VerbosityLevelVerbose)).Should(BeFalse())
+				Ω(types.VerbosityLevelNormal.GTE(types.VerbosityLevelNormal)).Should(BeTrue())
+				Ω(types.VerbosityLevelNormal.GTE(types.VerbosityLevelSuccinct)).Should(BeTrue())
+
+				Ω(types.VerbosityLevelNormal.Is(types.VerbosityLevelVeryVerbose)).Should(BeFalse())
+				Ω(types.VerbosityLevelNormal.Is(types.VerbosityLevelVerbose)).Should(BeFalse())
+				Ω(types.VerbosityLevelNormal.Is(types.VerbosityLevelNormal)).Should(BeTrue())
+				Ω(types.VerbosityLevelNormal.Is(types.VerbosityLevelSuccinct)).Should(BeFalse())
+			})
+		})
 	})
 
 	Describe("VetConfig", func() {
@@ -163,14 +206,23 @@ var _ = Describe("Config", func() {
 			})
 		})
 
-		Context("when succint and verbose are both set", func() {
-			BeforeEach(func() {
-				repConf.Succinct = true
-				repConf.Verbose = true
-			})
+		Context("when more than one verbosity flag is set", func() {
 			It("errors", func() {
+				repConf.Succinct, repConf.Verbose, repConf.VeryVerbose = true, true, false
 				errors := types.VetConfig(flagSet, suiteConf, repConf)
-				Ω(errors).Should(ConsistOf(types.GinkgoErrors.ConflictingVerboseSuccinctConfiguration()))
+				Ω(errors).Should(ConsistOf(types.GinkgoErrors.ConflictingVerbosityConfiguration()))
+
+				repConf.Succinct, repConf.Verbose, repConf.VeryVerbose = true, false, true
+				errors = types.VetConfig(flagSet, suiteConf, repConf)
+				Ω(errors).Should(ConsistOf(types.GinkgoErrors.ConflictingVerbosityConfiguration()))
+
+				repConf.Succinct, repConf.Verbose, repConf.VeryVerbose = false, true, true
+				errors = types.VetConfig(flagSet, suiteConf, repConf)
+				Ω(errors).Should(ConsistOf(types.GinkgoErrors.ConflictingVerbosityConfiguration()))
+
+				repConf.Succinct, repConf.Verbose, repConf.VeryVerbose = true, true, true
+				errors = types.VetConfig(flagSet, suiteConf, repConf)
+				Ω(errors).Should(ConsistOf(types.GinkgoErrors.ConflictingVerbosityConfiguration()))
 			})
 		})
 	})

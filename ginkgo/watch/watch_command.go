@@ -165,7 +165,7 @@ func (w *SpecWatcher) compileAndRun(suite internal.TestSuite, additionalArgs []s
 }
 
 func (w *SpecWatcher) computeSuccinctMode(numSuites int) {
-	if w.reporterConfig.Verbose {
+	if w.reporterConfig.Verbosity().GTE(types.VerbosityLevelVerbose) {
 		w.reporterConfig.Succinct = false
 		return
 	}

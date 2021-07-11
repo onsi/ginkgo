@@ -42,18 +42,59 @@ func NewDefaultSuiteConfig() SuiteConfig {
 	}
 }
 
+type VerbosityLevel uint
+
+const (
+	VerbosityLevelSuccinct VerbosityLevel = iota
+	VerbosityLevelNormal
+	VerbosityLevelVerbose
+	VerbosityLevelVeryVerbose
+)
+
+func (vl VerbosityLevel) GT(comp VerbosityLevel) bool {
+	return vl > comp
+}
+
+func (vl VerbosityLevel) GTE(comp VerbosityLevel) bool {
+	return vl >= comp
+}
+
+func (vl VerbosityLevel) Is(comp VerbosityLevel) bool {
+	return vl == comp
+}
+
+func (vl VerbosityLevel) LTE(comp VerbosityLevel) bool {
+	return vl <= comp
+}
+
+func (vl VerbosityLevel) LT(comp VerbosityLevel) bool {
+	return vl < comp
+}
+
 // Configuration for Ginkgo's reporter
 type ReporterConfig struct {
 	NoColor           bool
 	SlowSpecThreshold time.Duration
 	Succinct          bool
 	Verbose           bool
+	VeryVerbose       bool
 	FullTrace         bool
 	ReportPassed      bool
 
 	JSONReport     string
 	JUnitReport    string
 	TeamcityReport string
+}
+
+func (rc ReporterConfig) Verbosity() VerbosityLevel {
+	if rc.Succinct {
+		return VerbosityLevelSuccinct
+	} else if rc.Verbose {
+		return VerbosityLevelVerbose
+	} else if rc.VeryVerbose {
+		return VerbosityLevelVeryVerbose
+	}
+	return VerbosityLevelNormal
 }
 
 func (rc ReporterConfig) WillGenerateReport() bool {
@@ -256,7 +297,9 @@ var ReporterConfigFlags = GinkgoFlags{
 	{KeyPath: "R.SlowSpecThreshold", Name: "slow-spec-threshold", SectionKey: "output", UsageArgument: "duration", UsageDefaultValue: "5s",
 		Usage: "Specs that take longer to run than this threshold are flagged as slow by the default reporter."},
 	{KeyPath: "R.Verbose", Name: "v", SectionKey: "output",
-		Usage: "If set, default reporter print out all specs as they begin."},
+		Usage: "If set, emits more output including GinkgoWriter contents."},
+	{KeyPath: "R.VeryVerbose", Name: "vv", SectionKey: "output",
+		Usage: "If set, emits with maximal verbosity - includes skipped and pending tests."},
 	{KeyPath: "R.Succinct", Name: "succinct", SectionKey: "output",
 		Usage: "If set, default reporter prints out a very succinct report"},
 	{KeyPath: "R.FullTrace", Name: "trace", SectionKey: "output",
@@ -336,8 +379,14 @@ func VetConfig(flagSet GinkgoFlagSet, suiteConfig SuiteConfig, reporterConfig Re
 		errors = append(errors, GinkgoErrors.DryRunInParallelConfiguration())
 	}
 
-	if reporterConfig.Succinct && reporterConfig.Verbose {
-		errors = append(errors, GinkgoErrors.ConflictingVerboseSuccinctConfiguration())
+	numVerbosity := 0
+	for _, v := range []bool{reporterConfig.Succinct, reporterConfig.Verbose, reporterConfig.VeryVerbose} {
+		if v {
+			numVerbosity++
+		}
+	}
+	if numVerbosity > 1 {
+		errors = append(errors, GinkgoErrors.ConflictingVerbosityConfiguration())
 	}
 
 	return errors

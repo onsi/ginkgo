@@ -298,10 +298,10 @@ func (g ginkgoErrors) DryRunInParallelConfiguration() error {
 	}
 }
 
-func (g ginkgoErrors) ConflictingVerboseSuccinctConfiguration() error {
+func (g ginkgoErrors) ConflictingVerbosityConfiguration() error {
 	return GinkgoError{
-		Heading: "Conflicting reporter verbosity settings -v and --succinct.",
-		Message: "You can't set both -v and --succinct.  Please pick one!",
+		Heading: "Conflicting reporter verbosity settings.",
+		Message: "You can't set more than one of -v, -vv and --succinct.  Please pick one!",
 	}
 }
 
