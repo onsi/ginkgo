@@ -7,6 +7,7 @@ import (
 	. "github.com/onsi/ginkgo"
 	. "github.com/onsi/gomega"
 
+	"github.com/onsi/ginkgo/internal/interrupt_handler"
 	. "github.com/onsi/ginkgo/internal/test_helpers"
 	"github.com/onsi/ginkgo/types"
 
@@ -22,7 +23,7 @@ var _ = Describe("Suite", func() {
 	var reporter *FakeReporter
 	var writer *internal.Writer
 	var outputInterceptor *FakeOutputInterceptor
-	var interruptHandler *internal.InterruptHandler
+	var interruptHandler *interrupt_handler.InterruptHandler
 	var conf types.SuiteConfig
 	var rt *RunTracker
 
@@ -31,7 +32,7 @@ var _ = Describe("Suite", func() {
 		reporter = &FakeReporter{}
 		writer = internal.NewWriter(ioutil.Discard)
 		outputInterceptor = NewFakeOutputInterceptor()
-		interruptHandler = internal.NewInterruptHandler(0, "")
+		interruptHandler = interrupt_handler.NewInterruptHandler(0, "")
 		conf = types.SuiteConfig{
 			ParallelTotal: 1,
 			ParallelNode:  1,
