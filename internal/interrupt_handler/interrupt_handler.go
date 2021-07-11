@@ -1,4 +1,4 @@
-package internal
+package interrupt_handler
 
 import (
 	"fmt"

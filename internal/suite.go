@@ -5,6 +5,7 @@ import (
 	"time"
 
 	"github.com/onsi/ginkgo/formatter"
+	"github.com/onsi/ginkgo/internal/interrupt_handler"
 	"github.com/onsi/ginkgo/internal/parallel_support"
 	"github.com/onsi/ginkgo/reporters"
 	"github.com/onsi/ginkgo/types"
@@ -51,7 +52,7 @@ func (suite *Suite) BuildTree() error {
 	return nil
 }
 
-func (suite *Suite) Run(description string, suitePath string, failer *Failer, reporter reporters.Reporter, writer WriterInterface, outputInterceptor OutputInterceptor, interruptHandler InterruptHandlerInterface, suiteConfig types.SuiteConfig) (bool, bool) {
+func (suite *Suite) Run(description string, suitePath string, failer *Failer, reporter reporters.Reporter, writer WriterInterface, outputInterceptor OutputInterceptor, interruptHandler interrupt_handler.InterruptHandlerInterface, suiteConfig types.SuiteConfig) (bool, bool) {
 	if suite.phase != PhaseBuildTree {
 		panic("cannot run before building the tree = call suite.BuildTree() first")
 	}
@@ -163,7 +164,7 @@ func (suite *Suite) AddReportEntry(entry ReportEntry) error {
 	return nil
 }
 
-func (suite *Suite) runSpecs(description string, suitePath string, hasProgrammaticFocus bool, specs Specs, failer *Failer, reporter reporters.Reporter, writer WriterInterface, outputInterceptor OutputInterceptor, interruptHandler InterruptHandlerInterface, suiteConfig types.SuiteConfig) bool {
+func (suite *Suite) runSpecs(description string, suitePath string, hasProgrammaticFocus bool, specs Specs, failer *Failer, reporter reporters.Reporter, writer WriterInterface, outputInterceptor OutputInterceptor, interruptHandler interrupt_handler.InterruptHandlerInterface, suiteConfig types.SuiteConfig) bool {
 	suite.writer = writer
 
 	numSpecsThatWillBeRun := specs.CountWithoutSkip()
@@ -318,7 +319,7 @@ func (suite *Suite) runSpecs(description string, suitePath string, hasProgrammat
 // runSpec(spec) mutates currentSpecReport.  this is ugly
 // but it allows the user to call CurrentGinkgoSpecDescription and get
 // an up-to-date state of the spec **from within a running spec**
-func (suite *Suite) runSpec(spec Spec, failer *Failer, interruptHandler InterruptHandlerInterface, writer WriterInterface, outputInterceptor OutputInterceptor, suiteConfig types.SuiteConfig) {
+func (suite *Suite) runSpec(spec Spec, failer *Failer, interruptHandler interrupt_handler.InterruptHandlerInterface, writer WriterInterface, outputInterceptor OutputInterceptor, suiteConfig types.SuiteConfig) {
 	if suiteConfig.DryRun {
 		suite.currentSpecReport.State = types.SpecStatePassed
 		return
@@ -380,7 +381,7 @@ func (suite *Suite) runSpec(spec Spec, failer *Failer, interruptHandler Interrup
 	}
 }
 
-func (suite *Suite) reportAfterEach(spec Spec, failer *Failer, interruptHandler InterruptHandlerInterface, writer WriterInterface, outputInterceptor OutputInterceptor, suiteConfig types.SuiteConfig) {
+func (suite *Suite) reportAfterEach(spec Spec, failer *Failer, interruptHandler interrupt_handler.InterruptHandlerInterface, writer WriterInterface, outputInterceptor OutputInterceptor, suiteConfig types.SuiteConfig) {
 	nodes := spec.Nodes.WithType(types.NodeTypeReportAfterEach).SortedByDescendingNestingLevel()
 	if len(nodes) == 0 {
 		return
@@ -408,7 +409,7 @@ func (suite *Suite) reportAfterEach(spec Spec, failer *Failer, interruptHandler 
 	}
 }
 
-func (suite *Suite) runSuiteNode(node Node, failer *Failer, interruptChannel chan interface{}, interruptHandler InterruptHandlerInterface, writer WriterInterface, outputInterceptor OutputInterceptor, suiteConfig types.SuiteConfig) {
+func (suite *Suite) runSuiteNode(node Node, failer *Failer, interruptChannel chan interface{}, interruptHandler interrupt_handler.InterruptHandlerInterface, writer WriterInterface, outputInterceptor OutputInterceptor, suiteConfig types.SuiteConfig) {
 	if suiteConfig.DryRun {
 		suite.currentSpecReport.State = types.SpecStatePassed
 		return
@@ -471,7 +472,7 @@ func (suite *Suite) runSuiteNode(node Node, failer *Failer, interruptChannel cha
 	return
 }
 
-func (suite *Suite) runReportAfterSuiteNode(node Node, report types.Report, failer *Failer, interruptHandler InterruptHandlerInterface, writer WriterInterface, outputInterceptor OutputInterceptor, suiteConfig types.SuiteConfig) {
+func (suite *Suite) runReportAfterSuiteNode(node Node, report types.Report, failer *Failer, interruptHandler interrupt_handler.InterruptHandlerInterface, writer WriterInterface, outputInterceptor OutputInterceptor, suiteConfig types.SuiteConfig) {
 	if suiteConfig.DryRun {
 		suite.currentSpecReport.State = types.SpecStatePassed
 		return
@@ -506,7 +507,7 @@ func (suite *Suite) runReportAfterSuiteNode(node Node, report types.Report, fail
 	return
 }
 
-func (suite *Suite) runNode(node Node, failer *Failer, interruptChannel chan interface{}, interruptHandler InterruptHandlerInterface, text string, writer WriterInterface, suiteConfig types.SuiteConfig) (types.SpecState, types.Failure) {
+func (suite *Suite) runNode(node Node, failer *Failer, interruptChannel chan interface{}, interruptHandler interrupt_handler.InterruptHandlerInterface, text string, writer WriterInterface, suiteConfig types.SuiteConfig) (types.SpecState, types.Failure) {
 	if suiteConfig.EmitSpecProgress {
 		if text == "" {
 			text = "TOP-LEVEL"

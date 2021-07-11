@@ -3,7 +3,7 @@ package test_helpers
 import (
 	"sync"
 
-	"github.com/onsi/ginkgo/internal"
+	"github.com/onsi/ginkgo/internal/interrupt_handler"
 )
 
 type FakeInterruptHandler struct {
@@ -13,7 +13,7 @@ type FakeInterruptHandler struct {
 	stop                               chan interface{}
 	lock                               *sync.Mutex
 	interrupted                        bool
-	cause                              internal.InterruptCause
+	cause                              interrupt_handler.InterruptCause
 	interruptPlaceholderMessage        string
 	emittedInterruptPlaceholderMessage string
 }
@@ -52,7 +52,7 @@ func (handler *FakeInterruptHandler) registerForInterrupts() {
 	}()
 }
 
-func (handler *FakeInterruptHandler) Interrupt(cause internal.InterruptCause) {
+func (handler *FakeInterruptHandler) Interrupt(cause interrupt_handler.InterruptCause) {
 	handler.lock.Lock()
 	handler.cause = cause
 	handler.lock.Unlock()
@@ -60,11 +60,11 @@ func (handler *FakeInterruptHandler) Interrupt(cause internal.InterruptCause) {
 	handler.triggerInterrupt <- true
 }
 
-func (handler *FakeInterruptHandler) Status() internal.InterruptStatus {
+func (handler *FakeInterruptHandler) Status() interrupt_handler.InterruptStatus {
 	handler.lock.Lock()
 	defer handler.lock.Unlock()
 
-	return internal.InterruptStatus{
+	return interrupt_handler.InterruptStatus{
 		Interrupted: handler.interrupted,
 		Channel:     handler.c,
 		Cause:       handler.cause,

@@ -22,6 +22,7 @@ import (
 	"github.com/onsi/ginkgo/formatter"
 	"github.com/onsi/ginkgo/internal"
 	"github.com/onsi/ginkgo/internal/global"
+	"github.com/onsi/ginkgo/internal/interrupt_handler"
 	"github.com/onsi/ginkgo/internal/testingtproxy"
 	"github.com/onsi/ginkgo/reporters"
 	"github.com/onsi/ginkgo/types"
@@ -200,7 +201,7 @@ func RunSpecs(t GinkgoTestingT, description string) bool {
 	suitePath, err = filepath.Abs(suitePath)
 	exitIfErr(err)
 
-	passed, hasFocusedTests := global.Suite.Run(description, suitePath, global.Failer, reporter, writer, outputInterceptor, internal.NewInterruptHandler(suiteConfig.Timeout, suiteConfig.ParallelHost), suiteConfig)
+	passed, hasFocusedTests := global.Suite.Run(description, suitePath, global.Failer, reporter, writer, outputInterceptor, interrupt_handler.NewInterruptHandler(suiteConfig.Timeout, suiteConfig.ParallelHost), suiteConfig)
 
 	flagSet.ValidateDeprecations(deprecationTracker)
 	if deprecationTracker.DidTrackDeprecations() {

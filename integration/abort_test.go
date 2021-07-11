@@ -6,7 +6,7 @@ import (
 	"github.com/onsi/gomega/gbytes"
 	"github.com/onsi/gomega/gexec"
 
-	"github.com/onsi/ginkgo/internal"
+	"github.com/onsi/ginkgo/internal/interrupt_handler"
 	. "github.com/onsi/ginkgo/internal/test_helpers"
 	"github.com/onsi/ginkgo/reporters"
 	"github.com/onsi/ginkgo/types"
@@ -30,7 +30,7 @@ var _ = Describe("Abort", func() {
 		specs := Reports(report.SpecReports)
 		Ω(specs.Find("runs and passes")).Should(HavePassed())
 		Ω(specs.Find("aborts")).Should(HaveAborted("this suite needs to end now!"))
-		Ω(specs.Find("never runs")).Should(HaveBeenInterrupted(internal.InterruptCauseAbortByOtherProcess))
+		Ω(specs.Find("never runs")).Should(HaveBeenInterrupted(interrupt_handler.InterruptCauseAbortByOtherProcess))
 		Ω(specs.Find("never runs either")).Should(HaveBeenSkipped())
 
 		junitSuites := fm.LoadJUnitReport("abort", "out.xml")

@@ -1,6 +1,6 @@
 // +build freebsd openbsd netbsd dragonfly darwin linux solaris
 
-package interrupthandler
+package interrupt_handler
 
 import (
 	"os"
