@@ -8,7 +8,7 @@ import (
 	"github.com/onsi/ginkgo/formatter"
 	"github.com/onsi/ginkgo/ginkgo/command"
 	"github.com/onsi/ginkgo/ginkgo/internal"
-	"github.com/onsi/ginkgo/ginkgo/interrupthandler"
+	"github.com/onsi/ginkgo/internal/interrupt_handler"
 	"github.com/onsi/ginkgo/types"
 )
 
@@ -22,7 +22,8 @@ func BuildWatchCommand() command.Command {
 	if err != nil {
 		panic(err)
 	}
-	interruptHandler := interrupthandler.NewInterruptHandler()
+	interruptHandler := interrupt_handler.NewInterruptHandler(0, "")
+	interrupt_handler.SwallowSigQuit()
 
 	return command.Command{
 		Name:          "watch",
@@ -58,7 +59,7 @@ type SpecWatcher struct {
 	goFlagsConfig  types.GoFlagsConfig
 	flags          types.GinkgoFlagSet
 
-	interruptHandler *interrupthandler.InterruptHandler
+	interruptHandler *interrupt_handler.InterruptHandler
 }
 
 func (w *SpecWatcher) WatchSpecs(args []string, additionalArgs []string) {
@@ -126,7 +127,7 @@ func (w *SpecWatcher) WatchSpecs(args []string, additionalArgs []string) {
 			w.updateSeed()
 			w.computeSuccinctMode(len(suites))
 			for idx := range suites {
-				if w.interruptHandler.WasInterrupted() {
+				if w.interruptHandler.Status().Interrupted {
 					return
 				}
 				deltaTracker.WillRun(suites[idx])
@@ -143,7 +144,7 @@ func (w *SpecWatcher) WatchSpecs(args []string, additionalArgs []string) {
 			for _, message := range messages {
 				fmt.Println(message)
 			}
-		case <-w.interruptHandler.InterruptChannel():
+		case <-w.interruptHandler.Status().Channel:
 			return
 		}
 	}
@@ -155,7 +156,7 @@ func (w *SpecWatcher) compileAndRun(suite internal.TestSuite, additionalArgs []s
 		fmt.Println(suite.CompilationError.Error())
 		return suite
 	}
-	if w.interruptHandler.WasInterrupted() {
+	if w.interruptHandler.Status().Interrupted {
 		return suite
 	}
 	suite = internal.RunCompiledSuite(suite, w.suiteConfig, w.reporterConfig, w.cliConfig, w.goFlagsConfig, additionalArgs)
