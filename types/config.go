@@ -505,7 +505,7 @@ var GoBuildFlags = GinkgoFlags{
 var GoRunFlags = GinkgoFlags{
 	{KeyPath: "Go.CoverProfile", Name: "coverprofile", UsageArgument: "file", SectionKey: "code-and-coverage-analysis",
 		Usage: `Write a coverage profile to the file after all tests have passed. Sets -cover.`},
-	{KeyPath: "Go.BlockProfile", Name: "blockprofile", UsageArgument: "rile", SectionKey: "performance-analysis",
+	{KeyPath: "Go.BlockProfile", Name: "blockprofile", UsageArgument: "file", SectionKey: "performance-analysis",
 		Usage: `Write a goroutine blocking profile to the specified file when all tests are complete. Preserves test binary.`},
 	{KeyPath: "Go.BlockProfileRate", Name: "blockprofilerate", UsageArgument: "rate", SectionKey: "performance-analysis",
 		Usage: `Control the detail provided in goroutine blocking profiles by calling runtime.SetBlockProfileRate with rate. See 'go doc runtime.SetBlockProfileRate'. The profiler aims to sample, on average, one blocking event every n nanoseconds the program spends blocked. By default, if -test.blockprofile is set without this flag, all blocking events are recorded, equivalent to -test.blockprofilerate=1.`},
@@ -574,8 +574,8 @@ func GenerateGoTestCompileArgs(goFlagsConfig GoFlagsConfig, destination string, 
 	return args, nil
 }
 
-// GenerateTestRunArgs is used by the Ginkgo CLI to generate command line arguments to pass to the compiled test binary
-func GenerateTestRunArgs(suiteConfig SuiteConfig, reporterConfig ReporterConfig, goFlagsConfig GoFlagsConfig) ([]string, error) {
+// GenerateGinkgoTestRunArgs is used by the Ginkgo CLI to generate command line arguments to pass to the compiled Ginkgo test binary
+func GenerateGinkgoTestRunArgs(suiteConfig SuiteConfig, reporterConfig ReporterConfig, goFlagsConfig GoFlagsConfig) ([]string, error) {
 	var flags GinkgoFlags
 	flags = SuiteConfigFlags.WithPrefix("ginkgo")
 	flags = flags.CopyAppend(ParallelConfigFlags.WithPrefix("ginkgo")...)
@@ -588,6 +588,21 @@ func GenerateTestRunArgs(suiteConfig SuiteConfig, reporterConfig ReporterConfig,
 	}
 
 	return GenerateFlagArgs(flags, bindings)
+}
+
+// GenerateGoTestRunArgs is used by the Ginkgo CLI to generate command line arguments to pass to the compiled non-Ginkgo test binary
+func GenerateGoTestRunArgs(goFlagsConfig GoFlagsConfig) ([]string, error) {
+	flags := GoRunFlags.WithPrefix("test")
+	bindings := map[string]interface{}{
+		"Go": &goFlagsConfig,
+	}
+
+	args, err := GenerateFlagArgs(flags, bindings)
+	if err != nil {
+		return args, err
+	}
+	args = append(args, "--test.v")
+	return args, nil
 }
 
 // BuildRunCommandFlagSet builds the FlagSet for the `ginkgo run` command
