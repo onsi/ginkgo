@@ -200,13 +200,15 @@ var _ = Describe("Running Specs", func() {
 			fm.MountFixture("xunit")
 		})
 
-		It("should run the xunit style tests", func() {
-			session := startGinkgo(fm.PathTo("xunit"))
+		It("should run the xunit style tests, always setting -test.v and passing in supported go test flags", func() {
+			session := startGinkgo(fm.PathTo("xunit"), "-blockprofile=block-profile.out")
 			Eventually(session).Should(gexec.Exit(0))
 			output := string(session.Out.Contents())
 
 			Ω(output).Should(ContainSubstring("--- PASS: TestAlwaysTrue"))
 			Ω(output).Should(ContainSubstring("Test Suite Passed"))
+
+			Ω(fm.PathTo("xunit", "block-profile.out")).Should(BeAnExistingFile())
 		})
 	})
 
