@@ -32,7 +32,7 @@ func RunCompiledSuite(suite TestSuite, ginkgoConfig types.SuiteConfig, reporterC
 	} else if suite.IsGinkgo {
 		suite = runSerial(suite, ginkgoConfig, reporterConfig, cliConfig, goFlagsConfig, additionalArgs)
 	} else {
-		suite = runGoTest(suite, cliConfig)
+		suite = runGoTest(suite, cliConfig, goFlagsConfig)
 	}
 	runAfterRunHook(cliConfig.AfterRunHook, reporterConfig.NoColor, suite)
 	return suite
@@ -63,8 +63,10 @@ func checkForNoTestsWarning(buf *bytes.Buffer) bool {
 	return false
 }
 
-func runGoTest(suite TestSuite, cliConfig types.CLIConfig) TestSuite {
-	cmd, buf := buildAndStartCommand(suite, []string{"-test.v"}, true)
+func runGoTest(suite TestSuite, cliConfig types.CLIConfig, goFlagsConfig types.GoFlagsConfig) TestSuite {
+	args, err := types.GenerateGoTestRunArgs(goFlagsConfig)
+	command.AbortIfError("Failed to generate test run arguments", err)
+	cmd, buf := buildAndStartCommand(suite, args, true)
 
 	cmd.Wait()
 
@@ -81,7 +83,7 @@ func runGoTest(suite TestSuite, cliConfig types.CLIConfig) TestSuite {
 }
 
 func runSerial(suite TestSuite, ginkgoConfig types.SuiteConfig, reporterConfig types.ReporterConfig, cliConfig types.CLIConfig, goFlagsConfig types.GoFlagsConfig, additionalArgs []string) TestSuite {
-	args, err := types.GenerateTestRunArgs(ginkgoConfig, reporterConfig, goFlagsConfig)
+	args, err := types.GenerateGinkgoTestRunArgs(ginkgoConfig, reporterConfig, goFlagsConfig)
 	command.AbortIfError("Failed to generate test run arguments", err)
 	args = append([]string{"--test.timeout=0"}, args...)
 	args = append(args, additionalArgs...)
@@ -151,7 +153,7 @@ func runParallel(suite TestSuite, ginkgoConfig types.SuiteConfig, reporterConfig
 			mutexProfiles = append(mutexProfiles, filepath.Join(suite.Path, nodeGoFlagsConfig.MutexProfile))
 		}
 
-		args, err := types.GenerateTestRunArgs(nodeGinkgoConfig, reporterConfig, nodeGoFlagsConfig)
+		args, err := types.GenerateGinkgoTestRunArgs(nodeGinkgoConfig, reporterConfig, nodeGoFlagsConfig)
 		command.AbortIfError("Failed to generate test run argumnets", err)
 		args = append([]string{"--test.timeout=0"}, args...)
 		args = append(args, additionalArgs...)
