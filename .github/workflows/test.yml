@@ -13,7 +13,13 @@ jobs:
     - uses: actions/setup-go@v2
       with:
         go-version: ${{ matrix.version }}
+    - uses: actions/setup-node@v1
+      with:
+        node-version: 14.x
     - uses: actions/checkout@v2
     - run: go mod tidy && git diff --exit-code go.mod go.sum
     - run: go vet ./...
     - run: go run ./ginkgo -r --randomizeAllSpecs --randomizeSuites --race --trace
+    - run: GOOS=js GOARCH=wasm ginkgo build ./...
+    - run: cp $(shell go env GOROOT)/misc/wasm/wasm_exec.js .
+    - run: find . -name *.test | xargs node ./test.cjs
