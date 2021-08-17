@@ -1,7 +1,7 @@
 package integration_test
 
 import (
-	"io/ioutil"
+	"os"
 	"strings"
 
 	. "github.com/onsi/ginkgo"
@@ -23,7 +23,7 @@ var _ = Describe("Reporting", func() {
 			session := startGinkgo(fm.PathTo("reporting"), "--no-color")
 			Eventually(session).Should(gexec.Exit(1))
 
-			report, err := ioutil.ReadFile(fm.PathTo("reporting", "report-after-each.out"))
+			report, err := os.ReadFile(fm.PathTo("reporting", "report-after-each.out"))
 			Ω(err).ShouldNot(HaveOccurred())
 			lines := strings.Split(string(report), "\n")
 			Ω(lines).Should(ConsistOf(
@@ -40,7 +40,7 @@ var _ = Describe("Reporting", func() {
 			session := startGinkgo(fm.PathTo("reporting"), "--no-color", "--seed=17")
 			Eventually(session).Should(gexec.Exit(1))
 
-			report, err := ioutil.ReadFile(fm.PathTo("reporting", "report-after-suite.out"))
+			report, err := os.ReadFile(fm.PathTo("reporting", "report-after-suite.out"))
 			Ω(err).ShouldNot(HaveOccurred())
 			lines := strings.Split(string(report), "\n")
 			Ω(lines).Should(ConsistOf(
@@ -61,7 +61,7 @@ var _ = Describe("Reporting", func() {
 				session := startGinkgo(fm.PathTo("reporting"), "--no-color", "--seed=17", "--nodes=2")
 				Eventually(session).Should(gexec.Exit(1))
 
-				report, err := ioutil.ReadFile(fm.PathTo("reporting", "report-after-suite.out"))
+				report, err := os.ReadFile(fm.PathTo("reporting", "report-after-suite.out"))
 				Ω(err).ShouldNot(HaveOccurred())
 				lines := strings.Split(string(report), "\n")
 				Ω(lines).Should(ConsistOf(

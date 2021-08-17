@@ -1,7 +1,6 @@
 package internal_test
 
 import (
-	"io/ioutil"
 	"os"
 	"path/filepath"
 	"strings"
@@ -18,7 +17,7 @@ var _ = Describe("Utils", func() {
 
 		BeforeEach(func() {
 			var err error
-			tmpDir, err = ioutil.TempDir("/tmp", "ginkgo")
+			tmpDir, err = os.MkdirTemp("/tmp", "ginkgo")
 			Ω(err).ShouldNot(HaveOccurred())
 		})
 
@@ -28,7 +27,7 @@ var _ = Describe("Utils", func() {
 
 		It("returns true if the path exists", func() {
 			path := filepath.Join(tmpDir, "foo")
-			Ω(ioutil.WriteFile(path, []byte("foo"), 0666)).Should(Succeed())
+			Ω(os.WriteFile(path, []byte("foo"), 0666)).Should(Succeed())
 			Ω(internal.FileExists(path)).Should(BeTrue())
 		})
 

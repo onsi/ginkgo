@@ -2,16 +2,14 @@ package internal_test
 
 import (
 	"fmt"
-	"io/ioutil"
+	"io"
 
 	. "github.com/onsi/ginkgo"
-	. "github.com/onsi/gomega"
-
+	"github.com/onsi/ginkgo/internal"
 	"github.com/onsi/ginkgo/internal/interrupt_handler"
 	. "github.com/onsi/ginkgo/internal/test_helpers"
 	"github.com/onsi/ginkgo/types"
-
-	"github.com/onsi/ginkgo/internal"
+	. "github.com/onsi/gomega"
 )
 
 var _ = Describe("Suite", func() {
@@ -30,7 +28,7 @@ var _ = Describe("Suite", func() {
 	BeforeEach(func() {
 		failer = internal.NewFailer()
 		reporter = &FakeReporter{}
-		writer = internal.NewWriter(ioutil.Discard)
+		writer = internal.NewWriter(io.Discard)
 		outputInterceptor = NewFakeOutputInterceptor()
 		interruptHandler = interrupt_handler.NewInterruptHandler(0, "")
 		conf = types.SuiteConfig{

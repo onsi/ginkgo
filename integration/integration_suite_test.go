@@ -6,7 +6,6 @@ import (
 	"encoding/xml"
 	"flag"
 	"fmt"
-	"io/ioutil"
 	"os"
 	"os/exec"
 	"path/filepath"
@@ -91,7 +90,7 @@ func (f FixtureManager) MountFixture(fixture string, subPackage ...string) {
 func (f FixtureManager) copyAndRewrite(src string, dst string) {
 	Expect(os.MkdirAll(dst, 0777)).To(Succeed())
 
-	files, err := ioutil.ReadDir(src)
+	files, err := os.ReadDir(src)
 	Expect(err).NotTo(HaveOccurred())
 
 	for _, file := range files {
@@ -102,12 +101,12 @@ func (f FixtureManager) copyAndRewrite(src string, dst string) {
 			continue
 		}
 
-		srcContent, err := ioutil.ReadFile(srcPath)
+		srcContent, err := os.ReadFile(srcPath)
 		Ω(err).ShouldNot(HaveOccurred())
 		//rewrite import statements so that fixtures can work in the fixture folder when developing them, and in the tmp folder when under test
 		srcContent = bytes.ReplaceAll(srcContent, []byte("github.com/onsi/ginkgo/integration/_fixtures"), []byte(f.PackageRoot()))
 		srcContent = bytes.ReplaceAll(srcContent, []byte("_fixture"), []byte(""))
-		Ω(ioutil.WriteFile(dstPath, srcContent, 0666)).Should(Succeed())
+		Ω(os.WriteFile(dstPath, srcContent, 0666)).Should(Succeed())
 	}
 }
 
@@ -130,12 +129,12 @@ func (f FixtureManager) PathToFixtureFile(pkg string, target string) string {
 
 func (f FixtureManager) WriteFile(pkg string, target string, content string) {
 	dst := f.PathTo(pkg, target)
-	err := ioutil.WriteFile(dst, []byte(content), 0666)
+	err := os.WriteFile(dst, []byte(content), 0666)
 	Ω(err).ShouldNot(HaveOccurred())
 }
 
 func (f FixtureManager) ContentOf(pkg string, target string) string {
-	content, err := ioutil.ReadFile(f.PathTo(pkg, target))
+	content, err := os.ReadFile(f.PathTo(pkg, target))
 	ExpectWithOffset(1, err).NotTo(HaveOccurred())
 	return string(content)
 }
@@ -155,7 +154,7 @@ func (f FixtureManager) LoadJUnitReport(pkg string, target string) reporters.JUn
 }
 
 func (f FixtureManager) ContentOfFixture(pkg string, target string) string {
-	content, err := ioutil.ReadFile(f.PathToFixtureFile(pkg, target))
+	content, err := os.ReadFile(f.PathToFixtureFile(pkg, target))
 	ExpectWithOffset(1, err).NotTo(HaveOccurred())
 	return string(content)
 }
@@ -173,16 +172,16 @@ func (f FixtureManager) PackageNameFor(target string) string {
 }
 
 func sameFile(filePath, otherFilePath string) bool {
-	content, readErr := ioutil.ReadFile(filePath)
+	content, readErr := os.ReadFile(filePath)
 	Expect(readErr).NotTo(HaveOccurred())
-	otherContent, readErr := ioutil.ReadFile(otherFilePath)
+	otherContent, readErr := os.ReadFile(otherFilePath)
 	Expect(readErr).NotTo(HaveOccurred())
 	Expect(string(content)).To(Equal(string(otherContent)))
 	return true
 }
 
 func sameFolder(sourcePath, destinationPath string) bool {
-	files, err := ioutil.ReadDir(sourcePath)
+	files, err := os.ReadDir(sourcePath)
 	Expect(err).NotTo(HaveOccurred())
 	for _, f := range files {
 		srcPath := filepath.Join(sourcePath, f.Name())

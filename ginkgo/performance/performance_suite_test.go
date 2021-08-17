@@ -3,7 +3,6 @@ package performance_test
 import (
 	"flag"
 	"fmt"
-	"io/ioutil"
 	"math/rand"
 	"os"
 	"os/exec"
@@ -135,7 +134,7 @@ func (f PerformanceFixtureManager) MountFixture(fixture string, subPackage ...st
 func (f PerformanceFixtureManager) copyIn(src string, dst string) {
 	Expect(os.MkdirAll(dst, 0777)).To(Succeed())
 
-	files, err := ioutil.ReadDir(src)
+	files, err := os.ReadDir(src)
 	Expect(err).NotTo(HaveOccurred())
 
 	for _, file := range files {
@@ -146,9 +145,9 @@ func (f PerformanceFixtureManager) copyIn(src string, dst string) {
 			continue
 		}
 
-		srcContent, err := ioutil.ReadFile(srcPath)
+		srcContent, err := os.ReadFile(srcPath)
 		Ω(err).ShouldNot(HaveOccurred())
-		Ω(ioutil.WriteFile(dstPath, srcContent, 0666)).Should(Succeed())
+		Ω(os.WriteFile(dstPath, srcContent, 0666)).Should(Succeed())
 	}
 }
 
