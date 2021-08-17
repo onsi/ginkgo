@@ -2,7 +2,6 @@ package parallel_support_test
 
 import (
 	"io"
-	"io/ioutil"
 	"net/http"
 
 	. "github.com/onsi/ginkgo"
@@ -33,7 +32,7 @@ func newFakePoster() *fakePoster {
 }
 
 func (poster *fakePoster) Post(url string, bodyType string, body io.Reader) (resp *http.Response, err error) {
-	bodyContent, _ := ioutil.ReadAll(body)
+	bodyContent, _ := io.ReadAll(body)
 	poster.posts = append(poster.posts, post{
 		url:         url,
 		bodyType:    bodyType,
