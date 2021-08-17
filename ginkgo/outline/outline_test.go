@@ -5,8 +5,8 @@ import (
 	"fmt"
 	"go/parser"
 	"go/token"
-	"io/ioutil"
 	"log"
+	"os"
 	"path/filepath"
 	"strconv"
 	"strings"
@@ -32,14 +32,14 @@ var _ = DescribeTable("Validate outline from file with",
 		gotJSON, err := json.MarshalIndent(o, "", "  ")
 		Expect(err).To(BeNil(), "error marshalling outline to json: %s", err)
 
-		wantJSON, err := ioutil.ReadFile(filepath.Join("_testdata", jsonOutlineFilename))
+		wantJSON, err := os.ReadFile(filepath.Join("_testdata", jsonOutlineFilename))
 		Expect(err).To(BeNil(), "error reading JSON outline fixture: %s", err)
 
 		Expect(gotJSON).To(MatchJSON(wantJSON))
 
 		gotCSV := o.String()
 
-		wantCSV, err := ioutil.ReadFile(filepath.Join("_testdata", csvOutlineFilename))
+		wantCSV, err := os.ReadFile(filepath.Join("_testdata", csvOutlineFilename))
 		Expect(err).To(BeNil(), "error reading CSV outline fixture: %s", err)
 
 		Expect(gotCSV).To(Equal(string(wantCSV)))

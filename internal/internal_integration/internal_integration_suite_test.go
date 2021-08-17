@@ -1,17 +1,16 @@
 package internal_integration_test
 
 import (
-	"io/ioutil"
+	"io"
 	"reflect"
 	"testing"
 
 	. "github.com/onsi/ginkgo"
+	"github.com/onsi/ginkgo/internal"
+	"github.com/onsi/ginkgo/internal/global"
 	. "github.com/onsi/ginkgo/internal/test_helpers"
 	"github.com/onsi/ginkgo/types"
 	. "github.com/onsi/gomega"
-
-	"github.com/onsi/ginkgo/internal"
-	"github.com/onsi/ginkgo/internal/global"
 )
 
 func TestSuiteTests(t *testing.T) {
@@ -31,7 +30,7 @@ var outputInterceptor *FakeOutputInterceptor
 var _ = BeforeEach(func() {
 	conf = types.SuiteConfig{}
 	failer = internal.NewFailer()
-	writer = internal.NewWriter(ioutil.Discard)
+	writer = internal.NewWriter(io.Discard)
 	writer.SetMode(internal.WriterModeBufferOnly)
 	reporter = &FakeReporter{}
 	rt = NewRunTracker()

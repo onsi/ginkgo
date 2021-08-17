@@ -3,7 +3,6 @@ package generators
 import (
 	"bytes"
 	"fmt"
-	"io/ioutil"
 	"os"
 	"text/template"
 
@@ -86,7 +85,7 @@ func generateBootstrap(conf GeneratorsConfig) {
 
 	var templateText string
 	if conf.CustomTemplate != "" {
-		tpl, err := ioutil.ReadFile(conf.CustomTemplate)
+		tpl, err := os.ReadFile(conf.CustomTemplate)
 		command.AbortIfError("Failed to read custom bootstrap file:", err)
 		templateText = string(tpl)
 	} else if conf.Agouti {

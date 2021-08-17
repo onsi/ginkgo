@@ -10,7 +10,6 @@ package reporters
 
 import (
 	"fmt"
-	"io/ioutil"
 	"os"
 	"strings"
 
@@ -76,7 +75,7 @@ func MergeAndCleanupTeamcityReports(sources []string, dst string) ([]string, err
 	messages := []string{}
 	merged := []byte{}
 	for _, source := range sources {
-		data, err := ioutil.ReadFile(source)
+		data, err := os.ReadFile(source)
 		if err != nil {
 			messages = append(messages, fmt.Sprintf("Could not open %s:\n%s", source, err.Error()))
 			continue
@@ -84,5 +83,5 @@ func MergeAndCleanupTeamcityReports(sources []string, dst string) ([]string, err
 		os.Remove(source)
 		merged = append(merged, data...)
 	}
-	return messages, ioutil.WriteFile(dst, merged, 0666)
+	return messages, os.WriteFile(dst, merged, 0666)
 }

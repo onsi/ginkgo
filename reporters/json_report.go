@@ -3,7 +3,6 @@ package reporters
 import (
 	"encoding/json"
 	"fmt"
-	"io/ioutil"
 	"os"
 
 	"github.com/onsi/ginkgo/types"
@@ -33,7 +32,7 @@ func MergeAndCleanupJSONReports(sources []string, destination string) ([]string,
 	allReports := []types.Report{}
 	for _, source := range sources {
 		reports := []types.Report{}
-		data, err := ioutil.ReadFile(source)
+		data, err := os.ReadFile(source)
 		if err != nil {
 			messages = append(messages, fmt.Sprintf("Could not open %s:\n%s", source, err.Error()))
 			continue

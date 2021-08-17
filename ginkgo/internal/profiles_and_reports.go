@@ -3,7 +3,6 @@ package internal
 import (
 	"bytes"
 	"fmt"
-	"io/ioutil"
 	"os"
 	"os/exec"
 	"path/filepath"
@@ -159,7 +158,7 @@ func MergeAndCleanupCoverProfiles(profiles []string, destination string) error {
 	combined := &bytes.Buffer{}
 	modeRegex := regexp.MustCompile(`^mode: .*\n`)
 	for i, profile := range profiles {
-		contents, err := ioutil.ReadFile(profile)
+		contents, err := os.ReadFile(profile)
 		if err != nil {
 			return fmt.Errorf("Unable to read coverage file %s:\n%s", profile, err.Error())
 		}
@@ -183,7 +182,7 @@ func MergeAndCleanupCoverProfiles(profiles []string, destination string) error {
 		}
 	}
 
-	err := ioutil.WriteFile(destination, combined.Bytes(), 0666)
+	err := os.WriteFile(destination, combined.Bytes(), 0666)
 	if err != nil {
 		return fmt.Errorf("Unable to create combined cover profile:\n%s", err.Error())
 	}

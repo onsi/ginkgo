@@ -1,7 +1,7 @@
 package integration_test
 
 import (
-	"io/ioutil"
+	"os"
 	"path/filepath"
 	"time"
 
@@ -22,10 +22,10 @@ var _ = Describe("Watch", func() {
 
 	modifyFile := func(path string) {
 		time.Sleep(time.Second)
-		content, err := ioutil.ReadFile(path)
+		content, err := os.ReadFile(path)
 		Ω(err).ShouldNot(HaveOccurred())
 		content = append(content, []byte("//")...)
-		err = ioutil.WriteFile(path, content, 0666)
+		err = os.WriteFile(path, content, 0666)
 		Ω(err).ShouldNot(HaveOccurred())
 	}
 
