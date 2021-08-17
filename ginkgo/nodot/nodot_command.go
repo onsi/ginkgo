@@ -2,7 +2,6 @@ package nodot
 
 import (
 	"bufio"
-	"io/ioutil"
 	"os"
 	"path/filepath"
 	"regexp"
@@ -31,13 +30,13 @@ If you've renamed a declaration, that name will be honored and not overwritten.`
 func updateNodot() {
 	suiteFile, perm := findSuiteFile()
 
-	data, err := ioutil.ReadFile(suiteFile)
+	data, err := os.ReadFile(suiteFile)
 	command.AbortIfError("Failed to read boostrap file:", err)
 
 	content, err := ApplyNoDot(data)
 	command.AbortIfError("Failed to update nodot declarations:", err)
 
-	ioutil.WriteFile(suiteFile, content, perm)
+	os.WriteFile(suiteFile, content, perm)
 
 	internal.GoFmt(suiteFile)
 }
@@ -46,7 +45,7 @@ func findSuiteFile() (string, os.FileMode) {
 	workingDir, err := os.Getwd()
 	command.AbortIfError("Could not find suite file for nodot:", err)
 
-	files, err := ioutil.ReadDir(workingDir)
+	files, err := os.ReadDir(workingDir)
 	command.AbortIfError("Could not find suite file for nodot:", err)
 
 	re := regexp.MustCompile(`RunSpecs\(|RunSpecsWithDefaultAndCustomReporters\(|RunSpecsWithCustomReporters\(`)
@@ -61,7 +60,9 @@ func findSuiteFile() (string, os.FileMode) {
 		defer f.Close()
 
 		if re.MatchReader(bufio.NewReader(f)) {
-			return path, file.Mode()
+			fileInfo, err := file.Info()
+			command.AbortIfError("Could not find suite file for nodot:", err)
+			return path, fileInfo.Mode()
 		}
 	}
 
