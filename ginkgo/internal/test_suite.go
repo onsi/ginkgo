@@ -2,7 +2,6 @@ package internal
 
 import (
 	"errors"
-	"io/ioutil"
 	"math/rand"
 	"os"
 	"path"
@@ -220,7 +219,7 @@ func suitesInDir(dir string, recurse bool) TestSuites {
 		return suites
 	}
 
-	files, _ := ioutil.ReadDir(dir)
+	files, _ := os.ReadDir(dir)
 	re := regexp.MustCompile(`^[^._].*_test\.go$`)
 	for _, file := range files {
 		if !file.IsDir() && re.Match([]byte(file.Name())) {
@@ -264,13 +263,13 @@ func packageNameForSuite(dir string) string {
 	return filepath.Base(path)
 }
 
-func filesHaveGinkgoSuite(dir string, files []os.FileInfo) bool {
+func filesHaveGinkgoSuite(dir string, files []os.DirEntry) bool {
 	reTestFile := regexp.MustCompile(`_test\.go$`)
 	reGinkgo := regexp.MustCompile(`package ginkgo|\/ginkgo"`)
 
 	for _, file := range files {
 		if !file.IsDir() && reTestFile.Match([]byte(file.Name())) {
-			contents, _ := ioutil.ReadFile(dir + "/" + file.Name())
+			contents, _ := os.ReadFile(dir + "/" + file.Name())
 			if reGinkgo.Match(contents) {
 				return true
 			}

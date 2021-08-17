@@ -1,7 +1,6 @@
 package internal_test
 
 import (
-	"io/ioutil"
 	"os"
 	"path/filepath"
 
@@ -44,14 +43,14 @@ var _ = Describe("TestSuite", func() {
 			Ω(err).ShouldNot(HaveOccurred())
 
 			path = filepath.Join(path, filename)
-			ioutil.WriteFile(path, []byte(content), mode)
+			os.WriteFile(path, []byte(content), mode)
 		}
 
 		BeforeEach(func() {
 			cliConf = types.CLIConfig{}
 
 			var err error
-			tmpDir, err = ioutil.TempDir("/tmp", "ginkgo")
+			tmpDir, err = os.MkdirTemp("/tmp", "ginkgo")
 			Ω(err).ShouldNot(HaveOccurred())
 
 			origWd, err = os.Getwd()

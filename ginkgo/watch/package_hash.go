@@ -2,7 +2,6 @@ package watch
 
 import (
 	"fmt"
-	"io/ioutil"
 	"os"
 	"regexp"
 	"time"
@@ -63,15 +62,20 @@ func (p *PackageHash) CheckForChanges() bool {
 }
 
 func (p *PackageHash) computeHashes() (codeHash string, codeModifiedTime time.Time, testHash string, testModifiedTime time.Time, deleted bool) {
-	infos, err := ioutil.ReadDir(p.path)
+	entries, err := os.ReadDir(p.path)
 
 	if err != nil {
 		deleted = true
 		return
 	}
 
-	for _, info := range infos {
-		if info.IsDir() {
+	for _, entry := range entries {
+		if entry.IsDir() {
+			continue
+		}
+
+		info, err := entry.Info()
+		if err != nil {
 			continue
 		}
 

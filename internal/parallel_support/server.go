@@ -9,7 +9,7 @@ package parallel_support
 
 import (
 	"encoding/json"
-	"io/ioutil"
+	"io"
 	"net"
 	"net/http"
 	"sync"
@@ -220,7 +220,7 @@ func (server *Server) handleBeforeSuiteSucceeded(writer http.ResponseWriter, req
 	defer server.lock.Unlock()
 	server.beforeSuiteState.State = types.SpecStatePassed
 	var err error
-	server.beforeSuiteState.Data, err = ioutil.ReadAll(request.Body)
+	server.beforeSuiteState.Data, err = io.ReadAll(request.Body)
 	if err != nil {
 		writer.WriteHeader(http.StatusInternalServerError)
 	}

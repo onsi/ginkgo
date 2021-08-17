@@ -1,7 +1,7 @@
 package test_helpers
 
 import (
-	"io/ioutil"
+	"os"
 	"regexp"
 	"strings"
 )
@@ -9,12 +9,12 @@ import (
 var punctuationRE = regexp.MustCompile(`[^\w\-\s]`)
 
 func LoadMarkdownHeadingAnchors(filename string) []string {
-	b, err := ioutil.ReadFile(filename)
+	b, err := os.ReadFile(filename)
 	if err != nil {
 		return []string{}
 	}
 
-	anchors := []string{}
+	var anchors []string
 	lines := strings.Split(string(b), "\n")
 	for _, line := range lines {
 		line = strings.TrimLeft(line, " ")

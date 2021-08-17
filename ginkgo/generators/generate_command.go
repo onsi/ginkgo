@@ -3,7 +3,6 @@ package generators
 import (
 	"bytes"
 	"fmt"
-	"io/ioutil"
 	"os"
 	"path/filepath"
 	"strconv"
@@ -105,7 +104,7 @@ func generateTestFileForSubject(subject string, conf GeneratorsConfig) {
 
 	var templateText string
 	if conf.CustomTemplate != "" {
-		tpl, err := ioutil.ReadFile(conf.CustomTemplate)
+		tpl, err := os.ReadFile(conf.CustomTemplate)
 		command.AbortIfError("Failed to read custom template file:", err)
 		templateText = string(tpl)
 	} else if conf.Agouti {

@@ -3,7 +3,7 @@ package types
 import (
 	"flag"
 	"fmt"
-	"io/ioutil"
+	"io"
 	"reflect"
 	"strings"
 	"time"
@@ -109,7 +109,7 @@ func bindFlagSet(f GinkgoFlagSet, flagSet *flag.FlagSet) (GinkgoFlagSet, error) 
 	if flagSet == nil {
 		f.flagSet = flag.NewFlagSet("", flag.ContinueOnError)
 		//supress all output as Ginkgo is reponsible for formatting usage
-		f.flagSet.SetOutput(ioutil.Discard)
+		f.flagSet.SetOutput(io.Discard)
 	} else {
 		f.flagSet = flagSet
 		//we're piggybacking on an existing flagset (typically go test) so we have limited control
