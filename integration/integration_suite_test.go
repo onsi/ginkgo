@@ -87,6 +87,10 @@ func (f FixtureManager) MountFixture(fixture string, subPackage ...string) {
 	f.copyAndRewrite(src, dst)
 }
 
+func (f FixtureManager) MkEmpty(pkg string) {
+	ExpectWithOffset(1, os.MkdirAll(f.PathTo(pkg), 0700)).Should(Succeed())
+}
+
 func (f FixtureManager) copyAndRewrite(src string, dst string) {
 	Expect(os.MkdirAll(dst, 0777)).To(Succeed())
 
@@ -131,6 +135,11 @@ func (f FixtureManager) WriteFile(pkg string, target string, content string) {
 	dst := f.PathTo(pkg, target)
 	err := os.WriteFile(dst, []byte(content), 0666)
 	Ω(err).ShouldNot(HaveOccurred())
+}
+
+func (f FixtureManager) AppendToFile(pkg string, target string, content string) {
+	current := f.ContentOf(pkg, target)
+	f.WriteFile(pkg, target, current+content)
 }
 
 func (f FixtureManager) ContentOf(pkg string, target string) string {

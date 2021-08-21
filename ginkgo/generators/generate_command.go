@@ -58,8 +58,12 @@ type specData struct {
 	Package           string
 	Subject           string
 	PackageImportPath string
-	IncludeImports    bool
 	ImportPackage     bool
+
+	GinkgoImport  string
+	GomegaImport  string
+	GinkgoPackage string
+	GomegaPackage string
 }
 
 func generateTestFiles(conf GeneratorsConfig, args []string) {
@@ -87,8 +91,19 @@ func generateTestFileForSubject(subject string, conf GeneratorsConfig) {
 		Package:           determinePackageName(packageName, conf.Internal),
 		Subject:           formattedName,
 		PackageImportPath: getPackageImportPath(),
-		IncludeImports:    !conf.NoDot,
 		ImportPackage:     !conf.Internal,
+
+		GinkgoImport:  `. "github.com/onsi/ginkgo"`,
+		GomegaImport:  `. "github.com/onsi/gomega"`,
+		GinkgoPackage: "",
+		GomegaPackage: "",
+	}
+
+	if conf.NoDot {
+		data.GinkgoImport = `"github.com/onsi/ginkgo"`
+		data.GomegaImport = `"github.com/onsi/gomega"`
+		data.GinkgoPackage = `ginkgo.`
+		data.GomegaPackage = `gomega.`
 	}
 
 	targetFile := fmt.Sprintf("%s_test.go", specFilePrefix)

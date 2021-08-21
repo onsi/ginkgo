@@ -9,7 +9,6 @@ import (
 	sprig "github.com/go-task/slim-sprig"
 	"github.com/onsi/ginkgo/ginkgo/command"
 	"github.com/onsi/ginkgo/ginkgo/internal"
-	"github.com/onsi/ginkgo/ginkgo/nodot"
 	"github.com/onsi/ginkgo/types"
 )
 
@@ -53,8 +52,11 @@ func BuildBootstrapCommand() command.Command {
 type bootstrapData struct {
 	Package       string
 	FormattedName string
+
 	GinkgoImport  string
 	GomegaImport  string
+	GinkgoPackage string
+	GomegaPackage string
 }
 
 func generateBootstrap(conf GeneratorsConfig) {
@@ -63,13 +65,18 @@ func generateBootstrap(conf GeneratorsConfig) {
 	data := bootstrapData{
 		Package:       determinePackageName(packageName, conf.Internal),
 		FormattedName: formattedName,
+
 		GinkgoImport:  `. "github.com/onsi/ginkgo"`,
 		GomegaImport:  `. "github.com/onsi/gomega"`,
+		GinkgoPackage: "",
+		GomegaPackage: "",
 	}
 
 	if conf.NoDot {
 		data.GinkgoImport = `"github.com/onsi/ginkgo"`
 		data.GomegaImport = `"github.com/onsi/gomega"`
+		data.GinkgoPackage = `ginkgo.`
+		data.GomegaPackage = `gomega.`
 	}
 
 	targetFile := fmt.Sprintf("%s_suite_test.go", bootstrapFilePrefix)
@@ -99,13 +106,6 @@ func generateBootstrap(conf GeneratorsConfig) {
 
 	buf := &bytes.Buffer{}
 	bootstrapTemplate.Execute(buf, data)
-
-	if conf.NoDot {
-		contents, err := nodot.ApplyNoDot(buf.Bytes())
-		command.AbortIfError("Failed to import nodot declarations:", err)
-		fmt.Println("To update the nodot declarations in the future, switch to this directory and run:\n\tginkgo nodot")
-		buf = bytes.NewBuffer(contents)
-	}
 
 	buf.WriteTo(f)
 
