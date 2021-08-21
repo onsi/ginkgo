@@ -23,7 +23,6 @@ import (
 	"github.com/onsi/ginkgo/internal"
 	"github.com/onsi/ginkgo/internal/global"
 	"github.com/onsi/ginkgo/internal/interrupt_handler"
-	"github.com/onsi/ginkgo/internal/testingtproxy"
 	"github.com/onsi/ginkgo/reporters"
 	"github.com/onsi/ginkgo/types"
 )
@@ -39,10 +38,24 @@ var suiteDidRun = false
 func init() {
 	var err error
 	flagSet, err = types.BuildTestSuiteFlagSet(&suiteConfig, &reporterConfig)
-	if err != nil {
-		panic(err)
-	}
+	exitIfErr(err)
 	GinkgoWriter = internal.NewWriter(os.Stdout)
+}
+
+func exitIfErr(err error) {
+	if err != nil {
+		fmt.Fprintln(formatter.ColorableStdErr, err.Error())
+		os.Exit(1)
+	}
+}
+
+func exitIfErrors(errors []error) {
+	if len(errors) > 0 {
+		for _, err := range errors {
+			fmt.Fprintln(formatter.ColorableStdErr, err.Error())
+		}
+		os.Exit(1)
+	}
 }
 
 type GinkgoWriterInterface interface {
@@ -90,66 +103,6 @@ func GinkgoRandomSeed() int64 {
 //The node number is 1-indexed
 func GinkgoParallelNode() int {
 	return suiteConfig.ParallelNode
-}
-
-//Some matcher libraries or legacy codebases require a *testing.T
-//GinkgoT implements an interface analogous to *testing.T and can be used if
-//the library in question accepts *testing.T through an interface
-//
-// For example, with testify:
-// assert.Equal(GinkgoT(), 123, 123, "they should be equal")
-//
-// Or with gomock:
-// gomock.NewController(GinkgoT())
-//
-// GinkgoT() takes an optional offset argument that can be used to get the
-// correct line number associated with the failure.
-func GinkgoT(optionalOffset ...int) GinkgoTInterface {
-	offset := 3
-	if len(optionalOffset) > 0 {
-		offset = optionalOffset[0]
-	}
-	failedFunc := func() bool {
-		return CurrentSpecReport().Failed()
-	}
-	nameFunc := func() string {
-		return CurrentSpecReport().FullText()
-	}
-	return testingtproxy.New(GinkgoWriter, Fail, Skip, failedFunc, nameFunc, offset)
-}
-
-//The interface returned by GinkgoT().  This covers most of the methods
-//in the testing package's T.
-type GinkgoTInterface interface {
-	Cleanup(func())
-	Setenv(key, value string)
-	Error(args ...interface{})
-	Errorf(format string, args ...interface{})
-	Fail()
-	FailNow()
-	Failed() bool
-	Fatal(args ...interface{})
-	Fatalf(format string, args ...interface{})
-	Helper()
-	Log(args ...interface{})
-	Logf(format string, args ...interface{})
-	Name() string
-	Parallel()
-	Skip(args ...interface{})
-	SkipNow()
-	Skipf(format string, args ...interface{})
-	Skipped() bool
-	TempDir() string
-}
-
-type Report = types.Report
-type SpecReport = types.SpecReport
-
-// CurrentSpecReport returns information about the current running test.
-// The returned object is a types.SpecReport which includes helper methods
-// to make extracting information about the test easier.
-func CurrentSpecReport() SpecReport {
-	return global.Suite.CurrentSpecReport()
 }
 
 //RunSpecs is the entry point for the Ginkgo test runner.
@@ -280,18 +233,6 @@ func pushNode(node internal.Node, errors []error) bool {
 	return true
 }
 
-//Offset(uint) is a decorator that allows you to change the stack-frame offset used when computing the line number of the node in question.
-type Offset = internal.Offset
-
-//FlakeAttempts(uint N) is a decorator that allows you to mark individual tests or test containers as flaky.  Ginkgo will run them up to `N` times until they pass.
-type FlakeAttempts = internal.FlakeAttempts
-
-//Focus is a decorator that allows you to mark a test or container as focused.  Identical to FIt and FDescribe.
-const Focus = internal.Focus
-
-//Pending is a decorator that allows you to mark a test or container as pending.  Identical to PIt and PDescribe.
-const Pending = internal.Pending
-
 //Describe blocks allow you to organize your specs.  A Describe block can contain any number of
 //BeforeEach, AfterEach, JustBeforeEach, and It blocks.
 //
@@ -386,34 +327,6 @@ func By(text string, callbacks ...func()) {
 	}
 }
 
-// ReportEntryVisibility governs the visibility of ReportEntries in Ginkgo's console reporter
-//
-//- `ReportEntryVisibilityAlways`: the default behavior - the `ReportEntry` is always emitted.
-//- `ReportEntryVisibilityFailureOrVerbose`: the `ReportEntry` is only emitted if the spec fails or if the tests are run with -v (similar to `GinkgoWriter`s behavior).
-//- `ReportEntryVisibilityNever`: the `ReportEntry` is never emitted though it appears in any generated machine-readable reports (e.g. by setting `--json-report`).
-type ReportEntryVisibility = types.ReportEntryVisibility
-
-const ReportEntryVisibilityAlways, ReportEntryVisibilityFailureOrVerbose, ReportEntryVisibilityNever = types.ReportEntryVisibilityAlways, types.ReportEntryVisibilityFailureOrVerbose, types.ReportEntryVisibilityNever
-
-// AddReportEntry generates and a dds a new ReportEntry to the current SpecReport.
-// args can optinally include any of the following:
-//   - A single arbitrary object to attach as the Value of the ReportEntry.  This object will be included in any generated reports and will be emitted to the console when the report is emitted.
-//   - A ReportEntryVisibility enum to control the visibility of the ReportEntry
-//   - An Offset or CodeLocation decoration to control the reported location of the ReportEntry
-//
-// If the Value object implements `fmt.Stringer`, it's `String()` representation is used when emitting to the console.
-func AddReportEntry(name string, args ...interface{}) {
-	cl := types.NewCodeLocation(1)
-	reportEntry, err := internal.NewReportEntry(name, cl, args...)
-	if err != nil {
-		Fail(fmt.Sprintf("Failed to generate Report Entry:\n%s", err.Error()), 1)
-	}
-	err = global.Suite.AddReportEntry(reportEntry)
-	if err != nil {
-		Fail(fmt.Sprintf("Failed to add Report Entry:\n%s", err.Error()), 1)
-	}
-}
-
 //BeforeSuite blocks are run just once before any specs are run.  When running in parallel, each
 //parallel node process will call BeforeSuite.
 //
@@ -487,16 +400,6 @@ func SynchronizedAfterSuite(allNodesBody func(), node1Body func()) bool {
 	return pushNode(internal.NewSynchronizedAfterSuiteNode(allNodesBody, node1Body, types.NewCodeLocation(1)))
 }
 
-// ReportAfterSuite nodes are run at the end of the suite.  ReportAfterSuite nodes take a function that receives a types.Report.
-// They are called at the end of the suite, after all specs have run and any AfterSuite or SynchronizedAfterSuite nodes, and are passed in the final report for the test suite.
-// ReportAftersuite nodes must be created at the top-level (i.e. not nested in a Context/Describe/When node)
-//
-// When running in parallel, Ginkgo ensures that only one of the parallel nodes runs the ReportAfterSuite and that it is passed a report that is aggregated across
-// all parallel nodes
-func ReportAfterSuite(text string, body func(Report)) bool {
-	return pushNode(internal.NewReportAfterSuiteNode(text, body, types.NewCodeLocation(1)))
-}
-
 //BeforeEach blocks are run before It blocks.  When multiple BeforeEach blocks are defined in nested
 //Describe and Context blocks the outermost BeforeEach blocks are run first.
 func BeforeEach(args ...interface{}) bool {
@@ -519,161 +422,4 @@ func JustAfterEach(args ...interface{}) bool {
 //Describe and Context blocks the innermost AfterEach blocks are run first.
 func AfterEach(args ...interface{}) bool {
 	return pushNode(internal.NewNode(deprecationTracker, types.NodeTypeAfterEach, "", args...))
-}
-
-//ReportAfterEach nodes are run for each test, even if the test is skipped or pending.  ReportAfterEach nodes take a function that
-//receives a types.SpecReport.  They are called after the test has completed and are passed in the final report for the test.
-func ReportAfterEach(body func(SpecReport)) bool {
-	return pushNode(internal.NewReportAfterEachNode(body, types.NewCodeLocation(1)))
-}
-
-func registerReportAfterSuiteNodeForAutogeneratedReports(reporterConfig types.ReporterConfig) {
-	body := func(report Report) {
-		if reporterConfig.JSONReport != "" {
-			err := reporters.GenerateJSONReport(report, reporterConfig.JSONReport)
-			if err != nil {
-				Fail(fmt.Sprintf("Failed to generate JSON report:\n%s", err.Error()))
-			}
-		}
-		if reporterConfig.JUnitReport != "" {
-			err := reporters.GenerateJUnitReport(report, reporterConfig.JUnitReport)
-			if err != nil {
-				Fail(fmt.Sprintf("Failed to generate JSON report:\n%s", err.Error()))
-			}
-		}
-		if reporterConfig.TeamcityReport != "" {
-			err := reporters.GenerateTeamcityReport(report, reporterConfig.TeamcityReport)
-			if err != nil {
-				Fail(fmt.Sprintf("Failed to generate JSON report:\n%s", err.Error()))
-			}
-		}
-	}
-
-	flags := []string{}
-	if reporterConfig.JSONReport != "" {
-		flags = append(flags, "--json-report")
-	}
-	if reporterConfig.JUnitReport != "" {
-		flags = append(flags, "--junit-report")
-	}
-	if reporterConfig.TeamcityReport != "" {
-		flags = append(flags, "--teamcity-report")
-	}
-	pushNode(internal.NewReportAfterSuiteNode(
-		fmt.Sprintf("Autogenerated ReportAfterSuite for %s", strings.Join(flags, " ")),
-		body,
-		types.NewCustomCodeLocation("autogenerated by Ginkgo"),
-	))
-}
-
-func exitIfErr(err error) {
-	if err != nil {
-		fmt.Fprintln(formatter.ColorableStdErr, err.Error())
-		os.Exit(1)
-	}
-}
-
-func exitIfErrors(errors []error) {
-	if len(errors) > 0 {
-		for _, err := range errors {
-			fmt.Fprintln(formatter.ColorableStdErr, err.Error())
-		}
-		os.Exit(1)
-	}
-}
-
-/*
-===================================================
-   Deprecations for v2
-===================================================
-*/
-
-// Deprecated Done Channel for asynchronous testing
-type Done = internal.Done
-
-//Deprecated: Custom Ginkgo test reporters are no longer supported
-//Please read the documentation at:
-//https://github.com/onsi/ginkgo/blob/v2/docs/MIGRATING_TO_V2.md#removed-custom-reporters
-//for Ginkgo's new behavior and for a migration path.
-type Reporter = reporters.DeprecatedReporter
-
-//Deprecated: Custom Reporters have been removed in v2.  RunSpecsWithDefaultAndCustomReporters will simply call RunSpecs()
-//
-//Please read the documentation at:
-//https://github.com/onsi/ginkgo/blob/v2/docs/MIGRATING_TO_V2.md#removed-custom-reporters
-//for Ginkgo's new behavior and for a migration path.
-func RunSpecsWithDefaultAndCustomReporters(t GinkgoTestingT, description string, _ []Reporter) bool {
-	deprecationTracker.TrackDeprecation(types.Deprecations.CustomReporter())
-	return RunSpecs(t, description)
-}
-
-//Deprecated: Custom Reporters have been removed in v2.  RunSpecsWithCustomReporters will simply call RunSpecs()
-//
-//Please read the documentation at:
-//https://github.com/onsi/ginkgo/blob/v2/docs/MIGRATING_TO_V2.md#removed-custom-reporters
-//for Ginkgo's new behavior and for a migration path.
-func RunSpecsWithCustomReporters(t GinkgoTestingT, description string, _ []Reporter) bool {
-	deprecationTracker.TrackDeprecation(types.Deprecations.CustomReporter())
-	return RunSpecs(t, description)
-}
-
-//GinkgoTestDescription represents the information about the current running test returned by CurrentGinkgoTestDescription
-//	FullTestText: a concatenation of ComponentTexts and the TestText
-//	ComponentTexts: a list of all texts for the Describes & Contexts leading up to the current test
-//	TestText: the text in the It node
-//	FileName: the name of the file containing the current test
-//	LineNumber: the line number for the current test
-//	Failed: if the current test has failed, this will be true (useful in an AfterEach)
-//
-//Deprecated: Use CurrentSpecReport() instead
-type DeprecatedGinkgoTestDescription struct {
-	FullTestText   string
-	ComponentTexts []string
-	TestText       string
-
-	FileName   string
-	LineNumber int
-
-	Failed   bool
-	Duration time.Duration
-}
-type GinkgoTestDescription = DeprecatedGinkgoTestDescription
-
-//CurrentGinkgoTestDescripton returns information about the current running test.
-//Deprecated: Use CurrentSpecReport() instead
-func CurrentGinkgoTestDescription() DeprecatedGinkgoTestDescription {
-	deprecationTracker.TrackDeprecation(
-		types.Deprecations.CurrentGinkgoTestDescription(),
-		types.NewCodeLocation(1),
-	)
-	report := global.Suite.CurrentSpecReport()
-	if report.State == types.SpecStateInvalid {
-		return GinkgoTestDescription{}
-	}
-	componentTexts := []string{}
-	componentTexts = append(componentTexts, report.ContainerHierarchyTexts...)
-	componentTexts = append(componentTexts, report.LeafNodeText)
-
-	return DeprecatedGinkgoTestDescription{
-		ComponentTexts: componentTexts,
-		FullTestText:   report.FullText(),
-		TestText:       report.LeafNodeText,
-		FileName:       report.LeafNodeLocation.FileName,
-		LineNumber:     report.LeafNodeLocation.LineNumber,
-		Failed:         report.State.Is(types.SpecStateFailureStates...),
-		Duration:       report.RunTime,
-	}
-}
-
-//deprecated benchmarker
-type Benchmarker interface {
-	Time(name string, body func(), info ...interface{}) (elapsedTime time.Duration)
-	RecordValue(name string, value float64, info ...interface{})
-	RecordValueWithPrecision(name string, value float64, units string, precision int, info ...interface{})
-}
-
-//deprecated Measure
-func Measure(_ ...interface{}) bool {
-	deprecationTracker.TrackDeprecation(types.Deprecations.Measure(), types.NewCodeLocation(1))
-	return true
 }
