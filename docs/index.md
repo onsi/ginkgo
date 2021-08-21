@@ -118,7 +118,7 @@ var _ = Describe("Book", func() {
 
 Let's break this down:
 
-- We import the `ginkgo` and `gomega` packages into the top-level namespace.  While incredibly convenient, this is not - strictly speaking - necessary.  If youd like to avoid this check out the [Avoiding Dot Imports](#avoiding-dot-imports) section below.
+- We import the `ginkgo` and `gomega` packages into the top-level namespace.  While convenient this is, of course, not necessary.
 - Similarly, we import the `books` package since we are using the special `books_test` package to isolate our tests from our code.  For convenience we import the `books` package into the namespace.  You can opt out of either these decisions by editing the generated test file.
 - We add a *top-level* describe container using Ginkgo's `Describe(text string, body func()) bool` function.  The `var _ = ...` trick allows us to evaluate the Describe at the top level without having to wrap it in a `func init() {}`
 
@@ -1602,56 +1602,11 @@ to do this.  Since the ginkgo CLI is a single binary you can provide a paralleli
 
     This will generate a file named `SUBJECT_test.go`.  If you don't specify SUBJECT, it will generate a file named `PACKAGE_test.go` where PACKAGE is the name of the current directory.
 
-By default, these generators will dot-import both Ginkgo and Gomega.  To avoid dot imports, you can pass `--nodot` to both subcommands.  This is discussed more fully in the [next section](#avoiding-dot-imports).
+By default, these generators will dot-import both Ginkgo and Gomega.  To avoid dot imports, you can pass `--nodot` to both subcommands.
+
+You can also pass in a custom template using `--template`.  Take a look at the code under `ginkgo/ginkgo/generators` to see what's available in your template.
 
 > Note that you don't have to use either of these generators.  They're just convenient helpers to get you up and running quickly.
-
-### Avoiding Dot Imports
-
-Ginkgo and Gomega provide a DSL and, by default, the `ginkgo bootstrap` and `ginkgo generate` commands import both packages into the top-level namespace using dot imports.
-
-There are certain, rare, cases where you need to avoid this.  For example, your code may define methods with names that conflict with the methods defined in Ginkgo and/or Gomega.  In such cases you can either import your code into its own namespace (i.e. drop the `.` in front of your package import).  Or, you can drop the `.` in front of Ginkgo and/or Gomega.  The latter comes at the cost of constantly having to preface your `Describe`s and `It`s with `ginkgo.` and your `Expect`s and `ContainSubstring`s with `gomega.`.
-
-There is a *third* option that the ginkgo CLI provides, however.  If you need to (or simply want to!) avoid dot imports you can:
-
-    ginkgo bootstrap --nodot
-
-and
-
-    ginkgo generate --nodot <filename>
-
-This will create a bootstrap file that *explicitly* imports all the exported identifiers in Ginkgo and Gomega into the top level namespace.  This happens at the bottom of your bootstrap file and generates code that looks something like:
-
-```go
-import (
-    github.com/onsi/ginkgo
-    ...
-)
-
-...
-
-// Declarations for Ginkgo DSL
-var Describe = ginkgo.Describe
-var Context = ginkgo.Context
-var It = ginkgo.It
-// etc...
-```
-
-This allows you to write tests using `Describe`, `Context`, and `It` without dot imports and without the `ginkgo.` prefix.  Crucially, it also allows you to redefine any conflicting identifiers (or even cook up your own semantics!).  For example:
-
-```go
-var _ = ginkgo.Describe
-var When = ginkgo.Context
-var Then = ginkgo.It
-```
-
-This will avoid importing `Describe` and will rename `Context` to `When` and `It` to `Then`.
-
-As new matchers are added to Gomega you may need to update the set of imports identifiers.  You can do this by entering the directory containing your bootstrap file and running:
-
-    ginkgo nodot
-
-this will update the imports, preserving any renames that you've provided.
 
 ### Creating an Outline of Tests
 
@@ -1681,6 +1636,7 @@ The columns are:
 - Pending (bool): True, if pending. (Conforms to the rules in [Pending Specs](#pending-specs).)
 
 You can set a different output format with the `-format` flag. Accepted formats are `csv`, `indent`, and `json`. The `ident` format is like `csv`, but uses identation to show the nesting of containers and specs. Both the `csv` and `json` formats can be read by another program, e.g., an editor plugin that displays a tree view of Ginkgo tests in a file, or presents a menu for the user to quickly navigate to a container or spec.
+
 ### Other Subcommands
 
 - To unfocus any programmatically focused tests in the current directory (and subdirectories):

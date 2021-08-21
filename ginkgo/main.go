@@ -79,12 +79,6 @@ To bootstrap/generate test files without using "." imports:
 	ginkgo bootstrap --nodot
 	ginkgo generate --nodot
 
-this will explicitly export all the identifiers in Ginkgo and Gomega allowing you to rename them to avoid collisions.  When you pull to the latest Ginkgo/Gomega you'll want to run
-
-	ginkgo nodot
-
-to refresh this list and pull in any new identifiers.  In particular, this will pull in any new Gomega matchers that get added.
-
 To unfocus tests:
 
 	ginkgo unfocus
@@ -123,7 +117,6 @@ import (
 	"github.com/onsi/ginkgo/ginkgo/build"
 	"github.com/onsi/ginkgo/ginkgo/command"
 	"github.com/onsi/ginkgo/ginkgo/generators"
-	"github.com/onsi/ginkgo/ginkgo/nodot"
 	"github.com/onsi/ginkgo/ginkgo/outline"
 	"github.com/onsi/ginkgo/ginkgo/run"
 	"github.com/onsi/ginkgo/ginkgo/unfocus"
@@ -139,7 +132,6 @@ func GenerateCommands() []command.Command {
 		build.BuildBuildCommand(),
 		generators.BuildBootstrapCommand(),
 		generators.BuildGenerateCommand(),
-		nodot.BuildNodotCommand(),
 		outline.BuildOutlineCommand(),
 		unfocus.BuildUnfocusCommand(),
 		BuildVersionCommand(),
@@ -155,6 +147,7 @@ func main() {
 		DeprecatedCommands: []command.DeprecatedCommand{
 			{Name: "convert", Deprecation: types.Deprecations.Convert()},
 			{Name: "blur", Deprecation: types.Deprecations.Blur()},
+			{Name: "nodot", Deprecation: types.Deprecations.Nodot()},
 		},
 	}
 

@@ -66,6 +66,14 @@ func (d deprecations) Blur() Deprecation {
 	}
 }
 
+func (d deprecations) Nodot() Deprecation {
+	return Deprecation{
+		Message: "The nodot command is deprecated in Ginkgo V2.  Please either dot-import Ginkgo or use the package identifier in your code to references objects and types provided by Ginkgo and Gomega.",
+		DocLink: "removed-ginkgo-nodot",
+		Version: "1.16.0",
+	}
+}
+
 type DeprecationTracker struct {
 	deprecations map[Deprecation][]CodeLocation
 }
