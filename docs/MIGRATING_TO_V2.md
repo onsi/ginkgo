@@ -375,6 +375,30 @@ The `-debug` flag has been removed.  It functioned primarily as a band-aid to Gi
 #### Migration Strategy:
 Users should remove -stream from any scripts they have that invoke the `ginkgo` cli.
 
+### Removed: `ginkgo nodot`
+The `ginkgo nodot` subcommand in V1, along with the `--nodot` flags for `ginkgo bootstrap` and `ginkgo generate` were provided to allow users to avoid a `.` import of Ginkgo and Gomega but still have access to the exported variables and types at the top-level.  This was implemented by defining top-level aliases that pointed to the objects and types in the imported Ginkgo and Gomega libraries in the user's bootstrap file.  In practice most users either dot-import Ginkgo and Gomega, or they don't and use the imported package name to refer to objects and types instead.  V2 removes the support generating and maintaining these alias lists.  `--nodot` remainds for `ginkgo bootstrap` and `ginkgo generate` and it simply avoids dot-importing Ginkgo and Gomega.
+
+As a result of this change custom bootstrap and generate templates may need to be updated:
+
+1. `ginkgo generate` templates should no longer reference `{{.IncludeImports}}`.  Instead they should `import {{.GinkgoImport}}` and `import {{.GomegaImport}}`.
+2. Both `ginkgo generate` and `ginkgo boostrap` templates can use `{{.GinkgoPackage}}` and `{{.GomegaPackage}}` to correctly reference any names exported by Ginkgo or Gomega.  For example:
+
+	```go
+
+	import (
+		{{.GinkgoImport}}
+		{{.GomegaImport}}
+	}
+
+	var _ = {{.GinkgoPackage}}It("is templated", func() {
+		{{.GomegaPackage}}Expect(foo).To({{.GomegaPackage}}Equal(bar))
+	})
+
+	```
+
+	will generate the correct output if `--nodot` is specified by the user.
+
+
 ### Removed: `ginkgo convert`
 The `ginkgo convert` subcommand in V1 could convert an existing set of Go tests into a Ginkgo test suite, wrapping each `TestX` function in an `It`.  This subcommand added complexity to the codebase and was infrequently used.  It has been removed.  Users who want to convert tests suites over to Ginkgo will need to do so by hand.
 

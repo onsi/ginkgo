@@ -3,13 +3,13 @@ package generators
 var specText = `package {{.Package}}
 
 import (
-	{{if .IncludeImports}}. "github.com/onsi/ginkgo"{{end}}
-	{{if .IncludeImports}}. "github.com/onsi/gomega"{{end}}
+	{{.GinkgoImport}}
+	{{.GomegaImport}}
 
 	{{if .ImportPackage}}"{{.PackageImportPath}}"{{end}}
 )
 
-var _ = Describe("{{.Subject}}", func() {
+var _ = {{.GinkgoPackage}}Describe("{{.Subject}}", func() {
 
 })
 `
@@ -17,25 +17,25 @@ var _ = Describe("{{.Subject}}", func() {
 var agoutiSpecText = `package {{.Package}}
 
 import (
-	{{if .IncludeImports}}. "github.com/onsi/ginkgo"{{end}}
-	{{if .IncludeImports}}. "github.com/onsi/gomega"{{end}}
+	{{.GinkgoImport}}
+	{{.GomegaImport}}
 	"github.com/sclevine/agouti"
 	. "github.com/sclevine/agouti/matchers"
 
 	{{if .ImportPackage}}"{{.PackageImportPath}}"{{end}}
 )
 
-var _ = Describe("{{.Subject}}", func() {
+var _ = {{.GinkgoPackage}}Describe("{{.Subject}}", func() {
 	var page *agouti.Page
 
-	BeforeEach(func() {
+	{{.GinkgoPackage}}BeforeEach(func() {
 		var err error
 		page, err = agoutiDriver.NewPage()
-		Expect(err).NotTo(HaveOccurred())
+		{{.GomegaPackage}}Expect(err).NotTo({{.GomegaPackage}}HaveOccurred())
 	})
 
-	AfterEach(func() {
-		Expect(page.Destroy()).To(Succeed())
+	{{.GinkgoPackage}}AfterEach(func() {
+		{{.GomegaPackage}}Expect(page.Destroy()).To({{.GomegaPackage}}Succeed())
 	})
 })
 `
