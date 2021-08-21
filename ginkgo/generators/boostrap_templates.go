@@ -10,8 +10,8 @@ import (
 )
 
 func Test{{.FormattedName}}(t *testing.T) {
-	RegisterFailHandler(Fail)
-	RunSpecs(t, "{{.FormattedName}} Suite")
+	{{.GomegaPackage}}RegisterFailHandler({{.GinkgoPackage}}Fail)
+	{{.GinkgoPackage}}RunSpecs(t, "{{.FormattedName}} Suite")
 }
 `
 
@@ -26,23 +26,23 @@ import (
 )
 
 func Test{{.FormattedName}}(t *testing.T) {
-	RegisterFailHandler(Fail)
-	RunSpecs(t, "{{.FormattedName}} Suite")
+	{{.GomegaPackage}}RegisterFailHandler({{.GinkgoPackage}}Fail)
+	{{.GinkgoPackage}}RunSpecs(t, "{{.FormattedName}} Suite")
 }
 
 var agoutiDriver *agouti.WebDriver
 
-var _ = BeforeSuite(func() {
+var _ = {{.GinkgoPackage}}BeforeSuite(func() {
 	// Choose a WebDriver:
 
 	agoutiDriver = agouti.PhantomJS()
 	// agoutiDriver = agouti.Selenium()
 	// agoutiDriver = agouti.ChromeDriver()
 
-	Expect(agoutiDriver.Start()).To(Succeed())
+	{{.GomegaPackage}}Expect(agoutiDriver.Start()).To({{.GomegaPackage}}Succeed())
 })
 
-var _ = AfterSuite(func() {
-	Expect(agoutiDriver.Stop()).To(Succeed())
+var _ = {{.GinkgoPackage}}AfterSuite(func() {
+	{{.GomegaPackage}}Expect(agoutiDriver.Stop()).To({{.GomegaPackage}}Succeed())
 })
 `
