@@ -2,7 +2,6 @@ package example_test
 
 import (
 	. "github.com/onsi/ginkgo"
-	. "github.com/onsi/ginkgo/extensions/table"
 )
 
 var _ = Describe("NormalFixture", func() {
@@ -32,10 +31,6 @@ var _ = Describe("NormalFixture", func() {
 	Specify("normal", func() {
 
 	})
-
-	Measure("normal", func(b Benchmarker) {
-
-	}, 2)
 
 	DescribeTable("normal",
 		func() {},

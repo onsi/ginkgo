@@ -2,7 +2,6 @@ package example_test
 
 import (
 	"github.com/onsi/ginkgo"
-	"github.com/onsi/ginkgo/extensions/table"
 )
 
 var _ = ginkgo.Describe("NodotFixture", func() {
@@ -33,17 +32,13 @@ var _ = ginkgo.Describe("NodotFixture", func() {
 
 	})
 
-	ginkgo.Measure("normal", func(b ginkgo.Benchmarker) {
-
-	}, 2)
-
-	table.DescribeTable("normal",
+	ginkgo.DescribeTable("normal",
 		func() {},
-		table.Entry("normal"),
+		ginkgo.Entry("normal"),
 	)
 
-	table.DescribeTable("normal",
+	ginkgo.DescribeTable("normal",
 		func() {},
-		table.Entry("normal"),
+		ginkgo.Entry("normal"),
 	)
 })
