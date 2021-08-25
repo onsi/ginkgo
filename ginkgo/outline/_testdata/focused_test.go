@@ -2,7 +2,6 @@ package example_test
 
 import (
 	. "github.com/onsi/ginkgo"
-	. "github.com/onsi/ginkgo/extensions/table"
 )
 
 var _ = Describe("unfocused", func() {
@@ -32,10 +31,6 @@ var _ = Describe("unfocused", func() {
 	FSpecify("focused", func() {
 
 	})
-
-	FMeasure("focused", func(b Benchmarker) {
-
-	}, 2)
 
 	FDescribeTable("focused",
 		func() {},

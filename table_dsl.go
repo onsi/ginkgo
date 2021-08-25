@@ -1,19 +1,10 @@
-/*
-
-Table provides a simple DSL for Ginkgo-native Table-Driven Tests
-
-The godoc documentation describes Table's API.  More comprehensive documentation (with examples!) is available at http://onsi.github.io/ginkgo#table-driven-tests
-
-*/
-
-package table
+package ginkgo
 
 import (
 	"fmt"
 	"reflect"
 
 	"github.com/onsi/ginkgo/internal"
-	"github.com/onsi/ginkgo/internal/global"
 	"github.com/onsi/ginkgo/types"
 )
 
@@ -112,9 +103,125 @@ func describeTable(description string, itBody interface{}, entries []TableEntry,
 		args = append(args, internal.Pending)
 	}
 
-	node, errors := internal.NewNode(nil, types.NodeTypeContainer, description, args...)
-	if len(errors) != 0 {
-		panic(errors)
+	pushNode(internal.NewNode(deprecationTracker, types.NodeTypeContainer, description, args...))
+}
+
+/*
+TableEntry represents an entry in a table test.  You generally use the `Entry` constructor.
+*/
+type TableEntry struct {
+	Description  interface{}
+	Parameters   []interface{}
+	Pending      bool
+	Focused      bool
+	codeLocation types.CodeLocation
+}
+
+func (t TableEntry) generateIt(itBody reflect.Value) {
+	var description string
+	descriptionValue := reflect.ValueOf(t.Description)
+	switch descriptionValue.Kind() {
+	case reflect.String:
+		description = descriptionValue.String()
+	case reflect.Func:
+		values := castParameters(descriptionValue, t.Parameters)
+		res := descriptionValue.Call(values)
+		if len(res) != 1 {
+			exitIfErr(fmt.Errorf("The describe function should return only a value, returned %d", len(res)))
+		}
+		if res[0].Kind() != reflect.String {
+			exitIfErr(fmt.Errorf("The describe function should return a string, returned %#v", res[0]))
+		}
+		description = res[0].String()
+	default:
+		exitIfErr(fmt.Errorf("Description can either be a string or a function, got %#v", descriptionValue))
 	}
-	global.Suite.PushNode(node)
+
+	args := []interface{}{t.codeLocation}
+
+	if t.Pending {
+		args = append(args, internal.Pending)
+	} else {
+		values := castParameters(itBody, t.Parameters)
+		body := func() {
+			itBody.Call(values)
+		}
+		args = append(args, body)
+	}
+	if t.Focused {
+		args = append(args, internal.Focus)
+	}
+
+	pushNode(internal.NewNode(deprecationTracker, types.NodeTypeIt, description, args...))
+}
+
+func castParameters(function reflect.Value, parameters []interface{}) []reflect.Value {
+	res := make([]reflect.Value, len(parameters))
+	funcType := function.Type()
+	for i, param := range parameters {
+		if param == nil {
+			inType := funcType.In(i)
+			res[i] = reflect.Zero(inType)
+		} else {
+			res[i] = reflect.ValueOf(param)
+		}
+	}
+	return res
+}
+
+/*
+Entry constructs a TableEntry.
+
+The first argument is a required description (this becomes the content of the generated Ginkgo `It`).
+Subsequent parameters are saved off and sent to the callback passed in to `DescribeTable`.
+
+Each Entry ends up generating an individual Ginkgo It.
+*/
+func Entry(description interface{}, parameters ...interface{}) TableEntry {
+	return TableEntry{
+		Description:  description,
+		Parameters:   parameters,
+		Pending:      false,
+		Focused:      false,
+		codeLocation: types.NewCodeLocation(1),
+	}
+}
+
+/*
+You can focus a particular entry with FEntry.  This is equivalent to FIt.
+*/
+func FEntry(description interface{}, parameters ...interface{}) TableEntry {
+	return TableEntry{
+		Description:  description,
+		Parameters:   parameters,
+		Pending:      false,
+		Focused:      true,
+		codeLocation: types.NewCodeLocation(1),
+	}
+}
+
+/*
+You can mark a particular entry as pending with PEntry.  This is equivalent to PIt.
+*/
+func PEntry(description interface{}, parameters ...interface{}) TableEntry {
+	return TableEntry{
+		Description:  description,
+		Parameters:   parameters,
+		Pending:      true,
+		Focused:      false,
+		codeLocation: types.NewCodeLocation(1),
+	}
+}
+
+/*
+You can mark a particular entry as pending with XEntry.  This is equivalent to XIt.
+*/
+func XEntry(description interface{}, parameters ...interface{}) TableEntry {
+	return TableEntry{
+		Description:  description,
+		Parameters:   parameters,
+		Pending:      true,
+		Focused:      false,
+		codeLocation: types.NewCodeLocation(1),
+	}
 }
