@@ -7,7 +7,6 @@ import (
 	"time"
 
 	. "github.com/onsi/ginkgo"
-	. "github.com/onsi/ginkgo/extensions/table"
 	"github.com/onsi/ginkgo/internal"
 	"github.com/onsi/ginkgo/internal/test_helpers"
 	"github.com/onsi/ginkgo/reporters"

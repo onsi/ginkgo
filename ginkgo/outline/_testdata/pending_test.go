@@ -2,7 +2,6 @@ package example_test
 
 import (
 	. "github.com/onsi/ginkgo"
-	. "github.com/onsi/ginkgo/extensions/table"
 )
 
 var _ = Describe("PendingFixture", func() {
@@ -32,10 +31,6 @@ var _ = Describe("PendingFixture", func() {
 	PSpecify("pending", func() {
 
 	})
-
-	PMeasure("pending", func(b Benchmarker) {
-
-	}, 2)
 
 	PDescribeTable("pending",
 		func() {},
