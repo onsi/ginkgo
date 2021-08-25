@@ -2,7 +2,6 @@ package example_test
 
 import (
 	fooginkgo "github.com/onsi/ginkgo"
-	footable "github.com/onsi/ginkgo/extensions/table"
 )
 
 var _ = fooginkgo.Describe("NodotFixture", func() {
@@ -34,17 +33,13 @@ var _ = fooginkgo.Describe("NodotFixture", func() {
 
 	})
 
-	fooginkgo.Measure("normal", func(b fooginkgo.Benchmarker) {
-
-	}, 2)
-
-	footable.DescribeTable("normal",
+	fooginkgo.DescribeTable("normal",
 		func() {},
-		footable.Entry("normal"),
+		fooginkgo.Entry("normal"),
 	)
 
-	footable.DescribeTable("normal",
+	fooginkgo.DescribeTable("normal",
 		func() {},
-		footable.Entry("normal"),
+		fooginkgo.Entry("normal"),
 	)
 })

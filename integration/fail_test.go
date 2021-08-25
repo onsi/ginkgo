@@ -19,8 +19,8 @@ var _ = Describe("Failing Specs", func() {
 
 			Ω(output).ShouldNot(ContainSubstring("NEVER SEE THIS"))
 
-			Ω(output).Should(ContainSubstring("a top level failure on line 10"))
-			Ω(output).Should(ContainSubstring("fail_fixture_test.go:10"))
+			Ω(output).Should(ContainSubstring("a top level failure on line 9"))
+			Ω(output).Should(ContainSubstring("fail_fixture_test.go:9"))
 
 			Ω(output).Should(ContainSubstring("a sync failure"))
 			Ω(output).Should(MatchRegexp(`Test Panicked`))
@@ -29,13 +29,11 @@ var _ = Describe("Failing Specs", func() {
 
 			Ω(output).Should(ContainSubstring("a top level specify"))
 			Ω(output).ShouldNot(ContainSubstring("ginkgo_dsl.go"))
-			Ω(output).Should(ContainSubstring("fail_fixture_test.go:31"))
+			Ω(output).Should(ContainSubstring("fail_fixture_test.go:30"))
 
-			Ω(output).ShouldNot(ContainSubstring("table.go"))
-			Ω(output).Should(MatchRegexp(`a top level DescribeTable\n.*fail_fixture_test\.go:35`),
+			Ω(output).Should(MatchRegexp(`a top level DescribeTable\n.*fail_fixture_test\.go:34`),
 				"the output of a failing DescribeTable should include its file path and line number")
-			Ω(output).ShouldNot(ContainSubstring("table_entry.go"))
-			Ω(output).Should(MatchRegexp(`\[It\] a TableEntry constructed by Entry\n.*fail_fixture_test\.go:39`),
+			Ω(output).Should(MatchRegexp(`\[It\] a TableEntry constructed by Entry\n.*fail_fixture_test\.go:38`),
 				"the output of a failing Entry should include its file path and line number")
 
 			Ω(output).Should(ContainSubstring("0 Passed | 7 Failed"))

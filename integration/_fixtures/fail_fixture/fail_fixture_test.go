@@ -2,12 +2,11 @@ package fail_fixture_test
 
 import (
 	. "github.com/onsi/ginkgo"
-	. "github.com/onsi/ginkgo/extensions/table"
 	. "github.com/onsi/gomega"
 )
 
 var _ = It("handles top level failures", func() {
-	Ω("a top level failure on line 10").Should(Equal("nope"))
+	Ω("a top level failure on line 9").Should(Equal("nope"))
 	println("NEVER SEE THIS")
 })
 

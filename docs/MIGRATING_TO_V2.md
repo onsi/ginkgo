@@ -337,6 +337,13 @@ Alternatively, you can use the new `--json-report` flag to produce a machine rea
 
 Finally, if you still need the real-time reporting capabilities that 1.X's custom reporters provided you can use [`ReportAfterEach`](#capturing-report-information-about-each-spec-as-the-test-suite-runs) to get information about each spec as it completes.
 
+### Changed: Table testing support˚First-class Support for Table Testing
+The table extension has been moved into the core Ginkgo DSL and the table functionality has been improved while maintaining backward compatibility.  Users no longer need to `import "github.com/onsi/ginkgo/extenstions/table"`.  Instead the table DSL is automatically pulled in by importing `"github.com/onsi/ginkgo"`.
+
+#### Migratino Strategy:
+Remove `"github.com/onsi/ginkgo/extensions/table` imports.  Code that was dot-importing both Ginkgo and the table extension should automatically work.  If you were not dot-importing you will need to replace references to `table.DescribeTable` and `table.Entry` with `ginkgo.DescribeTable` and `ginkgo.Entry`.
+
+
 ### Changed: CurrentGinkgoTestDescription()
 `CurrentGinkgoTestDescription()` has been deprecated and will be removed in a future release.  The method was returning a processed object that included a subset of information available about the running test.
 

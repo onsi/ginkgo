@@ -131,7 +131,7 @@ func absoluteOffsetsForNode(fset *token.FileSet, n ast.Node) (start, end int) {
 
 // ginkgoNodeFromCallExpr derives an outline entry from a go AST subtree
 // corresponding to a Ginkgo container or spec.
-func ginkgoNodeFromCallExpr(fset *token.FileSet, ce *ast.CallExpr, ginkgoPackageName, tablePackageName *string) (*ginkgoNode, bool) {
+func ginkgoNodeFromCallExpr(fset *token.FileSet, ce *ast.CallExpr, ginkgoPackageName *string) (*ginkgoNode, bool) {
 	packageName, identName, ok := packageAndIdentNamesFromCallExpr(ce)
 	if !ok {
 		return nil, false
@@ -142,56 +142,31 @@ func ginkgoNodeFromCallExpr(fset *token.FileSet, ce *ast.CallExpr, ginkgoPackage
 	n.Start, n.End = absoluteOffsetsForNode(fset, ce)
 	n.Nodes = make([]*ginkgoNode, 0)
 	switch identName {
-	case "It", "Measure", "Specify":
+	case "It", "Specify", "Entry":
 		n.Spec = true
 		n.Text = textOrAltFromCallExpr(ce, undefinedTextAlt)
 		return &n, ginkgoPackageName != nil && *ginkgoPackageName == packageName
-	case "Entry":
-		n.Spec = true
-		n.Text = textOrAltFromCallExpr(ce, undefinedTextAlt)
-		return &n, tablePackageName != nil && *tablePackageName == packageName
-	case "FIt", "FMeasure", "FSpecify":
+	case "FIt", "FSpecify", "FEntry":
 		n.Spec = true
 		n.Focused = true
 		n.Text = textOrAltFromCallExpr(ce, undefinedTextAlt)
 		return &n, ginkgoPackageName != nil && *ginkgoPackageName == packageName
-	case "FEntry":
-		n.Spec = true
-		n.Focused = true
-		n.Text = textOrAltFromCallExpr(ce, undefinedTextAlt)
-		return &n, tablePackageName != nil && *tablePackageName == packageName
-	case "PIt", "PMeasure", "PSpecify", "XIt", "XMeasure", "XSpecify":
+	case "PIt", "PSpecify", "XIt", "XSpecify", "PEntry", "XEntry":
 		n.Spec = true
 		n.Pending = true
 		n.Text = textOrAltFromCallExpr(ce, undefinedTextAlt)
 		return &n, ginkgoPackageName != nil && *ginkgoPackageName == packageName
-	case "PEntry", "XEntry":
-		n.Spec = true
-		n.Pending = true
-		n.Text = textOrAltFromCallExpr(ce, undefinedTextAlt)
-		return &n, tablePackageName != nil && *tablePackageName == packageName
-	case "Context", "Describe", "When":
+	case "Context", "Describe", "When", "DescribeTable":
 		n.Text = textOrAltFromCallExpr(ce, undefinedTextAlt)
 		return &n, ginkgoPackageName != nil && *ginkgoPackageName == packageName
-	case "DescribeTable":
-		n.Text = textOrAltFromCallExpr(ce, undefinedTextAlt)
-		return &n, tablePackageName != nil && *tablePackageName == packageName
-	case "FContext", "FDescribe", "FWhen":
+	case "FContext", "FDescribe", "FWhen", "FDescribeTable":
 		n.Focused = true
 		n.Text = textOrAltFromCallExpr(ce, undefinedTextAlt)
 		return &n, ginkgoPackageName != nil && *ginkgoPackageName == packageName
-	case "FDescribeTable":
-		n.Focused = true
-		n.Text = textOrAltFromCallExpr(ce, undefinedTextAlt)
-		return &n, tablePackageName != nil && *tablePackageName == packageName
-	case "PContext", "PDescribe", "PWhen", "XContext", "XDescribe", "XWhen":
+	case "PContext", "PDescribe", "PWhen", "XContext", "XDescribe", "XWhen", "PDescribeTable", "XDescribeTable":
 		n.Pending = true
 		n.Text = textOrAltFromCallExpr(ce, undefinedTextAlt)
 		return &n, ginkgoPackageName != nil && *ginkgoPackageName == packageName
-	case "PDescribeTable", "XDescribeTable":
-		n.Pending = true
-		n.Text = textOrAltFromCallExpr(ce, undefinedTextAlt)
-		return &n, tablePackageName != nil && *tablePackageName == packageName
 	case "By":
 		n.Text = textOrAltFromCallExpr(ce, undefinedTextAlt)
 		return &n, ginkgoPackageName != nil && *ginkgoPackageName == packageName

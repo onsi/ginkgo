@@ -1,17 +1,16 @@
 Name,Text,Start,End,Spec,Focused,Pending
-Describe,NormalFixture,115,604,false,false,false
-Describe,normal,151,243,false,false,false
-It,normal,181,239,true,false,false
-By,step 1,206,218,false,false,false
-By,step 2,222,234,false,false,false
-Context,normal,246,306,false,false,false
-It,normal,275,302,true,false,false
-When,normal,309,366,false,false,false
-It,normal,335,362,true,false,false
-It,normal,369,395,true,false,false
-Specify,normal,398,429,true,false,false
-Measure,normal,432,479,true,false,false
-DescribeTable,normal,482,540,false,false,false
-Entry,normal,521,536,true,false,false
-DescribeTable,normal,543,601,false,false,false
-Entry,normal,582,597,true,false,false
+Describe,NormalFixture,70,509,false,false,false
+Describe,normal,106,198,false,false,false
+It,normal,136,194,true,false,false
+By,step 1,161,173,false,false,false
+By,step 2,177,189,false,false,false
+Context,normal,201,261,false,false,false
+It,normal,230,257,true,false,false
+When,normal,264,321,false,false,false
+It,normal,290,317,true,false,false
+It,normal,324,350,true,false,false
+Specify,normal,353,384,true,false,false
+DescribeTable,normal,387,445,false,false,false
+Entry,normal,426,441,true,false,false
+DescribeTable,normal,448,506,false,false,false
+Entry,normal,487,502,true,false,false
