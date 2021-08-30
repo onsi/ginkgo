@@ -16,6 +16,42 @@ var _ = Describe("UniqueNodeID", func() {
 	})
 })
 
+var _ = Describe("Partitioning Decorations", func() {
+	It("separates out decorations and non-decorations", func() {
+		type Foo struct {
+			A int
+		}
+		decorations, remaining := internal.PartitionDecorations(
+			Offset(3),
+			Foo{3},
+			types.NewCustomCodeLocation("hey there"),
+			"hey there",
+			Focus,
+			2.0,
+			Pending,
+			1,
+			FlakeAttempts(1),
+			true,
+		)
+
+		Ω(decorations).Should(Equal([]interface{}{
+			Offset(3),
+			types.NewCustomCodeLocation("hey there"),
+			Focus,
+			Pending,
+			FlakeAttempts(1),
+		}))
+
+		Ω(remaining).Should(Equal([]interface{}{
+			Foo{3},
+			"hey there",
+			2.0,
+			1,
+			true,
+		}))
+	})
+})
+
 var _ = Describe("Construcing nodes", func() {
 	var dt *types.DeprecationTracker
 	var didRun bool

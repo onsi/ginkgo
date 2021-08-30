@@ -274,7 +274,7 @@ func HavePanicked(options ...interface{}) OmegaMatcher {
 		} else if t == reflect.TypeOf(CapturedStdOutput("")) {
 			fields["CapturedStdOutErr"] = Equal(string(option.(CapturedStdOutput)))
 		} else if t.Kind() == reflect.String {
-			failureFields["ForwardedPanic"] = Equal(option.(string))
+			failureFields["ForwardedPanic"] = ContainSubstring(option.(string))
 		} else if t == reflect.TypeOf(types.FailureNodeIsLeafNode) {
 			failureFields["FailureNodeContext"] = Equal(option.(types.FailureNodeContext))
 		} else if t == reflect.TypeOf(types.NodeTypeIt) {

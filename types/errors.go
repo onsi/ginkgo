@@ -1,7 +1,9 @@
 package types
 
 import (
+	"fmt"
 	"reflect"
+	"strings"
 
 	"github.com/onsi/ginkgo/formatter"
 )
@@ -16,6 +18,10 @@ type GinkgoError struct {
 func (g GinkgoError) Error() string {
 	out := formatter.F("{{bold}}{{red}}%s{{/}}\n", g.Heading)
 	if (g.CodeLocation != CodeLocation{}) {
+		contentsOfLine := strings.TrimLeft(g.CodeLocation.ContentsOfLine(), "\t ")
+		if contentsOfLine != "" {
+			out += formatter.F("{{light-gray}}%s{{/}}\n", contentsOfLine)
+		}
 		out += formatter.F("{{gray}}%s{{/}}\n", g.CodeLocation)
 	}
 	if g.Message != "" {
@@ -229,6 +235,61 @@ func (g ginkgoErrors) AddReportEntryNotDuringRunPhase(cl CodeLocation) error {
 		Message:      formatter.F(`It looks like you are calling {{bold}}AddGinkgoReport{{/}} outside of a running test.  Make sure you call {{bold}}AddGinkgoReport{{/}} inside a runnable node such as It or BeforeEach and not inside the body of a container such as Describe or Context.`),
 		CodeLocation: cl,
 		DocLink:      "attaching-data-to-reports",
+	}
+}
+
+/* Table errors */
+func (g ginkgoErrors) MultipleEntryBodyFunctionsForTable(cl CodeLocation) error {
+	return GinkgoError{
+		Heading:      "DescribeTable passed multiple functions",
+		Message:      "It looks like you are passing multiple functions into DescribeTable.  Only one function can be passed in.  This function will be called for each Entry in the table.",
+		CodeLocation: cl,
+		DocLink:      "table-driven-tests",
+	}
+}
+
+func (g ginkgoErrors) InvalidEntryDescription(cl CodeLocation) error {
+	return GinkgoError{
+		Heading:      "Invalid Entry description",
+		Message:      "Entry description functions must be a string, a function that accepts the entry parameters and returns a string, or nil.",
+		CodeLocation: cl,
+		DocLink:      "table-driven-tests",
+	}
+}
+
+func (g ginkgoErrors) TooFewParametersToTableFunction(expected, actual int, kind string, cl CodeLocation) error {
+	return GinkgoError{
+		Heading:      fmt.Sprintf("Too few parameters passed in to %s", kind),
+		Message:      fmt.Sprintf("The %s expected %d parameters but you passed in %d", kind, expected, actual),
+		CodeLocation: cl,
+		DocLink:      "table-driven-tests",
+	}
+}
+
+func (g ginkgoErrors) TooManyParametersToTableFunction(expected, actual int, kind string, cl CodeLocation) error {
+	return GinkgoError{
+		Heading:      fmt.Sprintf("Too many parameters passed in to %s", kind),
+		Message:      fmt.Sprintf("The %s expected %d parameters but you passed in %d", kind, expected, actual),
+		CodeLocation: cl,
+		DocLink:      "table-driven-tests",
+	}
+}
+
+func (g ginkgoErrors) IncorrectParameterTypeToTableFunction(i int, expected, actual reflect.Type, kind string, cl CodeLocation) error {
+	return GinkgoError{
+		Heading:      fmt.Sprintf("Incorrect parameters type passed to %s", kind),
+		Message:      fmt.Sprintf("The %s expected parameter #%d to be of type <%s> but you passed in <%s>", kind, i, expected, actual),
+		CodeLocation: cl,
+		DocLink:      "table-driven-tests",
+	}
+}
+
+func (g ginkgoErrors) IncorrectVariadicParameterTypeToTableFunction(expected, actual reflect.Type, kind string, cl CodeLocation) error {
+	return GinkgoError{
+		Heading:      fmt.Sprintf("Incorrect parameters type passed to %s", kind),
+		Message:      fmt.Sprintf("The %s expected its variadic parameters to be of type <%s> but you passed in <%s>", kind, expected, actual),
+		CodeLocation: cl,
+		DocLink:      "table-driven-tests",
 	}
 }
 

@@ -1,6 +1,7 @@
 package types_test
 
 import (
+	"fmt"
 	"reflect"
 	"strings"
 
@@ -38,6 +39,22 @@ var _ = Describe("GinkgoErrors", func() {
 			},
 			"{{bold}}{{red}}Error! Error!{{/}}",
 			"{{gray}}foo.go:17{{/}}",
+			"  An error occured.",
+			"  Welp!",
+			"",
+			"  {{bold}}Learn more at:{{/}}",
+			"  {{cyan}}{{underline}}http://onsi.github.io/ginkgo/#the-doc-section{{/}}",
+		),
+		Entry("an error that successfully loads the line of its CodeLocation",
+			types.GinkgoError{
+				Heading:      "Error! Error!",
+				CodeLocation: types.NewCodeLocation(0),
+				Message:      "An error occured.\nWelp!",
+				DocLink:      "the-doc-section",
+			},
+			"{{bold}}{{red}}Error! Error!{{/}}",
+			"{{light-gray}}CodeLocation: types.NewCodeLocation(0),{{/}}",
+			fmt.Sprintf("{{gray}}%s:%d{{/}}", types.NewCodeLocation(0).FileName, types.NewCodeLocation(0).LineNumber-6),
 			"  An error occured.",
 			"  Welp!",
 			"",
