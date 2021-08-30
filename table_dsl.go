@@ -1,7 +1,6 @@
 package ginkgo
 
 import (
-	"fmt"
 	"reflect"
 
 	"github.com/onsi/ginkgo/internal"
@@ -53,120 +52,42 @@ For example:
 		Entry(describe("x < y"), 0, 1, false),
 	)
 */
-func DescribeTable(description string, itBody interface{}, entries ...TableEntry) bool {
-	describeTable(description, itBody, entries, false, false)
+func DescribeTable(description string, args ...interface{}) bool {
+	generateTable(description, args...)
 	return true
 }
 
 /*
 You can focus a table with `FDescribeTable`.  This is equivalent to `FDescribe`.
 */
-func FDescribeTable(description string, itBody interface{}, entries ...TableEntry) bool {
-	describeTable(description, itBody, entries, true, false)
+func FDescribeTable(description string, args ...interface{}) bool {
+	args = append(args, internal.Focus)
+	generateTable(description, args...)
 	return true
 }
 
 /*
 You can mark a table as pending with `PDescribeTable`.  This is equivalent to `PDescribe`.
 */
-func PDescribeTable(description string, itBody interface{}, entries ...TableEntry) bool {
-	describeTable(description, itBody, entries, false, true)
+func PDescribeTable(description string, args ...interface{}) bool {
+	args = append(args, internal.Pending)
+	generateTable(description, args...)
 	return true
 }
 
 /*
 You can mark a table as pending with `XDescribeTable`.  This is equivalent to `XDescribe`.
 */
-func XDescribeTable(description string, itBody interface{}, entries ...TableEntry) bool {
-	describeTable(description, itBody, entries, false, true)
-	return true
-}
-
-func describeTable(description string, itBody interface{}, entries []TableEntry, markedFocus bool, markedPending bool) {
-	itBodyValue := reflect.ValueOf(itBody)
-	if itBodyValue.Kind() != reflect.Func {
-		panic(fmt.Sprintf("DescribeTable expects a function, got %#v", itBody))
-	}
-
-	args := []interface{}{
-		func() {
-			for _, entry := range entries {
-				entry.generateIt(itBodyValue)
-			}
-		},
-		types.NewCodeLocation(2),
-	}
-	if markedFocus {
-		args = append(args, internal.Focus)
-	}
-	if markedPending {
-		args = append(args, internal.Pending)
-	}
-
-	pushNode(internal.NewNode(deprecationTracker, types.NodeTypeContainer, description, args...))
-}
+var XDescribeTable = PDescribeTable
 
 /*
 TableEntry represents an entry in a table test.  You generally use the `Entry` constructor.
 */
 type TableEntry struct {
-	Description  interface{}
-	Parameters   []interface{}
-	Pending      bool
-	Focused      bool
+	description  interface{}
+	decorations  []interface{}
+	parameters   []interface{}
 	codeLocation types.CodeLocation
-}
-
-func (t TableEntry) generateIt(itBody reflect.Value) {
-	var description string
-	descriptionValue := reflect.ValueOf(t.Description)
-	switch descriptionValue.Kind() {
-	case reflect.String:
-		description = descriptionValue.String()
-	case reflect.Func:
-		values := castParameters(descriptionValue, t.Parameters)
-		res := descriptionValue.Call(values)
-		if len(res) != 1 {
-			exitIfErr(fmt.Errorf("The describe function should return only a value, returned %d", len(res)))
-		}
-		if res[0].Kind() != reflect.String {
-			exitIfErr(fmt.Errorf("The describe function should return a string, returned %#v", res[0]))
-		}
-		description = res[0].String()
-	default:
-		exitIfErr(fmt.Errorf("Description can either be a string or a function, got %#v", descriptionValue))
-	}
-
-	args := []interface{}{t.codeLocation}
-
-	if t.Pending {
-		args = append(args, internal.Pending)
-	} else {
-		values := castParameters(itBody, t.Parameters)
-		body := func() {
-			itBody.Call(values)
-		}
-		args = append(args, body)
-	}
-	if t.Focused {
-		args = append(args, internal.Focus)
-	}
-
-	pushNode(internal.NewNode(deprecationTracker, types.NodeTypeIt, description, args...))
-}
-
-func castParameters(function reflect.Value, parameters []interface{}) []reflect.Value {
-	res := make([]reflect.Value, len(parameters))
-	funcType := function.Type()
-	for i, param := range parameters {
-		if param == nil {
-			inType := funcType.In(i)
-			res[i] = reflect.Zero(inType)
-		} else {
-			res[i] = reflect.ValueOf(param)
-		}
-	}
-	return res
 }
 
 /*
@@ -177,51 +98,151 @@ Subsequent parameters are saved off and sent to the callback passed in to `Descr
 
 Each Entry ends up generating an individual Ginkgo It.
 */
-func Entry(description interface{}, parameters ...interface{}) TableEntry {
-	return TableEntry{
-		Description:  description,
-		Parameters:   parameters,
-		Pending:      false,
-		Focused:      false,
-		codeLocation: types.NewCodeLocation(1),
-	}
+func Entry(description interface{}, args ...interface{}) TableEntry {
+	decorations, parameters := internal.PartitionDecorations(args...)
+	return TableEntry{description: description, decorations: decorations, parameters: parameters, codeLocation: types.NewCodeLocation(1)}
 }
 
 /*
 You can focus a particular entry with FEntry.  This is equivalent to FIt.
 */
-func FEntry(description interface{}, parameters ...interface{}) TableEntry {
-	return TableEntry{
-		Description:  description,
-		Parameters:   parameters,
-		Pending:      false,
-		Focused:      true,
-		codeLocation: types.NewCodeLocation(1),
-	}
+func FEntry(description interface{}, args ...interface{}) TableEntry {
+	decorations, parameters := internal.PartitionDecorations(args...)
+	decorations = append(decorations, internal.Focus)
+	return TableEntry{description: description, decorations: decorations, parameters: parameters, codeLocation: types.NewCodeLocation(1)}
 }
 
 /*
 You can mark a particular entry as pending with PEntry.  This is equivalent to PIt.
 */
-func PEntry(description interface{}, parameters ...interface{}) TableEntry {
-	return TableEntry{
-		Description:  description,
-		Parameters:   parameters,
-		Pending:      true,
-		Focused:      false,
-		codeLocation: types.NewCodeLocation(1),
-	}
+func PEntry(description interface{}, args ...interface{}) TableEntry {
+	decorations, parameters := internal.PartitionDecorations(args...)
+	decorations = append(decorations, internal.Pending)
+	return TableEntry{description: description, decorations: decorations, parameters: parameters, codeLocation: types.NewCodeLocation(1)}
 }
 
 /*
 You can mark a particular entry as pending with XEntry.  This is equivalent to XIt.
 */
-func XEntry(description interface{}, parameters ...interface{}) TableEntry {
-	return TableEntry{
-		Description:  description,
-		Parameters:   parameters,
-		Pending:      true,
-		Focused:      false,
-		codeLocation: types.NewCodeLocation(1),
+var XEntry = PEntry
+
+func generateTable(description string, args ...interface{}) {
+	cl := types.NewCodeLocation(2)
+	containerNodeArgs := []interface{}{cl}
+
+	entries := []TableEntry{}
+	var itBody interface{}
+
+	for _, arg := range args {
+		switch t := reflect.TypeOf(arg); {
+		case t == reflect.TypeOf(TableEntry{}):
+			entries = append(entries, arg.(TableEntry))
+		case t.Kind() == reflect.Func:
+			if itBody != nil {
+				exitIfErr(types.GinkgoErrors.MultipleEntryBodyFunctionsForTable(cl))
+			}
+			itBody = arg
+		default:
+			containerNodeArgs = append(containerNodeArgs, arg)
+		}
+	}
+
+	containerNodeArgs = append(containerNodeArgs, func() {
+		for _, entry := range entries {
+			var err error
+			entry := entry
+			var description string
+			switch t := reflect.TypeOf(entry.description); {
+			case t == reflect.TypeOf(""):
+				description = entry.description.(string)
+			case t.Kind() == reflect.Func && t.NumOut() == 1 && t.Out(0) == reflect.TypeOf(""):
+				err = validateParameters(entry.description, entry.parameters, "Entry Description function", entry.codeLocation)
+				if err == nil {
+					description = invokeFunction(entry.description, entry.parameters)[0].String()
+				}
+			default:
+				err = types.GinkgoErrors.InvalidEntryDescription(entry.codeLocation)
+			}
+
+			if err == nil {
+				err = validateParameters(itBody, entry.parameters, "Table Body function", entry.codeLocation)
+			}
+			itNodeArgs := []interface{}{entry.codeLocation}
+			itNodeArgs = append(itNodeArgs, entry.decorations...)
+			itNodeArgs = append(itNodeArgs, func() {
+				if err != nil {
+					panic(err)
+				}
+				invokeFunction(itBody, entry.parameters)
+			})
+
+			pushNode(internal.NewNode(deprecationTracker, types.NodeTypeIt, description, itNodeArgs...))
+		}
+	})
+
+	pushNode(internal.NewNode(deprecationTracker, types.NodeTypeContainer, description, containerNodeArgs...))
+}
+
+func invokeFunction(function interface{}, parameters []interface{}) []reflect.Value {
+	inValues := make([]reflect.Value, len(parameters))
+
+	funcType := reflect.TypeOf(function)
+	limit := funcType.NumIn()
+	if funcType.IsVariadic() {
+		limit = limit - 1
+	}
+
+	for i := 0; i < limit && i < len(parameters); i++ {
+		inValues[i] = computeValue(parameters[i], funcType.In(i))
+	}
+
+	if funcType.IsVariadic() {
+		variadicType := funcType.In(limit).Elem()
+		for i := limit; i < len(parameters); i++ {
+			inValues[i] = computeValue(parameters[i], variadicType)
+		}
+	}
+
+	return reflect.ValueOf(function).Call(inValues)
+}
+
+func validateParameters(function interface{}, parameters []interface{}, kind string, cl types.CodeLocation) error {
+	funcType := reflect.TypeOf(function)
+	limit := funcType.NumIn()
+	if funcType.IsVariadic() {
+		limit = limit - 1
+	}
+	if len(parameters) < limit {
+		return types.GinkgoErrors.TooFewParametersToTableFunction(limit, len(parameters), kind, cl)
+	}
+	if len(parameters) > limit && !funcType.IsVariadic() {
+		return types.GinkgoErrors.TooManyParametersToTableFunction(limit, len(parameters), kind, cl)
+	}
+	var i = 0
+	for ; i < limit; i++ {
+		actual := reflect.TypeOf(parameters[i])
+		expected := funcType.In(i)
+		if !(actual == nil) && !actual.AssignableTo(expected) {
+			return types.GinkgoErrors.IncorrectParameterTypeToTableFunction(i+1, expected, actual, kind, cl)
+		}
+	}
+	if funcType.IsVariadic() {
+		expected := funcType.In(limit).Elem()
+		for ; i < len(parameters); i++ {
+			actual := reflect.TypeOf(parameters[i])
+			if !(actual == nil) && !actual.AssignableTo(expected) {
+				return types.GinkgoErrors.IncorrectVariadicParameterTypeToTableFunction(expected, actual, kind, cl)
+			}
+		}
+	}
+
+	return nil
+}
+
+func computeValue(parameter interface{}, t reflect.Type) reflect.Value {
+	if parameter == nil {
+		return reflect.Zero(t)
+	} else {
+		return reflect.ValueOf(parameter)
 	}
 }

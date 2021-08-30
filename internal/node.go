@@ -55,6 +55,28 @@ type FlakeAttempts uint
 type Offset uint
 type Done chan<- interface{} // Deprecated Done Channel for asynchronous testing
 
+func PartitionDecorations(args ...interface{}) ([]interface{}, []interface{}) {
+	decorations := []interface{}{}
+	remainingArgs := []interface{}{}
+	for _, arg := range args {
+		switch t := reflect.TypeOf(arg); {
+		case t == reflect.TypeOf(Offset(0)):
+			decorations = append(decorations, arg)
+		case t == reflect.TypeOf(types.CodeLocation{}):
+			decorations = append(decorations, arg)
+		case t == reflect.TypeOf(Focus):
+			decorations = append(decorations, arg)
+		case t == reflect.TypeOf(Pending):
+			decorations = append(decorations, arg)
+		case t == reflect.TypeOf(FlakeAttempts(0)):
+			decorations = append(decorations, arg)
+		default:
+			remainingArgs = append(remainingArgs, arg)
+		}
+	}
+	return decorations, remainingArgs
+}
+
 func NewNode(deprecationTracker *types.DeprecationTracker, nodeType types.NodeType, text string, args ...interface{}) (Node, []error) {
 	baseOffset := 2
 	node := Node{
