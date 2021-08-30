@@ -421,7 +421,7 @@ var _ = Describe("Table driven tests", func() {
 					Entry("A", 1),
 					Entry("B", 2),
 					Entry("C", 3),
-					Entry("D", FlakeAttempts(3), 3),
+					Entry("D", []interface{}{FlakeAttempts(3), Offset(2)}, 3),
 				)
 			})
 			Ω(success).Should(BeFalse())

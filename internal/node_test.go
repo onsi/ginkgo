@@ -29,7 +29,11 @@ var _ = Describe("Partitioning Decorations", func() {
 			Focus,
 			2.0,
 			Pending,
+			nil,
 			1,
+			[]interface{}{Focus, Pending, []interface{}{Offset(2), FlakeAttempts(2)}},
+			[]interface{}{1, 2, 3.1, nil},
+			[]interface{}{},
 			FlakeAttempts(1),
 			true,
 		)
@@ -39,6 +43,7 @@ var _ = Describe("Partitioning Decorations", func() {
 			types.NewCustomCodeLocation("hey there"),
 			Focus,
 			Pending,
+			[]interface{}{Focus, Pending, []interface{}{Offset(2), FlakeAttempts(2)}},
 			FlakeAttempts(1),
 		}))
 
@@ -46,7 +51,10 @@ var _ = Describe("Partitioning Decorations", func() {
 			Foo{3},
 			"hey there",
 			2.0,
+			nil,
 			1,
+			[]interface{}{1, 2, 3.1, nil},
+			[]interface{}{},
 			true,
 		}))
 	})
