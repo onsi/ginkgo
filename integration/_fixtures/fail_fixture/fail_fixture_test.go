@@ -36,10 +36,4 @@ var _ = DescribeTable("a top level DescribeTable",
 		Expect(x).To(Equal(y))
 	},
 	Entry("a TableEntry constructed by Entry", 2, 3),
-	TableEntry{
-		Description: "a directly constructed TableEntry",
-		Parameters:  []interface{}{2, 3},
-		Pending:     false,
-		Focused:     false,
-	},
 )
