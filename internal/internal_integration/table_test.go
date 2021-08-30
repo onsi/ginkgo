@@ -18,6 +18,7 @@ var _ = Describe("Table driven tests", func() {
 			F("fail")
 		}
 	}
+
 	Describe("constructing tables", func() {
 		BeforeEach(func() {
 			success, _ := RunFixture("table happy-path", func() {
@@ -42,9 +43,10 @@ var _ = Describe("Table driven tests", func() {
 			entryDescriptionBuilder := func(a, b int) string {
 				return fmt.Sprintf("%d vs %d", a, b)
 			}
+			invalidEntryDescriptionBuilder := func(a, b int) {}
 
 			success, _ := RunFixture("table happy-path with custom descriptions", func() {
-				DescribeTable("hello", bodyFunc, Entry(entryDescriptionBuilder, 1, 1), Entry(entryDescriptionBuilder, 2, 2), Entry(entryDescriptionBuilder, 1, 2), Entry(entryDescriptionBuilder, 3, 3))
+				DescribeTable("hello", bodyFunc, Entry(entryDescriptionBuilder, 1, 1), Entry(entryDescriptionBuilder, 2, 2), Entry(entryDescriptionBuilder, 1, 2), Entry(entryDescriptionBuilder, 3, 3), Entry(invalidEntryDescriptionBuilder, 4, 4))
 			})
 			Ω(success).Should(BeFalse())
 		})
@@ -53,10 +55,14 @@ var _ = Describe("Table driven tests", func() {
 			Ω(rt).Should(HaveTracked("1 vs 1", "2 vs 2", "1 vs 2", "3 vs 3"))
 		})
 
+		It("catches invalid entry description functions", func() {
+			Ω(reporter.Did.Find("")).Should(HavePanicked("Invalid Entry description"))
+		})
+
 		It("reports on the tests correctly", func() {
 			Ω(reporter.Did.Names()).Should(Equal([]string{"1 vs 1", "2 vs 2", "1 vs 2", "3 vs 3"}))
 			Ω(reporter.Did.Find("1 vs 2")).Should(HaveFailed("fail", types.NodeTypeIt))
-			Ω(reporter.End).Should(BeASuiteSummary(false, NSpecs(4), NPassed(3), NFailed(1)))
+			Ω(reporter.End).Should(BeASuiteSummary(false, NSpecs(5), NPassed(3), NFailed(2)))
 		})
 	})
 
@@ -64,20 +70,45 @@ var _ = Describe("Table driven tests", func() {
 		Describe("when table entries are passed incorrect parameters", func() {
 			BeforeEach(func() {
 				success, _ := RunFixture("table with invalid inputs", func() {
-					DescribeTable("hello", bodyFunc, Entry("A", 1, 1), Entry("B", 1, 1), Entry("C", 1, 2), Entry("D", 1, "aardvark"), Entry("E", 1, 1))
+					Describe("container", func() {
+						DescribeTable("with variadic parameters", func(a int, b string, c ...float64) { rt.Run(CurrentSpecReport().LeafNodeText) },
+							Entry("var-A", 1, "b"),
+							Entry("var-B", 1, "b", 3.0, 4.0),
+							Entry("var-too-few", 1),
+							Entry("var-wrong-type", 1, 2),
+							Entry("var-wrong-type-variadic", 1, "b", 3.0, 4, 5.0),
+						)
+						DescribeTable("without variadic parameters", func(a int, b string) { rt.Run(CurrentSpecReport().LeafNodeText) },
+							Entry("nonvar-A", 1, "b"),
+							Entry("nonvar-too-few", 1),
+							Entry("nonvar-wrong-type", 1, 2),
+							Entry("nonvar-too-many", 1, "b", 2),
+
+							Entry(func(a int, b string) string { return "foo" }, 1, 2),
+						)
+					})
 				})
 				Ω(success).Should(BeFalse())
 			})
 
-			It("runs all the valid entries", func() {
-				Ω(rt).Should(HaveTracked("A", "B", "C", "E"))
+			It("runs all the valid entries, but not the invalid entries", func() {
+				Ω(rt).Should(HaveTracked("var-A", "var-B", "nonvar-A"))
+			})
+
+			It("reports the invalid entries as having panicked", func() {
+				Ω(reporter.Did.Find("var-too-few")).Should(HavePanicked("The Table Body function expected 2 parameters but you passed in 1"))
+				Ω(reporter.Did.Find("var-wrong-type")).Should(HavePanicked("The Table Body function expected parameter #2 to be of type <string> but you\n  passed in <int>"))
+				Ω(reporter.Did.Find("var-wrong-type-variadic")).Should(HavePanicked("The Table Body function expected its variadic parameters to be of type\n  <float64> but you passed in <int>"))
+
+				Ω(reporter.Did.Find("nonvar-too-few")).Should(HavePanicked("The Table Body function expected 2 parameters but you passed in 1"))
+				Ω(reporter.Did.Find("nonvar-wrong-type")).Should(HavePanicked("The Table Body function expected parameter #2 to be of type <string> but you\n  passed in <int>"))
+				Ω(reporter.Did.Find("nonvar-too-many")).Should(HavePanicked("The Table Body function expected 2 parameters but you passed in 3"))
+
+				Ω(reporter.Did.Find("")).Should(HavePanicked("The Entry Description function expected parameter #2 to be of type <string>"))
 			})
 
 			It("reports on the tests correctly", func() {
-				Ω(reporter.Did.Names()).Should(Equal([]string{"A", "B", "C", "D", "E"}))
-				Ω(reporter.Did.Find("C")).Should(HaveFailed("fail", types.NodeTypeIt))
-				Ω(reporter.Did.Find("D")).Should(HavePanicked("reflect: Call using string as type int", types.NodeTypeIt))
-				Ω(reporter.End).Should(BeASuiteSummary(false, NSpecs(5), NPassed(3), NFailed(2)))
+				Ω(reporter.End).Should(BeASuiteSummary(false, NSpecs(10), NPassed(3), NFailed(7)))
 			})
 		})
 
@@ -121,12 +152,18 @@ var _ = Describe("Table driven tests", func() {
 			Ω(a).Should(BeNil())
 			Ω(b).Should(BeNil())
 		}, Entry("nils", nil, nil))
+
+		DescribeTable("it supports variadic parameters", func(a int, b string, c ...interface{}) {
+			Ω(a).Should(Equal(c[0]))
+			Ω(b).Should(Equal(c[1]))
+			Ω(c[2]).Should(BeNil())
+		}, Entry("variadic arguments", 1, "one", 1, "one", nil))
 	})
 
 	Describe("when table entries are marked pending", func() {
 		BeforeEach(func() {
 			success, _ := RunFixture("table with pending entries", func() {
-				DescribeTable("hello", bodyFunc, Entry("A", 1, 1), PEntry("B", 1, 1), Entry("C", 1, 2), Entry("D", 1, 1))
+				DescribeTable("hello", bodyFunc, Entry("A", 1, 1), PEntry("B", 1, 1), Entry("C", 1, 2), Entry("D", 1, 1), Entry("E", Pending, 1, 1))
 			})
 			Ω(success).Should(BeFalse())
 		})
@@ -136,32 +173,34 @@ var _ = Describe("Table driven tests", func() {
 		})
 
 		It("reports on the tests correctly", func() {
-			Ω(reporter.Did.Names()).Should(Equal([]string{"A", "B", "C", "D"}))
+			Ω(reporter.Did.Names()).Should(Equal([]string{"A", "B", "C", "D", "E"}))
 			Ω(reporter.Did.Find("B")).Should(BePending())
 			Ω(reporter.Did.Find("C")).Should(HaveFailed("fail", types.NodeTypeIt))
-			Ω(reporter.End).Should(BeASuiteSummary(false, NSpecs(4), NPassed(2), NFailed(1), NPending(1)))
+			Ω(reporter.Did.Find("E")).Should(BePending())
+			Ω(reporter.End).Should(BeASuiteSummary(false, NSpecs(5), NPassed(2), NFailed(1), NPending(2)))
 		})
 	})
 
 	Describe("when table entries are marked focused", func() {
 		BeforeEach(func() {
 			success, _ := RunFixture("table with focused entries", func() {
-				DescribeTable("hello", bodyFunc, Entry("A", 1, 1), Entry("B", 1, 1), FEntry("C", 1, 2), FEntry("D", 1, 1))
+				DescribeTable("hello", bodyFunc, Entry("A", 1, 1), Entry("B", 1, 1), FEntry("C", 1, 2), FEntry("D", 1, 1), Entry("E", Focus, 1, 1))
 			})
 			Ω(success).Should(BeFalse())
 		})
 
 		It("runs all the focused entries", func() {
-			Ω(rt).Should(HaveTracked("C", "D"))
+			Ω(rt).Should(HaveTracked("C", "D", "E"))
 		})
 
 		It("reports on the tests correctly", func() {
-			Ω(reporter.Did.Names()).Should(Equal([]string{"A", "B", "C", "D"}))
+			Ω(reporter.Did.Names()).Should(Equal([]string{"A", "B", "C", "D", "E"}))
 			Ω(reporter.Did.Find("A")).Should(HaveBeenSkipped())
 			Ω(reporter.Did.Find("B")).Should(HaveBeenSkipped())
 			Ω(reporter.Did.Find("C")).Should(HaveFailed("fail", types.NodeTypeIt))
 			Ω(reporter.Did.Find("D")).Should(HavePassed(types.NodeTypeIt))
-			Ω(reporter.End).Should(BeASuiteSummary(false, NSpecs(4), NPassed(1), NFailed(1), NSkipped(2)))
+			Ω(reporter.Did.Find("E")).Should(HavePassed(types.NodeTypeIt))
+			Ω(reporter.End).Should(BeASuiteSummary(false, NSpecs(5), NPassed(2), NFailed(1), NSkipped(2)))
 		})
 	})
 
@@ -169,7 +208,8 @@ var _ = Describe("Table driven tests", func() {
 		BeforeEach(func() {
 			success, _ := RunFixture("table marked pending", func() {
 				Describe("top-level", func() {
-					PDescribeTable("hello", bodyFunc, Entry("A", 1, 1), Entry("B", 1, 1), Entry("C", 1, 2), Entry("D", 1, 1))
+					PDescribeTable("hello", bodyFunc, Entry("A", 1, 1), Entry("B", 1, 1))
+					DescribeTable("hello", Pending, bodyFunc, Entry("C", 1, 2), Entry("D", 1, 1))
 					It("runs", rt.T("runs"))
 				})
 			})
@@ -196,7 +236,8 @@ var _ = Describe("Table driven tests", func() {
 		BeforeEach(func() {
 			success, _ := RunFixture("table marked focused", func() {
 				Describe("top-level", func() {
-					FDescribeTable("hello", bodyFunc, Entry("A", 1, 1), Entry("B", 1, 1), Entry("C", 1, 2), Entry("D", 1, 1))
+					FDescribeTable("hello", bodyFunc, Entry("A", 1, 1), Entry("B", 1, 1))
+					DescribeTable("hello", Focus, bodyFunc, Entry("C", 1, 2), Entry("D", 1, 1))
 					It("does not run", rt.T("does not run"))
 				})
 			})
@@ -216,6 +257,48 @@ var _ = Describe("Table driven tests", func() {
 			Ω(reporter.Did.Find("does not run")).Should(HaveBeenSkipped())
 
 			Ω(reporter.End).Should(BeASuiteSummary(false, NSpecs(5), NPassed(3), NFailed(1), NSkipped(1)))
+		})
+	})
+
+	Describe("support for decorators", func() {
+		BeforeEach(func() {
+			success, _ := RunFixture("flaky table", func() {
+				var counter int
+				var currentSpec string
+
+				BeforeEach(func() {
+					if currentSpec != CurrentSpecReport().LeafNodeText {
+						counter = 0
+						currentSpec = CurrentSpecReport().LeafNodeText
+					}
+				})
+
+				DescribeTable("contrived flaky table", FlakeAttempts(2),
+					func(failUntil int) {
+						rt.Run(CurrentSpecReport().LeafNodeText)
+						counter += 1
+						if counter < failUntil {
+							F("fail")
+						}
+					},
+					Entry("A", 1),
+					Entry("B", 2),
+					Entry("C", 3),
+					Entry("D", FlakeAttempts(3), 3),
+				)
+			})
+			Ω(success).Should(BeFalse())
+		})
+
+		It("honors the flake attempts decorator", func() {
+			Ω(rt).Should(HaveTracked("A", "B", "B", "C", "C", "D", "D", "D"))
+		})
+
+		It("reports on the specs appropriately", func() {
+			Ω(reporter.Did.Find("A")).Should(HavePassed(NumAttempts(1)))
+			Ω(reporter.Did.Find("B")).Should(HavePassed(NumAttempts(2)))
+			Ω(reporter.Did.Find("C")).Should(HaveFailed(NumAttempts(2)))
+			Ω(reporter.Did.Find("D")).Should(HavePassed(NumAttempts(3)))
 		})
 	})
 })

@@ -49,6 +49,26 @@ var _ = Describe("CodeLocation", func() {
 		})
 	})
 
+	Describe("Fetching the line from the file in question", func() {
+		It("works", func() {
+			codeLocation = types.NewCodeLocation(0)
+			codeLocation.LineNumber = codeLocation.LineNumber - 2
+			Ω(codeLocation.ContentsOfLine()).Should(Equal("\tDescribe(\"Fetching the line from the file in question\", func() {"))
+		})
+
+		It("returns empty string if the line is not found or is out of bounds", func() {
+			codeLocation = types.CodeLocation{
+				FileName:   "foo.go",
+				LineNumber: 0,
+			}
+			Ω(codeLocation.ContentsOfLine()).Should(BeZero())
+
+			codeLocation = types.NewCodeLocation(0)
+			codeLocation.LineNumber = codeLocation.LineNumber + 1000000
+			Ω(codeLocation.ContentsOfLine()).Should(BeZero())
+		})
+	})
+
 	Describe("PruneStack", func() {
 		It("should remove any references to ginkgo and pkg/testing and pkg/runtime", func() {
 			// Hard-coded string, loosely based on what debug.Stack() produces.
