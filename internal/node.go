@@ -59,22 +59,47 @@ func PartitionDecorations(args ...interface{}) ([]interface{}, []interface{}) {
 	decorations := []interface{}{}
 	remainingArgs := []interface{}{}
 	for _, arg := range args {
-		switch t := reflect.TypeOf(arg); {
-		case t == reflect.TypeOf(Offset(0)):
+		if isDecoration(arg) {
 			decorations = append(decorations, arg)
-		case t == reflect.TypeOf(types.CodeLocation{}):
-			decorations = append(decorations, arg)
-		case t == reflect.TypeOf(Focus):
-			decorations = append(decorations, arg)
-		case t == reflect.TypeOf(Pending):
-			decorations = append(decorations, arg)
-		case t == reflect.TypeOf(FlakeAttempts(0)):
-			decorations = append(decorations, arg)
-		default:
+		} else {
 			remainingArgs = append(remainingArgs, arg)
 		}
 	}
 	return decorations, remainingArgs
+}
+
+func isDecoration(arg interface{}) bool {
+	switch t := reflect.TypeOf(arg); {
+	case t == nil:
+		return false
+	case t == reflect.TypeOf(Offset(0)):
+		return true
+	case t == reflect.TypeOf(types.CodeLocation{}):
+		return true
+	case t == reflect.TypeOf(Focus):
+		return true
+	case t == reflect.TypeOf(Pending):
+		return true
+	case t == reflect.TypeOf(FlakeAttempts(0)):
+		return true
+	case t.Kind() == reflect.Slice && isSliceOfDecorations(arg):
+		return true
+	default:
+		return false
+	}
+}
+
+func isSliceOfDecorations(slice interface{}) bool {
+	vSlice := reflect.ValueOf(slice)
+	if vSlice.Len() == 0 {
+		return false
+	}
+	for i := 0; i < vSlice.Len(); i++ {
+		if !isDecoration(vSlice.Index(i).Interface()) {
+			return false
+		}
+	}
+	return true
 }
 
 func NewNode(deprecationTracker *types.DeprecationTracker, nodeType types.NodeType, text string, args ...interface{}) (Node, []error) {
