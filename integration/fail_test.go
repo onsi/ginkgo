@@ -36,7 +36,7 @@ var _ = Describe("Failing Specs", func() {
 			Ω(output).Should(MatchRegexp(`\[It\] a TableEntry constructed by Entry\n.*fail_fixture_test\.go:38`),
 				"the output of a failing Entry should include its file path and line number")
 
-			Ω(output).Should(ContainSubstring("0 Passed | 7 Failed"))
+			Ω(output).Should(ContainSubstring("0 Passed | 6 Failed"))
 		})
 	})
 
