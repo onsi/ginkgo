@@ -2,6 +2,7 @@ package types
 
 import (
 	"fmt"
+	"os"
 	"regexp"
 	"runtime"
 	"runtime/debug"
@@ -20,6 +21,21 @@ func (codeLocation CodeLocation) String() string {
 		return codeLocation.CustomMessage
 	}
 	return fmt.Sprintf("%s:%d", codeLocation.FileName, codeLocation.LineNumber)
+}
+
+func (codeLocation CodeLocation) ContentsOfLine() string {
+	if codeLocation.CustomMessage != "" {
+		return ""
+	}
+	contents, err := os.ReadFile(codeLocation.FileName)
+	if err != nil {
+		return ""
+	}
+	lines := strings.Split(string(contents), "\n")
+	if len(lines) < codeLocation.LineNumber {
+		return ""
+	}
+	return lines[codeLocation.LineNumber-1]
 }
 
 func NewCustomCodeLocation(message string) CodeLocation {
