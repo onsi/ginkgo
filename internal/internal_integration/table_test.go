@@ -38,32 +38,169 @@ var _ = Describe("Table driven tests", func() {
 		})
 	})
 
-	Describe("constructing tables with dynamic entry description functions", func() {
-		BeforeEach(func() {
-			entryDescriptionBuilder := func(a, b int) string {
-				return fmt.Sprintf("%d vs %d", a, b)
-			}
-			invalidEntryDescriptionBuilder := func(a, b int) {}
-
-			success, _ := RunFixture("table happy-path with custom descriptions", func() {
-				DescribeTable("hello", bodyFunc, Entry(entryDescriptionBuilder, 1, 1), Entry(entryDescriptionBuilder, 2, 2), Entry(entryDescriptionBuilder, 1, 2), Entry(entryDescriptionBuilder, 3, 3), Entry(invalidEntryDescriptionBuilder, 4, 4))
+	Describe("Entry Descriptions", func() {
+		Describe("tables with no table-level entry description functions or strings", func() {
+			BeforeEach(func() {
+				success, _ := RunFixture("table with no table-level entry description function", func() {
+					DescribeTable("hello", func(a int, b string, c ...float64) {},
+						Entry(nil, 1, "b"),
+						Entry(nil, 1, "b", 2.71, 3.141),
+						Entry("C", 3, "b", 3.141),
+					)
+				})
+				Ω(success).Should(BeTrue())
 			})
-			Ω(success).Should(BeFalse())
+
+			It("renders the parameters for nil-described Entries as It strings", func() {
+				Ω(reporter.Did.Names()).Should(Equal([]string{
+					"Entry: 1, b",
+					"Entry: 1, b, 2.71, 3.141",
+					"C",
+				}))
+			})
 		})
 
-		It("runs all the entries, with the correct names", func() {
-			Ω(rt).Should(HaveTracked("1 vs 1", "2 vs 2", "1 vs 2", "3 vs 3"))
+		Describe("tables with a table-level entry description function", func() {
+			Context("happy path", func() {
+				BeforeEach(func() {
+					success, _ := RunFixture("table with table-level entry description function", func() {
+						DescribeTable("hello",
+							func(a int, b string, c ...float64) {},
+							func(a int, b string, c ...float64) string {
+								return fmt.Sprintf("%d | %s | %v", a, b, c)
+							},
+							Entry(nil, 1, "b"),
+							Entry(nil, 1, "b", 2.71, 3.141),
+							Entry("C", 3, "b", 3.141),
+						)
+					})
+					Ω(success).Should(BeTrue())
+				})
+
+				It("renders the parameters for nil-described Entries using the provided function as It strings", func() {
+					Ω(reporter.Did.Names()).Should(Equal([]string{
+						"1 | b | []",
+						"1 | b | [2.71 3.141]",
+						"C",
+					}))
+				})
+			})
+
+			Context("with more than one entry description function", func() {
+				BeforeEach(func() {
+					success, _ := RunFixture("table with multiple table-level entry description function", func() {
+						DescribeTable("hello",
+							func(a int, b string, c ...float64) {},
+							func(a int, b string, c ...float64) string {
+								return fmt.Sprintf("%d | %s | %v", a, b, c)
+							},
+							func(a int, b string, c ...float64) string {
+								return fmt.Sprintf("%d ~ %s ~ %v", a, b, c)
+							},
+							Entry(nil, 1, "b"),
+							Entry(nil, 1, "b", 2.71, 3.141),
+							Entry("C", 3, "b", 3.141),
+						)
+					})
+					Ω(success).Should(BeTrue())
+				})
+
+				It("renders the parameters for nil-described Entries using the last provided function as It strings", func() {
+					Ω(reporter.Did.Names()).Should(Equal([]string{
+						"1 ~ b ~ []",
+						"1 ~ b ~ [2.71 3.141]",
+						"C",
+					}))
+				})
+			})
+
+			Context("with a parameter mismatch", func() {
+				BeforeEach(func() {
+					success, _ := RunFixture("table with multiple table-level entry description function", func() {
+						DescribeTable("hello",
+							func(a int, b string, c ...float64) {},
+							func(a int, b string) string {
+								return fmt.Sprintf("%d | %s", a, b)
+							},
+							Entry(nil, 1, "b"),
+							Entry(nil, 1, "b", 2.71, 3.141),
+							Entry("C", 3, "b", 3.141),
+						)
+					})
+					Ω(success).Should(BeFalse())
+				})
+
+				It("fails the entry with a panic", func() {
+					Ω(reporter.Did.Find("1 | b")).Should(HavePassed())
+					Ω(reporter.Did.Find("")).Should(HavePanicked("Too many parameters passed in to Entry Description function"))
+					Ω(reporter.Did.Find("C")).Should(HavePassed())
+				})
+			})
 		})
 
-		It("catches invalid entry description functions", func() {
-			Ω(reporter.Did.Find("")).Should(HavePanicked("Invalid Entry description"))
+		Describe("tables with a table-level entry description format strings", func() {
+			BeforeEach(func() {
+				success, _ := RunFixture("table with table-level entry description format strings", func() {
+					DescribeTable("hello",
+						func(a int, b string, c float64) {},
+						func(a int, b string, c float64) string { return "ignored" },
+						EntryDescription("%[2]s | %[1]d | %[3]v"),
+						Entry(nil, 1, "a", 1.2),
+						Entry(nil, 1, "b", 2.71),
+						Entry("C", 3, "b", 3.141),
+					)
+				})
+				Ω(success).Should(BeTrue())
+			})
+
+			It("renders the parameters for nil-described Entries using the provided function as It strings", func() {
+				Ω(reporter.Did.Names()).Should(Equal([]string{
+					"a | 1 | 1.2",
+					"b | 1 | 2.71",
+					"C",
+				}))
+			})
 		})
 
-		It("reports on the tests correctly", func() {
-			Ω(reporter.Did.Names()).Should(Equal([]string{"1 vs 1", "2 vs 2", "1 vs 2", "3 vs 3"}))
-			Ω(reporter.Did.Find("1 vs 2")).Should(HaveFailed("fail", types.NodeTypeIt))
-			Ω(reporter.End).Should(BeASuiteSummary(false, NSpecs(5), NPassed(3), NFailed(2)))
+		Describe("entries with entry description functions and entry description format strings", func() {
+			BeforeEach(func() {
+				entryDescriptionBuilder := func(a, b int) string {
+					return fmt.Sprintf("%d vs %d", a, b)
+				}
+				invalidEntryDescriptionBuilder := func(a, b int) {}
+
+				success, _ := RunFixture("table happy-path with custom descriptions", func() {
+					DescribeTable("hello",
+						bodyFunc,
+						EntryDescription("table-level %d, %d"),
+						Entry(entryDescriptionBuilder, 1, 1),
+						Entry(entryDescriptionBuilder, 2, 2),
+						Entry(entryDescriptionBuilder, 1, 2),
+						Entry(entryDescriptionBuilder, 3, 3),
+						Entry("A", 4, 4),
+						Entry(nil, 5, 5),
+						Entry(EntryDescription("%dx%d"), 6, 6),
+						Entry(invalidEntryDescriptionBuilder, 4, 4),
+					)
+				})
+				Ω(success).Should(BeFalse())
+			})
+
+			It("runs all the entries, with the correct names", func() {
+				Ω(rt).Should(HaveTracked("1 vs 1", "2 vs 2", "1 vs 2", "3 vs 3", "A", "table-level 5, 5", "6x6"))
+			})
+
+			It("catches invalid entry description functions", func() {
+				Ω(reporter.Did.Find("")).Should(HavePanicked("Invalid Entry description"))
+			})
+
+			It("reports on the tests correctly", func() {
+				Ω(reporter.Did.Names()).Should(Equal([]string{"1 vs 1", "2 vs 2", "1 vs 2", "3 vs 3", "A", "table-level 5, 5", "6x6"}))
+				Ω(reporter.Did.Find("1 vs 2")).Should(HaveFailed("fail", types.NodeTypeIt))
+				Ω(reporter.End).Should(BeASuiteSummary(false, NSpecs(8), NPassed(6), NFailed(2)))
+			})
 		})
+
 	})
 
 	Describe("managing parameters", func() {

@@ -1,11 +1,28 @@
 package ginkgo
 
 import (
+	"fmt"
 	"reflect"
+	"strings"
 
 	"github.com/onsi/ginkgo/internal"
 	"github.com/onsi/ginkgo/types"
 )
+
+/*
+The EntryDescription decorator allows you to pass a format string to DescribeTable() and Entry().  This format string is used to generate entry names via:
+
+fmt.Sprintf(formatString, parameters...)
+
+where parameters are the parameters passed into the entry.
+
+When passed into an Entry the EntryDescription is used to generate the name or that entry.  When passed to DescribeTable, the EntryDescription is used to generate teh names for any entries that have `nil` descriptions.
+*/
+type EntryDescription string
+
+func (ed EntryDescription) render(args ...interface{}) string {
+	return fmt.Sprintf(string(ed), args...)
+}
 
 /*
 DescribeTable describes a table-driven test.
@@ -22,35 +39,21 @@ For example:
     )
 
 The first argument to `DescribeTable` is a string description.
-The second argument is a function that will be run for each table entry.  Your assertions go here - the function is equivalent to a Ginkgo It.
-The subsequent arguments must be of type `TableEntry`.  We recommend using the `Entry` convenience constructors.
+The subsequent arguments can include the following:
+  - a Table Body function that will be run for each table entry.  This function is required and can take any number of parameters but must return nothing.  The parameters associated with each table entry will be passed into this function.  Your assertions go here - the function is equivalent to a Ginkgo It.
+  - any Ginkgo decorator (optional)
+  - a function that accepts the same parameters as the Table Body function but returns a string.  This function is used to generate the names for entries with nil descriptions.
+  - a format string of type EntryDescription.  This format string is used to generate names for entries with nil descriptions.
+  - individual table entries.  These are constructed via Entry() and provide parameters for each test case.
 
-The `Entry` constructor takes a string description followed by an arbitrary set of parameters.  These parameters are passed into your function.
+The first argument to `Entry` is a description.  This can be a string, an EntryDescription(), a function that returns a string, or nil.  When nil, the Entry's name is generated using the table-level entry description function.  If none is provided than a default name is constructed from the passed-in parameters.
+The sbusequent arguments to `Entry` can include any Ginkgo decorators.  These are filtered out and applied to the generated test.  The remaining parameters are then passed into the Table Body function when running the tests.
 
-Under the hood, `DescribeTable` simply generates a new Ginkgo `Describe`.  Each `Entry` is turned into an `It` within the `Describe`.
-
-It's important to understand that the `Describe`s and `It`s are generated at evaluation time (i.e. when Ginkgo constructs the tree of tests and before the tests run).
+Under the hood, `DescribeTable` simply generates a new Ginkgo `Describe`.  Each `Entry` is turned into an `It` within the `Describe`.  It's important to understand that the `Describe`s and `It`s are generated at evaluation time (i.e. when Ginkgo constructs the tree of tests and before the tests run).
 
 Individual Entries can be focused (with FEntry) or marked pending (with PEntry or XEntry).  In addition, the entire table can be focused or marked pending with FDescribeTable and PDescribeTable/XDescribeTable.
 
-A description function can be passed to Entry in place of the description. The function is then fed with the entry parameters to generate the description of the It corresponding to that particular Entry.
-
-For example:
-
-	describe := func(desc string) func(int, int, bool) string {
-		return func(x, y int, expected bool) string {
-			return fmt.Sprintf("%s x=%d y=%d expected:%t", desc, x, y, expected)
-		}
-	}
-
-	DescribeTable("a simple table",
-		func(x int, y int, expected bool) {
-			Ω(x > y).Should(Equal(expected))
-		},
-		Entry(describe("x > y"), 1, 0, true),
-		Entry(describe("x == y"), 0, 0, false),
-		Entry(describe("x < y"), 0, 1, false),
-	)
+A description function can be passed to Entry in place of the description. The function is then fed with the entry parameters to genera
 */
 func DescribeTable(description string, args ...interface{}) bool {
 	generateTable(description, args...)
@@ -93,10 +96,10 @@ type TableEntry struct {
 /*
 Entry constructs a TableEntry.
 
-The first argument is a required description (this becomes the content of the generated Ginkgo `It`).
-Subsequent parameters are saved off and sent to the callback passed in to `DescribeTable`.
+The first argument is a description.  This can be a string, a function that accepts the parameters passed to the TableEntry and returns a string, an EntryDescription format string, or nil.  If nil is provided then the name of the Entry is derived using the table-level entry description.
+Subsequent arguments accept any Ginkgo decorators.  These are filtered out and the remaining arguments are passed into the Table Body function associated with the table.
 
-Each Entry ends up generating an individual Ginkgo It.
+Each Entry ends up generating an individual Ginkgo It.  The body of the it is the Table Body function with the Entry parameters passed in.
 */
 func Entry(description interface{}, args ...interface{}) TableEntry {
 	decorations, parameters := internal.PartitionDecorations(args...)
@@ -133,10 +136,23 @@ func generateTable(description string, args ...interface{}) {
 	entries := []TableEntry{}
 	var itBody interface{}
 
+	var tableLevelEntryDescription interface{}
+	tableLevelEntryDescription = func(args ...interface{}) string {
+		out := []string{}
+		for _, arg := range args {
+			out = append(out, fmt.Sprint(arg))
+		}
+		return "Entry: " + strings.Join(out, ", ")
+	}
+
 	for _, arg := range args {
 		switch t := reflect.TypeOf(arg); {
 		case t == reflect.TypeOf(TableEntry{}):
 			entries = append(entries, arg.(TableEntry))
+		case t == reflect.TypeOf(EntryDescription("")):
+			tableLevelEntryDescription = arg.(EntryDescription).render
+		case t.Kind() == reflect.Func && t.NumOut() == 1 && t.Out(0) == reflect.TypeOf(""):
+			tableLevelEntryDescription = arg
 		case t.Kind() == reflect.Func:
 			if itBody != nil {
 				exitIfErr(types.GinkgoErrors.MultipleEntryBodyFunctionsForTable(cl))
@@ -153,6 +169,13 @@ func generateTable(description string, args ...interface{}) {
 			entry := entry
 			var description string
 			switch t := reflect.TypeOf(entry.description); {
+			case t == nil:
+				err = validateParameters(tableLevelEntryDescription, entry.parameters, "Entry Description function", entry.codeLocation)
+				if err == nil {
+					description = invokeFunction(tableLevelEntryDescription, entry.parameters)[0].String()
+				}
+			case t == reflect.TypeOf(EntryDescription("")):
+				description = entry.description.(EntryDescription).render(entry.parameters...)
 			case t == reflect.TypeOf(""):
 				description = entry.description.(string)
 			case t.Kind() == reflect.Func && t.NumOut() == 1 && t.Out(0) == reflect.TypeOf(""):
