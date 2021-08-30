@@ -127,113 +127,129 @@ var _ = Describe("Program", func() {
 		})
 	})
 
-	DescribeTable("Emitting help when asked", func(args []string) {
-		program.RunAndExit(args)
-		Ω(rt).Should(HaveTracked("exit"))
-		Ω(rt).Should(HaveRunWithData("exit", "Code", 0))
-		//HavePrefix to avoid trailing whitespace causing failures
-		Ω(string(buf.Contents())).Should(HavePrefix(strings.Join([]string{
-			"Omicron v2.0.0",
-			"{{gray}}--------------{{/}}",
-			"For usage information for a command, run {{bold}}omicron help COMMAND{{/}}.",
-			"For usage information for the default command, run {{bold}}omicron help omicron{{/}} or {{bold}}omicron help alpha{{/}}.",
-			"",
-			"The following commands are available:",
-			"  {{bold}}omicron{{/}} or omicron {{bold}}alpha{{/}} - {{gray}}alpha usage{{/}}",
-			"    such usage!",
-			"  {{bold}}beta{{/}} - {{gray}}beta usage{{/}}",
-			"    such usage!",
-			"  {{bold}}gamma{{/}} - {{gray}}{{/}}",
-			"  {{bold}}zeta{{/}} - {{gray}}{{/}}",
-		}, "\n")))
-	},
-		Entry("with help", []string{"omicron", "help"}),
-		Entry("with -help", []string{"omicron", "-help"}),
-		Entry("with --help", []string{"omicron", "--help"}),
-		Entry("with -h", []string{"omicron", "-h"}),
-		Entry("with --h", []string{"omicron", "--h"}),
+	DescribeTable("Emitting help when asked",
+		func(args []string) {
+			program.RunAndExit(args)
+			Ω(rt).Should(HaveTracked("exit"))
+			Ω(rt).Should(HaveRunWithData("exit", "Code", 0))
+			//HavePrefix to avoid trailing whitespace causing failures
+			Ω(string(buf.Contents())).Should(HavePrefix(strings.Join([]string{
+				"Omicron v2.0.0",
+				"{{gray}}--------------{{/}}",
+				"For usage information for a command, run {{bold}}omicron help COMMAND{{/}}.",
+				"For usage information for the default command, run {{bold}}omicron help omicron{{/}} or {{bold}}omicron help alpha{{/}}.",
+				"",
+				"The following commands are available:",
+				"  {{bold}}omicron{{/}} or omicron {{bold}}alpha{{/}} - {{gray}}alpha usage{{/}}",
+				"    such usage!",
+				"  {{bold}}beta{{/}} - {{gray}}beta usage{{/}}",
+				"    such usage!",
+				"  {{bold}}gamma{{/}} - {{gray}}{{/}}",
+				"  {{bold}}zeta{{/}} - {{gray}}{{/}}",
+			}, "\n")))
+		},
+		func(args []string) string {
+			return fmt.Sprintf("with %s", args[1])
+		},
+		Entry(nil, []string{"omicron", "help"}),
+		Entry(nil, []string{"omicron", "-help"}),
+		Entry(nil, []string{"omicron", "--help"}),
+		Entry(nil, []string{"omicron", "-h"}),
+		Entry(nil, []string{"omicron", "--h"}),
 	)
 
-	DescribeTable("Emitting help for the default command", func(args []string) {
-		program.RunAndExit(args)
-		Ω(rt).Should(HaveTracked("exit"))
-		Ω(rt).Should(HaveRunWithData("exit", "Code", 0))
-		Ω(string(buf.Contents())).Should(HavePrefix(strings.Join([]string{
-			"{{bold}}alpha usage{{/}}",
-			"{{gray}}-----------{{/}}",
-			"such usage!",
-		}, "\n")))
-	},
-		Entry("with help omicron", []string{"omicron", "help", "omicron"}),
-		Entry("with -help omicron", []string{"omicron", "-help", "omicron"}),
-		Entry("with --help omicron", []string{"omicron", "--help", "omicron"}),
-		Entry("with -h omicron", []string{"omicron", "-h", "omicron"}),
-		Entry("with --h omicron", []string{"omicron", "--h", "omicron"}),
-		Entry("with help alpha", []string{"omicron", "help", "alpha"}),
-		Entry("with -help alpha", []string{"omicron", "-help", "alpha"}),
-		Entry("with --help alpha", []string{"omicron", "--help", "alpha"}),
-		Entry("with -h alpha", []string{"omicron", "-h", "alpha"}),
-		Entry("with --h alpha", []string{"omicron", "--h", "alpha"}),
-		Entry("with alpha -help", []string{"omicron", "alpha", "-help"}),
-		Entry("with alpha --help", []string{"omicron", "alpha", "--help"}),
-		Entry("with alpha -h", []string{"omicron", "alpha", "-h"}),
-		Entry("with alpha --h", []string{"omicron", "alpha", "--h"}),
+	DescribeTable("Emitting help for the default command",
+		func(args []string) {
+			program.RunAndExit(args)
+			Ω(rt).Should(HaveTracked("exit"))
+			Ω(rt).Should(HaveRunWithData("exit", "Code", 0))
+			Ω(string(buf.Contents())).Should(HavePrefix(strings.Join([]string{
+				"{{bold}}alpha usage{{/}}",
+				"{{gray}}-----------{{/}}",
+				"such usage!",
+			}, "\n")))
+		},
+		func(args []string) string {
+			return fmt.Sprintf("with %s %s", args[1], args[2])
+		},
+		Entry(nil, []string{"omicron", "help", "omicron"}),
+		Entry(nil, []string{"omicron", "-help", "omicron"}),
+		Entry(nil, []string{"omicron", "--help", "omicron"}),
+		Entry(nil, []string{"omicron", "-h", "omicron"}),
+		Entry(nil, []string{"omicron", "--h", "omicron"}),
+		Entry(nil, []string{"omicron", "help", "alpha"}),
+		Entry(nil, []string{"omicron", "-help", "alpha"}),
+		Entry(nil, []string{"omicron", "--help", "alpha"}),
+		Entry(nil, []string{"omicron", "-h", "alpha"}),
+		Entry(nil, []string{"omicron", "--h", "alpha"}),
+		Entry(nil, []string{"omicron", "alpha", "-help"}),
+		Entry(nil, []string{"omicron", "alpha", "--help"}),
+		Entry(nil, []string{"omicron", "alpha", "-h"}),
+		Entry(nil, []string{"omicron", "alpha", "--h"}),
 	)
 
-	DescribeTable("Emitting help for a known subcommand", func(args []string) {
-		program.RunAndExit(args)
-		Ω(rt).Should(HaveTracked("exit"))
-		Ω(rt).Should(HaveRunWithData("exit", "Code", 0))
-		Ω(string(buf.Contents())).Should(HavePrefix(strings.Join([]string{
-			"{{bold}}beta usage{{/}}",
-			"{{gray}}----------{{/}}",
-			"such usage!",
-			"",
-			"  --decay-rate{{/}} [float] {{gray}}{{/}}",
-			"    {{light-gray}}set the decay rate, in years{{/}}",
-		}, "\n")))
-	},
-		Entry("with help beta", []string{"omicron", "help", "beta"}),
-		Entry("with -help beta", []string{"omicron", "-help", "beta"}),
-		Entry("with --help beta", []string{"omicron", "--help", "beta"}),
-		Entry("with -h beta", []string{"omicron", "-h", "beta"}),
-		Entry("with --h beta", []string{"omicron", "--h", "beta"}),
-		Entry("with beta -help", []string{"omicron", "beta", "-help"}),
-		Entry("with beta --help", []string{"omicron", "beta", "--help"}),
-		Entry("with beta -h", []string{"omicron", "beta", "-h"}),
-		Entry("with beta --h", []string{"omicron", "beta", "--h"}),
+	DescribeTable("Emitting help for a known subcommand",
+		func(args []string) {
+			program.RunAndExit(args)
+			Ω(rt).Should(HaveTracked("exit"))
+			Ω(rt).Should(HaveRunWithData("exit", "Code", 0))
+			Ω(string(buf.Contents())).Should(HavePrefix(strings.Join([]string{
+				"{{bold}}beta usage{{/}}",
+				"{{gray}}----------{{/}}",
+				"such usage!",
+				"",
+				"  --decay-rate{{/}} [float] {{gray}}{{/}}",
+				"    {{light-gray}}set the decay rate, in years{{/}}",
+			}, "\n")))
+		},
+		func(args []string) string {
+			return fmt.Sprintf("with %s %s", args[1], args[2])
+		},
+		Entry(nil, []string{"omicron", "help", "beta"}),
+		Entry(nil, []string{"omicron", "-help", "beta"}),
+		Entry(nil, []string{"omicron", "--help", "beta"}),
+		Entry(nil, []string{"omicron", "-h", "beta"}),
+		Entry(nil, []string{"omicron", "--h", "beta"}),
+		Entry(nil, []string{"omicron", "beta", "-help"}),
+		Entry(nil, []string{"omicron", "beta", "--help"}),
+		Entry(nil, []string{"omicron", "beta", "-h"}),
+		Entry(nil, []string{"omicron", "beta", "--h"}),
 	)
 
-	DescribeTable("Emitting help for an unknown subcommand", func(args []string) {
-		program.RunAndExit(args)
-		Ω(rt).Should(HaveTracked("exit"))
-		Ω(rt).Should(HaveRunWithData("exit", "Code", 1))
-		Ω(string(buf.Contents())).Should(HavePrefix(strings.Join([]string{
-			"{{red}}Unknown Command: {{bold}}xi{{/}}",
-			"",
-			"Omicron v2.0.0",
-			"{{gray}}--------------{{/}}",
-			"For usage information for a command, run {{bold}}omicron help COMMAND{{/}}.",
-			"For usage information for the default command, run {{bold}}omicron help omicron{{/}} or {{bold}}omicron help alpha{{/}}.",
-			"",
-			"The following commands are available:",
-			"  {{bold}}omicron{{/}} or omicron {{bold}}alpha{{/}} - {{gray}}alpha usage{{/}}",
-			"    such usage!",
-			"  {{bold}}beta{{/}} - {{gray}}beta usage{{/}}",
-			"    such usage!",
-			"  {{bold}}gamma{{/}} - {{gray}}{{/}}",
-			"  {{bold}}zeta{{/}} - {{gray}}{{/}}",
-		}, "\n")))
-	},
-		Entry("with help xi", []string{"omicron", "help", "xi"}),
-		Entry("with -help xi", []string{"omicron", "-help", "xi"}),
-		Entry("with --help xi", []string{"omicron", "--help", "xi"}),
-		Entry("with -h xi", []string{"omicron", "-h", "xi"}),
-		Entry("with --h xi", []string{"omicron", "--h", "xi"}),
-		Entry("with xi -help", []string{"omicron", "xi", "-help"}),
-		Entry("with xi --help", []string{"omicron", "xi", "--help"}),
-		Entry("with xi -h", []string{"omicron", "xi", "-h"}),
-		Entry("with xi --h", []string{"omicron", "xi", "--h"}),
+	DescribeTable("Emitting help for an unknown subcommand",
+		func(args []string) {
+			program.RunAndExit(args)
+			Ω(rt).Should(HaveTracked("exit"))
+			Ω(rt).Should(HaveRunWithData("exit", "Code", 1))
+			Ω(string(buf.Contents())).Should(HavePrefix(strings.Join([]string{
+				"{{red}}Unknown Command: {{bold}}xi{{/}}",
+				"",
+				"Omicron v2.0.0",
+				"{{gray}}--------------{{/}}",
+				"For usage information for a command, run {{bold}}omicron help COMMAND{{/}}.",
+				"For usage information for the default command, run {{bold}}omicron help omicron{{/}} or {{bold}}omicron help alpha{{/}}.",
+				"",
+				"The following commands are available:",
+				"  {{bold}}omicron{{/}} or omicron {{bold}}alpha{{/}} - {{gray}}alpha usage{{/}}",
+				"    such usage!",
+				"  {{bold}}beta{{/}} - {{gray}}beta usage{{/}}",
+				"    such usage!",
+				"  {{bold}}gamma{{/}} - {{gray}}{{/}}",
+				"  {{bold}}zeta{{/}} - {{gray}}{{/}}",
+			}, "\n")))
+		},
+		func(args []string) string {
+			return fmt.Sprintf("with %s %s", args[1], args[2])
+		},
+		Entry(nil, []string{"omicron", "help", "xi"}),
+		Entry(nil, []string{"omicron", "-help", "xi"}),
+		Entry(nil, []string{"omicron", "--help", "xi"}),
+		Entry(nil, []string{"omicron", "-h", "xi"}),
+		Entry(nil, []string{"omicron", "--h", "xi"}),
+		Entry(nil, []string{"omicron", "xi", "-help"}),
+		Entry(nil, []string{"omicron", "xi", "--help"}),
+		Entry(nil, []string{"omicron", "xi", "-h"}),
+		Entry(nil, []string{"omicron", "xi", "--h"}),
 	)
 	Context("when called with a deprecated command", func() {
 		BeforeEach(func() {
