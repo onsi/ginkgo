@@ -48,7 +48,7 @@ func BeforeEach(args ...interface{})
 ```
 Note that this change is backwards compatible with v1.X.
 
-Ginkgo supports passing in decorators _and_ arbitrarily nested slices of decorators.  Ginkgo will unroll any slices and process the flattened list of decorators.  This makes it easier to pass around and combine groups of decorators.
+Ginkgo supports passing in decorators _and_ arbitrarily nested slices of decorators.  Ginkgo will unroll any slices and process the flattened list of decorators.  This makes it easier to pass around and combine groups of decorators.  In addition, decorators can be passed into the table-related DSL: `DescribeTable` and `Entry`.
 
 Here's a list of new decorators.  They are documented in more detail in the [Node Decoration Reference](https://github.com/onsi/ginkgo/blob/v2/docs/index.md#node-decoration-reference) section of the documentation.
 
@@ -234,6 +234,30 @@ Will emit a report that has the word "Mahomes" in red and the number 15 in bold 
 
 Lastly, it is possible to pass a pointer into `AddReportEntry`.  Ginkgo will compute the string representation of the passed in pointer at the last possible moment - so any changes to the object _after_ it is reported will be captured in the final report.  This is useful for building libraries on top of `AddReportEntry` - users can simply register objects when they're created and any subsequent mutations will appear in the generated report.
 
+### New: Table-level Entry Descriptions
+
+Table `Entry`s can now opt-into table-level descriptions.  Simply pass `nil` as the first argument into `Entry`.  By default, Ginkgo will generate an `Entry` description from the `Entry`s parameters.  You can also provide a string-returning function to `DescribeTable` which will be used to generate the description for these entries.  There's also a new `EntryDescription` decorator that can be passed in to `DescribeTable` - `EntryDescription` wraps a format string that can be used to format the parameters associated with each `Entry` to generate it's description.
+
+For example:
+
+```go
+var _ = Describe("Math", func() {
+    DescribeTable("addition",
+        func(a, b, c int) {
+            Expect(a+b).To(Equal(c))
+        },
+        EntryDescription("%d + %d = %d")
+        Entry(nil, 1, 2, 3),
+        Entry(nil, -1, 2, 1),
+        Entry("zeros", 0, 0, 0),
+        Entry(EntryDescription("%[3]d = %[1]d + %[2]d"), 2, 3, 5)
+        Entry(func(a, b, c int) string {fmt.Sprintf("%d = %d", a + b, c)}, 4, 3, 7)
+    )
+})
+```
+
+Will generate entries named: `1 + 2 = 3`, `-1 + 2 = 1`, `zeros`, `5 = 2 + 3`, and `7 = 7`.
+
 ### Improved: Profiling Support
 Ginkgo V1 was incorrectly handling Go test's various profiling flags (e.g. -cpuprofile, -memprofile).  This has been fixed in V2.  In fact, V2 can capture profiles for multiple packages (e.g. ginkgo -r -cpuprofile=profile.out will work).
 
@@ -337,10 +361,10 @@ Alternatively, you can use the new `--json-report` flag to produce a machine rea
 
 Finally, if you still need the real-time reporting capabilities that 1.X's custom reporters provided you can use [`ReportAfterEach`](#capturing-report-information-about-each-spec-as-the-test-suite-runs) to get information about each spec as it completes.
 
-### Changed: Table testing support˚First-class Support for Table Testing
+### Changed: First-class Support for Table Testing
 The table extension has been moved into the core Ginkgo DSL and the table functionality has been improved while maintaining backward compatibility.  Users no longer need to `import "github.com/onsi/ginkgo/extenstions/table"`.  Instead the table DSL is automatically pulled in by importing `"github.com/onsi/ginkgo"`.
 
-#### Migratino Strategy:
+#### Migration Strategy:
 Remove `"github.com/onsi/ginkgo/extensions/table` imports.  Code that was dot-importing both Ginkgo and the table extension should automatically work.  If you were not dot-importing you will need to replace references to `table.DescribeTable` and `table.Entry` with `ginkgo.DescribeTable` and `ginkgo.Entry`.
 
 
