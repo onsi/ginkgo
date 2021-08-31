@@ -56,8 +56,6 @@ func ApplyNestedFocusPolicyToTree(tree TreeNode) TreeNode {
 	- If there are no CLi arguments but a spec somewhere has programmatic focus, skip any specs that have no programmatic focus.
 	- If there are CLI arguments parse them and skip any specs that either don't match the filter regexp or do match* the skip regexp.
 
-	Lastly, `suiteConfig.RegexScansFilePath` allows the regular exprressions to match against the spec's filepath as well as the spec's text.
-
 	*Note:* specs with pending nodes are Skipped when created by NewSpec.
 */
 func ApplyFocusToSpecs(specs Specs, description string, suiteConfig types.SuiteConfig) (Specs, bool) {

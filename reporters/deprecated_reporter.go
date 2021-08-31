@@ -28,20 +28,19 @@ type DeprecatedReporter interface {
 // reporting support in V2.  It will be removed in a future minor version of Ginkgo.
 func ReportViaDeprecatedReporter(reporter DeprecatedReporter, report types.Report) {
 	conf := config.DeprecatedGinkgoConfigType{
-		RandomSeed:         report.SuiteConfig.RandomSeed,
-		RandomizeAllSpecs:  report.SuiteConfig.RandomizeAllSpecs,
-		RegexScansFilePath: report.SuiteConfig.RegexScansFilePath,
-		FocusStrings:       report.SuiteConfig.FocusStrings,
-		SkipStrings:        report.SuiteConfig.SkipStrings,
-		FailOnPending:      report.SuiteConfig.FailOnPending,
-		FailFast:           report.SuiteConfig.FailFast,
-		FlakeAttempts:      report.SuiteConfig.FlakeAttempts,
-		EmitSpecProgress:   report.SuiteConfig.EmitSpecProgress,
-		DryRun:             report.SuiteConfig.DryRun,
-		ParallelNode:       report.SuiteConfig.ParallelNode,
-		ParallelTotal:      report.SuiteConfig.ParallelTotal,
-		SyncHost:           report.SuiteConfig.ParallelHost,
-		StreamHost:         report.SuiteConfig.ParallelHost,
+		RandomSeed:        report.SuiteConfig.RandomSeed,
+		RandomizeAllSpecs: report.SuiteConfig.RandomizeAllSpecs,
+		FocusStrings:      report.SuiteConfig.FocusStrings,
+		SkipStrings:       report.SuiteConfig.SkipStrings,
+		FailOnPending:     report.SuiteConfig.FailOnPending,
+		FailFast:          report.SuiteConfig.FailFast,
+		FlakeAttempts:     report.SuiteConfig.FlakeAttempts,
+		EmitSpecProgress:  report.SuiteConfig.EmitSpecProgress,
+		DryRun:            report.SuiteConfig.DryRun,
+		ParallelNode:      report.SuiteConfig.ParallelNode,
+		ParallelTotal:     report.SuiteConfig.ParallelTotal,
+		SyncHost:          report.SuiteConfig.ParallelHost,
+		StreamHost:        report.SuiteConfig.ParallelHost,
 	}
 
 	summary := &types.DeprecatedSuiteSummary{
