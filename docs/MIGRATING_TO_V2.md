@@ -403,6 +403,9 @@ Both these flags tweaked the reporter's behavior for pending and skipped tests b
 ### Removed: `-debug`
 The `-debug` flag has been removed.  It functioned primarily as a band-aid to Ginkgo V1's poor handling of stuck parallel tests. The new [interrupt behavior](#interrupt-behavior) in V2 resolves the root issues behind the `-debug` flag.
 
+### Removed: `-regexScansFilePath`
+`-regexScansFilePath` allowed users to have the `-focus` and `-skip` regular expressions apply to filenames.  It is now removed in favor of `-focus-file` and `-skip-file` which provide more granular and explicit control over focusing/skipping files and line numbers.
+
 #### Migration Strategy:
 Users should remove -stream from any scripts they have that invoke the `ginkgo` cli.
 

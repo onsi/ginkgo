@@ -209,7 +209,7 @@ var _ = Describe("Focus", func() {
 			})
 		})
 
-		Context("when configured to RegexScansFilePath", func() {
+		PContext("when configured to focus/skip files", func() {
 			BeforeEach(func() {
 				specs = Specs{
 					S(N(CL("file_a"))),
@@ -218,7 +218,7 @@ var _ = Describe("Focus", func() {
 					S(N(CL("c", Focus))),
 				}
 
-				conf.RegexScansFilePath = true
+				// conf.RegexScansFilePath = true
 				conf.FocusStrings = []string{"file_"}
 				conf.SkipStrings = []string{"_a"}
 			})
