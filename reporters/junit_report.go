@@ -140,7 +140,6 @@ func GenerateJUnitReport(report types.Report, dst string) error {
 				{"SpecialSuiteFailureReason", strings.Join(report.SpecialSuiteFailureReasons, ",")},
 				{"RandomSeed", fmt.Sprintf("%d", report.SuiteConfig.RandomSeed)},
 				{"RandomizeAllSpecs", fmt.Sprintf("%t", report.SuiteConfig.RandomizeAllSpecs)},
-				{"RegexScansFilePath", fmt.Sprintf("%t", report.SuiteConfig.RegexScansFilePath)},
 				{"FocusStrings", strings.Join(report.SuiteConfig.FocusStrings, ",")},
 				{"SkipStrings", strings.Join(report.SuiteConfig.SkipStrings, ",")},
 				{"FailOnPending", fmt.Sprintf("%t", report.SuiteConfig.FailOnPending)},

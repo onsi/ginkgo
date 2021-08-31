@@ -16,17 +16,16 @@ import (
 
 // Configuration controlling how an individual test suite is run
 type SuiteConfig struct {
-	RandomSeed         int64
-	RandomizeAllSpecs  bool
-	RegexScansFilePath bool
-	FocusStrings       []string
-	SkipStrings        []string
-	FailOnPending      bool
-	FailFast           bool
-	FlakeAttempts      int
-	EmitSpecProgress   bool
-	DryRun             bool
-	Timeout            time.Duration
+	RandomSeed        int64
+	RandomizeAllSpecs bool
+	FocusStrings      []string
+	SkipStrings       []string
+	FailOnPending     bool
+	FailFast          bool
+	FlakeAttempts     int
+	EmitSpecProgress  bool
+	DryRun            bool
+	Timeout           time.Duration
 
 	ParallelNode  int
 	ParallelTotal int
@@ -223,6 +222,7 @@ type deprecatedConfig struct {
 	DebugParallel                   bool
 	NoisySkippings                  bool
 	NoisyPendings                   bool
+	RegexScansFilePath              bool
 	SlowSpecThresholdWithFLoatUnits float64
 	Stream                          bool
 	Notify                          bool
@@ -274,8 +274,7 @@ var SuiteConfigFlags = GinkgoFlags{
 		Usage: "If set, ginkgo will only run specs that match this regular expression. Can be specified multiple times, values are ORed."},
 	{KeyPath: "S.SkipStrings", Name: "skip", SectionKey: "filter",
 		Usage: "If set, ginkgo will only run specs that do not match this regular expression. Can be specified multiple times, values are ORed."},
-	{KeyPath: "S.RegexScansFilePath", Name: "regex-scans-filepath", SectionKey: "filter", DeprecatedName: "regexScansFilePath", DeprecatedDocLink: "changed-command-line-flags",
-		Usage: "If set, ginkgo regex matching also will look at the file path (code location)."},
+	{KeyPath: "D.RegexScansFilePath", DeprecatedName: "regexScansFilePath", DeprecatedDocLink: "removed--regexScansFilePath", DeprecatedVersion: "2.0.0"},
 
 	{KeyPath: "D.DebugParallel", DeprecatedName: "debug", DeprecatedDocLink: "removed--debug", DeprecatedVersion: "2.0.0"},
 }

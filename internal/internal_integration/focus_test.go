@@ -174,27 +174,6 @@ var _ = Describe("Focus", func() {
 		})
 	})
 
-	Describe("with config.RegexScansFilePath", func() {
-		BeforeEach(func() {
-			l := types.NewCodeLocation(0)
-			conf.FocusStrings = []string{l.FileName}
-			conf.RegexScansFilePath = true
-			success, _ := RunFixture("regex scans file path tests", func() {
-				It("A", rt.T("A"))
-				FIt("B", rt.T("B"))
-				PIt("C", rt.T("C"))
-			})
-			Ω(success).Should(BeTrue())
-		})
-
-		It("includes the filename when filtering", func() {
-			Ω(rt.TrackedRuns()).Should(ConsistOf("A", "B"))
-			Ω(reporter.Did.WithState(types.SpecStatePending).Names()).Should(ConsistOf("C"))
-			Ω(reporter.Did.WithState(types.SpecStatePassed).Names()).Should(ConsistOf("A", "B"))
-			Ω(reporter.End).Should(BeASuiteSummary(true, NPassed(2), NSkipped(0), NPending(1), NSpecs(3), NWillRun(2)))
-		})
-	})
-
 	Describe("Skip()", func() {
 		BeforeEach(func() {
 			success, _ := RunFixture("Skip() tests", func() {
