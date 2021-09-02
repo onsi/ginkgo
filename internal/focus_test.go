@@ -209,25 +209,49 @@ var _ = Describe("Focus", func() {
 			})
 		})
 
-		PContext("when configured to focus/skip files", func() {
+		Context("when configured to focus/skip files", func() {
 			BeforeEach(func() {
 				specs = Specs{
-					S(N(CL("file_a"))),
-					S(N(CL("file_b"))),
-					S(N(CL("file_b"), Pending)),
-					S(N(CL("c", Focus))),
+					S(N(CL("file_a", 1))),               //include because "file_:1" is in FocusFiles
+					S(N(CL("file_b", 3, "file_b", 15))), //include becasue "file_:15-21" is in FocusFiles
+					S(N(CL("file_b", 17))),              //skip because "_b:17" is in SkipFiles
+					S(N(CL("file_b", 20), Pending)),     //skip because spec is flagged pending
+					S(N(CL("c", 3), Focus)),             //skip because "c" is not in FocusFiles - override programmatic focus
+					S(N(CL("d", 17))),                   //include because "d " is in FocusFiles
 				}
 
-				// conf.RegexScansFilePath = true
-				conf.FocusStrings = []string{"file_"}
-				conf.SkipStrings = []string{"_a"}
+				conf.FocusFiles = []string{"file_:1,15-21", "d"}
+				conf.SkipFiles = []string{"_b:17"}
 			})
 
-			It("includes the codelocation filename in the search for focus and skip strings", func() {
+			It("applies a file-based focus and skip filter", func() {
 				specs, hasProgrammaticFocus := internal.ApplyFocusToSpecs(specs, description, conf)
-				Ω(harvestSkips(specs)).Should(Equal([]bool{true, false, true, true}))
+				Ω(harvestSkips(specs)).Should(Equal([]bool{false, false, true, true, true, false}))
 				Ω(hasProgrammaticFocus).Should(BeFalse())
+			})
+		})
 
+		Context("when configured with both focus/skip files and focus/skip strings", func() {
+			BeforeEach(func() {
+				specs = Specs{
+					S(N("dog", CL("file_a", 1))),                   //include because "file_:1" is in FocusFiles and "dog" is in FocusStrings
+					S(N("dog cat", CL("file_b", 3, "file_b", 15))), //skip because "file_:15-21" is in FocusFiles but "cat" is in SkipStirngs
+					S(N("fish", CL("file_b", 17))),                 //skip because "_b:17" is in SkipFiles, even though "fish" is in FocusStrings
+					S(N("biscuit", CL("file_b", 20), Pending)),     //skip because spec is flagged pending
+					S(N("pony", CL("c", 3), Focus)),                //skip because "c" is not in FocusFiles or FocusStrings - override programmatic focus
+					S(N("goat", CL("d", 17))),                      //skip because "goat" is in FocusStrings but "d" is not in FocusFiles
+				}
+
+				conf.FocusFiles = []string{"file_:1,15-21"}
+				conf.SkipFiles = []string{"_b:17"}
+				conf.FocusStrings = []string{"goat", "dog", "fish", "biscuit"}
+				conf.SkipStrings = []string{"cat"}
+			})
+
+			It("applies all filters with file filters taking precedence", func() {
+				specs, hasProgrammaticFocus := internal.ApplyFocusToSpecs(specs, description, conf)
+				Ω(harvestSkips(specs)).Should(Equal([]bool{false, true, true, true, true, true}))
+				Ω(hasProgrammaticFocus).Should(BeFalse())
 			})
 		})
 	})

@@ -48,13 +48,15 @@ func ApplyNestedFocusPolicyToTree(tree TreeNode) TreeNode {
 
 /*
 	Ginkgo supports focussing specs using `FIt`, `FDescribe`, etc. - this is called "programmatic focus"
-	It also supports focussing specs using regular expressions on the command line (`-focus=`, `-skip=`).
-	The CLI regular expressions take precedence.
+	It also supports focussing specs using regular expressions on the command line (`-focus=`, `-skip=`) that match against spec text
+	and file filters (`-focus-files=`, `-skip-files=`) that match against code locations for nodes in specs.
+
+	If any of the CLI flags are provided they take precedence.  The file filters run first followed by the regex filters.
 
 	This function sets the `Skip` property on specs by applying Ginkgo's focus policy:
 	- If there are no CLI arguments and no programmatic focus, do nothing.
-	- If there are no CLi arguments but a spec somewhere has programmatic focus, skip any specs that have no programmatic focus.
-	- If there are CLI arguments parse them and skip any specs that either don't match the filter regexp or do match* the skip regexp.
+	- If there are no CLI arguments but a spec somewhere has programmatic focus, skip any specs that have no programmatic focus.
+	- If there are CLI arguments parse them and skip any specs that either don't match the focus filters or do match the skip filters.
 
 	*Note:* specs with pending nodes are Skipped when created by NewSpec.
 */
@@ -62,13 +64,15 @@ func ApplyFocusToSpecs(specs Specs, description string, suiteConfig types.SuiteC
 	focusString := strings.Join(suiteConfig.FocusStrings, "|")
 	skipString := strings.Join(suiteConfig.SkipStrings, "|")
 
+	hasFocusCLIFlags := focusString != "" || skipString != "" || len(suiteConfig.SkipFiles) > 0 || len(suiteConfig.FocusFiles) > 0
+
 	type SkipCheck func(spec Spec) bool
 
 	// by default, skip any specs marked pending
 	skipChecks := []SkipCheck{func(spec Spec) bool { return spec.Nodes.HasNodeMarkedPending() }}
 	hasProgrammaticFocus := false
 
-	if focusString == "" && skipString == "" {
+	if !hasFocusCLIFlags {
 		// check for programmatic focus
 		for _, spec := range specs {
 			if spec.Nodes.HasNodeMarkedFocus() && !spec.Nodes.HasNodeMarkedPending() {
@@ -79,25 +83,26 @@ func ApplyFocusToSpecs(specs Specs, description string, suiteConfig types.SuiteC
 		}
 	}
 
-	//the text to match when applying regexp filtering
-	textToMatch := func(spec Spec) string {
-		textToMatch := description + " " + spec.Text()
-		if suiteConfig.RegexScansFilePath {
-			textToMatch += " " + spec.FirstNodeWithType(types.NodeTypeIt).CodeLocation.FileName
-		}
-		return textToMatch
+	if len(suiteConfig.FocusFiles) > 0 {
+		focusFilters, _ := types.ParseFileFilters(suiteConfig.FocusFiles)
+		skipChecks = append(skipChecks, func(spec Spec) bool { return !focusFilters.Matches(spec.Nodes.CodeLocations()) })
+	}
+
+	if len(suiteConfig.SkipFiles) > 0 {
+		skipFilters, _ := types.ParseFileFilters(suiteConfig.SkipFiles)
+		skipChecks = append(skipChecks, func(spec Spec) bool { return skipFilters.Matches(spec.Nodes.CodeLocations()) })
 	}
 
 	if focusString != "" {
 		// skip specs that don't match the focus string
 		re := regexp.MustCompile(focusString)
-		skipChecks = append(skipChecks, func(spec Spec) bool { return !re.MatchString(textToMatch(spec)) })
+		skipChecks = append(skipChecks, func(spec Spec) bool { return !re.MatchString(description + " " + spec.Text()) })
 	}
 
 	if skipString != "" {
 		// skip specs that match the skip string
 		re := regexp.MustCompile(skipString)
-		skipChecks = append(skipChecks, func(spec Spec) bool { return re.MatchString(textToMatch(spec)) })
+		skipChecks = append(skipChecks, func(spec Spec) bool { return re.MatchString(description + " " + spec.Text()) })
 	}
 
 	// skip specs if shouldSkip() is true.  note that we do nothing if shouldSkip() is false to avoid overwriting skip status established by the node's pending status
