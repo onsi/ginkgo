@@ -142,6 +142,8 @@ func GenerateJUnitReport(report types.Report, dst string) error {
 				{"RandomizeAllSpecs", fmt.Sprintf("%t", report.SuiteConfig.RandomizeAllSpecs)},
 				{"FocusStrings", strings.Join(report.SuiteConfig.FocusStrings, ",")},
 				{"SkipStrings", strings.Join(report.SuiteConfig.SkipStrings, ",")},
+				{"FocusFiles", strings.Join(report.SuiteConfig.FocusFiles, ";")},
+				{"SkipFiles", strings.Join(report.SuiteConfig.SkipFiles, ";")},
 				{"FailOnPending", fmt.Sprintf("%t", report.SuiteConfig.FailOnPending)},
 				{"FailFast", fmt.Sprintf("%t", report.SuiteConfig.FailFast)},
 				{"FlakeAttempts", fmt.Sprintf("%d", report.SuiteConfig.FlakeAttempts)},
