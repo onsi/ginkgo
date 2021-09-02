@@ -20,7 +20,7 @@ func BuildUnfocusCommand() command.Command {
 		Name:     "unfocus",
 		Usage:    "ginkgo unfocus",
 		ShortDoc: "Recursively unfocus any focused tests under the current directory",
-		DocLink:  "focused-specs",
+		DocLink:  "filtering-specs",
 		Command: func(_ []string, _ []string) {
 			unfocusSpecs()
 		},

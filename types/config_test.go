@@ -206,6 +206,20 @@ var _ = Describe("Config", func() {
 			})
 		})
 
+		Describe("file filter errors", func() {
+			Context("with an invalid --focus-file and/or --skip-file", func() {
+				BeforeEach(func() {
+					suiteConf.FocusFiles = append(suiteConf.FocusFiles, "bloop:123a")
+					suiteConf.SkipFiles = append(suiteConf.SkipFiles, "bloop:123b")
+				})
+
+				It("errors", func() {
+					errors := types.VetConfig(flagSet, suiteConf, repConf)
+					Ω(errors).Should(ConsistOf(types.GinkgoErrors.InvalidFileFilter("bloop:123a"), types.GinkgoErrors.InvalidFileFilter("bloop:123b")))
+				})
+			})
+		})
+
 		Context("when more than one verbosity flag is set", func() {
 			It("errors", func() {
 				repConf.Succinct, repConf.Verbose, repConf.VeryVerbose = true, true, false

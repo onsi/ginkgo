@@ -48,56 +48,6 @@ var _ = Describe("Flags Specs", func() {
 		Ω(output).Should(ContainSubstring("Detected pending specs and --fail-on-pending is set"))
 	})
 
-	It("should override the programmatic focus when told to focus", func() {
-		session := startGinkgo(fm.PathTo("flags"), "--no-color", "--focus=smores")
-		Eventually(session).Should(gexec.Exit(0))
-		output := string(session.Out.Contents())
-
-		Ω(output).Should(ContainSubstring("marshmallow"))
-		Ω(output).Should(ContainSubstring("chocolate"))
-		Ω(output).Should(ContainSubstring("smores"))
-		Ω(output).Should(ContainSubstring("3 Passed"))
-		Ω(output).Should(ContainSubstring("0 Failed"))
-		Ω(output).Should(ContainSubstring("1 Pending"))
-		Ω(output).Should(ContainSubstring("10 Skipped"))
-	})
-
-	It("should override the programmatic focus when told to skip", func() {
-		session := startGinkgo(fm.PathTo("flags"), "--no-color", "--skip=marshmallow|failing|flaky")
-		Eventually(session).Should(gexec.Exit(0))
-		output := string(session.Out.Contents())
-
-		Ω(output).ShouldNot(ContainSubstring("marshmallow"))
-		Ω(output).Should(ContainSubstring("chocolate"))
-		Ω(output).Should(ContainSubstring("smores"))
-		Ω(output).Should(ContainSubstring("10 Passed"))
-		Ω(output).Should(ContainSubstring("0 Failed"))
-		Ω(output).Should(ContainSubstring("1 Pending"))
-		Ω(output).Should(ContainSubstring("3 Skipped"))
-	})
-
-	It("should override the programmatic focus when told to skip (multiple options)", func() {
-		session := startGinkgo(fm.PathTo("flags"), "--no-color", "--skip=marshmallow", "--skip=failing", "--skip=flaky")
-		Eventually(session).Should(gexec.Exit(0))
-		output := string(session.Out.Contents())
-
-		Ω(output).ShouldNot(ContainSubstring("marshmallow"))
-		Ω(output).Should(ContainSubstring("chocolate"))
-		Ω(output).Should(ContainSubstring("smores"))
-		Ω(output).Should(ContainSubstring("10 Passed"))
-		Ω(output).Should(ContainSubstring("0 Failed"))
-		Ω(output).Should(ContainSubstring("1 Pending"))
-		Ω(output).Should(ContainSubstring("3 Skipped"))
-	})
-
-	It("should ignore empty skip and focus variables", func() {
-		session := startGinkgo(fm.PathTo("flags"), "--noColor", "--skip=", "--focus=")
-		Eventually(session).Should(gexec.Exit(types.GINKGO_FOCUS_EXIT_CODE))
-		output := string(session.Out.Contents())
-		Ω(output).Should(ContainSubstring("marshmallow"))
-		Ω(output).Should(ContainSubstring("chocolate"))
-	})
-
 	It("should run the race detector when told to", func() {
 		if !raceDetectorSupported() {
 			Skip("race detection is not supported")
