@@ -815,22 +815,22 @@ It("should do something, if it can", func() {
 
 Note that `Skip(...)` causes the closure to exit so there is no need to return.
 
-### Focused Specs
+### Filtering Specs
 
-It is often convenient, when developing to be able to run a subset of specs.  Ginkgo has several mechanisms for allowing you to focus specs:
+It is often convenient to be able to run a subset of specs.  Ginkgo has several mechanisms for allowing you to filter specs:
 
-1. You can focus individual specs or whole containers of specs *programatically* by adding an `F` in front of your `Describe`, `Context`, and `It`:
-    ```go
-    FDescribe("some behavior", func() { ... })
-    FContext("some scenario", func() { ... })
-    FIt("some assertion", func() { ... })
-    ```
+#### Programattic Filtering
 
-    doing so instructs Ginkgo to only run those specs.  To run all specs, you'll need to go back and remove all the `F`s.
+You can focus individual specs or containers of specs *programatically* by adding an `F` in front of your `Describe`, `Context`, and `It` or by using the `Focus` decorator:
 
-2. You can pass in a regular expression with the `--focus=REGEXP` and/or `--skip=REGEXP` flags.  Ginkgo will only run specs that match the focus regular expression and don't match the skip regular expression.
+```go
+FDescribe("some behavior", func() { ... })
+FContext("some scenario", func() { ... })
+FIt("some assertion", func() { ... })
+It("some other assertion", Focus, func() { ... })
+```
 
-When Ginkgo detects that a passing test suite has a programmatically focused test it causes the suite to exit with a non-zero status code.  This is to help detect erroneously committed focused tests on CI systems.  When passed a command-line focus/skip flag Ginkgo exits with status code 0 - if you want to focus tests on your CI system you should explicitly pass in a -focus or -skip flag.
+doing so instructs Ginkgo to only run those specs.  To run all specs, you'll need to go back and remove all the `F`s and `Focus`es.
 
 Nested programmatically focused specs follow a simple rule: if a leaf-node is marked focused, any of its ancestor nodes that are marked focus will be unfocused.  With this rule, sibling leaf nodes (regardless of relative-depth) that are focused will run regardless of the focus of a shared ancestor; and non-focused siblings will not run regardless of the focus of the shared ancestor or the relative depths of the siblings.  More simply:
 
@@ -852,15 +852,58 @@ FDescribe("outer describe", func() {
 
 will only run `B`.  This behavior tends to map more closely to what the developer actually intends when iterating on a test suite.
 
-> The programatic approach and the `--focus=REGEXP`/`--skip=REGEXP` approach are mutually exclusive.  Using the command line flags will override the programmatic focus.
-
-> Focusing a container with no `It` or `Measure` leaf nodes has no effect.  Since there is nothing to run in the container, Ginkgo effectively ignores it.
-
-> When using the command line flags you can specify one or both of `--focus` and `--skip`.  If both are specified the constraints will be `AND`ed together.
+When Ginkgo detects that a passing test suite has programmatically focused tests it causes the suite to exit with a non-zero status code.  This is to help detect erroneously committed focused tests on CI systems.  
 
 > You can unfocus programatically focused tests by running `ginkgo unfocus`.  This will strip the `F`s off of any `FDescribe`, `FContext`, and `FIt`s that your tests in the current directory may have.
 
-> If you want to skip entire packages (when running `ginkgo` recursively with the `-r` flag) you can pass a comma-separated list  to `--skipPackage=PACKAGES,TO,SKIP`.  Any packages with *paths* that contain one of the entries in this comma separated list will be skipped.
+#### Command-line Filtering
+
+Ginkgo allows you to filter specs via the command line.  This command-line based filtering will always override programatic filtering, however Pending tests can never be forced to run from the command line, they must be unmarked as pending in source, first.  Unlike programattic filtering, command-line filtering does not alter Ginkgo's exit code.
+
+There are two command-line filtering mechanisms provide - filtering by filename, and filtering by spec text.
+
+The `--focus=REGEXP` and `--skip=REGEXP` flags allow you to focus and/or skip specs on the basis of their spec text.  The spec text is the fully concatenated string comprised of the texts of the spec's containers and the spec itself.  For example:
+
+```go
+Describe("Measuring widgets", func() {
+    Context("when they are short", func() {
+        It("returns zero", func() {
+
+        })
+    })
+})
+
+```
+
+will have the spec text `"Measuring widgets when they are short returns zero"`.
+
+When `--focus` and/or `--skip` are provided Ginkgo will _only_ run specs with texts that match the focus regex **and** _don't_ match the skip regex.  You can provide `--focus` and `--skip` multiple times.  The `--focus` filters will be ORed together and the `--skip` tests will be ORed together.  For example, say you have the following specs:
+
+```go
+It("likes dogs", func() {...})
+It("likes purple dogs", func() {...})
+It("likes cats", func() {...})
+It("likes dog fish", func() {...})
+It("likes cat fish", func() {...})
+It("likes fish", func() {...})
+```
+
+then `ginkgo --focus=dog --focus=fish --skip=cat --skip=purple` will only run `"likes dogs"`, `"likes dog fish"`, and `"likes fish"`.
+
+
+The `--focus-file` and `--skip-file` flags allow you to focus and/or skip specs on the basis of they file they are in.  When provided Gingo will only run specs that are in files that _do_ match the `--focus-file` filter *and* _don't_ match the `--skip-file` filter.  You can provide multiple `--focus-file` and `--skip-file` flags.  The `--focus-file`s will be ORed together and the `--skip-file`s will be ORed together.
+
+The argument passed to `--focus-file`/`--skip-file` is a file filter and takes one of the following forms:
+
+- `FILE_REGEX` - will match specs in files who's absolute path matches the FILE_REGEX.  So `ginkgo --focus-file=foo` will match specs in files like `foo_test.go` or `/foo/bar_test.go`.
+- `FILE_REGEX:LINE` - will match specs in files that match FILE_REGEX where at least one node in the Spec (e.g. a `Describe` node, or an `It` node) is called at line number `LINE`.
+- `FILE_REGEX:LINE1-LINE2` - will match specs in files that match FILE_REGEX where at least one node in the Spec (e.g. a `Describe` node, or an `It` node) is called at a line within the range of `[LINE1:LINE2)`. 
+
+You can specify multiple comma-separated `LINE` and `LINE1-LINE2` arguments in a single `--focus-file/--skip-file` (e.g. `--focus-file=foo:1,2,10-12` will apply filters for line 1, line 2, and the range [10-12)).  To specify multiple files, pass in multiple `--focus-file` or `--skip-file` flags.
+
+When `-focus`, `-skip`, `-focus-file`, and `-skip-file` are all provided they are all ANDed together.  Meaning a given spec MUST be in a file:line matching the focus-file filter, AND MUST NOT be in a file:line matching the skip-file filter AND MUST have text matching the focus filter AND MUST NOT have text matching the skip filter.
+
+> If you want to skip entire packages (when running `ginkgo` recursively with the `-r` flag) you should use `--skip-package` instead of `--skip-file`.  `--skip-package` takes a comma-separated list of packages - any packages with *paths* that contain one of the entries in this comma separated list will not be compiled and will be skipped entirely.  Simply using `--skip-file` does not prevent package compilation and you can end up compiling and running packages that skip all their tests.
 
 ### Spec Permutation
 
@@ -1062,7 +1105,7 @@ It is an error to decorate a node as both `Pending` and `Focus`:
 It("is invalid", Focus, Pending, func() {}) //this will cause Ginkgo to exit with an error
 ```
 
-The `Focus` and `Pending` decorations are propagated through the test hierarchy as described in [Pending Specs](#pending-specs) and [Focused Specs](#focused-specs)
+The `Focus` and `Pending` decorations are propagated through the test hierarchy as described in [Pending Specs](#pending-specs) and [Filtering Specs](#filtering-specs)
 
 #### The `Offset` Decoration
 The `Offset(uint)` decoration applies to all decorable nodes.  The `Offset(uint)` decoration allows the user to change the stack-frame offset used to compute the location of the test node.  This is useful when building shared test behaviors.  For example:
@@ -1820,7 +1863,7 @@ The columns are:
 - Start (int): Position of the first character in the container or spec.
 - End (int): Position of the character immediately after the container or spec.
 - Spec (bool): True, if the identifier is a spec.
-- Focused (bool): True, if focused. (Conforms to the rules in [Focused Specs](#focused-specs).)
+- Focused (bool): True, if focused. (Conforms to the rules in [Filtering Specs](#filtering-specs).)
 - Pending (bool): True, if pending. (Conforms to the rules in [Pending Specs](#pending-specs).)
 
 You can set a different output format with the `-format` flag. Accepted formats are `csv`, `indent`, and `json`. The `ident` format is like `csv`, but uses identation to show the nesting of containers and specs. Both the `csv` and `json` formats can be read by another program, e.g., an editor plugin that displays a tree view of Ginkgo tests in a file, or presents a menu for the user to quickly navigate to a container or spec.

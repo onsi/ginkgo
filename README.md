@@ -43,7 +43,7 @@ Describe("the strings package", func() {
 
 - A comprehensive test runner that lets you:
     - Mark specs as [pending](https://onsi.github.io/ginkgo/#pending-specs)
-    - [Focus](https://onsi.github.io/ginkgo/#focused-specs) individual specs, and groups of specs, either programmatically or on the command line
+    - [Focus](https://onsi.github.io/ginkgo/#filtering-specs) individual specs, and groups of specs, either programmatically or on the command line
     - Run your tests in [random order](https://onsi.github.io/ginkgo/#spec-permutation), and then reuse random seeds to replicate the same order.
     - Break up your test suite into parallel processes for straightforward [test parallelization](https://onsi.github.io/ginkgo/#parallel-specs)
 
