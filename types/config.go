@@ -20,6 +20,8 @@ type SuiteConfig struct {
 	RandomizeAllSpecs bool
 	FocusStrings      []string
 	SkipStrings       []string
+	FocusFiles        []string
+	SkipFiles         []string
 	FailOnPending     bool
 	FailFast          bool
 	FlakeAttempts     int
@@ -274,8 +276,12 @@ var SuiteConfigFlags = GinkgoFlags{
 		Usage: "If set, ginkgo will only run specs that match this regular expression. Can be specified multiple times, values are ORed."},
 	{KeyPath: "S.SkipStrings", Name: "skip", SectionKey: "filter",
 		Usage: "If set, ginkgo will only run specs that do not match this regular expression. Can be specified multiple times, values are ORed."},
-	{KeyPath: "D.RegexScansFilePath", DeprecatedName: "regexScansFilePath", DeprecatedDocLink: "removed--regexScansFilePath", DeprecatedVersion: "2.0.0"},
+	{KeyPath: "S.FocusFiles", Name: "focus-file", SectionKey: "filter", UsageArgument: "file (regexp) | file:line | file:lineA-lineB | file:line,line,line",
+		Usage: "If set, ginkgo will only run specs in matching files. Can be specified multiple times, values are ORed."},
+	{KeyPath: "S.SkipFiles", Name: "skip-file", SectionKey: "filter", UsageArgument: "file (regexp) | file:line | file:lineA-lineB | file:line,line,line",
+		Usage: "If set, ginkgo will skip specs in matching files. Can be specified multiple times, values are ORed."},
 
+	{KeyPath: "D.RegexScansFilePath", DeprecatedName: "regexScansFilePath", DeprecatedDocLink: "removed--regexscansfilepath", DeprecatedVersion: "2.0.0"},
 	{KeyPath: "D.DebugParallel", DeprecatedName: "debug", DeprecatedDocLink: "removed--debug", DeprecatedVersion: "2.0.0"},
 }
 
@@ -376,6 +382,20 @@ func VetConfig(flagSet GinkgoFlagSet, suiteConfig SuiteConfig, reporterConfig Re
 
 	if suiteConfig.DryRun && suiteConfig.ParallelTotal > 1 {
 		errors = append(errors, GinkgoErrors.DryRunInParallelConfiguration())
+	}
+
+	if len(suiteConfig.FocusFiles) > 0 {
+		_, err := ParseFileFilters(suiteConfig.FocusFiles)
+		if err != nil {
+			errors = append(errors, err)
+		}
+	}
+
+	if len(suiteConfig.SkipFiles) > 0 {
+		_, err := ParseFileFilters(suiteConfig.SkipFiles)
+		if err != nil {
+			errors = append(errors, err)
+		}
 	}
 
 	numVerbosity := 0

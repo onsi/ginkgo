@@ -38,6 +38,16 @@ func (s Reports) Find(name string) types.SpecReport {
 	return types.SpecReport{}
 }
 
+func (s Reports) FindByFullText(text string) types.SpecReport {
+	for _, report := range s {
+		if report.FullText() == text {
+			return report
+		}
+	}
+
+	return types.SpecReport{}
+}
+
 func (s Reports) Names() []string {
 	out := []string{}
 	for _, report := range s {

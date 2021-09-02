@@ -238,6 +238,23 @@ func (g ginkgoErrors) AddReportEntryNotDuringRunPhase(cl CodeLocation) error {
 	}
 }
 
+/* FileFilter and SkipFilter errors */
+func (g ginkgoErrors) InvalidFileFilter(filter string) error {
+	return GinkgoError{
+		Heading: "Invalid File Filter",
+		Message: fmt.Sprintf(`The provided file filter: "%s" is invalid.  File filters must have the format "file", "file:lines" where "file" is a regular expression that will match against the file path and lines is a comma-separated list of integers (e.g. file:1,5,7) or line-ranges (e.g. file:1-3,5-9) or both (e.g. file:1,5-9)`, filter),
+		DocLink: "filtering-specs",
+	}
+}
+
+func (g ginkgoErrors) InvalidFileFilterRegularExpression(filter string, err error) error {
+	return GinkgoError{
+		Heading: "Invalid File Filter Regular Expression",
+		Message: fmt.Sprintf(`The provided file filter: "%s" included an invalid regular expression.  regexp.Compile error: %s`, filter, err),
+		DocLink: "filtering-specs",
+	}
+}
+
 /* Table errors */
 func (g ginkgoErrors) MultipleEntryBodyFunctionsForTable(cl CodeLocation) error {
 	return GinkgoError{
