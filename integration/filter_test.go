@@ -12,7 +12,7 @@ import (
 	"github.com/onsi/ginkgo/types"
 )
 
-var _ = FDescribe("Filter", func() {
+var _ = Describe("Filter", func() {
 	BeforeEach(func() {
 		fm.MountFixture("filter")
 	})
