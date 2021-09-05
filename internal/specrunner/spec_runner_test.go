@@ -2,23 +2,24 @@ package specrunner_test
 
 import (
 	. "github.com/onsi/ginkgo"
-	"github.com/onsi/ginkgo/internal/spec_iterator"
-	. "github.com/onsi/ginkgo/internal/specrunner"
-	"github.com/onsi/ginkgo/types"
-	. "github.com/onsi/gomega"
-
 	"github.com/onsi/ginkgo/config"
 	"github.com/onsi/ginkgo/internal/codelocation"
 	"github.com/onsi/ginkgo/internal/containernode"
 	Failer "github.com/onsi/ginkgo/internal/failer"
 	"github.com/onsi/ginkgo/internal/leafnodes"
 	"github.com/onsi/ginkgo/internal/spec"
+	"github.com/onsi/ginkgo/internal/spec_iterator"
+	. "github.com/onsi/ginkgo/internal/specrunner"
 	Writer "github.com/onsi/ginkgo/internal/writer"
 	"github.com/onsi/ginkgo/reporters"
+	"github.com/onsi/ginkgo/types"
+	. "github.com/onsi/gomega"
 )
 
-var noneFlag = types.FlagTypeNone
-var pendingFlag = types.FlagTypePending
+var (
+	noneFlag    = types.FlagTypeNone
+	pendingFlag = types.FlagTypePending
+)
 
 var _ = Describe("Spec Runner", func() {
 	var (
@@ -297,7 +298,7 @@ var _ = Describe("Spec Runner", func() {
 		var specA, pendingSpec, flakySpec, failedSpec, specB, skippedSpec *spec.Spec
 		var willRunCalls, didCompleteCalls []string
 		var conf config.GinkgoConfigType
-		var failedSpecFlag = noneFlag
+		failedSpecFlag := noneFlag
 
 		JustBeforeEach(func() {
 			willRunCalls = []string{}

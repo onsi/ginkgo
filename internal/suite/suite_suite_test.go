@@ -2,11 +2,10 @@ package suite_test
 
 import (
 	"fmt"
+	"testing"
 
 	. "github.com/onsi/ginkgo"
 	. "github.com/onsi/gomega"
-
-	"testing"
 )
 
 var dynamicallyGeneratedTests = []string{}
@@ -17,9 +16,11 @@ func Test(t *testing.T) {
 	RunSpecs(t, "Suite")
 }
 
-var numBeforeSuiteRuns = 0
-var numAfterSuiteRuns = 0
-var numDynamicallyGeneratedTests = 0
+var (
+	numBeforeSuiteRuns           = 0
+	numAfterSuiteRuns            = 0
+	numDynamicallyGeneratedTests = 0
+)
 
 var _ = BeforeSuite(func() {
 	numBeforeSuiteRuns++
@@ -41,7 +42,7 @@ var _ = Describe("Top-level cotnainer node lifecycle", func() {
 	}
 })
 
-//Fakes
+// Fakes
 type fakeTestingT struct {
 	didFail bool
 }

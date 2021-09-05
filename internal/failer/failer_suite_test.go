@@ -1,10 +1,10 @@
 package failer_test
 
 import (
+	"testing"
+
 	. "github.com/onsi/ginkgo"
 	. "github.com/onsi/gomega"
-
-	"testing"
 )
 
 func TestFailer(t *testing.T) {

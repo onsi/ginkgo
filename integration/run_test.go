@@ -467,7 +467,7 @@ var _ = Describe("Running Specs", func() {
 			Ω(session).Should(gbytes.Say("This was attempt #2"))
 			Ω(session).Should(gbytes.Say("Tests failed on attempt #3"))
 
-			//it should change the random seed between each test
+			// it should change the random seed between each test
 			lines := strings.Split(string(session.Out.Contents()), "\n")
 			randomSeeds := []string{}
 			for _, line := range lines {

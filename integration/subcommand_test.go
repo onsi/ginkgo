@@ -290,7 +290,6 @@ var _ = Describe("Subcommand", func() {
 				Ω(err).ShouldNot(HaveOccurred())
 				Ω(content).Should(ContainSubstring("package foo_bar_test"))
 				Ω(content).Should(ContainSubstring(`var _ = Describe("BazBuzz", func() {`))
-
 			})
 		})
 

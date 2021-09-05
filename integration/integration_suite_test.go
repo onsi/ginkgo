@@ -8,17 +8,18 @@ import (
 	"os/exec"
 	"path/filepath"
 	"runtime"
+	"testing"
+	"time"
 
 	. "github.com/onsi/ginkgo"
 	. "github.com/onsi/gomega"
 	"github.com/onsi/gomega/gexec"
-
-	"testing"
-	"time"
 )
 
-var tmpDir string
-var pathToGinkgo string
+var (
+	tmpDir       string
+	pathToGinkgo string
+)
 
 func TestIntegration(t *testing.T) {
 	SetDefaultEventuallyTimeout(30 * time.Second)

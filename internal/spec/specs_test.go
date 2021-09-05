@@ -4,13 +4,12 @@ import (
 	"math/rand"
 
 	. "github.com/onsi/ginkgo"
-	. "github.com/onsi/ginkgo/internal/spec"
-	. "github.com/onsi/gomega"
-
 	"github.com/onsi/ginkgo/internal/codelocation"
 	"github.com/onsi/ginkgo/internal/containernode"
 	"github.com/onsi/ginkgo/internal/leafnodes"
+	. "github.com/onsi/ginkgo/internal/spec"
 	"github.com/onsi/ginkgo/types"
+	. "github.com/onsi/gomega"
 )
 
 var _ = Describe("Specs", func() {

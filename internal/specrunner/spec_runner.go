@@ -1,22 +1,21 @@
 package specrunner
 
 import (
+	"errors"
 	"fmt"
 	"os"
 	"os/signal"
 	"sync"
 	"syscall"
-
-	"github.com/onsi/ginkgo/internal/spec_iterator"
+	"time"
 
 	"github.com/onsi/ginkgo/config"
 	"github.com/onsi/ginkgo/internal/leafnodes"
 	"github.com/onsi/ginkgo/internal/spec"
+	"github.com/onsi/ginkgo/internal/spec_iterator"
 	Writer "github.com/onsi/ginkgo/internal/writer"
 	"github.com/onsi/ginkgo/reporters"
 	"github.com/onsi/ginkgo/types"
-
-	"time"
 )
 
 type SpecRunner struct {
@@ -86,7 +85,7 @@ func (runner *SpecRunner) performDryRun() {
 
 	for {
 		spec, err := runner.iterator.Next()
-		if err == spec_iterator.ErrClosed {
+		if errors.Is(err, spec_iterator.ErrClosed) {
 			break
 		}
 		if err != nil {
@@ -148,7 +147,7 @@ func (runner *SpecRunner) runSpecs() bool {
 	skipRemainingSpecs := false
 	for {
 		spec, err := runner.iterator.Next()
-		if err == spec_iterator.ErrClosed {
+		if errors.Is(err, spec_iterator.ErrClosed) {
 			break
 		}
 		if err != nil {

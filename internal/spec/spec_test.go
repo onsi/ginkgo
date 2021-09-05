@@ -4,21 +4,21 @@ import (
 	"time"
 
 	. "github.com/onsi/ginkgo"
-	. "github.com/onsi/gomega"
-	"github.com/onsi/gomega/gbytes"
-
-	. "github.com/onsi/ginkgo/internal/spec"
-
 	"github.com/onsi/ginkgo/internal/codelocation"
 	"github.com/onsi/ginkgo/internal/containernode"
 	Failer "github.com/onsi/ginkgo/internal/failer"
 	"github.com/onsi/ginkgo/internal/leafnodes"
+	. "github.com/onsi/ginkgo/internal/spec"
 	"github.com/onsi/ginkgo/types"
+	. "github.com/onsi/gomega"
+	"github.com/onsi/gomega/gbytes"
 )
 
-var noneFlag = types.FlagTypeNone
-var focusedFlag = types.FlagTypeFocused
-var pendingFlag = types.FlagTypePending
+var (
+	noneFlag    = types.FlagTypeNone
+	focusedFlag = types.FlagTypeFocused
+	pendingFlag = types.FlagTypePending
+)
 
 var _ = Describe("Spec", func() {
 	var (

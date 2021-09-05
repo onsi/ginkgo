@@ -1,23 +1,20 @@
 package remote_test
 
 import (
-	. "github.com/onsi/ginkgo"
-	. "github.com/onsi/ginkgo/internal/remote"
-	. "github.com/onsi/gomega"
-
-	"github.com/onsi/ginkgo/config"
-	"github.com/onsi/ginkgo/reporters"
-	"github.com/onsi/ginkgo/types"
-
 	"bytes"
 	"encoding/json"
 	"net/http"
+
+	. "github.com/onsi/ginkgo"
+	"github.com/onsi/ginkgo/config"
+	. "github.com/onsi/ginkgo/internal/remote"
+	"github.com/onsi/ginkgo/reporters"
+	"github.com/onsi/ginkgo/types"
+	. "github.com/onsi/gomega"
 )
 
 var _ = Describe("Server", func() {
-	var (
-		server *Server
-	)
+	var server *Server
 
 	BeforeEach(func() {
 		var err error
@@ -262,7 +259,6 @@ var _ = Describe("Server", func() {
 				It("should return true", func() {
 					Ω(getRemoteAfterSuiteData()).Should(BeTrue())
 				})
-
 			})
 		})
 	})

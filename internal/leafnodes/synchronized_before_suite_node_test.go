@@ -1,19 +1,16 @@
 package leafnodes_test
 
 import (
-	. "github.com/onsi/ginkgo"
-	. "github.com/onsi/ginkgo/internal/leafnodes"
-	. "github.com/onsi/gomega"
-
 	"net/http"
-
-	"github.com/onsi/gomega/ghttp"
-
 	"time"
 
+	. "github.com/onsi/ginkgo"
 	"github.com/onsi/ginkgo/internal/codelocation"
 	Failer "github.com/onsi/ginkgo/internal/failer"
+	. "github.com/onsi/ginkgo/internal/leafnodes"
 	"github.com/onsi/ginkgo/types"
+	. "github.com/onsi/gomega"
+	"github.com/onsi/gomega/ghttp"
 )
 
 var _ = Describe("SynchronizedBeforeSuiteNode", func() {

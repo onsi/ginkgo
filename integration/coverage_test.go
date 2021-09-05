@@ -1,11 +1,10 @@
 package integration_test
 
 import (
+	"fmt"
 	"io/ioutil"
 	"os/exec"
 	"regexp"
-
-	"fmt"
 
 	. "github.com/onsi/ginkgo"
 	. "github.com/onsi/gomega"

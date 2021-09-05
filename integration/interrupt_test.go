@@ -19,7 +19,7 @@ var _ = Describe("Interrupt", func() {
 	Context("when interrupting a suite", func() {
 		var session *gexec.Session
 		BeforeEach(func() {
-			//we need to signal the actual process, so we must compile the test first
+			// we need to signal the actual process, so we must compile the test first
 			var err error
 			cmd := exec.Command("go", "test", "-c")
 			cmd.Dir = pathToTest
@@ -27,7 +27,7 @@ var _ = Describe("Interrupt", func() {
 			Ω(err).ShouldNot(HaveOccurred())
 			Eventually(session).Should(gexec.Exit(0))
 
-			//then run the compiled test directly
+			// then run the compiled test directly
 			cmd = exec.Command("./hanging.test", "--test.v=true", "--ginkgo.noColor")
 			cmd.Dir = pathToTest
 			session, err = gexec.Start(cmd, GinkgoWriter, GinkgoWriter)

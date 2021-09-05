@@ -2,20 +2,18 @@ package suite_test
 
 import (
 	"bytes"
-
-	. "github.com/onsi/ginkgo"
-	. "github.com/onsi/ginkgo/internal/suite"
-	. "github.com/onsi/gomega"
-
 	"math/rand"
 	"time"
 
+	. "github.com/onsi/ginkgo"
 	"github.com/onsi/ginkgo/config"
 	"github.com/onsi/ginkgo/internal/codelocation"
 	Failer "github.com/onsi/ginkgo/internal/failer"
+	. "github.com/onsi/ginkgo/internal/suite"
 	Writer "github.com/onsi/ginkgo/internal/writer"
 	"github.com/onsi/ginkgo/reporters"
 	"github.com/onsi/ginkgo/types"
+	. "github.com/onsi/gomega"
 )
 
 var _ = Describe("Suite", func() {
@@ -47,7 +45,7 @@ var _ = Describe("Suite", func() {
 			hasProgrammaticFocus bool
 		)
 
-		var f = func(runText string) func() {
+		f := func(runText string) func() {
 			return func() {
 				runOrder = append(runOrder, runText)
 			}
@@ -211,7 +209,6 @@ var _ = Describe("Suite", func() {
 					specSuite.PushItNode("inner focused it", f("inner focused it"), types.FlagTypeFocused, codelocation.New(0), 0)
 					specSuite.PushItNode("inner unfocused it", f("inner unfocused it"), types.FlagTypeNone, codelocation.New(0), 0)
 				}, types.FlagTypeFocused, codelocation.New(0))
-
 			})
 
 			It("should only run the focused test, applying backpropagation to favor most deeply focused leaf nodes", func() {
@@ -332,7 +329,6 @@ var _ = Describe("Suite", func() {
 				Ω(func() {
 					specSuite.SetBeforeSuiteNode(func() {}, codelocation.New(0), 0)
 				}).Should(Panic())
-
 			})
 		})
 	})

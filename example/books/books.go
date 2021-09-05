@@ -7,7 +7,6 @@ type Book struct {
 }
 
 func (b *Book) CategoryByLength() string {
-
 	if b.Pages >= 300 {
 		return "NOVEL"
 	}

@@ -2,11 +2,10 @@ package failer_test
 
 import (
 	. "github.com/onsi/ginkgo"
-	. "github.com/onsi/ginkgo/internal/failer"
-	. "github.com/onsi/gomega"
-
 	"github.com/onsi/ginkgo/internal/codelocation"
+	. "github.com/onsi/ginkgo/internal/failer"
 	"github.com/onsi/ginkgo/types"
+	. "github.com/onsi/gomega"
 )
 
 var _ = Describe("Failer", func() {

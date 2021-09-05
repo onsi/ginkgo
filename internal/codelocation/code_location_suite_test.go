@@ -1,10 +1,10 @@
 package codelocation_test
 
 import (
+	"testing"
+
 	. "github.com/onsi/ginkgo"
 	. "github.com/onsi/gomega"
-
-	"testing"
 )
 
 func TestCodelocation(t *testing.T) {

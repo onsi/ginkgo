@@ -145,5 +145,4 @@ var _ = Describe("ParallelizedIndexRange", func() {
 		Ω(startIndex).Should(Equal(10))
 		Ω(count).Should(Equal(1))
 	})
-
 })

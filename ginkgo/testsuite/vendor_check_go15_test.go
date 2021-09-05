@@ -1,3 +1,4 @@
+//go:build !go1.6
 // +build !go1.6
 
 package testsuite_test
@@ -45,25 +46,25 @@ var _ = Describe("TestSuite", func() {
 		relTmpDir, err = filepath.Rel(cwd, tmpDir)
 		Ω(err).ShouldNot(HaveOccurred())
 
-		//go files in the root directory (no tests)
+		// go files in the root directory (no tests)
 		writeFile("/", "main.go", "package main", 0666)
 
-		//non-go files in a nested directory
+		// non-go files in a nested directory
 		writeFile("/redherring", "big_test.jpg", "package ginkgo", 0666)
 
-		//non-ginkgo tests in a nested directory
+		// non-ginkgo tests in a nested directory
 		writeFile("/professorplum", "professorplum_test.go", `import "testing"`, 0666)
 
-		//ginkgo tests in a nested directory
+		// ginkgo tests in a nested directory
 		writeFile("/colonelmustard", "colonelmustard_test.go", `import "github.com/onsi/ginkgo"`, 0666)
 
-		//ginkgo tests in a deeply nested directory
+		// ginkgo tests in a deeply nested directory
 		writeFile("/colonelmustard/library", "library_test.go", `import "github.com/onsi/ginkgo"`, 0666)
 
-		//ginkgo tests deeply nested in a vendored dependency
+		// ginkgo tests deeply nested in a vendored dependency
 		writeFile("/vendor/mrspeacock/lounge", "lounge_test.go", `import "github.com/onsi/ginkgo"`, 0666)
 
-		//a precompiled ginkgo test
+		// a precompiled ginkgo test
 		writeFile("/precompiled-dir", "precompiled.test", `fake-binary-file`, 0777)
 		writeFile("/precompiled-dir", "some-other-binary", `fake-binary-file`, 0777)
 		writeFile("/precompiled-dir", "nonexecutable.test", `fake-binary-file`, 0666)

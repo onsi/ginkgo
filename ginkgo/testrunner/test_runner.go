@@ -140,7 +140,6 @@ func (t *TestRunner) CompileTo(path string) error {
 	cmd := exec.Command("go", args...)
 
 	output, err := cmd.CombinedOutput()
-
 	if err != nil {
 		if len(output) > 0 {
 			return fmt.Errorf("Failed to compile %s:\n\n%s", t.Suite.PackageName, output)
@@ -163,7 +162,7 @@ func (t *TestRunner) CompileTo(path string) error {
 				// are on different partitions. We can copy the file, however.
 				err = copyFile(compiledFile, path)
 				if err != nil {
-					return fmt.Errorf("Failed to copy compiled file: %s", err)
+					return fmt.Errorf("Failed to copy compiled file: %w", err)
 				}
 			}
 		} else {
@@ -354,14 +353,14 @@ func (t *TestRunner) runParallelGinkgoSuite() RunResult {
 		res = res.Merge(<-completions)
 	}
 
-	//all test processes are done, at this point
-	//we should be able to wait for the aggregator to tell us that it's done
+	// all test processes are done, at this point
+	// we should be able to wait for the aggregator to tell us that it's done
 
 	select {
 	case <-result:
 		fmt.Println("")
 	case <-time.After(time.Second):
-		//the aggregator never got back to us!  something must have gone wrong
+		// the aggregator never got back to us!  something must have gone wrong
 		fmt.Println(`
 	 -------------------------------------------------------------------
 	|                                                                   |

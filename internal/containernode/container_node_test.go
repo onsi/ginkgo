@@ -3,14 +3,12 @@ package containernode_test
 import (
 	"math/rand"
 
-	"github.com/onsi/ginkgo/internal/leafnodes"
-
 	. "github.com/onsi/ginkgo"
-	. "github.com/onsi/gomega"
-
 	"github.com/onsi/ginkgo/internal/codelocation"
 	. "github.com/onsi/ginkgo/internal/containernode"
+	"github.com/onsi/ginkgo/internal/leafnodes"
 	"github.com/onsi/ginkgo/types"
+	. "github.com/onsi/gomega"
 )
 
 var _ = Describe("Container Node", func() {
@@ -54,7 +52,7 @@ var _ = Describe("Container Node", func() {
 			Ω(container.SetupNodesOfType(types.SpecComponentTypeBeforeEach)).Should(Equal([]leafnodes.BasicNode{befA, befB}))
 			Ω(container.SetupNodesOfType(types.SpecComponentTypeAfterEach)).Should(Equal([]leafnodes.BasicNode{aftA, aftB}))
 			Ω(container.SetupNodesOfType(types.SpecComponentTypeJustBeforeEach)).Should(Equal([]leafnodes.BasicNode{jusBefA, jusBefB}))
-			Ω(container.SetupNodesOfType(types.SpecComponentTypeIt)).Should(BeEmpty()) //subjects are not setup nodes
+			Ω(container.SetupNodesOfType(types.SpecComponentTypeIt)).Should(BeEmpty()) // subjects are not setup nodes
 		})
 	})
 
@@ -108,9 +106,9 @@ var _ = Describe("Container Node", func() {
 		})
 
 		Describe("Backpropagating Programmatic Focus", func() {
-			//This allows inner focused specs to override the focus of outer focussed
-			//specs and more closely maps to what a developer wants to happen
-			//when debugging a test suite
+			// This allows inner focused specs to override the focus of outer focussed
+			// specs and more closely maps to what a developer wants to happen
+			// when debugging a test suite
 
 			Context("when a parent is focused *and* an inner subject is focused", func() {
 				BeforeEach(func() {

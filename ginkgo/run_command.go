@@ -3,15 +3,14 @@ package main
 import (
 	"flag"
 	"fmt"
+	"io/ioutil"
 	"math/rand"
 	"os"
+	"path/filepath"
 	"regexp"
 	"runtime"
 	"strings"
 	"time"
-
-	"io/ioutil"
-	"path/filepath"
 
 	"github.com/onsi/ginkgo/config"
 	"github.com/onsi/ginkgo/ginkgo/interrupthandler"
@@ -170,7 +169,6 @@ func (r *SpecRunner) moveCoverprofiles(runners []*testrunner.TestRunner) {
 	for _, runner := range runners {
 		_, filename := filepath.Split(runner.CoverageFile)
 		err := os.Rename(runner.CoverageFile, filepath.Join(r.getOutputDir(), filename))
-
 		if err != nil {
 			fmt.Printf("Unable to move coverprofile %s, %v\n", runner.CoverageFile, err)
 			return
@@ -180,7 +178,6 @@ func (r *SpecRunner) moveCoverprofiles(runners []*testrunner.TestRunner) {
 
 // Combines all generated profiles in the specified directory
 func (r *SpecRunner) combineCoverprofiles(runners []*testrunner.TestRunner) error {
-
 	path, _ := filepath.Abs(r.getOutputDir())
 	if !fileExists(path) {
 		return fmt.Errorf("Unable to create combined profile, outputdir does not exist: %s", r.getOutputDir())
@@ -193,7 +190,6 @@ func (r *SpecRunner) combineCoverprofiles(runners []*testrunner.TestRunner) erro
 		os.O_WRONLY|os.O_CREATE,
 		0666,
 	)
-
 	if err != nil {
 		fmt.Printf("Unable to create combined profile, %v\n", err)
 		return nil // non-fatal error
@@ -202,7 +198,6 @@ func (r *SpecRunner) combineCoverprofiles(runners []*testrunner.TestRunner) erro
 	modeRegex := regexp.MustCompile(`^mode: .*\n`)
 	for index, runner := range runners {
 		contents, err := ioutil.ReadFile(runner.CoverageFile)
-
 		if err != nil {
 			fmt.Printf("Unable to read coverage file %s to combine, %v\n", runner.CoverageFile, err)
 			return nil // non-fatal error

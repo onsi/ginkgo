@@ -2,11 +2,9 @@ package testingtproxy_test
 
 import (
 	. "github.com/onsi/ginkgo"
-	. "github.com/onsi/gomega"
-
-	"github.com/onsi/gomega/gbytes"
-
 	"github.com/onsi/ginkgo/internal/testingtproxy"
+	. "github.com/onsi/gomega"
+	"github.com/onsi/gomega/gbytes"
 )
 
 type messagedCall struct {
@@ -62,7 +60,7 @@ var _ = Describe("Testingtproxy", func() {
 	It("ignores Cleanup", func() {
 		GinkgoT().Cleanup(func() {
 			panic("bam!")
-		}) //is a no-op
+		}) // is a no-op
 	})
 
 	It("supports Error", func() {
@@ -102,7 +100,7 @@ var _ = Describe("Testingtproxy", func() {
 	})
 
 	It("ignores Helper", func() {
-		GinkgoT().Helper() //is a no-op
+		GinkgoT().Helper() // is a no-op
 	})
 
 	It("supports Log", func() {
@@ -123,7 +121,7 @@ var _ = Describe("Testingtproxy", func() {
 	})
 
 	It("ignores Parallel", func() {
-		GinkgoT().Parallel() //is a no-op
+		GinkgoT().Parallel() // is a no-op
 	})
 
 	It("supports Skip", func() {

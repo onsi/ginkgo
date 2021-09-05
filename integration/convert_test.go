@@ -115,7 +115,7 @@ var _ = Describe("ginkgo convert", func() {
 		})
 
 		It("gracefully handles existing test suite files", func() {
-			//nothing should have gone wrong!
+			// nothing should have gone wrong!
 		})
 	})
 })

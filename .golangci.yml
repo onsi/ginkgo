@@ -1,7 +1,14 @@
 linters:
   enable:
+    - errorlint
+    - gci
+    - gofmt
     - govet
   disable:
     - errcheck
+    - gosimple
+    - ineffassign
     - staticcheck
     - structcheck
+    - typecheck
+    - unused

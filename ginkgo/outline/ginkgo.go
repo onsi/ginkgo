@@ -98,7 +98,6 @@ func (n *ginkgoNode) BackpropagateUnfocus() {
 			thisNode.Focused = false
 		}
 	})
-
 }
 
 func packageAndIdentNamesFromCallExpr(ce *ast.CallExpr) (string, string, bool) {

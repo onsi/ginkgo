@@ -59,5 +59,4 @@ var _ = Describe("Suite Command Specs", func() {
 		Ω(output).Should(ContainSubstring("Post-suite command succeeded:"))
 		Ω(output).Should(ContainSubstring(expected))
 	})
-
 })

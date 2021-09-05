@@ -23,7 +23,7 @@ func intAddr(s int) interface{} {
 
 var _ = Describe("TestRunner", func() {
 	It("should pass through go opts", func() {
-		//var opts map[string]interface{}
+		// var opts map[string]interface{}
 		opts := map[string]interface{}{
 			"asmflags":         strAddr("a"),
 			"pkgdir":           strAddr("b"),
