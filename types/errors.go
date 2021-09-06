@@ -255,6 +255,30 @@ func (g ginkgoErrors) InvalidFileFilterRegularExpression(filter string, err erro
 	}
 }
 
+/* Label Errors */
+func (g ginkgoErrors) SyntaxErrorParsingLabelFilter(input string, location int, error string) error {
+	var message string
+	if location >= 0 {
+		for i, r := range input {
+			if i == location {
+				message += "{{red}}{{bold}}{{underline}}"
+			}
+			message += string(r)
+			if i == location {
+				message += "{{/}}"
+			}
+		}
+	} else {
+		message = input
+	}
+	message += "\n" + error
+	return GinkgoError{
+		Heading: "Syntax Error Parsing Label Filter",
+		Message: message,
+		DocLink: "spec-labels",
+	}
+}
+
 /* Table errors */
 func (g ginkgoErrors) MultipleEntryBodyFunctionsForTable(cl CodeLocation) error {
 	return GinkgoError{
