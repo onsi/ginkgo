@@ -1,7 +1,13 @@
 version: 2
 updates:
 - package-ecosystem: gomod
-  directory: "/"
+  directory: /
+  schedule:
+    interval: daily
+    time: '01:00'
+  open-pull-requests-limit: 5
+- package-ecosystem: github-actions
+  directory: /
   schedule:
     interval: daily
     time: '01:00'
