@@ -815,6 +815,10 @@ It("should do something, if it can", func() {
 
 Note that `Skip(...)` causes the closure to exit so there is no need to return.
 
+### Spec Labels
+
+TODO
+
 ### Filtering Specs
 
 It is often convenient to be able to run a subset of specs.  Ginkgo has several mechanisms for allowing you to filter specs:
