@@ -111,14 +111,19 @@ type SpecReport struct {
 	ContainerHierarchyTexts []string
 
 	// ContainerHierarchyLocations is a slice containing the CodeLocations of
-	// all Describe/Context/When containers in this spec's hirerachy.
+	// all Describe/Context/When containers in this spec's hierarchy.
 	ContainerHierarchyLocations []CodeLocation
 
-	// LeafNodeType, LeadNodeLocation, and LeafNodeText capture the NodeType, CodeLocation, and text
+	// ContainerHierarchyLabels is a slice containing the labels of
+	// all Describe/Context/When containers in this spec's hierarchy
+	ContainerHierarchyLabels [][]string
+
+	// LeafNodeType, LeadNodeLocation, LeafNodeLabels and LeafNodeText capture the NodeType, CodeLocation, and text
 	// of the Ginkgo node being tested (typically an NodeTypeIt node, though this can also be
 	// one of the NodeTypesForSuiteLevelNodes node types)
 	LeafNodeType     NodeType
 	LeafNodeLocation CodeLocation
+	LeafNodeLabels   []string
 	LeafNodeText     string
 
 	// State captures whether the spec has passed, failed, etc.
@@ -159,8 +164,10 @@ func (report SpecReport) MarshalJSON() ([]byte, error) {
 	out := struct {
 		ContainerHierarchyTexts     []string
 		ContainerHierarchyLocations []CodeLocation
+		ContainerHierarchyLabels    [][]string
 		LeafNodeType                NodeType
 		LeafNodeLocation            CodeLocation
+		LeafNodeLabels              []string
 		LeafNodeText                string
 		State                       SpecState
 		StartTime                   time.Time
@@ -175,8 +182,10 @@ func (report SpecReport) MarshalJSON() ([]byte, error) {
 	}{
 		ContainerHierarchyTexts:     report.ContainerHierarchyTexts,
 		ContainerHierarchyLocations: report.ContainerHierarchyLocations,
+		ContainerHierarchyLabels:    report.ContainerHierarchyLabels,
 		LeafNodeType:                report.LeafNodeType,
 		LeafNodeLocation:            report.LeafNodeLocation,
+		LeafNodeLabels:              report.LeafNodeLabels,
 		LeafNodeText:                report.LeafNodeText,
 		State:                       report.State,
 		StartTime:                   report.StartTime,
@@ -219,7 +228,7 @@ func (report SpecReport) Failed() bool {
 	return report.State.Is(SpecStateFailureStates...)
 }
 
-//FullText returns a concatenation of all the report.NodeTexts
+//FullText returns a concatenation of all the report.ContainerHierarchyTexts and report.LeafNodeText
 func (report SpecReport) FullText() string {
 	texts := []string{}
 	texts = append(texts, report.ContainerHierarchyTexts...)
@@ -227,6 +236,28 @@ func (report SpecReport) FullText() string {
 		texts = append(texts, report.LeafNodeText)
 	}
 	return strings.Join(texts, " ")
+}
+
+//Labels returns a deduped set of all the spec's Labels.
+func (report SpecReport) Labels() []string {
+	out := []string{}
+	seen := map[string]bool{}
+	for _, labels := range report.ContainerHierarchyLabels {
+		for _, label := range labels {
+			if !seen[label] {
+				seen[label] = true
+				out = append(out, label)
+			}
+		}
+	}
+	for _, label := range report.LeafNodeLabels {
+		if !seen[label] {
+			seen[label] = true
+			out = append(out, label)
+		}
+	}
+
+	return out
 }
 
 //FileName() returns the name of the file containing the spec

@@ -64,7 +64,7 @@ func ApplyFocusToSpecs(specs Specs, description string, suiteConfig types.SuiteC
 	focusString := strings.Join(suiteConfig.FocusStrings, "|")
 	skipString := strings.Join(suiteConfig.SkipStrings, "|")
 
-	hasFocusCLIFlags := focusString != "" || skipString != "" || len(suiteConfig.SkipFiles) > 0 || len(suiteConfig.FocusFiles) > 0
+	hasFocusCLIFlags := focusString != "" || skipString != "" || len(suiteConfig.SkipFiles) > 0 || len(suiteConfig.FocusFiles) > 0 || suiteConfig.LabelFilter != ""
 
 	type SkipCheck func(spec Spec) bool
 
@@ -81,6 +81,11 @@ func ApplyFocusToSpecs(specs Specs, description string, suiteConfig types.SuiteC
 				break
 			}
 		}
+	}
+
+	if suiteConfig.LabelFilter != "" {
+		labelFilter, _ := types.ParseLabelFilter(suiteConfig.LabelFilter)
+		skipChecks = append(skipChecks, func(spec Spec) bool { return !labelFilter(spec.Nodes.UnionOfLabels()) })
 	}
 
 	if len(suiteConfig.FocusFiles) > 0 {

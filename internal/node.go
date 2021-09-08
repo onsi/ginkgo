@@ -42,6 +42,7 @@ type Node struct {
 	MarkedFocus   bool
 	MarkedPending bool
 	FlakeAttempts int
+	Labels        Labels
 }
 
 // Decoration Types
@@ -54,6 +55,7 @@ const Pending = pendingType(true)
 type FlakeAttempts uint
 type Offset uint
 type Done chan<- interface{} // Deprecated Done Channel for asynchronous testing
+type Labels []string
 
 func PartitionDecorations(args ...interface{}) ([]interface{}, []interface{}) {
 	decorations := []interface{}{}
@@ -82,6 +84,8 @@ func isDecoration(arg interface{}) bool {
 		return true
 	case t == reflect.TypeOf(FlakeAttempts(0)):
 		return true
+	case t == reflect.TypeOf(Labels{}):
+		return true
 	case t.Kind() == reflect.Slice && isSliceOfDecorations(arg):
 		return true
 	default:
@@ -108,6 +112,7 @@ func NewNode(deprecationTracker *types.DeprecationTracker, nodeType types.NodeTy
 		ID:           UniqueNodeID(),
 		NodeType:     nodeType,
 		Text:         text,
+		Labels:       Labels{},
 		CodeLocation: types.NewCodeLocation(baseOffset),
 		NestingLevel: -1,
 	}
@@ -117,6 +122,11 @@ func NewNode(deprecationTracker *types.DeprecationTracker, nodeType types.NodeTy
 			errors = append(errors, err)
 		}
 		return predicate
+	}
+	appendError := func(err error) {
+		if err != nil {
+			errors = append(errors, err)
+		}
 	}
 
 	args = unrollInterfaceSlice(args)
@@ -134,6 +144,7 @@ func NewNode(deprecationTracker *types.DeprecationTracker, nodeType types.NodeTy
 		}
 	}
 
+	labelsSeen := map[string]bool{}
 	trackedFunctionError := false
 	args = remainingArgs
 	remainingArgs = []interface{}{}
@@ -151,6 +162,16 @@ func NewNode(deprecationTracker *types.DeprecationTracker, nodeType types.NodeTy
 		case t == reflect.TypeOf(FlakeAttempts(0)):
 			node.FlakeAttempts = int(arg.(FlakeAttempts))
 			appendErrorIf(!nodeType.Is(types.NodeTypesForContainerAndIt...), types.GinkgoErrors.InvalidDecorationForNodeType(node.CodeLocation, nodeType, "FlakeAttempts"))
+		case t == reflect.TypeOf(Labels{}):
+			appendErrorIf(!nodeType.Is(types.NodeTypesForContainerAndIt...), types.GinkgoErrors.InvalidDecorationForNodeType(node.CodeLocation, nodeType, "Label"))
+			for _, label := range arg.(Labels) {
+				if !labelsSeen[label] {
+					labelsSeen[label] = true
+					label, err := types.ValidateAndCleanupLabel(label, node.CodeLocation)
+					node.Labels = append(node.Labels, label)
+					appendError(err)
+				}
+			}
 		case t.Kind() == reflect.Func:
 			if appendErrorIf(node.Body != nil, types.GinkgoErrors.MultipleBodyFunctions(node.CodeLocation, nodeType)) {
 				trackedFunctionError = true
@@ -331,6 +352,18 @@ func (n Nodes) Texts() []string {
 	return out
 }
 
+func (n Nodes) Labels() [][]string {
+	out := [][]string{}
+	for _, node := range n {
+		if node.Labels == nil {
+			out = append(out, []string{})
+		} else {
+			out = append(out, []string(node.Labels))
+		}
+	}
+	return out
+}
+
 func (n Nodes) CodeLocations() []types.CodeLocation {
 	out := []types.CodeLocation{}
 	for _, node := range n {
@@ -371,6 +404,20 @@ func (n Nodes) HasNodeMarkedFocus() bool {
 	return false
 }
 
+func (n Nodes) UnionOfLabels() []string {
+	out := []string{}
+	seen := map[string]bool{}
+	for _, node := range n {
+		for _, label := range node.Labels {
+			if !seen[label] {
+				seen[label] = true
+				out = append(out, label)
+			}
+		}
+	}
+	return out
+}
+
 func unrollInterfaceSlice(args interface{}) []interface{} {
 	v := reflect.ValueOf(args)
 	if v.Kind() != reflect.Slice {
@@ -379,7 +426,7 @@ func unrollInterfaceSlice(args interface{}) []interface{} {
 	out := []interface{}{}
 	for i := 0; i < v.Len(); i++ {
 		el := reflect.ValueOf(v.Index(i).Interface())
-		if el.Kind() == reflect.Slice {
+		if el.Kind() == reflect.Slice && el.Type() != reflect.TypeOf(Labels{}) {
 			out = append(out, unrollInterfaceSlice(el.Interface())...)
 		} else {
 			out = append(out, v.Index(i).Interface())

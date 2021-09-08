@@ -279,6 +279,24 @@ func (g ginkgoErrors) SyntaxErrorParsingLabelFilter(input string, location int, 
 	}
 }
 
+func (g ginkgoErrors) InvalidLabel(label string, cl CodeLocation) error {
+	return GinkgoError{
+		Heading:      "Invalid Label",
+		Message:      fmt.Sprintf("'%s' is an invalid label.  Labels cannot contain of the following characters: '&|!,()/'", label),
+		CodeLocation: cl,
+		DocLink:      "spec-labels",
+	}
+}
+
+func (g ginkgoErrors) InvalidEmptyLabel(cl CodeLocation) error {
+	return GinkgoError{
+		Heading:      "Invalid Empty Label",
+		Message:      "Labels cannot be empty",
+		CodeLocation: cl,
+		DocLink:      "spec-labels",
+	}
+}
+
 /* Table errors */
 func (g ginkgoErrors) MultipleEntryBodyFunctionsForTable(cl CodeLocation) error {
 	return GinkgoError{
