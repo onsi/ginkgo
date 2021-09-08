@@ -28,6 +28,7 @@ var cl4 = types.CodeLocation{FileName: "cl4.go", LineNumber: 144, FullStackTrace
 
 func CLS(cls ...types.CodeLocation) []types.CodeLocation { return cls }
 func CTS(componentTexts ...string) []string              { return componentTexts }
+func CLabels(labels ...Labels) []Labels                  { return labels }
 
 type FailureNodeLocation types.CodeLocation
 type ForwardedPanic string
@@ -76,12 +77,19 @@ func S(options ...interface{}) types.SpecReport {
 			report.ContainerHierarchyTexts = option.([]string)
 		case reflect.TypeOf([]types.CodeLocation{}):
 			report.ContainerHierarchyLocations = option.([]types.CodeLocation)
+		case reflect.TypeOf([]Labels{}):
+			report.ContainerHierarchyLabels = [][]string{}
+			for _, labels := range option.([]Labels) {
+				report.ContainerHierarchyLabels = append(report.ContainerHierarchyLabels, []string(labels))
+			}
 		case reflect.TypeOf(""):
 			report.LeafNodeText = option.(string)
 		case reflect.TypeOf(types.NodeTypeIt):
 			report.LeafNodeType = option.(types.NodeType)
 		case reflect.TypeOf(types.CodeLocation{}):
 			report.LeafNodeLocation = option.(types.CodeLocation)
+		case reflect.TypeOf(Labels{}):
+			report.LeafNodeLabels = []string(option.(Labels))
 		case reflect.TypeOf(types.SpecStatePassed):
 			report.State = option.(types.SpecState)
 		case reflect.TypeOf(time.Second):
@@ -96,6 +104,11 @@ func S(options ...interface{}) types.SpecReport {
 			report.CapturedGinkgoWriterOutput = string(option.(GW))
 		case reflect.TypeOf(types.ReportEntry{}):
 			report.ReportEntries = append(report.ReportEntries, option.(types.ReportEntry))
+		}
+	}
+	if len(report.ContainerHierarchyLabels) == 0 {
+		for range report.ContainerHierarchyTexts {
+			report.ContainerHierarchyLabels = append(report.ContainerHierarchyLabels, []string{})
 		}
 	}
 	return report
@@ -261,6 +274,14 @@ var _ = Describe("DefaultReporter", func() {
 			DELIMITER,
 			"{{/}}Container {{gray}}Nested Container{{/}}",
 			"  {{bold}}My Test{{/}}",
+			"  {{gray}}"+cl2.String()+"{{/}}",
+			"",
+		),
+		Entry("specs with labels", C(Verbose),
+			S(CTS("Container", "Nested Container"), "My Test", CLS(cl0, cl1), cl2, CLabels(Label("dog", "cat"), Label("cat", "fruit")), Label("giraffe", "gorilla", "cat")),
+			DELIMITER,
+			"{{/}}Container {{gray}}Nested Container{{/}}",
+			"  {{bold}}My Test{{/}} {{coral}}[dog, cat, fruit, giraffe, gorilla]{{/}}",
 			"  {{gray}}"+cl2.String()+"{{/}}",
 			"",
 		),
@@ -607,8 +628,9 @@ var _ = Describe("DefaultReporter", func() {
 		//Failed tests
 		Entry("when a test has failed in an It",
 			C(),
-			S(CTS("Describe A", "Context B"), "The Test", CLS(cl0, cl1), cl2,
+			S(CTS("Describe A", "Context B"), "The Test", CLS(cl0, cl1), cl2, CLabels(Label("dog", "cat"), Label("cat", "cow")),
 				types.SpecStateFailed, 2,
+				Label("cow", "fish"),
 				GW("GW-OUTPUT\nIS EMITTED"), STD("STD-OUTPUT\nIS EMITTED"),
 				F("FAILURE MESSAGE\nWITH DETAILS", types.FailureNodeIsLeafNode, types.NodeTypeIt, FailureNodeLocation(cl2), cl3),
 				RE("report-name", cl4, "report-content"),
@@ -617,11 +639,11 @@ var _ = Describe("DefaultReporter", func() {
 			),
 			DELIMITER,
 			"{{red}}"+DENOTER+" [FAILED] [1.000 seconds]{{/}}",
-			"Describe A",
+			"Describe A {{coral}}[dog, cat]{{/}}",
 			"{{gray}}"+cl0.String()+"{{/}}",
-			"  Context B",
+			"  Context B {{coral}}[cat, cow]{{/}}",
 			"  {{gray}}"+cl1.String()+"{{/}}",
-			"    {{red}}{{bold}}[It] The Test{{/}}",
+			"    {{red}}{{bold}}[It] The Test{{/}} {{coral}}[cow, fish]{{/}}",
 			"    {{gray}}"+cl2.String()+"{{/}}",
 			"",
 			"  {{gray}}Begin Captured StdOut/StdErr Output >>{{/}}",
@@ -1060,7 +1082,7 @@ var _ = Describe("DefaultReporter", func() {
 					S(types.SpecStatePassed, 3), S(types.SpecStatePassed, 4), //flakey
 					S(types.SpecStatePending), S(types.SpecStatePending),
 					S(types.SpecStateSkipped), S(types.SpecStateSkipped), S(types.SpecStateSkipped),
-					S(CTS("Describe A", "Context B"), "The Test", CLS(cl0, cl1), cl2,
+					S(CTS("Describe A", "Context B"), "The Test", CLS(cl0, cl1), cl2, CLabels(Label("cat", "dog"), Label("dog", "fish")), Label("fish", "giraffe"),
 						types.SpecStateFailed, 2,
 						F("FAILURE MESSAGE\nWITH DETAILS", types.FailureNodeInContainer, FailureNodeLocation(cl3), types.NodeTypeJustBeforeEach, 1, cl4),
 					),
@@ -1082,7 +1104,7 @@ var _ = Describe("DefaultReporter", func() {
 			"",
 			"",
 			"{{red}}{{bold}}Summarizing 4 Failures:{{/}}",
-			"  {{red}}[FAIL]{{/}} {{/}}Describe A {{gray}}{{red}}{{bold}}Context B [JustBeforeEach]{{/}} {{/}}The Test{{/}}",
+			"  {{red}}[FAIL]{{/}} {{/}}Describe A {{gray}}{{red}}{{bold}}Context B [JustBeforeEach]{{/}} {{/}}The Test{{/}} {{coral}}[cat, dog, fish, giraffe]{{/}}",
 			"  {{gray}}"+cl4.String()+"{{/}}",
 			"  {{magenta}}[PANICKED!]{{/}} {{/}}Describe A {{gray}}{{magenta}}{{bold}}[It] The Test{{/}}{{/}}",
 			"  {{gray}}"+cl2.String()+"{{/}}",

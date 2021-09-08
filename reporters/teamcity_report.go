@@ -38,6 +38,11 @@ func GenerateTeamcityReport(report types.Report, dst string) error {
 		if spec.FullText() != "" {
 			name = name + " " + spec.FullText()
 		}
+		labels := spec.Labels()
+		if len(labels) > 0 {
+			name = name + " [" + strings.Join(labels, ",") + "]"
+		}
+
 		name = tcEscape(name)
 		fmt.Fprintf(f, "##teamcity[testStarted name='%s']\n", name)
 		switch spec.State {

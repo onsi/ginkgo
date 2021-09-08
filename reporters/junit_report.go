@@ -140,6 +140,7 @@ func GenerateJUnitReport(report types.Report, dst string) error {
 				{"SpecialSuiteFailureReason", strings.Join(report.SpecialSuiteFailureReasons, ",")},
 				{"RandomSeed", fmt.Sprintf("%d", report.SuiteConfig.RandomSeed)},
 				{"RandomizeAllSpecs", fmt.Sprintf("%t", report.SuiteConfig.RandomizeAllSpecs)},
+				{"LabelFilter", report.SuiteConfig.LabelFilter},
 				{"FocusStrings", strings.Join(report.SuiteConfig.FocusStrings, ",")},
 				{"SkipStrings", strings.Join(report.SuiteConfig.SkipStrings, ",")},
 				{"FocusFiles", strings.Join(report.SuiteConfig.FocusFiles, ";")},
@@ -157,6 +158,10 @@ func GenerateJUnitReport(report types.Report, dst string) error {
 		name := fmt.Sprintf("[%s]", spec.LeafNodeType)
 		if spec.FullText() != "" {
 			name = name + " " + spec.FullText()
+		}
+		labels := spec.Labels()
+		if len(labels) > 0 {
+			name = name + " [" + strings.Join(labels, ", ") + "]"
 		}
 
 		test := JUnitTestCase{

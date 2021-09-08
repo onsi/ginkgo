@@ -153,13 +153,19 @@ var _ = Describe("Types", func() {
 				})
 			})
 
-			Context("wtih both", func() {
+			Context("with both", func() {
 				It("returns both concatenated", func() {
 					Ω(types.SpecReport{
 						CapturedGinkgoWriterOutput: "gw",
 						CapturedStdOutErr:          "std",
 					}.CombinedOutput()).Should(Equal("std\ngw"))
 				})
+			})
+		})
+
+		Describe("Labels", Label("TestA", "TestB"), func() {
+			It("returns a concatenated, deduped, set of labels", Label("TestB", "TestC"), func() {
+				Ω(CurrentSpecReport().Labels()).Should(Equal([]string{"TestA", "TestB", "TestC"}))
 			})
 		})
 

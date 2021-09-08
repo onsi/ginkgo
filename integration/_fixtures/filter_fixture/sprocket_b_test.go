@@ -21,7 +21,7 @@ var _ = Describe("SprocketB", func() {
 
 	})
 
-	It("fish", func() {
+	It("fish", Label("slow"), func() {
 
 	})
 })

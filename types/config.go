@@ -22,6 +22,7 @@ type SuiteConfig struct {
 	SkipStrings       []string
 	FocusFiles        []string
 	SkipFiles         []string
+	LabelFilter       string
 	FailOnPending     bool
 	FailFast          bool
 	FlakeAttempts     int
@@ -272,6 +273,8 @@ var SuiteConfigFlags = GinkgoFlags{
 	{KeyPath: "S.Timeout", Name: "timeout", SectionKey: "debug", UsageDefaultValue: "1h",
 		Usage: "Test suite fails if it does not complete within the specified timeout."},
 
+	{KeyPath: "S.LabelFilter", Name: "label-filter", SectionKey: "filter", UsageArgument: "expression",
+		Usage: "If set, ginkgo will only run specs with labels that match the label-filter.  The passed-in expression can include boolean operations (!, &&, ||, ','), groupings via '()', and regular expresions '/regexp/'.  e.g. '(cat || dog) && !fruit'"},
 	{KeyPath: "S.FocusStrings", Name: "focus", SectionKey: "filter",
 		Usage: "If set, ginkgo will only run specs that match this regular expression. Can be specified multiple times, values are ORed."},
 	{KeyPath: "S.SkipStrings", Name: "skip", SectionKey: "filter",
@@ -393,6 +396,13 @@ func VetConfig(flagSet GinkgoFlagSet, suiteConfig SuiteConfig, reporterConfig Re
 
 	if len(suiteConfig.SkipFiles) > 0 {
 		_, err := ParseFileFilters(suiteConfig.SkipFiles)
+		if err != nil {
+			errors = append(errors, err)
+		}
+	}
+
+	if suiteConfig.LabelFilter != "" {
+		_, err := ParseLabelFilter(suiteConfig.LabelFilter)
 		if err != nil {
 			errors = append(errors, err)
 		}

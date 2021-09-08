@@ -180,7 +180,7 @@ var _ = Describe("Running Specs", func() {
 			fm.MountFixture("more_ginkgo_tests")
 		})
 
-		It("should mix up the order of the test suites", func() {
+		It("should mix up the order of the test suites", Label("slow"), func() {
 			session := startGinkgo(fm.TmpDir, "--no-color", "--randomize-suites", "-r", "--seed=1")
 			Eventually(session).Should(gexec.Exit(0))
 

@@ -8,6 +8,11 @@ var _ = Describe("reporting test", func() {
 	It("passes", func() {
 	})
 
+	Describe("labelled tests", Label("dog"), func() {
+		It("is labelled", Label("dog", "cat"), func() {
+		})
+	})
+
 	It("fails", func() {
 		GinkgoWriter.Print("some ginkgo-writer output")
 		Fail("fail!")

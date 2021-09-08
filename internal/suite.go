@@ -232,9 +232,11 @@ func (suite *Suite) runSpecs(description string, suitePath string, hasProgrammat
 			suite.currentSpecReport = types.SpecReport{
 				ContainerHierarchyTexts:     spec.Nodes.WithType(types.NodeTypeContainer).Texts(),
 				ContainerHierarchyLocations: spec.Nodes.WithType(types.NodeTypeContainer).CodeLocations(),
+				ContainerHierarchyLabels:    spec.Nodes.WithType(types.NodeTypeContainer).Labels(),
 				LeafNodeLocation:            spec.FirstNodeWithType(types.NodeTypeIt).CodeLocation,
 				LeafNodeType:                types.NodeTypeIt,
 				LeafNodeText:                spec.FirstNodeWithType(types.NodeTypeIt).Text,
+				LeafNodeLabels:              []string(spec.FirstNodeWithType(types.NodeTypeIt).Labels),
 				GinkgoParallelNode:          suiteConfig.ParallelNode,
 			}
 

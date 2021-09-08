@@ -99,7 +99,12 @@ func (r *DefaultReporter) WillRun(report types.SpecReport) {
 			r.emitBlock(r.cycleJoin(report.ContainerHierarchyTexts, " "))
 			indentation = 1
 		}
-		r.emitBlock(r.fi(indentation, "{{bold}}%s{{/}}", report.LeafNodeText))
+		line := r.fi(indentation, "{{bold}}%s{{/}}", report.LeafNodeText)
+		labels := report.Labels()
+		if len(labels) > 0 {
+			line += r.f(" {{coral}}[%s]{{/}}", strings.Join(labels, ", "))
+		}
+		r.emitBlock(line)
 	}
 	r.emitBlock(r.fi(indentation, "{{gray}}%s{{/}}", report.LeafNodeLocation))
 }
@@ -337,13 +342,14 @@ func (r *DefaultReporter) cycleJoin(elements []string, joiner string) string {
 }
 
 func (r *DefaultReporter) codeLocationBlock(report types.SpecReport, highlightColor string, succinct bool, usePreciseFailureLocation bool) string {
-	texts, locations := []string{}, []types.CodeLocation{}
-	texts, locations = append(texts, report.ContainerHierarchyTexts...), append(locations, report.ContainerHierarchyLocations...)
+	texts, locations, labels := []string{}, []types.CodeLocation{}, [][]string{}
+	texts, locations, labels = append(texts, report.ContainerHierarchyTexts...), append(locations, report.ContainerHierarchyLocations...), append(labels, report.ContainerHierarchyLabels...)
 	if report.LeafNodeType.Is(types.NodeTypesForSuiteLevelNodes...) {
 		texts = append(texts, r.f("[%s] %s", report.LeafNodeType, report.LeafNodeText))
 	} else {
 		texts = append(texts, report.LeafNodeText)
 	}
+	labels = append(labels, report.LeafNodeLabels)
 	locations = append(locations, report.LeafNodeLocation)
 
 	failureLocation := report.Failure.FailureNodeLocation
@@ -355,6 +361,7 @@ func (r *DefaultReporter) codeLocationBlock(report types.SpecReport, highlightCo
 	case types.FailureNodeAtTopLevel:
 		texts = append([]string{r.f(highlightColor+"{{bold}}TOP-LEVEL [%s]{{/}}", report.Failure.FailureNodeType)}, texts...)
 		locations = append([]types.CodeLocation{failureLocation}, locations...)
+		labels = append([][]string{{}}, labels...)
 	case types.FailureNodeInContainer:
 		i := report.Failure.FailureNodeContainerIndex
 		texts[i] = r.f(highlightColor+"{{bold}}%s [%s]{{/}}", texts[i], report.Failure.FailureNodeType)
@@ -367,7 +374,12 @@ func (r *DefaultReporter) codeLocationBlock(report types.SpecReport, highlightCo
 
 	out := ""
 	if succinct {
-		out += r.f("%s\n", r.cycleJoin(texts, " "))
+		out += r.f("%s", r.cycleJoin(texts, " "))
+		flattenedLabels := report.Labels()
+		if len(flattenedLabels) > 0 {
+			out += r.f(" {{coral}}[%s]{{/}}", strings.Join(flattenedLabels, ", "))
+		}
+		out += "\n"
 		if usePreciseFailureLocation {
 			out += r.f("{{gray}}%s{{/}}", failureLocation)
 		} else {
@@ -375,7 +387,11 @@ func (r *DefaultReporter) codeLocationBlock(report types.SpecReport, highlightCo
 		}
 	} else {
 		for i := range texts {
-			out += r.fi(uint(i), "%s\n", texts[i])
+			out += r.fi(uint(i), "%s", texts[i])
+			if len(labels[i]) > 0 {
+				out += r.f(" {{coral}}[%s]{{/}}", strings.Join(labels[i], ", "))
+			}
+			out += "\n"
 			out += r.fi(uint(i), "{{gray}}%s{{/}}\n", locations[i])
 		}
 	}
