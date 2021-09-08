@@ -334,3 +334,14 @@ LOOP:
 	}
 	return root.constructLabelFilter(input)
 }
+
+func ValidateAndCleanupLabel(label string, cl CodeLocation) (string, error) {
+	out := strings.TrimSpace(label)
+	if out == "" {
+		return "", GinkgoErrors.InvalidEmptyLabel(cl)
+	}
+	if strings.ContainsAny(out, "&|!,()/") {
+		return "", GinkgoErrors.InvalidLabel(label, cl)
+	}
+	return out, nil
+}

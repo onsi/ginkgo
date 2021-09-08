@@ -88,7 +88,7 @@ var _ = Describe("Interrupt and Timeout", func() {
 	})
 
 	Describe("applying the timeout to multiple suites", func() {
-		It("tracks the timeout across the suites, decrementing the available timeout for each individual suite, and reports on any suites that did not run because the timeout elapsed", func() {
+		It("tracks the timeout across the suites, decrementing the available timeout for each individual suite, and reports on any suites that did not run because the timeout elapsed", Label("slow"), func() {
 			fm.MountFixture("timeout")
 			session := startGinkgo(fm.PathTo("timeout"), "--no-color", "-r", "--timeout=10s", "--keep-going", "--json-report=out.json")
 			Eventually(session).Should(gbytes.Say("TimeoutA Suite"))

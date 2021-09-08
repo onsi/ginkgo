@@ -154,7 +154,7 @@ var _ = Describe("Profiling Specs", func() {
 			})
 
 			Context("when -keep-separate-coverprofiles is set", func() {
-				It("generates separate coverprofiles", func() {
+				It("generates separate coverprofiles", Label("slow"), func() {
 					session := startGinkgo(fm.PathTo("combined_coverage"), "--no-color", "--cover", "-r", "-nodes=2", "--keep-separate-coverprofiles")
 					Eventually(session).Should(gexec.Exit(0))
 					Ω(fm.PathTo("combined_coverage", "coverprofile.out")).ShouldNot(BeAnExistingFile())
@@ -255,7 +255,7 @@ var _ = Describe("Profiling Specs", func() {
 				"-nodes=3",
 			),
 
-			Entry("when --output-dir is set",
+			Entry("when --output-dir is set", Label("slow"),
 				func(pkg string) string { return fm.PathTo("profile", "profiles/"+pkg+".test") },
 				func(pkg string, profile string) string { return fm.PathTo("profile", "profiles/"+pkg+"_"+profile) },
 				"-nodes=3", "--output-dir=./profiles",

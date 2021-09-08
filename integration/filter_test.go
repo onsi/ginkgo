@@ -24,15 +24,16 @@ var _ = Describe("Filter", func() {
 			"--focus-file=sprocket", "--focus-file=widget:1-24", "--focus-file=_b:24-42",
 			"--skip-file=_c",
 			"--json-report=report.json",
+			"--label-filter=!SLOW",
 		)
 		Eventually(session).Should(gexec.Exit(0))
 		specs := Reports(fm.LoadJSONReports("filter", "report.json")[0].SpecReports)
 
 		passedSpecs := []string{
 			"SprocketA dog fish",
-			"SprocketB dog", "SprocketB dog fish", "SprocketB fish",
+			"SprocketB dog", "SprocketB dog fish",
 			"WidgetA dog", "WidgetA dog fish",
-			"WidgetB dog", "WidgetB dog fish",
+			"WidgetB dog fish",
 			// lines in _b > 24 are in --focus-file
 			"More WidgetB dog", "More WidgetB dog fish",
 		}
@@ -45,6 +46,9 @@ var _ = Describe("Filter", func() {
 			"SprocketA cat", "SprocketB cat", "WidgetA cat", "WidgetB cat", "More WidgetB cat",
 			// fish is in -focus but cat is in -skip
 			"SprocketA cat fish", "SprocketB cat fish", "WidgetA cat fish", "WidgetB cat fish", "More WidgetB cat fish",
+			// Tests labelled 'slow'
+			"WidgetB dog",
+			"SprocketB fish",
 			// _c is in -skip-file
 			"SprocketC cat", "SprocketC dog", "SprocketC cat fish", "SprocketC dog fish",
 			// lines in widget > 24 are not in --focus-file

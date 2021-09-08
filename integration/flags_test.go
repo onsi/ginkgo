@@ -48,7 +48,7 @@ var _ = Describe("Flags Specs", func() {
 		Ω(output).Should(ContainSubstring("Detected pending specs and --fail-on-pending is set"))
 	})
 
-	It("should run the race detector when told to", func() {
+	It("should run the race detector when told to", Label("slow"), func() {
 		if !raceDetectorSupported() {
 			Skip("race detection is not supported")
 		}

@@ -160,4 +160,31 @@ var _ = Describe("LabelFilter", func() {
 			NM("dog"), NM("cow"), NM("cat"), NM("dog", "fruit"), NM("dog", "cup"),
 		),
 	)
+
+	cl := types.NewCodeLocation(0)
+	DescribeTable("Validating Labels",
+		func(label string, expected string, expectedError error) {
+			out, err := types.ValidateAndCleanupLabel(label, cl)
+			Ω(out).Should(Equal(expected))
+			if expectedError == nil {
+				Ω(err).Should(BeNil())
+			} else {
+				Ω(err).Should(Equal(expectedError))
+			}
+		},
+		func(label string, expected string, expectedError error) string {
+			return label
+		},
+		Entry(nil, "cow", "cow", nil),
+		Entry(nil, "  cow dog  ", "cow dog", nil),
+		Entry(nil, "", "", types.GinkgoErrors.InvalidEmptyLabel(cl)),
+		Entry(nil, "   ", "", types.GinkgoErrors.InvalidEmptyLabel(cl)),
+		Entry(nil, "cow&", "", types.GinkgoErrors.InvalidLabel("cow&", cl)),
+		Entry(nil, "cow|", "", types.GinkgoErrors.InvalidLabel("cow|", cl)),
+		Entry(nil, "cow,", "", types.GinkgoErrors.InvalidLabel("cow,", cl)),
+		Entry(nil, "cow(", "", types.GinkgoErrors.InvalidLabel("cow(", cl)),
+		Entry(nil, "cow()", "", types.GinkgoErrors.InvalidLabel("cow()", cl)),
+		Entry(nil, "cow)", "", types.GinkgoErrors.InvalidLabel("cow)", cl)),
+		Entry(nil, "cow/", "", types.GinkgoErrors.InvalidLabel("cow/", cl)),
+	)
 })
