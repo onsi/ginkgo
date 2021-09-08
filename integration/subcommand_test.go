@@ -423,7 +423,7 @@ var _ = Describe("Subcommand", func() {
 	})
 
 	Describe("ginkgo unfocus", func() {
-		It("should unfocus tests", func() {
+		It("should unfocus tests", Label("slow"), func() {
 			fm.MountFixture("focused")
 
 			session := startGinkgo(fm.PathTo("focused"), "--no-color", "-r")

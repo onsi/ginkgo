@@ -9,7 +9,7 @@ var _ = Describe("WidgetB", func() {
 
 	})
 
-	It("dog", func() {
+	It("dog", Label("slow"), func() {
 
 	})
 

@@ -28,6 +28,7 @@ var _ = Describe("Reporting", func() {
 			lines := strings.Split(string(report), "\n")
 			Ω(lines).Should(ConsistOf(
 				"passes - passed",
+				"is labelled - passed",
 				"fails - failed",
 				"panics - panicked",
 				"is pending - pending",
@@ -47,6 +48,7 @@ var _ = Describe("Reporting", func() {
 				"ReportingFixture Suite - 17",
 				"1: [BeforeSuite] - passed",
 				"passes - passed",
+				"is labelled - passed",
 				"fails - failed",
 				"panics - panicked",
 				"is pending - pending",
@@ -69,6 +71,7 @@ var _ = Describe("Reporting", func() {
 					"1: [BeforeSuite] - passed",
 					"2: [BeforeSuite] - passed",
 					"passes - passed",
+					"is labelled - passed",
 					"fails - failed",
 					"panics - panicked",
 					"is pending - pending",
@@ -96,11 +99,13 @@ var _ = Describe("Reporting", func() {
 			Ω(report.SuitePath).Should(Equal(fm.AbsPathTo("reporting")))
 			Ω(report.SuiteDescription).Should(Equal("ReportingFixture Suite"))
 			Ω(report.SuiteConfig.ParallelTotal).Should(Equal(2))
-			Ω(report.SpecReports).Should(HaveLen(5 + 4 + 1))
+			Ω(report.SpecReports).Should(HaveLen(6 + 4 + 1))
 
 			specReports := Reports(report.SpecReports)
-			Ω(specReports.WithLeafNodeType(types.NodeTypeIt)).Should(HaveLen(5))
+			Ω(specReports.WithLeafNodeType(types.NodeTypeIt)).Should(HaveLen(6))
 			Ω(specReports.Find("passes")).Should(HavePassed())
+			Ω(specReports.Find("is labelled")).Should(HavePassed())
+			Ω(specReports.Find("is labelled").Labels()).Should(Equal([]string{"dog", "cat"}))
 			Ω(specReports.Find("fails")).Should(HaveFailed("fail!", types.FailureNodeIsLeafNode, CapturedGinkgoWriterOutput("some ginkgo-writer output")))
 			Ω(specReports.Find("panics")).Should(HavePanicked("boom"))
 			Ω(specReports.Find("is pending")).Should(BePending())
@@ -143,7 +148,7 @@ var _ = Describe("Reporting", func() {
 		checkJUnitReport := func(suite reporters.JUnitTestSuite) {
 			Ω(suite.Name).Should(Equal("ReportingFixture Suite"))
 			Ω(suite.Package).Should(Equal(fm.AbsPathTo("reporting")))
-			Ω(suite.Tests).Should(Equal(10))
+			Ω(suite.Tests).Should(Equal(11))
 			Ω(suite.Disabled).Should(Equal(1))
 			Ω(suite.Skipped).Should(Equal(1))
 			Ω(suite.Errors).Should(Equal(1))
@@ -157,6 +162,8 @@ var _ = Describe("Reporting", func() {
 			Ω(getTestCase("[It] reporting test passes", suite.TestCases).Failure).Should(BeNil())
 			Ω(getTestCase("[It] reporting test passes", suite.TestCases).Error).Should(BeNil())
 			Ω(getTestCase("[It] reporting test passes", suite.TestCases).Skipped).Should(BeNil())
+
+			Ω(getTestCase("[It] reporting test labelled tests is labelled [dog, cat]", suite.TestCases).Status).Should(Equal("passed"))
 
 			Ω(getTestCase("[It] reporting test panics", suite.TestCases).Status).Should(Equal("panicked"))
 			Ω(getTestCase("[It] reporting test panics", suite.TestCases).Error.Message).Should(Equal("boom"))
@@ -191,7 +198,7 @@ var _ = Describe("Reporting", func() {
 
 		checkUnifiedJUnitReport := func(report reporters.JUnitTestSuites) {
 			Ω(report.TestSuites).Should(HaveLen(3))
-			Ω(report.Tests).Should(Equal(13))
+			Ω(report.Tests).Should(Equal(14))
 			Ω(report.Disabled).Should(Equal(2))
 			Ω(report.Errors).Should(Equal(2))
 			Ω(report.Failures).Should(Equal(3))

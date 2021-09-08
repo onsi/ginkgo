@@ -31,8 +31,11 @@ var _ = Describe("Partitioning Decorations", func() {
 			Pending,
 			nil,
 			1,
-			[]interface{}{Focus, Pending, []interface{}{Offset(2), FlakeAttempts(2)}},
+			[]interface{}{Focus, Pending, []interface{}{Offset(2), FlakeAttempts(2)}, Label("a", "b", "c")},
 			[]interface{}{1, 2, 3.1, nil},
+			[]string{"a", "b", "c"},
+			Label("A", "B", "C"),
+			Label("D"),
 			[]interface{}{},
 			FlakeAttempts(1),
 			true,
@@ -43,7 +46,9 @@ var _ = Describe("Partitioning Decorations", func() {
 			types.NewCustomCodeLocation("hey there"),
 			Focus,
 			Pending,
-			[]interface{}{Focus, Pending, []interface{}{Offset(2), FlakeAttempts(2)}},
+			[]interface{}{Focus, Pending, []interface{}{Offset(2), FlakeAttempts(2)}, Label("a", "b", "c")},
+			Label("A", "B", "C"),
+			Label("D"),
 			FlakeAttempts(1),
 		}))
 
@@ -54,13 +59,14 @@ var _ = Describe("Partitioning Decorations", func() {
 			nil,
 			1,
 			[]interface{}{1, 2, 3.1, nil},
+			[]string{"a", "b", "c"},
 			[]interface{}{},
 			true,
 		}))
 	})
 })
 
-var _ = Describe("Construcing nodes", func() {
+var _ = Describe("Constructing nodes", func() {
 	var dt *types.DeprecationTracker
 	var didRun bool
 	var body func()
@@ -77,7 +83,7 @@ var _ = Describe("Construcing nodes", func() {
 
 	Describe("happy path", func() {
 		It("creates a node with a non-zero id", func() {
-			node, errors := internal.NewNode(dt, ntIt, "text", body, cl, Focus)
+			node, errors := internal.NewNode(dt, ntIt, "text", body, cl, Focus, Label("A", "B", "C"))
 			Ω(node.ID).Should(BeNumerically(">", 0))
 			Ω(node.NodeType).Should(Equal(ntIt))
 			Ω(node.Text).Should(Equal("text"))
@@ -87,6 +93,7 @@ var _ = Describe("Construcing nodes", func() {
 			Ω(node.MarkedFocus).Should(BeTrue())
 			Ω(node.MarkedPending).Should(BeFalse())
 			Ω(node.NestingLevel).Should(Equal(-1))
+			Ω(node.Labels).Should(Equal(Labels{"A", "B", "C"}))
 			ExpectAllWell(errors)
 		})
 	})
@@ -204,6 +211,47 @@ var _ = Describe("Construcing nodes", func() {
 		})
 	})
 
+	Describe("The Label decoration", func() {
+		It("has no labels by default", func() {
+			node, errors := internal.NewNode(dt, ntIt, "text", body)
+			Ω(node).ShouldNot(BeZero())
+			Ω(node.Labels).Should(Equal(Labels{}))
+			ExpectAllWell(errors)
+		})
+
+		It("can track labels", func() {
+			node, errors := internal.NewNode(dt, ntIt, "text", body, Label("A", "B", "C"))
+			Ω(node.Labels).Should(Equal(Labels{"A", "B", "C"}))
+			ExpectAllWell(errors)
+		})
+
+		It("appends and dedupes all labels together, even if nested", func() {
+			node, errors := internal.NewNode(dt, ntIt, "text", body, Label("A", "B", "C"), Label("D", "E", "C"), []interface{}{Label("F"), []interface{}{Label("G", "H", "A", "F")}})
+			Ω(node.Labels).Should(Equal(Labels{"A", "B", "C", "D", "E", "F", "G", "H"}))
+			ExpectAllWell(errors)
+		})
+
+		It("can be applied to containers", func() {
+			node, errors := internal.NewNode(dt, ntCon, "text", body, Label("A", "B", "C"))
+			Ω(node.Labels).Should(Equal(Labels{"A", "B", "C"}))
+			ExpectAllWell(errors)
+		})
+
+		It("cannot be applied to non-container/it nodes", func() {
+			node, errors := internal.NewNode(dt, ntBef, "", body, cl, Label("A", "B", "C"))
+			Ω(node).Should(BeZero())
+			Ω(errors).Should(ConsistOf(types.GinkgoErrors.InvalidDecorationForNodeType(cl, ntBef, "Label")))
+			Ω(dt.DidTrackDeprecations()).Should(BeFalse())
+		})
+
+		It("validates labels", func() {
+			node, errors := internal.NewNode(dt, ntIt, "", body, cl, Label("A", "B&C", "C,D", "C,D ", "  "))
+			Ω(node).Should(BeZero())
+			Ω(errors).Should(ConsistOf(types.GinkgoErrors.InvalidLabel("B&C", cl), types.GinkgoErrors.InvalidLabel("C,D", cl), types.GinkgoErrors.InvalidLabel("C,D ", cl), types.GinkgoErrors.InvalidEmptyLabel(cl)))
+			Ω(dt.DidTrackDeprecations()).Should(BeFalse())
+		})
+	})
+
 	Describe("passing in functions", func() {
 		It("works when a single function is passed in", func() {
 			node, errors := internal.NewNode(dt, ntIt, "text", body, cl)
@@ -283,9 +331,10 @@ var _ = Describe("Construcing nodes", func() {
 
 	Describe("when decorations are nested in slices", func() {
 		It("unrolls them first", func() {
-			node, errors := internal.NewNode(dt, ntIt, "text", []interface{}{body, []interface{}{Focus, FlakeAttempts(3)}, FlakeAttempts(2)})
+			node, errors := internal.NewNode(dt, ntIt, "text", []interface{}{body, []interface{}{Focus, FlakeAttempts(3), Label("A")}, FlakeAttempts(2), Label("B"), Label("C", "D")})
 			Ω(node.FlakeAttempts).Should(Equal(2))
 			Ω(node.MarkedFocus).Should(BeTrue())
+			Ω(node.Labels).Should(Equal(Labels{"A", "B", "C", "D"}))
 			node.Body()
 			Ω(didRun).Should(BeTrue())
 			ExpectAllWell(errors)
@@ -581,6 +630,28 @@ var _ = Describe("Nodes", func() {
 
 		It("returns a string slice containing the individual node text strings in order", func() {
 			Ω(nodes.Texts()).Should(Equal([]string{"the first node", "", "2", "c", ""}))
+		})
+	})
+
+	Describe("Labels and UnionOfLabels", func() {
+		var nodes Nodes
+		BeforeEach(func() {
+			nodes = Nodes{N(Label("A", "B")), N(Label("C")), N(), N(Label("A")), N(Label("D")), N(Label("B", "D", "E"))}
+		})
+
+		It("Labels returns a slice containing the labels for each node in order", func() {
+			Ω(nodes.Labels()).Should(Equal([][]string{
+				{"A", "B"},
+				{"C"},
+				{},
+				{"A"},
+				{"D"},
+				{"B", "D", "E"},
+			}))
+		})
+
+		It("UnionOfLabels returns a single slice of labels harvested from all nodes and deduped", func() {
+			Ω(nodes.UnionOfLabels()).Should(Equal([]string{"A", "B", "C", "D", "E"}))
 		})
 	})
 

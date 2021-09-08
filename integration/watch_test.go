@@ -11,7 +11,7 @@ import (
 	"github.com/onsi/gomega/gexec"
 )
 
-var _ = Describe("Watch", func() {
+var _ = Describe("Watch", Label("SLOW"), func() {
 	var session *gexec.Session
 
 	BeforeEach(func() {
