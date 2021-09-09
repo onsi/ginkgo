@@ -78,6 +78,21 @@ Ginkgo supports passing in decorators _and_ arbitrarily nested slices of decorat
 
 Here's a list of new decorators.  They are documented in more detail in the [Node Decoration Reference](https://github.com/onsi/ginkgo/blob/v2/docs/index.md#node-decoration-reference) section of the documentation.
 
+#### Label Decoration
+Specs can now be labelled with the `Label` decoration (see [Spec Labels](#new-spec-labels) below for details):
+
+```
+Describe("a labelled container", Label("red", "white"), Label("blue"), func() {
+	It("a labelled test", Label("yellow"), func() {
+
+	})
+})
+```
+
+the labels associated with a given spec is the union of the labels attached to that spec's `It` and any of the `It`'s containers.  So `"a labelled test"` will have the labels `red`, `white`, `blue`, and `yellow`.
+
+Labels can be arbitrary strings however they cannot include any of the following characters: `"&|!,()/"`.
+
 #### Focus Decoration
 In addition to `FDescribe` and `FIt`, specs can now be focused using the new `Focus` decoration:
 
@@ -143,6 +158,54 @@ Describe("flaky tests", FlakeAttempts(3), func() {
 With this setup, `"is flaky"` and `"is also flaky"` will run up to 3 times.  `"is _really_ flaky"` will run up to 5 times.  `"is _not_ flaky"` will run only once.
 
 Note that if `ginkgo --flake-attempts=N` is set the value passed in by the CLI will override all the decorated values.  Every test will now run up to `N` times.
+
+### New: Spec Labels
+Users can now label specs using the [`Label` decoration](#label-decoration).  Labels provide more fine-grained control for organizing specs and running specific subsets of labelled specs.  Labels are arbitrary strings however they cannot contain the characters `"&|!,()/"`.  A given spec inherits the labels of all it's containers and any labels attached to the spec's `It`, for example:
+
+```
+Describe("Extracting widgets", Label("integration", "extracting widgets"), func() {
+	It("can extract widgets from the external database", Label("network", "slow"), func() {
+		//has labels [integration, extracting widgets, network, slow]
+	})
+
+	It("can delete extracted widgets", Label("network"), func() {
+		//has labels [integration, extracting widgets, network]
+	})
+
+	It("can create new widgets locally", Label("local"), func() {
+		//has labels [integration, extracting widgets, local]
+	})
+})
+
+
+Describe("Editing widgets", Label("integration", "editing widgets"), func() {
+	It("can edit widgets in the external database", Label("network", "slow"), func() {
+		//has labels [integration, editing widgets, network, slow]
+	})
+
+	It("errors if the widget does not exist", Label("network"), func() {
+		//has labels [integration, editing widgets, network]
+	})
+})
+```
+
+will result in three specs.  The first spec (`"can extract widgets from the external database"`) will have the labels `[integration, extracting widgets, network, slow]`.  The second spec (`"can delete extracted widgets"` will have the labels `[integration, extracting widgets, network]`).  The third spec (`"can create new widgets locally"`) will have the labels `[integration, extracting widgets, local]`.
+
+You can filter by label using the new `ginkgo --label-filter` flag.  Label filter accepts a simple filter language that supports the following:
+
+- The `&&` and `||` logical binary operators representing AND and OR operations.
+- The `!` unary operator representing the NOT operation.
+- The `,` binary operator equivalent to `||`.
+- The `()` for grouping expressions.
+- All other characters will match as label literals.  Label matches are case intensive and trailing and leading whitespace is trimmed.
+- Regular expressions can be provided using `/REGEXP/` notation.
+
+For example:
+
+- `ginkgo --label-filter=integration` will match any specs with the `integration` label.
+- `ginkgo --label-filter=!slow` will avoid any tests labelled `slow`.
+- `ginkgo --label-filter=(local || network) && !slow` will run any specs labelled `local` and `network` but without the `slow` label.
+- `ginkgo --label-filter=/widgets/ && !slow` will run any specs with a label that matches the regular expression `widgets` but does not include the `slow` label.  This would match both the `extracting widgets` and `editing widgets` labels in our example above.
 
 ### Aborting the Test Suite
 Users can now signal that the entire test suite should abort via `AbortSuite(message string, skip int)`.  This will fail the current test and skip all subsequent tests.
