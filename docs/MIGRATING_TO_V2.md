@@ -9,13 +9,39 @@ This document serves as a changelog and migration guide for users migrating from
 
 The work on 2.0 is tracked in this [Pivotal Tracker backlog](https://www.pivotaltracker.com/n/projects/2493102).  The original 2.0 proposal is [here](https://docs.google.com/document/d/1h28ZknXRsTLPNNiOjdHIO-F2toCzq4xoZDXbfYaBdoQ/edit#heading=h.mzgqmkg24xoo) however this is starting to grow stale.  The tracker backlog is the most authoritative version of the roadmap.
 
-The current timeline for completion of 2.0 looks like:
+# Using the Beta
 
-- Early April 2021: first public release of 2.0, deprecation warnings land in v1.
-- May 2021: first beta/rc of 2.0 with most new functionality in place.
-- June/July 2021: 2.0 ships and fully replaces the 1.x codebase on master.
+Ginkgo 2.0 is now out in beta.  The GA release should come out in the Fall of 2021 but we'd love to get feedback and usage of the beta underway.
 
-But is, of course, subject to change ;)
+Currently, 2.0 lives on a branch and we have not formally bumped the major version number of Ginkgo yet.  If you are using `go mod` you'll need to do the following to use Ginkgo 2.0 in an existing or new project:
+
+1. Checkout the Ginkgo repo: 
+	```bash
+	git clone git@github.com:onsi/ginkgo.git
+	```
+
+2. Switch to the v2 branch:
+	```bash
+	cd ginkgo
+	git switch v2
+	```
+
+3. Install the v2 CLI:
+	```bash
+	go install ./ginkgo
+	```
+
+	this will put the `ginkgo` cli in `$GOBIN` or `$GOPATH/bin`.
+
+4. Update your go module to point to the local, V2, copy of Ginkgo:
+	```bash
+	cd /PATH/TO/YOUR/PACKAGE
+	go mod edit -replace github.com/onsi/ginkgo=/PATH/TO/GINKGO/V2
+	```
+
+For the beta you do not need to modify your Ginkgo import statements.  Once the GA is released the version number will be bumped to 2.0, the V2 branch will be merged into master, and users will need to update their import statements to `github.com/onsi/ginkgo/v2`.  V1 will no longer be supported once V2 goes GA.	
+
+Please share any feedback about the beta on the [Ginkgo 2.0](#711) issue.  Updated v2 documentation is being maintained [here](https://github.com/onsi/ginkgo/blob/v2/docs/index.md) though this migration guide has all the details around new features and backward incompatible changes.
 
 # Additions and Improvements
 
