@@ -32,6 +32,7 @@ func GinkgoT(optionalOffset ...int) GinkgoTInterface {
 //in the testing package's T.
 type GinkgoTInterface interface {
 	Cleanup(func())
+	Setenv(kev, value string)
 	Error(args ...interface{})
 	Errorf(format string, args ...interface{})
 	Fail()

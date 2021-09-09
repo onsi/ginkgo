@@ -1,6 +1,8 @@
 package testingtproxy_test
 
 import (
+	"os"
+
 	. "github.com/onsi/ginkgo"
 	. "github.com/onsi/gomega"
 
@@ -63,6 +65,11 @@ var _ = Describe("Testingtproxy", func() {
 		GinkgoT().Cleanup(func() {
 			panic("bam!")
 		}) //is a no-op
+	})
+
+	It("ignores Setenv", func() {
+		GinkgoT().Setenv("FOO", "BAR") //is a no-op
+		Ω(os.Getenv("FOO")).Should(BeZero())
 	})
 
 	It("supports Error", func() {

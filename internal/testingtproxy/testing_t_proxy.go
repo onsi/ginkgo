@@ -31,11 +31,12 @@ type ginkgoTestingTProxy struct {
 }
 
 func (t *ginkgoTestingTProxy) Cleanup(func()) {
+	fmt.Println("Cleanup is a noop for Ginkgo at the moment.")
 	// No-op
 }
 
 func (t *ginkgoTestingTProxy) Setenv(kev, value string) {
-	fmt.Println("Setenv is a noop for Ginkgo at the moment but will be implemented in V2")
+	fmt.Println("Setenv is a noop for Ginkgo at the moment.")
 	// No-op until Cleanup is implemented
 }
 
