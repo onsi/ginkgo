@@ -20,14 +20,14 @@ type Done = internal.Done
 
 //Deprecated: Custom Ginkgo test reporters are no longer supported
 //Please read the documentation at:
-//https://github.com/onsi/ginkgo/blob/v2/docs/MIGRATING_TO_V2.md#removed-custom-reporters
+//https://github.com/onsi/ginkgo/blob/ver2/docs/MIGRATING_TO_V2.md#removed-custom-reporters
 //for Ginkgo's new behavior and for a migration path.
 type Reporter = reporters.DeprecatedReporter
 
 //Deprecated: Custom Reporters have been removed in v2.  RunSpecsWithDefaultAndCustomReporters will simply call RunSpecs()
 //
 //Please read the documentation at:
-//https://github.com/onsi/ginkgo/blob/v2/docs/MIGRATING_TO_V2.md#removed-custom-reporters
+//https://github.com/onsi/ginkgo/blob/ver2/docs/MIGRATING_TO_V2.md#removed-custom-reporters
 //for Ginkgo's new behavior and for a migration path.
 func RunSpecsWithDefaultAndCustomReporters(t GinkgoTestingT, description string, _ []Reporter) bool {
 	deprecationTracker.TrackDeprecation(types.Deprecations.CustomReporter())
@@ -37,7 +37,7 @@ func RunSpecsWithDefaultAndCustomReporters(t GinkgoTestingT, description string,
 //Deprecated: Custom Reporters have been removed in v2.  RunSpecsWithCustomReporters will simply call RunSpecs()
 //
 //Please read the documentation at:
-//https://github.com/onsi/ginkgo/blob/v2/docs/MIGRATING_TO_V2.md#removed-custom-reporters
+//https://github.com/onsi/ginkgo/blob/ver2/docs/MIGRATING_TO_V2.md#removed-custom-reporters
 //for Ginkgo's new behavior and for a migration path.
 func RunSpecsWithCustomReporters(t GinkgoTestingT, description string, _ []Reporter) bool {
 	deprecationTracker.TrackDeprecation(types.Deprecations.CustomReporter())

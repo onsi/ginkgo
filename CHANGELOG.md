@@ -1,6 +1,6 @@
 ## 2.0.0
 
-See [https://github.com/onsi/ginkgo/blob/v2/docs/MIGRATING_TO_V2.md](https://github.com/onsi/ginkgo/blob/v2/docs/MIGRATING_TO_V2.md)
+See [https://github.com/onsi/ginkgo/blob/ver2/docs/MIGRATING_TO_V2.md](https://github.com/onsi/ginkgo/blob/ver2/docs/MIGRATING_TO_V2.md)
 
 ## 1.16.5
 

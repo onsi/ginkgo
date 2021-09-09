@@ -15,33 +15,20 @@ Ginkgo 2.0 is now out in beta.  The GA release should come out in the Fall of 20
 
 Currently, 2.0 lives on a branch and we have not formally bumped the major version number of Ginkgo yet.  If you are using `go mod` you'll need to do the following to use Ginkgo 2.0 in an existing or new project:
 
-1. Checkout the Ginkgo repo: 
+1. Get the `ver2` branch of Ginkgo.  This will create a pseudo-version of Ginkgo tied to the tip of the `ver2` branch:
 	```bash
-	git clone git@github.com:onsi/ginkgo.git
+	go get github.com/onsi/ginkgo@ver2
 	```
 
-2. Switch to the v2 branch:
+2. Install the V2 CLI.  Running this may require you to run a few addition `go get`s - just follow the go toolchain's instructions until you successfully get ginkgo v2 compiled:
 	```bash
-	cd ginkgo
-	git switch v2
+	go install github.com/onsi/ginkgo/ginkgo
+	ginkgo version //should print out "Ginkgo Version 2.0.0-beta"
 	```
 
-3. Install the v2 CLI:
-	```bash
-	go install ./ginkgo
-	```
+And that's it!  For the beta you do not need to modify your Ginkgo import statements.  Once the GA is released the version number will be bumped to 2.0, the V2 branch will be merged into master, and users will need to update their import statements to `github.com/onsi/ginkgo/v2`.  V1 will no longer be supported once V2 goes GA.
 
-	this will put the `ginkgo` cli in `$GOBIN` or `$GOPATH/bin`.
-
-4. Update your go module to point to the local, V2, copy of Ginkgo:
-	```bash
-	cd /PATH/TO/YOUR/PACKAGE
-	go mod edit -replace github.com/onsi/ginkgo=/PATH/TO/GINKGO/V2
-	```
-
-For the beta you do not need to modify your Ginkgo import statements.  Once the GA is released the version number will be bumped to 2.0, the V2 branch will be merged into master, and users will need to update their import statements to `github.com/onsi/ginkgo/v2`.  V1 will no longer be supported once V2 goes GA.	
-
-Please share any feedback about the beta on the [Ginkgo 2.0](#711) issue.  Updated v2 documentation is being maintained [here](https://github.com/onsi/ginkgo/blob/v2/docs/index.md) though this migration guide has all the details around new features and backward incompatible changes.
+Please share any feedback about the beta on the [Ginkgo 2.0](#711) issue.  Updated V2 documentation is being maintained [here](https://github.com/onsi/ginkgo/blob/ver2/docs/index.md) though this migration guide has all the details around new features and backward incompatible changes.  Updating to V2 will require you to make some changes to your test suites however the intent is that this work should be relatively minimal for most users.
 
 # Additions and Improvements
 
@@ -76,7 +63,7 @@ Note that this change is backwards compatible with v1.X.
 
 Ginkgo supports passing in decorators _and_ arbitrarily nested slices of decorators.  Ginkgo will unroll any slices and process the flattened list of decorators.  This makes it easier to pass around and combine groups of decorators.  In addition, decorators can be passed into the table-related DSL: `DescribeTable` and `Entry`.
 
-Here's a list of new decorators.  They are documented in more detail in the [Node Decoration Reference](https://github.com/onsi/ginkgo/blob/v2/docs/index.md#node-decoration-reference) section of the documentation.
+Here's a list of new decorators.  They are documented in more detail in the [Node Decoration Reference](https://github.com/onsi/ginkgo/blob/ver2/docs/index.md#node-decoration-reference) section of the documentation.
 
 #### Label Decoration
 Specs can now be labelled with the `Label` decoration (see [Spec Labels](#new-spec-labels) below for details):
@@ -231,7 +218,7 @@ Ginkgo V2 provides an improved reporting infrastructure that [replaces and impro
 #### Generating machine-readable reports
 Ginkgo now natively supports generating and aggregating reports in a number of machine-readable formats - and these reports can be generated and managed by simply passing `ginkgo` command line flags.
 
-Ginkgo V2 introduces a new JSON format that faithfully captures all avialable information about a Ginkgo test suite.  JSON reports can be generated via `ginkgo --json-report=out.json`.  The resulting JSON file encodes an array of `types.Report`.  Each entry in that array lists detailed information about the test suite and includes a list of `types.SpecReport` that captures detailed information about each spec.  These types are documented [here](https://github.com/onsi/ginkgo/blob/v2/types/types.go).
+Ginkgo V2 introduces a new JSON format that faithfully captures all avialable information about a Ginkgo test suite.  JSON reports can be generated via `ginkgo --json-report=out.json`.  The resulting JSON file encodes an array of `types.Report`.  Each entry in that array lists detailed information about the test suite and includes a list of `types.SpecReport` that captures detailed information about each spec.  These types are documented [here](https://github.com/onsi/ginkgo/blob/ver2/types/types.go).
 
 Ginkgo also supports generating JUnit reports with `ginkgo --junit-report=out.xml` and Teamcity reports with `ginkgo --teamcity-report=out.teamcity`.  In addition, Ginkgo V2's JUnit reporter has been improved and is now more conformant with the JUnit specification.
 
