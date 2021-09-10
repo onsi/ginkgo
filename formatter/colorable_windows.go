@@ -39,9 +39,6 @@ import (
 	"strings"
 	"syscall"
 	"unsafe"
-
-	"syscall"
-	"unsafe"
 )
 
 var (
