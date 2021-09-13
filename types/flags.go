@@ -56,6 +56,19 @@ func (f GinkgoFlags) WithPrefix(prefix string) GinkgoFlags {
 	return out
 }
 
+func (f GinkgoFlags) SubsetWithNames(names ...string) GinkgoFlags {
+	out := GinkgoFlags{}
+	for _, flag := range f {
+		for _, name := range names {
+			if flag.Name == name {
+				out = append(out, flag)
+				break
+			}
+		}
+	}
+	return out
+}
+
 type GinkgoFlagSection struct {
 	Key         string
 	Style       string

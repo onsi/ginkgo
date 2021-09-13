@@ -676,7 +676,7 @@ func BuildWatchCommandFlagSet(suiteConfig *SuiteConfig, reporterConfig *Reporter
 	return NewGinkgoFlagSet(flags, bindings, FlagSections)
 }
 
-// BuildWatchCommandFlagSet builds the FlagSet for the `ginkgo build` command
+// BuildBuildCommandFlagSet builds the FlagSet for the `ginkgo build` command
 func BuildBuildCommandFlagSet(cliConfig *CLIConfig, goFlagsConfig *GoFlagsConfig) (GinkgoFlagSet, error) {
 	flags := GinkgoCLISharedFlags
 	flags = flags.CopyAppend(GoBuildFlags...)
@@ -696,6 +696,24 @@ func BuildBuildCommandFlagSet(cliConfig *CLIConfig, goFlagsConfig *GoFlagsConfig
 		if flagSections[i].Key == "go-build" {
 			flagSections[i] = GinkgoFlagSection{Key: "go-build", Style: "{{/}}", Heading: "Go Build Flags",
 				Description: "These flags are inherited from go build."}
+		}
+	}
+
+	return NewGinkgoFlagSet(flags, bindings, flagSections)
+}
+
+func BuildLabelsCommandFlagSet(cliConfig *CLIConfig) (GinkgoFlagSet, error) {
+	flags := GinkgoCLISharedFlags.SubsetWithNames("r", "skip-package")
+
+	bindings := map[string]interface{}{
+		"C": cliConfig,
+	}
+
+	flagSections := make(GinkgoFlagSections, len(FlagSections))
+	copy(flagSections, FlagSections)
+	for i := range flagSections {
+		if flagSections[i].Key == "multiple-suites" {
+			flagSections[i].Heading = "Fetching Labels from Multiple Suites"
 		}
 	}
 

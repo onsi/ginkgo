@@ -45,6 +45,14 @@ var _ = Describe("Flags", func() {
 				}))
 			})
 		})
+
+		Describe("SubsetWithNames", func() {
+			It("returns the subset of flags with matching names", func() {
+				A := types.GinkgoFlags{{Name: "A", Usage: "Hey A"}, {Name: "B", Usage: "Hey B"}, {Name: "C", Usage: "Hey C"}}
+				subset := A.SubsetWithNames("A", "C", "D")
+				Ω(subset).Should(Equal(types.GinkgoFlags{{Name: "A", Usage: "Hey A"}, {Name: "C", Usage: "Hey C"}}))
+			})
+		})
 	})
 
 	Describe("GinkgoFlagSections", func() {
