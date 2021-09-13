@@ -147,7 +147,7 @@ With this setup, `"is flaky"` and `"is also flaky"` will run up to 3 times.  `"i
 Note that if `ginkgo --flake-attempts=N` is set the value passed in by the CLI will override all the decorated values.  Every test will now run up to `N` times.
 
 ### New: Spec Labels
-Users can now label specs using the [`Label` decoration](#label-decoration).  Labels provide more fine-grained control for organizing specs and running specific subsets of labelled specs.  Labels are arbitrary strings however they cannot contain the characters `"&|!,()/"`.  A given spec inherits the labels of all it's containers and any labels attached to the spec's `It`, for example:
+Users can now label specs using the [`Label` decoration](#label-decoration).  Labels provide more fine-grained control for organizing specs and running specific subsets of labelled specs.  Labels are arbitrary strings however they cannot contain the characters `"&|!,()/"`.  A given spec inherits the labels of all its containers and any labels attached to the spec's `It`, for example:
 
 ```
 Describe("Extracting widgets", Label("integration", "extracting widgets"), func() {
@@ -175,8 +175,6 @@ Describe("Editing widgets", Label("integration", "editing widgets"), func() {
 	})
 })
 ```
-
-will result in three specs.  The first spec (`"can extract widgets from the external database"`) will have the labels `[integration, extracting widgets, network, slow]`.  The second spec (`"can delete extracted widgets"` will have the labels `[integration, extracting widgets, network]`).  The third spec (`"can create new widgets locally"`) will have the labels `[integration, extracting widgets, local]`.
 
 You can filter by label using the new `ginkgo --label-filter` flag.  Label filter accepts a simple filter language that supports the following:
 
