@@ -1,0 +1,3 @@
+package onepkg
+
+func Stuff() {}
