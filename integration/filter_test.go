@@ -93,4 +93,19 @@ var _ = Describe("Filter", func() {
 		Ω(session).Should(gbytes.Say("Invalid File Filter"))
 		Ω(session).Should(gbytes.Say("Invalid File Filter"))
 	})
+
+	Describe("Listing labels", func() {
+		BeforeEach(func() {
+			fm.MountFixture("labels")
+		})
+
+		It("can list labels", func() {
+			session := startGinkgo(fm.TmpDir, "labels", "-r")
+			Eventually(session).Should(gexec.Exit(0))
+			Ω(session).Should(gbytes.Say(`filter: \["slow"\]`))
+			Ω(session).Should(gbytes.Say(`labels: \["beluga", "bird", "cat", "chicken", "cow", "dog", "giraffe", "koala", "monkey", "otter", "owl", "panda"\]`))
+			Ω(session).Should(gbytes.Say(`nolabels: No labels found`))
+			Ω(session).Should(gbytes.Say(`onepkg: \["beluga", "bird", "cat", "chicken", "cow", "dog", "giraffe", "koala", "monkey", "otter", "owl", "panda"\]`))
+		})
+	})
 })

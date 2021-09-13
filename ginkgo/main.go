@@ -117,6 +117,7 @@ import (
 	"github.com/onsi/ginkgo/ginkgo/build"
 	"github.com/onsi/ginkgo/ginkgo/command"
 	"github.com/onsi/ginkgo/ginkgo/generators"
+	"github.com/onsi/ginkgo/ginkgo/labels"
 	"github.com/onsi/ginkgo/ginkgo/outline"
 	"github.com/onsi/ginkgo/ginkgo/run"
 	"github.com/onsi/ginkgo/ginkgo/unfocus"
@@ -132,6 +133,7 @@ func GenerateCommands() []command.Command {
 		build.BuildBuildCommand(),
 		generators.BuildBootstrapCommand(),
 		generators.BuildGenerateCommand(),
+		labels.BuildLabelsCommand(),
 		outline.BuildOutlineCommand(),
 		unfocus.BuildUnfocusCommand(),
 		BuildVersionCommand(),
