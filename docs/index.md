@@ -815,10 +815,6 @@ It("should do something, if it can", func() {
 
 Note that `Skip(...)` causes the closure to exit so there is no need to return.
 
-### Spec Labels
-
-TODO
-
 ### Filtering Specs
 
 It is often convenient to be able to run a subset of specs.  Ginkgo has several mechanisms for allowing you to filter specs:
@@ -860,6 +856,55 @@ When Ginkgo detects that a passing test suite has programmatically focused tests
 
 > You can unfocus programatically focused tests by running `ginkgo unfocus`.  This will strip the `F`s off of any `FDescribe`, `FContext`, and `FIt`s that your tests in the current directory may have.
 
+#### Spec Labels
+
+Users can label specs using the [`Label` decoration](#the-label-decoration).  Labels provide fine-grained control for organizing specs and running specific subsets of labelled specs.  Labels are arbitrary strings however they cannot contain the characters `"&|!,()/"`.  A given spec inherits the labels of all its containers and any labels attached to the spec's `It`, for example:
+
+```
+Describe("Extracting widgets", Label("integration", "extracting widgets"), func() {
+    It("can extract widgets from the external database", Label("network", "slow"), func() {
+        //has labels [integration, extracting widgets, network, slow]
+    })
+
+    It("can delete extracted widgets", Label("network"), func() {
+        //has labels [integration, extracting widgets, network]
+    })
+
+    It("can create new widgets locally", Label("local"), func() {
+        //has labels [integration, extracting widgets, local]
+    })
+})
+
+
+Describe("Editing widgets", Label("integration", "editing widgets"), func() {
+    It("can edit widgets in the external database", Label("network", "slow"), func() {
+        //has labels [integration, editing widgets, network, slow]
+    })
+
+    It("errors if the widget does not exist", Label("network"), func() {
+        //has labels [integration, editing widgets, network]
+    })
+})
+```
+
+You can filter by label using the `ginkgo --label-filter` flag.  Label filter accepts a simple filter language that supports the following:
+
+- The `&&` and `||` logical binary operators representing AND and OR operations.
+- The `!` unary operator representing the NOT operation.
+- The `,` binary operator equivalent to `||`.
+- The `()` for grouping expressions.
+- All other characters will match as label literals.  Label matches are case intensive and trailing and leading whitespace is trimmed.
+- Regular expressions can be provided using `/REGEXP/` notation.
+
+For example:
+
+- `ginkgo --label-filter=integration` will match any specs with the `integration` label.
+- `ginkgo --label-filter=!slow` will avoid any tests labelled `slow`.
+- `ginkgo --label-filter=(local || network) && !slow` will run any specs labelled `local` and `network` but without the `slow` label.
+- `ginkgo --label-filter=/widgets/ && !slow` will run any specs with a label that matches the regular expression `widgets` but does not include the `slow` label.  This would match both the `extracting widgets` and `editing widgets` labels in our example above.
+
+To list the labels used in a given package you can use the `ginkgo labels` command.  This does a simple/naive scan of your test files for calls to `Label` and returns any labels it finds.
+
 #### Command-line Filtering
 
 Ginkgo allows you to filter specs via the command line.  This command-line based filtering will always override programatic filtering, however Pending tests can never be forced to run from the command line, they must be unmarked as pending in source, first.  Unlike programattic filtering, command-line filtering does not alter Ginkgo's exit code.
@@ -894,7 +939,6 @@ It("likes fish", func() {...})
 
 then `ginkgo --focus=dog --focus=fish --skip=cat --skip=purple` will only run `"likes dogs"`, `"likes dog fish"`, and `"likes fish"`.
 
-
 The `--focus-file` and `--skip-file` flags allow you to focus and/or skip specs on the basis of they file they are in.  When provided Gingo will only run specs that are in files that _do_ match the `--focus-file` filter *and* _don't_ match the `--skip-file` filter.  You can provide multiple `--focus-file` and `--skip-file` flags.  The `--focus-file`s will be ORed together and the `--skip-file`s will be ORed together.
 
 The argument passed to `--focus-file`/`--skip-file` is a file filter and takes one of the following forms:
@@ -905,7 +949,7 @@ The argument passed to `--focus-file`/`--skip-file` is a file filter and takes o
 
 You can specify multiple comma-separated `LINE` and `LINE1-LINE2` arguments in a single `--focus-file/--skip-file` (e.g. `--focus-file=foo:1,2,10-12` will apply filters for line 1, line 2, and the range [10-12)).  To specify multiple files, pass in multiple `--focus-file` or `--skip-file` flags.
 
-When `-focus`, `-skip`, `-focus-file`, and `-skip-file` are all provided they are all ANDed together.  Meaning a given spec MUST be in a file:line matching the focus-file filter, AND MUST NOT be in a file:line matching the skip-file filter AND MUST have text matching the focus filter AND MUST NOT have text matching the skip filter.
+When `-label-filter`, -focus`, `-skip`, `-focus-file`, and `-skip-file` are all provided they are all ANDed together.  Meaning a given spec MUST be in a file:line matching the focus-file filter, AND MUST NOT be in a file:line matching the skip-file filter AND MUST have text matching the focus filter AND MUST NOT have text matching the skip filter AND MUST have labels matching the label filter.
 
 > If you want to skip entire packages (when running `ginkgo` recursively with the `-r` flag) you should use `--skip-package` instead of `--skip-file`.  `--skip-package` takes a comma-separated list of packages - any packages with *paths* that contain one of the entries in this comma separated list will not be compiled and will be skipped entirely.  Simply using `--skip-file` does not prevent package compilation and you can end up compiling and running packages that skip all their tests.
 
@@ -1069,7 +1113,6 @@ func BeforeEach(args ...interface{})
 
 Ginkgo will vet the passed in decorations and exit with a clear error message if it detects any invalid configurations. 
 
-
 Moreover, Ginkgo also supports passing in arbitrarily nested slices of decorators.  Ginkgo will unroll these slices and process the flattened list.  This makes it easier to pass around groups of decorators.  For example, this is valid:
 
 ```go
@@ -1079,9 +1122,16 @@ var _ = Describe("a bunch of flaky controller tests", flakyDecorations, Label("c
     ...
 }
 ```
-The resulting tests will be decorated with `FlakAttempts(3)` and the two labels `flaky` and `controller`.
+The resulting tests will be decorated with `FlakeAttempts(3)` and the two labels `flaky` and `controller`.
 
-#### The Focus and Pending Decoration
+#### The `Label` Decoration
+The `Label` decoration applies to container nodes and subject nodes only.  It is an error to try to apply the `Label` decoration to a setup node.
+
+`Label` allows the user to annotate specs and containers of specs with labels.  The `Label` decoration takes a variadic set of strings allowing you to apply multiple labels simultaneously.  Labels are arbitrary strings that do not include the characters `"&|!,()/"`.  Specs can have as many labels as you'd like and the set of labels for a given set is the union of all the labels of the container nodes and the subject node.
+
+Labels can be used to control which subset of tests to run.  This is done by providing the `--label-filter` flag to the `ginkgo` cli.  More details can be found at [Spec Labels](#spec-labels).
+
+#### The `Focus` and `Pending` Decoration
 The `Focus` and `Pending` decorations apply to container nodes and subject nodes only.  It is an error to try to `Focus` or `Pending` a setup node.
 
 Using these decorators is identical to using the `FX` or `PX` form of the node constructor.  For example:
