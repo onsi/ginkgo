@@ -120,31 +120,70 @@ var _ = Describe("Spec and Specs", func() {
 		It(`returns a slice of []Specs - where each entry is a group of specs for which
 			the first node that matches on of the passed in nodetypes has the same id`, func() {
 			Ω(specs.PartitionByFirstNodeWithType(ntIt)).Should(Equal([]Specs{
-				Specs{specs[0]},
-				Specs{specs[1]},
-				Specs{specs[2]},
-				Specs{specs[3]},
-				Specs{specs[4]},
-				Specs{specs[5]},
-				Specs{specs[6]},
+				{specs[0]},
+				{specs[1]},
+				{specs[2]},
+				{specs[3]},
+				{specs[4]},
+				{specs[5]},
+				{specs[6]},
 			}), "partitioning by It returns one grouping per spec as each spec has a unique It")
 
 			Ω(specs.PartitionByFirstNodeWithType(ntIt, ntCon)).Should(Equal([]Specs{
-				Specs{specs[0], specs[2]},
-				Specs{specs[1]},
-				Specs{specs[3]},
-				Specs{specs[4]},
-				Specs{specs[5], specs[6]},
+				{specs[0], specs[2]},
+				{specs[1]},
+				{specs[3]},
+				{specs[4]},
+				{specs[5], specs[6]},
 			}), "partitioning by Container and It groups specs by common Container first, and It second")
 
 			Ω(specs.PartitionByFirstNodeWithType(ntCon)).Should(Equal([]Specs{
-				Specs{specs[0], specs[2]},
-				Specs{specs[4]},
-				Specs{specs[5], specs[6]},
+				{specs[0], specs[2]},
+				{specs[4]},
+				{specs[5], specs[6]},
 			}), "partitioning by just Container will not pull in specs that have no container")
 
 			Ω(specs.PartitionByFirstNodeWithType(ntAf)).Should(BeEmpty(),
 				"partitioning by a node type that doesn't appear matches against no specs and comes back empty")
+		})
+	})
+
+	Describe("indices of serial specs", func() {
+		var specs Specs
+		Context("when the are specs marked serial", func() {
+			BeforeEach(func() {
+				specs = Specs{
+					S(N(ntIt, Serial)),
+					S(N(ntCon), N(ntIt)),
+					S(N(ntCon), N(ntIt)),
+					S(N(ntCon, Serial), N(ntIt)),
+					S(N(ntCon, Serial), N(ntIt)),
+					S(N(ntIt)),
+					S(N(ntCon), N(ntIt, Serial)),
+					S(N(ntCon), N(ntCon, Serial), N(ntIt)),
+					S(N(ntIt)),
+				}
+			})
+
+			It("returns the set of indices pointing to specs that are marked serial", func() {
+				Ω(specs.IndicesMarkedSerial()).Should(Equal([]int{0, 3, 4, 6, 7}))
+			})
+		})
+
+		Context("when there are no specs marked serial", func() {
+			BeforeEach(func() {
+				specs = Specs{
+					S(N(ntIt)),
+					S(N(ntCon), N(ntIt)),
+					S(N(ntCon), N(ntIt)),
+					S(N(ntCon), N(ntIt)),
+					S(N(ntIt)),
+				}
+			})
+
+			It("returns empty", func() {
+				Ω(specs.IndicesMarkedSerial()).Should(BeEmpty())
+			})
 		})
 	})
 })

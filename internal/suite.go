@@ -215,6 +215,7 @@ func (suite *Suite) runSpecs(description string, suitePath string, hasProgrammat
 	suiteAborted := false
 	if report.SuiteSucceeded {
 		nextIndex := MakeNextIndexCounter(suiteConfig)
+		runSerialSpecs, serialSpecIndices := suiteConfig.ParallelTotal == 1, specs.IndicesMarkedSerial()
 
 		for {
 			idx, err := nextIndex()
@@ -224,10 +225,18 @@ func (suite *Suite) runSpecs(description string, suitePath string, hasProgrammat
 				break
 			}
 			if idx >= len(specs) {
+				if !runSerialSpecs && suiteConfig.ParallelNode == 1 && len(serialSpecIndices) > 0 {
+					runSerialSpecs, nextIndex = true, MakeNextIndexCounterForIndices(serialSpecIndices, len(specs))
+					suite.client.BlockUntilNonprimaryNodesHaveFinished()
+					continue
+				}
 				break
 			}
 
 			spec := specs[idx]
+			if spec.Nodes.HasNodeMarkedSerial() && !runSerialSpecs {
+				continue
+			}
 
 			suite.currentSpecReport = types.SpecReport{
 				ContainerHierarchyTexts:     spec.Nodes.WithType(types.NodeTypeContainer).Texts(),

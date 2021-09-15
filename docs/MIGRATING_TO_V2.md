@@ -65,6 +65,9 @@ Ginkgo supports passing in decorators _and_ arbitrarily nested slices of decorat
 
 Here's a list of new decorators.  They are documented in more detail in the [Node Decoration Reference](https://github.com/onsi/ginkgo/blob/ver2/docs/index.md#node-decoration-reference) section of the documentation.
 
+#### Serial Decoration
+Specs can now be labelled with the `Serial` decoration.  Specs labelled as `Serial` will never run in parallel with other specs.  Instead, Ginkgo will run them on a single test process _after_ all the parallel tests have finished running.
+
 #### Label Decoration
 Specs can now be labelled with the `Label` decoration (see [Spec Labels](#new-spec-labels) below for details):
 
