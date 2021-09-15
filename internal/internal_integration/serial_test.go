@@ -71,6 +71,7 @@ var _ = Describe("Serial", func() {
 				Consistently(rt, 100*time.Millisecond).Should(HaveTracked("A", "B", "D", "E", "G"))
 				close(exitChannels[2])
 				Eventually(rt).Should(HaveTracked("A", "B", "D", "E", "G", "C", "F", "H"))
+				Eventually(done).Should(BeClosed())
 			})
 		})
 
