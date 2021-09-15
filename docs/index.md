@@ -997,13 +997,9 @@ To specify the number of nodes to spawn, use `-nodes`:
 
 The test runner collates output from the running processes into one coherent output.  This is done, under the hood, via a client-server model: as each client suite completes a test, the test output and status is sent to the server which then prints to screen.  This collates the output of simultaneous test runners to one coherent (i.e. non-interleaved), aggregated, output.
 
-It is sometimes necessary/preferable to view the output of the individual parallel test suites in real-time.  To do this you can set `-stream`:
+#### Marking Specs as Serial
 
-    ginkgo -nodes=N -stream
-
-When run with the `-stream` flag the test runner simply pipes the output from each individual node as it runs (it prepends each line of output with the node # that the output came from).  This results in less coherent output (lines from different nodes will be interleaved) but can be valuable when debugging flakey/hanging test suites.
-
-> On windows, parallel tests default to `-stream` because Ginkgo can't capture logging to stdout/stderr (necessary for aggregation) on windows.
+By default all specs are distributed in parallel across Ginkgo's running test processes.  However there can be contexts where specific specs need to run in series and must not be run in parallel with other specs.  You can tell Ginkgo about these specs using the [Serial decorator](#the-serial-decoration).  Specs marked `Serial` will run on process #1 after all other processes have finished running parallel specs and exited.
 
 #### Managing External Processes in Parallel Test Suites
 
@@ -1123,6 +1119,13 @@ var _ = Describe("a bunch of flaky controller tests", flakyDecorations, Label("c
 }
 ```
 The resulting tests will be decorated with `FlakeAttempts(3)` and the two labels `flaky` and `controller`.
+
+#### The `Serial` Decoration
+The `Serial` decoration applies to container nodes and subject nodes only.  It is an error to try to apply the `Serial` decoration to a setup node.
+
+`Serial` allows the user to mark specs and containers of specs as only eligible to run in serial.  Ginkgo will guarantee that these specs never run in parallel with other specs.
+
+If a container is marked as `Serial` then all the specs defined in that container will be marked as `Serial`.
 
 #### The `Label` Decoration
 The `Label` decoration applies to container nodes and subject nodes only.  It is an error to try to apply the `Label` decoration to a setup node.

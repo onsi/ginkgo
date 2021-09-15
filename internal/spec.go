@@ -77,3 +77,13 @@ func (s Specs) PartitionByFirstNodeWithType(nodeTypes ...types.NodeType) []Specs
 
 	return partition
 }
+
+func (s Specs) IndicesMarkedSerial() []int {
+	out := []int{}
+	for idx, spec := range s {
+		if spec.Nodes.HasNodeMarkedSerial() {
+			out = append(out, idx)
+		}
+	}
+	return out
+}

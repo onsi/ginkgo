@@ -274,6 +274,22 @@ var _ = Describe("Running Specs", func() {
 		})
 	})
 
+	Context("when running in parallel and there are specs marked Serial", Label("slow"), func() {
+		BeforeEach(func() {
+			fm.MountFixture("serial")
+		})
+
+		It("runs the serial specs after all the parallel specs have finished", func() {
+			By("running a carefully crafted test without the serial decorator")
+			session := startGinkgo(fm.PathTo("serial"), "--no-color", "-nodes=2", "--randomize-all", "--fail-fast", "--", "--no-serial")
+			Eventually(session).Should(gexec.Exit(1))
+
+			By("running a carefully crafted test with the serial decorator")
+			session = startGinkgo(fm.PathTo("serial"), "--no-color", "-nodes=2", "--randomize-all", "--fail-fast")
+			Eventually(session).Should(gexec.Exit(0))
+		})
+	})
+
 	Context("when running multiple tests", func() {
 		BeforeEach(func() {
 			fm.MountFixture("passing_ginkgo_tests")

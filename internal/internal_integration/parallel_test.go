@@ -17,8 +17,9 @@ var _ = Describe("Running tests in parallel", func() {
 	var conf2 types.SuiteConfig
 	var reporter2 *FakeReporter
 	var rt2 *RunTracker
+	var serialValidator chan interface{}
 
-	var fixture = func(rt *RunTracker) {
+	var fixture = func(rt *RunTracker, node int) {
 		SynchronizedBeforeSuite(func() []byte {
 			rt.Run("before-suite-1")
 			return []byte("floop")
@@ -44,11 +45,28 @@ var _ = Describe("Running tests in parallel", func() {
 		It("F", rt.T("F", func() {
 			time.Sleep(10 * time.Millisecond)
 		}))
+		It("G", Serial, rt.T("G", func() {
+			Ω(serialValidator).Should(BeClosed())
+			time.Sleep(10 * time.Millisecond)
+		}))
+		It("H", Serial, rt.T("H", func() {
+			Ω(serialValidator).Should(BeClosed())
+			time.Sleep(10 * time.Millisecond)
+		}))
+		It("I", Serial, rt.T("I", func() {
+			Ω(serialValidator).Should(BeClosed())
+			time.Sleep(10 * time.Millisecond)
+		}))
 
-		SynchronizedAfterSuite(rt.T("after-suite-1"), rt.T("after-suite-2"))
+		SynchronizedAfterSuite(rt.T("after-suite-1", func() {
+			if node == 2 {
+				close(serialValidator)
+			}
+		}), rt.T("after-suite-2"))
 	}
 
 	BeforeEach(func() {
+		serialValidator = make(chan interface{})
 		//set up configuration for node 1 and node 2
 		conf.ParallelTotal = 2
 		conf.ParallelNode = 1
@@ -84,7 +102,7 @@ var _ = Describe("Running tests in parallel", func() {
 		// construct suite 1...
 		suite1 := internal.NewSuite()
 		WithSuite(suite1, func() {
-			fixture(rt)
+			fixture(rt, 1)
 			Ω(suite1.BuildTree()).Should(Succeed())
 		})
 
@@ -92,7 +110,7 @@ var _ = Describe("Running tests in parallel", func() {
 		suite2 := internal.NewSuite()
 		rt2 = NewRunTracker()
 		WithSuite(suite2, func() {
-			fixture(rt2)
+			fixture(rt2, 2)
 			Ω(suite2.BuildTree()).Should(Succeed())
 		})
 
@@ -136,22 +154,27 @@ var _ = Describe("Running tests in parallel", func() {
 		allRuns := append(rt.TrackedRuns(), rt2.TrackedRuns()...)
 		Ω(allRuns).Should(ConsistOf(
 			"before-suite-1", "before-suite-2 floop", "after-suite-1", "after-suite-2", "before-suite-2 floop", "after-suite-1",
-			"A", "B", "C", "D", "E", "F", //all ran
+			"A", "B", "C", "D", "E", "F", "G", "H", "I", //all ran
 		))
 
 		Ω(reporter.Did.Names()).ShouldNot(BeEmpty())
 		Ω(reporter2.Did.Names()).ShouldNot(BeEmpty())
 		names := append(reporter.Did.Names(), reporter2.Did.Names()...)
-		Ω(names).Should(ConsistOf("A", "B", "C", "D", "E", "F"))
+		Ω(names).Should(ConsistOf("A", "B", "C", "D", "E", "F", "G", "H", "I"))
+	})
+
+	It("only runs serial tests on node 1, after the other node has finished", func() {
+		Ω(reporter.Did.Names()).Should(ContainElements("G", "H", "I"))
+		Ω(reporter2.Did.Names()).ShouldNot(ContainElements("G", "H", "I"))
 	})
 
 	It("reports the correct statistics", func() {
-		Ω(reporter.End.PreRunStats.TotalSpecs).Should(Equal(6))
-		Ω(reporter2.End.PreRunStats.TotalSpecs).Should(Equal(6))
-		Ω(reporter.End.PreRunStats.SpecsThatWillRun).Should(Equal(6))
-		Ω(reporter2.End.PreRunStats.SpecsThatWillRun).Should(Equal(6))
+		Ω(reporter.End.PreRunStats.TotalSpecs).Should(Equal(9))
+		Ω(reporter2.End.PreRunStats.TotalSpecs).Should(Equal(9))
+		Ω(reporter.End.PreRunStats.SpecsThatWillRun).Should(Equal(9))
+		Ω(reporter2.End.PreRunStats.SpecsThatWillRun).Should(Equal(9))
 
 		Ω(reporter.End.SpecReports.WithLeafNodeType(types.NodeTypeIt).CountWithState(types.SpecStatePassed) +
-			reporter2.End.SpecReports.WithLeafNodeType(types.NodeTypeIt).CountWithState(types.SpecStatePassed)).Should(Equal(6))
+			reporter2.End.SpecReports.WithLeafNodeType(types.NodeTypeIt).CountWithState(types.SpecStatePassed)).Should(Equal(9))
 	})
 })
