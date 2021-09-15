@@ -16,6 +16,9 @@ const Focus = internal.Focus
 //Pending is a decorator that allows you to mark a test or container as pending.  Identical to PIt and PDescribe.
 const Pending = internal.Pending
 
+//Serial is a decorator that allows you to mark a test or container as serial.  These tests will never run in parallel with other tests.
+const Serial = internal.Serial
+
 //Label decorates specs with Labels.  Multiple labels can be passed to Label and these can be arbitrary strings but must not include the following characters: "&|!,()/".
 //Labels can be pplied to container and test nodes, but not setup nodes.  You can provide multiple Labels to a given node and a spec's labels is the union of all labels in its node hierarchy.
 func Label(labels ...string) Labels {

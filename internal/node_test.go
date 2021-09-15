@@ -29,9 +29,10 @@ var _ = Describe("Partitioning Decorations", func() {
 			Focus,
 			2.0,
 			Pending,
+			Serial,
 			nil,
 			1,
-			[]interface{}{Focus, Pending, []interface{}{Offset(2), FlakeAttempts(2)}, Label("a", "b", "c")},
+			[]interface{}{Focus, Pending, []interface{}{Offset(2), Serial, FlakeAttempts(2)}, Label("a", "b", "c")},
 			[]interface{}{1, 2, 3.1, nil},
 			[]string{"a", "b", "c"},
 			Label("A", "B", "C"),
@@ -46,7 +47,8 @@ var _ = Describe("Partitioning Decorations", func() {
 			types.NewCustomCodeLocation("hey there"),
 			Focus,
 			Pending,
-			[]interface{}{Focus, Pending, []interface{}{Offset(2), FlakeAttempts(2)}, Label("a", "b", "c")},
+			Serial,
+			[]interface{}{Focus, Pending, []interface{}{Offset(2), Serial, FlakeAttempts(2)}, Label("a", "b", "c")},
 			Label("A", "B", "C"),
 			Label("D"),
 			FlakeAttempts(1),
@@ -186,6 +188,29 @@ var _ = Describe("Constructing nodes", func() {
 		})
 	})
 
+	Describe("the Serial decoration", func() {
+		It("the node is not Serial by default", func() {
+			node, errors := internal.NewNode(dt, ntIt, "text", body)
+			Ω(node.MarkedSerial).Should(BeFalse())
+			ExpectAllWell(errors)
+		})
+		It("marks the node as Serial", func() {
+			node, errors := internal.NewNode(dt, ntIt, "text", body, Serial)
+			Ω(node.MarkedSerial).Should(BeTrue())
+			ExpectAllWell(errors)
+		})
+		It("allows containers to be marked", func() {
+			node, errors := internal.NewNode(dt, ntCon, "text", body, Serial)
+			Ω(node.MarkedSerial).Should(BeTrue())
+			ExpectAllWell(errors)
+		})
+		It("does not allow non-container/it nodes to be marked", func() {
+			node, errors := internal.NewNode(dt, ntBef, "", body, cl, Serial)
+			Ω(node).Should(BeZero())
+			Ω(errors).Should(ConsistOf(types.GinkgoErrors.InvalidDecorationForNodeType(cl, ntBef, "Serial")))
+			Ω(dt.DidTrackDeprecations()).Should(BeFalse())
+		})
+	})
 	Describe("The FlakeAttempts decoration", func() {
 		It("is zero by default", func() {
 			node, errors := internal.NewNode(dt, ntIt, "text", body)
@@ -734,6 +759,22 @@ var _ = Describe("Nodes", func() {
 			It("returns false", func() {
 				nodes := Nodes{N(), N(), N()}
 				Ω(nodes.HasNodeMarkedFocus()).Should(BeFalse())
+			})
+		})
+	})
+
+	Describe("HasNodeMarkedSerial", func() {
+		Context("when there is a node marked serial", func() {
+			It("returns true", func() {
+				nodes := Nodes{N(), N(), N(Serial), N()}
+				Ω(nodes.HasNodeMarkedSerial()).Should(BeTrue())
+			})
+		})
+
+		Context("when there is no node marked serial", func() {
+			It("returns false", func() {
+				nodes := Nodes{N(), N(), N()}
+				Ω(nodes.HasNodeMarkedSerial()).Should(BeFalse())
 			})
 		})
 	})

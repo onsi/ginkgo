@@ -41,6 +41,7 @@ type Node struct {
 
 	MarkedFocus   bool
 	MarkedPending bool
+	MarkedSerial  bool
 	FlakeAttempts int
 	Labels        Labels
 }
@@ -48,9 +49,11 @@ type Node struct {
 // Decoration Types
 type focusType bool
 type pendingType bool
+type serialType bool
 
 const Focus = focusType(true)
 const Pending = pendingType(true)
+const Serial = serialType(true)
 
 type FlakeAttempts uint
 type Offset uint
@@ -81,6 +84,8 @@ func isDecoration(arg interface{}) bool {
 	case t == reflect.TypeOf(Focus):
 		return true
 	case t == reflect.TypeOf(Pending):
+		return true
+	case t == reflect.TypeOf(Serial):
 		return true
 	case t == reflect.TypeOf(FlakeAttempts(0)):
 		return true
@@ -159,6 +164,9 @@ func NewNode(deprecationTracker *types.DeprecationTracker, nodeType types.NodeTy
 		case t == reflect.TypeOf(Pending):
 			node.MarkedPending = bool(arg.(pendingType))
 			appendErrorIf(!nodeType.Is(types.NodeTypesForContainerAndIt...), types.GinkgoErrors.InvalidDecorationForNodeType(node.CodeLocation, nodeType, "Pending"))
+		case t == reflect.TypeOf(Serial):
+			node.MarkedSerial = bool(arg.(serialType))
+			appendErrorIf(!nodeType.Is(types.NodeTypesForContainerAndIt...), types.GinkgoErrors.InvalidDecorationForNodeType(node.CodeLocation, nodeType, "Serial"))
 		case t == reflect.TypeOf(FlakeAttempts(0)):
 			node.FlakeAttempts = int(arg.(FlakeAttempts))
 			appendErrorIf(!nodeType.Is(types.NodeTypesForContainerAndIt...), types.GinkgoErrors.InvalidDecorationForNodeType(node.CodeLocation, nodeType, "FlakeAttempts"))
@@ -364,6 +372,20 @@ func (n Nodes) Labels() [][]string {
 	return out
 }
 
+func (n Nodes) UnionOfLabels() []string {
+	out := []string{}
+	seen := map[string]bool{}
+	for _, node := range n {
+		for _, label := range node.Labels {
+			if !seen[label] {
+				seen[label] = true
+				out = append(out, label)
+			}
+		}
+	}
+	return out
+}
+
 func (n Nodes) CodeLocations() []types.CodeLocation {
 	out := []types.CodeLocation{}
 	for _, node := range n {
@@ -404,18 +426,13 @@ func (n Nodes) HasNodeMarkedFocus() bool {
 	return false
 }
 
-func (n Nodes) UnionOfLabels() []string {
-	out := []string{}
-	seen := map[string]bool{}
+func (n Nodes) HasNodeMarkedSerial() bool {
 	for _, node := range n {
-		for _, label := range node.Labels {
-			if !seen[label] {
-				seen[label] = true
-				out = append(out, label)
-			}
+		if node.MarkedSerial {
+			return true
 		}
 	}
-	return out
+	return false
 }
 
 func unrollInterfaceSlice(args interface{}) []interface{} {

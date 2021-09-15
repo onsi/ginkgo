@@ -19,3 +19,16 @@ func MakeNextIndexCounter(suiteConfig types.SuiteConfig) func() (int, error) {
 		}
 	}
 }
+
+func MakeNextIndexCounterForIndices(indices []int, lenSpecs int) func() (int, error) {
+	idx := -1
+	return func() (int, error) {
+		idx += 1
+		if idx < len(indices) {
+			return indices[idx], nil
+		} else {
+			return lenSpecs, nil
+		}
+	}
+
+}
