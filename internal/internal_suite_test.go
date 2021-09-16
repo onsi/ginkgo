@@ -70,11 +70,12 @@ func N(args ...interface{}) Node {
 }
 
 // convenience helper to quickly make tree nodes
-func TN(node Node, children ...TreeNode) TreeNode {
-	return TreeNode{
-		Node:     node,
-		Children: TreeNodes(children),
+func TN(node Node, children ...*TreeNode) *TreeNode {
+	tn := &TreeNode{Node: node}
+	for _, child := range children {
+		tn.AppendChild(child)
 	}
+	return tn
 }
 
 // convenience helper to quickly make specs
@@ -95,13 +96,13 @@ func CL(options ...interface{}) types.CodeLocation {
 	return cl
 }
 
-func mustFindNodeWithText(tree TreeNode, text string) Node {
+func mustFindNodeWithText(tree *TreeNode, text string) Node {
 	node := findNodeWithText(tree, text)
 	ExpectWithOffset(1, node).ShouldNot(BeZero(), "Failed to find node in tree with text '%s'", text)
 	return node
 }
 
-func findNodeWithText(tree TreeNode, text string) Node {
+func findNodeWithText(tree *TreeNode, text string) Node {
 	if tree.Node.Text == text {
 		return tree.Node
 	}

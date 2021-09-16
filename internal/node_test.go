@@ -805,4 +805,20 @@ var _ = Describe("Nodes", func() {
 			})
 		})
 	})
+
+	Describe("FirstNodeMarkedOrdered", func() {
+		Context("when there are nodes marked ordered", func() {
+			It("returns the first one", func() {
+				nodes := Nodes{N(), N("A", ntCon, Ordered), N("B", ntCon, Ordered), N()}
+				Ω(nodes.FirstNodeMarkedOrdered().Text).Should(Equal("A"))
+			})
+		})
+
+		Context("when there is no node marked ordered", func() {
+			It("returns zero", func() {
+				nodes := Nodes{N(), N(), N()}
+				Ω(nodes.FirstNodeMarkedOrdered()).Should(BeZero())
+			})
+		})
+	})
 })
