@@ -43,7 +43,7 @@ var _ = Describe("Focus", func() {
 				),
 			)
 
-			tree = internal.ApplyNestedFocusPolicyToTree(tree)
+			internal.ApplyNestedFocusPolicyToTree(tree)
 			Ω(mustFindNodeWithText(tree, "root").MarkedFocus).Should(BeFalse())
 			Ω(mustFindNodeWithText(tree, "A").MarkedFocus).Should(BeTrue())
 			Ω(mustFindNodeWithText(tree, "B").MarkedFocus).Should(BeTrue())
@@ -68,7 +68,7 @@ var _ = Describe("Focus", func() {
 				),
 			)
 
-			tree = internal.ApplyNestedFocusPolicyToTree(tree)
+			internal.ApplyNestedFocusPolicyToTree(tree)
 			Ω(mustFindNodeWithText(tree, "A").MarkedFocus).Should(BeTrue())
 			Ω(mustFindNodeWithText(tree, "B").MarkedPending).Should(BeTrue())
 			Ω(mustFindNodeWithText(tree, "C").MarkedFocus).Should(BeTrue())
