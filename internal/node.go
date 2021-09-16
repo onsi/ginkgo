@@ -42,6 +42,7 @@ type Node struct {
 	MarkedFocus   bool
 	MarkedPending bool
 	MarkedSerial  bool
+	MarkedOrdered bool
 	FlakeAttempts int
 	Labels        Labels
 }
@@ -50,10 +51,12 @@ type Node struct {
 type focusType bool
 type pendingType bool
 type serialType bool
+type orderedType bool
 
 const Focus = focusType(true)
 const Pending = pendingType(true)
 const Serial = serialType(true)
+const Ordered = orderedType(true)
 
 type FlakeAttempts uint
 type Offset uint
@@ -86,6 +89,8 @@ func isDecoration(arg interface{}) bool {
 	case t == reflect.TypeOf(Pending):
 		return true
 	case t == reflect.TypeOf(Serial):
+		return true
+	case t == reflect.TypeOf(Ordered):
 		return true
 	case t == reflect.TypeOf(FlakeAttempts(0)):
 		return true
@@ -167,6 +172,9 @@ func NewNode(deprecationTracker *types.DeprecationTracker, nodeType types.NodeTy
 		case t == reflect.TypeOf(Serial):
 			node.MarkedSerial = bool(arg.(serialType))
 			appendErrorIf(!nodeType.Is(types.NodeTypesForContainerAndIt...), types.GinkgoErrors.InvalidDecorationForNodeType(node.CodeLocation, nodeType, "Serial"))
+		case t == reflect.TypeOf(Ordered):
+			node.MarkedOrdered = bool(arg.(orderedType))
+			appendErrorIf(!nodeType.Is(types.NodeTypeContainer), types.GinkgoErrors.InvalidDecorationForNodeType(node.CodeLocation, nodeType, "Ordered"))
 		case t == reflect.TypeOf(FlakeAttempts(0)):
 			node.FlakeAttempts = int(arg.(FlakeAttempts))
 			appendErrorIf(!nodeType.Is(types.NodeTypesForContainerAndIt...), types.GinkgoErrors.InvalidDecorationForNodeType(node.CodeLocation, nodeType, "FlakeAttempts"))
