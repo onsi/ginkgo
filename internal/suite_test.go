@@ -149,7 +149,53 @@ var _ = Describe("Suite", func() {
 						Ω(err).Should(HaveOccurred())
 					})
 				})
+			})
 
+			Context("when pushing a serial node in an ordered container", func() {
+				Context("when the outer-most ordered container is marked serial", func() {
+					It("succeeds", func() {
+						var errors = make([]error, 3)
+						errors[0] = suite.PushNode(N(ntCon, "top-level-container", Ordered, Serial, func() {
+							errors[1] = suite.PushNode(N(ntCon, "inner-container", Ordered, func() {
+								errors[2] = suite.PushNode(N(ntIt, "it", Serial, func() {}))
+							}))
+						}))
+						Ω(errors[0]).ShouldNot(HaveOccurred())
+						Ω(suite.BuildTree()).Should(Succeed())
+						Ω(errors[1]).ShouldNot(HaveOccurred())
+						Ω(errors[2]).ShouldNot(HaveOccurred())
+					})
+				})
+
+				Context("when the outer-most ordered container is not marked serial", func() {
+					It("errors", func() {
+						var errors = make([]error, 3)
+						errors[0] = suite.PushNode(N(ntCon, "top-level-container", Ordered, func() {
+							errors[1] = suite.PushNode(N(ntCon, "inner-container", Ordered, func() {
+								errors[2] = suite.PushNode(N(ntIt, "it", Serial, cl, func() {}))
+							}))
+						}))
+						Ω(errors[0]).ShouldNot(HaveOccurred())
+						Ω(suite.BuildTree()).Should(Succeed())
+						Ω(errors[1]).ShouldNot(HaveOccurred())
+						Ω(errors[2]).Should(MatchError(types.GinkgoErrors.InvalidSerialNodeInNonSerialOrderedContainer(cl, ntIt)))
+					})
+				})
+
+				Context("when a container in an ordered container is marked serial but the outer-most ordered container is not serial", func() {
+					It("errors", func() {
+						var errors = make([]error, 3)
+						errors[0] = suite.PushNode(N(ntCon, "top-level-container", Ordered, func() {
+							errors[1] = suite.PushNode(N(ntCon, "inner-container", Ordered, Serial, cl, func() {
+								errors[2] = suite.PushNode(N(ntIt, "it", func() {}))
+							}))
+						}))
+						Ω(errors[0]).ShouldNot(HaveOccurred())
+						Ω(suite.BuildTree()).Should(Succeed())
+						Ω(errors[1]).Should(MatchError(types.GinkgoErrors.InvalidSerialNodeInNonSerialOrderedContainer(cl, ntCon)))
+						Ω(errors[2]).ShouldNot(HaveOccurred())
+					})
+				})
 			})
 
 			Context("when pushing a suite node suring PhaseBuildTree", func() {

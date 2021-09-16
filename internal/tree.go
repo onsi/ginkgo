@@ -4,10 +4,23 @@ import "github.com/onsi/ginkgo/types"
 
 type TreeNode struct {
 	Node     Node
+	Parent   *TreeNode
 	Children TreeNodes
 }
 
-type TreeNodes []TreeNode
+func (tn *TreeNode) AppendChild(child *TreeNode) {
+	tn.Children = append(tn.Children, child)
+	child.Parent = tn
+}
+
+func (tn *TreeNode) AncestorNodeChain() Nodes {
+	if tn.Parent == nil || tn.Parent.Node.IsZero() {
+		return Nodes{tn.Node}
+	}
+	return append(tn.Parent.AncestorNodeChain(), tn.Node)
+}
+
+type TreeNodes []*TreeNode
 
 func (tn TreeNodes) Nodes() Nodes {
 	out := Nodes{}
@@ -17,22 +30,17 @@ func (tn TreeNodes) Nodes() Nodes {
 	return out
 }
 
-func (tn TreeNodes) WithID(id uint) TreeNode {
+func (tn TreeNodes) WithID(id uint) *TreeNode {
 	for _, treeNode := range tn {
 		if treeNode.Node.ID == id {
 			return treeNode
 		}
 	}
 
-	return TreeNode{}
+	return nil
 }
 
-func AppendTreeNodeChild(treeNode TreeNode, child TreeNode) TreeNode {
-	treeNode.Children = append(treeNode.Children, child)
-	return treeNode
-}
-
-func GenerateSpecsFromTreeRoot(tree TreeNode) Specs {
+func GenerateSpecsFromTreeRoot(tree *TreeNode) Specs {
 	var walkTree func(nestingLevel int, lNodes Nodes, rNodes Nodes, trees TreeNodes) Specs
 	walkTree = func(nestingLevel int, lNodes Nodes, rNodes Nodes, trees TreeNodes) Specs {
 		tests := Specs{}

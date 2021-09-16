@@ -25,25 +25,22 @@ import (
 	here the developer's intent is to focus in on the `"doesn't work"` spec and not to run the adjacent specs in the focused `"something to debug"` container.
 	The nested policy applied by this function enables this behavior.
 */
-func ApplyNestedFocusPolicyToTree(tree TreeNode) TreeNode {
-	var walkTree func(tree TreeNode) (TreeNode, bool)
-	walkTree = func(tree TreeNode) (TreeNode, bool) {
+func ApplyNestedFocusPolicyToTree(tree *TreeNode) {
+	var walkTree func(tree *TreeNode) bool
+	walkTree = func(tree *TreeNode) bool {
 		if tree.Node.MarkedPending {
-			return tree, false
+			return false
 		}
 		hasFocusedDescendant := false
-		processedTree := TreeNode{Node: tree.Node}
 		for _, child := range tree.Children {
-			processedChild, childHasFocus := walkTree(child)
+			childHasFocus := walkTree(child)
 			hasFocusedDescendant = hasFocusedDescendant || childHasFocus
-			processedTree = AppendTreeNodeChild(processedTree, processedChild)
 		}
-		processedTree.Node.MarkedFocus = processedTree.Node.MarkedFocus && !hasFocusedDescendant
-		return processedTree, processedTree.Node.MarkedFocus || hasFocusedDescendant
+		tree.Node.MarkedFocus = tree.Node.MarkedFocus && !hasFocusedDescendant
+		return tree.Node.MarkedFocus || hasFocusedDescendant
 	}
 
-	out, _ := walkTree(tree)
-	return out
+	walkTree(tree)
 }
 
 /*

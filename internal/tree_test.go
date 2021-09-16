@@ -39,7 +39,7 @@ var _ = Describe("Trees (TreeNode and TreeNodes)", func() {
 
 			Context("when the id matches a child node's id", func() {
 				It("returns an empty tree as children are not included in the match", func() {
-					Ω(treeNodes.WithID(childNode.ID)).Should(BeZero())
+					Ω(treeNodes.WithID(childNode.ID)).Should(BeNil())
 				})
 			})
 
@@ -49,27 +49,46 @@ var _ = Describe("Trees (TreeNode and TreeNodes)", func() {
 				})
 			})
 		})
-	})
 
-	Describe("AppendTreeNodeChild", func() {
-		It("appends the passed in child treenode to the parent's children and returns the parent", func() {
-			existingChildNode1 := N()
-			existingChildNode2 := N()
-			treeNode := TN(N(),
-				TN(existingChildNode1),
-				TN(existingChildNode2),
-			)
-			newChildNode := N()
+		Describe("AppendChild", func() {
+			It("appends the passed in child treenode to the parent's children and sets the child's parent", func() {
+				existingChildNode1 := N()
+				existingChildNode2 := N()
+				treeNode := TN(N(),
+					TN(existingChildNode1),
+					TN(existingChildNode2),
+				)
+				newChildNode := N()
+				childTreeNode := &TreeNode{Node: newChildNode}
+				treeNode.AppendChild(childTreeNode)
+				Ω(treeNode.Children.Nodes()).Should(Equal(Nodes{existingChildNode1, existingChildNode2, newChildNode}))
+				Ω(childTreeNode.Parent).Should(Equal(treeNode))
+			})
+		})
 
-			result := internal.AppendTreeNodeChild(treeNode, TreeNode{Node: newChildNode})
-			Ω(result.Children.Nodes()).Should(Equal(Nodes{existingChildNode1, existingChildNode2, newChildNode}))
+		Describe("ParentChain", func() {
+			It("returns the chain of parent nodes", func() {
+				grandparent := N()
+				parent := N()
+				aunt := N()
+				child := N()
+				sibling := N()
+				tree := TN(Node{}, TN(
+					grandparent,
+					TN(parent, TN(child), TN(sibling)),
+					TN(aunt),
+				))
+				childTree := tree.Children[0].Children[0].Children[0]
+				Ω(childTree.Node).Should(Equal(child))
+				Ω(childTree.AncestorNodeChain()).Should(Equal(Nodes{grandparent, parent, child}))
+			})
 		})
 	})
 
 	Describe("GenerateSpecsFromTreeRoot", func() {
-		var tree TreeNode
+		var tree *TreeNode
 		BeforeEach(func() {
-			tree = TreeNode{}
+			tree = &TreeNode{}
 		})
 
 		Context("when the tree is empty", func() {

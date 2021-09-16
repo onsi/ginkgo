@@ -20,7 +20,7 @@ const (
 )
 
 type Suite struct {
-	tree               TreeNode
+	tree               *TreeNode
 	topLevelContainers Nodes
 
 	phase Phase
@@ -35,6 +35,7 @@ type Suite struct {
 
 func NewSuite() *Suite {
 	return &Suite{
+		tree:  &TreeNode{},
 		phase: PhaseBuildTopLevel,
 	}
 }
@@ -56,8 +57,8 @@ func (suite *Suite) Run(description string, suitePath string, failer *Failer, re
 	if suite.phase != PhaseBuildTree {
 		panic("cannot run before building the tree = call suite.BuildTree() first")
 	}
-	tree := ApplyNestedFocusPolicyToTree(suite.tree)
-	specs := GenerateSpecsFromTreeRoot(tree)
+	ApplyNestedFocusPolicyToTree(suite.tree)
+	specs := GenerateSpecsFromTreeRoot(suite.tree)
 	specs = ShuffleSpecs(specs, suiteConfig)
 	specs, hasProgrammaticFocus := ApplyFocusToSpecs(specs, description, suiteConfig)
 
@@ -85,6 +86,13 @@ func (suite *Suite) PushNode(node Node) error {
 		return types.GinkgoErrors.PushingNodeInRunPhase(node.NodeType, node.CodeLocation)
 	}
 
+	if node.MarkedSerial {
+		firstOrderedNode := suite.tree.AncestorNodeChain().FirstNodeMarkedOrdered()
+		if !firstOrderedNode.IsZero() && !firstOrderedNode.MarkedSerial {
+			return types.GinkgoErrors.InvalidSerialNodeInNonSerialOrderedContainer(node.CodeLocation, node.NodeType)
+		}
+	}
+
 	if node.NodeType == types.NodeTypeContainer {
 		// During PhaseBuildTopLevel we only track the top level containers without entering them
 		// We only enter the top level container nodes during PhaseBuildTree
@@ -98,7 +106,8 @@ func (suite *Suite) PushNode(node Node) error {
 		}
 		if suite.phase == PhaseBuildTree {
 			parentTree := suite.tree
-			suite.tree = TreeNode{Node: node}
+			suite.tree = &TreeNode{Node: node}
+			parentTree.AppendChild(suite.tree)
 			err := func() (err error) {
 				defer func() {
 					if e := recover(); e != nil {
@@ -108,11 +117,11 @@ func (suite *Suite) PushNode(node Node) error {
 				node.Body()
 				return err
 			}()
-			suite.tree = AppendTreeNodeChild(parentTree, suite.tree)
+			suite.tree = parentTree
 			return err
 		}
 	} else {
-		suite.tree = AppendTreeNodeChild(suite.tree, TreeNode{Node: node})
+		suite.tree.AppendChild(&TreeNode{Node: node})
 		return nil
 	}
 

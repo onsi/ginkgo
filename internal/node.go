@@ -443,6 +443,15 @@ func (n Nodes) HasNodeMarkedSerial() bool {
 	return false
 }
 
+func (n Nodes) FirstNodeMarkedOrdered() Node {
+	for _, node := range n {
+		if node.MarkedOrdered {
+			return node
+		}
+	}
+	return Node{}
+}
+
 func unrollInterfaceSlice(args interface{}) []interface{} {
 	v := reflect.ValueOf(args)
 	if v.Kind() != reflect.Slice {
