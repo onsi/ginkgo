@@ -30,9 +30,10 @@ var _ = Describe("Partitioning Decorations", func() {
 			2.0,
 			Pending,
 			Serial,
+			Ordered,
 			nil,
 			1,
-			[]interface{}{Focus, Pending, []interface{}{Offset(2), Serial, FlakeAttempts(2)}, Label("a", "b", "c")},
+			[]interface{}{Focus, Pending, []interface{}{Offset(2), Serial, FlakeAttempts(2)}, Ordered, Label("a", "b", "c")},
 			[]interface{}{1, 2, 3.1, nil},
 			[]string{"a", "b", "c"},
 			Label("A", "B", "C"),
@@ -48,7 +49,8 @@ var _ = Describe("Partitioning Decorations", func() {
 			Focus,
 			Pending,
 			Serial,
-			[]interface{}{Focus, Pending, []interface{}{Offset(2), Serial, FlakeAttempts(2)}, Label("a", "b", "c")},
+			Ordered,
+			[]interface{}{Focus, Pending, []interface{}{Offset(2), Serial, FlakeAttempts(2)}, Ordered, Label("a", "b", "c")},
 			Label("A", "B", "C"),
 			Label("D"),
 			FlakeAttempts(1),
@@ -211,6 +213,31 @@ var _ = Describe("Constructing nodes", func() {
 			Ω(dt.DidTrackDeprecations()).Should(BeFalse())
 		})
 	})
+
+	Describe("the Ordered decoration", func() {
+		It("the node is not Ordered by default", func() {
+			node, errors := internal.NewNode(dt, ntCon, "", body)
+			Ω(node.MarkedOrdered).Should(BeFalse())
+			ExpectAllWell(errors)
+		})
+		It("marks the node as Ordered", func() {
+			node, errors := internal.NewNode(dt, ntCon, "", body, Ordered)
+			Ω(node.MarkedOrdered).Should(BeTrue())
+			ExpectAllWell(errors)
+		})
+		It("does not allow non-container nodes to be marked", func() {
+			node, errors := internal.NewNode(dt, ntBef, "", body, cl, Ordered)
+			Ω(node).Should(BeZero())
+			Ω(errors).Should(ConsistOf(types.GinkgoErrors.InvalidDecorationForNodeType(cl, ntBef, "Ordered")))
+			Ω(dt.DidTrackDeprecations()).Should(BeFalse())
+
+			node, errors = internal.NewNode(dt, ntIt, "not even Its", body, cl, Ordered)
+			Ω(node).Should(BeZero())
+			Ω(errors).Should(ConsistOf(types.GinkgoErrors.InvalidDecorationForNodeType(cl, ntIt, "Ordered")))
+			Ω(dt.DidTrackDeprecations()).Should(BeFalse())
+		})
+	})
+
 	Describe("The FlakeAttempts decoration", func() {
 		It("is zero by default", func() {
 			node, errors := internal.NewNode(dt, ntIt, "text", body)
