@@ -156,7 +156,7 @@ var _ = Describe("Suite", func() {
 					It("succeeds", func() {
 						var errors = make([]error, 3)
 						errors[0] = suite.PushNode(N(ntCon, "top-level-container", Ordered, Serial, func() {
-							errors[1] = suite.PushNode(N(ntCon, "inner-container", Ordered, func() {
+							errors[1] = suite.PushNode(N(ntCon, "inner-container", func() {
 								errors[2] = suite.PushNode(N(ntIt, "it", Serial, func() {}))
 							}))
 						}))
@@ -171,7 +171,7 @@ var _ = Describe("Suite", func() {
 					It("errors", func() {
 						var errors = make([]error, 3)
 						errors[0] = suite.PushNode(N(ntCon, "top-level-container", Ordered, func() {
-							errors[1] = suite.PushNode(N(ntCon, "inner-container", Ordered, func() {
+							errors[1] = suite.PushNode(N(ntCon, "inner-container", func() {
 								errors[2] = suite.PushNode(N(ntIt, "it", Serial, cl, func() {}))
 							}))
 						}))
@@ -181,20 +181,20 @@ var _ = Describe("Suite", func() {
 						Ω(errors[2]).Should(MatchError(types.GinkgoErrors.InvalidSerialNodeInNonSerialOrderedContainer(cl, ntIt)))
 					})
 				})
+			})
 
-				Context("when a container in an ordered container is marked serial but the outer-most ordered container is not serial", func() {
-					It("errors", func() {
-						var errors = make([]error, 3)
-						errors[0] = suite.PushNode(N(ntCon, "top-level-container", Ordered, func() {
-							errors[1] = suite.PushNode(N(ntCon, "inner-container", Ordered, Serial, cl, func() {
-								errors[2] = suite.PushNode(N(ntIt, "it", func() {}))
-							}))
+			Context("when nesting ordered containers", func() {
+				It("errors", func() {
+					var errors = make([]error, 3)
+					errors[0] = suite.PushNode(N(ntCon, "top-level-container", Ordered, func() {
+						errors[1] = suite.PushNode(N(ntCon, "inner-container", Ordered, cl, func() {
+							errors[2] = suite.PushNode(N(ntIt, "it", func() {}))
 						}))
-						Ω(errors[0]).ShouldNot(HaveOccurred())
-						Ω(suite.BuildTree()).Should(Succeed())
-						Ω(errors[1]).Should(MatchError(types.GinkgoErrors.InvalidSerialNodeInNonSerialOrderedContainer(cl, ntCon)))
-						Ω(errors[2]).ShouldNot(HaveOccurred())
-					})
+					}))
+					Ω(errors[0]).ShouldNot(HaveOccurred())
+					Ω(suite.BuildTree()).Should(Succeed())
+					Ω(errors[1]).Should(MatchError(types.GinkgoErrors.InvalidNestedOrderedContainer(cl)))
+					Ω(errors[2]).ShouldNot(HaveOccurred())
 				})
 			})
 
