@@ -959,11 +959,15 @@ By default, Ginkgo will randomize the order in which your specs are run.  This c
 
 Ginkgo's default behavior is to only permute the order of top-level containers -- the specs *within* those containers continue to run in the order in which they are specified in the test file.  This is helpful when developing specs as it mitigates the coginitive overload of having specs continuously change the order in which they run.
 
-To randomize *all* specs in a suite, you can pass the `--randomizeAllSpecs` flag.  This is useful on CI and can greatly help fight the scourge of test pollution.
+To randomize *all* specs in a suite, you can pass the `--randomize-all` flag.  This is useful on CI and can greatly help fight the scourge of test pollution.
 
 Ginkgo uses the current time to seed the randomization.  It prints out the seed near the beginning of the test output.  If you notice test intermittent test failures that you think may be due to test pollution, you can use the seed from a failing suite to exactly reproduce the spec order for that suite.  To do this pass the `--seed=SEED` flag.
 
 When running multiple spec suites Ginkgo defaults to running the suites in the order they would be listed on the file-system.  You can permute the suites by passing `ginkgo --randomizeSuites`
+
+#### Marking Specs as Oredered
+
+You can explicitly tell Ginkgo never to randomize specs within a given container by decorating the container with the [`Ordered` decorator](#the-ordered-decoration).  Doing so ensures the specs in the container run in the order they appear in.  This also ensures that the specs in the container are not parallelized with respect to one another.
 
 ### Repeating Test Runs and Managing Flakey Tests
 
@@ -1000,6 +1004,8 @@ The test runner collates output from the running processes into one coherent out
 #### Marking Specs as Serial
 
 By default all specs are distributed in parallel across Ginkgo's running test processes.  However there can be contexts where specific specs need to run in series and must not be run in parallel with other specs.  You can tell Ginkgo about these specs using the [Serial decorator](#the-serial-decoration).  Specs marked `Serial` will run on process #1 after all other processes have finished running parallel specs and exited.
+
+In addition, specs that appear in containers decorated with `Ordered` are guaranteed to run in order.  When running in parallel Ginkgo will ensure that specs in `Ordered` containers are all scheduled on the same parallel process, in order.  Note that these specs can still run in parallel with _other_ specs, just not with each other.  To ensure they run in order and in series, use both the `Ordered` and `Serial` decorator on the container.
 
 #### Managing External Processes in Parallel Test Suites
 
@@ -1126,6 +1132,14 @@ The `Serial` decoration applies to container nodes and subject nodes only.  It i
 `Serial` allows the user to mark specs and containers of specs as only eligible to run in serial.  Ginkgo will guarantee that these specs never run in parallel with other specs.
 
 If a container is marked as `Serial` then all the specs defined in that container will be marked as `Serial`.
+
+You cannot mark specs and containers as `Serial` if they appear in an `Ordered` container.  Instead, mark the `Ordered` container as `Serial`.
+
+#### The `Ordered` Decoration
+The `Ordered` decoration applies to container nodes only.  It is an error to try to apply the `Ordered` decoration to a setup or subject node.
+
+`Ordered` allows the user to mark containers of specs as ordered.  Ginkgo will guarantee that the container's specs will run in the order they appear in and will never run in parallel with one another (though they may run in parallel with other specs unless the `Serial` decoration is also applied to the `Ordered` container).
+
 
 #### The `Label` Decoration
 The `Label` decoration applies to container nodes and subject nodes only.  It is an error to try to apply the `Label` decoration to a setup node.

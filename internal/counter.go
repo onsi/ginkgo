@@ -12,23 +12,14 @@ func MakeNextIndexCounter(suiteConfig types.SuiteConfig) func() (int, error) {
 			return client.FetchNextCounter()
 		}
 	} else {
-		idx := -1
-		return func() (int, error) {
-			idx += 1
-			return idx, nil
-		}
+		return MakeIncrementingIndexCounter()
 	}
 }
 
-func MakeNextIndexCounterForIndices(indices []int, lenSpecs int) func() (int, error) {
+func MakeIncrementingIndexCounter() func() (int, error) {
 	idx := -1
 	return func() (int, error) {
 		idx += 1
-		if idx < len(indices) {
-			return indices[idx], nil
-		} else {
-			return lenSpecs, nil
-		}
+		return idx, nil
 	}
-
 }

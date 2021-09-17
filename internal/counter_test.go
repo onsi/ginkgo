@@ -60,16 +60,12 @@ var _ = Describe("Counter", func() {
 		})
 	})
 
-	Describe("building a counter for a set of indices", func() {
-		It("counts through the indices", func() {
-			counter := internal.MakeNextIndexCounterForIndices([]int{5, 3, 7, 10}, 12)
-			Ω(counter()).Should(Equal(5))
-			Ω(counter()).Should(Equal(3))
-			Ω(counter()).Should(Equal(7))
-			Ω(counter()).Should(Equal(10))
-			Ω(counter()).Should(Equal(12))
-			Ω(counter()).Should(Equal(12))
-			Ω(counter()).Should(Equal(12))
+	Describe("building an incrementing counter", func() {
+		It("counts.  plain and simple.", func() {
+			counter := internal.MakeIncrementingIndexCounter()
+			for i := 0; i < 10; i += 1 {
+				Ω(counter()).Should(Equal(i))
+			}
 		})
 	})
 })
