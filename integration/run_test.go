@@ -290,6 +290,22 @@ var _ = Describe("Running Specs", func() {
 		})
 	})
 
+	Context("when running with ordered specs", func() {
+		BeforeEach(func() {
+			fm.MountFixture("ordered")
+		})
+
+		It("always preserve spec order within ordered contexts", func() {
+			By("running a carefully crafted test without the ordered decorator")
+			session := startGinkgo(fm.PathTo("ordered"), "--no-color", "-nodes=2", "-v", "--randomize-all", "--fail-fast", "--", "--no-ordered")
+			Eventually(session).Should(gexec.Exit(1))
+
+			By("running a carefully crafted test with the ordered decorator")
+			session = startGinkgo(fm.PathTo("ordered"), "--no-color", "-nodes=2", "-v", "--randomize-all", "--fail-fast")
+			Eventually(session).Should(gexec.Exit(0))
+		})
+	})
+
 	Context("when running multiple tests", func() {
 		BeforeEach(func() {
 			fm.MountFixture("passing_ginkgo_tests")

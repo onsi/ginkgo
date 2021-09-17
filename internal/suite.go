@@ -59,7 +59,6 @@ func (suite *Suite) Run(description string, suitePath string, failer *Failer, re
 	}
 	ApplyNestedFocusPolicyToTree(suite.tree)
 	specs := GenerateSpecsFromTreeRoot(suite.tree)
-	specs = ShuffleSpecs(specs, suiteConfig)
 	specs, hasProgrammaticFocus := ApplyFocusToSpecs(specs, description, suiteConfig)
 
 	suite.phase = PhaseRun
@@ -223,69 +222,69 @@ func (suite *Suite) runSpecs(description string, suitePath string, hasProgrammat
 
 	suiteAborted := false
 	if report.SuiteSucceeded {
+		groupedSpecIndices, serialGroupedSpecIndices := OrderSpecs(specs, suiteConfig)
 		nextIndex := MakeNextIndexCounter(suiteConfig)
-		runSerialSpecs, serialSpecIndices := suiteConfig.ParallelTotal == 1, specs.IndicesMarkedSerial()
 
 		for {
-			idx, err := nextIndex()
+			groupedSpecIdx, err := nextIndex()
 			if err != nil {
 				report.SpecialSuiteFailureReasons = append(report.SpecialSuiteFailureReasons, fmt.Sprintf("Failed to iterate over specs:\n%s", err.Error()))
 				report.SuiteSucceeded = false
 				break
 			}
-			if idx >= len(specs) {
-				if !runSerialSpecs && suiteConfig.ParallelNode == 1 && len(serialSpecIndices) > 0 {
-					runSerialSpecs, nextIndex = true, MakeNextIndexCounterForIndices(serialSpecIndices, len(specs))
+			if groupedSpecIdx >= len(groupedSpecIndices) {
+				if suiteConfig.ParallelNode == 1 && len(serialGroupedSpecIndices) > 0 {
+					groupedSpecIndices, serialGroupedSpecIndices, nextIndex = serialGroupedSpecIndices, GroupedSpecIndices{}, MakeIncrementingIndexCounter()
 					suite.client.BlockUntilNonprimaryNodesHaveFinished()
 					continue
 				}
 				break
 			}
 
-			spec := specs[idx]
-			if spec.Nodes.HasNodeMarkedSerial() && !runSerialSpecs {
-				continue
-			}
+			specIndices := groupedSpecIndices[groupedSpecIdx]
+			for _, idx := range specIndices {
+				spec := specs[idx]
 
-			suite.currentSpecReport = types.SpecReport{
-				ContainerHierarchyTexts:     spec.Nodes.WithType(types.NodeTypeContainer).Texts(),
-				ContainerHierarchyLocations: spec.Nodes.WithType(types.NodeTypeContainer).CodeLocations(),
-				ContainerHierarchyLabels:    spec.Nodes.WithType(types.NodeTypeContainer).Labels(),
-				LeafNodeLocation:            spec.FirstNodeWithType(types.NodeTypeIt).CodeLocation,
-				LeafNodeType:                types.NodeTypeIt,
-				LeafNodeText:                spec.FirstNodeWithType(types.NodeTypeIt).Text,
-				LeafNodeLabels:              []string(spec.FirstNodeWithType(types.NodeTypeIt).Labels),
-				GinkgoParallelNode:          suiteConfig.ParallelNode,
-			}
-
-			if (suiteConfig.FailFast && !report.SuiteSucceeded) || interruptHandler.Status().Interrupted || suiteAborted {
-				spec.Skip = true
-			}
-
-			if spec.Skip {
-				suite.currentSpecReport.State = types.SpecStateSkipped
-				if spec.Nodes.HasNodeMarkedPending() {
-					suite.currentSpecReport.State = types.SpecStatePending
+				suite.currentSpecReport = types.SpecReport{
+					ContainerHierarchyTexts:     spec.Nodes.WithType(types.NodeTypeContainer).Texts(),
+					ContainerHierarchyLocations: spec.Nodes.WithType(types.NodeTypeContainer).CodeLocations(),
+					ContainerHierarchyLabels:    spec.Nodes.WithType(types.NodeTypeContainer).Labels(),
+					LeafNodeLocation:            spec.FirstNodeWithType(types.NodeTypeIt).CodeLocation,
+					LeafNodeType:                types.NodeTypeIt,
+					LeafNodeText:                spec.FirstNodeWithType(types.NodeTypeIt).Text,
+					LeafNodeLabels:              []string(spec.FirstNodeWithType(types.NodeTypeIt).Labels),
+					GinkgoParallelNode:          suiteConfig.ParallelNode,
 				}
-			}
 
-			reporter.WillRun(suite.currentSpecReport)
+				if (suiteConfig.FailFast && !report.SuiteSucceeded) || interruptHandler.Status().Interrupted || suiteAborted {
+					spec.Skip = true
+				}
 
-			if !spec.Skip {
-				//runSpec updates suite.currentSpecReport directly
-				suite.runSpec(spec, failer, interruptHandler, writer, outputInterceptor, suiteConfig)
-			}
+				if spec.Skip {
+					suite.currentSpecReport.State = types.SpecStateSkipped
+					if spec.Nodes.HasNodeMarkedPending() {
+						suite.currentSpecReport.State = types.SpecStatePending
+					}
+				}
 
-			//send the spec report to any attached ReportAfterEach blocks - this will update suite.currentSpecReport of failures occur in these blocks
-			suite.reportAfterEach(spec, failer, interruptHandler, writer, outputInterceptor, suiteConfig)
-			processSpecReport(suite.currentSpecReport)
-			if suite.currentSpecReport.State == types.SpecStateAborted {
-				suiteAborted = true
+				reporter.WillRun(suite.currentSpecReport)
+
+				if !spec.Skip {
+					//runSpec updates suite.currentSpecReport directly
+					suite.runSpec(spec, failer, interruptHandler, writer, outputInterceptor, suiteConfig)
+				}
+
+				//send the spec report to any attached ReportAfterEach blocks - this will update suite.currentSpecReport of failures occur in these blocks
+				suite.reportAfterEach(spec, failer, interruptHandler, writer, outputInterceptor, suiteConfig)
+				processSpecReport(suite.currentSpecReport)
+				if suite.currentSpecReport.State == types.SpecStateAborted {
+					suiteAborted = true
+				}
+				if suiteConfig.ParallelTotal > 1 && (suiteAborted || (suiteConfig.FailFast && !report.SuiteSucceeded)) {
+					suite.client.PostAbort()
+				}
+				suite.currentSpecReport = types.SpecReport{}
 			}
-			if suiteConfig.ParallelTotal > 1 && (suiteAborted || (suiteConfig.FailFast && !report.SuiteSucceeded)) {
-				suite.client.PostAbort()
-			}
-			suite.currentSpecReport = types.SpecReport{}
 		}
 
 		if specs.HasAnySpecsMarkedPending() && suiteConfig.FailOnPending {

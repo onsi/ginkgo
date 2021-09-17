@@ -45,6 +45,17 @@ var _ = Describe("Running tests in parallel", func() {
 		It("F", rt.T("F", func() {
 			time.Sleep(10 * time.Millisecond)
 		}))
+		Context("Ordered", Ordered, func() {
+			It("OA", rt.T("OA", func() {
+				time.Sleep(10 * time.Millisecond)
+			}))
+			It("OB", rt.T("OB", func() {
+				time.Sleep(10 * time.Millisecond)
+			}))
+			It("OC", rt.T("OC", func() {
+				time.Sleep(10 * time.Millisecond)
+			}))
+		})
 		It("G", Serial, rt.T("G", func() {
 			Ω(serialValidator).Should(BeClosed())
 			time.Sleep(10 * time.Millisecond)
@@ -57,6 +68,16 @@ var _ = Describe("Running tests in parallel", func() {
 			Ω(serialValidator).Should(BeClosed())
 			time.Sleep(10 * time.Millisecond)
 		}))
+		Context("Ordered and Serial", Ordered, Serial, func() {
+			It("OSA", rt.T("OSA", func() {
+				Ω(serialValidator).Should(BeClosed())
+				time.Sleep(10 * time.Millisecond)
+			}))
+			It("OSB", rt.T("OSB", func() {
+				Ω(serialValidator).Should(BeClosed())
+				time.Sleep(10 * time.Millisecond)
+			}))
+		})
 
 		SynchronizedAfterSuite(rt.T("after-suite-1", func() {
 			if node == 2 {
@@ -70,9 +91,13 @@ var _ = Describe("Running tests in parallel", func() {
 		//set up configuration for node 1 and node 2
 		conf.ParallelTotal = 2
 		conf.ParallelNode = 1
+		conf.RandomizeAllSpecs = true
+		conf.RandomSeed = 17
 		conf2 = types.SuiteConfig{
-			ParallelTotal: 2,
-			ParallelNode:  2,
+			ParallelTotal:     2,
+			ParallelNode:      2,
+			RandomSeed:        17,
+			RandomizeAllSpecs: true,
 		}
 
 		// start up a remote server - we're using the real thing here, not a fake
@@ -154,27 +179,54 @@ var _ = Describe("Running tests in parallel", func() {
 		allRuns := append(rt.TrackedRuns(), rt2.TrackedRuns()...)
 		Ω(allRuns).Should(ConsistOf(
 			"before-suite-1", "before-suite-2 floop", "after-suite-1", "after-suite-2", "before-suite-2 floop", "after-suite-1",
-			"A", "B", "C", "D", "E", "F", "G", "H", "I", //all ran
+			"A", "B", "C", "D", "E", "F", "G", "H", "I", "OA", "OB", "OC", "OSA", "OSB", //all ran
 		))
 
 		Ω(reporter.Did.Names()).ShouldNot(BeEmpty())
 		Ω(reporter2.Did.Names()).ShouldNot(BeEmpty())
 		names := append(reporter.Did.Names(), reporter2.Did.Names()...)
-		Ω(names).Should(ConsistOf("A", "B", "C", "D", "E", "F", "G", "H", "I"))
+		Ω(names).Should(ConsistOf("A", "B", "C", "D", "E", "F", "G", "H", "I", "OA", "OB", "OC", "OSA", "OSB"))
 	})
 
 	It("only runs serial tests on node 1, after the other node has finished", func() {
-		Ω(reporter.Did.Names()).Should(ContainElements("G", "H", "I"))
-		Ω(reporter2.Did.Names()).ShouldNot(ContainElements("G", "H", "I"))
+		names := reporter.Did.Names()
+		Ω(names).Should(ContainElements("G", "H", "I", "OSA", "OSB"))
+		for idx, name := range names {
+			if name == "OSA" {
+				Ω(names[idx+1]).Should(Equal("OSB"))
+				break
+			}
+		}
+		Ω(reporter2.Did.Names()).ShouldNot(ContainElements("G", "H", "I", "OSA", "OSB"))
+	})
+
+	It("it ensures specs in an ordered container run on the same process and are ordered", func() {
+		names1 := reporter.Did.Names()
+		names2 := reporter2.Did.Names()
+		in1, _ := ContainElement("OA").Match(names1)
+		winner := names1
+		if !in1 {
+			winner = names2
+		}
+		found := false
+		for idx, name := range winner {
+			if name == "OA" {
+				found = true
+				Ω(winner[idx+1]).Should(Equal("OB"))
+				Ω(winner[idx+2]).Should(Equal("OC"))
+				break
+			}
+		}
+		Ω(found).Should(BeTrue())
 	})
 
 	It("reports the correct statistics", func() {
-		Ω(reporter.End.PreRunStats.TotalSpecs).Should(Equal(9))
-		Ω(reporter2.End.PreRunStats.TotalSpecs).Should(Equal(9))
-		Ω(reporter.End.PreRunStats.SpecsThatWillRun).Should(Equal(9))
-		Ω(reporter2.End.PreRunStats.SpecsThatWillRun).Should(Equal(9))
+		Ω(reporter.End.PreRunStats.TotalSpecs).Should(Equal(14))
+		Ω(reporter2.End.PreRunStats.TotalSpecs).Should(Equal(14))
+		Ω(reporter.End.PreRunStats.SpecsThatWillRun).Should(Equal(14))
+		Ω(reporter2.End.PreRunStats.SpecsThatWillRun).Should(Equal(14))
 
 		Ω(reporter.End.SpecReports.WithLeafNodeType(types.NodeTypeIt).CountWithState(types.SpecStatePassed) +
-			reporter2.End.SpecReports.WithLeafNodeType(types.NodeTypeIt).CountWithState(types.SpecStatePassed)).Should(Equal(9))
+			reporter2.End.SpecReports.WithLeafNodeType(types.NodeTypeIt).CountWithState(types.SpecStatePassed)).Should(Equal(14))
 	})
 })
