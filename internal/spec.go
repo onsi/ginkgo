@@ -57,33 +57,3 @@ func (s Specs) CountWithoutSkip() int {
 	}
 	return n
 }
-
-func (s Specs) PartitionByFirstNodeWithType(nodeTypes ...types.NodeType) []Specs {
-	indexById := map[uint]int{}
-	partition := []Specs{}
-	for _, spec := range s {
-		id := spec.FirstNodeWithType(nodeTypes...).ID
-		if id == 0 {
-			continue
-		}
-		idx, found := indexById[id]
-		if !found {
-			partition = append(partition, Specs{})
-			idx = len(partition) - 1
-			indexById[id] = idx
-		}
-		partition[idx] = append(partition[idx], spec)
-	}
-
-	return partition
-}
-
-func (s Specs) IndicesMarkedSerial() []int {
-	out := []int{}
-	for idx, spec := range s {
-		if spec.Nodes.HasNodeMarkedSerial() {
-			out = append(out, idx)
-		}
-	}
-	return out
-}

@@ -23,6 +23,13 @@ var _ = Describe("Shuffling Tests", func() {
 			It("b.4", rt.T("b.4"))
 		})
 
+		Describe("ordered-container", Ordered, func() {
+			It("o.1", rt.T("o.1"))
+			It("o.2", rt.T("o.2"))
+			It("o.3", rt.T("o.3"))
+			It("o.4", rt.T("o.4"))
+		})
+
 		It("top.1", rt.T("top.1"))
 		It("top.2", rt.T("top.2"))
 		It("top.3", rt.T("top.3"))
@@ -41,6 +48,7 @@ var _ = Describe("Shuffling Tests", func() {
 
 				Ω(order).Should(ContainSubstring("a.1a.2a.3a.4"), "order in containers should be preserved")
 				Ω(order).Should(ContainSubstring("b.1b.2b.3b.4"), "order in containers should be preserved")
+				Ω(order).Should(ContainSubstring("o.1o.2o.3o.4"), "order in containers should be preserved")
 				orderings = append(orderings, order)
 				uniqueOrderings[order] = true
 			}
@@ -50,7 +58,7 @@ var _ = Describe("Shuffling Tests", func() {
 	})
 
 	Describe("when told to randomize all specs", func() {
-		It("shuffles all its", func() {
+		It("shuffles all its, but preserves ordered containers", func() {
 			conf.RandomizeAllSpecs = true
 			orderings := []string{}
 			uniqueOrderings := map[string]bool{}
@@ -60,6 +68,7 @@ var _ = Describe("Shuffling Tests", func() {
 				order := strings.Join(rt.TrackedRuns(), "")
 				rt.Reset()
 
+				Ω(order).Should(ContainSubstring("o.1o.2o.3o.4"), "order in containers should be preserved")
 				orderings = append(orderings, order)
 				uniqueOrderings[order] = true
 			}
