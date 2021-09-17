@@ -190,6 +190,15 @@ func (g ginkgoErrors) InvalidSerialNodeInNonSerialOrderedContainer(cl CodeLocati
 	}
 }
 
+func (g ginkgoErrors) InvalidNestedOrderedContainer(cl CodeLocation) error {
+	return GinkgoError{
+		Heading:      "Invalid Nested Ordered Container",
+		Message:      "An Ordered container is being nested inside another Ordered container.  This is superfluous and not allowed.  Remove the Ordered decoration from the nested container.",
+		CodeLocation: cl,
+		DocLink:      "ordered-containers",
+	}
+}
+
 func (g ginkgoErrors) UnknownDecoration(cl CodeLocation, nodeType NodeType, decoration interface{}) error {
 	return GinkgoError{
 		Heading:      "Unkown Decoration",
