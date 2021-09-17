@@ -242,6 +242,7 @@ func (suite *Suite) runSpecs(description string, suitePath string, hasProgrammat
 			}
 
 			specIndices := groupedSpecIndices[groupedSpecIdx]
+			groupSucceeded := true
 			for _, idx := range specIndices {
 				spec := specs[idx]
 
@@ -256,14 +257,22 @@ func (suite *Suite) runSpecs(description string, suitePath string, hasProgrammat
 					GinkgoParallelNode:          suiteConfig.ParallelNode,
 				}
 
+				skipReason := ""
 				if (suiteConfig.FailFast && !report.SuiteSucceeded) || interruptHandler.Status().Interrupted || suiteAborted {
 					spec.Skip = true
 				}
+				if !groupSucceeded {
+					spec.Skip, skipReason = true, "Spec skipped because an earlier spec in an ordered container failed"
+				}
 
 				if spec.Skip {
-					suite.currentSpecReport.State = types.SpecStateSkipped
 					if spec.Nodes.HasNodeMarkedPending() {
 						suite.currentSpecReport.State = types.SpecStatePending
+					} else {
+						suite.currentSpecReport.State = types.SpecStateSkipped
+						if skipReason != "" {
+							suite.currentSpecReport.Failure = suite.failureForLeafNodeWithMessage(spec.FirstNodeWithType(types.NodeTypeIt), skipReason)
+						}
 					}
 				}
 
@@ -277,6 +286,9 @@ func (suite *Suite) runSpecs(description string, suitePath string, hasProgrammat
 				//send the spec report to any attached ReportAfterEach blocks - this will update suite.currentSpecReport of failures occur in these blocks
 				suite.reportAfterEach(spec, failer, interruptHandler, writer, outputInterceptor, suiteConfig)
 				processSpecReport(suite.currentSpecReport)
+				if suite.currentSpecReport.State.Is(types.SpecStateFailureStates...) {
+					groupSucceeded = false
+				}
 				if suite.currentSpecReport.State == types.SpecStateAborted {
 					suiteAborted = true
 				}
@@ -480,7 +492,7 @@ func (suite *Suite) runSuiteNode(node Node, failer *Failer, interruptChannel cha
 	}
 
 	if err != nil && suite.currentSpecReport.State.Is(types.SpecStateInvalid, types.SpecStatePassed) {
-		suite.currentSpecReport.State, suite.currentSpecReport.Failure = suite.failureForLeafNodeWithError(node, err)
+		suite.currentSpecReport.State, suite.currentSpecReport.Failure = types.SpecStateFailed, suite.failureForLeafNodeWithMessage(node, err.Error())
 	}
 
 	suite.currentSpecReport.EndTime = time.Now()
@@ -504,7 +516,7 @@ func (suite *Suite) runReportAfterSuiteNode(node Node, report types.Report, fail
 	if suiteConfig.ParallelTotal > 1 {
 		aggregatedReport, err := suite.client.BlockUntilAggregatedNonprimaryNodesReport()
 		if err != nil {
-			suite.currentSpecReport.State, suite.currentSpecReport.Failure = suite.failureForLeafNodeWithError(node, err)
+			suite.currentSpecReport.State, suite.currentSpecReport.Failure = types.SpecStateFailed, suite.failureForLeafNodeWithMessage(node, err.Error())
 			return
 		}
 		report = report.Add(aggregatedReport)
@@ -578,9 +590,9 @@ func (suite *Suite) runNode(node Node, failer *Failer, interruptChannel chan int
 	}
 }
 
-func (suite *Suite) failureForLeafNodeWithError(node Node, err error) (types.SpecState, types.Failure) {
-	return types.SpecStateFailed, types.Failure{
-		Message:             err.Error(),
+func (suite *Suite) failureForLeafNodeWithMessage(node Node, message string) types.Failure {
+	return types.Failure{
+		Message:             message,
 		Location:            node.CodeLocation,
 		FailureNodeContext:  types.FailureNodeIsLeafNode,
 		FailureNodeType:     node.NodeType,

@@ -205,6 +205,15 @@ func HaveBeenSkipped() OmegaMatcher {
 	})
 }
 
+func HaveBeenSkippedWithMessage(message string) OmegaMatcher {
+	return MatchFields(IgnoreExtras, Fields{
+		"State": Equal(types.SpecStateSkipped),
+		"Failure": MatchFields(IgnoreExtras, Fields{
+			"Message": Equal(message),
+		}),
+	})
+}
+
 func HaveBeenInterrupted(cause interrupt_handler.InterruptCause) OmegaMatcher {
 	return MatchFields(IgnoreExtras, Fields{
 		"State": Equal(types.SpecStateInterrupted),

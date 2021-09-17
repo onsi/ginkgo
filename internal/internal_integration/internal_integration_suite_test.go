@@ -40,6 +40,7 @@ var _ = BeforeEach(func() {
 
 	conf.ParallelTotal = 1
 	conf.ParallelNode = 1
+	conf.RandomSeed = 17
 })
 
 var _ = AfterEach(func() {
