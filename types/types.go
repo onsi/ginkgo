@@ -595,6 +595,9 @@ const (
 	NodeTypeAfterEach
 	NodeTypeJustAfterEach
 
+	NodeTypeBeforeAll
+	NodeTypeAfterAll
+
 	NodeTypeBeforeSuite
 	NodeTypeSynchronizedBeforeSuite
 	NodeTypeAfterSuite
@@ -615,6 +618,8 @@ var ntEnumSupport = NewEnumSupport(map[uint]string{
 	uint(NodeTypeJustBeforeEach):          "JustBeforeEach",
 	uint(NodeTypeAfterEach):               "AfterEach",
 	uint(NodeTypeJustAfterEach):           "JustAfterEach",
+	uint(NodeTypeBeforeAll):               "BeforeAll",
+	uint(NodeTypeAfterAll):                "AfterAll",
 	uint(NodeTypeBeforeSuite):             "BeforeSuite",
 	uint(NodeTypeSynchronizedBeforeSuite): "SynchronizedBeforeSuite",
 	uint(NodeTypeAfterSuite):              "AfterSuite",
@@ -642,5 +647,16 @@ func (nt NodeType) Is(nodeTypes ...NodeType) bool {
 		}
 	}
 
+	return false
+}
+
+type NodeTypes []NodeType
+
+func (nt NodeTypes) Contains(expected NodeType) bool {
+	for _, nodeType := range nt {
+		if nodeType == expected {
+			return true
+		}
+	}
 	return false
 }
