@@ -636,7 +636,7 @@ var _ = Describe("Browing the Library", Ordered, func() {
 })
 ```
 
-Ginkgo will guarantee that these specs will always run in the order they appear and that they will not be parallelized with respect to one another.  The `BeforeAll` setup node will run once before the first spec runs and the `AfterAll` setup node will run once after the last spec runs.  `BeforeAll` and `AfterAll` nodes are only supported within `Ordered` containers.  Note that the `AfterEach` runs after every spec.
+Ginkgo will guarantee that these specs will always run in the order they appear and that they will not be parallelized with respect to one another.  The `BeforeAll` setup node will run once before the first spec runs and the `AfterAll` setup node will run once after the last spec runs.  `BeforeAll` and `AfterAll` nodes are only supported within `Ordered` containers and cannot be nested within other containers, even if those containers appear in an `Ordered` container.  Note that the `AfterEach` runs after every spec.
 
 Since the specs are guaranteed to share order and run on the same process they modify the shared closure variables and produce a single coherent narrative.  Because this is a common pattern, when a spec in an `Ordered` container fails all subsequent specs are skipped.
 

@@ -93,6 +93,18 @@ var _ = Describe("Types", func() {
 		)
 	})
 
+	Describe("NodeTypes", func() {
+		Describe("Contains", func() {
+			It("returns true if the NodeType is in NodeTypes", func() {
+				Ω(types.NodeTypes{types.NodeTypeIt, types.NodeTypeBeforeAll, types.NodeTypeAfterAll}.Contains(types.NodeTypeBeforeAll)).Should(BeTrue())
+			})
+
+			It("returns false if the NodeType is not in NodeTypes", func() {
+				Ω(types.NodeTypes{types.NodeTypeIt, types.NodeTypeBeforeEach, types.NodeTypeAfterAll}.Contains(types.NodeTypeBeforeAll)).Should(BeFalse())
+			})
+		})
+	})
+
 	Describe("FailureNodeContext", func() {
 		DescribeTable("Representation and Encoding", func(context types.FailureNodeContext) {
 			marshalled, err := json.Marshal(context)
