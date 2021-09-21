@@ -423,3 +423,15 @@ func JustAfterEach(args ...interface{}) bool {
 func AfterEach(args ...interface{}) bool {
 	return pushNode(internal.NewNode(deprecationTracker, types.NodeTypeAfterEach, "", args...))
 }
+
+//BeforeAll blocks occur inside Ordered contianers and run just once before any tests run.  Multiple BeforeAll blocks can occur in a given Ordered container
+//however they cannot be nested inside any other container, even a container inside an Ordered container.
+func BeforeAll(args ...interface{}) bool {
+	return pushNode(internal.NewNode(deprecationTracker, types.NodeTypeBeforeAll, "", args...))
+}
+
+//AfterAll blocks occur inside Ordered contianers and run just once after all tests have run.  Multiple AfterAll blocks can occur in a given Ordered container
+//however they cannot be nested inside any other container, even a container inside an Ordered container.
+func AfterAll(args ...interface{}) bool {
+	return pushNode(internal.NewNode(deprecationTracker, types.NodeTypeAfterAll, "", args...))
+}

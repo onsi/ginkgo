@@ -28,37 +28,47 @@ func TestOrderedFixture(t *testing.T) {
 var _ = Describe("tests", func() {
 	for i := 0; i < 10; i += 1 {
 		Context("ordered", OrderedDecoration, func() {
-			terribleSharedCounter := 0
+			var terribleSharedCounter int
 			var parallelNode int
 
-			It("increments the counter", func() {
+			BeforeAll(func() {
+				terribleSharedCounter = 1
 				parallelNode = GinkgoParallelNode()
-				terribleSharedCounter++
-				Ω(terribleSharedCounter).Should(Equal(1))
 			})
 
-			It("increments the shared counter", func() {
+			It("increments the counter", func() {
 				Ω(parallelNode).Should(Equal(GinkgoParallelNode()))
 				terribleSharedCounter++
 				Ω(terribleSharedCounter).Should(Equal(2))
 			})
 
-			It("increments the terrible shared counter", func() {
+			It("increments the shared counter", func() {
 				Ω(parallelNode).Should(Equal(GinkgoParallelNode()))
 				terribleSharedCounter++
 				Ω(terribleSharedCounter).Should(Equal(3))
 			})
 
-			It("increments the counter again", func() {
+			It("increments the terrible shared counter", func() {
 				Ω(parallelNode).Should(Equal(GinkgoParallelNode()))
 				terribleSharedCounter++
 				Ω(terribleSharedCounter).Should(Equal(4))
 			})
 
-			It("increments the counter and again", func() {
+			It("increments the counter again", func() {
 				Ω(parallelNode).Should(Equal(GinkgoParallelNode()))
 				terribleSharedCounter++
 				Ω(terribleSharedCounter).Should(Equal(5))
+			})
+
+			It("increments the counter and again", func() {
+				Ω(parallelNode).Should(Equal(GinkgoParallelNode()))
+				terribleSharedCounter++
+				Ω(terribleSharedCounter).Should(Equal(6))
+			})
+
+			AfterAll(func() {
+				Ω(parallelNode).Should(Equal(GinkgoParallelNode()))
+				Ω(terribleSharedCounter).Should(Equal(6))
 			})
 		})
 	}

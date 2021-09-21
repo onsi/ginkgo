@@ -223,6 +223,8 @@ func HaveBeenInterrupted(cause interrupt_handler.InterruptCause) OmegaMatcher {
 	})
 }
 
+type FailureNodeType types.NodeType
+
 func HaveFailed(options ...interface{}) OmegaMatcher {
 	fields := Fields{
 		"State": Equal(types.SpecStateFailed),
@@ -242,6 +244,8 @@ func HaveFailed(options ...interface{}) OmegaMatcher {
 			failureFields["Message"] = Equal(option.(string))
 		} else if t == reflect.TypeOf(types.CodeLocation{}) {
 			failureFields["Location"] = Equal(option.(types.CodeLocation))
+		} else if t == reflect.TypeOf(FailureNodeType(types.NodeTypeIt)) {
+			failureFields["FailureNodeType"] = Equal(types.NodeType(option.(FailureNodeType)))
 		} else if t == reflect.TypeOf(NumAttempts(0)) {
 			fields["NumAttempts"] = Equal(int(option.(NumAttempts)))
 		}

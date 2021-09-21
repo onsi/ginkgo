@@ -181,24 +181,6 @@ func (g ginkgoErrors) InvalidDeclarationOfFocusedAndPending(cl CodeLocation, nod
 	}
 }
 
-func (g ginkgoErrors) InvalidSerialNodeInNonSerialOrderedContainer(cl CodeLocation, nodeType NodeType) error {
-	return GinkgoError{
-		Heading:      "Invalid Serial Node in Non-Serial Ordered Container",
-		Message:      formatter.F(`[%s] node was decorated with Serial but occurs in an Ordered container that is not marked Serial.  Move the Serial decoration to the outer-most Ordered container to mark all ordered tests within the container as serial.`, nodeType),
-		CodeLocation: cl,
-		DocLink:      "node-decoration-reference",
-	}
-}
-
-func (g ginkgoErrors) InvalidNestedOrderedContainer(cl CodeLocation) error {
-	return GinkgoError{
-		Heading:      "Invalid Nested Ordered Container",
-		Message:      "An Ordered container is being nested inside another Ordered container.  This is superfluous and not allowed.  Remove the Ordered decoration from the nested container.",
-		CodeLocation: cl,
-		DocLink:      "ordered-containers",
-	}
-}
-
 func (g ginkgoErrors) UnknownDecoration(cl CodeLocation, nodeType NodeType, decoration interface{}) error {
 	return GinkgoError{
 		Heading:      "Unkown Decoration",
@@ -233,6 +215,34 @@ func (g ginkgoErrors) MissingBodyFunction(cl CodeLocation, nodeType NodeType) er
 		Message:      formatter.F(`[%s] node must be passed a single {{bold}}func(){{/}} - but none was passed in.`, nodeType),
 		CodeLocation: cl,
 		DocLink:      "node-decoration-reference",
+	}
+}
+
+/* Ordered Container errors */
+func (g ginkgoErrors) InvalidSerialNodeInNonSerialOrderedContainer(cl CodeLocation, nodeType NodeType) error {
+	return GinkgoError{
+		Heading:      "Invalid Serial Node in Non-Serial Ordered Container",
+		Message:      formatter.F(`[%s] node was decorated with Serial but occurs in an Ordered container that is not marked Serial.  Move the Serial decoration to the outer-most Ordered container to mark all ordered tests within the container as serial.`, nodeType),
+		CodeLocation: cl,
+		DocLink:      "node-decoration-reference",
+	}
+}
+
+func (g ginkgoErrors) InvalidNestedOrderedContainer(cl CodeLocation) error {
+	return GinkgoError{
+		Heading:      "Invalid Nested Ordered Container",
+		Message:      "An Ordered container is being nested inside another Ordered container.  This is superfluous and not allowed.  Remove the Ordered decoration from the nested container.",
+		CodeLocation: cl,
+		DocLink:      "ordered-containers",
+	}
+}
+
+func (g ginkgoErrors) SetupNodeNotInOrderedContainer(cl CodeLocation, nodeType NodeType) error {
+	return GinkgoError{
+		Heading:      "Setup Node not in Ordered Container",
+		Message:      fmt.Sprintf("[%s] setup nodes must appear inside an Ordered container.  They cannot be nested within other containers, even containers in an ordered container.", nodeType),
+		CodeLocation: cl,
+		DocLink:      "ordered-containers",
 	}
 }
 

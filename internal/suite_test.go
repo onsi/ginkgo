@@ -198,6 +198,39 @@ var _ = Describe("Suite", func() {
 				})
 			})
 
+			Context("when pushing BeforeAll and AfterAll nodes", func() {
+				Context("in an ordered container", func() {
+					It("succeeds", func() {
+						var errors = make([]error, 3)
+						errors[0] = suite.PushNode(N(ntCon, "top-level-container", Ordered, func() {
+							errors[1] = suite.PushNode(N(types.NodeTypeBeforeAll, func() {}))
+							errors[2] = suite.PushNode(N(types.NodeTypeAfterAll, func() {}))
+						}))
+						Ω(errors[0]).ShouldNot(HaveOccurred())
+						Ω(suite.BuildTree()).Should(Succeed())
+						Ω(errors[1]).ShouldNot(HaveOccurred())
+						Ω(errors[2]).ShouldNot(HaveOccurred())
+					})
+				})
+
+				Context("anywhere else", func() {
+					It("errors", func() {
+						var errors = make([]error, 4)
+						errors[0] = suite.PushNode(N(ntCon, "top-level-container", Ordered, func() {
+							errors[1] = suite.PushNode(N(ntCon, "nested-container", func() {
+								errors[2] = suite.PushNode(N(types.NodeTypeBeforeAll, cl, func() {}))
+								errors[3] = suite.PushNode(N(types.NodeTypeAfterAll, cl, func() {}))
+							}))
+						}))
+						Ω(errors[0]).ShouldNot(HaveOccurred())
+						Ω(suite.BuildTree()).Should(Succeed())
+						Ω(errors[1]).ShouldNot(HaveOccurred())
+						Ω(errors[2]).Should(MatchError(types.GinkgoErrors.SetupNodeNotInOrderedContainer(cl, types.NodeTypeBeforeAll)))
+						Ω(errors[3]).Should(MatchError(types.GinkgoErrors.SetupNodeNotInOrderedContainer(cl, types.NodeTypeAfterAll)))
+					})
+				})
+			})
+
 			Context("when pushing a suite node suring PhaseBuildTree", func() {
 				It("errors", func() {
 					var pushSuiteNodeErr error
