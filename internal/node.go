@@ -1,6 +1,7 @@
 package internal
 
 import (
+	"fmt"
 	"reflect"
 	"sort"
 
@@ -264,6 +265,35 @@ func NewReportAfterSuiteNode(text string, body func(types.Report), codeLocation 
 	}, nil
 }
 
+func NewCleanupNode(codeLocation types.CodeLocation, fail func(string), args ...interface{}) (Node, []error) {
+	var body func()
+	if len(args) == 0 {
+		return Node{}, []error{types.GinkgoErrors.DeferCleanupInvalidFunction(codeLocation)}
+	}
+	callback := reflect.ValueOf(args[0])
+	if !(callback.Kind() == reflect.Func && callback.Type().NumOut() <= 1) {
+		return Node{}, []error{types.GinkgoErrors.DeferCleanupInvalidFunction(codeLocation)}
+	}
+	callArgs := []reflect.Value{}
+	for _, arg := range args[1:] {
+		callArgs = append(callArgs, reflect.ValueOf(arg))
+	}
+	body = func() {
+		out := callback.Call(callArgs)
+		if len(out) == 1 && !out[0].IsNil() {
+			fail(fmt.Sprintf("DeferCleanup callback returned error: %v", out[0]))
+		}
+	}
+
+	return Node{
+		ID:           UniqueNodeID(),
+		NodeType:     types.NodeTypeCleanupInvalid,
+		Body:         body,
+		CodeLocation: codeLocation,
+		NestingLevel: -1,
+	}, nil
+}
+
 func (n Node) IsZero() bool {
 	return n.ID == 0
 }
@@ -357,6 +387,14 @@ func (n Nodes) SortedByAscendingNestingLevel() Nodes {
 		return out[i].NestingLevel < out[j].NestingLevel
 	})
 
+	return out
+}
+
+func (n Nodes) Reverse() Nodes {
+	out := make(Nodes, len(n))
+	for i, node := range n {
+		out[len(n)-1-i] = node
+	}
 	return out
 }
 

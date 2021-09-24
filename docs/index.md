@@ -642,6 +642,92 @@ Since the specs are guaranteed to share order and run on the same process they m
 
 While you can nest additional containers within an `Ordered` container you cannot nest additional `Ordered` containers.  While `Ordered` containers are useful pragmattic tools they can also be abused - in general we recommend keeping your tests separable and parallelizable where possible.
 
+### Cleaning Up After Tests
+
+The various examples so far have illustrated how `AfterEach`, `AfterAll`, and `AfterSuite` can be used to perform cleanup operations after tests, ordered containers or tests, and test suites have run, repsectively.
+
+While powerful, the `AfterX` class of nodes have a tendency to separate cleanup code from set up code.  For example:
+
+```go
+var oldDeployTarget
+BeforeEach(func() {
+    oldDeployTarget = os.GetEnv("DEPLOY_TARGET")
+    err := os.SetEnv("DEPLOY_TARGET", "TEST")
+    Expect(err).NotTo(HaveOccurred())
+})
+
+It(...)
+It(...)
+It(...)
+
+AfterEach(func() {
+    err := os.SetEnv("DEPLOY_TARGET", oldDeployTarget)
+    Expect(err).NotTo(HaveOccurred())
+})
+```
+
+sets the `DEPLOY_TARGET` environment variable before each test, then resets its value after each test, using `oldDeployTarget` to hold onto the previous value.  As written the clean up code is separated from the set up code and a shared variable must be used to communicate between the two.
+
+Ginkgo provides the `DeferCleanup()` function to solve for this usecase and bring test setup closer to test cleanup.  Here's what your example looks like with `DeferCleanup()`:
+
+```go
+BeforeEach(func() {
+    oldDeployTarget := os.GetEnv("DEPLOY_TARGET")
+    err := os.SetEnv("DEPLOY_TARGET", "TEST")
+    Expect(err).NotTo(HaveOccurred())
+    DeferCleanup(func() {
+        err := os.SetEnv("DEPLOY_TARGET", oldDeployTarget)
+        Expect(err).NotTo(HaveOccurred())
+    })
+})
+
+It(...)
+It(...)
+It(...)
+```
+
+You can think of `DeferCleanup` as generating a dynamic `AfterEach` node when it is invoked.  The callback passed to `DeferCleanup` is guaranteed to run _after_ the test has completed and has identical semantics to the `AfterEach` in the previous example.
+
+In fact, `DeferCleanup`s behavior depends on the context in which it is called:
+
+- When called in a `BeforeEach`, `JustBeforeEach`, `It`, `AfterEach`, and `JustAfterEach`, `DeferCleanup` will behave like an `AfterEach` and run after the test completes.
+- When called in a `BeforeAll` or `AfterAll`, `DeferCleanup` will behave like an `AfterAll` and run after the last test in an `Ordered` container.
+- When called in a `BeforeSuite`, `SynchronizedBeforeSuite`, `AfterSuite`, and `SynchronizedAfterSuite`, `DeferCleanup` will behave like an `AfterSuite` that runs after all the tests (and any registered `AfterSuite` nodes) have run.
+- `DeferCleanup()` cannot be called in any reporting nodes (e.g. `ReportAfterEach`), within the body of a container node outside of a setup or subject node, or within another `DeferCleanup` node.
+
+As shown above `DeferCleanup` can be passed a function that takes no arguments and returns no value.  You can also pass a function that returns a single value.  `DeferCleanup` interprets this value as an error and fails the test if the error is non-nil.  This allows us to rewrite our example as:
+
+```go
+BeforeEach(func() {
+    oldDeployTarget := os.GetEnv("DEPLOY_TARGET")
+    err := os.SetEnv("DEPLOY_TARGET", "TEST")
+    Expect(err).NotTo(HaveOccurred())
+    DeferCleanup(func() error {
+        return os.SetEnv("DEPLOY_TARGET", oldDeployTarget)
+    })
+})
+
+It(...)
+It(...)
+It(...)
+```
+
+`DeferCleanup` has one more trick up it's sleeve.  You can also pass in a function that accepts arguments, then pass those arguments in directly to `DeferCleanup`.  These arguments will be captured and passed to the function when cleanup is invoked.  This allows us to rewrite our example once more as:
+
+```go
+BeforeEach(func() {
+    DeferCleanup(os.SetEnv, "DEPLOY_TARGET", os.GetEnv("DEPLOY_TARGET"))
+    err := os.SetEnv("DEPLOY_TARGET", "TEST")
+    Expect(err).NotTo(HaveOccurred())
+})
+
+It(...)
+It(...)
+It(...)
+```
+
+here `DeferCleanup` is capturing the original value of `DEPLOY_TARGET` as returned by `os.GetEnv("DEPLOY_TARGET")` then passing it into `os.SetEnv` when cleanup is triggered after each test and asserting that the error returned by `os.SetEnv` is `nil`.
+
 ### Getting information about the running test
 
 If you'd like to get information, at runtime about the current test, you can use `CurrentSpecReport()` from within any runnable block.  The `types.SpecReport` returned by this call has a variety of information about the currently running test and is documented [here](https://pkg.go.dev/github.com/onsi/ginkgo/types#SpecReport).

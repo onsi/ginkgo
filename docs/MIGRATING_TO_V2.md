@@ -76,7 +76,7 @@ Spec containers (i.e. `Describe` and `Context` blocks) can now be labelled with 
 Ordered containers are documented in more details in the [Ordered Container](https://github.com/onsi/ginkgo/blob/ver2/docs/index.md#ordered-containers) section of the documentation.
 
 #### Label Decoration
-Specs can now be labelled with the `Label` decoration (see [Spec Labels](#new-spec-labels) below for details):
+Specs can now be labelled with the `Label` decoration (see [Spec Labels](#spec-labels) below for details):
 
 ```
 Describe("a labelled container", Label("red", "white"), Label("blue"), func() {
@@ -156,7 +156,7 @@ With this setup, `"is flaky"` and `"is also flaky"` will run up to 3 times.  `"i
 
 Note that if `ginkgo --flake-attempts=N` is set the value passed in by the CLI will override all the decorated values.  Every test will now run up to `N` times.
 
-### New: Spec Labels
+### Spec Labels
 Users can now label specs using the [`Label` decoration](#label-decoration).  Labels provide more fine-grained control for organizing specs and running specific subsets of labelled specs.  Labels are arbitrary strings however they cannot contain the characters `"&|!,()/"`.  A given spec inherits the labels of all its containers and any labels attached to the spec's `It`, for example:
 
 ```
@@ -201,6 +201,10 @@ For example:
 - `ginkgo --label-filter=!slow` will avoid any tests labelled `slow`.
 - `ginkgo --label-filter=(local || network) && !slow` will run any specs labelled `local` and `network` but without the `slow` label.
 - `ginkgo --label-filter=/widgets/ && !slow` will run any specs with a label that matches the regular expression `widgets` but does not include the `slow` label.  This would match both the `extracting widgets` and `editing widgets` labels in our example above.
+
+### DeferCleanup
+
+`DeferCleanup` allows users to move cleanup code out of `AfterEach/AfterAll/AfterSuite` and closer to the setup code that needs to be cleaned up.  Based on the context in which it is called, `DeferCleanup` will effectively register a dynamic `AfterEach/AfterAll/AfterSuite` node to clean up after the test/test group/suite.  The [docs](https://github.com/onsi/ginkgo/blob/ver2/docs/index.md#cleaning-up-after-tests) have more detailed examples.
 
 ### Aborting the Test Suite
 Users can now signal that the entire test suite should abort via `AbortSuite(message string, skip int)`.  This will fail the current test and skip all subsequent tests.

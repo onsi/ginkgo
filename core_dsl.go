@@ -34,6 +34,7 @@ var deprecationTracker = types.NewDeprecationTracker()
 var suiteConfig = types.NewDefaultSuiteConfig()
 var reporterConfig = types.NewDefaultReporterConfig()
 var suiteDidRun = false
+var outputInterceptor internal.OutputInterceptor
 
 func init() {
 	var err error
@@ -44,6 +45,9 @@ func init() {
 
 func exitIfErr(err error) {
 	if err != nil {
+		if outputInterceptor != nil {
+			outputInterceptor.StopInterceptingAndReturnOutput()
+		}
 		fmt.Fprintln(formatter.ColorableStdErr, err.Error())
 		os.Exit(1)
 	}
@@ -51,6 +55,9 @@ func exitIfErr(err error) {
 
 func exitIfErrors(errors []error) {
 	if len(errors) > 0 {
+		if outputInterceptor != nil {
+			outputInterceptor.StopInterceptingAndReturnOutput()
+		}
 		for _, err := range errors {
 			fmt.Fprintln(formatter.ColorableStdErr, err.Error())
 		}
@@ -127,7 +134,6 @@ func RunSpecs(t GinkgoTestingT, description string) bool {
 	}
 
 	var reporter reporters.Reporter
-	var outputInterceptor internal.OutputInterceptor
 	if suiteConfig.ParallelTotal == 1 {
 		reporter = reporters.NewDefaultReporter(reporterConfig, formatter.ColorableStdOut)
 		outputInterceptor = internal.NoopOutputInterceptor{}
@@ -424,14 +430,36 @@ func AfterEach(args ...interface{}) bool {
 	return pushNode(internal.NewNode(deprecationTracker, types.NodeTypeAfterEach, "", args...))
 }
 
-//BeforeAll blocks occur inside Ordered contianers and run just once before any tests run.  Multiple BeforeAll blocks can occur in a given Ordered container
+//BeforeAll blocks occur inside Ordered containers and run just once before any tests run.  Multiple BeforeAll blocks can occur in a given Ordered container
 //however they cannot be nested inside any other container, even a container inside an Ordered container.
 func BeforeAll(args ...interface{}) bool {
 	return pushNode(internal.NewNode(deprecationTracker, types.NodeTypeBeforeAll, "", args...))
 }
 
-//AfterAll blocks occur inside Ordered contianers and run just once after all tests have run.  Multiple AfterAll blocks can occur in a given Ordered container
+//AfterAll blocks occur inside Ordered containers and run just once after all tests have run.  Multiple AfterAll blocks can occur in a given Ordered container
 //however they cannot be nested inside any other container, even a container inside an Ordered container.
 func AfterAll(args ...interface{}) bool {
 	return pushNode(internal.NewNode(deprecationTracker, types.NodeTypeAfterAll, "", args...))
+}
+
+// DeferCleanup can be called within any setup or subject node to register a cleanup callback that Ginkgo will call at the appropriate time to cleanup after the spec.
+// DeferCleanup can be passed a function or a function that returns an error (in which case it will assert that the returned error was nil, or it will fail the test).
+// You can also pass DeferCleanup a function that takes arguments followed by a list of arguments to pass to the function.  For example:
+//
+//     BeforeEach(func() {
+//         DeferCleanup(os.SetEnv, "FOO", os.GetEnv("FOO"))
+//         os.SetEnv("FOO", "BAR")
+//     })
+//
+// will register a cleanup handler that will set the environment variable "FOO" to it's current value (obtained by os.GetEnv("FOO")) after the spec runs and then sets the environment variable "FOO" to "BAR" for the current spec.
+//
+// When DeferCleanup is called in BeforeEach, JustBeforeEach, It, AfterEach, or JustAfterEach the registered callback will be invoked when the spec completes (i.e. it will behave like an AfterEach block)
+// When DeferCleanup is called in BeforeAll or AfterAll the registered callback will be invoked when the ordered container completes (i.e. it will behave like an AfterAll block)
+// When DeferCleanup is called in BeforeSuite, SynchronizedBeforeSuite, AfterSuite, or SynchronizedAfterSuite the registered callback will be invoked when the suite completes (i.e. it will behave like an AfterSuite block)
+func DeferCleanup(args ...interface{}) {
+	cl := types.NewCodeLocation(1)
+	fail := func(message string) {
+		global.Failer.Fail(message, cl)
+	}
+	pushNode(internal.NewCleanupNode(cl, fail, args...))
 }
