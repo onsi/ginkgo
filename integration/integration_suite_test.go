@@ -38,6 +38,7 @@ func TestIntegration(t *testing.T) {
 }
 
 var _ = SynchronizedBeforeSuite(func() []byte {
+	DeferCleanup(gexec.CleanupBuildArtifacts)
 	pathToGinkgo, err := gexec.Build("../ginkgo")
 	Ω(err).ShouldNot(HaveOccurred())
 	return []byte(pathToGinkgo)
@@ -47,16 +48,9 @@ var _ = SynchronizedBeforeSuite(func() []byte {
 
 var _ = BeforeEach(func() {
 	fm = NewFixtureManager(fmt.Sprintf("tmp_%d", GinkgoParallelNode()))
-})
-
-var _ = AfterEach(func() {
 	if !DEBUG {
-		fm.Cleanup()
+		DeferCleanup(fm.Cleanup)
 	}
-})
-
-var _ = SynchronizedAfterSuite(func() {}, func() {
-	gexec.CleanupBuildArtifacts()
 })
 
 type FixtureManager struct {

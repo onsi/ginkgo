@@ -53,5 +53,14 @@ var _ = Describe("Failing Specs", func() {
 			Ω(output).Should(ContainSubstring("Ginkgo detected an issue with your test structure"))
 			Ω(output).Should(ContainSubstring("malformed_fixture_test.go:9"))
 		})
+
+		It("emits the error message even if running in parallel", func() {
+			session := startGinkgo(fm.PathTo("malformed"), "--no-color", "-nodes=2")
+			Eventually(session).Should(gexec.Exit(1))
+			output := string(session.Out.Contents()) + string(session.Err.Contents())
+
+			Ω(output).Should(ContainSubstring("Ginkgo detected an issue with your test structure"))
+			Ω(output).Should(ContainSubstring("malformed_fixture_test.go:9"))
+		})
 	})
 })

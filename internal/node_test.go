@@ -1,6 +1,7 @@
 package internal_test
 
 import (
+	"fmt"
 	"reflect"
 
 	. "github.com/onsi/ginkgo"
@@ -474,6 +475,109 @@ var _ = Describe("Node", func() {
 				Ω(node.NestingLevel).Should(Equal(-1))
 			})
 		})
+
+		Describe("NewCleanupNode", func() {
+			var capturedFailure string
+			var failFunc = func(msg string) {
+				capturedFailure = msg
+			}
+
+			BeforeEach(func() {
+				capturedFailure = ""
+			})
+
+			Context("when passed no function", func() {
+				It("errors", func() {
+					node, errs := internal.NewCleanupNode(cl, failFunc)
+					Ω(node.IsZero()).Should(BeTrue())
+					Ω(errs).Should(ConsistOf(types.GinkgoErrors.DeferCleanupInvalidFunction(cl)))
+					Ω(capturedFailure).Should(BeZero())
+				})
+			})
+
+			Context("when passed a function that returns too many values", func() {
+				It("errors", func() {
+					node, errs := internal.NewCleanupNode(cl, failFunc, func() (int, error) {
+						return 0, nil
+					})
+					Ω(node.IsZero()).Should(BeTrue())
+					Ω(errs).Should(ConsistOf(types.GinkgoErrors.DeferCleanupInvalidFunction(cl)))
+					Ω(capturedFailure).Should(BeZero())
+				})
+			})
+
+			Context("when passed a function that does not return", func() {
+				It("creates a body that runs the function and never calls the fail handler", func() {
+					didRun := false
+					node, errs := internal.NewCleanupNode(cl, failFunc, func() {
+						didRun = true
+					})
+					Ω(node.CodeLocation).Should(Equal(cl))
+					Ω(node.NodeType).Should(Equal(types.NodeTypeCleanupInvalid))
+					Ω(errs).Should(BeEmpty())
+
+					node.Body()
+					Ω(didRun).Should(BeTrue())
+					Ω(capturedFailure).Should(BeZero())
+				})
+			})
+
+			Context("when passed a function that returns nil", func() {
+				It("creates a body that runs the function and does not call the fail handler", func() {
+					didRun := false
+					node, errs := internal.NewCleanupNode(cl, failFunc, func() error {
+						didRun = true
+						return nil
+					})
+					Ω(node.CodeLocation).Should(Equal(cl))
+					Ω(node.NodeType).Should(Equal(types.NodeTypeCleanupInvalid))
+					Ω(errs).Should(BeEmpty())
+
+					node.Body()
+					Ω(didRun).Should(BeTrue())
+					Ω(capturedFailure).Should(BeZero())
+				})
+			})
+
+			Context("when passed a function that returns an error", func() {
+				It("creates a body that runs the function and does not call the fail handler", func() {
+					didRun := false
+					node, errs := internal.NewCleanupNode(cl, failFunc, func() error {
+						didRun = true
+						return fmt.Errorf("welp")
+					})
+					Ω(node.CodeLocation).Should(Equal(cl))
+					Ω(node.NodeType).Should(Equal(types.NodeTypeCleanupInvalid))
+					Ω(errs).Should(BeEmpty())
+
+					node.Body()
+					Ω(didRun).Should(BeTrue())
+					Ω(capturedFailure).Should(Equal("DeferCleanup callback returned error: welp"))
+				})
+			})
+
+			Context("when passed a function that takes arguments, and those arguments", func() {
+				It("creates a body that runs the function and passes in those arguments", func() {
+					var inA, inB, inC = "A", 2, "C"
+					var receivedA, receivedC string
+					var receivedB int
+					node, errs := internal.NewCleanupNode(cl, failFunc, func(a string, b int, c string) error {
+						receivedA, receivedB, receivedC = a, b, c
+						return nil
+					}, inA, inB, inC)
+					inA, inB, inC = "floop", 3, "flarp"
+					Ω(node.CodeLocation).Should(Equal(cl))
+					Ω(node.NodeType).Should(Equal(types.NodeTypeCleanupInvalid))
+					Ω(errs).Should(BeEmpty())
+
+					node.Body()
+					Ω(receivedA).Should(Equal("A"))
+					Ω(receivedB).Should(Equal(2))
+					Ω(receivedC).Should(Equal("C"))
+					Ω(capturedFailure).Should(BeZero())
+				})
+			})
+		})
 	})
 
 	Describe("IsZero()", func() {
@@ -671,6 +775,18 @@ var _ = Describe("Nodes", func() {
 			Ω(nodes.WithinNestingLevel(1)).Should(Equal(Nodes{n0, n1}))
 			Ω(nodes.WithinNestingLevel(2)).Should(Equal(Nodes{n0, n1, n2a, n2b}))
 			Ω(nodes.WithinNestingLevel(3)).Should(Equal(Nodes{n0, n1, n2a, n3, n2b}))
+		})
+	})
+
+	Describe("Reverse", func() {
+		It("reverses the nodes", func() {
+			nodes := Nodes{N("A"), N("B"), N("C"), N("D"), N("E")}
+			Ω(nodes.Reverse().Texts()).Should(Equal([]string{"E", "D", "C", "B", "A"}))
+		})
+
+		It("works with empty nodes", func() {
+			nodes := Nodes{}
+			Ω(nodes.Reverse()).Should(Equal(Nodes{}))
 		})
 	})
 

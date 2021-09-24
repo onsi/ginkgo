@@ -36,6 +36,8 @@ var _ = BeforeEach(func() {
 	rt = NewRunTracker()
 	cl = types.NewCodeLocation(0)
 	interruptHandler = NewFakeInterruptHandler()
+	DeferCleanup(interruptHandler.Stop)
+
 	outputInterceptor = NewFakeOutputInterceptor()
 
 	conf.ParallelTotal = 1
@@ -43,16 +45,14 @@ var _ = BeforeEach(func() {
 	conf.RandomSeed = 17
 })
 
-var _ = AfterEach(func() {
-	interruptHandler.Stop()
-})
-
 /* Helpers to set up and run test fixtures using the Ginkgo DSL */
 func WithSuite(suite *internal.Suite, callback func()) {
-	originalSuite := global.Suite
+	originalSuite, originalFailer := global.Suite, global.Failer
 	global.Suite = suite
+	global.Failer = failer
 	callback()
 	global.Suite = originalSuite
+	global.Failer = originalFailer
 }
 
 func RunFixture(description string, callback func()) (bool, bool) {
