@@ -162,7 +162,6 @@ Ginkgo only allows you to define one suite %s node.`, nodeType, earlierNodeType,
 }
 
 /* Decoration errors */
-
 func (g ginkgoErrors) InvalidDecorationForNodeType(cl CodeLocation, nodeType NodeType, decoration string) error {
 	return GinkgoError{
 		Heading:      "Invalid Decoration",
@@ -246,8 +245,44 @@ func (g ginkgoErrors) SetupNodeNotInOrderedContainer(cl CodeLocation, nodeType N
 	}
 }
 
-/* ReportEntry errors */
+/* DeferCleanup errors */
+func (g ginkgoErrors) DeferCleanupInvalidFunction(cl CodeLocation) error {
+	return GinkgoError{
+		Heading:      "DeferCleanup requires a valid function",
+		Message:      "You must pass DeferCleanup a function to invoke.  This function must return zero or one values - if it does return, it must return an error.  The function can take arbitrarily many arguments and you should provide these to DeferCleanup to pass along to the function.",
+		CodeLocation: cl,
+		DocLink:      "cleaning-up-after-tests",
+	}
+}
 
+func (g ginkgoErrors) PushingCleanupNodeDuringTreeConstruction(cl CodeLocation) error {
+	return GinkgoError{
+		Heading:      "DeferCleanup must be called inside a setup or subject node",
+		Message:      "You must call DeferCleanup inside a setup node (e.g. BeforeEach, BeforeSuite, AfterAll...) or a subject node (i.e. It).  You can't call DeferCleanup at the top-level or in a container node - use the After* family of setup nodes instead.",
+		CodeLocation: cl,
+		DocLink:      "cleaning-up-after-tests",
+	}
+}
+
+func (g ginkgoErrors) PushingCleanupInReportingNode(cl CodeLocation, nodeType NodeType) error {
+	return GinkgoError{
+		Heading:      fmt.Sprintf("DeferCleanup cannot be called in %s", nodeType),
+		Message:      "Please inline your cleanup code - Ginkgo won't run cleanup code after a ReportAfterEach or ReportAfterSuite.",
+		CodeLocation: cl,
+		DocLink:      "cleaning-up-after-tests",
+	}
+}
+
+func (g ginkgoErrors) PushingCleanupInCleanupNode(cl CodeLocation) error {
+	return GinkgoError{
+		Heading:      "DeferCleanup cannot be called in a DeferCleanup callback",
+		Message:      "Please inline your cleanup code - Ginkgo doesn't let you call DeferCleanup from within DeferCleanup",
+		CodeLocation: cl,
+		DocLink:      "cleaning-up-after-tests",
+	}
+}
+
+/* ReportEntry errors */
 func (g ginkgoErrors) TooManyReportEntryValues(cl CodeLocation, arg interface{}) error {
 	return GinkgoError{
 		Heading:      "Too Many ReportEntry Values",

@@ -231,7 +231,7 @@ var _ = Describe("Suite", func() {
 				})
 			})
 
-			Context("when pushing a suite node suring PhaseBuildTree", func() {
+			Context("when pushing a suite node during PhaseBuildTree", func() {
 				It("errors", func() {
 					var pushSuiteNodeErr error
 					err := suite.PushNode(N(ntCon, "top-level-container", func() {
@@ -244,7 +244,7 @@ var _ = Describe("Suite", func() {
 				})
 			})
 
-			Context("when pushing a suite node suring PhaseRun", func() {
+			Context("when pushing a suite node during PhaseRun", func() {
 				It("errors", func() {
 					var pushSuiteNodeErr error
 					err := suite.PushNode(N(ntIt, "top-level it", func() {
@@ -255,6 +255,89 @@ var _ = Describe("Suite", func() {
 					Ω(suite.BuildTree()).Should(Succeed())
 					suite.Run("suite", "/path/to/suite", failer, reporter, writer, outputInterceptor, interruptHandler, conf)
 					Ω(pushSuiteNodeErr).Should(HaveOccurred())
+				})
+			})
+		})
+
+		Describe("Cleanup Nodes", func() {
+			Context("when pushing a cleanup node during PhaseTopLevel", func() {
+				It("errors", func() {
+					err := suite.PushNode(N(types.NodeTypeCleanupInvalid, cl))
+					Ω(err).Should(MatchError(types.GinkgoErrors.PushingCleanupNodeDuringTreeConstruction(cl)))
+				})
+			})
+
+			Context("when pushing a cleanup node during PhaseBuildTree", func() {
+				It("errors", func() {
+					var errors = make([]error, 2)
+					errors[0] = suite.PushNode(N(ntCon, "container", func() {
+						errors[1] = suite.PushNode(N(types.NodeTypeCleanupInvalid, cl))
+					}))
+					Ω(errors[0]).ShouldNot(HaveOccurred())
+					Ω(suite.BuildTree()).Should(Succeed())
+					Ω(errors[1]).Should(MatchError(types.GinkgoErrors.PushingCleanupNodeDuringTreeConstruction(cl)))
+				})
+			})
+
+			Context("when pushing a cleanup node in a ReportAfterEach node", func() {
+				It("errors", func() {
+					var errors = make([]error, 4)
+					reportAfterEachNode, _ := internal.NewReportAfterEachNode(func(_ types.SpecReport) {
+						errors[3] = suite.PushNode(N(types.NodeTypeCleanupInvalid, cl))
+					}, types.NewCodeLocation(0))
+
+					errors[0] = suite.PushNode(N(ntCon, "container", func() {
+						errors[1] = suite.PushNode(N(ntIt, "test"))
+						errors[2] = suite.PushNode(reportAfterEachNode)
+					}))
+					Ω(errors[0]).ShouldNot(HaveOccurred())
+
+					Ω(suite.BuildTree()).Should(Succeed())
+					Ω(errors[1]).ShouldNot(HaveOccurred())
+					Ω(errors[2]).ShouldNot(HaveOccurred())
+
+					suite.Run("suite", "/path/to/suite", failer, reporter, writer, outputInterceptor, interruptHandler, conf)
+					Ω(errors[3]).Should(MatchError(types.GinkgoErrors.PushingCleanupInReportingNode(cl, types.NodeTypeReportAfterEach)))
+				})
+			})
+
+			Context("when pushing a cleanup node in a ReportAfterSuite node", func() {
+				It("errors", func() {
+					var errors = make([]error, 4)
+					reportAfterSuiteNode, _ := internal.NewReportAfterSuiteNode("report", func(_ types.Report) {
+						errors[3] = suite.PushNode(N(types.NodeTypeCleanupInvalid, cl))
+					}, types.NewCodeLocation(0))
+
+					errors[0] = suite.PushNode(N(ntCon, "container", func() {
+						errors[2] = suite.PushNode(N(ntIt, "test"))
+					}))
+					errors[1] = suite.PushNode(reportAfterSuiteNode)
+					Ω(errors[0]).ShouldNot(HaveOccurred())
+					Ω(errors[1]).ShouldNot(HaveOccurred())
+
+					Ω(suite.BuildTree()).Should(Succeed())
+					Ω(errors[2]).ShouldNot(HaveOccurred())
+
+					suite.Run("suite", "/path/to/suite", failer, reporter, writer, outputInterceptor, interruptHandler, conf)
+					Ω(errors[3]).Should(MatchError(types.GinkgoErrors.PushingCleanupInReportingNode(cl, types.NodeTypeReportAfterSuite)))
+				})
+			})
+
+			Context("when pushing a cleanup node within a cleanup node", func() {
+				It("errors", func() {
+					var errors = make([]error, 3)
+					errors[0] = suite.PushNode(N(ntIt, "It", func() {
+						cleanupNode, _ := internal.NewCleanupNode(types.NewCustomCodeLocation("outerCleanup"), nil, func() {
+							innerCleanupNode, _ := internal.NewCleanupNode(cl, nil, func() {})
+							errors[2] = suite.PushNode(innerCleanupNode)
+						})
+						errors[1] = suite.PushNode(cleanupNode)
+					}))
+					Ω(errors[0]).ShouldNot(HaveOccurred())
+					Ω(suite.BuildTree()).Should(Succeed())
+					suite.Run("suite", "/path/to/suite", failer, reporter, writer, outputInterceptor, interruptHandler, conf)
+					Ω(errors[1]).ShouldNot(HaveOccurred())
+					Ω(errors[2]).Should(MatchError(types.GinkgoErrors.PushingCleanupInCleanupNode(cl)))
 				})
 			})
 		})

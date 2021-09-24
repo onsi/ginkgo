@@ -605,6 +605,11 @@ const (
 
 	NodeTypeReportAfterEach
 	NodeTypeReportAfterSuite
+
+	NodeTypeCleanupInvalid
+	NodeTypeCleanupAfterEach
+	NodeTypeCleanupAfterAll
+	NodeTypeCleanupAfterSuite
 )
 
 var NodeTypesForContainerAndIt = []NodeType{NodeTypeContainer, NodeTypeIt}
@@ -626,6 +631,10 @@ var ntEnumSupport = NewEnumSupport(map[uint]string{
 	uint(NodeTypeSynchronizedAfterSuite):  "SynchronizedAfterSuite",
 	uint(NodeTypeReportAfterEach):         "ReportAfterEach",
 	uint(NodeTypeReportAfterSuite):        "ReportAfterSuite",
+	uint(NodeTypeCleanupInvalid):          "INVALID CLEANUP NODE",
+	uint(NodeTypeCleanupAfterEach):        "DeferCleanup (AfterEach)",
+	uint(NodeTypeCleanupAfterAll):         "DeferCleanup (AfterAll)",
+	uint(NodeTypeCleanupAfterSuite):       "DeferCleanup (AfterSuite)",
 })
 
 func (nt NodeType) String() string {
