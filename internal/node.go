@@ -265,33 +265,46 @@ func NewReportAfterSuiteNode(text string, body func(types.Report), codeLocation 
 	}, nil
 }
 
-func NewCleanupNode(codeLocation types.CodeLocation, fail func(string), args ...interface{}) (Node, []error) {
-	var body func()
-	if len(args) == 0 {
-		return Node{}, []error{types.GinkgoErrors.DeferCleanupInvalidFunction(codeLocation)}
+func NewCleanupNode(fail func(string, types.CodeLocation), args ...interface{}) (Node, []error) {
+	baseOffset := 2
+	node := Node{
+		ID:           UniqueNodeID(),
+		NodeType:     types.NodeTypeCleanupInvalid,
+		CodeLocation: types.NewCodeLocation(baseOffset),
+		NestingLevel: -1,
 	}
-	callback := reflect.ValueOf(args[0])
-	if !(callback.Kind() == reflect.Func && callback.Type().NumOut() <= 1) {
-		return Node{}, []error{types.GinkgoErrors.DeferCleanupInvalidFunction(codeLocation)}
-	}
-	callArgs := []reflect.Value{}
-	for _, arg := range args[1:] {
-		callArgs = append(callArgs, reflect.ValueOf(arg))
-	}
-	body = func() {
-		out := callback.Call(callArgs)
-		if len(out) == 1 && !out[0].IsNil() {
-			fail(fmt.Sprintf("DeferCleanup callback returned error: %v", out[0]))
+	remainingArgs := []interface{}{}
+	for _, arg := range args {
+		switch t := reflect.TypeOf(arg); {
+		case t == reflect.TypeOf(Offset(0)):
+			node.CodeLocation = types.NewCodeLocation(baseOffset + int(arg.(Offset)))
+		case t == reflect.TypeOf(types.CodeLocation{}):
+			node.CodeLocation = arg.(types.CodeLocation)
+		default:
+			remainingArgs = append(remainingArgs, arg)
 		}
 	}
 
-	return Node{
-		ID:           UniqueNodeID(),
-		NodeType:     types.NodeTypeCleanupInvalid,
-		Body:         body,
-		CodeLocation: codeLocation,
-		NestingLevel: -1,
-	}, nil
+	if len(remainingArgs) == 0 {
+		return Node{}, []error{types.GinkgoErrors.DeferCleanupInvalidFunction(node.CodeLocation)}
+	}
+	callback := reflect.ValueOf(remainingArgs[0])
+	if !(callback.Kind() == reflect.Func && callback.Type().NumOut() <= 1) {
+		return Node{}, []error{types.GinkgoErrors.DeferCleanupInvalidFunction(node.CodeLocation)}
+	}
+	callArgs := []reflect.Value{}
+	for _, arg := range remainingArgs[1:] {
+		callArgs = append(callArgs, reflect.ValueOf(arg))
+	}
+	cl := node.CodeLocation
+	node.Body = func() {
+		out := callback.Call(callArgs)
+		if len(out) == 1 && !out[0].IsNil() {
+			fail(fmt.Sprintf("DeferCleanup callback returned error: %v", out[0]), cl)
+		}
+	}
+
+	return node, nil
 }
 
 func (n Node) IsZero() bool {

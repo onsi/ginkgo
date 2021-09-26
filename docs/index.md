@@ -651,8 +651,8 @@ While powerful, the `AfterX` class of nodes have a tendency to separate cleanup 
 ```go
 var oldDeployTarget
 BeforeEach(func() {
-    oldDeployTarget = os.GetEnv("DEPLOY_TARGET")
-    err := os.SetEnv("DEPLOY_TARGET", "TEST")
+    oldDeployTarget = os.Getenv("DEPLOY_TARGET")
+    err := os.Setenv("DEPLOY_TARGET", "TEST")
     Expect(err).NotTo(HaveOccurred())
 })
 
@@ -661,7 +661,7 @@ It(...)
 It(...)
 
 AfterEach(func() {
-    err := os.SetEnv("DEPLOY_TARGET", oldDeployTarget)
+    err := os.Setenv("DEPLOY_TARGET", oldDeployTarget)
     Expect(err).NotTo(HaveOccurred())
 })
 ```
@@ -672,11 +672,11 @@ Ginkgo provides the `DeferCleanup()` function to solve for this usecase and brin
 
 ```go
 BeforeEach(func() {
-    oldDeployTarget := os.GetEnv("DEPLOY_TARGET")
-    err := os.SetEnv("DEPLOY_TARGET", "TEST")
+    oldDeployTarget := os.Getenv("DEPLOY_TARGET")
+    err := os.Setenv("DEPLOY_TARGET", "TEST")
     Expect(err).NotTo(HaveOccurred())
     DeferCleanup(func() {
-        err := os.SetEnv("DEPLOY_TARGET", oldDeployTarget)
+        err := os.Setenv("DEPLOY_TARGET", oldDeployTarget)
         Expect(err).NotTo(HaveOccurred())
     })
 })
@@ -699,11 +699,11 @@ As shown above `DeferCleanup` can be passed a function that takes no arguments a
 
 ```go
 BeforeEach(func() {
-    oldDeployTarget := os.GetEnv("DEPLOY_TARGET")
-    err := os.SetEnv("DEPLOY_TARGET", "TEST")
+    oldDeployTarget := os.Getenv("DEPLOY_TARGET")
+    err := os.Setenv("DEPLOY_TARGET", "TEST")
     Expect(err).NotTo(HaveOccurred())
     DeferCleanup(func() error {
-        return os.SetEnv("DEPLOY_TARGET", oldDeployTarget)
+        return os.Setenv("DEPLOY_TARGET", oldDeployTarget)
     })
 })
 
@@ -716,8 +716,8 @@ It(...)
 
 ```go
 BeforeEach(func() {
-    DeferCleanup(os.SetEnv, "DEPLOY_TARGET", os.GetEnv("DEPLOY_TARGET"))
-    err := os.SetEnv("DEPLOY_TARGET", "TEST")
+    DeferCleanup(os.Setenv, "DEPLOY_TARGET", os.Getenv("DEPLOY_TARGET"))
+    err := os.Setenv("DEPLOY_TARGET", "TEST")
     Expect(err).NotTo(HaveOccurred())
 })
 
@@ -726,7 +726,7 @@ It(...)
 It(...)
 ```
 
-here `DeferCleanup` is capturing the original value of `DEPLOY_TARGET` as returned by `os.GetEnv("DEPLOY_TARGET")` then passing it into `os.SetEnv` when cleanup is triggered after each test and asserting that the error returned by `os.SetEnv` is `nil`.
+here `DeferCleanup` is capturing the original value of `DEPLOY_TARGET` as returned by `os.Getenv("DEPLOY_TARGET")` then passing it into `os.Setenv` when cleanup is triggered after each test and asserting that the error returned by `os.Setenv` is `nil`.
 
 ### Getting information about the running test
 
