@@ -3,41 +3,53 @@ package testingtproxy
 import (
 	"fmt"
 	"io"
+	"os"
+
+	"github.com/onsi/ginkgo/internal"
+	"github.com/onsi/ginkgo/types"
 )
 
 type failFunc func(message string, callerSkip ...int)
 type skipFunc func(message string, callerSkip ...int)
-type failedFunc func() bool
-type nameFunc func() string
+type cleanupFunc func(args ...interface{})
+type reportFunc func() types.SpecReport
 
-func New(writer io.Writer, fail failFunc, skip skipFunc, failed failedFunc, name nameFunc, offset int) *ginkgoTestingTProxy {
+func New(writer io.Writer, fail failFunc, skip skipFunc, cleanup cleanupFunc, report reportFunc, offset int) *ginkgoTestingTProxy {
 	return &ginkgoTestingTProxy{
-		fail:   fail,
-		offset: offset,
-		writer: writer,
-		skip:   skip,
-		failed: failed,
-		name:   name,
+		fail:    fail,
+		offset:  offset,
+		writer:  writer,
+		skip:    skip,
+		cleanup: cleanup,
+		report:  report,
 	}
 }
 
 type ginkgoTestingTProxy struct {
-	fail   failFunc
-	skip   skipFunc
-	failed failedFunc
-	name   nameFunc
-	offset int
-	writer io.Writer
+	fail    failFunc
+	skip    skipFunc
+	cleanup cleanupFunc
+	report  reportFunc
+	offset  int
+	writer  io.Writer
 }
 
-func (t *ginkgoTestingTProxy) Cleanup(func()) {
-	fmt.Println("Cleanup is a noop for Ginkgo at the moment.")
-	// No-op
+func (t *ginkgoTestingTProxy) Cleanup(f func()) {
+	t.cleanup(f, internal.Offset(1))
 }
 
-func (t *ginkgoTestingTProxy) Setenv(kev, value string) {
-	fmt.Println("Setenv is a noop for Ginkgo at the moment.")
-	// No-op until Cleanup is implemented
+func (t *ginkgoTestingTProxy) Setenv(key, value string) {
+	originalValue, exists := os.LookupEnv(key)
+	if exists {
+		t.cleanup(os.Setenv, key, originalValue, internal.Offset(1))
+	} else {
+		t.cleanup(os.Unsetenv, key, internal.Offset(1))
+	}
+
+	err := os.Setenv(key, value)
+	if err != nil {
+		t.fail(fmt.Sprintf("Failed to set environment variable: %v", err), 1)
+	}
 }
 
 func (t *ginkgoTestingTProxy) Error(args ...interface{}) {
@@ -57,7 +69,7 @@ func (t *ginkgoTestingTProxy) FailNow() {
 }
 
 func (t *ginkgoTestingTProxy) Failed() bool {
-	return t.failed()
+	return t.report().Failed()
 }
 
 func (t *ginkgoTestingTProxy) Fatal(args ...interface{}) {
@@ -81,7 +93,7 @@ func (t *ginkgoTestingTProxy) Logf(format string, args ...interface{}) {
 }
 
 func (t *ginkgoTestingTProxy) Name() string {
-	return t.name()
+	return t.report().FullText()
 }
 
 func (t *ginkgoTestingTProxy) Parallel() {
@@ -101,10 +113,16 @@ func (t *ginkgoTestingTProxy) Skipf(format string, args ...interface{}) {
 }
 
 func (t *ginkgoTestingTProxy) Skipped() bool {
-	return false
+	return t.report().State.Is(types.SpecStateSkipped)
 }
 
 func (t *ginkgoTestingTProxy) TempDir() string {
-	// No-op
-	return ""
+	tmpDir, err := os.MkdirTemp("", "ginkgo")
+	if err != nil {
+		t.fail(fmt.Sprintf("Failed to create temporary directory: %v", err), 1)
+		return ""
+	}
+	t.cleanup(os.RemoveAll, tmpDir)
+
+	return tmpDir
 }

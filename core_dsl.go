@@ -457,9 +457,8 @@ func AfterAll(args ...interface{}) bool {
 // When DeferCleanup is called in BeforeAll or AfterAll the registered callback will be invoked when the ordered container completes (i.e. it will behave like an AfterAll block)
 // When DeferCleanup is called in BeforeSuite, SynchronizedBeforeSuite, AfterSuite, or SynchronizedAfterSuite the registered callback will be invoked when the suite completes (i.e. it will behave like an AfterSuite block)
 func DeferCleanup(args ...interface{}) {
-	cl := types.NewCodeLocation(1)
-	fail := func(message string) {
+	fail := func(message string, cl types.CodeLocation) {
 		global.Failer.Fail(message, cl)
 	}
-	pushNode(internal.NewCleanupNode(cl, fail, args...))
+	pushNode(internal.NewCleanupNode(fail, args...))
 }

@@ -327,8 +327,8 @@ var _ = Describe("Suite", func() {
 				It("errors", func() {
 					var errors = make([]error, 3)
 					errors[0] = suite.PushNode(N(ntIt, "It", func() {
-						cleanupNode, _ := internal.NewCleanupNode(types.NewCustomCodeLocation("outerCleanup"), nil, func() {
-							innerCleanupNode, _ := internal.NewCleanupNode(cl, nil, func() {})
+						cleanupNode, _ := internal.NewCleanupNode(nil, types.NewCustomCodeLocation("outerCleanup"), func() {
+							innerCleanupNode, _ := internal.NewCleanupNode(nil, cl, func() {})
 							errors[2] = suite.PushNode(innerCleanupNode)
 						})
 						errors[1] = suite.PushNode(cleanupNode)

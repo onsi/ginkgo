@@ -19,13 +19,7 @@ func GinkgoT(optionalOffset ...int) GinkgoTInterface {
 	if len(optionalOffset) > 0 {
 		offset = optionalOffset[0]
 	}
-	failedFunc := func() bool {
-		return CurrentSpecReport().Failed()
-	}
-	nameFunc := func() string {
-		return CurrentSpecReport().FullText()
-	}
-	return testingtproxy.New(GinkgoWriter, Fail, Skip, failedFunc, nameFunc, offset)
+	return testingtproxy.New(GinkgoWriter, Fail, Skip, DeferCleanup, CurrentSpecReport, offset)
 }
 
 //The interface returned by GinkgoT().  This covers most of the methods

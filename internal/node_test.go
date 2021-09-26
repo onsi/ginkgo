@@ -478,38 +478,44 @@ var _ = Describe("Node", func() {
 
 		Describe("NewCleanupNode", func() {
 			var capturedFailure string
-			var failFunc = func(msg string) {
+			var capturedCL types.CodeLocation
+
+			var failFunc = func(msg string, cl types.CodeLocation) {
 				capturedFailure = msg
+				capturedCL = cl
 			}
 
 			BeforeEach(func() {
 				capturedFailure = ""
+				capturedCL = types.CodeLocation{}
 			})
 
 			Context("when passed no function", func() {
 				It("errors", func() {
-					node, errs := internal.NewCleanupNode(cl, failFunc)
+					node, errs := internal.NewCleanupNode(failFunc, cl)
 					Ω(node.IsZero()).Should(BeTrue())
 					Ω(errs).Should(ConsistOf(types.GinkgoErrors.DeferCleanupInvalidFunction(cl)))
 					Ω(capturedFailure).Should(BeZero())
+					Ω(capturedCL).Should(BeZero())
 				})
 			})
 
 			Context("when passed a function that returns too many values", func() {
 				It("errors", func() {
-					node, errs := internal.NewCleanupNode(cl, failFunc, func() (int, error) {
+					node, errs := internal.NewCleanupNode(failFunc, cl, func() (int, error) {
 						return 0, nil
 					})
 					Ω(node.IsZero()).Should(BeTrue())
 					Ω(errs).Should(ConsistOf(types.GinkgoErrors.DeferCleanupInvalidFunction(cl)))
 					Ω(capturedFailure).Should(BeZero())
+					Ω(capturedCL).Should(BeZero())
 				})
 			})
 
 			Context("when passed a function that does not return", func() {
 				It("creates a body that runs the function and never calls the fail handler", func() {
 					didRun := false
-					node, errs := internal.NewCleanupNode(cl, failFunc, func() {
+					node, errs := internal.NewCleanupNode(failFunc, cl, func() {
 						didRun = true
 					})
 					Ω(node.CodeLocation).Should(Equal(cl))
@@ -519,13 +525,14 @@ var _ = Describe("Node", func() {
 					node.Body()
 					Ω(didRun).Should(BeTrue())
 					Ω(capturedFailure).Should(BeZero())
+					Ω(capturedCL).Should(BeZero())
 				})
 			})
 
 			Context("when passed a function that returns nil", func() {
 				It("creates a body that runs the function and does not call the fail handler", func() {
 					didRun := false
-					node, errs := internal.NewCleanupNode(cl, failFunc, func() error {
+					node, errs := internal.NewCleanupNode(failFunc, cl, func() error {
 						didRun = true
 						return nil
 					})
@@ -536,13 +543,14 @@ var _ = Describe("Node", func() {
 					node.Body()
 					Ω(didRun).Should(BeTrue())
 					Ω(capturedFailure).Should(BeZero())
+					Ω(capturedCL).Should(BeZero())
 				})
 			})
 
 			Context("when passed a function that returns an error", func() {
 				It("creates a body that runs the function and does not call the fail handler", func() {
 					didRun := false
-					node, errs := internal.NewCleanupNode(cl, failFunc, func() error {
+					node, errs := internal.NewCleanupNode(failFunc, cl, func() error {
 						didRun = true
 						return fmt.Errorf("welp")
 					})
@@ -553,6 +561,7 @@ var _ = Describe("Node", func() {
 					node.Body()
 					Ω(didRun).Should(BeTrue())
 					Ω(capturedFailure).Should(Equal("DeferCleanup callback returned error: welp"))
+					Ω(capturedCL).Should(Equal(cl))
 				})
 			})
 
@@ -561,7 +570,7 @@ var _ = Describe("Node", func() {
 					var inA, inB, inC = "A", 2, "C"
 					var receivedA, receivedC string
 					var receivedB int
-					node, errs := internal.NewCleanupNode(cl, failFunc, func(a string, b int, c string) error {
+					node, errs := internal.NewCleanupNode(failFunc, cl, func(a string, b int, c string) error {
 						receivedA, receivedB, receivedC = a, b, c
 						return nil
 					}, inA, inB, inC)
@@ -575,6 +584,59 @@ var _ = Describe("Node", func() {
 					Ω(receivedB).Should(Equal(2))
 					Ω(receivedC).Should(Equal("C"))
 					Ω(capturedFailure).Should(BeZero())
+					Ω(capturedCL).Should(BeZero())
+				})
+			})
+
+			Context("controlling the cleanup's code location", func() {
+				It("computes its own when one is not provided", func() {
+					node, errs := func() (internal.Node, []error) {
+						return internal.NewCleanupNode(failFunc, func() error {
+							return fmt.Errorf("welp")
+						})
+					}()
+					localCL := types.NewCodeLocation(0)
+					localCL.LineNumber -= 1
+					Ω(node.CodeLocation).Should(Equal(localCL))
+					Ω(node.NodeType).Should(Equal(types.NodeTypeCleanupInvalid))
+					Ω(errs).Should(BeEmpty())
+
+					node.Body()
+					Ω(capturedFailure).Should(Equal("DeferCleanup callback returned error: welp"))
+					Ω(capturedCL).Should(Equal(localCL))
+				})
+
+				It("can accept an Offset", func() {
+					node, errs := func() (internal.Node, []error) {
+						return func() (internal.Node, []error) {
+							return internal.NewCleanupNode(failFunc, Offset(1), func() error {
+								return fmt.Errorf("welp")
+							})
+						}()
+					}()
+					localCL := types.NewCodeLocation(0)
+					localCL.LineNumber -= 1
+					Ω(node.CodeLocation).Should(Equal(localCL))
+					Ω(node.NodeType).Should(Equal(types.NodeTypeCleanupInvalid))
+					Ω(errs).Should(BeEmpty())
+
+					node.Body()
+					Ω(capturedFailure).Should(Equal("DeferCleanup callback returned error: welp"))
+					Ω(capturedCL).Should(Equal(localCL))
+
+				})
+
+				It("can accept a code location", func() {
+					node, errs := internal.NewCleanupNode(failFunc, cl, func() error {
+						return fmt.Errorf("welp")
+					})
+					Ω(node.CodeLocation).Should(Equal(cl))
+					Ω(node.NodeType).Should(Equal(types.NodeTypeCleanupInvalid))
+					Ω(errs).Should(BeEmpty())
+
+					node.Body()
+					Ω(capturedFailure).Should(Equal("DeferCleanup callback returned error: welp"))
+					Ω(capturedCL).Should(Equal(cl))
 				})
 			})
 		})
