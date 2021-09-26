@@ -206,6 +206,8 @@ For example:
 
 `DeferCleanup` allows users to move cleanup code out of `AfterEach/AfterAll/AfterSuite` and closer to the setup code that needs to be cleaned up.  Based on the context in which it is called, `DeferCleanup` will effectively register a dynamic `AfterEach/AfterAll/AfterSuite` node to clean up after the test/test group/suite.  The [docs](https://github.com/onsi/ginkgo/blob/ver2/docs/index.md#cleaning-up-after-tests) have more detailed examples.
 
+`DeferCleanup` allows `GinkgoT()` to more fully implement the `testing.T` interface.  `Cleanup`, `TempDir`, and `Setenv` are now all supported.
+
 ### Aborting the Test Suite
 Users can now signal that the entire test suite should abort via `AbortSuite(message string, skip int)`.  This will fail the current test and skip all subsequent tests.
 

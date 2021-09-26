@@ -9,6 +9,7 @@ import (
 	"github.com/onsi/gomega/gbytes"
 
 	"github.com/onsi/ginkgo/internal/testingtproxy"
+	"github.com/onsi/ginkgo/types"
 )
 
 type messagedCall struct {
@@ -21,22 +22,19 @@ var _ = Describe("Testingtproxy", func() {
 
 	var failFunc func(message string, callerSkip ...int)
 	var skipFunc func(message string, callerSkip ...int)
-	var failedFunc func() bool
-	var nameFunc func() string
+	var reportFunc func() types.SpecReport
 
-	var nameToReturn string
-	var failedToReturn bool
 	var failFuncCall messagedCall
 	var skipFuncCall messagedCall
 	var offset int
+	var reportToReturn types.SpecReport
 	var buf *gbytes.Buffer
 
 	BeforeEach(func() {
 		failFuncCall = messagedCall{}
 		skipFuncCall = messagedCall{}
-		nameToReturn = ""
-		failedToReturn = false
 		offset = 3
+		reportToReturn = types.SpecReport{}
 
 		failFunc = func(message string, callerSkip ...int) {
 			failFuncCall.message = message
@@ -48,28 +46,86 @@ var _ = Describe("Testingtproxy", func() {
 			skipFuncCall.callerSkip = callerSkip
 		}
 
-		failedFunc = func() bool {
-			return failedToReturn
-		}
-
-		nameFunc = func() string {
-			return nameToReturn
+		reportFunc = func() types.SpecReport {
+			return reportToReturn
 		}
 
 		buf = gbytes.NewBuffer()
 
-		t = testingtproxy.New(buf, failFunc, skipFunc, failedFunc, nameFunc, offset)
+		t = testingtproxy.New(buf, failFunc, skipFunc, DeferCleanup, reportFunc, offset)
 	})
 
-	It("ignores Cleanup", func() {
-		GinkgoT().Cleanup(func() {
-			panic("bam!")
-		}) //is a no-op
+	Describe("Cleanup", Ordered, func() {
+		var didCleanupAfter bool
+		It("supports cleanup", func() {
+			Ω(didCleanupAfter).Should(BeFalse())
+			t.Cleanup(func() {
+				didCleanupAfter = true
+			})
+		})
+
+		It("ran cleanup after the last test", func() {
+			Ω(didCleanupAfter).Should(BeTrue())
+		})
 	})
 
-	It("ignores Setenv", func() {
-		GinkgoT().Setenv("FOO", "BAR") //is a no-op
-		Ω(os.Getenv("FOO")).Should(BeZero())
+	Describe("Setenv", func() {
+		Context("when the environment variable does not exist", Ordered, func() {
+			const key = "FLOOP_FLARP_WIBBLE_BLARP"
+
+			BeforeAll(func() {
+				os.Unsetenv(key)
+			})
+
+			It("sets the environment variable", func() {
+				t.Setenv(key, "HELLO")
+				Ω(os.Getenv(key)).Should(Equal("HELLO"))
+			})
+
+			It("cleans up after itself", func() {
+				_, exists := os.LookupEnv(key)
+				Ω(exists).Should(BeFalse())
+			})
+		})
+
+		Context("when the environment variable does exist", Ordered, func() {
+			const key = "FLOOP_FLARP_WIBBLE_BLARP"
+			const originalValue = "HOLA"
+
+			BeforeAll(func() {
+				os.Setenv(key, originalValue)
+			})
+
+			It("sets it", func() {
+				t.Setenv(key, "HELLO")
+				Ω(os.Getenv(key)).Should(Equal("HELLO"))
+			})
+
+			It("cleans up after itself", func() {
+				Ω(os.Getenv(key)).Should(Equal("HOLA"))
+			})
+
+			AfterAll(func() {
+				os.Unsetenv(key)
+			})
+		})
+	})
+
+	Describe("TempDir", Ordered, func() {
+		var tempDirA, tempDirB string
+
+		It("creates temporary directories", func() {
+			tempDirA = t.TempDir()
+			tempDirB = t.TempDir()
+			Ω(tempDirA).Should(BeADirectory())
+			Ω(tempDirB).Should(BeADirectory())
+			Ω(tempDirA).ShouldNot(Equal(tempDirB))
+		})
+
+		It("cleans up after itself", func() {
+			Ω(tempDirA).ShouldNot(BeADirectory())
+			Ω(tempDirB).ShouldNot(BeADirectory())
+		})
 	})
 
 	It("supports Error", func() {
@@ -123,9 +179,9 @@ var _ = Describe("Testingtproxy", func() {
 	})
 
 	It("supports Name", func() {
-		nameToReturn = "C.S. Lewis"
+		reportToReturn.ContainerHierarchyTexts = []string{"C.S."}
+		reportToReturn.LeafNodeText = "Lewis"
 		Ω(t.Name()).Should(Equal("C.S. Lewis"))
-
 		Ω(GinkgoT().Name()).Should(ContainSubstring("supports Name"))
 	})
 
@@ -151,11 +207,10 @@ var _ = Describe("Testingtproxy", func() {
 		Ω(skipFuncCall.callerSkip).Should(Equal([]int{offset}))
 	})
 
-	It("always returns false for Skipped", func() {
-		Ω(GinkgoT().Skipped()).Should(BeFalse())
-	})
-
-	It("returns empty string for TempDir", func() {
-		Ω(GinkgoT().TempDir()).Should(Equal(""))
+	It("returns the state of the test when asked if it was skipped", func() {
+		reportToReturn.State = types.SpecStatePassed
+		Ω(t.Skipped()).Should(BeFalse())
+		reportToReturn.State = types.SpecStateSkipped
+		Ω(t.Skipped()).Should(BeTrue())
 	})
 })
