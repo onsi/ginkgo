@@ -603,6 +603,7 @@ const (
 	NodeTypeAfterSuite
 	NodeTypeSynchronizedAfterSuite
 
+	NodeTypeReportBeforeEach
 	NodeTypeReportAfterEach
 	NodeTypeReportAfterSuite
 
@@ -629,6 +630,7 @@ var ntEnumSupport = NewEnumSupport(map[uint]string{
 	uint(NodeTypeSynchronizedBeforeSuite): "SynchronizedBeforeSuite",
 	uint(NodeTypeAfterSuite):              "AfterSuite",
 	uint(NodeTypeSynchronizedAfterSuite):  "SynchronizedAfterSuite",
+	uint(NodeTypeReportBeforeEach):        "ReportBeforeEach",
 	uint(NodeTypeReportAfterEach):         "ReportAfterEach",
 	uint(NodeTypeReportAfterSuite):        "ReportAfterSuite",
 	uint(NodeTypeCleanupInvalid):          "INVALID CLEANUP NODE",

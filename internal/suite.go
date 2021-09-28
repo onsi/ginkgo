@@ -180,7 +180,7 @@ func (suite *Suite) pushCleanupNode(node Node) error {
 		node.NodeType = types.NodeTypeCleanupAfterSuite
 	case types.NodeTypeBeforeAll, types.NodeTypeAfterAll:
 		node.NodeType = types.NodeTypeCleanupAfterAll
-	case types.NodeTypeReportAfterEach, types.NodeTypeReportAfterSuite:
+	case types.NodeTypeReportBeforeEach, types.NodeTypeReportAfterEach, types.NodeTypeReportAfterSuite:
 		return types.GinkgoErrors.PushingCleanupInReportingNode(node.CodeLocation, suite.currentNode.NodeType)
 	case types.NodeTypeCleanupInvalid, types.NodeTypeCleanupAfterEach, types.NodeTypeCleanupAfterAll, types.NodeTypeCleanupAfterSuite:
 		return types.GinkgoErrors.PushingCleanupInCleanupNode(node.CodeLocation)
@@ -329,8 +329,10 @@ func (suite *Suite) runSpecs(description string, suitePath string, hasProgrammat
 				}
 
 				reporter.WillRun(suite.currentSpecReport)
+				//send the spec report to any attached ReportBeforeEach blocks - this will update suite.currentSpecReport if failures occur in these blocks
+				suite.reportEach(spec, types.NodeTypeReportBeforeEach, failer, interruptHandler, writer, outputInterceptor, suiteConfig)
 
-				if !spec.Skip {
+				if !spec.Skip && !suite.currentSpecReport.State.Is(types.SpecStateFailureStates...) {
 					setupAllNodeTypesToInclude := types.NodeTypes{}
 					if firstToRun == idx {
 						setupAllNodeTypesToInclude = append(setupAllNodeTypesToInclude, types.NodeTypeBeforeAll)
@@ -342,8 +344,8 @@ func (suite *Suite) runSpecs(description string, suitePath string, hasProgrammat
 					suite.runSpec(spec, setupAllNodeTypesToInclude, failer, interruptHandler, writer, outputInterceptor, suiteConfig)
 				}
 
-				//send the spec report to any attached ReportAfterEach blocks - this will update suite.currentSpecReport of failures occur in these blocks
-				suite.reportAfterEach(spec, failer, interruptHandler, writer, outputInterceptor, suiteConfig)
+				//send the spec report to any attached ReportAfterEach blocks - this will update suite.currentSpecReport if failures occur in these blocks
+				suite.reportEach(spec, types.NodeTypeReportAfterEach, failer, interruptHandler, writer, outputInterceptor, suiteConfig)
 				processSpecReport(suite.currentSpecReport)
 				if suite.currentSpecReport.State.Is(types.SpecStateFailureStates...) {
 					groupSucceeded = false
@@ -513,8 +515,14 @@ func (suite *Suite) runSpec(spec Spec, setupAllNodeTypesToRun types.NodeTypes, f
 	}
 }
 
-func (suite *Suite) reportAfterEach(spec Spec, failer *Failer, interruptHandler interrupt_handler.InterruptHandlerInterface, writer WriterInterface, outputInterceptor OutputInterceptor, suiteConfig types.SuiteConfig) {
-	nodes := spec.Nodes.WithType(types.NodeTypeReportAfterEach).SortedByDescendingNestingLevel()
+func (suite *Suite) reportEach(spec Spec, nodeType types.NodeType, failer *Failer, interruptHandler interrupt_handler.InterruptHandlerInterface, writer WriterInterface, outputInterceptor OutputInterceptor, suiteConfig types.SuiteConfig) {
+	nodes := spec.Nodes.WithType(nodeType)
+	if nodeType == types.NodeTypeReportAfterEach {
+		nodes = nodes.SortedByDescendingNestingLevel()
+	}
+	if nodeType == types.NodeTypeReportBeforeEach {
+		nodes = nodes.SortedByAscendingNestingLevel()
+	}
 	if len(nodes) == 0 {
 		return
 	}
@@ -524,15 +532,18 @@ func (suite *Suite) reportAfterEach(spec Spec, failer *Failer, interruptHandler 
 		outputInterceptor.StartInterceptingOutput()
 		report := suite.currentSpecReport
 		node.Body = func() {
-			node.ReportAfterEachBody(report)
+			node.ReportEachBody(report)
 		}
 		interruptHandler.SetInterruptPlaceholderMessage(formatter.Fiw(0, formatter.COLS,
-			"{{yellow}}Ginkgo received an interrupt signal but is currently running a ReportAfterEach node.  To avoid an invalid report the ReportAfterEach node will not be interrupted however subsequent tests will be skipped.{{/}}\n\n{{bold}}The running ReportAfterEach node is at:\n%s.{{/}}",
+			"{{yellow}}Ginkgo received an interrupt signal but is currently running a %s node.  To avoid an invalid report the %s node will not be interrupted however subsequent tests will be skipped.{{/}}\n\n{{bold}}The running %s node is at:\n%s.{{/}}",
+			nodeType, nodeType, nodeType,
 			node.CodeLocation,
 		))
 		state, failure := suite.runNode(node, failer, nil, nil, spec.Nodes.BestTextFor(node), writer, suiteConfig)
 		interruptHandler.ClearInterruptPlaceholderMessage()
-		if suite.currentSpecReport.State == types.SpecStatePassed || state == types.SpecStateAborted {
+		// If the spec is not in a failure state (i.e. it's Passed/Skipped/Pending) and the reporter has failed, override the state.
+		// Also, if the reporter is every aborted - always override the state to propagate the abort
+		if (!suite.currentSpecReport.State.Is(types.SpecStateFailureStates...) && state.Is(types.SpecStateFailureStates...)) || state.Is(types.SpecStateAborted) {
 			suite.currentSpecReport.State = state
 			suite.currentSpecReport.Failure = failure
 		}
@@ -592,7 +603,7 @@ func (suite *Suite) runSuiteNode(node Node, failer *Failer, interruptChannel cha
 		}
 	}
 
-	if err != nil && suite.currentSpecReport.State.Is(types.SpecStateInvalid, types.SpecStatePassed) {
+	if err != nil && !suite.currentSpecReport.State.Is(types.SpecStateFailureStates...) {
 		suite.currentSpecReport.State, suite.currentSpecReport.Failure = types.SpecStateFailed, suite.failureForLeafNodeWithMessage(node, err.Error())
 	}
 

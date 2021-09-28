@@ -440,6 +440,42 @@ var _ = Describe("Node", func() {
 			})
 		})
 
+		Describe("NewReportBeforeEachNode", func() {
+			It("returns a correctly configured node", func() {
+				var didRun bool
+				body := func(types.SpecReport) { didRun = true }
+
+				node, errors := internal.NewReportBeforeEachNode(body, cl)
+				Ω(errors).Should(BeEmpty())
+				Ω(node.ID).Should(BeNumerically(">", 0))
+				Ω(node.NodeType).Should(Equal(types.NodeTypeReportBeforeEach))
+
+				node.ReportEachBody(types.SpecReport{})
+				Ω(didRun).Should(BeTrue())
+
+				Ω(node.CodeLocation).Should(Equal(cl))
+				Ω(node.NestingLevel).Should(Equal(-1))
+			})
+		})
+
+		Describe("NewReportAfterEachNode", func() {
+			It("returns a correctly configured node", func() {
+				var didRun bool
+				body := func(types.SpecReport) { didRun = true }
+
+				node, errors := internal.NewReportAfterEachNode(body, cl)
+				Ω(errors).Should(BeEmpty())
+				Ω(node.ID).Should(BeNumerically(">", 0))
+				Ω(node.NodeType).Should(Equal(types.NodeTypeReportAfterEach))
+
+				node.ReportEachBody(types.SpecReport{})
+				Ω(didRun).Should(BeTrue())
+
+				Ω(node.CodeLocation).Should(Equal(cl))
+				Ω(node.NestingLevel).Should(Equal(-1))
+			})
+		})
+
 		Describe("NewReportAfterSuiteNode", func() {
 			It("returns a correctly configured node", func() {
 				var didRun bool
@@ -455,24 +491,6 @@ var _ = Describe("Node", func() {
 
 				Ω(node.CodeLocation).Should(Equal(cl))
 				Ω(node.NestingLevel).Should(Equal(0))
-			})
-		})
-
-		Describe("NewReportAfterEachNode", func() {
-			It("returns a correctly configured node", func() {
-				var didRun bool
-				body := func(types.SpecReport) { didRun = true }
-
-				node, errors := internal.NewReportAfterEachNode(body, cl)
-				Ω(errors).Should(BeEmpty())
-				Ω(node.ID).Should(BeNumerically(">", 0))
-				Ω(node.NodeType).Should(Equal(types.NodeTypeReportAfterEach))
-
-				node.ReportAfterEachBody(types.SpecReport{})
-				Ω(didRun).Should(BeTrue())
-
-				Ω(node.CodeLocation).Should(Equal(cl))
-				Ω(node.NestingLevel).Should(Equal(-1))
 			})
 		})
 
