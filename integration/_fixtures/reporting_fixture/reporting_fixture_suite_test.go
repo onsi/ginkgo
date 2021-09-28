@@ -15,20 +15,25 @@ func TestReportingFixture(t *testing.T) {
 	RunSpecs(t, "ReportingFixture Suite")
 }
 
-var f *os.File
+var beforeEachReport, afterEachReport *os.File
 
 var _ = BeforeSuite(func() {
 	var err error
-	f, err = os.Create("report-after-each.out")
+	beforeEachReport, err = os.Create("report-before-each.out")
 	Ω(err).ShouldNot(HaveOccurred())
+	DeferCleanup(beforeEachReport.Close)
+
+	afterEachReport, err = os.Create("report-after-each.out")
+	Ω(err).ShouldNot(HaveOccurred())
+	DeferCleanup(afterEachReport.Close)
 })
 
-var _ = AfterSuite(func() {
-	f.Close()
+var _ = ReportBeforeEach(func(report SpecReport) {
+	fmt.Fprintf(beforeEachReport, "%s - %s\n", report.LeafNodeText, report.State)
 })
 
 var _ = ReportAfterEach(func(report SpecReport) {
-	fmt.Fprintf(f, "%s - %s\n", report.LeafNodeText, report.State)
+	fmt.Fprintf(afterEachReport, "%s - %s\n", report.LeafNodeText, report.State)
 })
 
 var _ = ReportAfterSuite("my report", func(report Report) {
@@ -37,7 +42,7 @@ var _ = ReportAfterSuite("my report", func(report Report) {
 
 	fmt.Fprintf(f, "%s - %d\n", report.SuiteDescription, report.SuiteConfig.RandomSeed)
 	for _, specReport := range report.SpecReports {
-		if specReport.LeafNodeType.Is(types.NodeTypesForSuiteLevelNodes...) {
+		if specReport.LeafNodeType.Is(types.NodeTypesForSuiteLevelNodes...) || specReport.LeafNodeType.Is(types.NodeTypeCleanupAfterSuite) {
 			fmt.Fprintf(f, "%d: [%s] - %s\n", specReport.GinkgoParallelNode, specReport.LeafNodeType, specReport.State)
 		} else {
 			fmt.Fprintf(f, "%s - %s\n", specReport.LeafNodeText, specReport.State)

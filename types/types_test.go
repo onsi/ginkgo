@@ -79,17 +79,29 @@ var _ = Describe("Types", func() {
 			json.Unmarshal(marshalled, &unmarshalled)
 			Ω(unmarshalled).Should(Equal(nodeType))
 		},
-			Entry("Container", types.NodeTypeContainer, "Container"),
-			Entry("It", types.NodeTypeIt, "It"),
-			Entry("BeforeEach", types.NodeTypeBeforeEach, "BeforeEach"),
-			Entry("JustBeforeEach", types.NodeTypeJustBeforeEach, "JustBeforeEach"),
-			Entry("AfterEach", types.NodeTypeAfterEach, "AfterEach"),
-			Entry("JustAfterEach", types.NodeTypeJustAfterEach, "JustAfterEach"),
-			Entry("BeforeSuite", types.NodeTypeBeforeSuite, "BeforeSuite"),
-			Entry("SynchronizedBeforeSuite", types.NodeTypeSynchronizedBeforeSuite, "SynchronizedBeforeSuite"),
-			Entry("AfterSuite", types.NodeTypeAfterSuite, "AfterSuite"),
-			Entry("SynchronizedAfterSuite", types.NodeTypeSynchronizedAfterSuite, "SynchronizedAfterSuite"),
-			Entry("Invalid", types.NodeTypeInvalid, "INVALID NODE TYPE"),
+			func(nodeType types.NodeType, expectedString string) string {
+				return expectedString
+			},
+			Entry(nil, types.NodeTypeContainer, "Container"),
+			Entry(nil, types.NodeTypeIt, "It"),
+			Entry(nil, types.NodeTypeBeforeEach, "BeforeEach"),
+			Entry(nil, types.NodeTypeJustBeforeEach, "JustBeforeEach"),
+			Entry(nil, types.NodeTypeAfterEach, "AfterEach"),
+			Entry(nil, types.NodeTypeJustAfterEach, "JustAfterEach"),
+			Entry(nil, types.NodeTypeBeforeAll, "BeforeAll"),
+			Entry(nil, types.NodeTypeAfterAll, "AfterAll"),
+			Entry(nil, types.NodeTypeBeforeSuite, "BeforeSuite"),
+			Entry(nil, types.NodeTypeSynchronizedBeforeSuite, "SynchronizedBeforeSuite"),
+			Entry(nil, types.NodeTypeAfterSuite, "AfterSuite"),
+			Entry(nil, types.NodeTypeSynchronizedAfterSuite, "SynchronizedAfterSuite"),
+			Entry(nil, types.NodeTypeReportBeforeEach, "ReportBeforeEach"),
+			Entry(nil, types.NodeTypeReportAfterEach, "ReportAfterEach"),
+			Entry(nil, types.NodeTypeReportAfterSuite, "ReportAfterSuite"),
+			Entry(nil, types.NodeTypeCleanupInvalid, "INVALID CLEANUP NODE"),
+			Entry(nil, types.NodeTypeCleanupAfterEach, "DeferCleanup (AfterEach)"),
+			Entry(nil, types.NodeTypeCleanupAfterAll, "DeferCleanup (AfterAll)"),
+			Entry(nil, types.NodeTypeCleanupAfterSuite, "DeferCleanup (AfterSuite)"),
+			Entry(nil, types.NodeTypeInvalid, "INVALID NODE TYPE"),
 		)
 	})
 
