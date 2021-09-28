@@ -323,7 +323,7 @@ func By(text string, callbacks ...func()) {
 	t := time.Now()
 	AddReportEntry("By Step", ReportEntryVisibilityNever, Offset(1), &value, t)
 	formatter := formatter.NewWithNoColorBool(reporterConfig.NoColor)
-	GinkgoWriter.Println(formatter.F("{{bold}}STEP:{{/}} "+text+" {{gray}}%s{{/}}", t.Format(types.GINKGO_TIME_FORMAT)))
+	GinkgoWriter.Println(formatter.F("{{bold}}STEP:{{/}} %s {{gray}}%s{{/}}", text, t.Format(types.GINKGO_TIME_FORMAT)))
 	if len(callbacks) == 1 {
 		callbacks[0]()
 		value.Duration = time.Since(t)
