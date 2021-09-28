@@ -37,7 +37,7 @@ type Node struct {
 	SynchronizedAfterSuiteAllNodesBody func()
 	SynchronizedAfterSuiteNode1Body    func()
 
-	ReportAfterEachBody  func(types.SpecReport)
+	ReportEachBody       func(types.SpecReport)
 	ReportAfterSuiteBody func(types.Report)
 
 	MarkedFocus   bool
@@ -245,13 +245,23 @@ func NewSynchronizedAfterSuiteNode(allNodesBody func(), node1Body func(), codeLo
 	}, nil
 }
 
+func NewReportBeforeEachNode(body func(types.SpecReport), codeLocation types.CodeLocation) (Node, []error) {
+	return Node{
+		ID:             UniqueNodeID(),
+		NodeType:       types.NodeTypeReportBeforeEach,
+		ReportEachBody: body,
+		CodeLocation:   codeLocation,
+		NestingLevel:   -1,
+	}, nil
+}
+
 func NewReportAfterEachNode(body func(types.SpecReport), codeLocation types.CodeLocation) (Node, []error) {
 	return Node{
-		ID:                  UniqueNodeID(),
-		NodeType:            types.NodeTypeReportAfterEach,
-		ReportAfterEachBody: body,
-		CodeLocation:        codeLocation,
-		NestingLevel:        -1,
+		ID:             UniqueNodeID(),
+		NodeType:       types.NodeTypeReportAfterEach,
+		ReportEachBody: body,
+		CodeLocation:   codeLocation,
+		NestingLevel:   -1,
 	}, nil
 }
 

@@ -265,7 +265,9 @@ var _ = Describe("ReportEntry and ReportEntries", func() {
 			})
 
 			ReportAfterEach(func(report SpecReport) {
-				Ω(report.ReportEntries[0].StringRepresentation()).Should(Equal("{{red}}bob {{green}}17{{/}}"))
+				if report.State.Is(types.SpecStatePassed) {
+					Ω(report.ReportEntries[0].StringRepresentation()).Should(Equal("{{red}}bob {{green}}17{{/}}"))
+				}
 			})
 		})
 
@@ -286,7 +288,9 @@ var _ = Describe("ReportEntry and ReportEntries", func() {
 			})
 
 			ReportAfterEach(func(report SpecReport) {
-				Ω(report.ReportEntries[0].StringRepresentation()).Should(Equal("{{red}}alice {{green}}42{{/}}"))
+				if report.State.Is(types.SpecStatePassed) {
+					Ω(report.ReportEntries[0].StringRepresentation()).Should(Equal("{{red}}alice {{green}}42{{/}}"))
+				}
 			})
 		})
 	})

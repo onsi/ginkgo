@@ -18,7 +18,25 @@ var _ = Describe("Reporting", func() {
 		fm.MountFixture("reporting")
 	})
 
-	Describe("in-suite reporting with ReportAfterEach and ReportAfterSuite", func() {
+	Describe("in-suite reporting with ReportBeforeEach, ReportAfterEach and ReportAfterSuite", func() {
+		It("reports on each test via ReportBeforeEach", func() {
+			session := startGinkgo(fm.PathTo("reporting"), "--no-color")
+			Eventually(session).Should(gexec.Exit(1))
+
+			report, err := os.ReadFile(fm.PathTo("reporting", "report-before-each.out"))
+			Ω(err).ShouldNot(HaveOccurred())
+			lines := strings.Split(string(report), "\n")
+			Ω(lines).Should(ConsistOf(
+				"passes - INVALID SPEC STATE",
+				"is labelled - INVALID SPEC STATE",
+				"fails - INVALID SPEC STATE",
+				"panics - INVALID SPEC STATE",
+				"is pending - pending",
+				"is skipped - INVALID SPEC STATE",
+				"",
+			))
+		})
+
 		It("reports on each test via ReportAfterEach", func() {
 			session := startGinkgo(fm.PathTo("reporting"), "--no-color")
 			Eventually(session).Should(gexec.Exit(1))
@@ -53,7 +71,8 @@ var _ = Describe("Reporting", func() {
 				"panics - panicked",
 				"is pending - pending",
 				"is skipped - skipped",
-				"1: [AfterSuite] - passed",
+				"1: [DeferCleanup (AfterSuite)] - passed",
+				"1: [DeferCleanup (AfterSuite)] - passed",
 				"",
 			))
 		})
@@ -76,8 +95,10 @@ var _ = Describe("Reporting", func() {
 					"panics - panicked",
 					"is pending - pending",
 					"is skipped - skipped",
-					"1: [AfterSuite] - passed",
-					"2: [AfterSuite] - passed",
+					"1: [DeferCleanup (AfterSuite)] - passed",
+					"1: [DeferCleanup (AfterSuite)] - passed",
+					"2: [DeferCleanup (AfterSuite)] - passed",
+					"2: [DeferCleanup (AfterSuite)] - passed",
 					"",
 				))
 			})
@@ -99,7 +120,7 @@ var _ = Describe("Reporting", func() {
 			Ω(report.SuitePath).Should(Equal(fm.AbsPathTo("reporting")))
 			Ω(report.SuiteDescription).Should(Equal("ReportingFixture Suite"))
 			Ω(report.SuiteConfig.ParallelTotal).Should(Equal(2))
-			Ω(report.SpecReports).Should(HaveLen(6 + 4 + 1))
+			Ω(report.SpecReports).Should(HaveLen(13)) //6 tests + (1 before-suite + 2 defercleanup after-suite)*2(nodes) + 1 report-after-suite
 
 			specReports := Reports(report.SpecReports)
 			Ω(specReports.WithLeafNodeType(types.NodeTypeIt)).Should(HaveLen(6))
@@ -112,7 +133,7 @@ var _ = Describe("Reporting", func() {
 			Ω(specReports.Find("is skipped").State).Should(Equal(types.SpecStateSkipped))
 			Ω(specReports.Find("my report")).Should(HaveFailed("fail!", types.FailureNodeIsLeafNode, types.NodeTypeReportAfterSuite))
 			Ω(specReports.FindByLeafNodeType(types.NodeTypeBeforeSuite)).Should(HavePassed())
-			Ω(specReports.FindByLeafNodeType(types.NodeTypeAfterSuite)).Should(HavePassed())
+			Ω(specReports.FindByLeafNodeType(types.NodeTypeCleanupAfterSuite)).Should(HavePassed())
 		}
 
 		checkJSONSubpackageReport := func(report types.Report) {
@@ -148,7 +169,7 @@ var _ = Describe("Reporting", func() {
 		checkJUnitReport := func(suite reporters.JUnitTestSuite) {
 			Ω(suite.Name).Should(Equal("ReportingFixture Suite"))
 			Ω(suite.Package).Should(Equal(fm.AbsPathTo("reporting")))
-			Ω(suite.Tests).Should(Equal(11))
+			Ω(suite.Tests).Should(Equal(13))
 			Ω(suite.Disabled).Should(Equal(1))
 			Ω(suite.Skipped).Should(Equal(1))
 			Ω(suite.Errors).Should(Equal(1))
@@ -176,6 +197,7 @@ var _ = Describe("Reporting", func() {
 			Ω(getTestCase("[It] reporting test is pending", suite.TestCases).Status).Should(Equal("pending"))
 			Ω(getTestCase("[It] reporting test is pending", suite.TestCases).Skipped.Message).Should(Equal("pending"))
 
+			Ω(getTestCase("[DeferCleanup (AfterSuite)]", suite.TestCases).Status).Should(Equal("passed"))
 			Ω(getTestCase("[ReportAfterSuite] my report", suite.TestCases).Status).Should(Equal("failed"))
 
 			Ω(getTestCase("[It] reporting test is skipped", suite.TestCases).Status).Should(Equal("skipped"))
@@ -198,7 +220,7 @@ var _ = Describe("Reporting", func() {
 
 		checkUnifiedJUnitReport := func(report reporters.JUnitTestSuites) {
 			Ω(report.TestSuites).Should(HaveLen(3))
-			Ω(report.Tests).Should(Equal(14))
+			Ω(report.Tests).Should(Equal(16))
 			Ω(report.Disabled).Should(Equal(2))
 			Ω(report.Errors).Should(Equal(2))
 			Ω(report.Failures).Should(Equal(3))
