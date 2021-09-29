@@ -13,10 +13,12 @@ import (
 var _ = Describe("OutputInterceptor", func() {
 	It("intercepts output", func() {
 		interceptor := internal.NewOutputInterceptor()
-		interceptor.StartInterceptingOutput()
-		fmt.Println("hi stdout")
-		fmt.Fprintln(os.Stderr, "hi stderr")
-		output := interceptor.StopInterceptingAndReturnOutput()
-		Ω(output).Should(Equal("hi stdout\nhi stderr\n"))
+		for i := 0; i < 2048; i++ { //we loop here to stress test and make sure we aren't leaking any file descriptors
+			interceptor.StartInterceptingOutput()
+			fmt.Println("hi stdout")
+			fmt.Fprintln(os.Stderr, "hi stderr")
+			output := interceptor.StopInterceptingAndReturnOutput()
+			Ω(output).Should(Equal("hi stdout\nhi stderr\n"))
+		}
 	})
 })
