@@ -61,16 +61,15 @@ func (interceptor *dupSyscallOutputInterceptor) StopInterceptingAndReturnOutput(
 	}
 
 	// first we have to close the write end of the pipe.  To do this we have to close all file descriptors pointing
-	// to the write end.  So that would be:
-	interceptor.pipeWriter.Close()              // the pipewriter itself
-	unix.Close(1)                               // FD #1 - which is how stdout was getting piped in
-	unix.Close(2)                               // FD #2 - which is how stderr was getting piped in
+	// to the write end.  So that would be the pipewriter itself, FD #1 and FD #2.
+	interceptor.pipeWriter.Close() // the pipewriter itself
+	// we also need to stop intercepting. we do that by reconnecting the stdout and stderr file descriptions back to their respective #1 and #2 file descriptors;
+	// this also closes #1 and #2 before it points that their original stdout and stderr file descriptions
+	unix.Dup2(int(interceptor.stdoutClone.Fd()), 1)
+	unix.Dup2(int(interceptor.stderrClone.Fd()), 2)
 	content := <-interceptor.interceptedContent // now wait for the goroutine to notice and return content
 	interceptor.pipeReader.Close()              //and now close the read end of the pipe so we don't leak a file descriptor
 
-	// now we need to stop intercepting. we do that by reconnecting the stdout and stderr file descriptions back to their respective #1 and #2 file descriptors;
-	unix.Dup2(int(interceptor.stdoutClone.Fd()), 1)
-	unix.Dup2(int(interceptor.stderrClone.Fd()), 2)
 	// and now we're done with the clone file descriptors, we can close them to clean up after ourselves
 	interceptor.stdoutClone.Close()
 	interceptor.stderrClone.Close()
