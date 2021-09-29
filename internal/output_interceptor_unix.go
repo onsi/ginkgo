@@ -19,10 +19,11 @@ func NewOutputInterceptor() OutputInterceptor {
 type dupSyscallOutputInterceptor struct {
 	intercepting bool
 
-	stdoutClone int
-	stderrClone int
+	stdoutClone *os.File
+	stderrClone *os.File
+	pipeWriter  *os.File
+	pipeReader  *os.File
 
-	interceptingWriter io.Closer
 	interceptedContent chan string
 }
 
@@ -32,22 +33,26 @@ func (interceptor *dupSyscallOutputInterceptor) StartInterceptingOutput() {
 	}
 	interceptor.intercepting = true
 
-	interceptor.stdoutClone, _ = unix.Dup(1)
-	interceptor.stderrClone, _ = unix.Dup(2)
+	// First, we create two clone file descriptors that point to the stdout and stderr file descriptions
+	stdoutCloneFD, _ := unix.Dup(1)
+	stderrCloneFD, _ := unix.Dup(2)
+	// And we wrap the clone file descriptors in files so we can write to them if need be (e.g. to emit output to the console evne though we're intercepting output)
+	interceptor.stdoutClone, interceptor.stderrClone = os.NewFile(uintptr(stdoutCloneFD), "stdout-clone"), os.NewFile(uintptr(stderrCloneFD), "stderr-clone")
 
-	reader, writer, _ := os.Pipe()
-	interceptor.interceptingWriter = writer
+	// Now we make a pipe, we'll use this to redirect the input to the 1 and 2 file descriptors (this is how everything else in the world is tring to log to stdout and stderr)
+	interceptor.pipeReader, interceptor.pipeWriter, _ = os.Pipe()
 
+	//Spin up a goroutine to copy data from the pipe into a buffer, this is how we capture any output the user is emitting
 	go func() {
 		buffer := &bytes.Buffer{}
-		io.Copy(buffer, reader)
+		io.Copy(buffer, interceptor.pipeReader)
 		interceptor.interceptedContent <- buffer.String()
 	}()
 
-	// This might call Dup3 if the dup2 syscall is not available, e.g. on
-	// linux/arm64 or linux/riscv64
-	unix.Dup2(int(writer.Fd()), 1)
-	unix.Dup2(int(writer.Fd()), 2)
+	// And now we call Dup2 (possibly Dup3 on some architectures) to have file descriptors 1 and 2 point to the same file description as the pipeWriter
+	// This effectively shunts data written to stdout and stderr to the write end of our pipe
+	unix.Dup2(int(interceptor.pipeWriter.Fd()), 1)
+	unix.Dup2(int(interceptor.pipeWriter.Fd()), 2)
 }
 
 func (interceptor *dupSyscallOutputInterceptor) StopInterceptingAndReturnOutput() string {
@@ -55,13 +60,20 @@ func (interceptor *dupSyscallOutputInterceptor) StopInterceptingAndReturnOutput(
 		return ""
 	}
 
-	unix.Dup2(interceptor.stdoutClone, 1)
-	unix.Dup2(interceptor.stderrClone, 2)
-	unix.Close(interceptor.stdoutClone)
-	unix.Close(interceptor.stderrClone)
+	// first we have to close the write end of the pipe.  To do this we have to close all file descriptors pointing
+	// to the write end.  So that would be:
+	interceptor.pipeWriter.Close()              // the pipewriter itself
+	unix.Close(1)                               // FD #1 - which is how stdout was getting piped in
+	unix.Close(2)                               // FD #2 - which is how stderr was getting piped in
+	content := <-interceptor.interceptedContent // now wait for the goroutine to notice and return content
+	interceptor.pipeReader.Close()              //and now close the read end of the pipe so we don't leak a file descriptor
 
-	interceptor.interceptingWriter.Close()
-	content := <-interceptor.interceptedContent
+	// now we need to stop intercepting. we do that by reconnecting the stdout and stderr file descriptions back to their respective #1 and #2 file descriptors;
+	unix.Dup2(int(interceptor.stdoutClone.Fd()), 1)
+	unix.Dup2(int(interceptor.stderrClone.Fd()), 2)
+	// and now we're done with the clone file descriptors, we can close them to clean up after ourselves
+	interceptor.stdoutClone.Close()
+	interceptor.stderrClone.Close()
 
 	interceptor.intercepting = false
 
