@@ -216,8 +216,8 @@ var _ = Describe("Synchronized Suite Nodes", func() {
 					Ω(client.BlockUntilSynchronizedBeforeSuiteData()).Should(Equal([]byte("hey there")))
 				})
 
-				It("emits the output of the node-1 BeforeSuite function", func() {
-					Ω(string(serverOutputBuffer.Contents())).Should(Equal("before-suite-node-1"))
+				It("emits the output of the node-1 BeforeSuite function and the node-1 AfterSuite fnction", func() {
+					Ω(string(serverOutputBuffer.Contents())).Should(Equal("before-suite-node-1after-suite-node-1"))
 					Ω(reporter.Did.FindByLeafNodeType(types.NodeTypeSynchronizedBeforeSuite)).Should(HavePassed(CapturedStdOutput("before-suite-node-1before-suite-all-nodes")))
 					Ω(reporter.Did.FindByLeafNodeType(types.NodeTypeSynchronizedAfterSuite)).Should(HavePassed(CapturedStdOutput("after-suite-all-nodesafter-suite-node-1")))
 				})

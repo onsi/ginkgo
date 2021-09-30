@@ -38,8 +38,16 @@ var _ = Describe("SuiteSetup", func() {
 						numOccurrences += 1
 					}
 				}
-
 				Ω(numOccurrences).Should(Equal(2)) // once when it's emitted because it's in the synchronizedBeforeSuite node.  And once again when it's captured in the spec report that includes the stdout output.
+
+				numOccurrences = 0
+				for _, line := range strings.Split(output, "\n") {
+					occurs, _ := ContainSubstring("AFTER_B_1").Match(line)
+					if occurs {
+						numOccurrences += 1
+					}
+				}
+				Ω(numOccurrences).Should(Equal(2)) // once when it's emitted because it's in the synchronizedAfterSuite node.  And once again when it's captured in the spec report that includes the stdout output.
 
 				Ω(output).Should(ContainSubstring("BEFORE_A_1"))
 				Ω(output).Should(ContainSubstring("BEFORE_B_1: DATA"))
