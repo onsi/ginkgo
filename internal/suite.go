@@ -577,7 +577,7 @@ func (suite *Suite) runSuiteNode(node Node, failer *Failer, interruptChannel cha
 			node.Body = func() { data = node.SynchronizedBeforeSuiteNode1Body() }
 			suite.currentSpecReport.State, suite.currentSpecReport.Failure = suite.runNode(node, failer, interruptChannel, interruptHandler, "", writer, suiteConfig)
 			if suiteConfig.ParallelTotal > 1 {
-				suite.currentSpecReport.CapturedStdOutErr = outputInterceptor.StopInterceptingAndReturnOutput()
+				suite.currentSpecReport.CapturedStdOutErr += outputInterceptor.StopInterceptingAndReturnOutput()
 				outputInterceptor.StartInterceptingOutput()
 				if suite.currentSpecReport.State.Is(types.SpecStatePassed) {
 					err = suite.client.PostSynchronizedBeforeSuiteSucceeded(data)
@@ -602,6 +602,11 @@ func (suite *Suite) runSuiteNode(node Node, failer *Failer, interruptChannel cha
 				err = suite.client.BlockUntilNonprimaryNodesHaveFinished()
 			}
 			if err == nil {
+				if suiteConfig.ParallelTotal > 1 {
+					suite.currentSpecReport.CapturedStdOutErr += outputInterceptor.StopInterceptingAndReturnOutput()
+					outputInterceptor.StartInterceptingOutputAndForwardTo(suite.client)
+				}
+
 				node.Body = node.SynchronizedAfterSuiteNode1Body
 				state, failure := suite.runNode(node, failer, interruptChannel, interruptHandler, "", writer, suiteConfig)
 				if suite.currentSpecReport.State.Is(types.SpecStatePassed) {
