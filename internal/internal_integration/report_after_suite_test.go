@@ -21,7 +21,7 @@ var _ = Describe("Sending reports to ReportAfterSuite nodes", func() {
 		conf.RandomSeed = 17
 		fixture = func() {
 			BeforeSuite(rt.T("before-suite", func() {
-				outputInterceptor.InterceptedOutput = "out-before-suite"
+				outputInterceptor.AppendInterceptedOutput("out-before-suite")
 			}))
 			Context("container", func() {
 				It("A", rt.T("A"))
@@ -34,7 +34,7 @@ var _ = Describe("Sending reports to ReportAfterSuite nodes", func() {
 			ReportAfterSuite("Report A", func(report Report) {
 				rt.RunWithData("report-A", "report", report)
 				writer.Print("gw-report-A")
-				outputInterceptor.InterceptedOutput = "out-report-A"
+				outputInterceptor.AppendInterceptedOutput("out-report-A")
 				if failInReportAfterSuiteA {
 					F("fail in report-A")
 				}
@@ -46,7 +46,7 @@ var _ = Describe("Sending reports to ReportAfterSuite nodes", func() {
 				}
 				rt.RunWithData("report-B", "report", report, "emitted-interrupt", interruptHandler.EmittedInterruptPlaceholderMessage())
 				writer.Print("gw-report-B")
-				outputInterceptor.InterceptedOutput = "out-report-B"
+				outputInterceptor.AppendInterceptedOutput("out-report-B")
 			})
 			AfterSuite(rt.T("after-suite", func() {
 				writer.Print("gw-after-suite")

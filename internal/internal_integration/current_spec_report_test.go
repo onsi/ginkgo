@@ -13,7 +13,7 @@ var _ = Describe("CurrentSpecReport", func() {
 
 	BeforeEach(func() {
 		specs = map[string]types.SpecReport{}
-		outputInterceptor.InterceptedOutput = "output-interceptor-content"
+		outputInterceptor.AppendInterceptedOutput("output-interceptor-content")
 
 		logCurrentSpecReport := func(key string, andRun ...func()) func() {
 			return func() {

@@ -1,10 +1,12 @@
 package parallel_support_test
 
 import (
+	"os"
 	"time"
 
 	. "github.com/onsi/ginkgo"
 	. "github.com/onsi/gomega"
+	"github.com/onsi/gomega/gbytes"
 
 	"github.com/onsi/ginkgo/internal/parallel_support"
 	. "github.com/onsi/ginkgo/internal/test_helpers"
@@ -16,6 +18,7 @@ var _ = Describe("The Parallel Support Client & Server", func() {
 		server   *parallel_support.Server
 		client   parallel_support.Client
 		reporter *FakeReporter
+		buffer   *gbytes.Buffer
 	)
 
 	BeforeEach(func() {
@@ -24,6 +27,9 @@ var _ = Describe("The Parallel Support Client & Server", func() {
 		server, err = parallel_support.NewServer(3, reporter)
 		Ω(err).ShouldNot(HaveOccurred())
 		server.Start()
+
+		buffer = gbytes.NewBuffer()
+		server.OutputDestination = buffer
 
 		client = parallel_support.NewClient(server.Address())
 		Eventually(client.CheckServerUp).Should(BeTrue())
@@ -128,6 +134,23 @@ var _ = Describe("The Parallel Support Client & Server", func() {
 					})
 				})
 			})
+		})
+	})
+
+	Describe("Streaming output", func() {
+		It("is configured to stream to stdout", func() {
+			server, err := parallel_support.NewServer(3, reporter)
+			Ω(err).ShouldNot(HaveOccurred())
+			Ω(server.OutputDestination.(*os.File).Fd()).Should(Equal(uintptr(1)))
+			server.Start()
+			server.Close()
+		})
+
+		It("streams output to the provided buffer", func() {
+			n, err := client.Write([]byte("hello"))
+			Ω(n).Should(Equal(5))
+			Ω(err).ShouldNot(HaveOccurred())
+			Ω(buffer).Should(gbytes.Say("hello"))
 		})
 	})
 
