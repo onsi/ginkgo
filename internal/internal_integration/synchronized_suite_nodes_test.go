@@ -6,6 +6,7 @@ import (
 	. "github.com/onsi/ginkgo/internal/test_helpers"
 	"github.com/onsi/ginkgo/types"
 	. "github.com/onsi/gomega"
+	"github.com/onsi/gomega/gbytes"
 )
 
 var _ = Describe("Synchronized Suite Nodes", func() {
@@ -16,12 +17,14 @@ var _ = Describe("Synchronized Suite Nodes", func() {
 		failInBeforeSuiteNode1, failInBeforeSuiteAllNodes, failInAfterSuiteAllNodes, failInAfterSuiteNode1 = false, false, false, false
 		fixture = func() {
 			SynchronizedBeforeSuite(func() []byte {
+				outputInterceptor.AppendInterceptedOutput("before-suite-node-1")
 				rt.Run("before-suite-node-1")
 				if failInBeforeSuiteNode1 {
 					F("fail-in-before-suite-node-1", cl)
 				}
 				return []byte("hey there")
 			}, func(data []byte) {
+				outputInterceptor.AppendInterceptedOutput("before-suite-all-nodes")
 				rt.RunWithData("before-suite-all-nodes", "data", string(data))
 				if failInBeforeSuiteAllNodes {
 					F("fail-in-before-suite-all-nodes", cl)
@@ -29,11 +32,13 @@ var _ = Describe("Synchronized Suite Nodes", func() {
 			})
 			It("test", rt.T("test"))
 			SynchronizedAfterSuite(func() {
+				outputInterceptor.AppendInterceptedOutput("after-suite-all-nodes")
 				rt.Run("after-suite-all-nodes")
 				if failInAfterSuiteAllNodes {
 					F("fail-in-after-suite-all-nodes", cl)
 				}
 			}, func() {
+				outputInterceptor.AppendInterceptedOutput("after-suite-node-1")
 				rt.Run("after-suite-node-1")
 				if failInAfterSuiteNode1 {
 					F("fail-in-after-suite-node-1", cl)
@@ -167,11 +172,14 @@ var _ = Describe("Synchronized Suite Nodes", func() {
 		var server *parallel_support.Server
 		var client parallel_support.Client
 		var exitChannels map[int]chan interface{}
+		var serverOutputBuffer *gbytes.Buffer
 
 		BeforeEach(func() {
 			conf.ParallelTotal = 2
 			server, client, exitChannels = SetUpServerAndClient(conf.ParallelTotal)
 			conf.ParallelHost = server.Address()
+			serverOutputBuffer = gbytes.NewBuffer()
+			server.OutputDestination = serverOutputBuffer
 		})
 
 		AfterEach(func() {
@@ -206,6 +214,12 @@ var _ = Describe("Synchronized Suite Nodes", func() {
 				It("passes data between the two SynchronizedBeforeSuite functions and up to the server", func() {
 					Ω(rt).Should(HaveRunWithData("before-suite-all-nodes", "data", "hey there"))
 					Ω(client.BlockUntilSynchronizedBeforeSuiteData()).Should(Equal([]byte("hey there")))
+				})
+
+				It("emits the output of the node-1 BeforeSuite function", func() {
+					Ω(string(serverOutputBuffer.Contents())).Should(Equal("before-suite-node-1"))
+					Ω(reporter.Did.FindByLeafNodeType(types.NodeTypeSynchronizedBeforeSuite)).Should(HavePassed(CapturedStdOutput("before-suite-node-1before-suite-all-nodes")))
+					Ω(reporter.Did.FindByLeafNodeType(types.NodeTypeSynchronizedAfterSuite)).Should(HavePassed(CapturedStdOutput("after-suite-all-nodesafter-suite-node-1")))
 				})
 			})
 

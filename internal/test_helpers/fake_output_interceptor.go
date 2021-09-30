@@ -1,29 +1,46 @@
 package test_helpers
 
-import "sync"
+import (
+	"io"
+	"sync"
+)
 
 type FakeOutputInterceptor struct {
 	intercepting      bool
-	InterceptedOutput string
+	forwardingWriter  io.Writer
+	interceptedOutput string
 	lock              *sync.Mutex
 }
 
 func NewFakeOutputInterceptor() *FakeOutputInterceptor {
 	return &FakeOutputInterceptor{
-		lock: &sync.Mutex{},
+		lock:             &sync.Mutex{},
+		forwardingWriter: io.Discard,
 	}
 }
 
-func (interceptor *FakeOutputInterceptor) StartInterceptingOutput() {
+func (interceptor *FakeOutputInterceptor) AppendInterceptedOutput(s string) {
 	interceptor.lock.Lock()
 	defer interceptor.lock.Unlock()
+	interceptor.interceptedOutput += s
+	interceptor.forwardingWriter.Write([]byte(s))
+}
+
+func (interceptor *FakeOutputInterceptor) StartInterceptingOutput() {
+	interceptor.StartInterceptingOutputAndForwardTo(io.Discard)
+}
+
+func (interceptor *FakeOutputInterceptor) StartInterceptingOutputAndForwardTo(w io.Writer) {
+	interceptor.lock.Lock()
+	defer interceptor.lock.Unlock()
+	interceptor.forwardingWriter = w
 	interceptor.intercepting = true
-	interceptor.InterceptedOutput = ""
+	interceptor.interceptedOutput = ""
 }
 
 func (interceptor *FakeOutputInterceptor) StopInterceptingAndReturnOutput() string {
 	interceptor.lock.Lock()
 	defer interceptor.lock.Unlock()
 	interceptor.intercepting = false
-	return interceptor.InterceptedOutput
+	return interceptor.interceptedOutput
 }

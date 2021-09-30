@@ -570,12 +570,20 @@ func (suite *Suite) runSuiteNode(node Node, failer *Failer, interruptChannel cha
 		var data []byte
 		var runAllNodes bool
 		if suiteConfig.ParallelNode == 1 {
+			if suiteConfig.ParallelTotal > 1 {
+				outputInterceptor.StopInterceptingAndReturnOutput()
+				outputInterceptor.StartInterceptingOutputAndForwardTo(suite.client)
+			}
 			node.Body = func() { data = node.SynchronizedBeforeSuiteNode1Body() }
 			suite.currentSpecReport.State, suite.currentSpecReport.Failure = suite.runNode(node, failer, interruptChannel, interruptHandler, "", writer, suiteConfig)
-			if suiteConfig.ParallelTotal > 1 && suite.currentSpecReport.State.Is(types.SpecStatePassed) {
-				err = suite.client.PostSynchronizedBeforeSuiteSucceeded(data)
-			} else if suiteConfig.ParallelTotal > 1 {
-				err = suite.client.PostSynchronizedBeforeSuiteFailed()
+			if suiteConfig.ParallelTotal > 1 {
+				suite.currentSpecReport.CapturedStdOutErr = outputInterceptor.StopInterceptingAndReturnOutput()
+				outputInterceptor.StartInterceptingOutput()
+				if suite.currentSpecReport.State.Is(types.SpecStatePassed) {
+					err = suite.client.PostSynchronizedBeforeSuiteSucceeded(data)
+				} else {
+					err = suite.client.PostSynchronizedBeforeSuiteFailed()
+				}
 			}
 			runAllNodes = suite.currentSpecReport.State.Is(types.SpecStatePassed) && err == nil
 		} else {
@@ -610,7 +618,7 @@ func (suite *Suite) runSuiteNode(node Node, failer *Failer, interruptChannel cha
 	suite.currentSpecReport.EndTime = time.Now()
 	suite.currentSpecReport.RunTime = suite.currentSpecReport.EndTime.Sub(suite.currentSpecReport.StartTime)
 	suite.currentSpecReport.CapturedGinkgoWriterOutput = string(writer.Bytes())
-	suite.currentSpecReport.CapturedStdOutErr = outputInterceptor.StopInterceptingAndReturnOutput()
+	suite.currentSpecReport.CapturedStdOutErr += outputInterceptor.StopInterceptingAndReturnOutput()
 
 	return
 }

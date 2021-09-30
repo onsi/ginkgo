@@ -17,11 +17,11 @@ var _ = Describe("Running Tests in Series - the happy path", func() {
 			BeforeSuite(rt.T("before-suite", func() {
 				time.Sleep(10 * time.Millisecond)
 				writer.Write([]byte("before-suite\n"))
-				outputInterceptor.InterceptedOutput = "output-intercepted-in-before-suite"
+				outputInterceptor.AppendInterceptedOutput("output-intercepted-in-before-suite")
 			}))
 			AfterSuite(rt.T("after-suite", func() {
 				time.Sleep(20 * time.Millisecond)
-				outputInterceptor.InterceptedOutput = "output-intercepted-in-after-suite"
+				outputInterceptor.AppendInterceptedOutput("output-intercepted-in-after-suite")
 			}))
 			Describe("top-level-container", func() {
 				JustBeforeEach(rt.T("just-before-each"))
@@ -45,7 +45,7 @@ var _ = Describe("Running Tests in Series - the happy path", func() {
 					JustAfterEach(rt.T("nested-just-after-each-2"))
 					It("C", rt.T("C", func() {
 						writer.Write([]byte("C\n"))
-						outputInterceptor.InterceptedOutput = "output-intercepted-in-C"
+						outputInterceptor.AppendInterceptedOutput("output-intercepted-in-C")
 					}))
 					It("D", rt.T("D"))
 				})

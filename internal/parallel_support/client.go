@@ -148,3 +148,12 @@ func (client Client) ShouldAbort() bool {
 	}
 	return false
 }
+
+func (client Client) Write(p []byte) (int, error) {
+	resp, err := http.Post(client.serverHost+"/stream-output", "text/plain;charset=UTF-8 ", bytes.NewReader(p))
+	resp.Body.Close()
+	if resp.StatusCode != http.StatusOK {
+		return 0, fmt.Errorf("failed to stream output")
+	}
+	return len(p), err
+}
