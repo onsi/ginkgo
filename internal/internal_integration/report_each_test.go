@@ -63,13 +63,13 @@ var _ = Describe("Sending reports to ReportBeforeEach and ReportAfterEach nodes"
 				Context("when stuff is emitted to writers and stdout/stderr", func() {
 					It("writes stuff", rt.T("writer", func() {
 						writer.Println("GinkgoWriter from It")
-						outputInterceptor.InterceptedOutput = "Output from It\n"
+						outputInterceptor.AppendInterceptedOutput("Output from It\n")
 					}))
 					ReportAfterEach(func(report types.SpecReport) {
 						rt.Run("writing-reporter")
 						reports["writing"] = append(reports["writing"], report)
 						writer.Println("GinkgoWriter from ReportAfterEach")
-						outputInterceptor.InterceptedOutput = "Output from ReportAfterEach\n"
+						outputInterceptor.AppendInterceptedOutput("Output from ReportAfterEach\n")
 					})
 				})
 				Context("when a ReportBeforeEach fails", func() {

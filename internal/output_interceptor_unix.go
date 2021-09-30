@@ -28,6 +28,10 @@ type dupSyscallOutputInterceptor struct {
 }
 
 func (interceptor *dupSyscallOutputInterceptor) StartInterceptingOutput() {
+	interceptor.StartInterceptingOutputAndForwardTo(io.Discard)
+}
+
+func (interceptor *dupSyscallOutputInterceptor) StartInterceptingOutputAndForwardTo(w io.Writer) {
 	if interceptor.intercepting {
 		return
 	}
@@ -45,7 +49,8 @@ func (interceptor *dupSyscallOutputInterceptor) StartInterceptingOutput() {
 	//Spin up a goroutine to copy data from the pipe into a buffer, this is how we capture any output the user is emitting
 	go func() {
 		buffer := &bytes.Buffer{}
-		io.Copy(buffer, interceptor.pipeReader)
+		destination := io.MultiWriter(buffer, w)
+		io.Copy(destination, interceptor.pipeReader)
 		interceptor.interceptedContent <- buffer.String()
 	}()
 

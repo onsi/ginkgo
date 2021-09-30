@@ -1,6 +1,8 @@
 package integration_test
 
 import (
+	"strings"
+
 	. "github.com/onsi/ginkgo"
 	. "github.com/onsi/gomega"
 	"github.com/onsi/gomega/gexec"
@@ -28,6 +30,16 @@ var _ = Describe("SuiteSetup", func() {
 				session := startGinkgo(fm.PathTo("synchronized_setup_tests"), "--no-color", "--nodes=3")
 				Eventually(session).Should(gexec.Exit(0))
 				output := string(session.Out.Contents())
+
+				numOccurrences := 0
+				for _, line := range strings.Split(output, "\n") {
+					occurs, _ := ContainSubstring("BEFORE_A_1").Match(line)
+					if occurs {
+						numOccurrences += 1
+					}
+				}
+
+				Ω(numOccurrences).Should(Equal(2)) // once when it's emitted because it's in the synchronizedBeforeSuite node.  And once again when it's captured in the spec report that includes the stdout output.
 
 				Ω(output).Should(ContainSubstring("BEFORE_A_1"))
 				Ω(output).Should(ContainSubstring("BEFORE_B_1: DATA"))

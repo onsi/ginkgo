@@ -12,6 +12,7 @@ import (
 	"io"
 	"net"
 	"net/http"
+	"os"
 	"sync"
 
 	"github.com/onsi/ginkgo/reporters"
@@ -32,7 +33,8 @@ Server spins up on an automatically selected port and listens for communication 
 It then forwards that communication to attached reporters.
 */
 type Server struct {
-	Done chan interface{}
+	Done              chan interface{}
+	OutputDestination io.Writer
 
 	listener         net.Listener
 	reporter         reporters.Reporter
@@ -56,13 +58,14 @@ func NewServer(parallelTotal int, reporter reporters.Reporter) (*Server, error) 
 		return nil, err
 	}
 	return &Server{
-		listener:         listener,
-		reporter:         reporter,
-		lock:             &sync.Mutex{},
-		alives:           make([]func() bool, parallelTotal),
-		beforeSuiteState: beforeSuiteState{Data: nil, State: types.SpecStateInvalid},
-		parallelTotal:    parallelTotal,
-		Done:             make(chan interface{}),
+		listener:          listener,
+		reporter:          reporter,
+		lock:              &sync.Mutex{},
+		alives:            make([]func() bool, parallelTotal),
+		beforeSuiteState:  beforeSuiteState{Data: nil, State: types.SpecStateInvalid},
+		parallelTotal:     parallelTotal,
+		OutputDestination: os.Stdout,
+		Done:              make(chan interface{}),
 	}, nil
 }
 
@@ -76,6 +79,7 @@ func (server *Server) Start() {
 	mux.HandleFunc("/suite-will-begin", server.specSuiteWillBegin)
 	mux.HandleFunc("/did-run", server.didRun)
 	mux.HandleFunc("/suite-did-end", server.specSuiteDidEnd)
+	mux.HandleFunc("/stream-output", server.streamOutput)
 
 	//synchronization endpoints
 	mux.HandleFunc("/before-suite-failed", server.handleBeforeSuiteFailed)
@@ -178,6 +182,10 @@ func (server *Server) specSuiteDidEnd(writer http.ResponseWriter, request *http.
 		server.reporter.SuiteDidEnd(server.aggregatedReport)
 		close(server.Done)
 	}
+}
+
+func (server *Server) streamOutput(writer http.ResponseWriter, request *http.Request) {
+	io.Copy(server.OutputDestination, request.Body)
 }
 
 //
