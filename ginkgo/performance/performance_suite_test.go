@@ -46,19 +46,6 @@ var _ = SynchronizedBeforeSuite(func() []byte {
 	pathToGinkgo = string(computedPathToGinkgo)
 })
 
-var _ = BeforeEach(func() {
-	// we mount everything outside the Ginkgo parent directory to make sure GOMODULES doesn't get confused by the go.mod in Ginkgo's root
-	pfm = NewPerformanceFixtureManager(fmt.Sprintf("../../../ginkgo_perf_tmp_%d", GinkgoParallelNode()))
-	gmcm = NewGoModCacheManager(fmt.Sprintf("../../../ginkgo_perf_cache_%d", GinkgoParallelNode()))
-})
-
-var _ = AfterEach(func() {
-	if !DEBUG {
-		pfm.Cleanup()
-		gmcm.Cleanup()
-	}
-})
-
 var _ = SynchronizedAfterSuite(func() {}, func() {
 	gexec.CleanupBuildArtifacts()
 })
@@ -449,6 +436,14 @@ func ginkgoCommand(dir string, args ...string) *exec.Cmd {
 
 func startGinkgo(dir string, args ...string) *gexec.Session {
 	cmd := ginkgoCommand(dir, args...)
+	session, err := gexec.Start(cmd, GinkgoWriter, GinkgoWriter)
+	Ω(err).ShouldNot(HaveOccurred())
+	return session
+}
+
+func startGinkgoWithEnv(dir string, env []string, args ...string) *gexec.Session {
+	cmd := ginkgoCommand(dir, args...)
+	cmd.Env = append(os.Environ(), env...)
 	session, err := gexec.Start(cmd, GinkgoWriter, GinkgoWriter)
 	Ω(err).ShouldNot(HaveOccurred())
 	return session

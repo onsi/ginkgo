@@ -61,7 +61,7 @@ var _ = Describe("ReportEntry and ReportEntries", func() {
 			Ω(reportEntry.Name).Should(Equal("name"))
 			Ω(reportEntry.Time).Should(BeTemporally("~", time.Now(), time.Second))
 			Ω(reportEntry.Location).Should(Equal(cl))
-			Ω(reportEntry.Value).Should(BeNil())
+			Ω(reportEntry.GetRawValue()).Should(BeNil())
 		})
 
 		It("has an empty StringRepresentation", func() {
@@ -74,8 +74,7 @@ var _ = Describe("ReportEntry and ReportEntries", func() {
 			Ω(rtEntry.Name).Should(Equal("name"))
 			Ω(rtEntry.Time).Should(BeTemporally("~", time.Now(), time.Second))
 			Ω(rtEntry.Location).Should(Equal(cl))
-			Ω(rtEntry.Representation).Should(Equal(""))
-			Ω(rtEntry.Value).Should(BeNil())
+			Ω(rtEntry.GetRawValue()).Should(BeNil())
 			Ω(rtEntry.StringRepresentation()).Should(BeZero())
 		})
 	})
@@ -87,7 +86,7 @@ var _ = Describe("ReportEntry and ReportEntries", func() {
 		})
 
 		It("returns a correctly configured ReportEntry", func() {
-			Ω(reportEntry.Value).Should(Equal("bob"))
+			Ω(reportEntry.GetRawValue()).Should(Equal("bob"))
 		})
 
 		It("has the correct StringRepresentation", func() {
@@ -96,8 +95,7 @@ var _ = Describe("ReportEntry and ReportEntries", func() {
 
 		It("round-trips through JSON correctly", func() {
 			rtEntry := reportEntryJSONRoundTrip(reportEntry)
-			Ω(rtEntry.Representation).Should(Equal(""))
-			Ω(rtEntry.Value).Should(Equal("bob"))
+			Ω(rtEntry.GetRawValue()).Should(Equal("bob"))
 			Ω(rtEntry.StringRepresentation()).Should(Equal("bob"))
 		})
 	})
@@ -109,7 +107,7 @@ var _ = Describe("ReportEntry and ReportEntries", func() {
 		})
 
 		It("returns a correctly configured ReportEntry", func() {
-			Ω(reportEntry.Value).Should(Equal(17))
+			Ω(reportEntry.GetRawValue()).Should(Equal(17))
 		})
 
 		It("has the correct StringRepresentation", func() {
@@ -118,8 +116,7 @@ var _ = Describe("ReportEntry and ReportEntries", func() {
 
 		It("round-trips through JSON correctly", func() {
 			rtEntry := reportEntryJSONRoundTrip(reportEntry)
-			Ω(rtEntry.Representation).Should(Equal(""))
-			Ω(rtEntry.Value).Should(Equal(float64(17)))
+			Ω(rtEntry.GetRawValue()).Should(Equal(float64(17)))
 			Ω(rtEntry.StringRepresentation()).Should(Equal("17"))
 		})
 	})
@@ -131,7 +128,7 @@ var _ = Describe("ReportEntry and ReportEntries", func() {
 		})
 
 		It("returns a correctly configured ReportEntry", func() {
-			Ω(reportEntry.Value).Should(Equal(SomeStruct{"bob", 17}))
+			Ω(reportEntry.GetRawValue()).Should(Equal(SomeStruct{"bob", 17}))
 		})
 
 		It("has the correct StringRepresentation", func() {
@@ -140,9 +137,15 @@ var _ = Describe("ReportEntry and ReportEntries", func() {
 
 		It("round-trips through JSON correctly", func() {
 			rtEntry := reportEntryJSONRoundTrip(reportEntry)
-			Ω(rtEntry.Representation).Should(Equal(""))
-			Ω(rtEntry.Value).Should(Equal(map[string]interface{}{"Label": "bob", "Count": float64(17)}))
-			Ω(rtEntry.StringRepresentation()).Should(Equal("map[Count:17 Label:bob]"))
+			Ω(rtEntry.GetRawValue()).Should(Equal(map[string]interface{}{"Label": "bob", "Count": float64(17)}))
+			Ω(rtEntry.StringRepresentation()).Should(Equal("{Label:bob Count:17}"))
+		})
+
+		It("can be rehydrated into the correct struct, manually", func() {
+			rtEntry := reportEntryJSONRoundTrip(reportEntry)
+			var s SomeStruct
+			Ω(json.Unmarshal([]byte(rtEntry.Value.AsJSON), &s)).Should(Succeed())
+			Ω(s).Should(Equal(SomeStruct{"bob", 17}))
 		})
 	})
 
@@ -153,7 +156,7 @@ var _ = Describe("ReportEntry and ReportEntries", func() {
 		})
 
 		It("returns a correctly configured ReportEntry", func() {
-			Ω(reportEntry.Value).Should(Equal(StringerStruct{"bob", 17}))
+			Ω(reportEntry.GetRawValue()).Should(Equal(StringerStruct{"bob", 17}))
 		})
 
 		It("has the correct StringRepresentation", func() {
@@ -162,8 +165,7 @@ var _ = Describe("ReportEntry and ReportEntries", func() {
 
 		It("round-trips through JSON correctly", func() {
 			rtEntry := reportEntryJSONRoundTrip(reportEntry)
-			Ω(rtEntry.Representation).Should(Equal("bob 17"))
-			Ω(rtEntry.Value).Should(Equal(map[string]interface{}{"Label": "bob", "Count": float64(17)}))
+			Ω(rtEntry.GetRawValue()).Should(Equal(map[string]interface{}{"Label": "bob", "Count": float64(17)}))
 			Ω(rtEntry.StringRepresentation()).Should(Equal("bob 17"))
 		})
 	})
@@ -175,7 +177,7 @@ var _ = Describe("ReportEntry and ReportEntries", func() {
 		})
 
 		It("returns a correctly configured ReportEntry", func() {
-			Ω(reportEntry.Value).Should(Equal(ColorableStringerStruct{"bob", 17}))
+			Ω(reportEntry.GetRawValue()).Should(Equal(ColorableStringerStruct{"bob", 17}))
 		})
 
 		It("has the correct StringRepresentation", func() {
@@ -184,8 +186,7 @@ var _ = Describe("ReportEntry and ReportEntries", func() {
 
 		It("round-trips through JSON correctly", func() {
 			rtEntry := reportEntryJSONRoundTrip(reportEntry)
-			Ω(rtEntry.Representation).Should(Equal("{{red}}bob {{green}}17{{/}}"))
-			Ω(rtEntry.Value).Should(Equal(map[string]interface{}{"Label": "bob", "Count": float64(17)}))
+			Ω(rtEntry.GetRawValue()).Should(Equal(map[string]interface{}{"Label": "bob", "Count": float64(17)}))
 			Ω(rtEntry.StringRepresentation()).Should(Equal("{{red}}bob {{green}}17{{/}}"))
 		})
 	})
@@ -200,7 +201,7 @@ var _ = Describe("ReportEntry and ReportEntries", func() {
 	Context("with the Offset decoration", func() {
 		It("computes a new offset code location", func() {
 			reportEntry, err = internal.NewReportEntry("name", cl, Offset(1))
-			Ω(reportEntry.Value).Should(BeNil())
+			Ω(reportEntry.GetRawValue()).Should(BeNil())
 			expectedCL := types.NewCodeLocation(2) // NewReportEntry has a BaseOffset of 2
 			Ω(reportEntry.Location.FileName).Should(Equal(expectedCL.FileName))
 		})
@@ -209,14 +210,14 @@ var _ = Describe("ReportEntry and ReportEntries", func() {
 		It("uses the passed-in codelocation", func() {
 			customCl := types.NewCustomCodeLocation("foo")
 			reportEntry, err = internal.NewReportEntry("name", cl, customCl)
-			Ω(reportEntry.Value).Should(BeNil())
+			Ω(reportEntry.GetRawValue()).Should(BeNil())
 			Ω(reportEntry.Location).Should(Equal(customCl))
 		})
 	})
 	Context("with a ReportEntryVisibility", func() {
 		It("uses the passed in visibility", func() {
 			reportEntry, err = internal.NewReportEntry("name", cl, types.ReportEntryVisibilityFailureOrVerbose)
-			Ω(reportEntry.Value).Should(BeNil())
+			Ω(reportEntry.GetRawValue()).Should(BeNil())
 			Ω(reportEntry.Visibility).Should(Equal(types.ReportEntryVisibilityFailureOrVerbose))
 		})
 	})
@@ -224,7 +225,7 @@ var _ = Describe("ReportEntry and ReportEntries", func() {
 		It("uses the passed in time", func() {
 			t := time.Date(1984, 3, 7, 0, 0, 0, 0, time.Local)
 			reportEntry, err = internal.NewReportEntry("name", cl, t)
-			Ω(reportEntry.Value).Should(BeNil())
+			Ω(reportEntry.GetRawValue()).Should(BeNil())
 			Ω(reportEntry.Time).Should(Equal(t))
 		})
 	})

@@ -5,7 +5,6 @@ import (
 
 	. "github.com/onsi/ginkgo"
 	"github.com/onsi/ginkgo/internal/interrupt_handler"
-	"github.com/onsi/ginkgo/internal/parallel_support"
 	. "github.com/onsi/ginkgo/internal/test_helpers"
 	"github.com/onsi/ginkgo/types"
 	. "github.com/onsi/gomega"
@@ -164,15 +163,10 @@ var _ = Describe("Sending reports to ReportAfterSuite nodes", func() {
 	})
 
 	Context("when running in parallel", func() {
-		var server *parallel_support.Server
-		var client parallel_support.Client
-		var exitChannels map[int]chan interface{}
 		var otherNodeReport types.Report
 
 		BeforeEach(func() {
-			conf.ParallelTotal = 2
-			server, client, exitChannels = SetUpServerAndClient(conf.ParallelTotal)
-			conf.ParallelHost = server.Address()
+			SetUpForParallel(2)
 
 			otherNodeReport = types.Report{
 				SpecReports: types.SpecReports{
@@ -180,10 +174,6 @@ var _ = Describe("Sending reports to ReportAfterSuite nodes", func() {
 					types.SpecReport{LeafNodeText: "F", LeafNodeLocation: cl, State: types.SpecStateSkipped, LeafNodeType: types.NodeTypeIt},
 				},
 			}
-		})
-
-		AfterEach(func() {
-			server.Close()
 		})
 
 		Context("on node 1", func() {

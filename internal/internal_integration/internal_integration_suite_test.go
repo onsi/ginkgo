@@ -8,6 +8,7 @@ import (
 	. "github.com/onsi/ginkgo"
 	"github.com/onsi/ginkgo/internal"
 	"github.com/onsi/ginkgo/internal/global"
+	"github.com/onsi/ginkgo/internal/parallel_support"
 	. "github.com/onsi/ginkgo/internal/test_helpers"
 	"github.com/onsi/ginkgo/types"
 	. "github.com/onsi/gomega"
@@ -27,6 +28,10 @@ var cl types.CodeLocation
 var interruptHandler *FakeInterruptHandler
 var outputInterceptor *FakeOutputInterceptor
 
+var server parallel_support.Server
+var client parallel_support.Client
+var exitChannels map[int]chan interface{}
+
 var _ = BeforeEach(func() {
 	conf = types.SuiteConfig{}
 	failer = internal.NewFailer()
@@ -43,6 +48,8 @@ var _ = BeforeEach(func() {
 	conf.ParallelTotal = 1
 	conf.ParallelNode = 1
 	conf.RandomSeed = 17
+
+	server, client, exitChannels = nil, nil, nil
 })
 
 /* Helpers to set up and run test fixtures using the Ginkgo DSL */
@@ -55,13 +62,19 @@ func WithSuite(suite *internal.Suite, callback func()) {
 	global.Failer = originalFailer
 }
 
+func SetUpForParallel(parallelTotal int) {
+	conf.ParallelTotal = parallelTotal
+	server, client, exitChannels = SetUpServerAndClient(conf.ParallelTotal)
+	conf.ParallelHost = server.Address()
+}
+
 func RunFixture(description string, callback func()) (bool, bool) {
 	suite := internal.NewSuite()
 	var success, hasProgrammaticFocus bool
 	WithSuite(suite, func() {
 		callback()
 		Ω(suite.BuildTree()).Should(Succeed())
-		success, hasProgrammaticFocus = suite.Run(description, "/path/to/suite", failer, reporter, writer, outputInterceptor, interruptHandler, conf)
+		success, hasProgrammaticFocus = suite.Run(description, "/path/to/suite", failer, reporter, writer, outputInterceptor, interruptHandler, client, conf)
 	})
 	return success, hasProgrammaticFocus
 }

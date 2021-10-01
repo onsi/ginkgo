@@ -18,9 +18,9 @@ A FakeReporter and collection of matchers to match against reported suite and sp
 
 type Reports []types.SpecReport
 
-func (s Reports) FindByLeafNodeType(nodeTypes ...types.NodeType) types.SpecReport {
+func (s Reports) FindByLeafNodeType(nodeTypes types.NodeType) types.SpecReport {
 	for _, report := range s {
-		if report.LeafNodeType.Is(nodeTypes...) {
+		if report.LeafNodeType.Is(nodeTypes) {
 			return report
 		}
 	}
@@ -68,10 +68,10 @@ func (s Reports) WithState(state types.SpecState) Reports {
 	return out
 }
 
-func (s Reports) WithLeafNodeType(nodeTypes ...types.NodeType) Reports {
+func (s Reports) WithLeafNodeType(nodeTypes types.NodeType) Reports {
 	out := Reports{}
 	for _, report := range s {
-		if report.LeafNodeType.Is(nodeTypes...) {
+		if report.LeafNodeType.Is(nodeTypes) {
 			out = append(out, report)
 		}
 	}
@@ -160,7 +160,7 @@ func BeASuiteSummary(options ...interface{}) OmegaMatcher {
 			WillRunSpecs: report.PreRunStats.SpecsThatWillRun,
 			Passed:       specs.CountWithState(types.SpecStatePassed),
 			Skipped:      specs.CountWithState(types.SpecStateSkipped),
-			Failed:       specs.CountWithState(types.SpecStateFailureStates...),
+			Failed:       specs.CountWithState(types.SpecStateFailureStates),
 			Pending:      specs.CountWithState(types.SpecStatePending),
 			Flaked:       specs.CountOfFlakedSpecs(),
 		}
@@ -205,13 +205,21 @@ func HaveBeenSkipped() OmegaMatcher {
 	})
 }
 
-func HaveBeenSkippedWithMessage(message string) OmegaMatcher {
-	return MatchFields(IgnoreExtras, Fields{
+func HaveBeenSkippedWithMessage(message string, options ...interface{}) OmegaMatcher {
+	fields := Fields{
 		"State": Equal(types.SpecStateSkipped),
 		"Failure": MatchFields(IgnoreExtras, Fields{
 			"Message": Equal(message),
 		}),
-	})
+	}
+	for _, option := range options {
+		t := reflect.TypeOf(option)
+		if t == reflect.TypeOf(NumAttempts(0)) {
+			fields["NumAttempts"] = Equal(int(option.(NumAttempts)))
+		}
+
+	}
+	return MatchFields(IgnoreExtras, fields)
 }
 
 func HaveBeenInterrupted(cause interrupt_handler.InterruptCause) OmegaMatcher {
@@ -275,6 +283,8 @@ func HaveAborted(options ...interface{}) OmegaMatcher {
 			failureFields["Message"] = Equal(option.(string))
 		} else if t == reflect.TypeOf(types.CodeLocation{}) {
 			failureFields["Location"] = Equal(option.(types.CodeLocation))
+		} else if t == reflect.TypeOf(FailureNodeType(types.NodeTypeIt)) {
+			failureFields["FailureNodeType"] = Equal(types.NodeType(option.(FailureNodeType)))
 		} else if t == reflect.TypeOf(NumAttempts(0)) {
 			fields["NumAttempts"] = Equal(int(option.(NumAttempts)))
 		}

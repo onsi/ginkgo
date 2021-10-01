@@ -4,7 +4,6 @@ import (
 	"time"
 
 	. "github.com/onsi/ginkgo"
-	"github.com/onsi/ginkgo/internal/parallel_support"
 	. "github.com/onsi/ginkgo/internal/test_helpers"
 	. "github.com/onsi/gomega"
 )
@@ -41,17 +40,8 @@ var _ = Describe("Serial", func() {
 	})
 
 	Context("when running in parallel", func() {
-		var server *parallel_support.Server
-		var exitChannels map[int]chan interface{}
-
 		BeforeEach(func() {
-			conf.ParallelTotal = 2
-			server, _, exitChannels = SetUpServerAndClient(conf.ParallelTotal)
-			conf.ParallelHost = server.Address()
-		})
-
-		AfterEach(func() {
-			server.Close()
+			SetUpForParallel(2)
 		})
 
 		Describe("when running as node 1", func() {

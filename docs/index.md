@@ -2498,7 +2498,9 @@ AddReportEntry(name string, args ...interface{})
 
 `AddReportEntry` can be called from any runnable node (e.g. `It`, `BeforeEach`, `BeforeSuite`) - but not from the body of a container node (e.g. `Describe`, `Context`).
 
-`AddReportEntry` generates `ReportEntry` and attaches it to the current running spec.  `ReportEntry` includes the passed in `name` as well as the time and source location at which `AddReportEntry` was called.  Users can also attach a single object of arbitrary type to the `ReportEntry` by passing it into `AddReportEntry` - this object is stored in `ReportEntry.Value` and is always included in the suite's JSON report.
+`AddReportEntry` generates `ReportEntry` and attaches it to the current running spec.  `ReportEntry` includes the passed in `name` as well as the time and source location at which `AddReportEntry` was called.  Users can also attach a single object of arbitrary type to the `ReportEntry` by passing it into `AddReportEntry` - this object is wrapped and stored under `ReportEntry.Value` and is always included in the suite's JSON report.
+
+You can access the report entries attached to a spec by getting the `CurrentSpecReport()` or registering a `ReportAfterEach()` - the returned report will include the attached `ReportEntries`.  You can fetch the value associated with the `ReportEntry` by calling `entry.GetRawValue()`.  When called in-process this returns the object that was passed to `AddReportEntry`.  When called after hydrating a report from JSON `entry.GetRawValue()` will include a parsed JSON `interface{}` - if you want to hydrate the JSON yourself into an object of known type you can `json.Unmarshal([]byte(entry.Value.AsJSON), &object)`.
 
 #### Supported Args
 `AddReportEntry` supports the `Offset` and `CodeLocation` decorations.  These will control the source code location associated with the generated `ReportEntry`.  You can also pass in a `time.Time` argument to override the timestamp associated with the `ReportEntry` - this can be helpful if you want to ensure a consistent timestamp between your code and the `ReportEntry`.
@@ -2510,7 +2512,7 @@ If you pass multiple arguments of the same type (e.g. two `Offset`s), the last a
 `type Timestamp time.Time`
 
 #### Controlling Output
-By default, Ginkgo's console reporter will emit any `ReportEntry` attached to a spec.  It will emit the `ReportEntry` name, location, and time.  If `ReportEntry.Value` is non-nil it will also emit a representation of `Value`.   If `Value` implements `fmt.Stringer` or `types.ColorableStringer` then `Value.String()` or `Value.ColorableString()` (which takes precedence) is used to generate the representation, otherwise Ginkgo uses `fmt.Sprintf("%#v", Value)`. 
+By default, Ginkgo's console reporter will emit any `ReportEntry` attached to a spec.  It will emit the `ReportEntry` name, location, and time.  If the `ReportEntry` value is non-nil it will also emit a representation of the value.  If the value implements `fmt.Stringer` or `types.ColorableStringer` then `value.String()` or `value.ColorableString()` (which takes precedence) is used to generate the representation, otherwise Ginkgo uses `fmt.Sprintf("%#v", value)`. 
 
 You can modify this default behavior by passing in one of the `ReportEntryVisibility` enum to `AddReportEntry`:
 

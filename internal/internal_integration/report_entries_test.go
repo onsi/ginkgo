@@ -25,11 +25,11 @@ var _ = Describe("ReportEntries", func() {
 
 	It("attaches entries to the report", func() {
 		Ω(reporter.Did.Find("adds-entries").ReportEntries[0].Name).Should(Equal("medical"))
-		Ω(reporter.Did.Find("adds-entries").ReportEntries[0].Value).Should(Equal("healthy"))
+		Ω(reporter.Did.Find("adds-entries").ReportEntries[0].Value.String()).Should(Equal("healthy"))
 		Ω(reporter.Did.Find("adds-entries").ReportEntries[1].Name).Should(Equal("engineering"))
-		Ω(reporter.Did.Find("adds-entries").ReportEntries[1].Value).Should(Equal("on fire"))
+		Ω(reporter.Did.Find("adds-entries").ReportEntries[1].Value.String()).Should(Equal("on fire"))
 		Ω(reporter.Did.Find("adds-no-entries").ReportEntries).Should(BeEmpty())
 		Ω(reporter.Did.FindByLeafNodeType(types.NodeTypeBeforeSuite).ReportEntries[0].Name).Should(Equal("bridge"))
-		Ω(reporter.Did.FindByLeafNodeType(types.NodeTypeBeforeSuite).ReportEntries[0].Value).Should(Equal("engaged"))
+		Ω(reporter.Did.FindByLeafNodeType(types.NodeTypeBeforeSuite).ReportEntries[0].Value.String()).Should(Equal("engaged"))
 	})
 })

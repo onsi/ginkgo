@@ -7,6 +7,7 @@ import (
 	. "github.com/onsi/ginkgo"
 	"github.com/onsi/ginkgo/internal"
 	"github.com/onsi/ginkgo/internal/interrupt_handler"
+	"github.com/onsi/ginkgo/internal/parallel_support"
 	. "github.com/onsi/ginkgo/internal/test_helpers"
 	"github.com/onsi/ginkgo/types"
 	. "github.com/onsi/gomega"
@@ -24,13 +25,15 @@ var _ = Describe("Suite", func() {
 	var interruptHandler *interrupt_handler.InterruptHandler
 	var conf types.SuiteConfig
 	var rt *RunTracker
+	var client parallel_support.Client
 
 	BeforeEach(func() {
 		failer = internal.NewFailer()
 		reporter = &FakeReporter{}
 		writer = internal.NewWriter(io.Discard)
 		outputInterceptor = NewFakeOutputInterceptor()
-		interruptHandler = interrupt_handler.NewInterruptHandler(0, "")
+		client = nil
+		interruptHandler = interrupt_handler.NewInterruptHandler(0, client)
 		conf = types.SuiteConfig{
 			ParallelTotal: 1,
 			ParallelNode:  1,
@@ -59,7 +62,7 @@ var _ = Describe("Suite", func() {
 				Ω(rt).Should(HaveTracked("traversing outer", "traversing nested"))
 
 				rt.Reset()
-				suite.Run("suite", "/path/to/suite", failer, reporter, writer, outputInterceptor, interruptHandler, conf)
+				suite.Run("suite", "/path/to/suite", failer, reporter, writer, outputInterceptor, interruptHandler, client, conf)
 				Ω(rt).Should(HaveTracked("running it"))
 
 				Ω(err1).ShouldNot(HaveOccurred())
@@ -84,7 +87,7 @@ var _ = Describe("Suite", func() {
 			})
 
 			It("errors", func() {
-				suite.Run("suite", "/path/to/suite", failer, reporter, writer, outputInterceptor, interruptHandler, conf)
+				suite.Run("suite", "/path/to/suite", failer, reporter, writer, outputInterceptor, interruptHandler, client, conf)
 				Ω(pushNodeErrDuringRun).Should(HaveOccurred())
 				Ω(rt).Should(HaveTracked("in it"))
 			})
@@ -253,7 +256,7 @@ var _ = Describe("Suite", func() {
 
 					Ω(err).ShouldNot(HaveOccurred())
 					Ω(suite.BuildTree()).Should(Succeed())
-					suite.Run("suite", "/path/to/suite", failer, reporter, writer, outputInterceptor, interruptHandler, conf)
+					suite.Run("suite", "/path/to/suite", failer, reporter, writer, outputInterceptor, interruptHandler, client, conf)
 					Ω(pushSuiteNodeErr).Should(HaveOccurred())
 				})
 			})
@@ -296,7 +299,7 @@ var _ = Describe("Suite", func() {
 					Ω(errors[1]).ShouldNot(HaveOccurred())
 					Ω(errors[2]).ShouldNot(HaveOccurred())
 
-					suite.Run("suite", "/path/to/suite", failer, reporter, writer, outputInterceptor, interruptHandler, conf)
+					suite.Run("suite", "/path/to/suite", failer, reporter, writer, outputInterceptor, interruptHandler, client, conf)
 					Ω(errors[3]).Should(MatchError(types.GinkgoErrors.PushingCleanupInReportingNode(cl, types.NodeTypeReportBeforeEach)))
 				})
 			})
@@ -318,7 +321,7 @@ var _ = Describe("Suite", func() {
 					Ω(errors[1]).ShouldNot(HaveOccurred())
 					Ω(errors[2]).ShouldNot(HaveOccurred())
 
-					suite.Run("suite", "/path/to/suite", failer, reporter, writer, outputInterceptor, interruptHandler, conf)
+					suite.Run("suite", "/path/to/suite", failer, reporter, writer, outputInterceptor, interruptHandler, client, conf)
 					Ω(errors[3]).Should(MatchError(types.GinkgoErrors.PushingCleanupInReportingNode(cl, types.NodeTypeReportAfterEach)))
 				})
 			})
@@ -340,7 +343,7 @@ var _ = Describe("Suite", func() {
 					Ω(suite.BuildTree()).Should(Succeed())
 					Ω(errors[2]).ShouldNot(HaveOccurred())
 
-					suite.Run("suite", "/path/to/suite", failer, reporter, writer, outputInterceptor, interruptHandler, conf)
+					suite.Run("suite", "/path/to/suite", failer, reporter, writer, outputInterceptor, interruptHandler, client, conf)
 					Ω(errors[3]).Should(MatchError(types.GinkgoErrors.PushingCleanupInReportingNode(cl, types.NodeTypeReportAfterSuite)))
 				})
 			})
@@ -357,7 +360,7 @@ var _ = Describe("Suite", func() {
 					}))
 					Ω(errors[0]).ShouldNot(HaveOccurred())
 					Ω(suite.BuildTree()).Should(Succeed())
-					suite.Run("suite", "/path/to/suite", failer, reporter, writer, outputInterceptor, interruptHandler, conf)
+					suite.Run("suite", "/path/to/suite", failer, reporter, writer, outputInterceptor, interruptHandler, client, conf)
 					Ω(errors[1]).ShouldNot(HaveOccurred())
 					Ω(errors[2]).Should(MatchError(types.GinkgoErrors.PushingCleanupInCleanupNode(cl)))
 				})

@@ -128,12 +128,6 @@ func NewNode(deprecationTracker *types.DeprecationTracker, nodeType types.NodeTy
 		NestingLevel: -1,
 	}
 	errors := []error{}
-	appendErrorIf := func(predicate bool, err error) bool {
-		if predicate {
-			errors = append(errors, err)
-		}
-		return predicate
-	}
 	appendError := func(err error) {
 		if err != nil {
 			errors = append(errors, err)
@@ -166,21 +160,33 @@ func NewNode(deprecationTracker *types.DeprecationTracker, nodeType types.NodeTy
 			break //ignore deprecated timeouts
 		case t == reflect.TypeOf(Focus):
 			node.MarkedFocus = bool(arg.(focusType))
-			appendErrorIf(!nodeType.Is(types.NodeTypesForContainerAndIt...), types.GinkgoErrors.InvalidDecorationForNodeType(node.CodeLocation, nodeType, "Focus"))
+			if !nodeType.Is(types.NodeTypesForContainerAndIt) {
+				appendError(types.GinkgoErrors.InvalidDecorationForNodeType(node.CodeLocation, nodeType, "Focus"))
+			}
 		case t == reflect.TypeOf(Pending):
 			node.MarkedPending = bool(arg.(pendingType))
-			appendErrorIf(!nodeType.Is(types.NodeTypesForContainerAndIt...), types.GinkgoErrors.InvalidDecorationForNodeType(node.CodeLocation, nodeType, "Pending"))
+			if !nodeType.Is(types.NodeTypesForContainerAndIt) {
+				appendError(types.GinkgoErrors.InvalidDecorationForNodeType(node.CodeLocation, nodeType, "Pending"))
+			}
 		case t == reflect.TypeOf(Serial):
 			node.MarkedSerial = bool(arg.(serialType))
-			appendErrorIf(!nodeType.Is(types.NodeTypesForContainerAndIt...), types.GinkgoErrors.InvalidDecorationForNodeType(node.CodeLocation, nodeType, "Serial"))
+			if !nodeType.Is(types.NodeTypesForContainerAndIt) {
+				appendError(types.GinkgoErrors.InvalidDecorationForNodeType(node.CodeLocation, nodeType, "Serial"))
+			}
 		case t == reflect.TypeOf(Ordered):
 			node.MarkedOrdered = bool(arg.(orderedType))
-			appendErrorIf(!nodeType.Is(types.NodeTypeContainer), types.GinkgoErrors.InvalidDecorationForNodeType(node.CodeLocation, nodeType, "Ordered"))
+			if !nodeType.Is(types.NodeTypeContainer) {
+				appendError(types.GinkgoErrors.InvalidDecorationForNodeType(node.CodeLocation, nodeType, "Ordered"))
+			}
 		case t == reflect.TypeOf(FlakeAttempts(0)):
 			node.FlakeAttempts = int(arg.(FlakeAttempts))
-			appendErrorIf(!nodeType.Is(types.NodeTypesForContainerAndIt...), types.GinkgoErrors.InvalidDecorationForNodeType(node.CodeLocation, nodeType, "FlakeAttempts"))
+			if !nodeType.Is(types.NodeTypesForContainerAndIt) {
+				appendError(types.GinkgoErrors.InvalidDecorationForNodeType(node.CodeLocation, nodeType, "FlakeAttempts"))
+			}
 		case t == reflect.TypeOf(Labels{}):
-			appendErrorIf(!nodeType.Is(types.NodeTypesForContainerAndIt...), types.GinkgoErrors.InvalidDecorationForNodeType(node.CodeLocation, nodeType, "Label"))
+			if !nodeType.Is(types.NodeTypesForContainerAndIt) {
+				appendError(types.GinkgoErrors.InvalidDecorationForNodeType(node.CodeLocation, nodeType, "Label"))
+			}
 			for _, label := range arg.(Labels) {
 				if !labelsSeen[label] {
 					labelsSeen[label] = true
@@ -190,12 +196,14 @@ func NewNode(deprecationTracker *types.DeprecationTracker, nodeType types.NodeTy
 				}
 			}
 		case t.Kind() == reflect.Func:
-			if appendErrorIf(node.Body != nil, types.GinkgoErrors.MultipleBodyFunctions(node.CodeLocation, nodeType)) {
+			if node.Body != nil {
+				appendError(types.GinkgoErrors.MultipleBodyFunctions(node.CodeLocation, nodeType))
 				trackedFunctionError = true
 				break
 			}
 			isValid := (t.NumOut() == 0) && (t.NumIn() <= 1) && (t.NumIn() == 0 || t.In(0) == reflect.TypeOf(make(Done)))
-			if appendErrorIf(!isValid, types.GinkgoErrors.InvalidBodyType(t, node.CodeLocation, nodeType)) {
+			if !isValid {
+				appendError(types.GinkgoErrors.InvalidBodyType(t, node.CodeLocation, nodeType))
 				trackedFunctionError = true
 				break
 			}
@@ -212,10 +220,15 @@ func NewNode(deprecationTracker *types.DeprecationTracker, nodeType types.NodeTy
 	}
 
 	//validations
-	appendErrorIf(node.MarkedPending && node.MarkedFocus, types.GinkgoErrors.InvalidDeclarationOfFocusedAndPending(node.CodeLocation, nodeType))
-	appendErrorIf(node.Body == nil && !node.MarkedPending && !trackedFunctionError, types.GinkgoErrors.MissingBodyFunction(node.CodeLocation, nodeType))
+	if node.MarkedPending && node.MarkedFocus {
+		appendError(types.GinkgoErrors.InvalidDeclarationOfFocusedAndPending(node.CodeLocation, nodeType))
+	}
+
+	if node.Body == nil && !node.MarkedPending && !trackedFunctionError {
+		appendError(types.GinkgoErrors.MissingBodyFunction(node.CodeLocation, nodeType))
+	}
 	for _, arg := range remainingArgs {
-		errors = append(errors, types.GinkgoErrors.UnknownDecoration(node.CodeLocation, nodeType, arg))
+		appendError(types.GinkgoErrors.UnknownDecoration(node.CodeLocation, nodeType, arg))
 	}
 
 	if len(errors) > 0 {
@@ -325,21 +338,22 @@ func (n Node) IsZero() bool {
 type Nodes []Node
 
 func (n Nodes) CopyAppend(nodes ...Node) Nodes {
-	out := Nodes{}
-	for _, node := range n {
-		out = append(out, node)
+	numN := len(n)
+	out := make(Nodes, numN+len(nodes))
+	for i, node := range n {
+		out[i] = node
 	}
-	for _, node := range nodes {
-		out = append(out, node)
+	for j, node := range nodes {
+		out[numN+j] = node
 	}
 	return out
 }
 
 func (n Nodes) SplitAround(pivot Node) (Nodes, Nodes) {
 	pivotIdx := len(n)
-	for idx, node := range n {
-		if node.ID == pivot.ID {
-			pivotIdx = idx
+	for i := range n {
+		if n[i].ID == pivot.ID {
+			pivotIdx = i
 			break
 		}
 	}
@@ -352,40 +366,85 @@ func (n Nodes) SplitAround(pivot Node) (Nodes, Nodes) {
 	return left, right
 }
 
-func (n Nodes) FirstNodeWithType(nodeTypes ...types.NodeType) Node {
-	for _, node := range n {
-		if node.NodeType.Is(nodeTypes...) {
-			return node
+func (n Nodes) FirstNodeWithType(nodeTypes types.NodeType) Node {
+	for i := range n {
+		if n[i].NodeType.Is(nodeTypes) {
+			return n[i]
 		}
 	}
 	return Node{}
 }
 
-func (n Nodes) WithType(nodeTypes ...types.NodeType) Nodes {
-	out := Nodes{}
-	for _, node := range n {
-		if node.NodeType.Is(nodeTypes...) {
-			out = append(out, node)
+func (n Nodes) WithType(nodeTypes types.NodeType) Nodes {
+	count := 0
+	for i := range n {
+		if n[i].NodeType.Is(nodeTypes) {
+			count++
+		}
+	}
+
+	out, j := make(Nodes, count), 0
+	for i := range n {
+		if n[i].NodeType.Is(nodeTypes) {
+			out[j] = n[i]
+			j++
 		}
 	}
 	return out
 }
 
-func (n Nodes) WithoutType(nodeTypes ...types.NodeType) Nodes {
-	out := Nodes{}
-	for _, node := range n {
-		if !node.NodeType.Is(nodeTypes...) {
-			out = append(out, node)
+func (n Nodes) WithoutType(nodeTypes types.NodeType) Nodes {
+	count := 0
+	for i := range n {
+		if !n[i].NodeType.Is(nodeTypes) {
+			count++
 		}
+	}
+
+	out, j := make(Nodes, count), 0
+	for i := range n {
+		if !n[i].NodeType.Is(nodeTypes) {
+			out[j] = n[i]
+			j++
+		}
+	}
+	return out
+}
+
+func (n Nodes) WithoutNode(nodeToExclude Node) Nodes {
+	idxToExclude := len(n)
+	for i := range n {
+		if n[i].ID == nodeToExclude.ID {
+			idxToExclude = i
+			break
+		}
+	}
+	if idxToExclude == len(n) {
+		return n
+	}
+	out, j := make(Nodes, len(n)-1), 0
+	for i := range n {
+		if i == idxToExclude {
+			continue
+		}
+		out[j] = n[i]
+		j++
 	}
 	return out
 }
 
 func (n Nodes) WithinNestingLevel(deepestNestingLevel int) Nodes {
-	out := make(Nodes, 0, len(n))
-	for _, node := range n {
-		if node.NestingLevel <= deepestNestingLevel {
-			out = append(out, node)
+	count := 0
+	for i := range n {
+		if n[i].NestingLevel <= deepestNestingLevel {
+			count++
+		}
+	}
+	out, j := make(Nodes, count), 0
+	for i := range n {
+		if n[i].NestingLevel <= deepestNestingLevel {
+			out[j] = n[i]
+			j++
 		}
 	}
 	return out
@@ -413,27 +472,27 @@ func (n Nodes) SortedByAscendingNestingLevel() Nodes {
 
 func (n Nodes) Reverse() Nodes {
 	out := make(Nodes, len(n))
-	for i, node := range n {
-		out[len(n)-1-i] = node
+	for i := range n {
+		out[len(n)-1-i] = n[i]
 	}
 	return out
 }
 
 func (n Nodes) Texts() []string {
 	out := make([]string, len(n))
-	for i, node := range n {
-		out[i] = node.Text
+	for i := range n {
+		out[i] = n[i].Text
 	}
 	return out
 }
 
 func (n Nodes) Labels() [][]string {
 	out := make([][]string, len(n))
-	for i, node := range n {
-		if node.Labels == nil {
+	for i := range n {
+		if n[i].Labels == nil {
 			out[i] = []string{}
 		} else {
-			out[i] = []string(node.Labels)
+			out[i] = []string(n[i].Labels)
 		}
 	}
 	return out
@@ -442,8 +501,8 @@ func (n Nodes) Labels() [][]string {
 func (n Nodes) UnionOfLabels() []string {
 	out := []string{}
 	seen := map[string]bool{}
-	for _, node := range n {
-		for _, label := range node.Labels {
+	for i := range n {
+		for _, label := range n[i].Labels {
 			if !seen[label] {
 				seen[label] = true
 				out = append(out, label)
@@ -455,8 +514,8 @@ func (n Nodes) UnionOfLabels() []string {
 
 func (n Nodes) CodeLocations() []types.CodeLocation {
 	out := make([]types.CodeLocation, len(n))
-	for i, node := range n {
-		out[i] = node.CodeLocation
+	for i := range n {
+		out[i] = n[i].CodeLocation
 	}
 	return out
 }
@@ -466,9 +525,9 @@ func (n Nodes) BestTextFor(node Node) string {
 		return node.Text
 	}
 	parentNestingLevel := node.NestingLevel - 1
-	for _, node := range n {
-		if node.Text != "" && node.NestingLevel == parentNestingLevel {
-			return node.Text
+	for i := range n {
+		if n[i].Text != "" && n[i].NestingLevel == parentNestingLevel {
+			return n[i].Text
 		}
 	}
 
@@ -476,8 +535,8 @@ func (n Nodes) BestTextFor(node Node) string {
 }
 
 func (n Nodes) HasNodeMarkedPending() bool {
-	for _, node := range n {
-		if node.MarkedPending {
+	for i := range n {
+		if n[i].MarkedPending {
 			return true
 		}
 	}
@@ -485,8 +544,8 @@ func (n Nodes) HasNodeMarkedPending() bool {
 }
 
 func (n Nodes) HasNodeMarkedFocus() bool {
-	for _, node := range n {
-		if node.MarkedFocus {
+	for i := range n {
+		if n[i].MarkedFocus {
 			return true
 		}
 	}
@@ -494,8 +553,8 @@ func (n Nodes) HasNodeMarkedFocus() bool {
 }
 
 func (n Nodes) HasNodeMarkedSerial() bool {
-	for _, node := range n {
-		if node.MarkedSerial {
+	for i := range n {
+		if n[i].MarkedSerial {
 			return true
 		}
 	}
@@ -503,9 +562,9 @@ func (n Nodes) HasNodeMarkedSerial() bool {
 }
 
 func (n Nodes) FirstNodeMarkedOrdered() Node {
-	for _, node := range n {
-		if node.MarkedOrdered {
-			return node
+	for i := range n {
+		if n[i].MarkedOrdered {
+			return n[i]
 		}
 	}
 	return Node{}

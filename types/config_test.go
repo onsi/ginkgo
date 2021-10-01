@@ -184,16 +184,6 @@ var _ = Describe("Config", func() {
 					})
 				})
 
-				Context("and parallel host is set but fails", func() {
-					BeforeEach(func() {
-						server.SetUnhandledRequestStatusCode(http.StatusGone)
-					})
-					It("errors", func() {
-						errors := types.VetConfig(flagSet, suiteConf, repConf)
-						Ω(errors).Should(ConsistOf(types.GinkgoErrors.UnreachableParallelHost(server.URL())))
-					})
-				})
-
 				Context("when trying to dry run in parallel", func() {
 					BeforeEach(func() {
 						suiteConf.DryRun = true
