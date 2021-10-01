@@ -87,7 +87,7 @@ func CurrentGinkgoTestDescription() DeprecatedGinkgoTestDescription {
 		TestText:       report.LeafNodeText,
 		FileName:       report.LeafNodeLocation.FileName,
 		LineNumber:     report.LeafNodeLocation.LineNumber,
-		Failed:         report.State.Is(types.SpecStateFailureStates...),
+		Failed:         report.State.Is(types.SpecStateFailureStates),
 		Duration:       report.RunTime,
 	}
 }

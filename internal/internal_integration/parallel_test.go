@@ -1,13 +1,10 @@
 package internal_integration_test
 
 import (
-	"net/http"
-	"sync"
 	"time"
 
 	. "github.com/onsi/ginkgo"
 	"github.com/onsi/ginkgo/internal"
-	"github.com/onsi/ginkgo/internal/parallel_support"
 	. "github.com/onsi/ginkgo/internal/test_helpers"
 	"github.com/onsi/ginkgo/types"
 	. "github.com/onsi/gomega"
@@ -89,40 +86,16 @@ var _ = Describe("Running tests in parallel", func() {
 	BeforeEach(func() {
 		serialValidator = make(chan interface{})
 		//set up configuration for node 1 and node 2
-		conf.ParallelTotal = 2
+
+		//SetUpForParallel starts up a server, sets up a client, and sets up the exitChannels map - they're all cleaned up automatically after the test
+		SetUpForParallel(2)
+
 		conf.ParallelNode = 1
 		conf.RandomizeAllSpecs = true
 		conf.RandomSeed = 17
-		conf2 = types.SuiteConfig{
-			ParallelTotal:     2,
-			ParallelNode:      2,
-			RandomSeed:        17,
-			RandomizeAllSpecs: true,
-		}
 
-		// start up a remote server - we're using the real thing here, not a fake
-		server, err := parallel_support.NewServer(2, &FakeReporter{})
-		Ω(err).ShouldNot(HaveOccurred())
-		server.Start()
-
-		// we're using a SynchronizedAfterSuite and making sure it runs on the correct nodes
-		// so we need to pass the server these "alive" callbacks.
-		// in real life the ginkgo cli sets these up and monitors the running processes
-		// here we do the same but are simply monitoring the running goroutines
-		aliveState := &sync.Map{}
-		for i := 1; i <= 2; i += 1 {
-			node := i
-			aliveState.Store(node, true)
-			server.RegisterAlive(node, func() bool {
-				alive, _ := aliveState.Load(node)
-				return alive.(bool)
-			})
-		}
-
-		// wait for the server to come up
-		Eventually(StatusCodePoller(server.Address() + "/up")).Should(Equal(http.StatusOK))
-		conf.ParallelHost = server.Address()
-		conf2.ParallelHost = server.Address()
+		conf2 = conf //makes a copy
+		conf2.ParallelNode = 2
 
 		// construct suite 1...
 		suite1 := internal.NewSuite()
@@ -142,26 +115,22 @@ var _ = Describe("Running tests in parallel", func() {
 		finished := make(chan bool)
 		//now launch suite 1...
 		go func() {
-			success, _ := suite1.Run("node 1", "/path/to/suite", failer, reporter, writer, outputInterceptor, interruptHandler, conf)
+			success, _ := suite1.Run("node 1", "/path/to/suite", failer, reporter, writer, outputInterceptor, interruptHandler, client, conf)
 			finished <- success
-			aliveState.Store(1, false)
+			close(exitChannels[1])
 		}()
 
 		//and launch suite 2...
 		reporter2 = &FakeReporter{}
 		go func() {
-			success, _ := suite2.Run("node 2", "/path/to/suite", internal.NewFailer(), reporter2, writer, outputInterceptor, interruptHandler, conf2)
+			success, _ := suite2.Run("node 2", "/path/to/suite", internal.NewFailer(), reporter2, writer, outputInterceptor, interruptHandler, client, conf2)
 			finished <- success
-			aliveState.Store(2, false)
+			close(exitChannels[2])
 		}()
 
 		// eventually both suites should finish (and succeed)...
 		Eventually(finished).Should(Receive(Equal(true)))
 		Eventually(finished).Should(Receive(Equal(true)))
-
-		// ...so we can safely shut down the server
-		server.Close()
-
 		// and now we're ready to make asserts on the various run trackers and reporters
 	})
 

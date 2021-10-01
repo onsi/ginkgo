@@ -16,6 +16,7 @@ func NewReportEntry(name string, cl types.CodeLocation, args ...interface{}) (Re
 		Time:       time.Now(),
 		Location:   cl,
 	}
+	var didSetValue = false
 	for _, arg := range args {
 		switch reflect.TypeOf(arg) {
 		case reflect.TypeOf(types.ReportEntryVisibilityAlways):
@@ -27,10 +28,11 @@ func NewReportEntry(name string, cl types.CodeLocation, args ...interface{}) (Re
 		case reflect.TypeOf(out.Time):
 			out.Time = arg.(time.Time)
 		default:
-			if out.Value != nil {
+			if didSetValue {
 				return ReportEntry{}, types.GinkgoErrors.TooManyReportEntryValues(out.Location, arg)
 			}
-			out.Value = arg
+			out.Value = types.WrapEntryValue(arg)
+			didSetValue = true
 		}
 	}
 

@@ -27,7 +27,7 @@ var _ = Describe("Spec and Specs", func() {
 				nBef := N(ntBef)
 				nIt := N(ntIt)
 				spec := S(N(ntCon), N(ntAf), nBef, N(ntBef), nIt, N(ntAf))
-				Ω(spec.FirstNodeWithType(ntIt, ntBef)).Should(Equal(nBef))
+				Ω(spec.FirstNodeWithType(ntIt | ntBef)).Should(Equal(nBef))
 			})
 		})
 

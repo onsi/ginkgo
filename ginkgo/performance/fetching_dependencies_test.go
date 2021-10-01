@@ -1,6 +1,8 @@
 package performance_test
 
 import (
+	"fmt"
+
 	. "github.com/onsi/ginkgo"
 	. "github.com/onsi/gomega"
 	"github.com/onsi/gomega/gmeasure"
@@ -13,6 +15,14 @@ var _ = Describe("Fetching Dependencies", func() {
 		var err error
 		cache, err = gmeasure.NewExperimentCache("./fetching-dependencies-cache")
 		Ω(err).ShouldNot(HaveOccurred())
+
+		// we mount everything outside the Ginkgo parent directory to make sure GOMODULES doesn't get confused by the go.mod in Ginkgo's root
+		pfm = NewPerformanceFixtureManager(fmt.Sprintf("../../../ginkgo_perf_tmp_%d", GinkgoParallelNode()))
+		gmcm = NewGoModCacheManager(fmt.Sprintf("../../../ginkgo_perf_cache_%d", GinkgoParallelNode()))
+		if !DEBUG {
+			DeferCleanup(pfm.Cleanup)
+			DeferCleanup(gmcm.Cleanup)
+		}
 	})
 
 	Describe("Experiments", func() {

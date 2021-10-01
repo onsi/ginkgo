@@ -63,11 +63,7 @@ type InterruptHandler struct {
 	stop                        chan interface{}
 }
 
-func NewInterruptHandler(timeout time.Duration, parallelHost string) *InterruptHandler {
-	var client parallel_support.Client
-	if parallelHost != "" {
-		client = parallel_support.NewClient(parallelHost)
-	}
+func NewInterruptHandler(timeout time.Duration, client parallel_support.Client) *InterruptHandler {
 	handler := &InterruptHandler{
 		c:           make(chan interface{}),
 		lock:        &sync.Mutex{},
@@ -98,7 +94,7 @@ func (handler *InterruptHandler) registerForInterrupts(timeout time.Duration) {
 
 	// cross-process abort handling
 	var abortChannel chan bool
-	if !handler.client.IsZero() {
+	if handler.client != nil {
 		abortChannel = make(chan bool)
 		go func() {
 			pollTicker := time.NewTicker(ABORT_POLLING_INTERVAL)

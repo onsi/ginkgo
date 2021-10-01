@@ -2,11 +2,14 @@ package internal_test
 
 import (
 	"fmt"
+	"os"
 	"reflect"
+	"time"
 
 	. "github.com/onsi/ginkgo"
 	"github.com/onsi/ginkgo/types"
 	. "github.com/onsi/gomega"
+	"github.com/onsi/gomega/gmeasure"
 
 	"github.com/onsi/ginkgo/internal"
 )
@@ -745,7 +748,7 @@ var _ = Describe("Nodes", func() {
 
 		Context("when there is a matching node", func() {
 			It("returns the first node that matches one of the requested node types", func() {
-				Ω(nodes.FirstNodeWithType(ntAf, ntIt, ntBef).Text).Should(Equal("bef1"))
+				Ω(nodes.FirstNodeWithType(ntAf | ntIt | ntBef).Text).Should(Equal("bef1"))
 			})
 		})
 		Context("when there is no matching node", func() {
@@ -771,7 +774,7 @@ var _ = Describe("Nodes", func() {
 		Describe("WithType", func() {
 			Context("when there are matching nodes", func() {
 				It("returns them while preserving order", func() {
-					Ω(nodes.WithType(ntIt, ntBef)).Should(Equal(Nodes{nBef1, nBef2, nIt}))
+					Ω(nodes.WithType(ntIt | ntBef)).Should(Equal(Nodes{nBef1, nBef2, nIt}))
 				})
 			})
 
@@ -785,13 +788,36 @@ var _ = Describe("Nodes", func() {
 		Describe("WithoutType", func() {
 			Context("when there are matching nodes", func() {
 				It("does not include them in the result", func() {
-					Ω(nodes.WithoutType(ntIt, ntBef)).Should(Equal(Nodes{nCon, nAf}))
+					Ω(nodes.WithoutType(ntIt | ntBef)).Should(Equal(Nodes{nCon, nAf}))
 				})
 			})
 
 			Context("when no nodes match", func() {
 				It("doesn't elide any nodes", func() {
 					Ω(nodes.WithoutType(ntJusAf)).Should(Equal(nodes))
+				})
+			})
+		})
+
+		Describe("WithoutNode", func() {
+			Context("when operating on an empty nodes list", func() {
+				It("does nothing", func() {
+					nodes = Nodes{}
+					Ω(nodes.WithoutNode(N(ntIt))).Should(BeEmpty())
+
+				})
+			})
+			Context("when the node is in the nodes list", func() {
+				It("returns a copy of the nodes list without the node in it", func() {
+					Ω(nodes.WithoutNode(nBef2)).Should(Equal(Nodes{nCon, nBef1, nIt, nAf}))
+					Ω(nodes).Should(Equal(Nodes{nCon, nBef1, nBef2, nIt, nAf}))
+				})
+			})
+
+			Context("when the node is not in the nodes list", func() {
+				It("returns an unadulterated copy of the nodes list", func() {
+					Ω(nodes.WithoutNode(N(ntBef))).Should(Equal(Nodes{nCon, nBef1, nBef2, nIt, nAf}))
+					Ω(nodes).Should(Equal(Nodes{nCon, nBef1, nBef2, nIt, nAf}))
 				})
 			})
 		})
@@ -1016,5 +1042,152 @@ var _ = Describe("Nodes", func() {
 				Ω(nodes.FirstNodeMarkedOrdered()).Should(BeZero())
 			})
 		})
+	})
+})
+
+var _ = Describe("Iteration Performance", Serial, func() {
+	BeforeEach(func() {
+		if os.Getenv("PERF") == "" {
+			Skip("")
+		}
+	})
+
+	It("compares the performance of iteration using range vs counters", func() {
+		experiment := gmeasure.NewExperiment("iteration")
+
+		size := 1000
+		nodes := make(Nodes, size)
+		for i := 0; i < size; i++ {
+			nodes[i] = N(ntAf)
+		}
+		nodes[size-1] = N(ntIt)
+
+		experiment.SampleDuration("range", func(idx int) {
+			numIts := 0
+			for _, node := range nodes {
+				if node.NodeType.Is(ntIt) {
+					numIts += 1
+				}
+			}
+		}, gmeasure.SamplingConfig{N: 1024}, gmeasure.Precision(time.Nanosecond))
+
+		experiment.SampleDuration("range-index", func(idx int) {
+			numIts := 0
+			for i := range nodes {
+				if nodes[i].NodeType.Is(ntIt) {
+					numIts += 1
+				}
+			}
+		}, gmeasure.SamplingConfig{N: 1024}, gmeasure.Precision(time.Nanosecond))
+
+		experiment.SampleDuration("counter", func(idx int) {
+			numIts := 0
+			for i := 0; i < len(nodes); i++ {
+				if nodes[i].NodeType.Is(ntIt) {
+					numIts += 1
+				}
+			}
+		}, gmeasure.SamplingConfig{N: 1024}, gmeasure.Precision(time.Nanosecond))
+
+		AddReportEntry(experiment.Name, gmeasure.RankStats(gmeasure.LowerMedianIsBetter, experiment.GetStats("range"), experiment.GetStats("range-index"), experiment.GetStats("counter")))
+
+	})
+
+	It("compares the performance of slice construction by growing slices vs pre-allocating slices vs counting twice", func() {
+		experiment := gmeasure.NewExperiment("filtering")
+
+		size := 1000
+		nodes := make(Nodes, size)
+		for i := 0; i < size; i++ {
+			if i%100 == 0 {
+				nodes[i] = N(ntIt)
+			} else {
+				nodes[i] = N(ntAf)
+			}
+		}
+
+		largeStats := []gmeasure.Stats{}
+		smallStats := []gmeasure.Stats{}
+
+		experiment.SampleDuration("grow-slice (large)", func(idx int) {
+			out := Nodes{}
+			for i := range nodes {
+				if nodes[i].NodeType.Is(ntAf) {
+					out = append(out, nodes[i])
+				}
+			}
+		}, gmeasure.SamplingConfig{N: 1024}, gmeasure.Precision(time.Nanosecond))
+		largeStats = append(largeStats, experiment.GetStats("grow-slice (large)"))
+
+		experiment.SampleDuration("grow-slice (small)", func(idx int) {
+			out := Nodes{}
+			for i := range nodes {
+				if nodes[i].NodeType.Is(ntIt) {
+					out = append(out, nodes[i])
+				}
+			}
+		}, gmeasure.SamplingConfig{N: 1024}, gmeasure.Precision(time.Nanosecond))
+		smallStats = append(smallStats, experiment.GetStats("grow-slice (small)"))
+
+		experiment.SampleDuration("pre-allocate (large)", func(idx int) {
+			out := make(Nodes, 0, len(nodes))
+			for i := range nodes {
+				if nodes[i].NodeType.Is(ntAf) {
+					out = append(out, nodes[i])
+				}
+			}
+		}, gmeasure.SamplingConfig{N: 1024}, gmeasure.Precision(time.Nanosecond))
+		largeStats = append(largeStats, experiment.GetStats("pre-allocate (large)"))
+
+		experiment.SampleDuration("pre-allocate (small)", func(idx int) {
+			out := make(Nodes, 0, len(nodes))
+			for i := range nodes {
+				if nodes[i].NodeType.Is(ntIt) {
+					out = append(out, nodes[i])
+				}
+			}
+		}, gmeasure.SamplingConfig{N: 1024}, gmeasure.Precision(time.Nanosecond))
+		smallStats = append(smallStats, experiment.GetStats("pre-allocate (small)"))
+
+		experiment.SampleDuration("pre-count (large)", func(idx int) {
+			count := 0
+			for i := range nodes {
+				if nodes[i].NodeType.Is(ntAf) {
+					count++
+				}
+			}
+
+			out := make(Nodes, count)
+			j := 0
+			for i := range nodes {
+				if nodes[i].NodeType.Is(ntAf) {
+					out[j] = nodes[i]
+					j++
+				}
+			}
+		}, gmeasure.SamplingConfig{N: 1024}, gmeasure.Precision(time.Nanosecond))
+		largeStats = append(largeStats, experiment.GetStats("pre-count (large)"))
+
+		experiment.SampleDuration("pre-count (small)", func(idx int) {
+			count := 0
+			for i := range nodes {
+				if nodes[i].NodeType.Is(ntIt) {
+					count++
+				}
+			}
+
+			out := make(Nodes, count)
+			j := 0
+			for i := range nodes {
+				if nodes[i].NodeType.Is(ntIt) {
+					out[j] = nodes[i]
+					j++
+				}
+			}
+		}, gmeasure.SamplingConfig{N: 1024}, gmeasure.Precision(time.Nanosecond))
+		smallStats = append(smallStats, experiment.GetStats("pre-count (small)"))
+
+		AddReportEntry("Large Slice", gmeasure.RankStats(gmeasure.LowerMedianIsBetter, largeStats...))
+		AddReportEntry("Small Slice", gmeasure.RankStats(gmeasure.LowerMedianIsBetter, smallStats...))
 	})
 })

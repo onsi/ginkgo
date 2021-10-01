@@ -1,0 +1,2 @@
+{"Name":"parallel-RPC-SWAP-benchmark","Version":2}
+{"Name":"parallel-RPC-SWAP-benchmark","Measurements":[{"Type":"Duration","ExperimentName":"parallel-RPC-SWAP-benchmark","Note":"","Name":"runtime","Style":"","Units":"duration","PrecisionBundle":{"Duration":100000,"ValueFormat":"%.3f"},"Durations":[691170592,701798762,671782049,656337074,680936039,684759574,672048754,689200123,671827343,651730201],"Values":null,"Annotations":["","","","","","","","","",""]}]}

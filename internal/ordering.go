@@ -32,7 +32,7 @@ func OrderSpecs(specs Specs, suiteConfig types.SuiteConfig) (GroupedSpecIndices,
 	// but setting --randomize-all-specs causes us to shuffle all specs (excpect for Ordered specs)
 	nodeTypesToGroup := types.NodeTypesForContainerAndIt
 	if suiteConfig.RandomizeAllSpecs {
-		nodeTypesToGroup = []types.NodeType{types.NodeTypeIt}
+		nodeTypesToGroup = types.NodeTypeIt
 	}
 
 	// Go through all specs and build the permutable groups.  These are groupings that can be shuffled.
@@ -46,7 +46,7 @@ func OrderSpecs(specs Specs, suiteConfig types.SuiteConfig) (GroupedSpecIndices,
 		if groupingNode.IsZero() {
 			// If a spec is not in an ordered container...
 			// ...we group based on the first node with a nodetype satisfying `nodeTypesToGroup`
-			groupingNode = spec.Nodes.FirstNodeWithType(nodeTypesToGroup...)
+			groupingNode = spec.Nodes.FirstNodeWithType(nodeTypesToGroup)
 		} else {
 			// If a spec is in an ordered container...
 			// ...we group based on the outermost ordered container

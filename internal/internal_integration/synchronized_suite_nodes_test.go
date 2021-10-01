@@ -2,7 +2,6 @@ package internal_integration_test
 
 import (
 	. "github.com/onsi/ginkgo"
-	"github.com/onsi/ginkgo/internal/parallel_support"
 	. "github.com/onsi/ginkgo/internal/test_helpers"
 	"github.com/onsi/ginkgo/types"
 	. "github.com/onsi/gomega"
@@ -169,21 +168,12 @@ var _ = Describe("Synchronized Suite Nodes", func() {
 	})
 
 	Describe("when running in parallel", func() {
-		var server *parallel_support.Server
-		var client parallel_support.Client
-		var exitChannels map[int]chan interface{}
 		var serverOutputBuffer *gbytes.Buffer
 
 		BeforeEach(func() {
-			conf.ParallelTotal = 2
-			server, client, exitChannels = SetUpServerAndClient(conf.ParallelTotal)
-			conf.ParallelHost = server.Address()
+			SetUpForParallel(2)
 			serverOutputBuffer = gbytes.NewBuffer()
-			server.OutputDestination = serverOutputBuffer
-		})
-
-		AfterEach(func() {
-			server.Close()
+			server.SetOutputDestination(serverOutputBuffer)
 		})
 
 		Describe("when running as node 1", func() {

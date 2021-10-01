@@ -11,22 +11,30 @@ import (
 	"github.com/onsi/ginkgo/types"
 )
 
-var ErrorGone = fmt.Errorf("gone!")
-var ErrorFailed = fmt.Errorf("failed!")
-
-var POLLING_INTERVAL = 50 * time.Millisecond
-
-type Client struct {
+type httpClient struct {
 	serverHost string
 }
 
-func NewClient(serverHost string) Client {
-	return Client{
+func newHttpClient(serverHost string) *httpClient {
+	return &httpClient{
 		serverHost: serverHost,
 	}
 }
 
-func (client Client) post(path string, data interface{}) error {
+func (client *httpClient) Connect() bool {
+	resp, err := http.Get(client.serverHost + "/up")
+	if err != nil {
+		return false
+	}
+	resp.Body.Close()
+	return resp.StatusCode == http.StatusOK
+}
+
+func (client *httpClient) Close() error {
+	return nil
+}
+
+func (client *httpClient) post(path string, data interface{}) error {
 	var body io.Reader
 	if data != nil {
 		encoded, err := json.Marshal(data)
@@ -46,7 +54,7 @@ func (client Client) post(path string, data interface{}) error {
 	return nil
 }
 
-func (client Client) poll(path string, data interface{}) error {
+func (client *httpClient) poll(path string, data interface{}) error {
 	for {
 		resp, err := http.Get(client.serverHost + path)
 		if err != nil {
@@ -74,31 +82,27 @@ func (client Client) poll(path string, data interface{}) error {
 	}
 }
 
-func (client Client) IsZero() bool {
-	return client.serverHost == ""
-}
-
-func (client Client) PostSuiteWillBegin(report types.Report) error {
+func (client *httpClient) PostSuiteWillBegin(report types.Report) error {
 	return client.post("/suite-will-begin", report)
 }
 
-func (client Client) PostDidRun(report types.SpecReport) error {
+func (client *httpClient) PostDidRun(report types.SpecReport) error {
 	return client.post("/did-run", report)
 }
 
-func (client Client) PostSuiteDidEnd(report types.Report) error {
+func (client *httpClient) PostSuiteDidEnd(report types.Report) error {
 	return client.post("/suite-did-end", report)
 }
 
-func (client Client) PostSynchronizedBeforeSuiteSucceeded(data []byte) error {
+func (client *httpClient) PostSynchronizedBeforeSuiteSucceeded(data []byte) error {
 	return client.post("/before-suite-succeeded", data)
 }
 
-func (client Client) PostSynchronizedBeforeSuiteFailed() error {
+func (client *httpClient) PostSynchronizedBeforeSuiteFailed() error {
 	return client.post("/before-suite-failed", nil)
 }
 
-func (client Client) BlockUntilSynchronizedBeforeSuiteData() ([]byte, error) {
+func (client *httpClient) BlockUntilSynchronizedBeforeSuiteData() ([]byte, error) {
 	var data []byte
 	err := client.poll("/before-suite-state", &data)
 	if err == ErrorGone {
@@ -109,11 +113,11 @@ func (client Client) BlockUntilSynchronizedBeforeSuiteData() ([]byte, error) {
 	return data, err
 }
 
-func (client Client) BlockUntilNonprimaryNodesHaveFinished() error {
+func (client *httpClient) BlockUntilNonprimaryNodesHaveFinished() error {
 	return client.poll("/have-nonprimary-nodes-finished", nil)
 }
 
-func (client Client) BlockUntilAggregatedNonprimaryNodesReport() (types.Report, error) {
+func (client *httpClient) BlockUntilAggregatedNonprimaryNodesReport() (types.Report, error) {
 	var report types.Report
 	err := client.poll("/aggregated-nonprimary-nodes-report", &report)
 	if err == ErrorGone {
@@ -122,26 +126,17 @@ func (client Client) BlockUntilAggregatedNonprimaryNodesReport() (types.Report, 
 	return report, err
 }
 
-func (client Client) FetchNextCounter() (int, error) {
+func (client *httpClient) FetchNextCounter() (int, error) {
 	var counter ParallelIndexCounter
 	err := client.poll("/counter", &counter)
 	return counter.Index, err
 }
 
-func (client Client) CheckServerUp() bool {
-	resp, err := http.Get(client.serverHost + "/up")
-	if err != nil {
-		return false
-	}
-	resp.Body.Close()
-	return resp.StatusCode == http.StatusOK
-}
-
-func (client Client) PostAbort() error {
+func (client *httpClient) PostAbort() error {
 	return client.post("/abort", nil)
 }
 
-func (client Client) ShouldAbort() bool {
+func (client *httpClient) ShouldAbort() bool {
 	err := client.poll("/abort", nil)
 	if err == ErrorGone {
 		return true
@@ -149,11 +144,11 @@ func (client Client) ShouldAbort() bool {
 	return false
 }
 
-func (client Client) Write(p []byte) (int, error) {
-	resp, err := http.Post(client.serverHost+"/stream-output", "text/plain;charset=UTF-8 ", bytes.NewReader(p))
+func (client *httpClient) Write(p []byte) (int, error) {
+	resp, err := http.Post(client.serverHost+"/emit-output", "text/plain;charset=UTF-8 ", bytes.NewReader(p))
 	resp.Body.Close()
 	if resp.StatusCode != http.StatusOK {
-		return 0, fmt.Errorf("failed to stream output")
+		return 0, fmt.Errorf("failed to emit output")
 	}
 	return len(p), err
 }

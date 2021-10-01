@@ -27,6 +27,7 @@ type Suite struct {
 
 	suiteNodes   Nodes
 	cleanupNodes Nodes
+	nodeRunCount map[uint]int
 
 	writer            WriterInterface
 	currentSpecReport types.SpecReport
@@ -37,8 +38,9 @@ type Suite struct {
 
 func NewSuite() *Suite {
 	return &Suite{
-		tree:  &TreeNode{},
-		phase: PhaseBuildTopLevel,
+		tree:         &TreeNode{},
+		phase:        PhaseBuildTopLevel,
+		nodeRunCount: map[uint]int{},
 	}
 }
 
@@ -55,7 +57,7 @@ func (suite *Suite) BuildTree() error {
 	return nil
 }
 
-func (suite *Suite) Run(description string, suitePath string, failer *Failer, reporter reporters.Reporter, writer WriterInterface, outputInterceptor OutputInterceptor, interruptHandler interrupt_handler.InterruptHandlerInterface, suiteConfig types.SuiteConfig) (bool, bool) {
+func (suite *Suite) Run(description string, suitePath string, failer *Failer, reporter reporters.Reporter, writer WriterInterface, outputInterceptor OutputInterceptor, interruptHandler interrupt_handler.InterruptHandlerInterface, client parallel_support.Client, suiteConfig types.SuiteConfig) (bool, bool) {
 	if suite.phase != PhaseBuildTree {
 		panic("cannot run before building the tree = call suite.BuildTree() first")
 	}
@@ -64,11 +66,10 @@ func (suite *Suite) Run(description string, suitePath string, failer *Failer, re
 	specs, hasProgrammaticFocus := ApplyFocusToSpecs(specs, description, suiteConfig)
 
 	suite.phase = PhaseRun
-	if suiteConfig.ParallelTotal > 1 {
-		suite.client = parallel_support.NewClient(suiteConfig.ParallelHost)
-	}
+	suite.client = client
 
 	success := suite.runSpecs(description, suitePath, hasProgrammaticFocus, specs, failer, reporter, writer, outputInterceptor, interruptHandler, suiteConfig)
+
 	return success, hasProgrammaticFocus
 }
 
@@ -79,11 +80,11 @@ func (suite *Suite) Run(description string, suitePath string, failer *Failer, re
 */
 
 func (suite *Suite) PushNode(node Node) error {
-	if node.NodeType.Is(types.NodeTypeCleanupInvalid, types.NodeTypeCleanupAfterEach, types.NodeTypeCleanupAfterAll, types.NodeTypeCleanupAfterSuite) {
+	if node.NodeType.Is(types.NodeTypeCleanupInvalid | types.NodeTypeCleanupAfterEach | types.NodeTypeCleanupAfterAll | types.NodeTypeCleanupAfterSuite) {
 		return suite.pushCleanupNode(node)
 	}
 
-	if node.NodeType.Is(types.NodeTypeBeforeSuite, types.NodeTypeAfterSuite, types.NodeTypeSynchronizedBeforeSuite, types.NodeTypeSynchronizedAfterSuite, types.NodeTypeReportAfterSuite) {
+	if node.NodeType.Is(types.NodeTypeBeforeSuite | types.NodeTypeAfterSuite | types.NodeTypeSynchronizedBeforeSuite | types.NodeTypeSynchronizedAfterSuite | types.NodeTypeReportAfterSuite) {
 		return suite.pushSuiteNode(node)
 	}
 
@@ -105,7 +106,7 @@ func (suite *Suite) PushNode(node Node) error {
 		}
 	}
 
-	if node.NodeType.Is(types.NodeTypeBeforeAll, types.NodeTypeAfterAll) && !suite.tree.Node.MarkedOrdered {
+	if node.NodeType.Is(types.NodeTypeBeforeAll|types.NodeTypeAfterAll) && !suite.tree.Node.MarkedOrdered {
 		return types.GinkgoErrors.SetupNodeNotInOrderedContainer(node.CodeLocation, node.NodeType)
 	}
 
@@ -155,12 +156,12 @@ func (suite *Suite) pushSuiteNode(node Node) error {
 
 	switch node.NodeType {
 	case types.NodeTypeBeforeSuite, types.NodeTypeSynchronizedBeforeSuite:
-		existingBefores := suite.suiteNodes.WithType(types.NodeTypeBeforeSuite, types.NodeTypeSynchronizedBeforeSuite)
+		existingBefores := suite.suiteNodes.WithType(types.NodeTypeBeforeSuite | types.NodeTypeSynchronizedBeforeSuite)
 		if len(existingBefores) > 0 {
 			return types.GinkgoErrors.MultipleBeforeSuiteNodes(node.NodeType, node.CodeLocation, existingBefores[0].NodeType, existingBefores[0].CodeLocation)
 		}
 	case types.NodeTypeAfterSuite, types.NodeTypeSynchronizedAfterSuite:
-		existingAfters := suite.suiteNodes.WithType(types.NodeTypeAfterSuite, types.NodeTypeSynchronizedAfterSuite)
+		existingAfters := suite.suiteNodes.WithType(types.NodeTypeAfterSuite | types.NodeTypeSynchronizedAfterSuite)
 		if len(existingAfters) > 0 {
 			return types.GinkgoErrors.MultipleAfterSuiteNodes(node.NodeType, node.CodeLocation, existingAfters[0].NodeType, existingAfters[0].CodeLocation)
 		}
@@ -242,14 +243,14 @@ func (suite *Suite) runSpecs(description string, suitePath string, hasProgrammat
 		if suiteConfig.ParallelTotal > 1 {
 			suite.client.PostDidRun(specReport)
 		}
-		if specReport.State.Is(types.SpecStateFailureStates...) {
+		if specReport.State.Is(types.SpecStateFailureStates) {
 			report.SuiteSucceeded = false
 		}
 		report.SpecReports = append(report.SpecReports, specReport)
 	}
 
 	interruptStatus := interruptHandler.Status()
-	beforeSuiteNode := suite.suiteNodes.FirstNodeWithType(types.NodeTypeBeforeSuite, types.NodeTypeSynchronizedBeforeSuite)
+	beforeSuiteNode := suite.suiteNodes.FirstNodeWithType(types.NodeTypeBeforeSuite | types.NodeTypeSynchronizedBeforeSuite)
 	if !beforeSuiteNode.IsZero() && !interruptStatus.Interrupted && numSpecsThatWillBeRun > 0 {
 		suite.currentSpecReport = types.SpecReport{
 			LeafNodeType:       beforeSuiteNode.NodeType,
@@ -264,7 +265,10 @@ func (suite *Suite) runSpecs(description string, suitePath string, hasProgrammat
 	suiteAborted := false
 	if report.SuiteSucceeded {
 		groupedSpecIndices, serialGroupedSpecIndices := OrderSpecs(specs, suiteConfig)
-		nextIndex := MakeNextIndexCounter(suiteConfig)
+		nextIndex := MakeIncrementingIndexCounter()
+		if suiteConfig.ParallelTotal > 1 {
+			nextIndex = suite.client.FetchNextCounter
+		}
 
 		for {
 			groupedSpecIdx, err := nextIndex()
@@ -283,14 +287,11 @@ func (suite *Suite) runSpecs(description string, suitePath string, hasProgrammat
 			}
 
 			specIndices := groupedSpecIndices[groupedSpecIdx]
-			groupSucceeded := true
+			groupState := types.SpecStatePassed
 
-			firstToRun, lastToRun := -1, -1
+			lastToRun := -1
 			for _, idx := range specIndices {
 				if !specs[idx].Skip {
-					if firstToRun == -1 {
-						firstToRun = idx
-					}
 					lastToRun = idx
 				}
 			}
@@ -312,9 +313,10 @@ func (suite *Suite) runSpecs(description string, suitePath string, hasProgrammat
 				skipReason := ""
 				if (suiteConfig.FailFast && !report.SuiteSucceeded) || interruptHandler.Status().Interrupted || suiteAborted {
 					spec.Skip = true
-				}
-				if !groupSucceeded {
+				} else if groupState.Is(types.SpecStateFailureStates) {
 					spec.Skip, skipReason = true, "Spec skipped because an earlier spec in an ordered container failed"
+				} else if groupState.Is(types.SpecStateSkipped) {
+					spec.Skip, skipReason = true, "Spec skipped because Skip() was called in BeforeAll"
 				}
 
 				if spec.Skip {
@@ -332,23 +334,19 @@ func (suite *Suite) runSpecs(description string, suitePath string, hasProgrammat
 				//send the spec report to any attached ReportBeforeEach blocks - this will update suite.currentSpecReport if failures occur in these blocks
 				suite.reportEach(spec, types.NodeTypeReportBeforeEach, failer, interruptHandler, writer, outputInterceptor, suiteConfig)
 
-				if !spec.Skip && !suite.currentSpecReport.State.Is(types.SpecStateFailureStates...) {
-					setupAllNodeTypesToInclude := types.NodeTypes{}
-					if firstToRun == idx {
-						setupAllNodeTypesToInclude = append(setupAllNodeTypesToInclude, types.NodeTypeBeforeAll)
-					}
-					if lastToRun == idx {
-						setupAllNodeTypesToInclude = append(setupAllNodeTypesToInclude, types.NodeTypeAfterAll)
-					}
+				if !spec.Skip && !suite.currentSpecReport.State.Is(types.SpecStateFailureStates) {
 					//runSpec updates suite.currentSpecReport directly
-					suite.runSpec(spec, setupAllNodeTypesToInclude, failer, interruptHandler, writer, outputInterceptor, suiteConfig)
+					suite.runSpec(spec, idx == lastToRun, failer, interruptHandler, writer, outputInterceptor, suiteConfig)
 				}
 
 				//send the spec report to any attached ReportAfterEach blocks - this will update suite.currentSpecReport if failures occur in these blocks
 				suite.reportEach(spec, types.NodeTypeReportAfterEach, failer, interruptHandler, writer, outputInterceptor, suiteConfig)
 				processSpecReport(suite.currentSpecReport)
-				if suite.currentSpecReport.State.Is(types.SpecStateFailureStates...) {
-					groupSucceeded = false
+				if suite.currentSpecReport.State.Is(types.SpecStateFailureStates) {
+					groupState = suite.currentSpecReport.State
+				}
+				if suite.currentSpecReport.State.Is(types.SpecStateSkipped) && suite.currentSpecReport.Failure.FailureNodeType == types.NodeTypeBeforeAll {
+					groupState = types.SpecStateSkipped
 				}
 				if suite.currentSpecReport.State == types.SpecStateAborted {
 					suiteAborted = true
@@ -366,7 +364,7 @@ func (suite *Suite) runSpecs(description string, suitePath string, hasProgrammat
 		}
 	}
 
-	afterSuiteNode := suite.suiteNodes.FirstNodeWithType(types.NodeTypeAfterSuite, types.NodeTypeSynchronizedAfterSuite)
+	afterSuiteNode := suite.suiteNodes.FirstNodeWithType(types.NodeTypeAfterSuite | types.NodeTypeSynchronizedAfterSuite)
 	if !afterSuiteNode.IsZero() && numSpecsThatWillBeRun > 0 {
 		suite.currentSpecReport = types.SpecReport{
 			LeafNodeType:       afterSuiteNode.NodeType,
@@ -379,7 +377,6 @@ func (suite *Suite) runSpecs(description string, suitePath string, hasProgrammat
 	}
 
 	afterSuiteCleanup := suite.cleanupNodes.WithType(types.NodeTypeCleanupAfterSuite).Reverse()
-	suite.cleanupNodes = suite.cleanupNodes.WithoutType(types.NodeTypeCleanupAfterSuite)
 	if len(afterSuiteCleanup) > 0 {
 		for _, cleanupNode := range afterSuiteCleanup {
 			suite.currentSpecReport = types.SpecReport{
@@ -426,14 +423,12 @@ func (suite *Suite) runSpecs(description string, suitePath string, hasProgrammat
 // runSpec(spec) mutates currentSpecReport.  this is ugly
 // but it allows the user to call CurrentGinkgoSpecDescription and get
 // an up-to-date state of the spec **from within a running spec**
-func (suite *Suite) runSpec(spec Spec, setupAllNodeTypesToRun types.NodeTypes, failer *Failer, interruptHandler interrupt_handler.InterruptHandlerInterface, writer WriterInterface, outputInterceptor OutputInterceptor, suiteConfig types.SuiteConfig) {
+func (suite *Suite) runSpec(spec Spec, isLastSpecInGroup bool, failer *Failer, interruptHandler interrupt_handler.InterruptHandlerInterface, writer WriterInterface, outputInterceptor OutputInterceptor, suiteConfig types.SuiteConfig) {
 	if suiteConfig.DryRun {
 		suite.currentSpecReport.State = types.SpecStatePassed
 		return
 	}
 
-	writer.Truncate()
-	outputInterceptor.StartInterceptingOutput()
 	suite.currentSpecReport.StartTime = time.Now()
 	maxAttempts := max(1, spec.FlakeAttempts())
 	if suiteConfig.FlakeAttempts > 0 {
@@ -442,6 +437,8 @@ func (suite *Suite) runSpec(spec Spec, setupAllNodeTypesToRun types.NodeTypes, f
 
 	for attempt := 0; attempt < maxAttempts; attempt++ {
 		suite.currentSpecReport.NumAttempts = attempt + 1
+		writer.Truncate()
+		outputInterceptor.StartInterceptingOutput()
 
 		if attempt > 0 {
 			fmt.Fprintf(writer, "\nGinkgo: Attempt #%d Failed.  Retrying...\n", attempt)
@@ -450,16 +447,14 @@ func (suite *Suite) runSpec(spec Spec, setupAllNodeTypesToRun types.NodeTypes, f
 		interruptStatus := interruptHandler.Status()
 		deepestNestingLevelAttained := -1
 		var nodes Nodes
-		if setupAllNodeTypesToRun.Contains(types.NodeTypeBeforeAll) && attempt == 0 {
-			nodes = nodes.CopyAppend(spec.Nodes.WithType(types.NodeTypeBeforeAll)...)
-		}
+		nodes = nodes.CopyAppend(spec.Nodes.WithType(types.NodeTypeBeforeAll)...) //always append BeforeAlls, suite.runNode makes sure we never run a BeforeAll node more than once
 		nodes = nodes.CopyAppend(spec.Nodes.WithType(types.NodeTypeBeforeEach)...).SortedByAscendingNestingLevel()
 		nodes = nodes.CopyAppend(spec.Nodes.WithType(types.NodeTypeJustBeforeEach).SortedByAscendingNestingLevel()...)
 		nodes = nodes.CopyAppend(spec.Nodes.WithType(types.NodeTypeIt)...)
 
-		for _, node := range nodes {
-			deepestNestingLevelAttained = max(deepestNestingLevelAttained, node.NestingLevel)
-			suite.currentSpecReport.State, suite.currentSpecReport.Failure = suite.runNode(node, failer, interruptStatus.Channel, interruptHandler, spec.Nodes.BestTextFor(node), writer, suiteConfig)
+		for i := range nodes {
+			deepestNestingLevelAttained = max(deepestNestingLevelAttained, nodes[i].NestingLevel)
+			suite.currentSpecReport.State, suite.currentSpecReport.Failure = suite.runNode(nodes[i], failer, interruptStatus.Channel, interruptHandler, spec.Nodes.BestTextFor(nodes[i]), writer, suiteConfig)
 			suite.currentSpecReport.RunTime = time.Since(suite.currentSpecReport.StartTime)
 			if suite.currentSpecReport.State != types.SpecStatePassed {
 				break
@@ -468,8 +463,8 @@ func (suite *Suite) runSpec(spec Spec, setupAllNodeTypesToRun types.NodeTypes, f
 
 		// pull out some shared code so we aren't repeating ourselves down below. this just runs after and cleanup nodes
 		runAfterAndCleanupNodes := func(afterAndCleanupNodes Nodes) {
-			for _, node := range afterAndCleanupNodes {
-				state, failure := suite.runNode(node, failer, interruptHandler.Status().Channel, interruptHandler, spec.Nodes.BestTextFor(node), writer, suiteConfig)
+			for i := range afterAndCleanupNodes {
+				state, failure := suite.runNode(afterAndCleanupNodes[i], failer, interruptHandler.Status().Channel, interruptHandler, spec.Nodes.BestTextFor(afterAndCleanupNodes[i]), writer, suiteConfig)
 				suite.currentSpecReport.RunTime = time.Since(suite.currentSpecReport.StartTime)
 				if suite.currentSpecReport.State == types.SpecStatePassed || state == types.SpecStateAborted {
 					suite.currentSpecReport.State = state
@@ -478,10 +473,24 @@ func (suite *Suite) runSpec(spec Spec, setupAllNodeTypesToRun types.NodeTypes, f
 			}
 		}
 
-		var ranAfterAllNodes bool
+		// pull out a helper that catpures the logic of whether or not we should run the AfterAll and CleanupAfterAll Nodes - note that suite.runNode makes sure we never run an AfterAll node more than once
+		shouldRunAfterAll := func() bool {
+			isFinalAttempt := (attempt == maxAttempts-1)
+			switch suite.currentSpecReport.State {
+			case types.SpecStatePassed: //we've passed so far...
+				return isLastSpecInGroup //... and we're the last spec in the group, so we should run the Alls
+			case types.SpecStateSkipped: //the user called skip...
+				return isLastSpecInGroup || suite.currentSpecReport.Failure.FailureNodeType == types.NodeTypeBeforeAll //...we should run the Alls if we're the last spec in the group OR the skip was called in BeforeAll, which makes us the last spec in the group
+			case types.SpecStateFailed, types.SpecStatePanicked: // the spec has failed...
+				return isFinalAttempt // ...failing a spec in the group ends the group, so we are the last spec in the group if this is our final attempt.  If so, we should run the Alls.
+			case types.SpecStateInterrupted, types.SpecStateAborted: // ...we've been interrupted and/or aborted. that means the test run is over and we should clean up the stack.  Run the Alls
+				return true
+			}
+			return false
+		}
+
 		afterNodes := spec.Nodes.WithType(types.NodeTypeJustAfterEach).SortedByDescendingNestingLevel()
-		if setupAllNodeTypesToRun.Contains(types.NodeTypeAfterAll) || (suite.currentSpecReport.State != types.SpecStatePassed && attempt == maxAttempts-1) {
-			ranAfterAllNodes = true
+		if shouldRunAfterAll() {
 			afterNodes = afterNodes.CopyAppend(spec.Nodes.WithType(types.NodeTypeAfterEach).CopyAppend(spec.Nodes.WithType(types.NodeTypeAfterAll)...).SortedByDescendingNestingLevel()...)
 		} else {
 			afterNodes = afterNodes.CopyAppend(spec.Nodes.WithType(types.NodeTypeAfterEach).SortedByDescendingNestingLevel()...)
@@ -489,27 +498,29 @@ func (suite *Suite) runSpec(spec Spec, setupAllNodeTypesToRun types.NodeTypes, f
 		afterNodes = afterNodes.WithinNestingLevel(deepestNestingLevelAttained)
 		runAfterAndCleanupNodes(afterNodes)
 
-		if (suite.currentSpecReport.State != types.SpecStatePassed && attempt == maxAttempts-1) && !ranAfterAllNodes {
+		// perhaps we didn't run the AfterAlls but a state change due to an AfterEach now requires us to run the AfterAlls:
+		if shouldRunAfterAll() {
 			runAfterAndCleanupNodes(spec.Nodes.WithType(types.NodeTypeAfterAll).WithinNestingLevel(deepestNestingLevelAttained))
 		}
 
 		cleanupNodes := suite.cleanupNodes.WithType(types.NodeTypeCleanupAfterEach).Reverse()
-		suite.cleanupNodes = suite.cleanupNodes.WithoutType(types.NodeTypeCleanupAfterEach)
-		if setupAllNodeTypesToRun.Contains(types.NodeTypeAfterAll) || (suite.currentSpecReport.State != types.SpecStatePassed && attempt == maxAttempts-1) {
+		if shouldRunAfterAll() {
 			cleanupNodes = append(cleanupNodes, suite.cleanupNodes.WithType(types.NodeTypeCleanupAfterAll).Reverse()...)
-			suite.cleanupNodes = suite.cleanupNodes.WithoutType(types.NodeTypeCleanupAfterAll)
 		}
 		runAfterAndCleanupNodes(cleanupNodes)
 
+		// perhaps we didn't run the AfterAlls but a state change due to a CleanUp function from an AfterEach now requires us to run the AfterAlls:
+		if shouldRunAfterAll() {
+			runAfterAndCleanupNodes(spec.Nodes.WithType(types.NodeTypeAfterAll).WithinNestingLevel(deepestNestingLevelAttained))
+			runAfterAndCleanupNodes(suite.cleanupNodes.WithType(types.NodeTypeCleanupAfterAll).Reverse())
+		}
+
 		suite.currentSpecReport.EndTime = time.Now()
 		suite.currentSpecReport.RunTime = suite.currentSpecReport.EndTime.Sub(suite.currentSpecReport.StartTime)
-		suite.currentSpecReport.CapturedGinkgoWriterOutput = string(writer.Bytes())
-		suite.currentSpecReport.CapturedStdOutErr = outputInterceptor.StopInterceptingAndReturnOutput()
+		suite.currentSpecReport.CapturedGinkgoWriterOutput += string(writer.Bytes())
+		suite.currentSpecReport.CapturedStdOutErr += outputInterceptor.StopInterceptingAndReturnOutput()
 
-		if suite.currentSpecReport.State == types.SpecStatePassed {
-			return
-		}
-		if interruptHandler.Status().Interrupted {
+		if suite.currentSpecReport.State.Is(types.SpecStatePassed | types.SpecStateSkipped | types.SpecStateAborted | types.SpecStateInterrupted) {
 			return
 		}
 	}
@@ -527,23 +538,23 @@ func (suite *Suite) reportEach(spec Spec, nodeType types.NodeType, failer *Faile
 		return
 	}
 
-	for _, node := range nodes {
+	for i := range nodes {
 		writer.Truncate()
 		outputInterceptor.StartInterceptingOutput()
 		report := suite.currentSpecReport
-		node.Body = func() {
-			node.ReportEachBody(report)
+		nodes[i].Body = func() {
+			nodes[i].ReportEachBody(report)
 		}
 		interruptHandler.SetInterruptPlaceholderMessage(formatter.Fiw(0, formatter.COLS,
 			"{{yellow}}Ginkgo received an interrupt signal but is currently running a %s node.  To avoid an invalid report the %s node will not be interrupted however subsequent tests will be skipped.{{/}}\n\n{{bold}}The running %s node is at:\n%s.{{/}}",
 			nodeType, nodeType, nodeType,
-			node.CodeLocation,
+			nodes[i].CodeLocation,
 		))
-		state, failure := suite.runNode(node, failer, nil, nil, spec.Nodes.BestTextFor(node), writer, suiteConfig)
+		state, failure := suite.runNode(nodes[i], failer, nil, nil, spec.Nodes.BestTextFor(nodes[i]), writer, suiteConfig)
 		interruptHandler.ClearInterruptPlaceholderMessage()
 		// If the spec is not in a failure state (i.e. it's Passed/Skipped/Pending) and the reporter has failed, override the state.
 		// Also, if the reporter is every aborted - always override the state to propagate the abort
-		if (!suite.currentSpecReport.State.Is(types.SpecStateFailureStates...) && state.Is(types.SpecStateFailureStates...)) || state.Is(types.SpecStateAborted) {
+		if (!suite.currentSpecReport.State.Is(types.SpecStateFailureStates) && state.Is(types.SpecStateFailureStates)) || state.Is(types.SpecStateAborted) {
 			suite.currentSpecReport.State = state
 			suite.currentSpecReport.Failure = failure
 		}
@@ -616,7 +627,7 @@ func (suite *Suite) runSuiteNode(node Node, failer *Failer, interruptChannel cha
 		}
 	}
 
-	if err != nil && !suite.currentSpecReport.State.Is(types.SpecStateFailureStates...) {
+	if err != nil && !suite.currentSpecReport.State.Is(types.SpecStateFailureStates) {
 		suite.currentSpecReport.State, suite.currentSpecReport.Failure = types.SpecStateFailed, suite.failureForLeafNodeWithMessage(node, err.Error())
 	}
 
@@ -664,6 +675,14 @@ func (suite *Suite) runReportAfterSuiteNode(node Node, report types.Report, fail
 }
 
 func (suite *Suite) runNode(node Node, failer *Failer, interruptChannel chan interface{}, interruptHandler interrupt_handler.InterruptHandlerInterface, text string, writer WriterInterface, suiteConfig types.SuiteConfig) (types.SpecState, types.Failure) {
+	if node.NodeType.Is(types.NodeTypeBeforeAll|types.NodeTypeAfterAll) && suite.nodeRunCount[node.ID] > 0 {
+		return types.SpecStatePassed, types.Failure{}
+	}
+	suite.nodeRunCount[node.ID] += 1
+	if node.NodeType.Is(types.NodeTypeCleanupAfterEach | types.NodeTypeCleanupAfterAll | types.NodeTypeCleanupAfterSuite) {
+		suite.cleanupNodes = suite.cleanupNodes.WithoutNode(node)
+	}
+
 	suite.currentNode = node
 	defer func() {
 		suite.currentNode = Node{}
@@ -679,7 +698,7 @@ func (suite *Suite) runNode(node Node, failer *Failer, interruptChannel chan int
 
 	var failure types.Failure
 	failure.FailureNodeType, failure.FailureNodeLocation = node.NodeType, node.CodeLocation
-	if node.NodeType.Is(types.NodeTypeIt) || node.NodeType.Is(types.NodeTypesForSuiteLevelNodes...) {
+	if node.NodeType.Is(types.NodeTypeIt) || node.NodeType.Is(types.NodeTypesForSuiteLevelNodes) {
 		failure.FailureNodeContext = types.FailureNodeIsLeafNode
 	} else if node.NestingLevel <= 0 {
 		failure.FailureNodeContext = types.FailureNodeAtTopLevel

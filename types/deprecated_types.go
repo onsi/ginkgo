@@ -74,7 +74,7 @@ type DeprecatedSpecSummary struct {
 }
 
 func (s DeprecatedSpecSummary) HasFailureState() bool {
-	return s.State.Is(SpecStateFailureStates...)
+	return s.State.Is(SpecStateFailureStates)
 }
 
 func (s DeprecatedSpecSummary) TimedOut() bool {

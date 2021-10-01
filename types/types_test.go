@@ -62,11 +62,11 @@ var _ = Describe("Types", func() {
 	Describe("NodeType", func() {
 		Describe("Is", func() {
 			It("returns true when the NodeType is in the passed-in list", func() {
-				Ω(types.NodeTypeContainer.Is(types.NodeTypeIt, types.NodeTypeContainer)).Should(BeTrue())
+				Ω(types.NodeTypeContainer.Is(types.NodeTypeIt | types.NodeTypeContainer)).Should(BeTrue())
 			})
 
 			It("returns false when the NodeType is not in the passed-in list", func() {
-				Ω(types.NodeTypeContainer.Is(types.NodeTypeIt, types.NodeTypeBeforeEach)).Should(BeFalse())
+				Ω(types.NodeTypeContainer.Is(types.NodeTypeIt | types.NodeTypeBeforeEach)).Should(BeFalse())
 			})
 		})
 
@@ -103,18 +103,6 @@ var _ = Describe("Types", func() {
 			Entry(nil, types.NodeTypeCleanupAfterSuite, "DeferCleanup (AfterSuite)"),
 			Entry(nil, types.NodeTypeInvalid, "INVALID NODE TYPE"),
 		)
-	})
-
-	Describe("NodeTypes", func() {
-		Describe("Contains", func() {
-			It("returns true if the NodeType is in NodeTypes", func() {
-				Ω(types.NodeTypes{types.NodeTypeIt, types.NodeTypeBeforeAll, types.NodeTypeAfterAll}.Contains(types.NodeTypeBeforeAll)).Should(BeTrue())
-			})
-
-			It("returns false if the NodeType is not in NodeTypes", func() {
-				Ω(types.NodeTypes{types.NodeTypeIt, types.NodeTypeBeforeEach, types.NodeTypeAfterAll}.Contains(types.NodeTypeBeforeAll)).Should(BeFalse())
-			})
-		})
 	})
 
 	Describe("FailureNodeContext", func() {
@@ -304,7 +292,7 @@ var _ = Describe("Types", func() {
 					{LeafNodeType: types.NodeTypeSynchronizedAfterSuite, NumAttempts: 6},
 				}
 
-				Ω(reports.WithLeafNodeType(types.NodeTypeIt, types.NodeTypeAfterSuite)).Should(Equal(types.SpecReports{
+				Ω(reports.WithLeafNodeType(types.NodeTypeIt | types.NodeTypeAfterSuite)).Should(Equal(types.SpecReports{
 					{LeafNodeType: types.NodeTypeIt, NumAttempts: 2},
 					{LeafNodeType: types.NodeTypeIt, NumAttempts: 3},
 					{LeafNodeType: types.NodeTypeAfterSuite, NumAttempts: 5},
@@ -322,7 +310,7 @@ var _ = Describe("Types", func() {
 					{State: types.SpecStateSkipped, NumAttempts: 6},
 				}
 
-				Ω(reports.WithState(types.SpecStatePassed, types.SpecStatePending)).Should(Equal(types.SpecReports{
+				Ω(reports.WithState(types.SpecStatePassed | types.SpecStatePending)).Should(Equal(types.SpecReports{
 					{State: types.SpecStatePassed, NumAttempts: 2},
 					{State: types.SpecStatePassed, NumAttempts: 3},
 					{State: types.SpecStatePending, NumAttempts: 5},
@@ -340,7 +328,7 @@ var _ = Describe("Types", func() {
 					{State: types.SpecStateSkipped, NumAttempts: 6},
 				}
 
-				Ω(reports.CountWithState(types.SpecStatePassed, types.SpecStatePending)).Should(Equal(3))
+				Ω(reports.CountWithState(types.SpecStatePassed | types.SpecStatePending)).Should(Equal(3))
 			})
 		})
 
