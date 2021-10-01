@@ -336,19 +336,17 @@ func (n Nodes) CopyAppend(nodes ...Node) Nodes {
 }
 
 func (n Nodes) SplitAround(pivot Node) (Nodes, Nodes) {
-	left := Nodes{}
-	right := Nodes{}
-	found := false
-	for _, node := range n {
+	pivotIdx := len(n)
+	for idx, node := range n {
 		if node.ID == pivot.ID {
-			found = true
-			continue
+			pivotIdx = idx
+			break
 		}
-		if found {
-			right = append(right, node)
-		} else {
-			left = append(left, node)
-		}
+	}
+	left := n[:pivotIdx]
+	right := Nodes{}
+	if pivotIdx+1 < len(n) {
+		right = n[pivotIdx+1:]
 	}
 
 	return left, right
@@ -384,7 +382,7 @@ func (n Nodes) WithoutType(nodeTypes ...types.NodeType) Nodes {
 }
 
 func (n Nodes) WithinNestingLevel(deepestNestingLevel int) Nodes {
-	out := Nodes{}
+	out := make(Nodes, 0, len(n))
 	for _, node := range n {
 		if node.NestingLevel <= deepestNestingLevel {
 			out = append(out, node)
@@ -422,20 +420,20 @@ func (n Nodes) Reverse() Nodes {
 }
 
 func (n Nodes) Texts() []string {
-	out := []string{}
-	for _, node := range n {
-		out = append(out, node.Text)
+	out := make([]string, len(n))
+	for i, node := range n {
+		out[i] = node.Text
 	}
 	return out
 }
 
 func (n Nodes) Labels() [][]string {
-	out := [][]string{}
-	for _, node := range n {
+	out := make([][]string, len(n))
+	for i, node := range n {
 		if node.Labels == nil {
-			out = append(out, []string{})
+			out[i] = []string{}
 		} else {
-			out = append(out, []string(node.Labels))
+			out[i] = []string(node.Labels)
 		}
 	}
 	return out
@@ -456,9 +454,9 @@ func (n Nodes) UnionOfLabels() []string {
 }
 
 func (n Nodes) CodeLocations() []types.CodeLocation {
-	out := []types.CodeLocation{}
-	for _, node := range n {
-		out = append(out, node.CodeLocation)
+	out := make([]types.CodeLocation, len(n))
+	for i, node := range n {
+		out[i] = node.CodeLocation
 	}
 	return out
 }
