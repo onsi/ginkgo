@@ -7,7 +7,6 @@ package types
 
 import (
 	"flag"
-	"net/http"
 	"os"
 	"runtime"
 	"strconv"
@@ -245,7 +244,8 @@ var FlagSections = GinkgoFlagSections{
 	{Key: "output", Style: "{{magenta}}", Heading: "Controlling Output Formatting"},
 	{Key: "code-and-coverage-analysis", Style: "{{orange}}", Heading: "Code and Coverage Analysis"},
 	{Key: "performance-analysis", Style: "{{coral}}", Heading: "Performance Analysis"},
-	{Key: "debug", Style: "{{blue}}", Heading: "Debugging Tests"},
+	{Key: "debug", Style: "{{blue}}", Heading: "Debugging Tests",
+		Description: "In addition to these flags, Ginkgo supports a few debugging environment variables.  To change the parallel server protocol set {{blue}}GINKGO_PARALLEL_PROTOCOL{{/}} to {{bold}}HTTP{{/}}.  To change the output interceptor set {{blue}}GINKGO_INTERCEPTOR_MODE{{/}} to either {{bold}}SWAP{{/}} or {{bold}}NONE{{/}}.  To avoid pruning callstacks set {{blue}}GINKGO_PRUNE_STACK{{/}} to {{bold}}FALSE{{/}}."},
 	{Key: "watch", Style: "{{light-yellow}}", Heading: "Controlling Ginkgo Watch"},
 	{Key: "misc", Style: "{{light-gray}}", Heading: "Miscellaneous"},
 	{Key: "go-build", Style: "{{light-gray}}", Heading: "Go Build Flags", Succinct: true,
@@ -369,18 +369,8 @@ func VetConfig(flagSet GinkgoFlagSet, suiteConfig SuiteConfig, reporterConfig Re
 		errors = append(errors, GinkgoErrors.InvalidParallelNodeConfiguration())
 	}
 
-	if suiteConfig.ParallelTotal > 1 {
-		if suiteConfig.ParallelHost == "" {
-			errors = append(errors, GinkgoErrors.MissingParallelHostConfiguration())
-		} else {
-			resp, err := http.Get(suiteConfig.ParallelHost + "/up")
-			if err != nil || resp.StatusCode != http.StatusOK {
-				errors = append(errors, GinkgoErrors.UnreachableParallelHost(suiteConfig.ParallelHost))
-			}
-			if err != nil {
-				resp.Body.Close()
-			}
-		}
+	if suiteConfig.ParallelTotal > 1 && suiteConfig.ParallelHost == "" {
+		errors = append(errors, GinkgoErrors.MissingParallelHostConfiguration())
 	}
 
 	if suiteConfig.DryRun && suiteConfig.ParallelTotal > 1 {

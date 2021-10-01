@@ -4,7 +4,6 @@ import (
 	. "github.com/onsi/ginkgo"
 	. "github.com/onsi/gomega"
 
-	"github.com/onsi/ginkgo/internal/parallel_support"
 	. "github.com/onsi/ginkgo/internal/test_helpers"
 	"github.com/onsi/ginkgo/types"
 )
@@ -159,17 +158,8 @@ var _ = Describe("handling test aborts", func() {
 	})
 
 	Describe("when running in parallel and a test aborts", func() {
-		var server *parallel_support.Server
-		var client parallel_support.Client
-
 		BeforeEach(func() {
-			conf.ParallelTotal = 2
-			server, client, _ = SetUpServerAndClient(conf.ParallelTotal)
-			conf.ParallelHost = server.Address()
-		})
-
-		AfterEach(func() {
-			server.Close()
+			SetUpForParallel(2)
 		})
 
 		It("notifies the server of the abort", func() {

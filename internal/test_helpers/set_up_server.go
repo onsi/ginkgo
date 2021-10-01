@@ -1,17 +1,18 @@
 package test_helpers
 
 import (
+	. "github.com/onsi/ginkgo"
 	"github.com/onsi/ginkgo/internal/parallel_support"
 	"github.com/onsi/ginkgo/reporters"
 	. "github.com/onsi/gomega"
 )
 
-func SetUpServerAndClient(numNodes int) (*parallel_support.Server, parallel_support.Client, map[int]chan interface{}) {
+func SetUpServerAndClient(numNodes int) (parallel_support.Server, parallel_support.Client, map[int]chan interface{}) {
 	server, err := parallel_support.NewServer(numNodes, reporters.NoopReporter{})
 	Ω(err).ShouldNot(HaveOccurred())
 	server.Start()
 	client := parallel_support.NewClient(server.Address())
-	Eventually(client.CheckServerUp).Should(BeTrue())
+	Eventually(client.Connect).Should(BeTrue())
 
 	exitChannels := map[int]chan interface{}{}
 	for node := 1; node <= numNodes; node++ {
@@ -26,6 +27,9 @@ func SetUpServerAndClient(numNodes int) (*parallel_support.Server, parallel_supp
 			}
 		})
 	}
+
+	DeferCleanup(server.Close)
+	DeferCleanup(client.Close)
 
 	return server, client, exitChannels
 }

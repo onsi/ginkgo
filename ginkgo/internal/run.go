@@ -185,7 +185,7 @@ func runParallel(suite TestSuite, ginkgoConfig types.SuiteConfig, reporterConfig
 	}
 
 	select {
-	case <-server.Done:
+	case <-server.GetSuiteDone():
 		fmt.Println("")
 	case <-time.After(time.Second):
 		//the serve never got back to us.  Something must have gone wrong.

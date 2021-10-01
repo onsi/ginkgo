@@ -230,6 +230,72 @@ var _ = Describe("Ordered", func() {
 			})
 		})
 
+		Context("when a skip occurs in a BeforeAll", func() {
+			BeforeEach(func() {
+				success, _ := RunFixture("skipping in a BeforeAll", func() {
+					Context("container", Ordered, func() {
+						BeforeAll(rt.T("BA", func() { Skip("skip") }))
+						It("A", FlakeAttempts(3), rt.T("A"))
+						It("B", rt.T("B"))
+						It("C", rt.T("C"))
+						AfterAll(rt.T("AA"))
+					})
+				})
+				Ω(success).Should(BeTrue())
+			})
+
+			It("skips the entire group", func() {
+				Ω(rt).Should(HaveTracked("BA", "AA"))
+				Ω(reporter.Did.Find("A")).Should(HaveBeenSkippedWithMessage("skip", NumAttempts(1)))
+				Ω(reporter.Did.Find("B")).Should(HaveBeenSkippedWithMessage("Spec skipped because Skip() was called in BeforeAll"))
+				Ω(reporter.Did.Find("C")).Should(HaveBeenSkippedWithMessage("Spec skipped because Skip() was called in BeforeAll"))
+			})
+		})
+
+		Context("when a skip occurs in a test", func() {
+			BeforeEach(func() {
+				success, _ := RunFixture("skipping in a test", func() {
+					Context("container", Ordered, func() {
+						BeforeAll(rt.T("BA"))
+						It("A", rt.T("A"))
+						It("B", rt.T("B", func() { Skip("skip") }))
+						It("C", rt.T("C"))
+						AfterAll(rt.T("AA"))
+					})
+				})
+				Ω(success).Should(BeTrue())
+			})
+
+			It("only skips that test and doesn't run the AfterAll", func() {
+				Ω(rt).Should(HaveTracked("BA", "A", "B", "C", "AA"))
+				Ω(reporter.Did.Find("A")).Should(HavePassed())
+				Ω(reporter.Did.Find("B")).Should(HaveBeenSkippedWithMessage("skip"))
+				Ω(reporter.Did.Find("C")).Should(HavePassed())
+			})
+		})
+
+		Context("when a skip occurs in the last test", func() {
+			BeforeEach(func() {
+				success, _ := RunFixture("skipping in a test", func() {
+					Context("container", Ordered, func() {
+						BeforeAll(rt.T("BA"))
+						It("A", rt.T("A"))
+						It("B", rt.T("B"))
+						It("C", rt.T("C", func() { Skip("skip") }))
+						AfterAll(rt.T("AA"))
+					})
+				})
+				Ω(success).Should(BeTrue())
+			})
+
+			It("only skips the tst and runs the AfterAll", func() {
+				Ω(rt).Should(HaveTracked("BA", "A", "B", "C", "AA"))
+				Ω(reporter.Did.Find("A")).Should(HavePassed())
+				Ω(reporter.Did.Find("B")).Should(HavePassed())
+				Ω(reporter.Did.Find("C")).Should(HaveBeenSkippedWithMessage("skip"))
+			})
+		})
+
 		Context("when a failure occurs in a test", func() {
 			BeforeEach(func() {
 				success, _ := RunFixture("ordered failure in test", func() {
@@ -305,7 +371,7 @@ var _ = Describe("Ordered", func() {
 
 		Context("when a failure occurs in an AfterEach", func() {
 			BeforeEach(func() {
-				success, _ := RunFixture("ordered failure in BeforeAll", func() {
+				success, _ := RunFixture("ordered failure in AfterEach", func() {
 					BeforeEach(rt.T("BE-outer"))
 					Context("container", Ordered, func() {
 						BeforeEach(rt.T("BE"))
@@ -324,6 +390,35 @@ var _ = Describe("Ordered", func() {
 				Ω(rt).Should(HaveTracked("BE-outer", "BA", "BE", "A", "AE", "AE-outer", "AA"))
 
 				Ω(reporter.Did.Find("A")).Should(HaveFailed(types.FailureNodeInContainer, FailureNodeType(types.NodeTypeAfterEach), "fail"))
+			})
+		})
+
+		Context("when a failure occurs in a DeferCleanup", func() {
+			BeforeEach(func() {
+				success, _ := RunFixture("ordered failure in DeferCleanup", func() {
+					BeforeEach(rt.T("BE-outer"))
+					Context("container", Ordered, func() {
+						BeforeEach(rt.T("BE"))
+						BeforeAll(rt.T("BA"))
+						It("A", rt.T("A", func() {
+							DeferCleanup(func() {
+								rt.Run("cleanup")
+								Fail("fail")
+							})
+						}))
+						It("B", rt.T("B"))
+						AfterAll(rt.T("AA"))
+						AfterEach(rt.T("AE"))
+					})
+					AfterEach(rt.T("AE-outer"))
+				})
+				Ω(success).Should(BeFalse())
+			})
+
+			It("notices and runs the AfterAll to unwind things, even if that means it runs it out of order with the AfterEach", func() {
+				Ω(rt).Should(HaveTracked("BE-outer", "BA", "BE", "A", "AE", "AE-outer", "cleanup", "AA"))
+
+				Ω(reporter.Did.Find("A")).Should(HaveFailed(types.FailureNodeInContainer, FailureNodeType(types.NodeTypeCleanupAfterEach), "fail"))
 			})
 		})
 
@@ -353,6 +448,132 @@ var _ = Describe("Ordered", func() {
 				Ω(reporter.Did.Find("A")).Should(HaveBeenInterrupted(interrupt_handler.InterruptCauseSignal))
 			})
 		})
+
+		Context("when an abort occurs", func() {
+			BeforeEach(func() {
+				success, _ := RunFixture("ordered failure in BeforeAll", func() {
+					BeforeEach(rt.T("BE-outer"))
+					Context("container", Ordered, func() {
+						BeforeEach(rt.T("BE"))
+						BeforeAll(rt.T("BA"))
+						It("A", rt.T("A", func() {
+							Abort("abort!")
+						}))
+						It("B", rt.T("B"))
+						AfterAll(rt.T("AA"))
+						AfterEach(rt.T("AE"))
+					})
+					AfterEach(rt.T("AE-outer"))
+				})
+				Ω(success).Should(BeFalse())
+			})
+
+			It("runs the AfterAll and skips subsequent tests", func() {
+				Ω(rt).Should(HaveTracked("BE-outer", "BA", "BE", "A", "AE", "AA", "AE-outer"))
+
+				Ω(reporter.Did.Find("A")).Should(HaveAborted("abort!"))
+			})
+		})
 	})
 
+	//here be more, bigger, dragons!
+	Describe("Interplay between BeforeAll/AfterAll and FlakeAttempts", func() {
+		BeforeEach(func() {
+			conf.FlakeAttempts = 3
+		})
+
+		Context("when the first test is flaky", func() {
+			BeforeEach(func() {
+				success, _ := RunFixture("flaky first test", func() {
+					Context("container", Ordered, func() {
+						BeforeAll(rt.T("BA"))
+						It("A", rt.T("A", func() {
+							F("fail")
+						}))
+						It("B", rt.T("B"))
+						It("C", rt.T("C"))
+						AfterAll(rt.T("AA"))
+					})
+				})
+				Ω(success).Should(BeFalse())
+			})
+
+			It("runs the BeforeAll just once", func() {
+				Ω(rt).Should(HaveTracked("BA", "A", "A", "A", "AA"))
+				Ω(reporter.Did.Find("A")).Should(HaveFailed("fail", NumAttempts(3)))
+			})
+		})
+
+		Context("when a test is flaky", func() {
+			Context("and never succeeds", func() {
+				BeforeEach(func() {
+					success, _ := RunFixture("flaky test that never succeeds", func() {
+						Context("container", Ordered, func() {
+							BeforeAll(rt.T("BA"))
+							It("A", rt.T("A"))
+							It("B", rt.T("B", func() {
+								F("fail")
+							}))
+							It("C", rt.T("C"))
+							AfterAll(rt.T("AA"))
+						})
+					})
+					Ω(success).Should(BeFalse())
+				})
+
+				It("runs the AfterAll when the test fails once", func() {
+					Ω(rt).Should(HaveTracked("BA", "A", "B", "B", "B", "AA"))
+					Ω(reporter.Did.Find("B")).Should(HaveFailed("fail", NumAttempts(3)))
+				})
+			})
+
+			Context("and eventually succeeds", func() {
+				BeforeEach(func() {
+					success, _ := RunFixture("flaky test that eventually succeeds", func() {
+						i := 0
+						Context("container", Ordered, func() {
+							BeforeAll(rt.T("BA"))
+							It("A", rt.T("A"))
+							It("B", rt.T("B", func() {
+								i += 1
+								if i < 3 {
+									panic("boom")
+								}
+							}))
+							It("C", rt.T("C"))
+							AfterAll(rt.T("AA"))
+						})
+					})
+					Ω(success).Should(BeTrue())
+				})
+
+				It("runs does not run the AfterAll unt", func() {
+					Ω(rt).Should(HaveTracked("BA", "A", "B", "B", "B", "C", "AA"))
+					Ω(reporter.Did.Find("B")).Should(HavePassed(NumAttempts(3)))
+				})
+			})
+		})
+
+		Context("when the last test is flaky", func() {
+			BeforeEach(func() {
+				success, _ := RunFixture("flaky first test", func() {
+					Context("container", Ordered, func() {
+						BeforeAll(rt.T("BA"))
+						It("A", rt.T("A"))
+						It("B", rt.T("B"))
+						It("C", rt.T("C", func() {
+							F("fail")
+						}))
+						AfterAll(rt.T("AA"))
+					})
+				})
+				Ω(success).Should(BeFalse())
+			})
+
+			It("runs the AfterAll just once", func() {
+				Ω(rt).Should(HaveTracked("BA", "A", "B", "C", "C", "C", "AA"))
+				Ω(reporter.Did.Find("C")).Should(HaveFailed("fail", NumAttempts(3)))
+			})
+		})
+	})
 })

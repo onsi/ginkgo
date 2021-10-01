@@ -24,7 +24,7 @@ func BuildRunCommand() command.Command {
 		panic(err)
 	}
 
-	interruptHandler := interrupt_handler.NewInterruptHandler(0, "")
+	interruptHandler := interrupt_handler.NewInterruptHandler(0, nil)
 	interrupt_handler.SwallowSigQuit()
 
 	return command.Command{

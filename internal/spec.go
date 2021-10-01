@@ -13,23 +13,23 @@ type Spec struct {
 
 func (s Spec) Text() string {
 	texts := []string{}
-	for _, node := range s.Nodes {
-		if node.Text != "" {
-			texts = append(texts, node.Text)
+	for i := range s.Nodes {
+		if s.Nodes[i].Text != "" {
+			texts = append(texts, s.Nodes[i].Text)
 		}
 	}
 	return strings.Join(texts, " ")
 }
 
-func (s Spec) FirstNodeWithType(nodeTypes ...types.NodeType) Node {
-	return s.Nodes.FirstNodeWithType(nodeTypes...)
+func (s Spec) FirstNodeWithType(nodeTypes types.NodeType) Node {
+	return s.Nodes.FirstNodeWithType(nodeTypes)
 }
 
 func (s Spec) FlakeAttempts() int {
 	flakeAttempts := 0
-	for _, node := range s.Nodes {
-		if node.FlakeAttempts > 0 {
-			flakeAttempts = node.FlakeAttempts
+	for i := range s.Nodes {
+		if s.Nodes[i].FlakeAttempts > 0 {
+			flakeAttempts = s.Nodes[i].FlakeAttempts
 		}
 	}
 
@@ -39,8 +39,8 @@ func (s Spec) FlakeAttempts() int {
 type Specs []Spec
 
 func (s Specs) HasAnySpecsMarkedPending() bool {
-	for _, spec := range s {
-		if spec.Nodes.HasNodeMarkedPending() {
+	for i := range s {
+		if s[i].Nodes.HasNodeMarkedPending() {
 			return true
 		}
 	}
@@ -50,8 +50,8 @@ func (s Specs) HasAnySpecsMarkedPending() bool {
 
 func (s Specs) CountWithoutSkip() int {
 	n := 0
-	for _, spec := range s {
-		if !spec.Skip {
+	for i := range s {
+		if !s[i].Skip {
 			n += 1
 		}
 	}

@@ -21,12 +21,17 @@ var _ = Describe("Decorations test", func() {
 				customIt()
 				It("flaky", FlakeAttempts(4), rt.T("flaky", func() {
 					count += 1
+					outputInterceptor.AppendInterceptedOutput("so flaky\n")
+					writer.Println("so tasty")
 					if count < 3 {
 						F("fail")
 					}
 				}))
 				It("never-passes", FlakeAttempts(2), rt.T("never-passes", func() {
 					F("fail")
+				}))
+				It("skips", FlakeAttempts(3), rt.T("skips", func() {
+					Skip("skip")
 				}))
 			})
 		})
@@ -38,6 +43,7 @@ var _ = Describe("Decorations test", func() {
 			"is-offset",
 			"flaky", "flaky", "flaky",
 			"never-passes", "never-passes",
+			"skips",
 		))
 	})
 
@@ -49,9 +55,10 @@ var _ = Describe("Decorations test", func() {
 	})
 
 	Describe("FlakeAttempts", func() {
-		It("reruns tests until they pass or until the number of flake attempts is exhausted", func() {
-			Ω(reporter.Did.Find("flaky")).Should(HavePassed(NumAttempts(3)))
+		It("reruns tests until they pass or until the number of flake attempts is exhausted, but does not rerun skipped tests", func() {
+			Ω(reporter.Did.Find("flaky")).Should(HavePassed(NumAttempts(3), CapturedStdOutput("so flaky\nso flaky\nso flaky\n"), CapturedGinkgoWriterOutput("so tasty\n\nGinkgo: Attempt #1 Failed.  Retrying...\nso tasty\n\nGinkgo: Attempt #2 Failed.  Retrying...\nso tasty\n")))
 			Ω(reporter.Did.Find("never-passes")).Should(HaveFailed("fail", NumAttempts(2)))
+			Ω(reporter.Did.Find("skips")).Should(HaveBeenSkippedWithMessage("skip", NumAttempts(1)))
 		})
 	})
 })

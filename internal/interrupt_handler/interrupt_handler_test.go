@@ -14,7 +14,7 @@ var _ = Describe("InterruptHandler", func() {
 	var interruptHandler *interrupt_handler.InterruptHandler
 	Describe("Timeout interrupts", func() {
 		BeforeEach(func() {
-			interruptHandler = interrupt_handler.NewInterruptHandler(500*time.Millisecond, "")
+			interruptHandler = interrupt_handler.NewInterruptHandler(500*time.Millisecond, nil)
 		})
 
 		AfterEach(func() {
@@ -50,15 +50,10 @@ var _ = Describe("InterruptHandler", func() {
 	})
 
 	Describe("Interrupting when another Ginkgo process has aborted", func() {
-		var server *parallel_support.Server
 		var client parallel_support.Client
 		BeforeEach(func() {
-			server, client, _ = SetUpServerAndClient(2)
-			interruptHandler = interrupt_handler.NewInterruptHandler(0, server.Address())
-		})
-
-		AfterEach(func() {
-			server.Close()
+			_, client, _ = SetUpServerAndClient(2)
+			interruptHandler = interrupt_handler.NewInterruptHandler(0, client)
 		})
 
 		It("interrupts when the server is told to abort", func() {
@@ -77,6 +72,5 @@ var _ = Describe("InterruptHandler", func() {
 			Ω(interruptHandler.InterruptMessageWithStackTraces()).Should(HavePrefix("Interrupted by Other Ginkgo Process"))
 			Ω(interruptHandler.InterruptMessageWithStackTraces()).ShouldNot(ContainSubstring("Here's a stack trace"))
 		})
-
 	})
 })

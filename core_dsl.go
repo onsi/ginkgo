@@ -23,6 +23,7 @@ import (
 	"github.com/onsi/ginkgo/internal"
 	"github.com/onsi/ginkgo/internal/global"
 	"github.com/onsi/ginkgo/internal/interrupt_handler"
+	"github.com/onsi/ginkgo/internal/parallel_support"
 	"github.com/onsi/ginkgo/reporters"
 	"github.com/onsi/ginkgo/types"
 )
@@ -35,6 +36,7 @@ var suiteConfig = types.NewDefaultSuiteConfig()
 var reporterConfig = types.NewDefaultReporterConfig()
 var suiteDidRun = false
 var outputInterceptor internal.OutputInterceptor
+var client parallel_support.Client
 
 func init() {
 	var err error
@@ -48,6 +50,9 @@ func exitIfErr(err error) {
 		if outputInterceptor != nil {
 			outputInterceptor.StopInterceptingAndReturnOutput()
 		}
+		if client != nil {
+			client.Close()
+		}
 		fmt.Fprintln(formatter.ColorableStdErr, err.Error())
 		os.Exit(1)
 	}
@@ -57,6 +62,9 @@ func exitIfErrors(errors []error) {
 	if len(errors) > 0 {
 		if outputInterceptor != nil {
 			outputInterceptor.StopInterceptingAndReturnOutput()
+		}
+		if client != nil {
+			client.Close()
 		}
 		for _, err := range errors {
 			fmt.Fprintln(formatter.ColorableStdErr, err.Error())
@@ -137,9 +145,21 @@ func RunSpecs(t GinkgoTestingT, description string) bool {
 	if suiteConfig.ParallelTotal == 1 {
 		reporter = reporters.NewDefaultReporter(reporterConfig, formatter.ColorableStdOut)
 		outputInterceptor = internal.NoopOutputInterceptor{}
+		client = nil
 	} else {
 		reporter = reporters.NoopReporter{}
 		outputInterceptor = internal.NewOutputInterceptor()
+		if os.Getenv("GINKGO_INTERCEPTOR_MODE") == "SWAP" {
+			outputInterceptor = internal.NewOSGlobalReassigningOutputInterceptor()
+		} else if os.Getenv("GINKGO_INTERCEPTOR_MODE") == "NONE" {
+			outputInterceptor = internal.NoopOutputInterceptor{}			
+		}
+		client = parallel_support.NewClient(suiteConfig.ParallelHost)
+		if !client.Connect() {
+			client = nil
+			exitIfErr(types.GinkgoErrors.UnreachableParallelHost(suiteConfig.ParallelHost))
+		}
+		defer client.Close()
 	}
 
 	writer := GinkgoWriter.(*internal.Writer)
@@ -161,7 +181,7 @@ func RunSpecs(t GinkgoTestingT, description string) bool {
 	suitePath, err = filepath.Abs(suitePath)
 	exitIfErr(err)
 
-	passed, hasFocusedTests := global.Suite.Run(description, suitePath, global.Failer, reporter, writer, outputInterceptor, interrupt_handler.NewInterruptHandler(suiteConfig.Timeout, suiteConfig.ParallelHost), suiteConfig)
+	passed, hasFocusedTests := global.Suite.Run(description, suitePath, global.Failer, reporter, writer, outputInterceptor, interrupt_handler.NewInterruptHandler(suiteConfig.Timeout, client), client, suiteConfig)
 
 	flagSet.ValidateDeprecations(deprecationTracker)
 	if deprecationTracker.DidTrackDeprecations() {

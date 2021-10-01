@@ -86,13 +86,13 @@ func (r *DefaultReporter) SuiteWillBegin(report types.Report) {
 }
 
 func (r *DefaultReporter) WillRun(report types.SpecReport) {
-	if r.conf.Verbosity().LT(types.VerbosityLevelVerbose) || report.State.Is(types.SpecStatePending, types.SpecStateSkipped) {
+	if r.conf.Verbosity().LT(types.VerbosityLevelVerbose) || report.State.Is(types.SpecStatePending|types.SpecStateSkipped) {
 		return
 	}
 
 	r.emitDelimiter()
 	indentation := uint(0)
-	if report.LeafNodeType.Is(types.NodeTypesForSuiteLevelNodes...) {
+	if report.LeafNodeType.Is(types.NodeTypesForSuiteLevelNodes) {
 		r.emitBlock(r.f("{{bold}}[%s] %s{{/}}", report.LeafNodeType.String(), report.LeafNodeText))
 	} else {
 		if len(report.ContainerHierarchyTexts) > 0 {
@@ -119,7 +119,7 @@ func (r *DefaultReporter) DidRun(report types.SpecReport) {
 	hasStd := report.CapturedStdOutErr != ""
 	hasEmittableReports := report.ReportEntries.HasVisibility(types.ReportEntryVisibilityAlways) || (report.ReportEntries.HasVisibility(types.ReportEntryVisibilityFailureOrVerbose) && (!report.Failure.IsZero() || v.GTE(types.VerbosityLevelVerbose)))
 
-	if report.LeafNodeType.Is(types.NodeTypesForSuiteLevelNodes...) {
+	if report.LeafNodeType.Is(types.NodeTypesForSuiteLevelNodes) {
 		denoter = fmt.Sprintf("[%s]", report.LeafNodeType)
 	}
 
@@ -127,7 +127,7 @@ func (r *DefaultReporter) DidRun(report types.SpecReport) {
 	case types.SpecStatePassed:
 		highlightColor, succinctLocationBlock = "{{green}}", v.LT(types.VerbosityLevelVerbose)
 		emitGinkgoWriterOutput = (r.conf.ReportPassed || v.GTE(types.VerbosityLevelVerbose)) && hasGW
-		if report.LeafNodeType.Is(types.NodeTypesForSuiteLevelNodes...) {
+		if report.LeafNodeType.Is(types.NodeTypesForSuiteLevelNodes) {
 			if v.GTE(types.VerbosityLevelVerbose) || hasStd || hasEmittableReports {
 				header = fmt.Sprintf("%s PASSED", denoter)
 			} else {
@@ -239,7 +239,7 @@ func (r *DefaultReporter) DidRun(report types.SpecReport) {
 }
 
 func (r *DefaultReporter) SuiteDidEnd(report types.Report) {
-	failures := report.SpecReports.WithState(types.SpecStateFailureStates...)
+	failures := report.SpecReports.WithState(types.SpecStateFailureStates)
 	if len(failures) > 1 {
 		r.emitBlock("\n\n")
 		r.emitBlock(r.f("{{red}}{{bold}}Summarizing %d Failures:{{/}}", len(failures)))
@@ -272,7 +272,7 @@ func (r *DefaultReporter) SuiteDidEnd(report types.Report) {
 
 	specs := report.SpecReports.WithLeafNodeType(types.NodeTypeIt) //exclude any suite setup nodes
 	r.emitBlock(r.f(color+"Ran %d of %d Specs in %.3f seconds{{/}}",
-		specs.CountWithState(types.SpecStatePassed)+specs.CountWithState(types.SpecStateFailureStates...),
+		specs.CountWithState(types.SpecStatePassed)+specs.CountWithState(types.SpecStateFailureStates),
 		report.PreRunStats.TotalSpecs,
 		report.RunTime.Seconds()),
 	)
@@ -286,11 +286,11 @@ func (r *DefaultReporter) SuiteDidEnd(report types.Report) {
 		r.emitBlock(r.f(color+"%s - %s{{/}}\n", status, strings.Join(report.SpecialSuiteFailureReasons, ", ")))
 	}
 
-	if len(specs) == 0 && report.SpecReports.WithLeafNodeType(types.NodeTypeBeforeSuite, types.NodeTypeSynchronizedBeforeSuite).CountWithState(types.SpecStateFailureStates...) > 0 {
+	if len(specs) == 0 && report.SpecReports.WithLeafNodeType(types.NodeTypeBeforeSuite|types.NodeTypeSynchronizedBeforeSuite).CountWithState(types.SpecStateFailureStates) > 0 {
 		r.emit(r.f("{{cyan}}{{bold}}A BeforeSuite node failed so all tests were skipped.{{/}}\n"))
 	} else {
 		r.emit(r.f("{{green}}{{bold}}%d Passed{{/}} | ", specs.CountWithState(types.SpecStatePassed)))
-		r.emit(r.f("{{red}}{{bold}}%d Failed{{/}} | ", specs.CountWithState(types.SpecStateFailureStates...)))
+		r.emit(r.f("{{red}}{{bold}}%d Failed{{/}} | ", specs.CountWithState(types.SpecStateFailureStates)))
 		if specs.CountOfFlakedSpecs() > 0 {
 			r.emit(r.f("{{light-yellow}}{{bold}}%d Flaked{{/}} | ", specs.CountOfFlakedSpecs()))
 		}
@@ -344,7 +344,7 @@ func (r *DefaultReporter) cycleJoin(elements []string, joiner string) string {
 func (r *DefaultReporter) codeLocationBlock(report types.SpecReport, highlightColor string, succinct bool, usePreciseFailureLocation bool) string {
 	texts, locations, labels := []string{}, []types.CodeLocation{}, [][]string{}
 	texts, locations, labels = append(texts, report.ContainerHierarchyTexts...), append(locations, report.ContainerHierarchyLocations...), append(labels, report.ContainerHierarchyLabels...)
-	if report.LeafNodeType.Is(types.NodeTypesForSuiteLevelNodes...) {
+	if report.LeafNodeType.Is(types.NodeTypesForSuiteLevelNodes) {
 		texts = append(texts, r.f("[%s] %s", report.LeafNodeType, report.LeafNodeText))
 	} else {
 		texts = append(texts, report.LeafNodeText)

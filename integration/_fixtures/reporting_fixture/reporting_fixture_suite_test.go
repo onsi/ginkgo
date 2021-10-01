@@ -42,7 +42,7 @@ var _ = ReportAfterSuite("my report", func(report Report) {
 
 	fmt.Fprintf(f, "%s - %d\n", report.SuiteDescription, report.SuiteConfig.RandomSeed)
 	for _, specReport := range report.SpecReports {
-		if specReport.LeafNodeType.Is(types.NodeTypesForSuiteLevelNodes...) || specReport.LeafNodeType.Is(types.NodeTypeCleanupAfterSuite) {
+		if specReport.LeafNodeType.Is(types.NodeTypesForSuiteLevelNodes) || specReport.LeafNodeType.Is(types.NodeTypeCleanupAfterSuite) {
 			fmt.Fprintf(f, "%d: [%s] - %s\n", specReport.GinkgoParallelNode, specReport.LeafNodeType, specReport.State)
 		} else {
 			fmt.Fprintf(f, "%s - %s\n", specReport.LeafNodeText, specReport.State)

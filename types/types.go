@@ -2,7 +2,6 @@ package types
 
 import (
 	"encoding/json"
-	"fmt"
 	"strings"
 	"time"
 )
@@ -225,7 +224,7 @@ func (report SpecReport) CombinedOutput() string {
 //Failed returns true if report.State is one of the SpecStateFailureStates
 // (SpecStateFailed, SpecStatePanicked, SpecStateinterrupted)
 func (report SpecReport) Failed() bool {
-	return report.State.Is(SpecStateFailureStates...)
+	return report.State.Is(SpecStateFailureStates)
 }
 
 //FullText returns a concatenation of all the report.ContainerHierarchyTexts and report.LeafNodeText
@@ -283,32 +282,49 @@ func (report SpecReport) FailureLocation() CodeLocation {
 type SpecReports []SpecReport
 
 //WithLeafNodeType returns the subset of SpecReports with LeafNodeType matching one of the requested NodeTypes
-func (reports SpecReports) WithLeafNodeType(nodeType ...NodeType) SpecReports {
-	out := SpecReports{}
-	for _, report := range reports {
-		if report.LeafNodeType.Is(nodeType...) {
-			out = append(out, report)
+func (reports SpecReports) WithLeafNodeType(nodeTypes NodeType) SpecReports {
+	count := 0
+	for i := range reports {
+		if reports[i].LeafNodeType.Is(nodeTypes) {
+			count++
+		}
+	}
+
+	out := make(SpecReports, count)
+	j := 0
+	for i := range reports {
+		if reports[i].LeafNodeType.Is(nodeTypes) {
+			out[j] = reports[i]
+			j++
 		}
 	}
 	return out
 }
 
 //WithState returns the subset of SpecReports with State matching one of the requested SpecStates
-func (reports SpecReports) WithState(states ...SpecState) SpecReports {
-	out := SpecReports{}
-	for _, report := range reports {
-		if report.State.Is(states...) {
-			out = append(out, report)
+func (reports SpecReports) WithState(states SpecState) SpecReports {
+	count := 0
+	for i := range reports {
+		if reports[i].State.Is(states) {
+			count++
+		}
+	}
+
+	out, j := make(SpecReports, count), 0
+	for i := range reports {
+		if reports[i].State.Is(states) {
+			out[j] = reports[i]
+			j++
 		}
 	}
 	return out
 }
 
 //CountWithState returns the number of SpecReports with State matching one of the requested SpecStates
-func (reports SpecReports) CountWithState(states ...SpecState) int {
+func (reports SpecReports) CountWithState(states SpecState) int {
 	n := 0
-	for _, report := range reports {
-		if report.State.Is(states...) {
+	for i := range reports {
+		if reports[i].State.Is(states) {
 			n += 1
 		}
 	}
@@ -318,8 +334,8 @@ func (reports SpecReports) CountWithState(states ...SpecState) int {
 //CountWithState returns the number of SpecReports that passed after multiple attempts
 func (reports SpecReports) CountOfFlakedSpecs() int {
 	n := 0
-	for _, report := range reports.WithState(SpecStatePassed) {
-		if report.NumAttempts > 1 {
+	for i := range reports {
+		if reports[i].State.Is(SpecStatePassed) && reports[i].NumAttempts > 1 {
 			n += 1
 		}
 	}
@@ -388,156 +404,14 @@ func (fnc FailureNodeContext) MarshalJSON() ([]byte, error) {
 	return fncEnumSupport.MarshJSON(uint(fnc))
 }
 
-// ReportEntry captures information attached to `SpecReport` via `AddReportEntry`
-type ReportEntry struct {
-	// Visibility captures the visibility policy for this ReportEntry
-	Visibility ReportEntryVisibility
-	// Time captures the time the AddReportEntry was called
-	Time time.Time
-	// Location captures the location of the AddReportEntry call
-	Location CodeLocation
-	// Name captures the name of this report
-	Name string
-	// Value captures the (optional) object passed into AddReportEntry - this can be
-	// anything the user wants.  If Value is a `fmt.Stringer` then Value.String() is called to produce a textual representation
-	Value interface{}
-	// ReportEntry needs to be encoded when generating json-formatted reports.  The concrete type of
-	// Value is lost during the encode/decode round-trip - if Value is a `fmt.Stringer()` that means that we'd
-	// lose the correct string representation of the value.  To circument this, we capture `Value.String()`
-	// in `Representation` when encoding `ReportEntry`.  This is done just before encoding to ensure
-	// we have the latest state of `Value`.
-	Representation string
-}
-
-// ColorableStringer is an interface that ReportEntry values can satisfy.  If they do then ColorableStirng() is used to generate their representation.
-type ColorableStringer interface {
-	ColorableString() string
-}
-
-// StringRepresentation() returns the string representation of the ReportEntry --
-// if Value is nil, empty string is returned
-// if Value is a `ColorableStringer` then `Value.ColorableString()` is returned
-// if Value is a `fmt.Stringer` then `Value.String()` is returned
-// otherwise the Value is formatted with "%+v"
-func (entry ReportEntry) StringRepresentation() string {
-	if entry.Value == nil {
-		return ""
-	}
-
-	if colorableStringer, ok := entry.Value.(ColorableStringer); ok {
-		return colorableStringer.ColorableString()
-	}
-
-	if stringer, ok := entry.Value.(fmt.Stringer); ok {
-		return stringer.String()
-	}
-	if entry.Representation != "" {
-		return entry.Representation
-	}
-	return fmt.Sprintf("%+v", entry.Value)
-}
-
-func (entry ReportEntry) MarshalJSON() ([]byte, error) {
-	//All this to capture the representaiton at encoding-time, not creating time
-	//This way users can Report on pointers and get their final values at reporting-time
-	out := struct {
-		Visibility     ReportEntryVisibility
-		Time           time.Time
-		Location       CodeLocation
-		Name           string
-		Value          interface{}
-		Representation string `json:",omitempty"`
-	}{
-		Visibility:     entry.Visibility,
-		Time:           entry.Time,
-		Location:       entry.Location,
-		Name:           entry.Name,
-		Value:          entry.Value,
-		Representation: entry.Representation,
-	}
-
-	if entry.Value != nil {
-		if colorableStringer, ok := entry.Value.(ColorableStringer); ok {
-			out.Representation = colorableStringer.ColorableString()
-		} else if stringer, ok := entry.Value.(fmt.Stringer); ok {
-			out.Representation = stringer.String()
-		}
-	}
-
-	return json.Marshal(out)
-}
-
-type ReportEntries []ReportEntry
-
-func (re ReportEntries) HasVisibility(visibilities ...ReportEntryVisibility) bool {
-	for _, entry := range re {
-		if entry.Visibility.Is(visibilities...) {
-			return true
-		}
-	}
-	return false
-}
-
-func (re ReportEntries) WithVisibility(visibilities ...ReportEntryVisibility) ReportEntries {
-	out := ReportEntries{}
-
-	for _, entry := range re {
-		if entry.Visibility.Is(visibilities...) {
-			out = append(out, entry)
-		}
-	}
-
-	return out
-}
-
-// ReportEntryVisibility governs the visibility of ReportEntries in Ginkgo's console reporter
-type ReportEntryVisibility uint
-
-const (
-	// Always print out this ReportEntry
-	ReportEntryVisibilityAlways ReportEntryVisibility = iota
-	// Only print out this ReportEntry if the spec fails or if the test is run with -v
-	ReportEntryVisibilityFailureOrVerbose
-	// Never print out this ReportEntry (note that ReportEntrys are always encoded in machine readable reports (e.g. JSON, JUnit, etc.))
-	ReportEntryVisibilityNever
-)
-
-var revEnumSupport = NewEnumSupport(map[uint]string{
-	uint(ReportEntryVisibilityAlways):           "always",
-	uint(ReportEntryVisibilityFailureOrVerbose): "failure-or-verbose",
-	uint(ReportEntryVisibilityNever):            "never",
-})
-
-func (rev ReportEntryVisibility) String() string {
-	return revEnumSupport.String(uint(rev))
-}
-func (rev *ReportEntryVisibility) UnmarshalJSON(b []byte) error {
-	out, err := revEnumSupport.UnmarshJSON(b)
-	*rev = ReportEntryVisibility(out)
-	return err
-}
-func (rev ReportEntryVisibility) MarshalJSON() ([]byte, error) {
-	return revEnumSupport.MarshJSON(uint(rev))
-}
-
-func (v ReportEntryVisibility) Is(visibilities ...ReportEntryVisibility) bool {
-	for _, visibility := range visibilities {
-		if v == visibility {
-			return true
-		}
-	}
-
-	return false
-}
-
 // SpecState captures the state of a spec
-// To determine if a given `state` represents a failure state, use `state.Is(SpecStateFailureStates...)`
+// To determine if a given `state` represents a failure state, use `state.Is(SpecStateFailureStates)`
 type SpecState uint
 
 const (
-	SpecStateInvalid SpecState = iota
+	SpecStateInvalid SpecState = 0
 
-	SpecStatePending
+	SpecStatePending SpecState = 1 << iota
 	SpecStateSkipped
 	SpecStatePassed
 	SpecStateFailed
@@ -569,25 +443,19 @@ func (ss SpecState) MarshalJSON() ([]byte, error) {
 	return ssEnumSupport.MarshJSON(uint(ss))
 }
 
-var SpecStateFailureStates = []SpecState{SpecStateFailed, SpecStateAborted, SpecStatePanicked, SpecStateInterrupted}
+var SpecStateFailureStates = SpecStateFailed | SpecStateAborted | SpecStatePanicked | SpecStateInterrupted
 
-func (ss SpecState) Is(states ...SpecState) bool {
-	for _, testState := range states {
-		if testState == ss {
-			return true
-		}
-	}
-
-	return false
+func (ss SpecState) Is(states SpecState) bool {
+	return ss&states != 0
 }
 
 // NodeType captures the type of a given Ginkgo Node
 type NodeType uint
 
 const (
-	NodeTypeInvalid NodeType = iota
+	NodeTypeInvalid NodeType = 0
 
-	NodeTypeContainer
+	NodeTypeContainer NodeType = 1 << iota
 	NodeTypeIt
 
 	NodeTypeBeforeEach
@@ -613,8 +481,8 @@ const (
 	NodeTypeCleanupAfterSuite
 )
 
-var NodeTypesForContainerAndIt = []NodeType{NodeTypeContainer, NodeTypeIt}
-var NodeTypesForSuiteLevelNodes = []NodeType{NodeTypeBeforeSuite, NodeTypeSynchronizedBeforeSuite, NodeTypeAfterSuite, NodeTypeSynchronizedAfterSuite, NodeTypeReportAfterSuite}
+var NodeTypesForContainerAndIt = NodeTypeContainer | NodeTypeIt
+var NodeTypesForSuiteLevelNodes = NodeTypeBeforeSuite | NodeTypeSynchronizedBeforeSuite | NodeTypeAfterSuite | NodeTypeSynchronizedAfterSuite | NodeTypeReportAfterSuite
 
 var ntEnumSupport = NewEnumSupport(map[uint]string{
 	uint(NodeTypeInvalid):                 "INVALID NODE TYPE",
@@ -651,23 +519,6 @@ func (nt NodeType) MarshalJSON() ([]byte, error) {
 	return ntEnumSupport.MarshJSON(uint(nt))
 }
 
-func (nt NodeType) Is(nodeTypes ...NodeType) bool {
-	for _, nodeType := range nodeTypes {
-		if nt == nodeType {
-			return true
-		}
-	}
-
-	return false
-}
-
-type NodeTypes []NodeType
-
-func (nt NodeTypes) Contains(expected NodeType) bool {
-	for _, nodeType := range nt {
-		if nodeType == expected {
-			return true
-		}
-	}
-	return false
+func (nt NodeType) Is(nodeTypes NodeType) bool {
+	return nt&nodeTypes != 0
 }

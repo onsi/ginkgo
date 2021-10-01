@@ -1,0 +1,2 @@
+{"Name":"parallel-HTTP-NONE-benchmark","Version":2}
+{"Name":"parallel-HTTP-NONE-benchmark","Measurements":[{"Type":"Duration","ExperimentName":"parallel-HTTP-NONE-benchmark","Note":"","Name":"runtime","Style":"","Units":"duration","PrecisionBundle":{"Duration":100000,"ValueFormat":"%.3f"},"Durations":[823209014,849832205,864494051,822988536,849038025,801723792,856141724,794304618,856987786,824270814],"Values":null,"Annotations":["","","","","","","","","",""]}]}
