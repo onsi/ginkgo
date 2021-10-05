@@ -113,19 +113,21 @@ var _ = Describe("Running tests in parallel", func() {
 		})
 
 		finished := make(chan bool)
+		exit1 := exitChannels[1] //avoid a race around exitChannels access in a separate goroutine
 		//now launch suite 1...
 		go func() {
 			success, _ := suite1.Run("node 1", "/path/to/suite", failer, reporter, writer, outputInterceptor, interruptHandler, client, conf)
 			finished <- success
-			close(exitChannels[1])
+			close(exit1)
 		}()
 
 		//and launch suite 2...
 		reporter2 = &FakeReporter{}
+		exit2 := exitChannels[2] //avoid a race around exitChannels access in a separate goroutine
 		go func() {
 			success, _ := suite2.Run("node 2", "/path/to/suite", internal.NewFailer(), reporter2, writer, outputInterceptor, interruptHandler, client, conf2)
 			finished <- success
-			close(exitChannels[2])
+			close(exit2)
 		}()
 
 		// eventually both suites should finish (and succeed)...
