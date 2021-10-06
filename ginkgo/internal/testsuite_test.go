@@ -82,6 +82,8 @@ var _ = Describe("TestSuite", func() {
 			//a precompiled ginkgo test
 			writeFile("/precompiled-dir", "precompiled.test", `fake-binary-file`, 0777)
 			writeFile("/precompiled-dir", "some-other-binary", `fake-binary-file`, 0777)
+			writeFile("/precompiled-dir", "windows.test.exe", `fake-binary-file`, 0666)
+			writeFile("/precompiled-dir", "windows.exe", `fake-binary-file`, 0666)
 			writeFile("/precompiled-dir", "nonexecutable.test", `fake-binary-file`, 0666)
 		})
 
@@ -237,6 +239,24 @@ var _ = Describe("TestSuite", func() {
 					suites := FindSuites([]string{"precompiled-dir/precompiled.test"}, cliConf, true)
 					Ω(suites).Should(ConsistOf(
 						PTS("./precompiled-dir", "precompiled", true, path, TestSuiteStateCompiled),
+					))
+				})
+			})
+
+			Context("when pointed at a precompiled test suite on windows", func() {
+				It("returns the precompiled suite", func() {
+					path, err := filepath.Abs("./precompiled-dir/windows.exe")
+					Ω(err).ShouldNot(HaveOccurred())
+					suites := FindSuites([]string{"precompiled-dir/windows.exe"}, cliConf, true)
+					Ω(suites).Should(ConsistOf(
+						PTS("./precompiled-dir", "windows", true, path, TestSuiteStateCompiled),
+					))
+
+					path, err = filepath.Abs("./precompiled-dir/windows.test.exe")
+					Ω(err).ShouldNot(HaveOccurred())
+					suites = FindSuites([]string{"precompiled-dir/windows.test.exe"}, cliConf, true)
+					Ω(suites).Should(ConsistOf(
+						PTS("./precompiled-dir", "windows", true, path, TestSuiteStateCompiled),
 					))
 				})
 			})

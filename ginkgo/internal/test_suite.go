@@ -186,16 +186,17 @@ func precompiledTestSuite(path string) (TestSuite, error) {
 		return TestSuite{}, errors.New("this is a directory, not a file")
 	}
 
-	if filepath.Ext(path) != ".test" {
+	if filepath.Ext(path) != ".test" && filepath.Ext(path) != ".exe" {
 		return TestSuite{}, errors.New("this is not a .test binary")
 	}
 
-	if info.Mode()&0111 == 0 {
+	if filepath.Ext(path) == ".test" && info.Mode()&0111 == 0 {
 		return TestSuite{}, errors.New("this is not executable")
 	}
 
 	dir := relPath(filepath.Dir(path))
-	packageName := strings.TrimSuffix(filepath.Base(path), filepath.Ext(path))
+	packageName := strings.TrimSuffix(filepath.Base(path), ".exe")
+	packageName = strings.TrimSuffix(packageName, ".test")
 
 	path, err = filepath.Abs(path)
 	if err != nil {
