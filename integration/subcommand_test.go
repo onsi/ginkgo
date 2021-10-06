@@ -45,6 +45,19 @@ var _ = Describe("Subcommand", func() {
 			Ω(output).Should(ContainSubstring("already exists"))
 		})
 
+		It("should generate a bootstrap file with a working package name if the folder starts with a numeral", func() {
+			fm.MkEmpty("7")
+			session := startGinkgo(fm.PathTo("7"), "bootstrap")
+			Eventually(session).Should(gexec.Exit(0))
+
+			content := fm.ContentOf("7", "7_suite_test.go")
+			pkg := strings.Split(content, "\n")[0]
+			Ω(pkg).Should(Equal("package seven_test"))
+
+			session = startGinkgo(fm.PathTo("7"))
+			Eventually(session).Should(gexec.Exit(0))
+		})
+
 		It("should import nodot declarations when told to", func() {
 			session := startGinkgo(fm.PathTo(pkg), "bootstrap", "--nodot")
 			Eventually(session).Should(gexec.Exit(0))
