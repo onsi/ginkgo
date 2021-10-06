@@ -125,7 +125,7 @@ func writeBackup(path string, data []byte) (string, error) {
 	return t.Name(), nil
 }
 
-func updateFile(path string, data []byte, eliminations []int64) error {
+func updateFile(path string, data []byte, eliminations [][]int64) error {
 	to, err := os.Create(path)
 	if err != nil {
 		return fmt.Errorf("error opening file for writing '%s': %w\n", path, err)
@@ -134,14 +134,15 @@ func updateFile(path string, data []byte, eliminations []int64) error {
 
 	from := bytes.NewReader(data)
 	var cursor int64
-	for _, byteToEliminate := range eliminations {
-		if _, err := io.CopyN(to, from, byteToEliminate-cursor); err != nil {
+	for _, eliminationRange := range eliminations {
+		positionToEliminate, lengthToEliminate := eliminationRange[0], eliminationRange[1]
+		if _, err := io.CopyN(to, from, positionToEliminate-cursor); err != nil {
 			return fmt.Errorf("error copying data: %w", err)
 		}
 
-		cursor = byteToEliminate + 1
+		cursor = positionToEliminate + lengthToEliminate
 
-		if _, err := from.Seek(1, io.SeekCurrent); err != nil {
+		if _, err := from.Seek(lengthToEliminate, io.SeekCurrent); err != nil {
 			return fmt.Errorf("error seeking to position in buffer: %w", err)
 		}
 	}
@@ -153,13 +154,19 @@ func updateFile(path string, data []byte, eliminations []int64) error {
 	return nil
 }
 
-func scanForFocus(file *ast.File) (eliminations []int64) {
+func scanForFocus(file *ast.File) (eliminations [][]int64) {
 	ast.Inspect(file, func(n ast.Node) bool {
 		if c, ok := n.(*ast.CallExpr); ok {
 			if i, ok := c.Fun.(*ast.Ident); ok {
 				if isFocus(i.Name) {
-					eliminations = append(eliminations, int64(i.Pos()-file.Pos()))
+					eliminations = append(eliminations, []int64{int64(i.Pos() - file.Pos()), 1})
 				}
+			}
+		}
+
+		if i, ok := n.(*ast.Ident); ok {
+			if i.Name == "Focus" {
+				eliminations = append(eliminations, []int64{int64(i.Pos() - file.Pos()), 6})
 			}
 		}
 
