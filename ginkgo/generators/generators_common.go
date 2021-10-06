@@ -4,6 +4,7 @@ import (
 	"go/build"
 	"os"
 	"path/filepath"
+	"strconv"
 	"strings"
 
 	"github.com/onsi/ginkgo/ginkgo/command"
@@ -24,14 +25,28 @@ func getPackageAndFormattedName() (string, string, string) {
 	pkg, err := build.ImportDir(path, 0)
 	packageName := pkg.Name
 	if err != nil {
-		packageName = dirName
+		packageName = ensureLegalPackageName(dirName)
 	}
 
-	formattedName := prettifyPackageName(filepath.Base(path))
+	formattedName := prettifyName(filepath.Base(path))
 	return packageName, dirName, formattedName
 }
 
-func prettifyPackageName(name string) string {
+func ensureLegalPackageName(name string) string {
+	if name == "_" {
+		return "underscore"
+	}
+	if len(name) == 0 {
+		return "empty"
+	}
+	n, isDigitErr := strconv.Atoi(string(name[0]))
+	if isDigitErr == nil {
+		return []string{"zero", "one", "two", "three", "four", "five", "six", "seven", "eight", "nine"}[n] + name[1:]
+	}
+	return name
+}
+
+func prettifyName(name string) string {
 	name = strings.Replace(name, "-", " ", -1)
 	name = strings.Replace(name, "_", " ", -1)
 	name = strings.Title(name)

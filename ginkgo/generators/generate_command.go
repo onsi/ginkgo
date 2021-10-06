@@ -80,7 +80,7 @@ func generateTestFileForSubject(subject string, conf GeneratorsConfig) {
 	packageName, specFilePrefix, formattedName := getPackageAndFormattedName()
 	if subject != "" {
 		specFilePrefix = formatSubject(subject)
-		formattedName = prettifyPackageName(specFilePrefix)
+		formattedName = prettifyName(specFilePrefix)
 	}
 
 	if conf.Internal {
