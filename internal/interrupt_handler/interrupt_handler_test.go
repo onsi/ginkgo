@@ -15,10 +15,7 @@ var _ = Describe("InterruptHandler", func() {
 	Describe("Timeout interrupts", func() {
 		BeforeEach(func() {
 			interruptHandler = interrupt_handler.NewInterruptHandler(500*time.Millisecond, nil)
-		})
-
-		AfterEach(func() {
-			interruptHandler.Stop()
+			DeferCleanup(interruptHandler.Stop)
 		})
 
 		It("eventually closes the interrupt channel to signal an interrupt has occurred", func() {
@@ -54,6 +51,7 @@ var _ = Describe("InterruptHandler", func() {
 		BeforeEach(func() {
 			_, client, _ = SetUpServerAndClient(2)
 			interruptHandler = interrupt_handler.NewInterruptHandler(0, client)
+			DeferCleanup(interruptHandler.Stop)
 		})
 
 		It("interrupts when the server is told to abort", func() {

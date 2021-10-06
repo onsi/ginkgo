@@ -48,7 +48,7 @@ func init() {
 func exitIfErr(err error) {
 	if err != nil {
 		if outputInterceptor != nil {
-			outputInterceptor.StopInterceptingAndReturnOutput()
+			outputInterceptor.Shutdown()
 		}
 		if client != nil {
 			client.Close()
@@ -61,7 +61,7 @@ func exitIfErr(err error) {
 func exitIfErrors(errors []error) {
 	if len(errors) > 0 {
 		if outputInterceptor != nil {
-			outputInterceptor.StopInterceptingAndReturnOutput()
+			outputInterceptor.Shutdown()
 		}
 		if client != nil {
 			client.Close()
@@ -152,7 +152,7 @@ func RunSpecs(t GinkgoTestingT, description string) bool {
 		if os.Getenv("GINKGO_INTERCEPTOR_MODE") == "SWAP" {
 			outputInterceptor = internal.NewOSGlobalReassigningOutputInterceptor()
 		} else if os.Getenv("GINKGO_INTERCEPTOR_MODE") == "NONE" {
-			outputInterceptor = internal.NoopOutputInterceptor{}			
+			outputInterceptor = internal.NoopOutputInterceptor{}
 		}
 		client = parallel_support.NewClient(suiteConfig.ParallelHost)
 		if !client.Connect() {
@@ -182,6 +182,7 @@ func RunSpecs(t GinkgoTestingT, description string) bool {
 	exitIfErr(err)
 
 	passed, hasFocusedTests := global.Suite.Run(description, suitePath, global.Failer, reporter, writer, outputInterceptor, interrupt_handler.NewInterruptHandler(suiteConfig.Timeout, client), client, suiteConfig)
+	outputInterceptor.Shutdown()
 
 	flagSet.ValidateDeprecations(deprecationTracker)
 	if deprecationTracker.DidTrackDeprecations() {
