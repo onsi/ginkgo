@@ -192,9 +192,10 @@ func runParallel(suite TestSuite, ginkgoConfig types.SuiteConfig, reporterConfig
 		fmt.Fprintln(os.Stderr, "** Ginkgo timed out waiting for all parallel nodes to report back. **")
 		fmt.Fprintf(os.Stderr, "%s (%s)\n", suite.PackageName, suite.Path)
 		for node := 1; node <= cliConfig.ComputedNodes(); node++ {
-			fmt.Fprintf(os.Stderr, "Output from node %d\n:", node)
+			fmt.Fprintf(os.Stderr, "Output from node %d:\n", node)
 			fmt.Fprintln(os.Stderr, formatter.Fi(1, "%s", nodeOutput[node-1].String()))
 		}
+		fmt.Fprintf(os.Stderr, "** End **")
 	}
 
 	for node := 1; node <= cliConfig.ComputedNodes(); node++ {

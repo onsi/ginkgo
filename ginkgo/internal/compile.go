@@ -5,6 +5,7 @@ import (
 	"os"
 	"os/exec"
 	"path/filepath"
+	"strings"
 	"sync"
 
 	"github.com/onsi/ginkgo/types"
@@ -42,6 +43,11 @@ func CompileSuite(suite TestSuite, goFlagsConfig types.GoFlagsConfig) TestSuite 
 			suite.State = TestSuiteStateFailedToCompile
 			suite.CompilationError = fmt.Errorf("Failed to compile %s\n%s", suite.PackageName, err.Error())
 		}
+		return suite
+	}
+
+	if strings.Contains(string(output), "[no test files]") {
+		suite.State = TestSuiteStateSkippedDueToEmptyCompilation
 		return suite
 	}
 

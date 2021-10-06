@@ -14,6 +14,7 @@ import (
 
 const TIMEOUT_ELAPSED_FAILURE_REASON = "Suite did not run because the timeout elapsed"
 const PRIOR_FAILURES_FAILURE_REASON = "Suite did not run because prior suites failed and --keep-going is not set"
+const EMPTY_SKIP_FAILURE_REASON = "Suite did not run go test reported that no test files were found"
 
 type TestSuiteState uint
 
@@ -25,6 +26,7 @@ const (
 
 	TestSuiteStatePassed
 
+	TestSuiteStateSkippedDueToEmptyCompilation
 	TestSuiteStateSkippedByFilter
 	TestSuiteStateSkippedDueToPriorFailures
 

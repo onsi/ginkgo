@@ -104,7 +104,7 @@ func FinalizeProfilesAndReportsForSuites(suites TestSuites, cliConfig types.CLIC
 	}
 
 	reportableSuites := suites.ThatAreGinkgoSuites()
-	for _, suite := range reportableSuites.WithState(TestSuiteStateFailedToCompile, TestSuiteStateFailedDueToTimeout, TestSuiteStateSkippedDueToPriorFailures) {
+	for _, suite := range reportableSuites.WithState(TestSuiteStateFailedToCompile, TestSuiteStateFailedDueToTimeout, TestSuiteStateSkippedDueToPriorFailures, TestSuiteStateSkippedDueToEmptyCompilation) {
 		report := types.Report{
 			SuitePath:      suite.AbsPath(),
 			SuiteConfig:    suiteConfig,
@@ -117,6 +117,9 @@ func FinalizeProfilesAndReportsForSuites(suites TestSuites, cliConfig types.CLIC
 			report.SpecialSuiteFailureReasons = append(report.SpecialSuiteFailureReasons, TIMEOUT_ELAPSED_FAILURE_REASON)
 		case TestSuiteStateSkippedDueToPriorFailures:
 			report.SpecialSuiteFailureReasons = append(report.SpecialSuiteFailureReasons, PRIOR_FAILURES_FAILURE_REASON)
+		case TestSuiteStateSkippedDueToEmptyCompilation:
+			report.SpecialSuiteFailureReasons = append(report.SpecialSuiteFailureReasons, EMPTY_SKIP_FAILURE_REASON)
+			report.SuiteSucceeded = true
 		}
 
 		for _, format := range reportFormats {
