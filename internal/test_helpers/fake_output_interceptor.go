@@ -44,3 +44,6 @@ func (interceptor *FakeOutputInterceptor) StopInterceptingAndReturnOutput() stri
 	interceptor.intercepting = false
 	return interceptor.interceptedOutput
 }
+
+func (interceptor *FakeOutputInterceptor) Shutdown() {
+}

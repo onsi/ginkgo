@@ -34,6 +34,7 @@ var _ = Describe("Suite", func() {
 		outputInterceptor = NewFakeOutputInterceptor()
 		client = nil
 		interruptHandler = interrupt_handler.NewInterruptHandler(0, client)
+		DeferCleanup(interruptHandler.Stop)
 		conf = types.SuiteConfig{
 			ParallelTotal: 1,
 			ParallelNode:  1,
