@@ -16,13 +16,7 @@ var _ = Describe("Utils", func() {
 		var tmpDir string
 
 		BeforeEach(func() {
-			var err error
-			tmpDir, err = os.MkdirTemp("/tmp", "ginkgo")
-			Ω(err).ShouldNot(HaveOccurred())
-		})
-
-		AfterEach(func() {
-			Ω(os.RemoveAll(tmpDir)).Should(Succeed())
+			tmpDir = GinkgoT().TempDir()
 		})
 
 		It("returns true if the path exists", func() {
@@ -34,6 +28,47 @@ var _ = Describe("Utils", func() {
 		It("returns false if the path does not exist", func() {
 			path := filepath.Join(tmpDir, "foo")
 			Ω(internal.FileExists(path)).Should(BeFalse())
+		})
+	})
+
+	Describe("Copying Files", func() {
+		var tmpDirA, tmpDirB string
+		var j = filepath.Join
+
+		BeforeEach(func() {
+			tmpDirA = GinkgoT().TempDir()
+			tmpDirB = GinkgoT().TempDir()
+
+			os.WriteFile(j(tmpDirA, "file_a"), []byte("FILE_A"), 0666)
+			os.WriteFile(j(tmpDirA, "file_b"), []byte("FILE_B"), 0777)
+			os.WriteFile(j(tmpDirB, "file_c"), []byte("FILE_C"), 0666)
+		})
+
+		DescribeTable("it copies files, overwriting existing content and preserve permissions",
+			func(src string, dest string) {
+				src, dest = j(tmpDirA, src), j(tmpDirB, dest)
+				Ω(internal.CopyFile(src, dest)).Should(Succeed())
+				expectedContent, err := os.ReadFile(src)
+				Ω(err).ShouldNot(HaveOccurred())
+				Ω(os.ReadFile(dest)).Should(Equal(expectedContent))
+				expectedStat, err := os.Stat(src)
+				stat, err := os.Stat(dest)
+				Ω(stat.Mode()).Should(Equal(expectedStat.Mode()))
+			},
+			Entry(nil, "file_a", "file_a"),
+			Entry(nil, "file_b", "file_b"),
+			Entry(nil, "file_b", "file_c"),
+		)
+
+		It("fails when src does not exist", func() {
+			err := internal.CopyFile(j(tmpDirA, "file_c"), j(tmpDirB, "file_c"))
+			Ω(err).Should(HaveOccurred())
+			Ω(os.ReadFile(j(tmpDirB, "file_c"))).Should(Equal([]byte("FILE_C")))
+		})
+
+		It("fails when dest's directory does not exist", func() {
+			err := internal.CopyFile(j(tmpDirA, "file_a"), j(tmpDirB, "foo", "file_a"))
+			Ω(err).Should(HaveOccurred())
 		})
 	})
 

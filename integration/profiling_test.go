@@ -261,5 +261,19 @@ var _ = Describe("Profiling Specs", func() {
 				"-nodes=3", "--output-dir=./profiles",
 			),
 		)
+
+		Context("when profiling a precompiled binary and output-dir is set", func() {
+			It("copies (not moves) the binary to output-dir", func() {
+				Eventually(startGinkgo(fm.PathTo("profile"), "build", "-r")).Should(gexec.Exit(0))
+				session := startGinkgo(fm.PathTo("profile"), "--cpuprofile=cpu.out", "--output-dir=./profiles", "./slow_memory_hog/slow_memory_hog.test", "./lock_contest/lock_contest.test", "./block_contest/block_contest.test")
+				Eventually(session).Should(gexec.Exit(0))
+
+				for _, pkg := range []string{"slow_memory_hog", "block_contest", "lock_contest"} {
+					Ω(fm.PathTo("profile", pkg, pkg+".test")).Should(BeAnExistingFile(), "preserve the precompiled binary in the package directory")
+					Ω(fm.PathTo("profile", "profiles", pkg+".test")).Should(BeAnExistingFile(), "copy the precompiled binary to the output-dir")
+					Ω(fm.PathTo("profile", "profiles", pkg+"_cpu.out")).Should(BeAnExistingFile(), "generate a correctly named cpu profile")
+				}
+			})
+		})
 	})
 })
