@@ -63,9 +63,14 @@ func FinalizeProfilesAndReportsForSuites(suites TestSuites, cliConfig types.CLIC
 			if goFlagsConfig.BinaryMustBePreserved() {
 				src := suite.PathToCompiledTest
 				dst := filepath.Join(cliConfig.OutputDir, suite.NamespacedName()+".test")
-				err := os.Rename(src, dst)
-				if err != nil {
-					return messages, err
+				if suite.Precompiled {
+					if err := CopyFile(src, dst); err != nil {
+						return messages, err
+					}
+				} else {
+					if err := os.Rename(src, dst); err != nil {
+						return messages, err
+					}
 				}
 			}
 			profiles := []string{goFlagsConfig.BlockProfile, goFlagsConfig.CPUProfile, goFlagsConfig.MemProfile, goFlagsConfig.MutexProfile}

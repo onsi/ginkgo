@@ -2,6 +2,7 @@ package internal
 
 import (
 	"fmt"
+	"io"
 	"os"
 	"os/exec"
 
@@ -12,6 +13,37 @@ import (
 func FileExists(path string) bool {
 	_, err := os.Stat(path)
 	return err == nil
+}
+
+func CopyFile(src string, dest string) error {
+	srcFile, err := os.Open(src)
+	if err != nil {
+		return err
+	}
+
+	srcStat, err := srcFile.Stat()
+	if err != nil {
+		return err
+	}
+
+	if _, err := os.Stat(dest); err == nil {
+		os.Remove(dest)
+	}
+
+	destFile, err := os.OpenFile(dest, os.O_WRONLY|os.O_CREATE, srcStat.Mode())
+	if err != nil {
+		return err
+	}
+
+	_, err = io.Copy(destFile, srcFile)
+	if err != nil {
+		return err
+	}
+
+	if err := srcFile.Close(); err != nil {
+		return err
+	}
+	return destFile.Close()
 }
 
 func GoFmt(path string) {

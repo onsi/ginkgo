@@ -142,7 +142,8 @@ func (f PerformanceFixtureManager) PathTo(pkg string, target ...string) string {
 	if len(target) == 0 {
 		return filepath.Join(f.TmpDir, pkg)
 	}
-	return filepath.Join(f.TmpDir, pkg, target[0])
+	components := append([]string{f.TmpDir, pkg}, target...)
+	return filepath.Join(components...)
 }
 
 /* GoModDownload runs go mod download for a given package */

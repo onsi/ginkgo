@@ -126,7 +126,8 @@ func (f FixtureManager) PathTo(pkg string, target ...string) string {
 	if len(target) == 0 {
 		return filepath.Join(f.TmpDir, pkg)
 	}
-	return filepath.Join(f.TmpDir, pkg, target[0])
+	components := append([]string{f.TmpDir, pkg}, target...)
+	return filepath.Join(components...)
 }
 
 func (f FixtureManager) PathToFixtureFile(pkg string, target string) string {
