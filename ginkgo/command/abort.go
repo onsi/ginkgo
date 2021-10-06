@@ -12,6 +12,14 @@ func Abort(details AbortDetails) {
 	panic(details)
 }
 
+func AbortGracefullyWith(format string, args ...interface{}) {
+	Abort(AbortDetails{
+		ExitCode:  0,
+		Error:     fmt.Errorf(format, args...),
+		EmitUsage: false,
+	})
+}
+
 func AbortWith(format string, args ...interface{}) {
 	Abort(AbortDetails{
 		ExitCode:  1,

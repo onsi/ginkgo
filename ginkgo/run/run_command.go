@@ -77,10 +77,7 @@ func (r *SpecRunner) RunSpecs(args []string, additionalArgs []string) {
 	}
 
 	if len(skippedSuites) > 0 && len(suites) == 0 {
-		command.Abort(command.AbortDetails{
-			ExitCode: 0,
-			Error:    fmt.Errorf("All tests skipped! Exiting..."),
-		})
+		command.AbortGracefullyWith("All tests skipped! Exiting...")
 	}
 
 	if len(suites) == 0 {
@@ -121,6 +118,11 @@ OUTER_LOOP:
 			if r.interruptHandler.Status().Interrupted {
 				opc.StopAndDrain()
 				break OUTER_LOOP
+			}
+
+			if suites[suiteIdx].State.Is(internal.TestSuiteStateSkippedDueToEmptyCompilation) {
+				fmt.Printf("Skipping %s (no test files)\n", suite.Path)
+				continue SUITE_LOOP
 			}
 
 			if suites[suiteIdx].State.Is(internal.TestSuiteStateFailedToCompile) {
