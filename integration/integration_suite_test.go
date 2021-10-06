@@ -53,6 +53,17 @@ var _ = BeforeEach(func() {
 	}
 })
 
+var _ = AfterEach(func() {
+	if DEBUG {
+		return
+	}
+	suiteConfig, _ := GinkgoConfiguration()
+	if CurrentSpecReport().Failed() && suiteConfig.FailFast {
+		return
+	}
+	fm.Cleanup()
+})
+
 type FixtureManager struct {
 	TmpDir string
 }

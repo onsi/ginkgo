@@ -8,6 +8,7 @@ import (
 	"strings"
 
 	. "github.com/onsi/ginkgo"
+	. "github.com/onsi/ginkgo/internal/test_helpers"
 	"github.com/onsi/ginkgo/types"
 	. "github.com/onsi/gomega"
 	"github.com/onsi/gomega/gbytes"
@@ -394,6 +395,25 @@ var _ = Describe("Running Specs", func() {
 				Ω(output).Should(ContainSubstring(fmt.Sprintf("%s [FAILED]", denoter)))
 				Ω(output).Should(MatchRegexp(`\[\d+\] More_ginkgo_tests Suite - 2/2 specs [%s]{2} SUCCESS! \d+(\.\d+)?[muµ]s PASS`, regexp.QuoteMeta(denoter)))
 				Ω(output).Should(ContainSubstring("Test Suite Failed"))
+			})
+		})
+
+		Context("when running large suites in parallel", Label("slow"), func() {
+			BeforeEach(func() {
+				fm.MountFixture("large")
+			})
+
+			It("doesn't miss any tests (a sanity test)", func() {
+				session := startGinkgo(fm.PathTo("large"), "--no-color", "--nodes=3", "--json-report=report.json")
+				Eventually(session).Should(gexec.Exit(0))
+				report := Reports(fm.LoadJSONReports("large", "report.json")[0].SpecReports)
+
+				expectedNames := []string{}
+				for i := 0; i < 2048; i++ {
+					expectedNames = append(expectedNames, fmt.Sprintf("%d", i))
+				}
+				Ω(report.Names()).Should(ConsistOf(expectedNames))
+
 			})
 		})
 	})
