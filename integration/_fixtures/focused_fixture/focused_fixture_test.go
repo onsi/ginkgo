@@ -27,6 +27,10 @@ var _ = Describe("FocusedFixture", func() {
 
 	})
 
+	It("focused", Focus, func() {
+
+	})
+
 	FSpecify("focused", func() {
 
 	})
