@@ -129,7 +129,7 @@ func runParallel(suite TestSuite, ginkgoConfig types.SuiteConfig, reporterConfig
 
 	for node := 1; node <= numNodes; node++ {
 		nodeGinkgoConfig := ginkgoConfig
-		nodeGinkgoConfig.ParallelNode, nodeGinkgoConfig.ParallelTotal, nodeGinkgoConfig.ParallelHost = node, numNodes, server.Address()
+		nodeGinkgoConfig.ParallelProcess, nodeGinkgoConfig.ParallelTotal, nodeGinkgoConfig.ParallelHost = node, numNodes, server.Address()
 
 		nodeGoFlagsConfig := goFlagsConfig
 		if goFlagsConfig.Cover {

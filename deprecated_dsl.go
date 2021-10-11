@@ -92,6 +92,14 @@ func CurrentGinkgoTestDescription() DeprecatedGinkgoTestDescription {
 	}
 }
 
+func GinkgoParallelNode() int {
+	deprecationTracker.TrackDeprecation(
+		types.Deprecations.ParallelNode(),
+		types.NewCodeLocation(1),
+	)
+	return GinkgoParallelProcess()
+}
+
 //deprecated benchmarker
 type Benchmarker interface {
 	Time(name string, body func(), info ...interface{}) (elapsedTime time.Duration)

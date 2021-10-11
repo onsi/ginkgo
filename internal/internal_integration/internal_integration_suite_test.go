@@ -46,7 +46,7 @@ var _ = BeforeEach(func() {
 	outputInterceptor = NewFakeOutputInterceptor()
 
 	conf.ParallelTotal = 1
-	conf.ParallelNode = 1
+	conf.ParallelProcess = 1
 	conf.RandomSeed = 17
 
 	server, client, exitChannels = nil, nil, nil

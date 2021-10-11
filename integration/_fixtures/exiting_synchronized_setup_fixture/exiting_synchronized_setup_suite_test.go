@@ -17,7 +17,7 @@ func TestSynchronized_setup(t *testing.T) {
 var beforeData string
 
 var _ = SynchronizedBeforeSuite(func() []byte {
-	fmt.Printf("BEFORE_A_%d\n", GinkgoParallelNode())
+	fmt.Printf("BEFORE_A_%d\n", GinkgoParallelProcess())
 	os.Exit(1)
 	return []byte("WHAT EVZ")
 }, func(data []byte) {

@@ -17,19 +17,19 @@ func TestSynchronized_setup_tests(t *testing.T) {
 var beforeData string
 
 var _ = SynchronizedBeforeSuite(func() []byte {
-	fmt.Printf("BEFORE_A_%d\n", GinkgoParallelNode())
+	fmt.Printf("BEFORE_A_%d\n", GinkgoParallelProcess())
 	time.Sleep(100 * time.Millisecond)
 	return []byte("DATA")
 }, func(data []byte) {
-	fmt.Printf("BEFORE_B_%d: %s\n", GinkgoParallelNode(), string(data))
+	fmt.Printf("BEFORE_B_%d: %s\n", GinkgoParallelProcess(), string(data))
 	beforeData += string(data) + "OTHER"
 })
 
 var _ = SynchronizedAfterSuite(func() {
-	fmt.Printf("\nAFTER_A_%d\n", GinkgoParallelNode())
+	fmt.Printf("\nAFTER_A_%d\n", GinkgoParallelProcess())
 	time.Sleep(100 * time.Millisecond)
 }, func() {
-	fmt.Printf("AFTER_B_%d\n", GinkgoParallelNode())
+	fmt.Printf("AFTER_B_%d\n", GinkgoParallelProcess())
 })
 
 var _ = Describe("Synchronized Setup", func() {

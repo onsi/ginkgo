@@ -89,7 +89,7 @@ var _ = Describe("tests", func() {
 
 	for i := 0; i < 5; i += 1 {
 		It("runs in series", SerialDecoration, func() {
-			Ω(GinkgoParallelNode()).Should(Equal(1))
+			Ω(GinkgoParallelProcess()).Should(Equal(1))
 			initialValue := getCounter(Default)
 			Consistently(func(g Gomega) {
 				currentValue := getCounter(g)

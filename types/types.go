@@ -135,8 +135,8 @@ type SpecReport struct {
 	// RunTime captures the duration of the spec
 	RunTime time.Duration
 
-	// GinkgoParallelNode captures the parallel node that this spec ran on
-	GinkgoParallelNode int
+	// ParallelProcess captures the parallel process that this spec ran on
+	ParallelProcess int
 
 	//Failure is populated if a spec has failed, panicked, been interrupted, or skipped by the user (e.g. calling Skip())
 	//It includes detailed information about the Failure
@@ -172,7 +172,7 @@ func (report SpecReport) MarshalJSON() ([]byte, error) {
 		StartTime                   time.Time
 		EndTime                     time.Time
 		RunTime                     time.Duration
-		GinkgoParallelNode          int
+		ParallelProcess             int
 		Failure                     *Failure `json:",omitempty"`
 		NumAttempts                 int
 		CapturedGinkgoWriterOutput  string        `json:",omitempty"`
@@ -190,7 +190,7 @@ func (report SpecReport) MarshalJSON() ([]byte, error) {
 		StartTime:                   report.StartTime,
 		EndTime:                     report.EndTime,
 		RunTime:                     report.RunTime,
-		GinkgoParallelNode:          report.GinkgoParallelNode,
+		ParallelProcess:             report.ParallelProcess,
 		Failure:                     nil,
 		ReportEntries:               nil,
 		NumAttempts:                 report.NumAttempts,

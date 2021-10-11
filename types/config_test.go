@@ -139,23 +139,23 @@ var _ = Describe("Config", func() {
 
 			Context("when parallel node is less than one", func() {
 				BeforeEach(func() {
-					suiteConf.ParallelNode = 0
+					suiteConf.ParallelProcess = 0
 				})
 
 				It("errors", func() {
 					errors := types.VetConfig(flagSet, suiteConf, repConf)
-					Ω(errors).Should(ConsistOf(types.GinkgoErrors.InvalidParallelNodeConfiguration()))
+					Ω(errors).Should(ConsistOf(types.GinkgoErrors.InvalidParallelProcessConfiguration()))
 				})
 			})
 
 			Context("when parallel node is greater than parallel total", func() {
 				BeforeEach(func() {
-					suiteConf.ParallelNode = suiteConf.ParallelTotal + 1
+					suiteConf.ParallelProcess = suiteConf.ParallelTotal + 1
 				})
 
 				It("errors", func() {
 					errors := types.VetConfig(flagSet, suiteConf, repConf)
-					Ω(errors).Should(ConsistOf(types.GinkgoErrors.InvalidParallelNodeConfiguration()))
+					Ω(errors).Should(ConsistOf(types.GinkgoErrors.InvalidParallelProcessConfiguration()))
 				})
 			})
 

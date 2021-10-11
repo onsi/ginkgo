@@ -49,7 +49,7 @@ var _ = Describe("Synchronized Suite Nodes", func() {
 	Describe("when running in series", func() {
 		BeforeEach(func() {
 			conf.ParallelTotal = 1
-			conf.ParallelNode = 1
+			conf.ParallelProcess = 1
 		})
 
 		Describe("happy path", func() {
@@ -178,7 +178,7 @@ var _ = Describe("Synchronized Suite Nodes", func() {
 
 		Describe("when running as node 1", func() {
 			BeforeEach(func() {
-				conf.ParallelNode = 1
+				conf.ParallelProcess = 1
 			})
 
 			Describe("happy path", func() {
@@ -246,7 +246,7 @@ var _ = Describe("Synchronized Suite Nodes", func() {
 
 		Describe("when running as another node", func() {
 			BeforeEach(func() {
-				conf.ParallelNode = 2
+				conf.ParallelProcess = 2
 			})
 
 			Describe("happy path", func() {
