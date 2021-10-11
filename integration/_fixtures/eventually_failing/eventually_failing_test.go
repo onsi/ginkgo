@@ -2,7 +2,7 @@ package eventually_failing_test
 
 import (
 	"fmt"
-	"io/ioutil"
+	"os"
 	"strings"
 	"time"
 
@@ -13,7 +13,7 @@ import (
 var _ = Describe("EventuallyFailing", func() {
 	It("should fail on the third try", func() {
 		time.Sleep(time.Second)
-		files, err := ioutil.ReadDir(".")
+		files, err := os.ReadDir(".")
 		Ω(err).ShouldNot(HaveOccurred())
 
 		numRuns := 1
@@ -24,6 +24,6 @@ var _ = Describe("EventuallyFailing", func() {
 		}
 
 		Ω(numRuns).Should(BeNumerically("<", 3))
-		ioutil.WriteFile(fmt.Sprintf("./counter-%d", numRuns), []byte("foo"), 0777)
+		os.WriteFile(fmt.Sprintf("./counter-%d", numRuns), []byte("foo"), 0777)
 	})
 })

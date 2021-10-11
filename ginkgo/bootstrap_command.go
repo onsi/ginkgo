@@ -4,7 +4,6 @@ import (
 	"bytes"
 	"flag"
 	"fmt"
-	"io/ioutil"
 	"os"
 	"path/filepath"
 	"strings"
@@ -167,7 +166,7 @@ func generateBootstrap(agouti, noDot, internal bool, customBootstrapFile string)
 
 	var templateText string
 	if customBootstrapFile != "" {
-		tpl, err := ioutil.ReadFile(customBootstrapFile)
+		tpl, err := os.ReadFile(customBootstrapFile)
 		if err != nil {
 			panic(err.Error())
 		}

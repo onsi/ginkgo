@@ -1,7 +1,6 @@
 package integration_test
 
 import (
-	"io/ioutil"
 	"os"
 	"path/filepath"
 	"strings"
@@ -255,7 +254,7 @@ var _ = Describe("Flags Specs", func() {
 		coverageFile := filepath.Join(pathToTest, "flags.coverprofile")
 		_, err := os.Stat(coverageFile)
 		Ω(err).ShouldNot(HaveOccurred())
-		contents, err := ioutil.ReadFile(coverageFile)
+		contents, err := os.ReadFile(coverageFile)
 		Ω(err).ShouldNot(HaveOccurred())
 		Ω(contents).Should(ContainSubstring("mode: count"))
 	})

@@ -2,7 +2,6 @@ package integration_test
 
 import (
 	"fmt"
-	"io/ioutil"
 	"os"
 	"regexp"
 	"runtime"
@@ -304,9 +303,9 @@ var _ = Describe("Running Specs", func() {
 				session := startGinkgo(pathToTest, "--nodes=2", "--debug")
 				Eventually(session).Should(gexec.Exit(0))
 
-				f0, err := ioutil.ReadFile(pathToTest + "/ginkgo-node-1.log")
+				f0, err := os.ReadFile(pathToTest + "/ginkgo-node-1.log")
 				Ω(err).ShouldNot(HaveOccurred())
-				f1, err := ioutil.ReadFile(pathToTest + "/ginkgo-node-2.log")
+				f1, err := os.ReadFile(pathToTest + "/ginkgo-node-2.log")
 				Ω(err).ShouldNot(HaveOccurred())
 				content := string(append(f0, f1...))
 
@@ -322,9 +321,9 @@ var _ = Describe("Running Specs", func() {
 				session := startGinkgo(pathToTest, "--nodes=2", "--debug", "-v")
 				Eventually(session).Should(gexec.Exit(0))
 
-				f0, err := ioutil.ReadFile(pathToTest + "/ginkgo-node-1.log")
+				f0, err := os.ReadFile(pathToTest + "/ginkgo-node-1.log")
 				Ω(err).ShouldNot(HaveOccurred())
-				f1, err := ioutil.ReadFile(pathToTest + "/ginkgo-node-2.log")
+				f1, err := os.ReadFile(pathToTest + "/ginkgo-node-2.log")
 				Ω(err).ShouldNot(HaveOccurred())
 				content := string(append(f0, f1...))
 
@@ -467,7 +466,7 @@ var _ = Describe("Running Specs", func() {
 			Ω(session).Should(gbytes.Say("This was attempt #2"))
 			Ω(session).Should(gbytes.Say("Tests failed on attempt #3"))
 
-			//it should change the random seed between each test
+			// it should change the random seed between each test
 			lines := strings.Split(string(session.Out.Contents()), "\n")
 			randomSeeds := []string{}
 			for _, line := range lines {

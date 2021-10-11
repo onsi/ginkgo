@@ -4,7 +4,6 @@ import (
 	"bytes"
 	"fmt"
 	"io"
-	"io/ioutil"
 	"os"
 	"os/exec"
 	"path/filepath"
@@ -504,7 +503,7 @@ func (t *TestRunner) combineCoverprofiles() {
 		}
 
 		coverFile = filepath.Join(t.Suite.Path, coverFile)
-		coverProfile, err := ioutil.ReadFile(coverFile)
+		coverProfile, err := os.ReadFile(coverFile)
 		os.Remove(coverFile)
 
 		if err == nil {
@@ -548,7 +547,7 @@ func (t *TestRunner) combineCoverprofiles() {
 	}
 
 	coverageFilepath := filepath.Join(t.Suite.Path, finalFilename)
-	ioutil.WriteFile(coverageFilepath, []byte(finalOutput), 0666)
+	os.WriteFile(coverageFilepath, []byte(finalOutput), 0666)
 
 	t.CoverageFile = coverageFilepath
 }

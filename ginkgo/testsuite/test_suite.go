@@ -2,7 +2,6 @@ package testsuite
 
 import (
 	"errors"
-	"io/ioutil"
 	"os"
 	"path/filepath"
 	"regexp"
@@ -52,7 +51,7 @@ func SuitesInDir(dir string, recurse bool) []TestSuite {
 		return suites
 	}
 
-	files, _ := ioutil.ReadDir(dir)
+	files, _ := os.ReadDir(dir)
 	re := regexp.MustCompile(`^[^._].*_test\.go$`)
 	for _, file := range files {
 		if !file.IsDir() && re.Match([]byte(file.Name())) {
@@ -85,7 +84,7 @@ func relPath(dir string) string {
 	return dir
 }
 
-func New(dir string, files []os.FileInfo) TestSuite {
+func New(dir string, files []os.DirEntry) TestSuite {
 	return TestSuite{
 		Path:        relPath(dir),
 		PackageName: packageNameForSuite(dir),
@@ -98,13 +97,13 @@ func packageNameForSuite(dir string) string {
 	return filepath.Base(path)
 }
 
-func filesHaveGinkgoSuite(dir string, files []os.FileInfo) bool {
+func filesHaveGinkgoSuite(dir string, files []os.DirEntry) bool {
 	reTestFile := regexp.MustCompile(`_test\.go$`)
 	reGinkgo := regexp.MustCompile(`package ginkgo|\/ginkgo"`)
 
 	for _, file := range files {
 		if !file.IsDir() && reTestFile.Match([]byte(file.Name())) {
-			contents, _ := ioutil.ReadFile(dir + "/" + file.Name())
+			contents, _ := os.ReadFile(dir + "/" + file.Name())
 			if reGinkgo.Match(contents) {
 				return true
 			}

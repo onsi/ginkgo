@@ -3,7 +3,6 @@ package main
 import (
 	"bufio"
 	"flag"
-	"io/ioutil"
 	"os"
 	"path/filepath"
 	"regexp"
@@ -28,7 +27,7 @@ func BuildNodotCommand() *Command {
 func updateNodot(args []string, additionalArgs []string) {
 	suiteFile, perm := findSuiteFile()
 
-	data, err := ioutil.ReadFile(suiteFile)
+	data, err := os.ReadFile(suiteFile)
 	if err != nil {
 		complainAndQuit("Failed to update nodot declarations: " + err.Error())
 	}
@@ -37,7 +36,7 @@ func updateNodot(args []string, additionalArgs []string) {
 	if err != nil {
 		complainAndQuit("Failed to update nodot declarations: " + err.Error())
 	}
-	ioutil.WriteFile(suiteFile, content, perm)
+	os.WriteFile(suiteFile, content, perm)
 
 	goFmt(suiteFile)
 }
@@ -48,7 +47,7 @@ func findSuiteFile() (string, os.FileMode) {
 		complainAndQuit("Could not find suite file for nodot: " + err.Error())
 	}
 
-	files, err := ioutil.ReadDir(workingDir)
+	files, err := os.ReadDir(workingDir)
 	if err != nil {
 		complainAndQuit("Could not find suite file for nodot: " + err.Error())
 	}
@@ -67,7 +66,7 @@ func findSuiteFile() (string, os.FileMode) {
 		defer f.Close()
 
 		if re.MatchReader(bufio.NewReader(f)) {
-			return path, file.Mode()
+			return path, file.Type()
 		}
 	}
 

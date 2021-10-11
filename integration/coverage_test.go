@@ -1,11 +1,10 @@
 package integration_test
 
 import (
-	"io/ioutil"
+	"fmt"
+	"os"
 	"os/exec"
 	"regexp"
-
-	"fmt"
 
 	. "github.com/onsi/ginkgo"
 	. "github.com/onsi/gomega"
@@ -119,7 +118,7 @@ var _ = Describe("Coverage Specs", func() {
 
 			By("and strips multiple mode specifier", func() {
 				re := regexp.MustCompile(`mode: atomic`)
-				bytes, err := ioutil.ReadFile("./_fixtures/combined_coverage_fixture/coverprofile-recursive.txt")
+				bytes, err := os.ReadFile("./_fixtures/combined_coverage_fixture/coverprofile-recursive.txt")
 				Ω(err).Should(BeNil())
 				matches := re.FindAllIndex(bytes, -1)
 				Ω(len(matches)).Should(Equal(1))

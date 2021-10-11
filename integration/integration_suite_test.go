@@ -3,18 +3,16 @@ package integration_test
 import (
 	"fmt"
 	"io"
-	"io/ioutil"
 	"os"
 	"os/exec"
 	"path/filepath"
 	"runtime"
+	"testing"
+	"time"
 
 	. "github.com/onsi/ginkgo"
 	. "github.com/onsi/gomega"
 	"github.com/onsi/gomega/gexec"
-
-	"testing"
-	"time"
 )
 
 var tmpDir string
@@ -62,7 +60,7 @@ func copyIn(sourcePath, destinationPath string, recursive bool) {
 	err := os.MkdirAll(destinationPath, 0777)
 	Expect(err).NotTo(HaveOccurred())
 
-	files, err := ioutil.ReadDir(sourcePath)
+	files, err := os.ReadDir(sourcePath)
 	Expect(err).NotTo(HaveOccurred())
 	for _, f := range files {
 		srcPath := filepath.Join(sourcePath, f.Name())
@@ -89,16 +87,16 @@ func copyIn(sourcePath, destinationPath string, recursive bool) {
 }
 
 func sameFile(filePath, otherFilePath string) bool {
-	content, readErr := ioutil.ReadFile(filePath)
+	content, readErr := os.ReadFile(filePath)
 	Expect(readErr).NotTo(HaveOccurred())
-	otherContent, readErr := ioutil.ReadFile(otherFilePath)
+	otherContent, readErr := os.ReadFile(otherFilePath)
 	Expect(readErr).NotTo(HaveOccurred())
 	Expect(string(content)).To(Equal(string(otherContent)))
 	return true
 }
 
 func sameFolder(sourcePath, destinationPath string) bool {
-	files, err := ioutil.ReadDir(sourcePath)
+	files, err := os.ReadDir(sourcePath)
 	Expect(err).NotTo(HaveOccurred())
 	for _, f := range files {
 		srcPath := filepath.Join(sourcePath, f.Name())

@@ -1,7 +1,7 @@
 package integration_test
 
 import (
-	"io/ioutil"
+	"io"
 	"os"
 	"path/filepath"
 	"strings"
@@ -21,7 +21,7 @@ var _ = Describe("Watch", func() {
 	var session *gexec.Session
 
 	fixUpImportPath := func(path string) {
-		files, err := ioutil.ReadDir(path)
+		files, err := os.ReadDir(path)
 		Expect(err).NotTo(HaveOccurred())
 
 		for _, f := range files {
@@ -30,12 +30,12 @@ var _ = Describe("Watch", func() {
 			r, err := os.Open(filePath)
 			Ω(err).ShouldNot(HaveOccurred())
 
-			src, err := ioutil.ReadAll(r)
+			src, err := io.ReadAll(r)
 			Ω(err).ShouldNot(HaveOccurred())
 			out := strings.ReplaceAll(string(src), "$ROOT_PATH$", "github.com/onsi/ginkgo/integration/"+rootPath)
 			r.Close()
 
-			err = ioutil.WriteFile(filePath, []byte(out), 0666)
+			err = os.WriteFile(filePath, []byte(out), 0666)
 			Ω(err).ShouldNot(HaveOccurred())
 		}
 	}
@@ -65,10 +65,10 @@ var _ = Describe("Watch", func() {
 
 	modifyFile := func(path string) {
 		time.Sleep(time.Second)
-		content, err := ioutil.ReadFile(path)
+		content, err := os.ReadFile(path)
 		Ω(err).ShouldNot(HaveOccurred())
 		content = append(content, []byte("//")...)
-		err = ioutil.WriteFile(path, content, 0666)
+		err = os.WriteFile(path, content, 0666)
 		Ω(err).ShouldNot(HaveOccurred())
 	}
 
