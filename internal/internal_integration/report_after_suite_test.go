@@ -58,7 +58,7 @@ var _ = Describe("Sending reports to ReportAfterSuite nodes", func() {
 	Context("when running in series", func() {
 		BeforeEach(func() {
 			conf.ParallelTotal = 1
-			conf.ParallelNode = 1
+			conf.ParallelProcess = 1
 		})
 
 		Context("the happy path", func() {
@@ -178,7 +178,7 @@ var _ = Describe("Sending reports to ReportAfterSuite nodes", func() {
 
 		Context("on node 1", func() {
 			BeforeEach(func() {
-				conf.ParallelNode = 1
+				conf.ParallelProcess = 1
 			})
 
 			Context("the happy path", func() {
@@ -263,7 +263,7 @@ var _ = Describe("Sending reports to ReportAfterSuite nodes", func() {
 
 		Context("on a non-primary node", func() {
 			BeforeEach(func() {
-				conf.ParallelNode = 2
+				conf.ParallelProcess = 2
 				success, _ := RunFixture("happy-path", fixture)
 				Ω(success).Should(BeFalse())
 			})

@@ -101,7 +101,7 @@ var _ = Describe("Running Tests in Series - the happy path", func() {
 				"Failure":                    BeZero(),
 				"CapturedGinkgoWriterOutput": Equal("before-suite\n"),
 				"CapturedStdOutErr":          Equal("output-intercepted-in-before-suite"),
-				"GinkgoParallelNode":         Equal(1),
+				"ParallelProcess":            Equal(1),
 			}))
 
 			beforeSuiteReport := reporter.Did.FindByLeafNodeType(types.NodeTypeBeforeSuite)
@@ -114,7 +114,7 @@ var _ = Describe("Running Tests in Series - the happy path", func() {
 				"Failure":                    BeZero(),
 				"CapturedGinkgoWriterOutput": BeZero(),
 				"CapturedStdOutErr":          Equal("output-intercepted-in-after-suite"),
-				"GinkgoParallelNode":         Equal(1),
+				"ParallelProcess":            Equal(1),
 			}))
 
 			afterSuiteReport := reporter.Did.FindByLeafNodeType(types.NodeTypeAfterSuite)
@@ -139,7 +139,7 @@ var _ = Describe("Running Tests in Series - the happy path", func() {
 				"NumAttempts":                Equal(1),
 				"CapturedGinkgoWriterOutput": Equal("before-each\nC\n"),
 				"CapturedStdOutErr":          Equal("output-intercepted-in-C"),
-				"GinkgoParallelNode":         Equal(1),
+				"ParallelProcess":            Equal(1),
 			}))
 
 		})

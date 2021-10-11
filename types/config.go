@@ -29,17 +29,17 @@ type SuiteConfig struct {
 	DryRun            bool
 	Timeout           time.Duration
 
-	ParallelNode  int
-	ParallelTotal int
-	ParallelHost  string
+	ParallelProcess int
+	ParallelTotal   int
+	ParallelHost    string
 }
 
 func NewDefaultSuiteConfig() SuiteConfig {
 	return SuiteConfig{
-		RandomSeed:    time.Now().Unix(),
-		Timeout:       time.Hour,
-		ParallelNode:  1,
-		ParallelTotal: 1,
+		RandomSeed:      time.Now().Unix(),
+		Timeout:         time.Hour,
+		ParallelProcess: 1,
+		ParallelTotal:   1,
 	}
 }
 
@@ -290,12 +290,12 @@ var SuiteConfigFlags = GinkgoFlags{
 
 // ParallelConfigFlags provides flags for the Ginkgo test process (not the CLI)
 var ParallelConfigFlags = GinkgoFlags{
-	{KeyPath: "S.ParallelNode", Name: "parallel.node", SectionKey: "low-level-parallel", UsageDefaultValue: "1",
-		Usage: "This worker node's (one-indexed) node number.  For running specs in parallel."},
+	{KeyPath: "S.ParallelProcess", Name: "parallel.process", SectionKey: "low-level-parallel", UsageDefaultValue: "1",
+		Usage: "This worker process's (one-indexed) process number.  For running specs in parallel."},
 	{KeyPath: "S.ParallelTotal", Name: "parallel.total", SectionKey: "low-level-parallel", UsageDefaultValue: "1",
-		Usage: "The total number of worker nodes.  For running specs in parallel."},
+		Usage: "The total number of worker processes.  For running specs in parallel."},
 	{KeyPath: "S.ParallelHost", Name: "parallel.host", SectionKey: "low-level-parallel", UsageDefaultValue: "set by Ginkgo CLI",
-		Usage: "The address for the server that will synchronize the running nodes."},
+		Usage: "The address for the server that will synchronize the processes."},
 }
 
 // ReporterConfigFlags provides flags for the Ginkgo test process, and CLI
@@ -365,8 +365,8 @@ func VetConfig(flagSet GinkgoFlagSet, suiteConfig SuiteConfig, reporterConfig Re
 		errors = append(errors, GinkgoErrors.InvalidParallelTotalConfiguration())
 	}
 
-	if suiteConfig.ParallelNode > suiteConfig.ParallelTotal || suiteConfig.ParallelNode < 1 {
-		errors = append(errors, GinkgoErrors.InvalidParallelNodeConfiguration())
+	if suiteConfig.ParallelProcess > suiteConfig.ParallelTotal || suiteConfig.ParallelProcess < 1 {
+		errors = append(errors, GinkgoErrors.InvalidParallelProcessConfiguration())
 	}
 
 	if suiteConfig.ParallelTotal > 1 && suiteConfig.ParallelHost == "" {

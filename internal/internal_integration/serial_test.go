@@ -28,7 +28,7 @@ var _ = Describe("Serial", func() {
 	Context("when running in series", func() {
 		BeforeEach(func() {
 			conf.ParallelTotal = 1
-			conf.ParallelNode = 1
+			conf.ParallelProcess = 1
 			success, _ := RunFixture("in-series", fixture)
 			Ω(success).Should(BeTrue())
 		})
@@ -46,7 +46,7 @@ var _ = Describe("Serial", func() {
 
 		Describe("when running as node 1", func() {
 			BeforeEach(func() {
-				conf.ParallelNode = 1
+				conf.ParallelProcess = 1
 			})
 
 			It("participates in running parallel tests, then runs the serial tests after all other nodes have finished", func() {
@@ -67,7 +67,7 @@ var _ = Describe("Serial", func() {
 
 		Describe("when running as a non-primary node", func() {
 			BeforeEach(func() {
-				conf.ParallelNode = 2
+				conf.ParallelProcess = 2
 			})
 
 			It("participates in running parallel tests, but never runs the serial tests", func() {

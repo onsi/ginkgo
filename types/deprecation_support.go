@@ -43,6 +43,14 @@ func (d deprecations) Measure() Deprecation {
 	}
 }
 
+func (d deprecations) ParallelNode() Deprecation {
+	return Deprecation{
+		Message: "GinkgoParallelNode is deprecated and will be removed in Ginkgo V2.  Please use GinkgoParallelProcess instead.",
+		DocLink: "renamed-ginkgoparallelnode",
+		Version: "1.16.4",
+	}
+}
+
 func (d deprecations) CurrentGinkgoTestDescription() Deprecation {
 	return Deprecation{
 		Message: "CurrentGinkgoTestDescription() is deprecated in Ginkgo V2.  Use CurrentSpecReport() instead.",

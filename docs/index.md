@@ -1178,7 +1178,7 @@ func TestBooks(t *testing.T) {
 }
 
 var _ = BeforeSuite(func() {
-    port := 4000 + config.GinkgoConfig.ParallelNode
+    port := 4000 + GinkgoParallelProcess()
 
     dbRunner = db.NewRunner()
     err := dbRunner.Start(port)
@@ -1196,7 +1196,7 @@ var _ = AfterSuite(func() {
 ```
 
 
-The `github.com/onsi/ginkgo/config` package provides your suite with access to the command line configuration parameters passed into Ginkgo.  The `config.GinkgoConfig.ParallelNode` parameter is the index for the current node (starts with `1`, goes up to `N`).  Similarly `config.GinkgoConfig.ParallelTotal` is the total number of nodes running in parallel.
+Ginkgo provides access to the index of the current parallel process via `GinkgoParallelProcess()` - it is one-indexed.  To fetch the total number of nodes you can get the suite configuration from `suiteConfig, _ := GinkgoConfiguration()` and access `suiteConfig.ParallelTotal`.
 
 #### Managing *Singleton* External Processes in Parallel Test Suites
 
