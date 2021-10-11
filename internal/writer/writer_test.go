@@ -20,7 +20,6 @@ var _ = Describe("Writer", func() {
 	It("should stream directly to the outbuffer by default", func() {
 		writer.Write([]byte("foo"))
 		Ω(out).Should(gbytes.Say("foo"))
-		Fail("boom")
 	})
 
 	It("should not emit the header when asked to DumpOutWitHeader", func() {
