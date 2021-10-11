@@ -90,12 +90,12 @@ var _ = Describe("Running tests in parallel", func() {
 		//SetUpForParallel starts up a server, sets up a client, and sets up the exitChannels map - they're all cleaned up automatically after the test
 		SetUpForParallel(2)
 
-		conf.ParallelNode = 1
+		conf.ParallelProcess = 1
 		conf.RandomizeAllSpecs = true
 		conf.RandomSeed = 17
 
 		conf2 = conf //makes a copy
-		conf2.ParallelNode = 2
+		conf2.ParallelProcess = 2
 
 		// construct suite 1...
 		suite1 := internal.NewSuite()

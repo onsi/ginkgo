@@ -450,9 +450,9 @@ func (g ginkgoErrors) InvalidParallelTotalConfiguration() error {
 	}
 }
 
-func (g ginkgoErrors) InvalidParallelNodeConfiguration() error {
+func (g ginkgoErrors) InvalidParallelProcessConfiguration() error {
 	return GinkgoError{
-		Heading: "-ginkgo.parallel.node is one-indexed and must be <= ginkgo.parallel.total",
+		Heading: "-ginkgo.parallel.process is one-indexed and must be <= ginkgo.parallel.total",
 		Message: sharedParallelErrorMessage,
 		DocLink: "parallel-specs",
 	}

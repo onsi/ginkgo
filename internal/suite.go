@@ -253,9 +253,9 @@ func (suite *Suite) runSpecs(description string, suitePath string, hasProgrammat
 	beforeSuiteNode := suite.suiteNodes.FirstNodeWithType(types.NodeTypeBeforeSuite | types.NodeTypeSynchronizedBeforeSuite)
 	if !beforeSuiteNode.IsZero() && !interruptStatus.Interrupted && numSpecsThatWillBeRun > 0 {
 		suite.currentSpecReport = types.SpecReport{
-			LeafNodeType:       beforeSuiteNode.NodeType,
-			LeafNodeLocation:   beforeSuiteNode.CodeLocation,
-			GinkgoParallelNode: suiteConfig.ParallelNode,
+			LeafNodeType:     beforeSuiteNode.NodeType,
+			LeafNodeLocation: beforeSuiteNode.CodeLocation,
+			ParallelProcess:  suiteConfig.ParallelProcess,
 		}
 		reporter.WillRun(suite.currentSpecReport)
 		suite.runSuiteNode(beforeSuiteNode, failer, interruptStatus.Channel, interruptHandler, writer, outputInterceptor, suiteConfig)
@@ -278,7 +278,7 @@ func (suite *Suite) runSpecs(description string, suitePath string, hasProgrammat
 				break
 			}
 			if groupedSpecIdx >= len(groupedSpecIndices) {
-				if suiteConfig.ParallelNode == 1 && len(serialGroupedSpecIndices) > 0 {
+				if suiteConfig.ParallelProcess == 1 && len(serialGroupedSpecIndices) > 0 {
 					groupedSpecIndices, serialGroupedSpecIndices, nextIndex = serialGroupedSpecIndices, GroupedSpecIndices{}, MakeIncrementingIndexCounter()
 					suite.client.BlockUntilNonprimaryNodesHaveFinished()
 					continue
@@ -307,7 +307,7 @@ func (suite *Suite) runSpecs(description string, suitePath string, hasProgrammat
 					LeafNodeType:                types.NodeTypeIt,
 					LeafNodeText:                spec.FirstNodeWithType(types.NodeTypeIt).Text,
 					LeafNodeLabels:              []string(spec.FirstNodeWithType(types.NodeTypeIt).Labels),
-					GinkgoParallelNode:          suiteConfig.ParallelNode,
+					ParallelProcess:             suiteConfig.ParallelProcess,
 				}
 
 				skipReason := ""
@@ -367,9 +367,9 @@ func (suite *Suite) runSpecs(description string, suitePath string, hasProgrammat
 	afterSuiteNode := suite.suiteNodes.FirstNodeWithType(types.NodeTypeAfterSuite | types.NodeTypeSynchronizedAfterSuite)
 	if !afterSuiteNode.IsZero() && numSpecsThatWillBeRun > 0 {
 		suite.currentSpecReport = types.SpecReport{
-			LeafNodeType:       afterSuiteNode.NodeType,
-			LeafNodeLocation:   afterSuiteNode.CodeLocation,
-			GinkgoParallelNode: suiteConfig.ParallelNode,
+			LeafNodeType:     afterSuiteNode.NodeType,
+			LeafNodeLocation: afterSuiteNode.CodeLocation,
+			ParallelProcess:  suiteConfig.ParallelProcess,
 		}
 		reporter.WillRun(suite.currentSpecReport)
 		suite.runSuiteNode(afterSuiteNode, failer, interruptHandler.Status().Channel, interruptHandler, writer, outputInterceptor, suiteConfig)
@@ -380,9 +380,9 @@ func (suite *Suite) runSpecs(description string, suitePath string, hasProgrammat
 	if len(afterSuiteCleanup) > 0 {
 		for _, cleanupNode := range afterSuiteCleanup {
 			suite.currentSpecReport = types.SpecReport{
-				LeafNodeType:       cleanupNode.NodeType,
-				LeafNodeLocation:   cleanupNode.CodeLocation,
-				GinkgoParallelNode: suiteConfig.ParallelNode,
+				LeafNodeType:     cleanupNode.NodeType,
+				LeafNodeLocation: cleanupNode.CodeLocation,
+				ParallelProcess:  suiteConfig.ParallelProcess,
 			}
 			reporter.WillRun(suite.currentSpecReport)
 			suite.runSuiteNode(cleanupNode, failer, interruptHandler.Status().Channel, interruptHandler, writer, outputInterceptor, suiteConfig)
@@ -398,13 +398,13 @@ func (suite *Suite) runSpecs(description string, suitePath string, hasProgrammat
 	report.EndTime = time.Now()
 	report.RunTime = report.EndTime.Sub(report.StartTime)
 
-	if suiteConfig.ParallelNode == 1 {
+	if suiteConfig.ParallelProcess == 1 {
 		for _, node := range suite.suiteNodes.WithType(types.NodeTypeReportAfterSuite) {
 			suite.currentSpecReport = types.SpecReport{
-				LeafNodeType:       node.NodeType,
-				LeafNodeLocation:   node.CodeLocation,
-				LeafNodeText:       node.Text,
-				GinkgoParallelNode: suiteConfig.ParallelNode,
+				LeafNodeType:     node.NodeType,
+				LeafNodeLocation: node.CodeLocation,
+				LeafNodeText:     node.Text,
+				ParallelProcess:  suiteConfig.ParallelProcess,
 			}
 			reporter.WillRun(suite.currentSpecReport)
 			suite.runReportAfterSuiteNode(node, report, failer, interruptHandler, writer, outputInterceptor, suiteConfig)
@@ -580,7 +580,7 @@ func (suite *Suite) runSuiteNode(node Node, failer *Failer, interruptChannel cha
 	case types.NodeTypeSynchronizedBeforeSuite:
 		var data []byte
 		var runAllNodes bool
-		if suiteConfig.ParallelNode == 1 {
+		if suiteConfig.ParallelProcess == 1 {
 			if suiteConfig.ParallelTotal > 1 {
 				outputInterceptor.StopInterceptingAndReturnOutput()
 				outputInterceptor.StartInterceptingOutputAndForwardTo(suite.client)
@@ -608,7 +608,7 @@ func (suite *Suite) runSuiteNode(node Node, failer *Failer, interruptChannel cha
 	case types.NodeTypeSynchronizedAfterSuite:
 		node.Body = node.SynchronizedAfterSuiteAllNodesBody
 		suite.currentSpecReport.State, suite.currentSpecReport.Failure = suite.runNode(node, failer, interruptChannel, interruptHandler, "", writer, suiteConfig)
-		if suiteConfig.ParallelNode == 1 {
+		if suiteConfig.ParallelProcess == 1 {
 			if suiteConfig.ParallelTotal > 1 {
 				err = suite.client.BlockUntilNonprimaryNodesHaveFinished()
 			}

@@ -239,7 +239,7 @@ var _ = Describe("Types", func() {
 					StartTime:                  time.Date(2012, 06, 19, 05, 32, 12, 0, time.UTC),
 					EndTime:                    time.Date(2012, 06, 19, 05, 33, 12, 0, time.UTC),
 					RunTime:                    time.Minute,
-					GinkgoParallelNode:         2,
+					ParallelProcess:            2,
 					NumAttempts:                3,
 					CapturedGinkgoWriterOutput: "gw",
 					CapturedStdOutErr:          "std",

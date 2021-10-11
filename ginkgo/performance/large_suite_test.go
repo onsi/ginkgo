@@ -35,7 +35,7 @@ var _ = Describe("Running a large test suite", Ordered, Serial, func() {
 		cache, err = gmeasure.NewExperimentCache("./large-suite-cache")
 		Ω(err).ShouldNot(HaveOccurred())
 
-		pfm = NewPerformanceFixtureManager(fmt.Sprintf("./ginkgo_perf_tmp_%d", GinkgoParallelNode()))
+		pfm = NewPerformanceFixtureManager(fmt.Sprintf("./ginkgo_perf_tmp_%d", GinkgoParallelProcess()))
 		if !DEBUG {
 			DeferCleanup(pfm.Cleanup)
 		}

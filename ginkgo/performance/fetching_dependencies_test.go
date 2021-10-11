@@ -17,8 +17,8 @@ var _ = Describe("Fetching Dependencies", func() {
 		Ω(err).ShouldNot(HaveOccurred())
 
 		// we mount everything outside the Ginkgo parent directory to make sure GOMODULES doesn't get confused by the go.mod in Ginkgo's root
-		pfm = NewPerformanceFixtureManager(fmt.Sprintf("../../../ginkgo_perf_tmp_%d", GinkgoParallelNode()))
-		gmcm = NewGoModCacheManager(fmt.Sprintf("../../../ginkgo_perf_cache_%d", GinkgoParallelNode()))
+		pfm = NewPerformanceFixtureManager(fmt.Sprintf("../../../ginkgo_perf_tmp_%d", GinkgoParallelProcess()))
+		gmcm = NewGoModCacheManager(fmt.Sprintf("../../../ginkgo_perf_cache_%d", GinkgoParallelProcess()))
 		if !DEBUG {
 			DeferCleanup(pfm.Cleanup)
 			DeferCleanup(gmcm.Cleanup)

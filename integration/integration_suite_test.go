@@ -47,7 +47,7 @@ var _ = SynchronizedBeforeSuite(func() []byte {
 })
 
 var _ = BeforeEach(func() {
-	fm = NewFixtureManager(fmt.Sprintf("tmp_%d", GinkgoParallelNode()))
+	fm = NewFixtureManager(fmt.Sprintf("tmp_%d", GinkgoParallelProcess()))
 })
 
 var _ = AfterEach(func() {

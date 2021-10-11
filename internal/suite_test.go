@@ -37,7 +37,7 @@ var _ = Describe("Suite", func() {
 		DeferCleanup(interruptHandler.Stop)
 		conf = types.SuiteConfig{
 			ParallelTotal: 1,
-			ParallelNode:  1,
+			ParallelProcess:  1,
 		}
 		rt = NewRunTracker()
 		suite = internal.NewSuite()

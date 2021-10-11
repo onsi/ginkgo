@@ -114,10 +114,10 @@ func GinkgoRandomSeed() int64 {
 	return suiteConfig.RandomSeed
 }
 
-//GinkgoParallelNode returns the parallel node number for the current ginkgo process
-//The node number is 1-indexed
-func GinkgoParallelNode() int {
-	return suiteConfig.ParallelNode
+//GinkgoParallelProcess returns the parallel process number for the current ginkgo process
+//The process number is 1-indexed
+func GinkgoParallelProcess() int {
+	return suiteConfig.ParallelProcess
 }
 
 //RunSpecs is the entry point for the Ginkgo test runner.
@@ -355,7 +355,7 @@ func By(text string, callbacks ...func()) {
 }
 
 //BeforeSuite blocks are run just once before any specs are run.  When running in parallel, each
-//parallel node process will call BeforeSuite.
+//parallel process will call BeforeSuite.
 //
 //You may only register *one* BeforeSuite handler per test suite.  You typically do so in your bootstrap file at the top level.
 func BeforeSuite(body func()) bool {
@@ -365,7 +365,7 @@ func BeforeSuite(body func()) bool {
 //AfterSuite blocks are *always* run after all the specs regardless of whether specs have passed or failed.
 //Moreover, if Ginkgo receives an interrupt signal (^C) it will attempt to run the AfterSuite before exiting.
 //
-//When running in parallel, each parallel node process will call AfterSuite.
+//When running in parallel, each parallel process will call AfterSuite.
 //
 //You may only register *one* AfterSuite handler per test suite.  You typically do so in your bootstrap file at the top level.
 func AfterSuite(body func()) bool {
@@ -373,15 +373,15 @@ func AfterSuite(body func()) bool {
 }
 
 //SynchronizedBeforeSuite blocks are primarily meant to solve the problem of setting up singleton external resources shared across
-//nodes when running tests in parallel.  For example, say you have a shared database that you can only start one instance of that
-//must be used in your tests.  When running in parallel, only one node should set up the database and all other nodes should wait
-//until that node is done before running.
+//tests when running tests in parallel.  For example, say you have a shared database that you can only start one instance of that
+//must be used in your tests.  When running in parallel, only one parallel process should set up the database and all other processes should wait
+//until that process is done before running.
 //
-//SynchronizedBeforeSuite accomplishes this by taking *two* function arguments.  The first is only run on parallel node #1.  The second is
-//run on all nodes, but *only* after the first function completes successfully.  Ginkgo also makes it possible to send data from the first function (on Node 1)
-//to the second function (on all the other nodes).
+//SynchronizedBeforeSuite accomplishes this by taking *two* function arguments.  The first is only run on parallel process #1.  The second is
+//run on all processes, but *only* after the first function completes successfully.  Ginkgo also makes it possible to send data from the first function (on process #1)
+//to the second function (on all the other processes).
 //
-//The functions have the following signatures.  The first function (which only runs on node 1) has the signature:
+//The functions have the following signatures.  The first function (which only runs on process #1) has the signature:
 //
 //	func() []byte
 //
@@ -389,7 +389,7 @@ func AfterSuite(body func()) bool {
 //
 //	func(data []byte)
 //
-//Here's a simple pseudo-code example that starts a shared database on Node 1 and shares the database's address with the other nodes:
+//Here's a simple pseudo-code example that starts a shared database on process #1 and shares the database's address with the other processes:
 //
 //	var dbClient db.Client
 //	var dbRunner db.Runner
@@ -404,27 +404,27 @@ func AfterSuite(body func()) bool {
 //		err := dbClient.Connect(string(data))
 //		Ω(err).ShouldNot(HaveOccurred())
 //	})
-func SynchronizedBeforeSuite(node1Body func() []byte, allNodesBody func([]byte)) bool {
-	return pushNode(internal.NewSynchronizedBeforeSuiteNode(node1Body, allNodesBody, types.NewCodeLocation(1)))
+func SynchronizedBeforeSuite(process1Body func() []byte, allProcessBody func([]byte)) bool {
+	return pushNode(internal.NewSynchronizedBeforeSuiteNode(process1Body, allProcessBody, types.NewCodeLocation(1)))
 }
 
 //SynchronizedAfterSuite blocks complement the SynchronizedBeforeSuite blocks in solving the problem of setting up
-//external singleton resources shared across nodes when running tests in parallel.
+//external singleton resources shared across processes when running tests in parallel.
 //
-//SynchronizedAfterSuite accomplishes this by taking *two* function arguments.  The first runs on all nodes.  The second runs only on parallel node #1
-//and *only* after all other nodes have finished and exited.  This ensures that node 1, and any resources it is running, remain alive until
-//all other nodes are finished.
+//SynchronizedAfterSuite accomplishes this by taking *two* function arguments.  The first runs on all processes.  The second runs only on parallel process #1
+//and *only* after all other nodes have finished and exited.  This ensures that process #1, and any resources it is running, remain alive until
+//all other processes are finished.
 //
 //Here's a pseudo-code example that complements that given in SynchronizedBeforeSuite.  Here, SynchronizedAfterSuite is used to tear down the shared database
-//only after all nodes have finished:
+//only after all test processes have finished:
 //
 //	var _ = SynchronizedAfterSuite(func() {
 //		dbClient.Cleanup()
 //	}, func() {
 //		dbRunner.Stop()
 //	})
-func SynchronizedAfterSuite(allNodesBody func(), node1Body func()) bool {
-	return pushNode(internal.NewSynchronizedAfterSuiteNode(allNodesBody, node1Body, types.NewCodeLocation(1)))
+func SynchronizedAfterSuite(allProcessBody func(), process1Body func()) bool {
+	return pushNode(internal.NewSynchronizedAfterSuiteNode(allProcessBody, process1Body, types.NewCodeLocation(1)))
 }
 
 //BeforeEach blocks are run before It blocks.  When multiple BeforeEach blocks are defined in nested
