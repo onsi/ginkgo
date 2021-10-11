@@ -2,7 +2,6 @@ package reporters_test
 
 import (
 	"encoding/xml"
-	"io/ioutil"
 	"os"
 	"time"
 
@@ -23,7 +22,7 @@ var _ = Describe("JUnit Reporter", func() {
 	reportedSuiteTime := 12.456
 
 	readOutputFile := func() reporters.JUnitTestSuite {
-		bytes, err := ioutil.ReadFile(outputFile)
+		bytes, err := os.ReadFile(outputFile)
 		Expect(err).ToNot(HaveOccurred())
 		var suite reporters.JUnitTestSuite
 		err = xml.Unmarshal(bytes, &suite)
@@ -32,7 +31,7 @@ var _ = Describe("JUnit Reporter", func() {
 	}
 
 	BeforeEach(func() {
-		f, err := ioutil.TempFile("", "output")
+		f, err := os.CreateTemp("", "output")
 		Expect(err).ToNot(HaveOccurred())
 		f.Close()
 		outputFile = f.Name()
@@ -115,9 +114,9 @@ var _ = Describe("JUnit Reporter", func() {
 			})
 
 			// Set the ReportFile config flag with a new directory and new file path to be created.
-			d, err := ioutil.TempDir("", "new-junit-dir")
+			d, err := os.MkdirTemp("", "new-junit-dir")
 			Expect(err).ToNot(HaveOccurred())
-			f, err := ioutil.TempFile(d, "output")
+			f, err := os.CreateTemp(d, "output")
 			Expect(err).ToNot(HaveOccurred())
 			f.Close()
 			outputFile = f.Name()

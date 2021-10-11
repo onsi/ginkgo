@@ -7,7 +7,6 @@ import (
 	"go/format"
 	"go/parser"
 	"go/token"
-	"io/ioutil"
 	"os"
 )
 
@@ -61,7 +60,7 @@ func rewriteTestsInFile(pathToFile string) {
 		panic(fmt.Sprintf("Error stat'ing file: %s\n", pathToFile))
 	}
 
-	err = ioutil.WriteFile(pathToFile, buffer.Bytes(), fileInfo.Mode())
+	err = os.WriteFile(pathToFile, buffer.Bytes(), fileInfo.Mode())
 }
 
 /*

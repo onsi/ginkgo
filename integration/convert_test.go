@@ -1,7 +1,6 @@
 package integration_test
 
 import (
-	"io/ioutil"
 	"os"
 	"os/exec"
 	"path/filepath"
@@ -16,14 +15,14 @@ var _ = Describe("ginkgo convert", func() {
 
 	readConvertedFileNamed := func(pathComponents ...string) string {
 		pathToFile := filepath.Join(tmpDir, "convert_fixtures", filepath.Join(pathComponents...))
-		bytes, err := ioutil.ReadFile(pathToFile)
+		bytes, err := os.ReadFile(pathToFile)
 		ExpectWithOffset(1, err).NotTo(HaveOccurred())
 
 		return string(bytes)
 	}
 
 	readGoldMasterNamed := func(filename string) string {
-		bytes, err := ioutil.ReadFile(filepath.Join("_fixtures", "convert_goldmasters", filename))
+		bytes, err := os.ReadFile(filepath.Join("_fixtures", "convert_goldmasters", filename))
 		Ω(err).ShouldNot(HaveOccurred())
 
 		return string(bytes)
@@ -32,7 +31,7 @@ var _ = Describe("ginkgo convert", func() {
 	BeforeEach(func() {
 		var err error
 
-		tmpDir, err = ioutil.TempDir("", "ginkgo-convert")
+		tmpDir, err = os.MkdirTemp("", "ginkgo-convert")
 		Ω(err).ShouldNot(HaveOccurred())
 
 		err = exec.Command("cp", "-r", filepath.Join("_fixtures", "convert_fixtures"), tmpDir).Run()
@@ -110,7 +109,7 @@ var _ = Describe("ginkgo convert", func() {
 	Context("with an existing test suite file", func() {
 		BeforeEach(func() {
 			goldMaster := readGoldMasterNamed("fixtures_suite_test.go")
-			err := ioutil.WriteFile(filepath.Join(tmpDir, "convert_fixtures", "tmp_suite_test.go"), []byte(goldMaster), 0600)
+			err := os.WriteFile(filepath.Join(tmpDir, "convert_fixtures", "tmp_suite_test.go"), []byte(goldMaster), 0600)
 			Ω(err).ShouldNot(HaveOccurred())
 		})
 

@@ -3,7 +3,6 @@
 package testsuite_test
 
 import (
-	"io/ioutil"
 	"os"
 	"path/filepath"
 
@@ -22,7 +21,7 @@ var _ = Describe("TestSuite", func() {
 		Ω(err).ShouldNot(HaveOccurred())
 
 		path = filepath.Join(path, filename)
-		ioutil.WriteFile(path, []byte(content), mode)
+		os.WriteFile(path, []byte(content), mode)
 	}
 
 	var origVendor string
@@ -37,7 +36,7 @@ var _ = Describe("TestSuite", func() {
 
 	BeforeEach(func() {
 		var err error
-		tmpDir, err = ioutil.TempDir("/tmp", "ginkgo")
+		tmpDir, err = os.MkdirTemp("/tmp", "ginkgo")
 		Ω(err).ShouldNot(HaveOccurred())
 
 		cwd, err := os.Getwd()

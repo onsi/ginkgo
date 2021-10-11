@@ -4,7 +4,6 @@ import (
 	"bytes"
 	"flag"
 	"fmt"
-	"io/ioutil"
 	"os"
 	"path/filepath"
 	"strconv"
@@ -149,7 +148,7 @@ func generateSpecForSubject(subject string, agouti, noDot, internal bool, custom
 
 	var templateText string
 	if customTestFile != "" {
-		tpl, err := ioutil.ReadFile(customTestFile)
+		tpl, err := os.ReadFile(customTestFile)
 		if err != nil {
 			panic(err.Error())
 		}

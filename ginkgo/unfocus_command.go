@@ -8,7 +8,6 @@ import (
 	"go/parser"
 	"go/token"
 	"io"
-	"io/ioutil"
 	"os"
 	"path/filepath"
 	"strings"
@@ -54,7 +53,7 @@ func unfocusSpecs([]string, []string) {
 }
 
 func unfocusDir(goFiles chan string, path string) {
-	files, err := ioutil.ReadDir(path)
+	files, err := os.ReadDir(path)
 	if err != nil {
 		fmt.Println(err.Error())
 		return
@@ -79,7 +78,7 @@ func shouldProcessFile(basename string) bool {
 }
 
 func unfocusFile(path string) {
-	data, err := ioutil.ReadFile(path)
+	data, err := os.ReadFile(path)
 	if err != nil {
 		fmt.Printf("error reading file '%s': %s\n", path, err.Error())
 		return
@@ -112,7 +111,7 @@ func unfocusFile(path string) {
 }
 
 func writeBackup(path string, data []byte) (string, error) {
-	t, err := ioutil.TempFile(filepath.Dir(path), filepath.Base(path))
+	t, err := os.CreateTemp(filepath.Dir(path), filepath.Base(path))
 
 	if err != nil {
 		return "", fmt.Errorf("error creating temporary file: %w", err)

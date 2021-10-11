@@ -10,7 +10,6 @@ import (
 	"strings"
 	"time"
 
-	"io/ioutil"
 	"path/filepath"
 
 	"github.com/onsi/ginkgo/config"
@@ -202,7 +201,7 @@ func (r *SpecRunner) combineCoverprofiles(runners []*testrunner.TestRunner) erro
 
 	modeRegex := regexp.MustCompile(`^mode: .*\n`)
 	for index, runner := range runners {
-		contents, err := ioutil.ReadFile(runner.CoverageFile)
+		contents, err := os.ReadFile(runner.CoverageFile)
 
 		if err != nil {
 			fmt.Printf("Unable to read coverage file %s to combine, %v\n", runner.CoverageFile, err)
