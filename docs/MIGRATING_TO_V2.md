@@ -11,7 +11,7 @@ The work on 2.0 is tracked in this [Pivotal Tracker backlog](https://www.pivotal
 
 # Using the Beta
 
-Ginkgo 2.0 is now out in beta.  The GA release should come out in the Fall of 2021 but we'd love to get feedback and usage of the beta underway.
+A release candidate for Ginkgo 2.0 is now available.  The GA release should come out in the Fall of 2021 but we'd love to get feedback and usage of the RC underway.
 
 Currently, 2.0 lives on a branch and we have not formally bumped the major version number of Ginkgo yet.  If you are using `go mod` you'll need to do the following to use Ginkgo 2.0 in an existing or new project:
 
@@ -23,12 +23,12 @@ Currently, 2.0 lives on a branch and we have not formally bumped the major versi
 2. Install the V2 CLI.  Running this may require you to run a few addition `go get`s - just follow the go toolchain's instructions until you successfully get ginkgo v2 compiled:
 	```bash
 	go install github.com/onsi/ginkgo/ginkgo
-	ginkgo version //should print out "Ginkgo Version 2.0.0-beta"
+	ginkgo version //should print out "Ginkgo Version 2.0.0-rc1"
 	```
 
-And that's it!  For the beta you do not need to modify your Ginkgo import statements.  Once the GA is released the version number will be bumped to 2.0, the V2 branch will be merged into master, and users will need to update their import statements to `github.com/onsi/ginkgo/v2`.  V1 will no longer be supported once V2 goes GA.
+And that's it!  For the RC you do not need to modify your Ginkgo import statements.  Once the GA is released the version number will be bumped to 2.0, the V2 branch will be merged into master, and users will need to update their import statements to `github.com/onsi/ginkgo/v2`.  V1 will no longer be supported once V2 goes GA.
 
-Please share any feedback about the beta on the [Ginkgo 2.0](#711) issue.  Updated V2 documentation is being maintained [here](https://github.com/onsi/ginkgo/blob/ver2/docs/index.md) though this migration guide has all the details around new features and backward incompatible changes.  Updating to V2 will require you to make some changes to your test suites however the intent is that this work should be relatively minimal for most users.
+Please share any feedback about the RC on the [Ginkgo 2.0](#711) issue.  Updated V2 documentation is being maintained [here](https://github.com/onsi/ginkgo/blob/ver2/docs/index.md) though this migration guide has all the details around new features and backward incompatible changes.  Updating to V2 will require you to make some changes to your test suites however the intent is that this work should be relatively minimal for most users.
 
 # Additions and Improvements
 
