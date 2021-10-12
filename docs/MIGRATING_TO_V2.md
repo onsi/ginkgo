@@ -54,7 +54,8 @@ In addition, in V1.x when running multiple test suites Ginkgo would give each su
 Specs can now be decorated with a series of new spec decorators.  These decorators enable fine-grained control over certain aspects of the spec's creation and lifecycle. 
 
 To support decorations, the signature for Ginkgo's container, setup, and It nodes have been changed to:
-```
+
+```go
 func Describe(text string, args ...interface{})
 func It(text string, args ...interface{})
 func BeforeEach(args ...interface{})
@@ -78,7 +79,7 @@ Ordered containers are documented in more details in the [Ordered Container](htt
 #### Label Decoration
 Specs can now be labelled with the `Label` decoration (see [Spec Labels](#spec-labels) below for details):
 
-```
+```go
 Describe("a labelled container", Label("red", "white"), Label("blue"), func() {
 	It("a labelled test", Label("yellow"), func() {
 
@@ -93,7 +94,7 @@ Labels can be arbitrary strings however they cannot include any of the following
 #### Focus Decoration
 In addition to `FDescribe` and `FIt`, specs can now be focused using the new `Focus` decoration:
 
-```
+```go
 Describe("a focused container", Focus, func() {
   ....
 })
@@ -102,7 +103,7 @@ Describe("a focused container", Focus, func() {
 #### Pending Decoration
 In addition to `PDescribe` and `PIt`, specs can now be focused using the new `Focus` decoration:
 
-```
+```go
 Describe("a focused container", Pending, func() {
   ....
 })
@@ -111,7 +112,7 @@ Describe("a focused container", Pending, func() {
 #### Offset Decoration
 The `Offset(uint)` decoration allows the user to change the stack-frame offset used to compute the location of the test node.  This is useful when building shared test behaviors.  For example:
 
-```
+```go
 SharedBehaviorIt := func() {
 	It("does something common and complicated", Offset(1), func() {
 		...
@@ -132,7 +133,7 @@ now, if the `It` defined in `SharedBehaviorIt` the location reported by Ginkgo w
 #### FlakeAttempts Decoration
 The `FlakeAttempts(uint)` decoration allows the user to flag specific tests or groups of tests as potentially flaky.  Ginkgo will run tests up to the number of times specified in `FlakeAttempts` until they pass.  For example:
 
-```
+```go
 Describe("flaky tests", FlakeAttempts(3), func() {
 	It("is flaky", func() {
 		...
@@ -159,7 +160,7 @@ Note that if `ginkgo --flake-attempts=N` is set the value passed in by the CLI w
 ### Spec Labels
 Users can now label specs using the [`Label` decoration](#label-decoration).  Labels provide more fine-grained control for organizing specs and running specific subsets of labelled specs.  Labels are arbitrary strings however they cannot contain the characters `"&|!,()/"`.  A given spec inherits the labels of all its containers and any labels attached to the spec's `It`, for example:
 
-```
+```go
 Describe("Extracting widgets", Label("integration", "extracting widgets"), func() {
 	It("can extract widgets from the external database", Label("network", "slow"), func() {
 		//has labels [integration, extracting widgets, network, slow]
@@ -244,7 +245,7 @@ Ginkgo follows the following rules when generating reports using these new `--FO
 #### Generating Custom Reports when a test suite completes
 Ginkgo now provides a new node, `ReportAfterSuite`, with the following properties and constraints:
 - `ReportAfterSuite` nodes are passed a function that takes a `types.Report`:
-  ```
+  ```go
   var _ = ReportAfterSuite(func(report types.Report) {
   	// do stuff with report
   })
@@ -259,7 +260,7 @@ Ginkgo now provides a new node, `ReportAfterSuite`, with the following propertie
 #### Capturing report information about each spec as the test suite runs
 Ginkgo also provides a new node, `ReportAfterEach`, with the following properties and constraints:
 - `ReportAfterEach` nodes are passed a function that takes a `types.SpecReport`:
-  ```
+  ```go
   var _ = ReportAfterEach(func(specReport types.SpecReport) {
   	// do stuff with specReport
   })
@@ -279,7 +280,7 @@ Ginkgo V2 supports attaching arbitrary data to individual spec reports.  These a
 
 You attach data to a spec report via
 
-```
+```go
 AddReportEntry(name string, args ...interface{})
 ```
 
@@ -403,7 +404,7 @@ As described in the [Ginkgo 2.0 Proposal](https://docs.google.com/document/d/1h2
 
 In Ginkgo 2.0 tests of the form:
 
-```
+```go
 It("...", func(done Done) {
 	// user test code to run asynchronously
 	close(done) //signifies the test is done
@@ -417,7 +418,7 @@ We recommend users make targeted use of Gomega's [Asynchronous Assertions](https
 
 As a first migration pass that produces **equivalent behavior** users can replace asynchronous tests with:
 
-```
+```go
 It("...", func() {
 	done := make(chan interface{})
 	go func() {
@@ -432,7 +433,7 @@ It("...", func() {
 As described in the [Ginkgo 2.0 Proposal](https://docs.google.com/document/d/1h28ZknXRsTLPNNiOjdHIO-F2toCzq4xoZDXbfYaBdoQ/edit#heading=h.2ezhpn4gmcgs) the Ginkgo 1.x implementation of benchmarking using `Measure` nodes was a source of tightly-coupled complexity.  It is removed in Ginkgo 2.0.
 
 In Ginkgo 2.0 tests of the form:
-```
+```go
 Measure(..., func(b Benchmarker) {
 	// user benchmark code
 })
