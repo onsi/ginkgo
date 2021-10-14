@@ -101,7 +101,7 @@ Describe("a focused container", Focus, func() {
 ```
 
 #### Pending Decoration
-In addition to `PDescribe` and `PIt`, specs can now be focused using the new `Focus` decoration:
+In addition to `PDescribe` and `PIt`, specs can now be focused using the new `Pending` decoration:
 
 ```go
 Describe("a focused container", Pending, func() {
