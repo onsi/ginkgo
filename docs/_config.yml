@@ -1,0 +1,7 @@
+baseurl: "/ginkgo" # the subpath of your site, e.g. /blog
+
+# Build settings
+name: Ginkgo
+markdown: GFM
+highlighter: rouge
+lsi: false
