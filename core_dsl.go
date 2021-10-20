@@ -120,19 +120,48 @@ func GinkgoParallelProcess() int {
 	return suiteConfig.ParallelProcess
 }
 
-//RunSpecs is the entry point for the Ginkgo test runner.
-//You must call this within a Golang testing TestX(t *testing.T) function.
+// RunSpecs is the entry point for the Ginkgo test runner.
+// You must call this within a Golang testing TestX(t *testing.T) function.
+// If you bootstrapped your test suite with "ginkgo bootstrap" this is already
+// done for you.
 //
-//To bootstrap a test suite you can use the Ginkgo CLI:
+// Ginkgo is typically configured via command-line flags.  This configuration
+// can be overriden, however, and passed into RunSpecs as optional arguments:
 //
-//	ginkgo bootstrap
-func RunSpecs(t GinkgoTestingT, description string) bool {
+//		func TestMySuite(t *testing.T)  {
+//			RegisterFailHanlder(gomega.Fail)
+//			// fetch the current config
+//			suiteConfig, reporterConfig := GinkgoConfiguration()
+//			// adjust it
+//			suiteConfig.SkipStrings = []string{"NEVER-RUN"}
+//			reporterConfig.FullTrace = true
+//			// pass it in to RunSpecs
+//			RunSpecs(t, "My Suite", suiteConfig, reporterConfig)
+//		}
+//
+// Note that some configuration changes can lead to undefined behavior.  For example,
+// you should not change ParallelProcess or ParallelTotal as the Ginkgo CLI is responsible
+// for setting these and orhcestrating parallel tests across the parallel processes.
+func RunSpecs(t GinkgoTestingT, description string, configs ...interface{}) bool {
 	if suiteDidRun {
 		exitIfErr(types.GinkgoErrors.RerunningSuite())
 	}
 	suiteDidRun = true
 
-	configErrors := types.VetConfig(flagSet, suiteConfig, reporterConfig)
+	configErrors := []error{}
+	for _, config := range configs {
+		switch config := config.(type) {
+		case types.SuiteConfig:
+			suiteConfig = config
+		case types.ReporterConfig:
+			reporterConfig = config
+		default:
+			configErrors = append(configErrors, types.GinkgoErrors.UnkownTypePassedToRunSpecs(config))
+		}
+	}
+	exitIfErrors(configErrors)
+
+	configErrors = types.VetConfig(flagSet, suiteConfig, reporterConfig)
 	if len(configErrors) > 0 {
 		fmt.Fprintf(formatter.ColorableStdErr, formatter.F("{{red}}Ginkgo detected configuration issues:{{/}}\n"))
 		for _, err := range configErrors {

@@ -151,4 +151,14 @@ var _ = Describe("Flags Specs", func() {
 		output := string(session.Out.Contents())
 		Ω(output).Should(ContainSubstring("NaN returns complex128"))
 	})
+
+	It("should allow configuration overrides", func() {
+		fm.MountFixture("config_override")
+		session := startGinkgo(fm.PathTo("config_override"), "--label-filter=NORUN", "--no-color")
+		Eventually(session).Should(gexec.Exit(0), "Succeeds because --label-filter is overriden by the test suite itself.")
+		output := string(session.Out.Contents())
+		Ω(output).Should(ContainSubstring("2 Specs"))
+		Ω(output).Should(ContainSubstring("1 Skipped"))
+		Ω(output).Should(ContainSubstring("1 Passed"))
+	})
 })

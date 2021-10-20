@@ -478,8 +478,25 @@ Replace any calls to `CurrentGinkgoTestDescription()` with `CurrentSpecReport()`
 ### Changed: availability of Ginkgo's configuration
 In v1 Ginkgo's configuration could be accessed by importing the `config` package and accessing the globally available `GinkgoConfig` and `DefaultReporterConfig` objects.  This is no longer supported in V2.
 
+V1 also allowed mutating the global config objects which could lead to strange behavior if done within a test.  This too is no longer supported in V2.
+
 #### Migration Strategy:
 Instead, configuration can be accessed using the DSL's `GinkgoConfiguration()` function.  This will return a `types.SuiteConfig` and `types.ReporterConfig`.  Users generally don't need to access this configuration - the most commonly used fields by end users are already made available via `GinkgoRandomSeed()` and `GinkgoParallelProcess()`.
+
+It is generally recommended that users use the CLI to configure Ginkgo as some aspects of configuration must apply to the CLI as well as the suite under tests - nonetheless there are contexts where it is necessary to change Ginkgo's configuration programatically.  V2 supports this by allowing users to pass updated configuration into `RunSpecs`:
+
+```go
+func TestMySuite(t *testing.T)  {
+	RegisterFailHanlder(gomega.Fail)
+	// fetch the current config
+	suiteConfig, reporterConfig := GinkgoConfiguration()
+	// adjust it
+	suiteConfig.SkipStrings = []string{"NEVER-RUN"}
+	reporterConfig.FullTrace = true
+	// pass it in to RunSpecs
+	RunSpecs(t, "My Suite", suiteConfig, reporterConfig)
+}
+```
 
 ### Renamed: `GinkgoParallelNode`
 `GinkgoParallelNode` has been renamed to `GinkgoParallelProcess` to reduce confusion around the word `node` and better capture Ginkgo's parallelization mechanism.
