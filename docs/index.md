@@ -1795,6 +1795,21 @@ The Ginkgo CLI can be installed by running
 
 It offers a number of conveniences beyond what `go test` provides out of the box and is recommended, but not necessary.
 
+### TODO: Configuring Ginkgo Programatically
+
+```go
+func TestMySuite(t *testing.T)  {
+    RegisterFailHanlder(gomega.Fail)
+    // fetch the current config
+    suiteConfig, reporterConfig := GinkgoConfiguration()
+    // adjust it
+    suiteConfig.SkipStrings = []string{"NEVER-RUN"}
+    reporterConfig.FullTrace = true
+    // pass it in to RunSpecs
+    RunSpecs(t, "My Suite", suiteConfig, reporterConfig)
+}
+```
+
 ### Running Tests
 
 To run the suite in the current directory, simply run:

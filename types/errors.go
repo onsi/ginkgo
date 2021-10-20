@@ -440,6 +440,13 @@ func (g ginkgoErrors) SynchronizedBeforeSuiteDisappearedOnNode1() error {
 
 /* Configuration errors */
 
+func (g ginkgoErrors) UnkownTypePassedToRunSpecs(value interface{}) error {
+	return GinkgoError{
+		Heading: "Unkown Type pased to RunSpecs",
+		Message: fmt.Sprintf("RunSpecs() accepts configuration of type types.SuiteConfig and/or types.ReporterConfig.\n You passed in: %v", value),
+	}
+}
+
 var sharedParallelErrorMessage = "It looks like you are trying to run tests in parallel with go test.\nThis is unsupported and you should use the ginkgo CLI instead."
 
 func (g ginkgoErrors) InvalidParallelTotalConfiguration() error {
