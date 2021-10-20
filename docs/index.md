@@ -2,6 +2,7 @@
 layout: default
 title: Ginkgo
 ---
+{% raw  %}
 [Ginkgo](https://github.com/onsi/ginkgo) is a Go testing framework built to help you efficiently write expressive and comprehensive tests using [Behavior-Driven Development](https://en.wikipedia.org/wiki/Behavior-driven_development) ("BDD") style.  It is best paired with the [Gomega](https://github.com/onsi/gomega) matcher library but is designed to be matcher-agnostic.
 
 These docs are written assuming you'll be using Gomega with Ginkgo.  They also assume you know your way around Go and have a good mental model for how Go organizes packages under `$GOPATH`.
@@ -2636,3 +2637,4 @@ When using Gomock you may want to run `ginkgo` with the `-trace` flag to print o
 ### Generating JUnit XML Output
 
 Ginkgo provides first-class support for generating conformant JUnit XML reports.  Simply run `ginkgo --junit-report=out.xml` to generate a JUnit report at `out.xml`.  This report will include information from all test suites that Ginkgo ran.  To keep reports separate you can use `ginkgo --junit-report=out.xml --keep-separate-reports`.  You can also instruct Ginkgo to place the reports in a given directory by specifying `--output-dir`.
+{% endraw  %}

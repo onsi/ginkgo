@@ -2,7 +2,7 @@
 layout: default
 title: Migrating to Ginkgo V2
 ---
-
+{% raw  %}
 [Ginkgo 2.0](#711) is a major release that adds substantial new functionality and removes/moves existing functionality.  **Please provide feedback, concerns, questions, etc. on issue [#711](#711).**
 
 This document serves as a changelog and migration guide for users migrating from Ginkgo 1.x to 2.0.  The intent is that the migration will take minimal user effort.
@@ -568,3 +568,5 @@ These are minor changes that will be transparent for most users.
 - When running in series and verbose mode (i.e. `ginkgo -v`) GinkgoWriter output is emitted in real-time (existing behavior) but also emitted in the failure message for failed tests.  This allows for consistent failure messages regardless of verbosity settings and also makes it possible for the resulting JSON report to include captured GinkgoWriter information.
 
 - Removed `ginkgo blur` alias.  Use `ginkgo unfocus` instead.
+
+{% endraw  %}
