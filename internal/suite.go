@@ -250,6 +250,7 @@ func (suite *Suite) runSpecs(description string, suitePath string, hasProgrammat
 	}
 
 	interruptStatus := interruptHandler.Status()
+	beforeSuiteSkipped := false
 	beforeSuiteNode := suite.suiteNodes.FirstNodeWithType(types.NodeTypeBeforeSuite | types.NodeTypeSynchronizedBeforeSuite)
 	if !beforeSuiteNode.IsZero() && !interruptStatus.Interrupted && numSpecsThatWillBeRun > 0 {
 		suite.currentSpecReport = types.SpecReport{
@@ -260,6 +261,10 @@ func (suite *Suite) runSpecs(description string, suitePath string, hasProgrammat
 		reporter.WillRun(suite.currentSpecReport)
 		suite.runSuiteNode(beforeSuiteNode, failer, interruptStatus.Channel, interruptHandler, writer, outputInterceptor, suiteConfig)
 		processSpecReport(suite.currentSpecReport)
+		beforeSuiteSkipped = suite.currentSpecReport.State.Is(types.SpecStateSkipped)
+		if beforeSuiteSkipped {
+			report.SpecialSuiteFailureReasons = append(report.SpecialSuiteFailureReasons, "Suite skipped in BeforeSuite")
+		}
 	}
 
 	suiteAborted := false
@@ -311,7 +316,7 @@ func (suite *Suite) runSpecs(description string, suitePath string, hasProgrammat
 				}
 
 				skipReason := ""
-				if (suiteConfig.FailFast && !report.SuiteSucceeded) || interruptHandler.Status().Interrupted || suiteAborted {
+				if (suiteConfig.FailFast && !report.SuiteSucceeded) || interruptHandler.Status().Interrupted || suiteAborted || beforeSuiteSkipped {
 					spec.Skip = true
 				} else if groupState.Is(types.SpecStateFailureStates) {
 					spec.Skip, skipReason = true, "Spec skipped because an earlier spec in an ordered container failed"
