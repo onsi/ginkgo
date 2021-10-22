@@ -3,7 +3,7 @@ layout: default
 title: Ginkgo
 ---
 {% raw  %}
-[Ginkgo](https://github.com/onsi/ginkgo) is a Go testing framework built to help you efficiently write expressive and comprehensive tests.  It is best paired with the [Gomega](https://github.com/onsi/gomega) matcher library.
+[Ginkgo](https://github.com/onsi/ginkgo) is a Go testing framework built to help you efficiently write expressive and comprehensive tests.  It is best paired with the [Gomega](https://github.com/onsi/gomega) matcher library.  When combined, Ginkgo and Gomega provide a rich and expressive DSL ([Domain-specific Language](https://en.wikipedia.org/wiki/Domain-specific_language)) for writing tests.
 
 The narrative docs you are reading here are supplemented by the [godoc](https://pkg.go.dev/github.com/onsi/ginkgo) API-level docs.  We suggest starting here to build a mental model for how Ginkgo works and understand how the Ginkgo DSL can be used to solve real-world testing scenarios.  These docs are written assuming you are familiar with Go and the Go toolchain and that you are using Ginkgo V2 (V1 is no longer supported - see [here](https://onsi.github.com/ginkgo/MIGRATING_TO_V2) for the migration guide).
 
@@ -15,7 +15,7 @@ Like all software projects, Ginkgo was written at a particular time and place to
 
 The first commit to Ginkgo was made by [@onsi](https://github.com/onsi/) on August 19th, 2013 (to put that timeframe in perspective, it's roughly three months before [Go 1.2](https://golang.org/doc/go1.2) was released!)  Ginkgo came together in the highly collaborative environment fostered by Pivotal, a software company and consultancy that advocated for outcome-oriented software development built by balanced teams that embrace test-driven development.
 
-Specifically, Pivotal was one of the lead contributers to Cloud Foundry.  A sprawling distributed system, originaly written in Ruby, that was slowly migrating towards the emerging distributed systems language of choice: Go.  At the time (and, arguably, to this day) the landscape of Go's testing infrastructure was somewhat anemic.  For engineers coming from the rich ecosystems of testing frameworks such as [Jasmine](https://jasmine.github.io), [rspec](https://rspec.info), and [Cedar](https://github.com/cedarbdd/cedar) there was a need for a comprehensive testing framework with a mature set of matchers in Go.
+Specifically, Pivotal was one of the lead contributors to Cloud Foundry.  A sprawling distributed system, originally written in Ruby, that was slowly migrating towards the emerging distributed systems language of choice: Go.  At the time (and, arguably, to this day) the landscape of Go's testing infrastructure was somewhat anemic.  For engineers coming from the rich ecosystems of testing frameworks such as [Jasmine](https://jasmine.github.io), [rspec](https://rspec.info), and [Cedar](https://github.com/cedarbdd/cedar) there was a need for a comprehensive testing framework with a mature set of matchers in Go.
 
 The need was twofold: organizational and technical. As a growing organization Pivotal needed a shared testing framework to be used across its many teams writing Go.  Engineers jumping from one team to another needed to be able to hit the ground running; we needed fewer testing bikesheds and more shared testing patterns.  And our test-driven development culture put a premium on tests as first-class citizens: they needed to be easy to write, easy to read, and easy to maintain.
 
@@ -144,31 +144,31 @@ import (
     "path/to/books"
 )
 
-var _ = Describe("Book", func() {
+var _ = Describe("Books", func() {
 
 })
 ```
 
 As with the bootstrapped suite file, this test file is in the separate `books_test` package and dot-imports both `ginkgo` and `gomega`.  Since we're testing the external interface of `books` Ginkgo adds an `import` statement to pull the `books` package into the test.
 
-Ginkgo then adds an empty top-level `Describe` container node.  `Describe` is part of the Ginkgo DSL and takes a description and a closure function. `Describe("book", func() { })` generates a container that will contain specs that describe the behavior of `"Book"`.
+Ginkgo then adds an empty top-level `Describe` container node.  `Describe` is part of the Ginkgo DSL and takes a description and a closure function. `Describe("book", func() { })` generates a container that will contain specs that describe the behavior of `"Books"`.
 
 > By default, Go does not allow you to invoke bare functions at the top-level of a file.  Ginkgo gets around this by having its node DSL functions return a value that is intended to be discarded.  This allows us to write `var _ = Describe(...)` at the top-level which satisfies Go's top-level policies.
 
 Let's add a few specs, now, to describe our book model's ability to categorize books:
 
 ```go
-var _ = Describe("Book", func() {
-    var foxInSocks, lesMis *book.Book
+var _ = Describe("Books", func() {
+    var foxInSocks, lesMis *books.Book
 
     BeforeEach(func() {
-        lesMis = &book.Book{
+        lesMis = &books.Book{
             Title:  "Les Miserables",
             Author: "Victor Hugo",
             Pages:  2783,
         }
 
-        foxInSocks = &book.Book{
+        foxInSocks = &books.Book{
             Title:  "Fox In Socks",
             Author: "Dr. Seuss",
             Pages:  24,
@@ -178,13 +178,13 @@ var _ = Describe("Book", func() {
     Describe("Categorizing books", func() {
         Context("with more than 300 pages", func() {
             It("should be a novel", func() {
-                Expect(lesMis.Category()).To(Equal(book.CategoryNovel))
+                Expect(lesMis.Category()).To(Equal(books.CategoryNovel))
             })
         })
 
         Context("with fewer than 300 pages", func() {
             It("should be a short story", func() {
-                Expect(foxInSocks.Category()).To(Equal(book.CategoryShortStory))
+                Expect(foxInSocks.Category()).To(Equal(books.CategoryShortStory))
             })
         })
     })
@@ -236,12 +236,12 @@ Ginkgo makes it easy to write expressive specs that describe the behavior of you
 Every Ginkgo spec has exactly one subject node.  You can add a single spec to a suite by adding a new subject node using `It(<description>, <closure>)`.  Here's a spec to validate that we can extract the author's last name from a `Book` model:
 
 ```go
-var _ = Describe("Book", func() {
+var _ = Describe("Books", func() {
     It("can extract the author's last name", func() {
         book = &books.Book{
             Title: "Les Miserables",
             Author: "Victor Hugo",
-            Pages: "2783",
+            Pages: 2783,
         }
 
         Expect(book.AuthorLastName()).To(Equal("Hugo"))
@@ -257,14 +257,14 @@ Ginkgo provides an alias for `It` called `Specify`.  `Specify` is functionally i
 You can remove duplication and share common setup across specs using `BeforeEach(<closure>)` setup nodes.  Let's add specs to our `Book` suite that cover extracting the author's first name and a few natural edge cases:
 
 ```go
-var _ = Describe("Book", func() {
+var _ = Describe("Books", func() {
     var book *books.Book
 
     BeforeEach(func() {
         book = &books.Book{
             Title: "Les Miserables",
             Author: "Victor Hugo",
-            Pages: "2783",
+            Pages: 2783,
         }
         Expect(book.IsValid()).To(BeTrue())
     })
@@ -305,14 +305,14 @@ Ginkgo allows you to hierarchically organize the specs in your suite using conta
 Our `book` suite is getting longer and would benefit from some hierarchical organization.  Let's organize what we have so far using container nodes:
 
 ```go
-var _ = Describe("Book", func() {
+var _ = Describe("Books", func() {
     var book *books.Book
 
     BeforeEach(func() {
         book = &books.Book{
             Title: "Les Miserables",
             Author: "Victor Hugo",
-            Pages: "2783",
+            Pages: 2783,
         }
         Expect(book.IsValid()).To(BeTrue())
     })
@@ -353,14 +353,14 @@ When Ginkgo runs a spec it runs through all the `BeforeEach` closures that appea
 Organizing our specs in this way can also help us reason about our spec coverage.  What additional contexts are we missing?  What edge cases should we worry about?  Let's add a few:
 
 ```go
-var _ = Describe("Book", func() {
+var _ = Describe("Books", func() {
     var book *books.Book
 
     BeforeEach(func() {
         book = &books.Book{
             Title: "Les Miserables",
             Author: "Victor Hugo",
-            Pages: "2783",
+            Pages: 2783,
         }
         Expect(book.IsValid()).To(BeTrue())
     })
@@ -422,14 +422,14 @@ Let's keep going and add spec out some additional behavior.  Let's test how our 
 
 
 ```go
-var _ = Describe("Book", func() {
+var _ = Describe("Books", func() {
     var book *books.Book
 
     BeforeEach(func() {
         book = &books.Book{
             Title: "Les Miserables",
             Author: "Victor Hugo",
-            Pages: "2783",
+            Pages: 2783,
         }
         Expect(book.IsValid()).To(BeTrue())
     })
@@ -723,7 +723,7 @@ Describe("Reporting book weight", func() {
         book = &books.Book{
             Title: "Les Miserables",
             Author: "Victor Hugo",
-            Pages: "2783",
+            Pages: 2783,
             Weight: 500,
         }
     })
@@ -777,7 +777,7 @@ Describe("Reporting book weight", func() {
         book = &books.Book{
             Title: "Les Miserables",
             Author: "Victor Hugo",
-            Pages: "2783",
+            Pages: 2783,
             Weight: 500,
         }
     })
@@ -837,7 +837,7 @@ Describe("Reporting book weight", func() {
         book = &books.Book{
             Title: "Les Miserables",
             Author: "Victor Hugo",
-            Pages: "2783",
+            Pages: 2783,
             Weight: 500,
         }
         originalWeightUnits = os.Getenv("WEIGHT_UNITS")
@@ -956,7 +956,7 @@ The setup nodes we've explored so far have all applied at the spec level.  They 
 
 It is common, however, to need to perform setup and cleanup at the level of the Ginkgo suite.  This is setup that should be performed just once - before any specs run, and cleanup that should be performed just once, when all the specs have finished.  Such code is particularly common in integration tests that need to prepare environments or spin up external resources.
 
-Ginkgo supports suite-level setup and cleanup through two specialized setup nodes: `BeforeSuite` and `AfterSuite`.  These setup nodes **must** be called at the top-level of the suite and cannot be nested in containers.  Also there can be at most one `BeforeSuite` node and one `AfterSuite` node per suite.  It is idiomatic to place the suite setup nodes in the Ginkgo bootstrap suite file.
+Ginkgo supports suite-level setup and cleanup through two specialized **suite setup** nodes: `BeforeSuite` and `AfterSuite`.  These suite setup nodes **must** be called at the top-level of the suite and cannot be nested in containers.  Also there can be at most one `BeforeSuite` node and one `AfterSuite` node per suite.  It is idiomatic to place the suite setup nodes in the Ginkgo bootstrap suite file.
 
 Let's continue to build out our book tests.  Books can be stored and retrieved from an external database and we'd like to test this behavior.  To do that, we'll need to spin up a database and set up a client to access it.  We can do that `BeforeEach` spec - but doing so would be prohibitively expensive and slow.  Instead, it would be more efficient to spin up the database just once when the suite starts.  Here's how we'd do it in our `books_suite_test.go` file:
 
@@ -1034,7 +1034,6 @@ The `Succeed()` form is more succinct and reads clearly.
 > We won't get into it here but make sure to keep reading to understand how Ginkgo manages [suite parallelism](#parallelism) and provides [SynchronizedBeforeSuite and SynchronizedAfterSuite](#parallel-suite-setup-and-cleanup-codesynchronizedbeforesuitecode-and-codesynchronizedaftersuitecode) suite setup nodes.
 
 ### Mental Model: How Ginkgo Handles Failure
-
 So far we've focused on how Ginkgo specs are constructed using nested nodes and how node closures are called in order when specs run.
 
 ...but Ginkgo is a testing framework.  And tests fail!  Let's delve into how Ginkgo handles failure.
@@ -1073,12 +1072,351 @@ It("panics in a goroutine", func() {
 You must remember follow this pattern when making assertions in goroutines - however, if uncaught, Ginkgo's panic will include a helpful error to remind you to add `defer GinkgoRecover()` to your goroutine.
 
 ### Logging Output
+As outlined above, when a spec fails - say via a failed Gomega assertion - Ginkgo will the failure message passed to the `Fail`  handler.  Often times the failure message generated by Gomega gives you enough information to understand and resolve the spec failure.
 
+But there are several contexts, particularly when running large complex integration suites, where additional debugging information is necessary to understand the root cause of a failed spec.  You'll typically only want to see this information if a spec has failed - and hide it if the spec succeeds.
 
-### Documenting Complex `It`s: `By`
-### Table Tests
-  #### Generating Entry Descriptions
-  #### Managing Complex Parameters (link to patterns)
+Ginkgo provides a globally available `io.Writer` called `GinkgoWriter` that solves for this usecase.  `GinkgoWriter` aggregates everything written to it while a spec is running and only emits to stdout if the test fails or is interrupted (via `^C`).
+
+`GinkgoWriter` includes three convenience methods:
+
+- `GinkgoWriter.Print(a ...interface{})` is equivalent to `fmt.Fprint(GinkgoWriter, a...)`
+- `GinkgoWriter.Println(a ...interface{})` is equivalent to `fmt.Fprintln(GinkgoWriter, a...)`
+- `GinkgoWriter.Printf(format string, a ...interface{})` is equivalent to `fmt.Fprintf(GinkgoWriter, format, a...)`
+
+You can also attach additional `io.Writer`s for `GinkgoWriter` to tee to via `GinkgoWriter.TeeTo(writer)`.  Any data written to `GinkgoWriter` will immediately be sent to attached tee writers.  All attached Tee writers can be cleared with `GinkgoWriter.ClearTeeWriters()`.
+
+Finally - when running in verbose mode via `ginkgo -v` anything written to `GinkgoWriter` will be immediately streamed to stdout.  This can help shorten the feedback loop when debugging a complex spec.
+
+### Documenting Complex Specs: `By`
+
+As a rule, you should try to keep your subject and setup closures short and to the point.  Sometimes this is not possible, particularly when testing complex workflows in integration-style tests.  In these cases your test blocks begin to hide a narrative that is hard to glean by looking at code alone.  Ginkgo provides `By` to help in these situations.  Here's an example:
+
+```go
+var _ = Describe("Browsing the library", func() {
+    BeforeEach(func() {
+        By("Fetching a token and logging in")
+
+        authToken, err := authClient.GetToken("gopher", "literati")
+        Expect(err).NotTo(HaveOccurred())
+
+        Expect(libraryClient.Login(authToken)).To(Succeed())
+    })
+
+    It("should be a pleasant experience", func() {
+        By("Entering an aisle")
+        aisle, err := libraryClient.EnterAisle()
+        Expect(err).NotTo(HaveOccurred())
+
+        By("Browsing for books")
+        books, err := aisle.GetBooks()
+        Expect(err).NotTo(HaveOccurred())
+        Expect(books).To(HaveLen(7))
+
+        By("Finding a particular book")
+        book, err := books.FindByTitle("Les Miserables")
+        Expect(err).NotTo(HaveOccurred())
+        Expect(book.Title).To(Equal("Les Miserables"))
+
+        By("Checking a book out")
+        Expect(libraryClient.CheckOut(book)).To(Succeed())
+        books, err = aisle.GetBooks()
+        Expect(err).NotTo(HaveOccurred())
+        Expect(books).To(HaveLen(6))
+        Expect(books).NotTo(ContainElement(book))
+    })
+})
+```
+
+The string passed to `By` is emitted via the [`GinkgoWriter`](#logging-output).  If a test succeeds you won't see any output beyond Ginkgo's green dot.  If a test fails, however, you will see each step printed out up to the step immediately preceding the failure.  Running with `ginkgo -v` always emits all steps.
+
+`By` takes an optional function of type `func()`.  When passed such a function `By` will immediately call the function.  This allows you to organize your `It`s into groups of steps but is purely optional.  
+
+We haven't discussed [Report Entries](#attaching-data-to-reports) yet but we'll also mention that `By` also adds a `ReportEntry` to the running spec.  This ensures that the steps outlined in `By` appear in the structure JSON and JUnit reports that Ginkgo can generate.  If passed a function `By` will measure the runtime of the function and attach the resulting duration to the report as well.
+
+`By` doesn't affect the structure of your specs - it's simply syntactic sugar to help you document long and complex specs.  Ginkgo has additional mechanisms to break specs up into more granular subunits with guaranteed ordering - we'll discuss [Ordered containers](#ordered-containers) in detail later.
+
+### Table Specs
+
+We'll round out this chapter on [Writing Specs](#writing-specs) with one last topic.  Ginkgo provides an expressive DSL for writing table driven specs.  This DSL is a simple wrapper around concepts you've already met - container nodes like `Describe` and subject nodes like `It`.
+
+Let's write a table spec to describe the Author name functions we tested earlier:
+
+```go
+DescribeTable("Extracting the author's first and last name",
+    func(author string, isValid bool, firstName string, lastName string) {
+        book := &books.Book{
+            Title: "My Book"
+            Author: author,
+            Pages: 10,
+        }
+        Expect(book.IsValid()).To(Equal(isValid))
+        Expect(book.AuthorFirstName()).To(Equal(firstName))
+        Expect(book.AuthorLastName()).To(Equal(lastName))
+    },
+    Entry("When author has both names", "Victor Hugo", true, "Victor", "Hugo"),
+    Entry("When author has one name", "Hugo", true, "", "Hugo"),
+    Entry("When author has a middle name", "Victor Marie Hugo", true, "Victor", "Hugo"),
+    Entry("When author has no name", "", false, "", ""),
+)
+```
+
+`DescribeTable` takes a string description, a **spec closure** to run for each table entry, and a set of entries.  Each `Entry` takes a string description, followed by a list of parameters.  `DescribeTable` will generate a spec for each `Entry` and when the specs run, the `Entry` parameters will be passed to the spec closure and must match the types expected by the the spec closure.
+
+You'll be notified with a clear message at runtime if the parameter types don't match the spec closure signature.
+
+#### Mental Model: Table Specs are just Synctatic Sugar
+`DescribeTable` is simply providing syntactic sugar to convert its inputs into a set of standard Ginkgo nodes.  During the [Tree Construction Phase](#mental-model-how-ginkgo-traverses-the-spec-hierarchy) `DescribeTable` is generating a single container node that contains one subject node per table entry.  The description for the container node will be the description passed to `DescribeTable` and the descriptions for the subject nodes will be the descriptions passed to the `Entry`s.  During the Run Phase, when specs run, each subject node will simply invoke the spec closure passed to `DescribeTable`, passing in the parameters associated with the `Entry`.
+
+To put it another way, the table test above is equivalent to:
+
+```go
+Describe("Extracting the author's first and last name", func() {
+    It("When author has both names", func() {
+        book := &books.Book{
+            Title: "My Book"
+            Author: "Victor Hugo",
+            Pages: 10,
+        }
+        Expect(book.IsValid()).To(Equal(true))
+        Expect(book.AuthorFirstName()).To(Equal("Victor"))
+        Expect(book.AuthorLastName()).To(Equal("Hugo"))
+    })
+
+    It("When author has one name", func() {
+        book := &books.Book{
+            Title: "My Book"
+            Author: "Hugo",
+            Pages: 10,
+        }
+        Expect(book.IsValid()).To(Equal(true))
+        Expect(book.AuthorFirstName()).To(Equal(""))
+        Expect(book.AuthorLastName()).To(Equal("Hugo"))
+    })
+
+    It("When author has a middle name", func() {
+        book := &books.Book{
+            Title: "My Book"
+            Author: "Victor Marie Hugo",
+            Pages: 10,
+        }
+        Expect(book.IsValid()).To(Equal(true))
+        Expect(book.AuthorFirstName()).To(Equal("Victor"))
+        Expect(book.AuthorLastName()).To(Equal("Hugo"))
+    })    
+
+    It("When author has no name", func() {
+        book := &books.Book{
+            Title: "My Book"
+            Author: "",
+            Pages: 10,
+        }
+        Expect(book.IsValid()).To(Equal(false))
+        Expect(book.AuthorFirstName()).To(Equal(""))
+        Expect(book.AuthorLastName()).To(Equal(""))
+    })    
+})
+```
+
+As you can see - the table spec can capture this sort of repetitive testing much more concisely!
+
+Since `DescribeTable` is simply generating a container node you can nest it within other containers and surround it with setup nodes like so:
+
+```go
+Describe("book", func() {
+    var book *books.Book
+
+    BeforeEach(func() {
+        book = &books.Book{
+            Title: "Les Miserables",
+            Author: "Victor Hugo",
+            Pages: 2783,
+        }
+        Expect(book.IsValid()).To(BeTrue())
+    })
+
+    DescribeTable("Extracting the author's first and last name",
+        func(author string, isValid bool, firstName string, lastName string) {
+            book.Author = author
+            Expect(book.IsValid()).To(Equal(isValid))
+            Expect(book.AuthorFirstName()).To(Equal(firstName))
+            Expect(book.AuthorLastName()).To(Equal(lastName))
+        },
+        Entry("When author has both names", "Victor Hugo", true, "Victor", "Hugo"),
+        Entry("When author has one name", "Hugo", true, "", "Hugo"),
+        Entry("When author has a middle name", "Victor Marie Hugo", true, "Victor", "Hugo"),
+        Entry("When author has no name", "", false, "", ""),
+    )
+
+})
+```
+
+the `BeforeEach` closure will run before each table entry spec and set up a fresh copy of `book` for the spec closure to manipulate and assert against.
+
+The fact that `DescribeTable` is constructed during the Tree Construction Phase can trip users up sometimes.  Specifically, variables declared in container nodes have not been initialized yet during the Tree Construction Phase.  Because of this, the following will not work:
+
+```go
+/* INVALID */
+Describe("book", func() {
+    var shelf map[string]*books.Book //Shelf is declared here
+
+    BeforeEach(func() {
+        shelf = map[string]*books.Book{ //...and initialized here
+            "Les Miserables": &books.Book{Title: "Les Miserables", Author: "Victor Hugo", Pages: 2783},
+            "Fox In Socks": &books.Book{Title: "Fox In Socks", Author: "Dr. Seuss", Pages: 24},
+        }
+    })
+
+    DescribeTable("Categorizing books",
+        func(book *books.Book, category books.Category) {
+            Expect(book.Category()).To(Equal(category))
+        },
+        Entry("Novels", shelf["Les Miserables"], books.CategoryNovel),
+        Entry("Novels", shelf["Fox in Socks"], books.CategoryShortStory),
+    )
+})
+```
+
+These specs will fail.  When `DescribeTable` and `Entry` are invoked during the Tree Construction Phase `shelf` will have been declared but uninitialized.  So `shelf["Les Miserables"]` will return a `nil` pointer and the spec will fail.
+
+To get around this we must move access of the `shelf` variable into the body of the spec closure so that it can run at the appropriate time during the Run Phase.  We can do this like so:
+
+```go
+/* INVALID */
+Describe("book", func() {
+    var shelf map[string]*books.Book //Shelf is declared here
+
+    BeforeEach(func() {
+        shelf = map[string]*books.Book{ //...and initialized here
+            "Les Miserables": &books.Book{Title: "Les Miserables", Author: "Victor Hugo", Pages: 2783},
+            "Fox In Socks": &books.Book{Title: "Fox In Socks", Author: "Dr. Seuss", Pages: 24},
+        }
+    })
+
+    DescribeTable("Categorizing books",
+        func(key string, category books.Category) {
+            Expect(shelf[key]).To(Equal(category))
+        },
+        Entry("Novels", "Les Miserables", books.CategoryNovel),
+        Entry("Novels", "Fox in Socks", books.CategoryShortStory),
+    )
+})
+```
+
+we're now accessing the `shelf` variable in the spec closure during the Run Phase and can trust that it has been correctly instantiated by the setup node closure.
+
+Be sure to check out the [Table Patterns](#table-patterns) section of the [Ginkgo and Gomega Patterns](#ginkgo-and-gomega-patterns) chapter to learn about a few more table-based patterns.
+
+#### Generating Entry Descriptions
+In the examples we've shown so far, we are explicitly passing in a description for each table entry.  Recall that this description is used to generate the description of the resulting spec's Subject node.  That means it's important as it conveys the intent of the spec and is printed out in case the spec fails.
+
+There are times, though, when adding a description manually can be tedious, repetitive, and error prone.  Consider this example:
+
+```go
+var _ = Describe("Math", func() {
+    DescribeTable("addition",
+        func(a, b, c int) {
+            Expect(a+b).To(Equal(c))
+        },
+        Entry("1+2=3", 1, 2, 3),
+        Entry("-1+2=1", -1, 2, 1),
+        Entry("0+0=0", 0, 0, 0),
+        Entry("10+100=101", 10, 100, 110), //OOPS TYPO
+    )
+})
+```
+
+Mercifully, Ginkgo's table DSL provides a few mechanisms to programatically generate entry descriptions.
+
+**`nil` Descriptions**
+
+First - Entries can have their descriptions auto-generated by passing `nil` for the `Entry` description:
+
+```go
+var _ = Describe("Math", func() {
+    DescribeTable("addition",
+        func(a, b, c int) {
+            Expect(a+b).To(Equal(c))
+        },
+        Entry(nil, 1, 2, 3),
+        Entry(nil, -1, 2, 1),
+        Entry(nil, 0, 0, 0),
+        Entry(nil, 10, 100, 110),
+    )
+})
+```
+
+This will generate entries named after the spec parameters.  In this case we'd have `Entry: 1, 2, 3`, `Entry: -1, 2, 1`, `Entry: 0, 0, 0`, `Entry: 10, 100, 110`.
+
+**Custom Description Generator**
+
+Second - you can pass a table-level Entry **description closure** to render entries with `nil` description:
+
+```go
+var _ = Describe("Math", func() {
+    DescribeTable("addition",
+        func(a, b, c int) {
+            Expect(a+b).To(Equal(c))
+        },
+        func(a, b, c int) string {
+            return fmt.Sprintf("%d + %d = %d", a, b, c)
+        }        
+        Entry(nil, 1, 2, 3),
+        Entry(nil, -1, 2, 1),
+        Entry(nil, 0, 0, 0),
+        Entry(nil, 10, 100, 110),
+    )
+})
+```
+
+This will generate entries named `1 + 2 = 3`, `-1 + 2 = 1`, `0 + 0 = 0`, and `10 + 100 = 110`.
+
+The description closure must return a `string` and must accept the same parameters passed to the spec closure.
+
+**`EntryDescription()` format string**
+
+There's also a convenience decorator called `EntryDescription` to specify Entry descriptions as format strings:
+
+```go
+var _ = Describe("Math", func() {
+    DescribeTable("addition",
+        func(a, b, c int) {
+            Expect(a+b).To(Equal(c))
+        },
+        EntryDescription("%d + %d = %d")
+        Entry(nil, 1, 2, 3),
+        Entry(nil, -1, 2, 1),
+        Entry(nil, 0, 0, 0),
+        Entry(nil, 10, 100, 110),
+    )
+})
+```
+
+This will have the same effect as the description above.
+
+**Per-Entry Descriptions**
+
+In addition to `nil` and strings you can also pass a string-returning closure or an `EntryDescription` as the first argument to `Entry`.  Doing so will cause the entry's description to be generated by the passed-in closure or `EntryDescription` format string.
+
+For example:
+
+```go
+var _ = Describe("Math", func() {
+    DescribeTable("addition",
+        func(a, b, c int) {
+            Expect(a+b).To(Equal(c))
+        },
+        EntryDescription("%d + %d = %d")
+        Entry(nil, 1, 2, 3),
+        Entry(nil, -1, 2, 1),
+        Entry("zeros", 0, 0, 0),
+        Entry(EntryDescription("%[3]d = %[1]d + %[2]d"), 10, 100, 110)
+        Entry(func(a, b, c int) string {fmt.Sprintf("%d = %d", a + b, c)}, 4, 3, 7)
+    )
+})
+```
+
+Will generate entries named: `1 + 2 = 3`, `-1 + 2 = 1`, `zeros`, `110 = 10 + 100`, and `7 = 7`.
 
 ## Running Specs
   ### Spec Permutation
@@ -1086,8 +1424,11 @@ You must remember follow this pattern when making assertions in goroutines - how
   #### Parallel Suite Setup and Cleanup: `SynchronizedBeforeSuite` and `SynchronizedAfterSuite`
   #### `ginkgo` CLI vs `go test`
   ### Pending Specs
+  ### Skipping Specs
+  (include skipping in BeforeSuite)
   ### Filtering Specs
-    #### Programattic Filtering
+    #### Programmatic Filtering
+    (include tables!)
     #### Spec Labels
     #### Command-line Filtering
   ### Serial Specs
@@ -1146,6 +1487,14 @@ You must remember follow this pattern when making assertions in goroutines - how
   ### Providing a `testing.T`
   ### Using Other Matcher Libraries
   ### Integrating with Gomock
-  ### IDE Support
+
+### IDE Support
+
+Ginkgo works best from the command-line, and [`ginkgo watch`](#watching-for-changes) makes it easy to rerun tests on the command line whenever changes are detected.
+
+There are a set of [completions](https://github.com/onsi/ginkgo-sublime-completions) available for [Sublime Text](https://www.sublimetext.com/) (just use [Package Control](https://sublime.wbond.net/) to install `Ginkgo Completions`) and for [VSCode](https://code.visualstudio.com/) (use the extensions installer and install vscode-ginkgo).
+
+IDE authors can set the `GINKGO_EDITOR_INTEGRATION` environment variable to any non-empty value to enable coverage to be displayed for focused specs. By default, Ginkgo will fail with a non-zero exit code if specs are focused to ensure they do not pass in CI.
+
 
 {% endraw  %}
