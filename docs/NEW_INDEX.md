@@ -5,6 +5,8 @@ title: Ginkgo
 {% raw  %}
 [Ginkgo](https://github.com/onsi/ginkgo) is a Go testing framework built to help you efficiently write expressive and comprehensive tests.  It is best paired with the [Gomega](https://github.com/onsi/gomega) matcher library.  When combined, Ginkgo and Gomega provide a rich and expressive DSL ([Domain-specific Language](https://en.wikipedia.org/wiki/Domain-specific_language)) for writing tests.
 
+Ginkgo is sometimes described as a "Behavior Driven Development" (BDD) framework.  In reality, Ginkgo is a general purpose testing framework in active use across a wide variety of testing contexts: unit tests, integration tests, acceptance test, performance tests, etc.
+
 The narrative docs you are reading here are supplemented by the [godoc](https://pkg.go.dev/github.com/onsi/ginkgo) API-level docs.  We suggest starting here to build a mental model for how Ginkgo works and understand how the Ginkgo DSL can be used to solve real-world testing scenarios.  These docs are written assuming you are familiar with Go and the Go toolchain and that you are using Ginkgo V2 (V1 is no longer supported - see [here](https://onsi.github.com/ginkgo/MIGRATING_TO_V2) for the migration guide).
 
 ## Why Ginkgo?
@@ -17,11 +19,11 @@ The first commit to Ginkgo was made by [@onsi](https://github.com/onsi/) on Augu
 
 Specifically, Pivotal was one of the lead contributors to Cloud Foundry.  A sprawling distributed system, originally written in Ruby, that was slowly migrating towards the emerging distributed systems language of choice: Go.  At the time (and, arguably, to this day) the landscape of Go's testing infrastructure was somewhat anemic.  For engineers coming from the rich ecosystems of testing frameworks such as [Jasmine](https://jasmine.github.io), [rspec](https://rspec.info), and [Cedar](https://github.com/cedarbdd/cedar) there was a need for a comprehensive testing framework with a mature set of matchers in Go.
 
-The need was twofold: organizational and technical. As a growing organization Pivotal needed a shared testing framework to be used across its many teams writing Go.  Engineers jumping from one team to another needed to be able to hit the ground running; we needed fewer testing bikesheds and more shared testing patterns.  And our test-driven development culture put a premium on tests as first-class citizens: they needed to be easy to write, easy to read, and easy to maintain.
+The need was twofold: organizational and technical. As a growing organization Pivotal woudl benefit from a shared testing framework to be used across its many teams writing Go.  Engineers jumping from one team to another needed to be able to hit the ground running; we needed fewer testing bikesheds and more shared testing patterns.  And our test-driven development culture put a premium on tests as first-class citizens: they needed to be easy to write, easy to read, and easy to maintain.
 
-Moreover, the _nature_ of the code being built - complex distributed systems - required a testing framework that could provide for the needs unique to unit-testing and integration-testing such a system.  We needed to make testing [asynchronous behavior](https://onsi.github.io/gomega/#making-asynchronous-assertions) ubiqutous and straightforward.  We needed to have [parallelizable integration tests](#parallelism) to ensure our test run-times didn't get out of control.  We needed a test framework that helped us [suss out](#spec-permutation) flaky tests and fix them.
+Moreover, the _nature_ of the code being built - complex distributed systems - required a testing framework that could provide for the needs unique to unit-testing and integration-testing such a system.  We needed to make testing [asynchronous behavior](https://onsi.github.io/gomega/#making-asynchronous-assertions) ubiqutous and straightforward.  We needed to have [parallelizable integration tests](#parallelism) to ensure our test run-times didn't get out of control.  We needed a test framework that helped us [suss out](#spec-randomization) flaky tests and fix them.
 
-This was the context that led to Ginkgo.  Over the years the Go testing ecosystem has grown and evolved - sometimes [bringing](https://go.dev/blog/subtests) it [closer](https://golang.org/doc/go1.17#testing) to Ginkgo.  Throughout, the community's reactions to Ginkgo have been... interesting.  Some enjoy the expressive framework and rich set of matchers - for many the DSL is familiar and the `ginkgo` CLI is productive.  Others have found the DSL off-putting, arguing that Ginkgo is not "the Go way."  That's OK; the world is plenty large enough for options to abound :)
+This was the context that led to Ginkgo.  Over the years the Go testing ecosystem has grown and evolved - sometimes [bringing](https://go.dev/blog/subtests) it [closer](https://golang.org/doc/go1.17#testing) to Ginkgo.  Throughout, the community's reactions to Ginkgo have been... interesting.  Some enjoy the expressive framework and rich set of matchers - for many the DSL is familiar and the `ginkgo` CLI is productive.  Others have found the DSL off-putting, arguing that Ginkgo is not "the Go way" and that Go developers should eschew third party libraries in general.  That's OK; the world is plenty large enough for options to abound :)
 
 Happy Testing!
 
@@ -499,9 +501,95 @@ When Ginkgo runs a suite it does so in _two phases_.  The **Tree Construction Ph
 
 During the Tree Construction Phase Ginkgo enters all container nodes by invoking their closures to construct the spec tree.  During this phase Ginkgo is capturing and saving off the various setup and subject node closures it encounters in the tree _without running them_.  Only container node closures run during this phase and Ginkgo does not expect to encounter any assertions as no specs are running yet.
 
-Once the spec tree is constructed Ginkgo scans the tree to generate a flattened list of specs.  Each spec will have exactly one subject node and all its associated setup nodes.  At this point Ginkgo can randomize and filter the spec list (you'll learn more about that later) and is ready to run through the specs.
+Let's paint a picture of what that looks like in practice.  Consider the following set of book specs:
 
-During the Run Phase Ginkgo runs through each spec in the flattened spec list  sequentially.  When running a spec Ginkgo invokes the setup and subject nodes in the correct order and tracks any failed assertions.  Container node closures are _never_ invoked during the run phase.
+```go
+var _ = Describe("Books", func() {
+    var book *books.Book
+
+    BeforeEach(func() {
+        //Closure A
+        book = &books.Book{
+            Title: "Les Miserables",
+            Author: "Victor Hugo",
+            Pages: 2783,
+        }
+        Expect(book.IsValid()).To(BeTrue())
+    })
+
+    Describe("Extracting names", func() {
+        When("author has both names", func() {
+            It("extracts the last name", func() {                
+                //Closure B
+                Expect(book.AuthorLastName()).To(Equal("Hugo"))
+            })
+
+            It("extracts the first name", func() {
+                //Closure C
+                Expect(book.AuthorFirstName()).To(Equal("Victor"))
+            })            
+        })
+
+        When("author has one name", func() {
+            BeforeEach(func() {
+                //Closure D
+                book.Author = "Hugo"
+            })  
+
+            It("extracts the last name", func() {
+                //Closure E
+                Expect(book.AuthorLastName()).To(Equal("Hugo"))
+            })
+
+            It("returns empty first name", func() {
+                //Closure F
+                Expect(book.AuthorFirstName()).To(BeZero())
+            })
+        })
+
+    })
+})
+```
+
+We could represent the spec tree that Ginkgo generates as follows:
+
+```
+Describe: "Books"
+  |_BeforeEach: <Closure-A>
+  |_Describe: "Extracting names"
+    |_When: "author has both names"
+      |_It: "extracts the last name", <Closure-B>
+      |_It: "extracts the first name", <Closure-C>
+    |_When: "author has one name"
+      |_BeforeEach: <Closure-D>
+      |_It: "extracts the last name", <Closure-E>
+      |_It: "returns empty first name", <Closure-F>
+```
+
+Note that Ginkgo is saving off just the setup and subject node closures.
+
+Once the spec tree is constructed Ginkgo walks the tree to generate a flattened list of specs.  For our example, the resulting spec list would look a bit like:
+
+```
+{
+  Texts: ["Books", "Extracting names", "author has both names", "extracts the last name"],
+  Closures: <BeforeEach-Closure-A>, <It-Closure-B>
+},
+{
+  Texts: ["Books", "Extracting names", "author has both names", "extracts the first name"],
+  Closures: <BeforeEach-Closure-A>, <It-Closure-C>
+},
+{
+  Texts: ["Books", "Extracting names", "author has one name", "extracts the last name"],
+  Closures: <BeforeEach-Closure-A>, <BeforeEach-Closure-D>, <It-Closure-E>
+},
+{
+  Texts: ["Books", "Extracting names", "author has one name", "returns empty first name"],
+  Closures: <BeforeEach-Closure-A>, <BeforeEach-Closure-D>, <It-Closure-F>
+}
+```
+
+As you can see each generated spec has exactly one subject node, and the appropriate set of setup nodes.  During the Run Phase Ginkgo runs through each spec in the spec list sequentially.  When running a spec Ginkgo invokes the setup and subject nodes closures in the correct order and tracks any failed assertions.  Note that container node closures are _never_ invoked during the run phase.
 
 Given this mental model, here are a few common gotchas to avoid:
 
@@ -588,9 +676,9 @@ var _ = Describe("book", func() {
 
 Ginkgo currently has no mechanism in place to detect this failure mode, you'll need to stick to "declare in container nodes, initialize in setup nodes" to avoid spec pollution.
 
-### Separating Creation and Configuration: `JustBeforEach`
+### Separating Creation and Configuration: `JustBeforeEach`
 
-Let's get back to your growing Book suite and explore a few more Ginkgo nodes.  So far we've met the `BeforeEach` setup node, let's introduce it's closely related cousin: `JustBeforeEach`.
+Let's get back to our growing Book suite and explore a few more Ginkgo nodes.  So far we've met the `BeforeEach` setup node, let's introduce its closely related cousin: `JustBeforeEach`.
 
 `JustBeforeEach` is intended to solve a very specific problem but should be used with care as it can add complexity to a test suite.  Consider the following section of our JSON decoding book tests:
 
@@ -1071,6 +1159,8 @@ It("panics in a goroutine", func() {
 
 You must remember follow this pattern when making assertions in goroutines - however, if uncaught, Ginkgo's panic will include a helpful error to remind you to add `defer GinkgoRecover()` to your goroutine.
 
+When a failure occurs Ginkgo marks the current spec as failed and moves on to the next spec.  If, however, you'd like to stop the entire suite when the first failure occurs you can run `ginkgo --fail-fast`.
+
 ### Logging Output
 As outlined above, when a spec fails - say via a failed Gomega assertion - Ginkgo will the failure message passed to the `Fail`  handler.  Often times the failure message generated by Gomega gives you enough information to understand and resolve the spec failure.
 
@@ -1419,22 +1509,952 @@ var _ = Describe("Math", func() {
 Will generate entries named: `1 + 2 = 3`, `-1 + 2 = 1`, `zeros`, `110 = 10 + 100`, and `7 = 7`.
 
 ## Running Specs
-  ### Spec Permutation
-  ### Parallelism
-  #### Parallel Suite Setup and Cleanup: `SynchronizedBeforeSuite` and `SynchronizedAfterSuite`
-  #### `ginkgo` CLI vs `go test`
-  ### Pending Specs
-  ### Skipping Specs
-  (include skipping in BeforeSuite)
-  ### Filtering Specs
-    #### Programmatic Filtering
-    (include tables!)
-    #### Spec Labels
-    #### Command-line Filtering
-  ### Serial Specs
-  ### Ordered Containers
-  ### Repeating Test Runs and Managing Flakey Tests
-  ### Interrupting and Aborting Test Runs
+
+The previous chapter covered the basics of [Writing Specs](#writing-specs) in Ginkgo.  We explored how Ginkgo lets you use container nodes, subject nodes, and setup nodes to construct hierarchical spec trees; and how Ginkgo transforms those trees into a list of specs to run.
+
+In this chapter we'll shift our focus from the Tree Construction Phase to the Run Phase and dive into the various capabilities Ginkgo provides for manipulating the spec list and controlling how specs run.
+
+To start, let's continue to flesh out our mental model for Ginkgo.
+
+### Mental Model: Ginkgo Assumes Specs are Independent
+
+We've already seen how Ginkgo generates a spec tree and converts it to a flat list of specs.  If you need a refresher, skim through the [Mental Model: How Ginkgo Traverses the Spec Hierarchy](#mental-model-how-ginkgo-traverses-the-spec-hierarchy) section up above.
+
+Lists are powerful things.  They can be sorted.  They can be randomized.  They can be filtered.  They can be distributed to multiple workers.  Ginkgo supports all of these manipulations of the spec list enabling you to randomize, filter, and parallelize your test suite with minimal effort.
+
+To unlock these powerful capabilities Ginkgo makes an important, foundational, assumption about the specs in your suite:
+
+**Ginkgo assumes specs are independent**.
+
+Because individual Ginkgo specs do not depend on each other, it is possible to run them in any order; it is possible to run subsets of them; it is even possible to run them simultaneously in parallel.  Ensuring your specs are independent is foundational to writing effective Ginkgo suites that make the most of Ginkgo's capabilities.
+
+In the next few sections we'll unpack how Ginkgo randomizes specs and supports running specs in parallel.  As we do, we'll cover principles that - if followed - will help you write specs that are independent from each other.
+
+### Spec Randomization
+
+By default, Ginkgo will randomize the order in which the specs in a suite run.  This is done intentionally.  By randomizing specs, Ginkgo can help suss out spec pollution - accidental dependencies between specs - throughout a suite's development.
+
+Ginkgo's default behavior is to only randomize the order of top-level containers -- the specs *within* those containers continue to run in the order in which they are specified in the test files.  This is helpful when developing specs as it mitigates the cognitive overload of having specs within a container continuously change the order in which they run during a debugging session.
+
+When running on CI, or before committing code, it's good practice to instruct Ginkgo to randomize **all** specs in a suite.  You do this with the `--randomize-all` flag:
+
+```bash
+$> ginkgo --randomize-all
+```
+
+Ginkgo uses the current time to seed the randomization and prints out the seed near the beginning of the suite output.  If you notice intermittent spec failures that you think may be due to spec pollution, you can use the seed from a failing suite to exactly reproduce the spec order for that suite.  To do this pass the `--seed=SEED` flag:
+
+```bash
+$> ginkgo --seed=17
+```
+
+Because Ginkgo randomizes specs you should make sure that each spec runs from a clean independent slate.  Principles like ["Declare in container nodes, initialize in setup nodes"](#avoid-spec-pollution-dont-initialize-variables-in-container-nodes) help you accomplish this: when variables are initialized in setup nodes each spec is guaranteed to get a fresh, correctly initialized, state to operate on.  For example:
+
+```go
+/* INVALID */
+Describe("Bookmark", func() {
+    book := &books.Book{
+        Title:  "Les Miserables",
+        Author: "Victor Hugo",
+        Pages:  2783,
+    }
+
+    It("has no bookmarks by default", func() {
+        Expect(book.Bookmarks()).To(BeEmpty())
+    })
+
+    It("can add bookmarks", func() {
+        book.AddBookmark(173)
+        Expect(book.Bookmarks()).To(ContainElement(173))
+    })
+})
+```
+
+This suite only passes if the "has no bookmarks" spec runs before the "can add bookmarks" spec.  Instead, you should initializ the book variable in a setup node:
+
+```go
+Describe("Bookmark", func() {
+    var book *books.Book
+
+    BeforeEach(func() {
+        book = &books.Book{
+            Title:  "Les Miserables",
+            Author: "Victor Hugo",
+            Pages:  2783,
+        }        
+    })
+
+    It("has no bookmarks by default", func() {
+        Expect(book.Bookmarks()).To(BeEmpty())
+    })
+
+    It("can add bookmarks", func() {
+        book.AddBookmark(173)
+        Expect(book.Bookmarks()).To(ContainElement(173))
+    })
+})
+```
+
+In addition to avoiding accidental spec pollution you should make sure to avoid _intentional_ spec pollution!  Specifically, you should ensure that the correctness of your suite does not rely on the order in which specs run.
+
+For example:
+
+```go
+/* INVALID */
+Describe("checking out a book", func() {
+    var book *book.Bookmarks
+    var err error
+
+    It("can fetch a book from a library", func() {
+        book, err = libraryClient.FetchByTitle("Les Miserables")
+        Expect(err).NotTo(HaveOccurred())
+        Expect(book.Title).To(Equal("Les Miserables"))
+    })
+
+    It("can check out the book", func() {
+        Expect(library.CheckOut(book)).To(Succeed())
+    })
+
+    It("no longer has the book in stock", func() {
+        book, err = libraryClient.FetchByTitle("Les Miserables")
+        Expect(err).To(MatchError(books.NOT_IN_STOCK))
+        Expect(book).To(BeNil())
+    })
+})
+```
+
+These specs are not independent - the assume that they run in order.  This means they can't be randomized or parallelized with respect to each other.
+
+You can fix these specs by creating a single `It` to test the behavior of checking out a book:
+
+```go
+/* INVALID */
+Describe("checking out a book", func() {
+    It("can perform a checkout flow", func() {
+        By("fetching a book")
+        book, err := libraryClient.FetchByTitle("Les Miserables")
+        Expect(err).NotTo(HaveOccurred())
+        Expect(book.Title).To(Equal("Les Miserables"))
+
+        By("checking out the book")
+        Expect(library.CheckOut(book)).To(Succeed())
+
+
+        By("validating the book is no longer in stock")
+        book, err = libraryClient.FetchByTitle("Les Miserables")
+        Expect(err).To(MatchError(books.NOT_IN_STOCK))
+        Expect(book).To(BeNil())
+    })
+})
+```
+
+Ginkgo also provides an alternative that we'll discuss later - you can use [Ordered Containers](#ordered-containers) to tell Ginkgo when the specs in a container must _always_ be run in order.
+
+### Spec Parallelization
+
+As spec suites grow in size and complexity they have a tendency to get slower.  Thankfully the vast majority of modern computers ship with multiple CPU cores.  Ginkgo helps you use those cores to speed up your suites by running specs in parallel.  This is _especially_ useful when running large, complex, and slow integration suites where the only means to speed things up is to embrace parallelism.
+
+To run a Ginkgo suite in parallel you simply pass the `-p` flag to `ginkgo`:
+
+```bash
+$> ginkgo -p
+```
+
+this will automatically detect the optimal number of test processes to spawn based on the number of cores on your maching.  You can, instead, specify this number manually via `-processes=N`:
+
+```bash
+$> ginkgo -processes=N
+```
+
+And that's it!  Ginkgo will automatically run your specs in parallel and take care of collating the results into a single coherent output stream.
+
+At this point, though, you may be scratching your head.  _How_ does Ginkgo support parallelism given the use of shared closure variables we've seen throughout?  Consider the example from above:
+
+```go
+Describe("Bookmark", func() {
+    var book *books.Book
+
+    BeforeEach(func() {
+        book = &books.Book{
+            Title:  "Les Miserables",
+            Author: "Victor Hugo",
+            Pages:  2783,
+        }        
+    })
+
+    It("has no bookmarks by default", func() {
+        Expect(book.Bookmarks()).To(BeEmpty())
+    })
+
+    It("can add bookmarks", func() {
+        book.AddBookmark(173)
+        Expect(book.Bookmarks()).To(ContainElement(173))
+    })
+})
+```
+
+Both "Bookmark" specs are interrogating and mutating the same shared `book` variable.  Running the two specs in parallel would lead to an obvious data race over `book` and undefined, seemingly random, behavior.
+
+#### Mental Model: How Ginkgo Runs Parallel Specs
+
+Ginkgo ensures specs running in parallel are fully isolated from one another.  It does this by running the specs in _different processes_.  Because Ginkgo specs are assumed to be fully independent they can be harvested out to run on different worker processes - each process has its own memory space and there is, therefore, no risk for shared variable data races.
+
+Here's what happens under the hood when you run `ginkgo -p`:
+
+First, the Ginkgo CLI compiles a single test binary (via `go test -c`).  It then invokes `N` copies of the test binary.
+
+Each of these processes then enters the Tree Construction Phase and all processes generate an identical spec tree and, therefore, an identical list of specs to run.  The processes then enter the Run Phase and start running their specs.  They coordinate via the Ginkgo CLI (which acts a server) to figure out the next spec to run, and report to the CLI as specs finish running.  The CLI then takes care of generating a single coherent output stream of the running specs.  In essence, this is a simple map-reduce system with the CLI playing the role of a centralized server.
+
+With few exceptions, the different test processes do not communicate with one another and for most spec suites you, the developer, do not need to worry about which spec is running on which process.  This makes it easy to parallelize your suites and get some major performance gains.
+
+There are, however, contexts where you _do_ need to be aware of which process a given spec is running on.  In particular, there are several patterns for building effective parallelizable integration suites that need this information. We will explore such patterns in much more detail in the [Patterns chapter](#patterns-for-parallel-integration specs) - feel free to jump straight there if you're interested!  For now we'll simply introduce some of the building blocks that Ginkgo provides for implementing these patterns.
+
+#### Discovering Which Parallel Process a Spec is Running On
+
+Ginkgo numbers the running parallel processes from `1` to `N`.  A spec can get the index of the Ginkgo process it is running on via `GinkgoParallelProcess()`.  This can be useful in contexts where specs need to share a globally available external resource but need to access a specific shard, namespace, or instance of the resource so as to avoid spec pollution.  For example:
+
+```go
+Describe("Storing books in an external database", func() {
+    BeforeEach(func() {
+        namespace := fmt.Sprintf("namespace-%d", GinkgoParallelProcess())
+        Expect(dbClient.SetNamespace(namespace)).To(Succeed())
+        DeferCleanup(dbClient.ClearNamespace, namespace)
+    })
+
+    It("returns empty when there are no books", func() {
+        Expect(dbClient.Books()).To(BeEmpty())
+    })
+
+    Context("when a book is in the database", func() {
+        var book *books.Book
+        BeforeEach(func() {
+            lesMiserables = &books.Book{
+                Title:  "Les Miserables",
+                Author: "Victor Hugo",
+                Pages:  2783,
+            }
+            Expect(dbClient.Store(book)).To(Succeed())
+        })
+
+        It("can fetch the book", func() {
+            Expect(dbClient.Books()).To(ConsistOf(book))
+        })
+
+        It("can update the book", func() {
+            book.Author = "Victor Marie Hugo"
+            Expect(dbClient.Store(book)).To(Succeed())
+            Expect(dbClient.Books()).To(ConsistOf(book))
+        })
+
+        It("can delete the book", func() {
+            Expect(dbClient.Delete(book)).To(Succeed())
+            Expect(dbClient.Books()).To(BeEmpty())            
+        })
+    })
+})
+```
+
+Without sharding access to the database these specs would step on each other's toes and result in non-deterministic flaky behavior. By implementing sharded access to the database (e.g. `dbClient.SetNamespace` could instruct the client to prepend the `namespace` string to any keys stored in a key-value database) this suite can be trivially parallelized.  And by extending the "declare in container nodes, initialize in setup nodes" principle to apply to state stored _external_ to the suite we are able to ensure that each spec runs from a known clean shard of the database.
+
+Such a suite will continue to be parallelizable as it grows - enabling faster runtimes with less flakiness than would otherwise be possible in a serial-only suite.
+
+In addition to `GinkgoParallelProcess()`, Ginkgo provides access to the total number of running processes.  You can get this from `GinkgoConfiguration()`, which returns the state of Ginkgo's configuration, like so:
+
+```go
+suiteConfig, _ := GinkgoConfiguration()
+totalProcesses := suiteConfig.ParallelTotal
+```
+
+#### Parallel Suite Setup and Cleanup: `SynchronizedBeforeSuite` and `SynchronizedAfterSuite`
+
+Our example above assumed the existence of a single, globally shared, running database.  How might we have set up such a database?
+
+You typically spin up external resources like this in the `BeforeSuite` in your suite bootstrap file.  We saw this example earlier:
+
+```go
+var dbClient *db.Client
+var dbRunner *db.Runner
+
+var _ = BeforeSuite(func() {
+    dbRunner := db.NewRunner()
+    Expect(dbRunner.Start()).To(Succeed())
+
+    dbClient = db.NewClient()
+    Expect(dbClient.Connect(dbRunner.Address())).To(Succeed())
+})
+
+var _ = AfterSuite(func() {
+    Expect(dbClient.Cleanup()).To(Succeed())
+    Expect(dbRunner.Stop()).To(Succeed())
+})
+```
+
+However, since `BeforeSuite` runs on _every_ parallel process this would result in `N` independent databases spinning up.  Sometimes that's exactly what you want - as it provides maximal isolation for the running specs and is a natural way to shard data access.  Sometimes, however, spinning up multiple external processes is too resource intensive or slow and it is more efficient to share access to a single resource.
+
+Ginkgo supports this usecase with `SynchronizedBeforeSuite` and `SynchronizedAfterSuite`.  Here are the full signatures for the two:
+
+```go
+
+func SynchronizedBeforeSuite(
+    process1 func() []byte,
+    allProcesses func([]byte),
+)
+
+func SynchronizedAfterSuite(
+    allProcesses func(),
+    process1 func(),
+)
+```
+
+Let's dig into `SynchronizedBeforeSuite` (henceforth `SBS`) first.  `SBS` runs at the beginning of the Run Phase - before any specs have run but after the spec tree has been parsed and constructed.
+
+`SBS` allows us to set up state in one process, and pass information to all the other processes.  Concretely, the `process1` function runs **only** on parallel process #1.  All other parallel processes pause and wait for `process1` to complete.  Upon completion `process1` returns arbitrary data as a `[]byte` slice and this data is then passed to all parallel processes which then invoke the `allProcesses` function in parallel, passing in the `[]byte` slice.
+
+Similarly, `SynchronizedAfterSuite` is split into two functions.  The first, `allProcesses`, runs on all processes after they finish running specs.  The second, `process1`, only runs on process #1 - and only _after_ all other processes have finished and exited.
+
+We can use this behavior to set up shared external resources like so:
+
+```go
+var dbClient *db.Client
+var dbRunner *db.Runner
+
+var _ = SynchronizedBeforeSuite(func() []byte {
+    //runs *only* on process #1
+    dbRunner := db.NewRunner()
+    Expect(dbRunner.Start()).To(Succeed())
+    return []byte(dbRunner.Address())
+}), func(address []byte) {
+    //runs on *all* processes
+    dbClient = db.NewClient()
+    Expect(dbClient.Connect(string(address))).To(Succeed())
+    dbClient.SetNamespace(fmt.Sprintf("namespace-%d", GinkgoParallelProcess()))
+})
+
+var _ = SynchronizedAfterSuite(func() {
+    //runs on *all* processes
+    Expect(dbClient.Cleanup()).To(Succeed())    
+}, func() {
+    //runs *only* on process #1
+    Expect(dbRunner.Stop()).To(Succeed())
+})
+```
+
+This code will spin up a single database and ensure that every parallel Ginkgo process connects to the database and sets up an appropriately sharded namespace.  Ginkgo does all the work of coordinating across these various closures and passing information back and forth - and all the complexity of the parallel setup in the test suite is now contained in the `Synchronized*` setup nodes.
+
+Bu the way, we can clean all this up further using `DeferCleanup`.  `DeferCleanup` is context aware and so knows that any cleanup code registered in a `BeforeSuite`/`SynchronizedBeforeSuite` should run at the end of the suite:
+
+```go
+var dbClient *db.Client
+
+var _ = SynchronizedBeforeSuite(func() []byte {
+    //runs *only* on process #1
+    dbRunner := db.NewRunner()
+    Expect(dbRunner.Start()).To(Succeed())
+    DeferCleanup(dbRunner.Stop)
+    return []byte(dbRunner.Address())
+}), func(address []byte) {
+    //runs on *all* processes
+    dbClient = db.NewClient()
+    Expect(dbClient.Connect(string(address))).To(Succeed())
+    dbClient.SetNamespace(fmt.Sprintf("namespace-%d", GinkgoParallelProcess()))
+    DeferCleanup(dbClient.Cleanup)
+})
+```
+
+#### `ginkgo` vs `go test`
+One last word before we close out the topic of Spec Parallelization.  Ginkgo's process-based server-client parallelization model should make clear why you need to use the `ginkgo` CLI to run parallel specs instead of `go test`.  While Ginkgo suites are fully compatible with `go test` there _are_ some features, most notably parallelization, that require the use of the` ginkgo` CLI.
+
+We recommend embracing the `ginkgo` CLI as part of your toolchain and workflow.  It's designed to make the process of writing and iterating on complex spec suites as painless as possible.  Consider, for example, the `watch` subcommand:
+
+```bash
+$> ginkgo watch -p
+```
+
+is all you need to have Ginkgo rerun your suite - in parallel -  whenever it detects a change in the suite or any of its dependencies.  Run that in a terminal while you build out your code and get immediate feedback as you evolve your suite!
+
+### Mental Model: Spec Decorators
+We've emphasized throughout this chapter that Ginkgo _assumes_ specs are fully independent.  This assumption enables spec randomization and spec parallelization.
+
+There are some contexts, however, when spec independence is simply too difficult to achieve.  The cost of ensuring specs are independent may be too high.  Or there may be external constraints beyond your control.  When this is the case, Ginkgo allows you to explicitly control how specific specs in your suite must be run.
+
+We'll get into that in the next two sections.  But first we'll need to introduce **Spec Decorators**.
+
+So far we've seen that container nodes and subject nodes have the following signature:
+
+```go
+Describe("description", <closure>)
+It("description", <closure>)
+```
+
+In actuality, the signatures for these functions is actually:
+
+```go
+Describe("description", args ...interface{})
+It("description", args ...interface{})
+```
+
+and Ginkgo provides a number of additional types that can be passed in to container and subject nodes.  We call these types Spec Decorators as they decorate the spec with additional metadata.  This metadata can modify the behavior of the spec at run time.  A comprehensive [reference of all decorators](#spec-decorator-reference) is maintained in these docs.
+
+Some Spec Decorators only apply to a specific node.  For example the `Offset` or `CodeLocation` decorators allow you to adjust the location of a node reported by Ginkgo (this is useful when building shared libraries that generate they're own Ginkgo nodes).
+
+Most Spec Decorators, however, get applied to the specs that include the decorated node.  For example, the `Serial` decorator (which we'll see in the next section) instructs Ginkgo to ensure that any specs that include the `Serial` node should only run in series and never in parallel.
+
+So, if `Serial` is applied to a container like so:
+
+```go
+Describe("Never in parallel please", Serial, func() {
+    It("tests one behavior", func() {
+        
+    })
+
+    It("tests another behavior", func() {
+        
+    })
+})
+```
+
+Then both specs generated by the subject nodes in this container will be marked as `Serial`.  If we transfer the `Serial` decorator to one of the subject nodes, hwoever:
+
+```go
+Describe("Never in parallel please",  func() {
+    It("tests one behavior", func() {
+        
+    })
+
+    It("tests another behavior", Serial, func() {
+        
+    })
+})
+```
+
+now, only the spec with the "tests another behavior" subject node will be marked Serial.
+
+Another way of capturing this behavior is to say that most Spec Decorators apply hierarchically.  If a container node is decorated with a decorator then the decorator applies to all its child nodes.
+
+One last thing - spec decorators can also decorate [Table Specs](#table-specs):
+
+```go
+DescribeTable("Table", Serial, ...)
+Entry("Entry", FlakeAttempts(3), ...)
+```
+
+will all work just fine.  You can put the decorators anywhere after the description strings.
+
+The [reference](#spec-decorator-reference) clarifies how decorator inheritance works for each decorator and which nodes can accept which decorators.
+
+### Serial Specs
+
+When you run `ginkgo -p` Ginkgo spins up multiple processes and distributes **all** your specs across those processes.  As such, any spec must be able to run in parallel with any other spec.
+
+Sometimes, however, you simply _must_ enforce that a spec runs in series.  Perhaps it is a performance benchmark spec that cannot run in parallel with any other work.  Perhaps it is a spec that is known to exercise an edge case that places some external resource into a known-bad state and, therefore, must be run independently of all other specs.  Perhaps it is simply a spec that is just so resource intensive that it must run alone to avoid exhibiting flaky behavior.
+
+Whatever the reason, Ginkgo allows you to decorate container and subject nodes with `Serial`:
+
+```go
+
+Describe("Something expensive", Serial, func() {
+    It("is a resource hog that can't run in parallel", func() {
+        ...
+    })
+
+    It("is another resource hog that can't run in parallel", func() {
+        ...
+    })
+})
+```
+
+Ginkgo will guarantee that these specs will never run in parallel with other specs.
+
+Under the hood Ginkgo does this by running `Serial` at the **end** of the suite on parallel process #1.  When it detects the presence of `Serial` specs, process #1 will wait for all other processes to exit before running the `Serial` specs.
+
+### Ordered Containers
+
+By default Ginkgo does not guarantee the order in which specs run.  As we've seen, `ginkgo --randomize-all` will shuffle the order of all specs and `ginkgo -p` will distribute all specs across multiple workers.  Both operations mean that the order in which specs run cannot be guaranteed.
+
+There are contexts, however, when you must guarantee the order in which a set of specs run.  For example, you may be testing a complex flow of behavior and would like to break your spec up into multiple units instead of having one enormous `It`.  Or you may have to perform some expensive setup for a set of specs and only want to perform that setup **once** _before_ the specs run.
+
+Ginkgo provides `Ordered` containers to solve for these usecases.  Specs in `Ordered` containers are guaranteed to run in the order in which they appear.  Let's pull out an example from before; recall that the following is invalid:
+
+```go
+/* INVALID */
+Describe("checking out a book", func() {
+    var book *book.Bookmarks
+    var err error
+
+    It("can fetch a book from a library", func() {
+        book, err = libraryClient.FetchByTitle("Les Miserables")
+        Expect(err).NotTo(HaveOccurred())
+        Expect(book.Title).To(Equal("Les Miserables"))
+    })
+
+    It("can check out the book", func() {
+        Expect(library.CheckOut(book)).To(Succeed())
+    })
+
+    It("no longer has the book in stock", func() {
+        book, err = libraryClient.FetchByTitle("Les Miserables")
+        Expect(err).To(MatchError(books.NOT_IN_STOCK))
+        Expect(book).To(BeNil())
+    })
+})
+```
+
+These specs break the "declare in container nodes, initialize in setup nodes" principle.  When randomizing specs or running in parallel Ginkgo will not guarantee that these specs run in order.  Because the specs are mutating the same shared set of variables they will behave in non-deterministic ways when shuffled.  In fact, when running in parallel, specs on different parallel processes will be accessing completely different local copies of the closure variables!
+
+When we introduced this example we recommended condensing the tests into a single `It` and using `By` to document the test.  `Ordered` containers provide an alternative that some users might prefer, stylistically:
+
+```go
+Describe("checking out a book", Ordered, func() {
+    var book *book.Bookmarks
+    var err error
+
+    It("can fetch a book from a library", func() {
+        book, err = libraryClient.FetchByTitle("Les Miserables")
+        Expect(err).NotTo(HaveOccurred())
+        Expect(book.Title).To(Equal("Les Miserables"))
+    })
+
+    It("can check out the book", func() {
+        Expect(library.CheckOut(book)).To(Succeed())
+    })
+
+    It("no longer has the book in stock", func() {
+        book, err = libraryClient.FetchByTitle("Les Miserables")
+        Expect(err).To(MatchError(books.NOT_IN_STOCK))
+        Expect(book).To(BeNil())
+    })
+})
+```
+
+here we've decorated the `Describe` container as `Ordered`.  Ginkgo will guarantee that specs in an `Ordered` container will run sequentially, in the order they are written.  Specs in an `Ordered` container may run in parallel with respect to _other_ specs, but they will always run sequentially on the same parallel process.  This allows specs in `Ordered` containers to rely on mutating local closure state.
+
+The `Ordered` decorator can only appear on a container node.  Any container nodes nested within a container node will automatically be considered `Ordered` and there is no way to mark a node within an `Ordered` container as "not `Ordered`".  In fact, to prevent confusion, Ginkgo doesn't let you add an `Ordered` decorator to a container node if one of its parent containers is already decorated with `Ordered`.
+
+> Ginkgo did not include support for `Ordered` containers for quite some time.  As you can see `Ordered` containers make it possible to circumvent the "Declare in container nodes, initialize in setup nodes" principle; and they make it possible to write dependent specs  This comes at a cost, of course - specs in `Ordered` containers cannot be fully parallelized which can result in slower suite runtimes.  Despite these cons, pragmatism prevailed and `Ordered` containers were introduced in response to real-world needs in the community.  Nonetheless, we recommend using `Ordered` containers only when needed.
+
+#### Setup in `Ordered` Containers: `BeforeAll` and `AfterAll`
+
+You can include all the usual setup nodes in an `Ordered` container however and they continue to operate in the same way.  `BeforeEach` will run before every spec and `AfterEach` will run after every spec.  This applies to all setup nodes in a spec's hierarchy.  So `BeforeEach`/`AfterEach` nodes that are present outside the `Ordered` container will still run before and after each spec in the container.
+
+There are, however, two new setup node variants that can be used within `Ordered` containers: `BeforeAll` and `AfterAll`.
+
+`BeforeAll` closures will run exactly once before any of the specs within the `Ordered` container.  `AfterAll` closures will run exactly once after the last spec has finished running.  Here's an extension of our earlier example that illustrates how these nodes might be used:
+
+```go
+Describe("checking out a book", Ordered, func() {
+    var libraryClient *library.Client
+    var book *book.Bookmarks
+    var err error
+
+    BeforeAll(func() {
+        libraryClient = library.NewClient()
+        Expect(libraryClient.Connect()).To(Succeed())
+    })
+
+    It("can fetch a book from a library", func() {
+        book, err = libraryClient.FetchByTitle("Les Miserables")
+        Expect(err).NotTo(HaveOccurred())
+        Expect(book.Title).To(Equal("Les Miserables"))
+    })
+
+    It("can check out the book", func() {
+        Expect(library.CheckOut(book)).To(Succeed())
+    })
+
+    It("no longer has the book in stock", func() {
+        book, err = libraryClient.FetchByTitle("Les Miserables")
+        Expect(err).To(MatchError(books.NOT_IN_STOCK))
+        Expect(book).To(BeNil())
+    })
+
+    AfterAll(func() {
+        Expect(libraryClient.Disconnect()).To(Succeed())
+    })
+})
+```
+
+here we only set up the `libraryCLient` once before all the specs run, and then tear it down once all the specs complete.
+
+`BeforeAll` and `AfterAll` nodes can only be introduced within an `Ordered` container.  To avoid potentially complex and confusing behavior they cannot be nested within other containers within an `Ordered` container.
+
+As always, you can also use `DeferCleanup`.  Since `DeferCleanupe` is context aware, it will detect when it is called in a `BeforeAll` and behave like an `AfterAll`.  The following is equivalent to the example above:
+
+```go
+BeforeAll(func() {
+    libraryClient = library.NewClient()
+    Expect(libraryClient.Connect()).To(Succeed())    
+    DeferCleanup(libraryClient.Disconnect)
+})
+
+```
+
+#### Failure Handling in `Ordered` Containers
+
+Normally, when a spec fails Ginkgo moves on to the next spec.  This is possible because Ginkgo assumes, by default, that all specs are independent.  However `Ordered` containers explicitly opt in to a different behavior.  Spec independence cannot be guaranteed in `Ordered` containers, so Ginkgo treats failures differently.
+
+When a spec in an `Ordered` container fails all subsequent specs are skipped. Ginkgo will then run any `AfterAll` node closures to clean up after the specs.  This failure behavior cannot be overridden.
+
+#### Combining `Serial` and `Ordered`
+
+To sum up: specs decorated with `Serial` are guaranteed to run in series and never in parallel with other specs.  Specs in `Ordered` containers are guaranteed to run in order sequentially on the same parallel process but may be parallelized with specs in other containers.
+
+You can combine both decorators to have specs in `Ordered` containers run serially with respect to all other specs.  To do this, you must apply the `Serial` decorator to the same container that has the `Ordered` decorator.  You cannot declare a spec within an `Ordered` container as `Serial` independently.
+
+### Filtering Specs
+
+There are several contexts where you may only want to run a _subset_ of specs in a suite.  Perhaps some specs are slow and only need to be run on CI or before a commit.  Perhaps you're only working on a subset of the code and want to run the relevant subset of the specs, or even just one spec.  Perhaps a spec is under development and isn't ready to run yet.  Perhaps a spec should always be skipped if a certain condition is met.
+
+Ginkgo supports all these usecases (and more) through a wide variety of mechanisms to organize and filter specs.  Let's dig into them.
+
+#### Pending Specs
+You can mark individual specs, or containers of specs, as `Pending`.  This is used to denote that a spec or its code is under development and should not be run.  None of the other filtering mechanisms described in this chapter can override a `Pending` spec and cause it to run.
+
+Here are all the ways you can mark a spec as `Pending`:
+
+```go
+// With the Pending decorator:
+Describe("these specs aren't ready for primetime", Pending, func() { ... })
+It("needs work", Pending, func() { ... })
+It("placeholder", Pending) //note: pending specs don't require a closure
+DescribeTable("under development", Pending, func() { ... }, ...)
+Entry("this one isn't working yet", Pending)
+
+// By prepending `P` or `X`:
+PDescribe("these specs aren't ready for primetime", func() { ... })
+XDescribe("these specs aren't ready for primetime", func() { ... })
+PIt("needs work", func() { ... })
+XIt("placeholder")
+PDescribeTable("under development", func() {...}, ...)
+XEntry("this one isn't working yet")
+```
+
+Ginkgo will never run a pending spec.  If all other specs in the suite pass the suite will be considered successful.  You can, however, run `ginkgo --fail-on-pending` to have Ginkgo fail the suite if it detects any pending specs.  This can be useful on CI if you want to enforce a policy that pending specs should not be committed to source control.
+
+Note that pending specs are declared at compile time.  You cannot mark a spec as pending dynamically at runtime.  For that, keep reading...
+
+#### Skipping Specs
+If you need to skip a spec at runtime you can use Ginkgo's `Skip(...)` function.  For example, say we want to skip a spec if some condition is not met.  We could:
+
+```go
+It("should do something, if it can", func() {
+    if !someCondition {
+        Skip("Special condition wasn't met.")
+    }
+    ...
+})
+```
+
+This will cause the current spec to skip.  Ginkgo will immediately end execution (`Skip`, just like `Fail`, throws a panic to halt execution of the current spec) and mark the spec as skipped.  The message passed to `Skip` will be included in the spec report.  Note that `Skip` **does not** fail the suite.  Even skipping all the specs in the suite will not cause the suite to fail.  Only an explicitly failure will do so.
+
+You can call `Skip` in any subject or setup nodes.  If called in a `BeforeEach`, `Skip` will skip the current spec.  If called in a `BeforeAll`, `Skip` will skip all specs in the `Ordered` container (however, skipping an individual spec in an `Ordered` container does not skip subsequent specs).  If called in a `BeforeSuite`, `Skip` will skip the entire suite.
+
+You cannot call `Skip` in a container node - `Skip` only applies during the Run Phase, not the Tree Construction Phase.
+
+#### Focused Specs
+Ginkgo allows you to `Focus` individual specs, or containers of specs.  When Ginkgo detects focused specs in a suite it skips all other specs and _only_ runs the focused specs.
+
+Here are all the ways you can mark a spec as focused:
+
+```go
+// With the Focus decorator:
+Describe("just these specs please", Focus, func() { ... })
+It("just me please", Focus, func() { ... })
+DescribeTable("run this table", Focus, func() { ... }, ...)
+Entry("run just this entry", Focus)
+
+// By prepending `F`:
+FDescribe("just these specs please", func() { ... })
+FIt("just me please", func() { ... })
+FDescribeTable("run this table", func() { ... }, ...)
+FEntry("run just this entry", ...)
+```
+
+doing so instructs Ginkgo to only run the focused specs.  To run all specs, you'll need to go back and remove all the `F`s and `Focus` decorators.
+
+You can nest focus declarations.  Doing so follows a simple rule: if a child node is marked as focused, any of its ancestor nodes that are marked as focused will be unfocused.  This behavior was chosen as it most naturally maps onto the developers intent when iterating on a spec suite.  For example:
+
+```go
+FDescribe("some specs you're debugging", func() {
+    It("might be failing", func() { ... })
+    It("might also be failing", func() { ... })
+})
+```
+
+will run both specs.  Let's say you discover that the second spec is the one failing and you want to rerun it rapidly as you iterate on the code.  Just `F` it:
+
+```go
+FDescribe("some specs you're debugging", func() {
+    It("might be failing", func() { ... })
+    FIt("might also be failing", func() { ... })
+})
+```
+
+now only the second spec will run because of Ginkgo's focus rules.
+
+We refer to the focus filtering mechanism as "Programmatic Focus" as the focus declarations are "programmed in" at compile time.  Programmatic focus can be super helpful when developing or debugging a test suite, however it can be a real pain to accidentally commit a focused spec. So...
+
+When Ginkgo detects that a passing test suite has programmatically focused tests it causes the suite to exit with a non-zero status code.  The logs will show that the suite succeeded, but will also include a message that says that programmatic specs were detected.  The non-zero exit code will be caught by most CI systems and flagged, allowing developers to go back and unfocus the specs they committed. 
+
+You can unfocus _all_ specs in a suite by running `ginkgo unfocus`.  This simply strips off any `F`s off of `FDescribe`, `FContext`, `FIt`, etc... and removes an `Focus` decorators.
+
+#### Spec Labels
+`Pending`, `Skip`, and `Focus` provide adhoc mechanisms for filtering suites.  For particularly large and complex suites, however, you may need a more structured mechanism for organizing and filtering specs.  For such usecases, Ginkgo provides labels.
+
+Labels are simply textual tags that can be attached to Ginkgo container and setup nodes via the `Label` decoration.  Here are the ways you can attach labels to a node:
+
+```go
+It("is labelled", Label("first label", "second label"), func() { ... })
+It("is labelled", Label("first label"), Label("second label"), func() { ... })
+```
+
+Labels can container arbitrary strings but cannot contain any of the characters in the set: `"&|!,()/"`.  The labels associated with a spec is the union of all the labels attached to the spec's container nodes and subject nodes. For example:
+
+```go
+Describe("Storing books", Label("integration", "storage"), func() {
+    It("can save entire shelves of books to the central library", Label("network", "slow", "library storage"), func() {
+        // has labels [integration, storage, network, slow, library storage]
+    })
+
+    It("cannot delete books from the central library", Label("network", "library storage"), func() {
+        // has labels [integration, storage, network, library storage]        
+    })
+
+    It("can check if a book is stored in the central library", Label("network", "slow", "library query"), func() {
+        // has labels [integration, storage, network, slow, library query]        
+    })
+
+    It("can save books locally", Label("local"), func() {
+        // has labels [integration, storage, local]        
+    })
+
+    It("can delete books locally", Label("local"), func() {
+        // has labels [integration, storage, local]                
+    })
+})
+```
+
+The labels associated with a spec are included in any generated reports and are emitted alongside the spec whenever it fails.
+
+The real power, of labels, however, is around filtering.  You can filter by label using via the `ginkgo --label-filter=QUERY` flag.  Ginkgo will accept and parse a simple filter query language with the following operators and rules:
+
+- The `&&` and `||` logical binary operators representing AND and OR operations.
+- The `!` unary operator representing the NOT operation.
+- The `,` binary operator equivalent to `||`.
+- The `()` for grouping expressions.
+- All other characters will match as label literals.  Label matches are **case intensive** and trailing and leading whitespace is trimmed.
+- Regular expressions can be provided using `/REGEXP/` notation.
+
+To build on our example above, here are some label filter queries and their behavior:
+
+| Query | Behavior |
+| --- | --- |
+| `ginkgo --label-filter="integration"` | Match any specs with the `integration` label |
+| `ginkgo --label-filter="!slow"` | Avoid any specs labelled `slow` |
+| `ginkgo --label-filter="network && !slow"` | Run specs labelled `network` that aren't `slow` |
+| `ginkgo --label-filter=/library/` | Run specs with labels matching the regular expression `library` - this will match the three library-related specs in our example.
+
+You can list the labels used in a given package using the `ginkgo labels` subcommand.  This does a simple/naive scan of your test files for calls to `Label` and returns any labels it finds.
+
+You can iterate on different filters quickly with `ginkgo --dry-run -v --label-filter=FILTER`.  This will cause Ginkgo to tell you which specs it will run for a given filter without actually running anything.
+
+#### Location-Based Filtering
+
+Ginkgo allows you to filter specs based on their source code location from the command line.  You do this using the `ginkgo --focus-file` and `ginkgo --skip-file` flags.  Ginkgo will only run specs that are in files that _do_ match the `--focus-file` filter *and* _don't_ match the `--skip-file` filter.  You can provide multiple `--focus-file` and `--skip-file` flags.  The `--focus-file`s will be ORed together and the `--skip-file`s will be ORed together.
+
+The argument passed to `--focus-file`/`--skip-file` is a file filter and takes one of the following forms:
+
+- `FILE_REGEX` - will match specs in files who's absolute path matches the FILE_REGEX.  So `ginkgo --focus-file=foo` will match specs in files like `foo_test.go` or `/foo/bar_test.go`.
+- `FILE_REGEX:LINE` - will match specs in files that match FILE_REGEX where at least one node in the spec is constructed at line number `LINE`.
+- `FILE_REGEX:LINE1-LINE2` - will match specs in files that match FILE_REGEX where at least one node in the spec is constructed at a line within the range of `[LINE1:LINE2)`.
+
+You can specify multiple comma-separated `LINE` and `LINE1-LINE2` arguments in a single `--focus-file/--skip-file` (e.g. `--focus-file=foo:1,2,10-12` will apply filters for line 1, line 2, and the range [10-12)).  To specify multiple files, pass in multiple `--focus-file` or `--skip-file` flags.
+
+To filter a spec based on its line number you must use the exact line number where one of the spec's nodes (e.g. `It()`) is called.  You can't use a line number that is "close" to the node, or within the node's closure.
+
+#### Description-Based Filtering
+
+Finally, Ginkgo allows you to filter specs based on the description strings that appear in their subject nodes and/or container hierarchy nodes.  You do this using the `ginkgo --focus=REGEXP` and `ginkgo --skip=REGEXP` flags.
+
+When these flags are provided Ginkgo matches the passed-in regular expression against the fully concatenated description of each spec.  For example the spec tree:
+
+```go
+Describe("Studying books", func() {
+    Context("when the book is long", func() {
+        It("can be read over multiple sessions", func() {
+            
+        })
+    })
+})
+```
+
+will generate a spec with description `"Studying books when the book is long can be read over multiple sessions"`.
+
+When `--focus` and/or `--skip` are provided Ginkgo will _only_ run specs with descriptions that match the focus regexp **and** _don't_ match the skip regexp.  You can provide `--focus` and `--skip` multiple times.  The `--focus` filters will be ORed together and the `--skip` filters will be ORed together.  For example, say you have the following specs:
+
+```go
+It("likes dogs", func() {...})
+It("likes purple dogs", func() {...})
+It("likes cats", func() {...})
+It("likes dog fish", func() {...})
+It("likes cat fish", func() {...})
+It("likes fish", func() {...})
+```
+
+then `ginkgo --focus=dog --focus=fish --skip=cat --skip=purple` will only run `"likes dogs"`, `"likes dog fish"`, and `"likes fish"`.
+
+The description-based `--focus` and `--skip` flags were Ginkgo's original command-line based filtering mechanism and will continue to be supported - however we recommend using labels when possible as the label filter language is more flexible and easier to reason about.
+
+#### Combining Filters
+
+To sum up, we've seen that Ginkgo supports the following mechanisms for organizing and filtering specs:
+
+- Specs that are marked as `Pending` at compile-time never run.
+- At run-time, specs can be individually skipped by calling `Skip()`
+- Specs that are programmatically focused with the `Focus` decorator at compile-time run to the exclusion of other specs.
+- Specs can be labelled with the `Label()` decoration.  `ginkgo --label-filter=QUERY` will apply a label filter query and only run specs that pass the filter.
+- `ginkgo --focus-file=FILE_FILTER/--skip-file=FILE_FILTER` will filter specs based on their source code location.
+- `ginkgo --focus=REGEXP/--skip=REGEXP` will filter specs based on their descriptions.
+
+These mechanisms can all be used in concert.  They combine with the following rules:
+
+- `Pending` specs are always pending and can never be coerced to run by another filtering mechanism.
+- Specs that invoke `Skip()` will always be skipped regardless of other filtering mechanisms.
+- The CLI based filters (`--label-filter`, `--focus-file/--skip-file`, `--focus/--skip`) **always** override any programmatic focus.
+- When multiple CLI filters are provided they are all ANDed together.  The spec must satisfy the label filter query **and** any location-based filters **and** any description based filters.
+
+### Repeating Test Runs and Managing Flaky Specs
+
+Ginkgo wants to help you write reliable, deterministic, tests.  Flaky specs - i.e. specs that fail _sometimes_ in non-deterministic or difficult to reason about ways - can be incredibly frustrating to debug and can erode faith in the value of a spec suite.
+
+Ginkgo provides a few mechanisms to help you suss out and debug flaky specs.  If you suspect a flaky spec you can rerun a suite repeatedly until it fails via:
+
+```bash
+$> ginkgo --until-it-fails
+```
+
+This will compile the suite once and then run it repeatedly, forever, until a failure is detected.  This flag pairs well with `--randomize-all` and `-p` to try and suss out failures due to accidental spec dependencies.
+
+Since `--until-it-fails` runs indefinitely, until a failure is detected, it is not appropriate for CI environments.  If you'd like to help ensure that flaky specs don't creep into your codebase you can use:
+
+```bash
+$> ginkgo --repeat=N
+```
+
+to have Ginkgo repeat your test suite up to `N` times or until a failure occurs, whichever comes first.  This is especially valuable in CI environments.
+
+One quick note on `--repeat`: when you invoke `ginkgo --repeat=N` Ginkgo will run your suite a total of `1+N` times.  In this way, `ginkgo --repeat=N` is similar to `go test --count=N+1` **however** `--count` is one of the few `go test` flags that is **not** compatible with Ginkgo suites.  Please use `ginkgo --repeat=N` instead.
+
+Both `--until-it-fails` and `--repeat` help you identify flaky specs early.  Doing so will help you debug flaky specs while the context that introduced them is fresh.
+
+However.  There are times when the cost of preventing and/or debugging flaky specs simply is simply too high and specs simply need to be retried.  While this should never be the primary way of dealing with flaky specs, Ginkgo is pragmatic about this reality and provides a mechanism for retrying specs.
+
+You can retry all specs in a suite via:
+
+```bash
+$> ginkgo --flake-attempts=N
+```
+
+Now, when a spec fails Ginkgo will not automatically mark the suite as failed.  Instead it will attempt to rerun the spec up to `N` times.  If the spec succeeds during a retry, Ginkgo moves on and marks the suite as successful but reports that the spec needed to be retried.
+
+You can take a more granular approach by decorating individual subject nodes or container nodes as potentially flaky with the `FlakeAttempts(N)` decorator:
+
+```go
+Describe("Storing books", func() {
+    It("can save books to the central library", FlakeAttempts(3), func() {
+        // this spec has been marked as flaky and will be retried up to 3 times
+    })
+
+    It("can save books locally", func() {
+        // this spec must always pass on the first try
+    })
+})
+```
+
+It bears repeating: you should use `FlakeAttempts` judiciously.  The best approach to managing flaky spec suites is to debug flakes early and resolve them.  More often than not they are telling you something important about your architecture.  In a world of competing priorities and finite resources, however, `FlakeAttempts` provides a means to explicitly accept the technical debt of flaky specs and move on.
+
+### Interrupting, Aborting, and Timing Out Suites
+
+We've talked a lot about running specs.  Let's take moment to talk about stopping them.
+
+Ginkgo provides a few mechanisms for stopping a suite before all specs have naturally completed.  These mechanisms are especially useful when a spec gets stuck and hangs.
+
+First, you can signal to a suite that it must stop running by sending a `SIGINT` or `SIGTERM` signal to the running spec process (or just hit `^C`).
+
+Second, you can also specify a timeout on a suite (or set of suites) via:
+
+```bash
+ginkgo --timeout=duration
+```
+
+where `duration` is a parseable go duration string (the default is `1h` -- one hour).  When running multiple suites Ginkgo will ensure that the total runtime of _all_ the suites does not exceed the specified timeout.
+
+Finally, you can abort a suite from within the suite by calling `Abort(<reason>)`.  This will immediately end the suite and is the programmatic equivalent of sending an interrupt signal to the test process.
+
+All three mechanisms have same effects.  They:
+
+- Immediately interrupt the current spec.
+- Run any cleanup nodes (`AfterEach`, `JustAfterEach`, `AfterAll`, `DeferCleanup` code, etc.)
+- Emit as much information about the interrupted spec as possible.  This includes:
+    - anything written to the `GinkgoWriter`
+    - the location of the node that was running at the time of interrupt.
+    - (for timeout and signal interrupts) a full dump of all running goroutines.
+- Skip any subsequent specs.
+- Run any `AfterSuite` closures.
+- Exit, marking the suite as failed.
+
+In short, Ginkgo does its best to cleanup and emit as much information as possible about the suite before shutting down.  If, during cleanup, any cleanup node closures get stuck Ginkgo allows you to interrupt them via subsequent interrupt signals.  In the case of a timeout, Ginkgo sends these repeat interrupt signals itself to make sure the suite shuts down eventually.
+
+### Running Multiple Suites
+
+So far we've covered writing and running specs in individual suites.  Of course, the `ginkgo` CLI also supports running multiple suites with a single invocation on the command line.  We'll close out this chapter on running specs by covering how Ginkgo runs multiple suites.
+
+When you run `ginkgo` the Ginkgo CLI first looks for a spec suite in the current directory.  If it finds one it runs `go test -c` to compile the suite and generate a `.test` binary.  It then invokes the binary directly, passing along any necessary flags to correctly configure it.  In the case of parallel specs, the CLI will configure and spin up multiple copies of the binary and act as a server to coordinate running specs in parallel.
+
+You can have `ginkgo` run multiple spec suites by pointing it at multiple package locations (i.e. directories) like so:
+
+```bash
+$> ginkgo <flags> path/to/package-1 path/to/package-2 ...
+```
+
+Ginkgo will enter each of these directory and look for a spec suite.  If it finds one it will compile the suite and run it.  Note that you need to include any `ginkgo` flags **before** the list of packages.
+
+You can also have `ginkgo` recursively find and run all spec suites within the current directory:
+
+```bash
+$> ginkgo -r
+
+- or, equivalently,
+
+$> ginkgo <flags> ./...
+```
+
+Now Ginkgo will walk the file tree and search for spec suites.  It will compile any it finds and run them.
+
+When there are multiple suites to run Ginkgo attempts to compile the suites in parallel but **always** runs them sequentially.  You can control the number of parallel compilation workers using the `ginkgo --compilers=N` flag, by default Ginkgo runs as many compilers as you have cores.
+
+Ginkgo provides a few additional configuration flags when running multiple suites.
+
+You can ask Ginkgo to skip certain packages via:
+
+```bash
+$> ginkgo -r --skip-package=list,of,packages
+```
+
+`--skip-package` takes a comma-separated list of package names.  If any part of the package's **path** matches one of the entries in this list that package is skipped: it is not compiled and it is not run.
+
+By default, Ginkgo runs suites in the order it finds them.  You can have Ginkgo randomize the order in which suites run withL
+
+```bash
+$> ginkgo -r --randomize-suites
+```
+
+Finally, Ginkgo's default behavior when running multiple suites is to stop execution after the first suite that fails.  (Note that Ginkgo will run _all_ the specs in that suite unless `--fail-fast` is specified.)  You can alter this behavior and have Ginkgo run _all_ suites regardless of failure with:
+
+```bash
+$> ginkgo -r --keep-going
+```
+
+As you can see, Ginkgo provides several CLI flags for controlling how specs are run.  Be sure to check out the [Recommended Continuous Integration Configuration](#recommended-continuous-integration-configuration) section of the patterns chapter for pointers on which flags are best used in CI environments.
 
 ## Reporting and Profiling Suites
   ### Generating machine-readable reports
@@ -1448,13 +2468,21 @@ Will generate entries named: `1 + 2 = 3`, `-1 + 2 = 1`, `zeros`, `110 = 10 + 100
     #### Other Profiles
 
 ## Ginkgo and Gomega Patterns
+  ### Recommended Continuous Integration Configuration
   ### Configuring Suites Programatically
   ### Custom Command-Line Flags
   ### Dynamically Generating Specs
+
+  ### Patterns for Parallel Integration Specs
+  One of Ginkgo's strengths centers around building and running large complex integration suites.  Integration suites are spec suites that exercise multiple related components to validate the behavior of the integrated system as a whole.  They are notorious for being difficult to write, susceptible to random failure, and painfully slow.  They also happen to be incredibly valuable, particularly when building large complex distributed systems.
+  #### Asynchronous Testing
+  #### Testing External Processes
+  #### Managing External Processes in Parallel Test Suites
+  #### Managing External Resources in Parallel Test Suites
+  #### Alternatives to `BeforeAll` - central server pattern
+
   ### Benchmarking Code
-  ### Asynchronous Testing
-  ### Managing External Processes in Parallel Test Suites
-  ### Managing External Resources in Parallel Test Suites
+
   ### Locally-scoped Shared Behaviors
     #### Pattern 1: Extract a function that defines the shared `It`s
     #### Pattern 2: Extract functions that return closures, and pass the results to `It`s
@@ -1464,7 +2492,7 @@ Will generate entries named: `1 + 2 = 3`, `-1 + 2 = 1`, `zeros`, `110 = 10 + 100
   ### Table Patterns
     #### Managing Complex Parameters
 
-## Decorator Reference
+## Spec Decorator Reference
   #### Node Decorations Overview
   #### The `Serial` Decoration
   #### The `Ordered` Decoration
