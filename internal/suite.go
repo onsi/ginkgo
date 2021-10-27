@@ -580,8 +580,15 @@ func (suite *Suite) runSuiteNode(node Node, failer *Failer, interruptChannel cha
 
 	var err error
 	switch node.NodeType {
-	case types.NodeTypeBeforeSuite, types.NodeTypeAfterSuite, types.NodeTypeCleanupAfterSuite:
+	case types.NodeTypeBeforeSuite, types.NodeTypeAfterSuite:
 		suite.currentSpecReport.State, suite.currentSpecReport.Failure = suite.runNode(node, failer, interruptChannel, interruptHandler, "", writer, suiteConfig)
+	case types.NodeTypeCleanupAfterSuite:
+		if suiteConfig.ParallelTotal > 1 && suiteConfig.ParallelProcess == 1 {
+			err = suite.client.BlockUntilNonprimaryNodesHaveFinished()
+		}
+		if err == nil {
+			suite.currentSpecReport.State, suite.currentSpecReport.Failure = suite.runNode(node, failer, interruptChannel, interruptHandler, "", writer, suiteConfig)
+		}
 	case types.NodeTypeSynchronizedBeforeSuite:
 		var data []byte
 		var runAllNodes bool
