@@ -159,8 +159,40 @@ var _ = Describe("Cleanup", func() {
 
 	Context("edge cases", func() {
 		Context("cleanup is added in a SynchronizedBeforeSuite and SynchronizedAfterSuite", func() {
-			BeforeEach(func() {
-				success, _ := RunFixture("cleanup in synchronized suites", func() {
+			Context("when running in serial", func() {
+				BeforeEach(func() {
+					success, _ := RunFixture("cleanup in synchronized suites", func() {
+						SynchronizedBeforeSuite(func() []byte {
+							rt.Run("BS1")
+							DeferCleanup(rt.Run, "C-BS1")
+							return nil
+						}, func(_ []byte) {
+							rt.Run("BS2")
+							DeferCleanup(rt.Run, "C-BS2")
+						})
+
+						SynchronizedAfterSuite(func() {
+							rt.Run("AS1")
+							DeferCleanup(rt.Run, "C-AS1")
+						}, func() {
+							rt.Run("AS2")
+							DeferCleanup(rt.Run, "C-AS2")
+						})
+						Context("ordering", func() {
+							It("A", rt.T("A", C("C-A")))
+							It("B", rt.T("B", C("C-B")))
+						})
+					})
+					Ω(success).Should(BeTrue())
+
+				})
+				It("runs the cleanup at the appropriate time", func() {
+					Ω(rt).Should(HaveTracked("BS1", "BS2", "A", "C-A", "B", "C-B", "AS1", "AS2", "C-AS2", "C-AS1", "C-BS2", "C-BS1"))
+				})
+			})
+
+			Context("when running in parallel and there is no SynchronizedAfterSuite", func() {
+				fixture := func() {
 					SynchronizedBeforeSuite(func() []byte {
 						rt.Run("BS1")
 						DeferCleanup(rt.Run, "C-BS1")
@@ -170,23 +202,46 @@ var _ = Describe("Cleanup", func() {
 						DeferCleanup(rt.Run, "C-BS2")
 					})
 
-					SynchronizedAfterSuite(func() {
-						rt.Run("AS1")
-						DeferCleanup(rt.Run, "C-AS1")
-					}, func() {
-						rt.Run("AS2")
-						DeferCleanup(rt.Run, "C-AS2")
-					})
 					Context("ordering", func() {
 						It("A", rt.T("A", C("C-A")))
 						It("B", rt.T("B", C("C-B")))
 					})
-				})
-				Ω(success).Should(BeTrue())
-			})
+				}
 
-			It("runs the cleanup at the appropriate time", func() {
-				Ω(rt).Should(HaveTracked("BS1", "BS2", "A", "C-A", "B", "C-B", "AS1", "AS2", "C-AS2", "C-AS1", "C-BS2", "C-BS1"))
+				BeforeEach(func() {
+					SetUpForParallel(2)
+				})
+
+				Context("as process #1", func() {
+					It("runs the cleanup only _after_ the other processes have finished", func() {
+						done := make(chan interface{})
+						go func() {
+							defer GinkgoRecover()
+							success, _ := RunFixture("DeferCleanup on SBS in parallel on process 1", fixture)
+							Ω(success).Should(BeTrue())
+							close(done)
+						}()
+
+						Eventually(rt).Should(HaveTracked("BS1", "BS2", "A", "C-A", "B", "C-B"))
+						Consistently(rt).Should(HaveTracked("BS1", "BS2", "A", "C-A", "B", "C-B"))
+						close(exitChannels[2])
+						Eventually(rt).Should(HaveTracked("BS1", "BS2", "A", "C-A", "B", "C-B", "C-BS2", "C-BS1"))
+						Eventually(done).Should(BeClosed())
+					})
+				})
+
+				Context("as process #2", func() {
+					BeforeEach(func() {
+						conf.ParallelProcess = 2
+						client.PostSynchronizedBeforeSuiteSucceeded([]byte("hola hola"))
+						success, _ := RunFixture("DeferCleanup on SBS in parallel on process 2", fixture)
+						Ω(success).Should(BeTrue())
+					})
+
+					It("runs the cleanup at the appropriate time", func() {
+						Ω(rt).Should(HaveTracked("BS2", "A", "C-A", "B", "C-B", "C-BS2"))
+					})
+				})
 			})
 		})
 
