@@ -2457,15 +2457,16 @@ $> ginkgo -r --keep-going
 As you can see, Ginkgo provides several CLI flags for controlling how specs are run.  Be sure to check out the [Recommended Continuous Integration Configuration](#recommended-continuous-integration-configuration) section of the patterns chapter for pointers on which flags are best used in CI environments.
 
 ## Reporting and Profiling Suites
-  ### Generating machine-readable reports
-  ### Generating Custom Reports when a test suite completes
-  ### Capturing report information about each spec as the test suite runs
-  ### Attaching Data to Reports
-    #### Supported Args
-    #### Controlling Output
-  ### Profiling your Test Suites
-    #### Computing Coverage
-    #### Other Profiles
+### Controlling Ginkgo's Output
+### Generating machine-readable reports
+### Generating Custom Reports when a test suite completes
+### Capturing report information about each spec as the test suite runs
+### Attaching Data to Reports
+#### Supported Args
+#### Controlling Output
+### Profiling your Test Suites
+#### Computing Coverage
+#### Other Profiles
 
 ## Ginkgo and Gomega Patterns
   ### Recommended Continuous Integration Configuration
