@@ -495,6 +495,13 @@ func (g ginkgoErrors) ConflictingVerbosityConfiguration() error {
 	}
 }
 
+func (g ginkgoErrors) InvalidOutputInterceptorModeConfiguration(value string) error {
+	return GinkgoError{
+		Heading: fmt.Sprintf("Invalid value '%s' for --output-interceptor-mode.", value),
+		Message: "You must choose one of 'dup', 'swap', or 'none'.",
+	}
+}
+
 func (g ginkgoErrors) InvalidGoFlagCount() error {
 	return GinkgoError{
 		Heading: "Use of go test -count",

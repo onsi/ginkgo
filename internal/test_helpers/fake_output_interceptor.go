@@ -38,6 +38,18 @@ func (interceptor *FakeOutputInterceptor) StartInterceptingOutputAndForwardTo(w 
 	interceptor.interceptedOutput = ""
 }
 
+func (interceptor *FakeOutputInterceptor) PauseIntercepting() {
+	interceptor.lock.Lock()
+	defer interceptor.lock.Unlock()
+	interceptor.intercepting = false
+}
+
+func (interceptor *FakeOutputInterceptor) ResumeIntercepting() {
+	interceptor.lock.Lock()
+	defer interceptor.lock.Unlock()
+	interceptor.intercepting = true
+}
+
 func (interceptor *FakeOutputInterceptor) StopInterceptingAndReturnOutput() string {
 	interceptor.lock.Lock()
 	defer interceptor.lock.Unlock()

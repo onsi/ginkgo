@@ -120,6 +120,34 @@ func GinkgoParallelProcess() int {
 	return suiteConfig.ParallelProcess
 }
 
+//PauseOutputInterception() pauses Ginkgo's output interception.  This is only relevant
+//when running in parallel and output to stdout/stderr is being intercepted.  You generally
+//don't need to call this function - however there are cases when Ginkgo's output interception
+//mechanisms can interfere with external processes launched by the test process.
+//
+//In particular, if an external process is launched that has cmd.Stdout/cmd.Stderr set to os.Stdout/os.Stderr
+//then Ginkgo's output interceptor will hang.  To circumvent this, set cmd.Stdout/cmd.Stderr to GinkgoWriter.
+//If, for some reason, you aren't able to do that, you can PauseOutputInterception() before starting the process
+//then ResumeOutputInterception() after starting it.
+//
+//Note that PauseOutputInterception() does not cause stdout writes to print to the console
+//when running in parallel the Ginkgo CLI prevents individual processes from emitting to console -
+//this simply stops intercepting and storing stdout writes to an internal buffer.
+func PauseOutputInterception() {
+	if outputInterceptor == nil {
+		return
+	}
+	outputInterceptor.PauseIntercepting()
+}
+
+//ResumeOutputInterception() - see docs for PauseOutputInterception()
+func ResumeOutputInterception() {
+	if outputInterceptor == nil {
+		return
+	}
+	outputInterceptor.ResumeIntercepting()
+}
+
 // RunSpecs is the entry point for the Ginkgo test runner.
 // You must call this within a Golang testing TestX(t *testing.T) function.
 // If you bootstrapped your test suite with "ginkgo bootstrap" this is already
@@ -177,11 +205,13 @@ func RunSpecs(t GinkgoTestingT, description string, configs ...interface{}) bool
 		client = nil
 	} else {
 		reporter = reporters.NoopReporter{}
-		outputInterceptor = internal.NewOutputInterceptor()
-		if os.Getenv("GINKGO_INTERCEPTOR_MODE") == "SWAP" {
+		switch strings.ToLower(suiteConfig.OutputInterceptorMode) {
+		case "swap":
 			outputInterceptor = internal.NewOSGlobalReassigningOutputInterceptor()
-		} else if os.Getenv("GINKGO_INTERCEPTOR_MODE") == "NONE" {
+		case "none":
 			outputInterceptor = internal.NoopOutputInterceptor{}
+		default:
+			outputInterceptor = internal.NewOutputInterceptor()
 		}
 		client = parallel_support.NewClient(suiteConfig.ParallelHost)
 		if !client.Connect() {

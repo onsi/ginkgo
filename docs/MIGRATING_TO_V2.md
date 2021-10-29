@@ -394,6 +394,7 @@ In V1 Ginkgo would run windows tests in parallel with the `--stream` option.  Th
 - `By` now emits a timestamp.  It also registers a `ReportEntry` that appears in the suite report as structured data.  If passed a callback, `By` will now time the callback and include the duration in the suite report.
 - Test randomization is now more stable as tests are now sorted deterministcally on file_name:line_number first (previously they were sorted on test text which could not guarantee a stable sort).
 - A new "very verbose" setting is now available.  Setting `-vv` implies `-v` but also causes skipped tests to be emitted.
+- Ginkgo's OutputInterceptor (the component that intercepts stdout/stderr when running in parallel) should now be more performant and better handle edge cases.  It can be paused and resumed with PauseOutputInterception() and ResumeOutputInterception() and disabled entirely with --output-interceptor-mode=none.
 
 # Changes
 

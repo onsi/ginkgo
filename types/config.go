@@ -10,24 +10,26 @@ import (
 	"os"
 	"runtime"
 	"strconv"
+	"strings"
 	"time"
 )
 
 // Configuration controlling how an individual test suite is run
 type SuiteConfig struct {
-	RandomSeed        int64
-	RandomizeAllSpecs bool
-	FocusStrings      []string
-	SkipStrings       []string
-	FocusFiles        []string
-	SkipFiles         []string
-	LabelFilter       string
-	FailOnPending     bool
-	FailFast          bool
-	FlakeAttempts     int
-	EmitSpecProgress  bool
-	DryRun            bool
-	Timeout           time.Duration
+	RandomSeed            int64
+	RandomizeAllSpecs     bool
+	FocusStrings          []string
+	SkipStrings           []string
+	FocusFiles            []string
+	SkipFiles             []string
+	LabelFilter           string
+	FailOnPending         bool
+	FailFast              bool
+	FlakeAttempts         int
+	EmitSpecProgress      bool
+	DryRun                bool
+	Timeout               time.Duration
+	OutputInterceptorMode string
 
 	ParallelProcess int
 	ParallelTotal   int
@@ -245,7 +247,7 @@ var FlagSections = GinkgoFlagSections{
 	{Key: "code-and-coverage-analysis", Style: "{{orange}}", Heading: "Code and Coverage Analysis"},
 	{Key: "performance-analysis", Style: "{{coral}}", Heading: "Performance Analysis"},
 	{Key: "debug", Style: "{{blue}}", Heading: "Debugging Tests",
-		Description: "In addition to these flags, Ginkgo supports a few debugging environment variables.  To change the parallel server protocol set {{blue}}GINKGO_PARALLEL_PROTOCOL{{/}} to {{bold}}HTTP{{/}}.  To change the output interceptor set {{blue}}GINKGO_INTERCEPTOR_MODE{{/}} to either {{bold}}SWAP{{/}} or {{bold}}NONE{{/}}.  To avoid pruning callstacks set {{blue}}GINKGO_PRUNE_STACK{{/}} to {{bold}}FALSE{{/}}."},
+		Description: "In addition to these flags, Ginkgo supports a few debugging environment variables.  To change the parallel server protocol set {{blue}}GINKGO_PARALLEL_PROTOCOL{{/}} to {{bold}}HTTP{{/}}.  To avoid pruning callstacks set {{blue}}GINKGO_PRUNE_STACK{{/}} to {{bold}}FALSE{{/}}."},
 	{Key: "watch", Style: "{{light-yellow}}", Heading: "Controlling Ginkgo Watch"},
 	{Key: "misc", Style: "{{light-gray}}", Heading: "Miscellaneous"},
 	{Key: "go-build", Style: "{{light-gray}}", Heading: "Go Build Flags", Succinct: true,
@@ -272,6 +274,8 @@ var SuiteConfigFlags = GinkgoFlags{
 		Usage: "If set, ginkgo will emit progress information as each spec runs to the GinkgoWriter."},
 	{KeyPath: "S.Timeout", Name: "timeout", SectionKey: "debug", UsageDefaultValue: "1h",
 		Usage: "Test suite fails if it does not complete within the specified timeout."},
+	{KeyPath: "S.OutputInterceptorMode", Name: "output-interceptor-mode", SectionKey: "debug", UsageArgument: "dup, swap, or none",
+		Usage: "If set, ginkgo will use the specified output interception strategy when running in parallel.  Defaults to dup on unix and swap on windows."},
 
 	{KeyPath: "S.LabelFilter", Name: "label-filter", SectionKey: "filter", UsageArgument: "expression",
 		Usage: "If set, ginkgo will only run specs with labels that match the label-filter.  The passed-in expression can include boolean operations (!, &&, ||, ','), groupings via '()', and regular expresions '/regexp/'.  e.g. '(cat || dog) && !fruit'"},
@@ -396,6 +400,12 @@ func VetConfig(flagSet GinkgoFlagSet, suiteConfig SuiteConfig, reporterConfig Re
 		if err != nil {
 			errors = append(errors, err)
 		}
+	}
+
+	switch strings.ToLower(suiteConfig.OutputInterceptorMode) {
+	case "", "dup", "swap", "none":
+	default:
+		errors = append(errors, GinkgoErrors.InvalidOutputInterceptorModeConfiguration(suiteConfig.OutputInterceptorMode))
 	}
 
 	numVerbosity := 0

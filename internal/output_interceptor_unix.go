@@ -3,102 +3,59 @@
 package internal
 
 import (
-	"bytes"
-	"io"
 	"os"
 
 	"golang.org/x/sys/unix"
 )
 
 func NewOutputInterceptor() OutputInterceptor {
-	return &dupSyscallOutputInterceptor{
+	return &genericOutputInterceptor{
 		interceptedContent: make(chan string),
 		pipeChannel:        make(chan pipePair),
 		shutdown:           make(chan interface{}),
+		implementation:     &dupSyscallOutputInterceptorImpl{},
 	}
 }
 
-type dupSyscallOutputInterceptor struct {
-	intercepting bool
+type dupSyscallOutputInterceptorImpl struct{}
 
-	stdoutClone *os.File
-	stderrClone *os.File
-	pipe        pipePair
+func (impl *dupSyscallOutputInterceptorImpl) CreateStdoutStderrClones() (*os.File, *os.File) {
+	// To clone stdout and stderr we:
+	// First, create two clone file descriptors that point to the stdout and stderr file descriptions
+	stdoutCloneFD, _ := unix.Dup(1)
+	stderrCloneFD, _ := unix.Dup(2)
 
-	shutdown           chan interface{}
-	pipeChannel        chan pipePair
-	interceptedContent chan string
+	// And then wrap the clone file descriptors in files.
+	// One benefit of this (that we don't use yet) is that we can actually write
+	// to these files to emit output to the console evne though we're intercepting output
+	stdoutClone := os.NewFile(uintptr(stdoutCloneFD), "stdout-clone")
+	stderrClone := os.NewFile(uintptr(stderrCloneFD), "stderr-clone")
+
+	//these clones remain alive throughout the lifecycle of the suite and don't need to be recreated
+	//this speeds things up a bit, actually.
+	return stdoutClone, stderrClone
 }
 
-func (interceptor *dupSyscallOutputInterceptor) StartInterceptingOutput() {
-	interceptor.StartInterceptingOutputAndForwardTo(io.Discard)
-}
-
-func (interceptor *dupSyscallOutputInterceptor) StartInterceptingOutputAndForwardTo(w io.Writer) {
-	if interceptor.intercepting {
-		return
-	}
-	interceptor.intercepting = true
-
-	if interceptor.stdoutClone == nil {
-		// First, we create two clone file descriptors that point to the stdout and stderr file descriptions
-		stdoutCloneFD, _ := unix.Dup(1)
-		stderrCloneFD, _ := unix.Dup(2)
-		// And we wrap the clone file descriptors in files so we can write to them if need be (e.g. to emit output to the console evne though we're intercepting output)
-		interceptor.stdoutClone, interceptor.stderrClone = os.NewFile(uintptr(stdoutCloneFD), "stdout-clone"), os.NewFile(uintptr(stderrCloneFD), "stderr-clone")
-
-		interceptor.shutdown = make(chan interface{})
-		go startPipeFactory(interceptor.pipeChannel, interceptor.shutdown)
-	}
-
-	// Now we make a pipe, we'll use this to redirect the input to the 1 and 2 file descriptors (this is how everything else in the world is tring to log to stdout and stderr)
-	// we get the pipe from our pipe factory.  it runs in the background so we can request the next pipe while the spec being intercepted is running
-	interceptor.pipe = <-interceptor.pipeChannel
-
-	//Spin up a goroutine to copy data from the pipe into a buffer, this is how we capture any output the user is emitting
-	go func() {
-		buffer := &bytes.Buffer{}
-		destination := io.MultiWriter(buffer, w)
-		io.Copy(destination, interceptor.pipe.reader)
-		interceptor.interceptedContent <- buffer.String()
-	}()
-
-	// And now we call Dup2 (possibly Dup3 on some architectures) to have file descriptors 1 and 2 point to the same file description as the pipeWriter
+func (impl *dupSyscallOutputInterceptorImpl) ConnectPipeToStdoutStderr(pipeWriter *os.File) {
+	// To redirect output to our pipe we need to point the 1 and 2 file descriptors (which is how the world tries to log things)
+	// to the write end of the pipe.
+	// We do this with Dup2 (possibly Dup3 on some architectures) to have file descriptors 1 and 2 point to the same file description as the pipeWriter
 	// This effectively shunts data written to stdout and stderr to the write end of our pipe
-	unix.Dup2(int(interceptor.pipe.writer.Fd()), 1)
-	unix.Dup2(int(interceptor.pipe.writer.Fd()), 2)
+	unix.Dup2(int(pipeWriter.Fd()), 1)
+	unix.Dup2(int(pipeWriter.Fd()), 2)
 }
 
-func (interceptor *dupSyscallOutputInterceptor) StopInterceptingAndReturnOutput() string {
-	if !interceptor.intercepting {
-		return ""
-	}
-
-	// first we have to close the write end of the pipe.  To do this we have to close all file descriptors pointing
-	// to the write end.  So that would be the pipewriter itself, FD #1 and FD #2.
-	interceptor.pipe.writer.Close() // the pipewriter itself
-	// we also need to stop intercepting. we do that by reconnecting the stdout and stderr file descriptions back to their respective #1 and #2 file descriptors;
-	// this also closes #1 and #2 before it points that their original stdout and stderr file descriptions
-	unix.Dup2(int(interceptor.stdoutClone.Fd()), 1)
-	unix.Dup2(int(interceptor.stderrClone.Fd()), 2)
-
-	content := <-interceptor.interceptedContent // now wait for the goroutine to notice and return content
-	interceptor.pipe.reader.Close()             //and now close the read end of the pipe so we don't leak a file descriptor
-
-	interceptor.intercepting = false
-
-	return content
+func (impl *dupSyscallOutputInterceptorImpl) RestoreStdoutStderrFromClones(stdoutClone *os.File, stderrClone *os.File) {
+	// To restore stdour/stderr from the clones we have the 1 and 2 file descriptors
+	// point to the original file descriptions that we saved off in the clones.
+	// This has the added benefit of closing the connection between these descriptors and the write end of the pipe
+	// which is important to cause the io.Copy on the pipe.Reader to end.
+	unix.Dup2(int(stdoutClone.Fd()), 1)
+	unix.Dup2(int(stderrClone.Fd()), 2)
 }
 
-func (interceptor *dupSyscallOutputInterceptor) Shutdown() {
-	interceptor.StopInterceptingAndReturnOutput()
-
-	if interceptor.stdoutClone != nil {
-		close(interceptor.shutdown)
-		// and now we're done with the clone file descriptors, we can close them to clean up after ourselves
-		interceptor.stdoutClone.Close()
-		interceptor.stderrClone.Close()
-		interceptor.stdoutClone = nil
-		interceptor.stderrClone = nil
-	}
+func (impl *dupSyscallOutputInterceptorImpl) ShutdownClones(stdoutClone *os.File, stderrClone *os.File) {
+	// We're done with the clones so we can close them to clean up after ourselves
+	stdoutClone.Close()
+	stderrClone.Close()
 }
