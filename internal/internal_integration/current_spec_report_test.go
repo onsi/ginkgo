@@ -44,6 +44,14 @@ var _ = Describe("CurrentSpecReport", func() {
 				}))
 				AfterEach(logCurrentSpecReport("aft-B"))
 			})
+
+			Context("an ordered container", Ordered, func() {
+				It("C", logCurrentSpecReport("C"))
+			})
+
+			Context("an serial spec", func() {
+				It("D", Serial, logCurrentSpecReport("D"))
+			})
 			AfterSuite(logCurrentSpecReport("after-suite"))
 		})
 	})
@@ -78,6 +86,17 @@ var _ = Describe("CurrentSpecReport", func() {
 	It("does not capture stdout/err output", func() {
 		Ω(specs["aft-A"].CapturedStdOutErr).Should(BeZero())
 		Ω(specs["aft-B"].CapturedStdOutErr).Should(BeZero())
+	})
+
+	It("captures serial/ordered correctly", func() {
+		Ω(specs["A"].IsSerial).Should(BeFalse())
+		Ω(specs["A"].IsInOrderedContainer).Should(BeFalse())
+		Ω(specs["after-suite"].IsSerial).Should(BeFalse())
+		Ω(specs["after-suite"].IsInOrderedContainer).Should(BeFalse())
+		Ω(specs["C"].IsSerial).Should(BeFalse())
+		Ω(specs["C"].IsInOrderedContainer).Should(BeTrue())
+		Ω(specs["D"].IsSerial).Should(BeTrue())
+		Ω(specs["D"].IsInOrderedContainer).Should(BeFalse())
 	})
 
 	It("captures test details correctly", func() {

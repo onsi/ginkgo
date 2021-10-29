@@ -313,6 +313,8 @@ func (suite *Suite) runSpecs(description string, suitePath string, hasProgrammat
 					LeafNodeText:                spec.FirstNodeWithType(types.NodeTypeIt).Text,
 					LeafNodeLabels:              []string(spec.FirstNodeWithType(types.NodeTypeIt).Labels),
 					ParallelProcess:             suiteConfig.ParallelProcess,
+					IsSerial:                    spec.Nodes.HasNodeMarkedSerial(),
+					IsInOrderedContainer:        !spec.Nodes.FirstNodeMarkedOrdered().IsZero(),
 				}
 
 				skipReason := ""

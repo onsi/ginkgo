@@ -181,6 +181,21 @@ var _ = Describe("Types", func() {
 			})
 		})
 
+		Describe("MatchesLabelFilter", Label("dog", "cat"), func() {
+			It("returns an error when passed an invalid filter query", func() {
+				matches, err := CurrentSpecReport().MatchesLabelFilter("(welp")
+				Ω(err).Should(HaveOccurred())
+				Ω(matches).Should(BeFalse())
+			})
+
+			It("returns whether or not the query matches", Label("catfish"), func() {
+				Ω(CurrentSpecReport().MatchesLabelFilter("dog")).Should(BeTrue())
+				Ω(CurrentSpecReport().MatchesLabelFilter("cow || cat")).Should(BeTrue())
+				Ω(CurrentSpecReport().MatchesLabelFilter("/fish/")).Should(BeTrue())
+				Ω(CurrentSpecReport().MatchesLabelFilter("dog && !/fish/")).Should(BeFalse())
+			})
+		})
+
 		It("can report on whether state is a failed state", func() {
 			Ω(types.SpecReport{State: types.SpecStatePending}.Failed()).Should(BeFalse())
 			Ω(types.SpecReport{State: types.SpecStateSkipped}.Failed()).Should(BeFalse())

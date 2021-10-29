@@ -128,6 +128,12 @@ type SpecReport struct {
 	// State captures whether the spec has passed, failed, etc.
 	State SpecState
 
+	// IsSerial captures whether the spec has the Serial decorator
+	IsSerial bool
+
+	// IsInOrderedContainer captures whether the spec appears in an Ordered container
+	IsInOrderedContainer bool
+
 	// StartTime and EndTime capture the start and end time of the spec
 	StartTime time.Time
 	EndTime   time.Time
@@ -257,6 +263,15 @@ func (report SpecReport) Labels() []string {
 	}
 
 	return out
+}
+
+//MatchesLabelFilter returns true if the spec satisfies the passed in label filter query
+func (report SpecReport) MatchesLabelFilter(query string) (bool, error) {
+	filter, err := ParseLabelFilter(query)
+	if err != nil {
+		return false, err
+	}
+	return filter(report.Labels()), nil
 }
 
 //FileName() returns the name of the file containing the spec
