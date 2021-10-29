@@ -151,6 +151,7 @@ func GenerateJUnitReport(report types.Report, dst string) error {
 				{"EmitSpecProgress", fmt.Sprintf("%t", report.SuiteConfig.EmitSpecProgress)},
 				{"DryRun", fmt.Sprintf("%t", report.SuiteConfig.DryRun)},
 				{"ParallelTotal", fmt.Sprintf("%d", report.SuiteConfig.ParallelTotal)},
+				{"OutputInterceptorMode", report.SuiteConfig.OutputInterceptorMode},
 			},
 		},
 	}

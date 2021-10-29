@@ -70,7 +70,7 @@ var _ = Describe("Running a large test suite", Ordered, Serial, func() {
 
 			env := []string{}
 			if nodes > 1 {
-				env = append(env, "GINKGO_PARALLEL_PROTOCOL="+protocol, "GINKGO_INTERCEPTOR_MODE="+interceptor)
+				env = append(env, "GINKGO_PARALLEL_PROTOCOL="+protocol)
 			}
 
 			experiment.SampleDuration("runtime", func(idx int) {
@@ -79,6 +79,7 @@ var _ = Describe("Running a large test suite", Ordered, Serial, func() {
 					pfm.PathTo("large_suite"),
 					env,
 					fmt.Sprintf("-nodes=%d", nodes),
+					fmt.Sprintf("--output-interceptor-mode=%s", interceptor),
 					"large_suite.test",
 				)
 				Eventually(session).Should(gexec.Exit(0))
@@ -90,6 +91,7 @@ var _ = Describe("Running a large test suite", Ordered, Serial, func() {
 				pfm.PathTo("large_suite"),
 				env,
 				fmt.Sprintf("-nodes=%d", nodes),
+				fmt.Sprintf("--output-interceptor-mode=%s", interceptor),
 				"--cpuprofile=CPU.profile",
 				"--blockprofile=BLOCK.profile",
 				"large_suite.test",

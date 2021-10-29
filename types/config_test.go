@@ -210,6 +210,20 @@ var _ = Describe("Config", func() {
 			})
 		})
 
+		Describe("validating --output-interceptor-mode", func() {
+			It("errors if an invalid output interceptor mode is specified", func() {
+				suiteConf.OutputInterceptorMode = "DURP"
+				errors := types.VetConfig(flagSet, suiteConf, repConf)
+				Ω(errors).Should(ConsistOf(types.GinkgoErrors.InvalidOutputInterceptorModeConfiguration("DURP")))
+
+				for _, value := range []string{"", "dup", "DUP", "swap", "SWAP", "none", "NONE"} {
+					suiteConf.OutputInterceptorMode = value
+					errors = types.VetConfig(flagSet, suiteConf, repConf)
+					Ω(errors).Should(BeEmpty())
+				}
+			})
+		})
+
 		Context("when more than one verbosity flag is set", func() {
 			It("errors", func() {
 				repConf.Succinct, repConf.Verbose, repConf.VeryVerbose = true, true, false
