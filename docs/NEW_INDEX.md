@@ -2457,14 +2457,275 @@ $> ginkgo -r --keep-going
 As you can see, Ginkgo provides several CLI flags for controlling how specs are run.  Be sure to check out the [Recommended Continuous Integration Configuration](#recommended-continuous-integration-configuration) section of the patterns chapter for pointers on which flags are best used in CI environments.
 
 ## Reporting and Profiling Suites
+The previous two chapters covered how Ginkgo specs are written and how Ginkgo specs run.  This chapter is all about output.  We'll cover how Ginkgo reports on spec suites and how Ginkgo can help you profile your spec suites.
+
 ### Controlling Ginkgo's Output
+Ginkgo emits a real-time report of the progress of your spec suite to the console while running your specs.  A green dot is emitted for each successful spec and a red `F`, along with failure information, is emitted for each unsuccessful spec.
+
+There are several CLI flags that allow you to tweak this output:
+
+#### Controlling Verbosity
+Ginkgo has four verbosity settings: succinct (the default when running multiple suites), normal (the default when running a single suite), verbose, and very-verbose.
+
+You can opt into succinct mode with `ginkgo --succinct`, verbose mode with `ginkgo -v` and very-verbose mode with `ginkgo -vv`.
+
+These settings control the amount of information emitted with each spec.  By default (i.e. succinct and normal) Ginkgo only emits detailed information about specs that fail.  That includes the location of the spec/failure and any captured `GinkgoWriter` content.
+
+The two verbose settings are most helpful when debugging spec suites.  They make Ginkgo emit detailed information for _every_ spec regardless of failure or success.  This includes anything written to the `GinkgoWriter` and the source code location of each spec.  When running in series in verbose or very-verbose mode Ginkgo will always immediately stream out this information in real-time while specs are running. A real-time stream isn't possible when running in parallel (the [streams would be interleaved](https://www.youtube.com/watch?v=jyaLZHiJJnE)); instead Ginkgo emits all this information about each spec right after it completes.
+
+When you [filter specs](#filtering-specs) using Ginkgo's various filtering mechanism Ginkgo usually emits a single cyan `S` for each skipped spec (the only exception is specs skipped with `Skip(<message>)` - Ginkgo emits the message for those specs.  You can circumvent this with `Skip("")`).  If you run with the very-verbose setting, however, Ginkgo will emit the description and location information of every skipped spec.  This can be useful if you need to debug your filter queries and can be paired with `--dry-run`.
+
+There are a couple more flags that are verbosity-related but can be controlled independently from the verbosity mode:
+
+First, you can tell Ginkgo to always emit the `GinkgoWriter` output of every spec with `--always-emit-ginkgo-writer`.  This will emit `GinkgoWriter` output for both failed _and_ passing specs, regardless of verbosity setting.
+
+Second, you can tell Ginkgo to emit progress of a spec as Ginkgo runs each of its node closures.  You do this with `ginkgo --progress -v` (or `-vv`).  `--progress` will emit a message to the `GinkgoWriter` just before a node starts running.  By running with `-v` or `-vv` you can then stream the output to the `GinkgoWriter` immediately.  `--progress` was initially introduced to help debug specs that are stuck/hanging.  It is not longer necessary as Ginkgo's behavior during an interrupt has matured and now generally has enough information to help you identify where a spec is stuck.
+
+#### Other Settings
+Here are a grab bag of other settings:
+
+You can disable Ginkgo's color output by running `ginkgo --no-color`.
+
+By default, Ginkgo calls out specs that are running slowly if they exceed a certain threshold (default: 5 seconds).  This doesn't affect the status of the spec - it is still considered to have passed - but can give you an early warning that a slow spec has been introduced.  You can adjust this threshold with `ginkgo --slow-spec-threshold=<duration>`.
+
+By default, Ginkgo only emits full stack traces when a spec panics.  When a normal assertion failure occurs, Ginkgo simply emits the line at which the failure occurred.  You can, instead, have Ginkgo always emit the full stack trace by running `ginkgo --trace`.
+
+### Reporting Infrastructure
+Ginkgo's console output is great when running specs on the console or quickly grokking a CI run.  Of course, there are several contexts where generating a machine-readable report is crucial.  Ginkgo provides first-class CLI support for generating and aggregating reports in a number of machine-readable formats _and_ an extensible reporting infrastructure to enable additional formats and custom reporting.  We'll dig into these topics in the next few sections.
+
 ### Generating machine-readable reports
-### Generating Custom Reports when a test suite completes
-### Capturing report information about each spec as the test suite runs
+Ginkgo natively supports generating and aggregating reports in a number of machine-readable formats - and these reports can be generated and managed by simply passing `ginkgo` command line flags.
+
+A JSON-formatted report that faithfully captures all available information about a Ginkgo spec run can be generated via:
+
+```bash
+$> ginkgo --json-report=report.json
+```
+
+The resulting JSON file encodes an array of `types.Report`.  Each entry in that array lists detailed information about an individual spec suite and includes a list of `types.SpecReport` that captures detailed information about each spec.  These types are documented in [godoc](https://pkg.go.dev/github.com/onsi/ginkgo/types).
+
+When possible, we recommend building tooling on top of Ginkgo's JSON format and using Ginkgo's `types` package directly to access the suite and spec reports.  The structs in the package include several helper functions to interpret the report.
+
+Ginkgo also supports generating JUnit reports with 
+
+```bash
+$> ginkgo --junit-report=report.xml
+```
+
+The JUnit report is compatible with the JUnit specification, however Ginkgo specs carry much more metadata than can be easily mapped onto the JUnit spec so some information is lost and/or a bit harder to decode than using Ginkgo's native JSON format.
+
+Ginkgo also supports Teamcity reports with `ginkgo --teamcity-report=report.teamcity` though, again, the Teamcity spec makes it difficult to capture all the spec metadata.
+
+Of course, you can generate multiple formats simultaneously by passing in multiple flags:
+
+```bash
+$> ginkgo --json-report=report.json --junit-report=report.xml
+```
+
+By default, when any of these command-line report flags are provided Ginkgo will generate a single report file, per format, at the passed-in file name.  If Ginkgo is running multiple suites (e.g. `ginkgo -r --json-report=report.json`) then _all_ the suite reports will be encoded in the single report file.
+
+If you'd rather generate separate reports for each suite, you can pass in the `--keep-separate-reports` flag like so: `ginkgo -r --json-report=report.json --keep-separate-reports`.  This will generate an individual report named `report.json` in each suite/package directory,
+
+If you'd like to have all reports end up in a single directory.  Set `--output-dir=<dir>`:
+
+When generating combined reports with: `ginkgo -r --json-report=report.json --output-dir=<dir>` Ginkgo will create the `<dir>` directory (if necessary), and place `report.json` there.
+
+When generating separate reports with: `ginkgo -r --json-report=report.json --output-dir=<dir> --keep-separate-reports` Ginkgo will create the `<dir>` directory (if necessary), and place a report file per package in the directory.  These reports will be namespaced with the name of the package: `PACKAGE_NAME_report.json`.
+
+### Generating reports programmatically
+The JSON and JUnit reports described above can be easily generated from the command line - there's no need to make any changes to your suite.
+
+Ginkgo's reporting infrastructure does, however, provide several mechanisms for writing custom reporting code in your spec suites (or, in a supporting package).  We'll explore these mechanisms next.
+
+#### Getting a report for the current spec
+
+At any point during the Run Phase you can get an information-rich up-to-date copy of the current spec's report by running `CurrentSpecReport()`.
+
+There are several uses for this data.  For example, you can write code that performs additional, potentially expensive, diagnostics after a spec runs - but only if the spec has failed:
+
+```go
+Describe("Manipulating books at the central library", func() {
+    It("can fetch all books", func() {
+        Expect(libraryClient.FetchBooks()).NotTo(BeEmpty())
+    })
+
+    It("can fetch a specific book", func() {
+        book, err := libraryClient.FetchBook("Les Miserables")
+        Expect(err).NotTo(HaveOccurred())
+        Expect(book.AuthorLastName()).To(Equal("Hugo"))        
+    })
+
+    It("can update a book", func() {
+        book, err := libraryClient.FetchBook("Les Miserables")
+        Expect(err).NotTo(HaveOccurred())
+        book.Author = "Victor Marie Hugo"
+        Expect(libraryClient.SaveBook(book)).To(Succeed())
+    })
+
+    AfterEach(func() {
+        if CurrentSpecReport().Failed() {
+            GinkgoWriter.Println(libraryClient.DebugLogs())
+        }
+    })
+})
+```
+
+In this example, the `AfterEach` closure is using `CurrentSpecReport()` to discover whether or not the current spec has failed.  If it has debug information is fetched from the library server and emitted to the `GinkgoWriter`.
+
+Given `CurrentSpecReport()` you can imagine generating custom report information with something like a top-level `AfterEach`.  For example, let's say we want to write report infromation to a local file using a custom format _and_ send updates to a remote server.  You might try something like:
+
+```go
+/*INVALID*/
+
+var report *os.File
+BeforeSuite(func() {
+    report = os.Create("report.custom")
+    DeferCleanup(report.Close)
+})
+
+AfterEach(func() {
+    report := CurrentSpecReport()
+    customFormat := fmt.Sprintf("%s | %s", report.State, report.FullText())
+    fmt.Fprintln(report, customFormat)
+    client.SendReport(customFormat)
+})
+```
+
+At first glance it looks like this could work.  However, there are a number of problems with this approach:
+
+First of all, the `AfterEach` will _only_ be called if the spec in question runs.  It will never be called for skipped or pending specs and we'll miss reporting on those specs!
+
+Second, the approach we're taking to generate a custom report file will work when running in serial, but not in parallel.  In parallel, multiple test processes will race over writing to `report.custom` and you'll end up with a mess.
+
+Ginkgo's reporting infrastructure provides an alternative solution for this use case.  A special category of setup nodes called **Reporting Nodes**.
+
+#### Reporting Nodes - `ReportAfterEach` and `ReportBeforeEach`
+
+Ginkgo provides three reporting-focused nodes `ReportAfterEach`, `ReportAfterSuite`, and `ReportBeforeEach`.
+
+`ReportAfterEach` behaves similarly to a standard `AfterEach` node and can be declared anywhere an `AfterEach` node can be declared.  `ReportAfterEach` takes a closure that accepts a single [`SpecReport`](https://pkg.go.dev/github.com/onsi/ginkgo/types#SpecReport) argument.  For example, we could implement a top-level ReportAfterEach that emits information about every spec to a remote server:
+
+```go
+ReportAfterEach(func(report SpecReport) {
+    customFormat := fmt.Sprintf("%s | %s", report.State, report.FullText())
+    client.SendReport(customFormat)
+})
+```
+
+`ReportAfterEach` has several unique properties that distinguish it from `AfterEach`.  Most importantly, `ReportAfterEach` closures are **always** called - even if the spec has failed, is marked pending, or is skipped.  This ensures reports that rely on `ReportAfterEach` are complete.
+
+
+In addition, `ReportAfterEach` closures are called after a spec completes.  i.e. _after_ all `AfterEach` closures have run.  This gives them access to the complete final state of the spec.  Note that if a failure occurs in a `ReportAfterEach` your the spec will be marked as failed.  Subsequent `ReportAfterEach` closures will see the failed state, but not the closure in which the failure occurred.
+
+Also, `ReportAfterEach` closures **cannot** be interrupted.  This is to ensure the integrity of generated reports - so be careful what kind of code you put in there.  If you're making network requests make sure to wrap them in a timeout!
+
+`ReportAfterEach` is useful if you need to stream or emit up-to-date information about the suite as it runs. Ginkgo also provides `ReportBeforeEach` which is called before the test runs and receives a preliminary `types.SpecReport` - the state of this report will indicate whether the test will be skipped or is marked pending.
+
+You should be aware that when running in parallel, each parallel process will be running specs and their `ReportAfterEach`es.  This means that multiple `ReportAfterEach` blocks can be running concurrently on independent processes.  Given that, code like this won't work:
+
+```go
+/* INVALID */
+var reportFile *os.File
+BeforeSuite(func() {
+    reportFile = os.Open("report.custom")
+})
+
+ReportAfterEach(func(report SpecReport) {
+    fmt.Fprintf(reportFile, "%s | %s\n", report.FullText(), report.State)
+})
+```
+
+you'll end up with multiple processes writing to the same file and the output will be a mess.  There is a better approach for this usecase...
+
+#### Reporting Nodes - `ReportAfterSuite`
+`ReportAfterSuite` nodes behave similarly to `AfterSuite` and can be placed at the top-level of your suite (typically in the suite bootstrap file).  `ReportAfterSuite` nodes take a closure that accepts a single [`Report`]((https://pkg.go.dev/github.com/onsi/ginkgo/types#Report)) argument:
+
+```go
+var _ = ReportAfterSuite(func(report Report) {
+    // process report
+})
+```
+
+`Report` contains all available information about the suite, including individual `SpecReport` entries for each spec that ran in the suite, and the overall status of the suite (whether it passed or failed).
+
+The closure passed to `ReportAfterSuite` is called exactly once at the end of the suite after any `AfterSuite` nodes have run.  Just like `ReportAfterEach`, `ReportAfterSuite` nodes can't be interrupted by the user to ensure the integrity of the generated report - so you'll want to make sure the code you put in there doesn't have a chance of hanging/getting stuck.
+
+Finally, and most importantly, when running in parallel `ReportAfterSuite` **only runs on process #1** and receives a `Report` that aggregates the `SpecReports` from all processes.  This allows you to perform any custom suite reporting in one place after all specs have run and not have to worry about aggregating information across multiple parallel processes.
+
+So, we can rewrite our invalid `ReportAfterEach` example from above into a valid `ReportAfterSuite` example:
+
+```go
+ReportAfterSuite(func(report Report) {
+    f := os.Open("report.custom")
+    for _, specReport := range report.SpecReports {
+        fmt.Fprintf(f, "%s | %s\n", report.FullText(), report.State)
+    }
+    f.Close()
+})
+```
+
+Now each suite will generate exactly one report with all the specs appropriately formatted whether running in series or in parallel.
+
 ### Attaching Data to Reports
+Ginkgo supports attaching arbitrary data to individual spec reports.  These are called `ReportEntries` and appear in the various report-related data structures (e.g. `Report` in `ReportAfterSuite` and `SpecReport` in `ReportAfterEach`) as well as the machine-readable reports generated by `--json-report`, `--junit-report`, etc.  `ReportEntries` are also emitted to the console by Ginkgo's reporter and you can specify a visibility policy to control when this output is displayed.
+
+You attach data to a spec report via
+
+```go
+AddReportEntry(name string, args ...interface{})
+```
+
+`AddReportEntry` can be called from any setup or subject node closure.  When called, `AddReportEntry` generates `ReportEntry` and attaches it to the current running spec.  `ReportEntry` includes the passed in `name` as well as the time and source location at which `AddReportEntry` was called.  Users can also attach a single object of arbitrary type to the `ReportEntry` by passing it into `AddReportEntry` - this object is wrapped and stored under `ReportEntry.Value` and is always included in the suite's JSON report.
+
+You can access the report entries attached to a spec by getting the `CurrentSpecReport()` or registering a `ReportAfterEach()` - the returned report will include the attached `ReportEntries`.  You can fetch the value associated with the `ReportEntry` by calling `entry.GetRawValue()`.  When called in-process this returns the object that was passed to `AddReportEntry`.  When called after hydrating a report from JSON `entry.GetRawValue()` will include a parsed JSON `interface{}` - if you want to hydrate the JSON yourself into an object of known type you can `json.Unmarshal([]byte(entry.Value.AsJSON), &object)`.
+
 #### Supported Args
+`AddReportEntry` supports the `Offset` and `CodeLocation` decorators.  These will control the source code location associated with the generated `ReportEntry`.  You can also pass in a `time.Time` argument to override the timestamp associated with the `ReportEntry` - this can be helpful if you want to ensure a consistent timestamp between your code and the `ReportEntry`.
+
+You can also pass in a `ReportEntryVisibility` enum to control the report's visibility.  This is discussed in more detail below.
+
+If you pass multiple arguments of the same type (e.g. two `Offset`s), the last argument in wins.  This does mean you cannot attach an object with one of the types discussed in this section as the `ReportEntry.Value`.  To get by this you'll need to define a custom type.  For example, if you want the `Value` to be a `time.Time` timestamp you can use a custom type such as
+
+`type Timestamp time.Time`
+
 #### Controlling Output
-### Profiling your Test Suites
+By default, Ginkgo's console reporter will emit any `ReportEntry` attached to a spec.  It will emit the `ReportEntry` name, location, and time.  If the `ReportEntry` value is non-nil it will also emit a representation of the value.  If the value implements `fmt.Stringer` or `types.ColorableStringer` then `value.String()` or `value.ColorableString()` (which takes precedence) is used to generate the representation, otherwise Ginkgo uses `fmt.Sprintf("%#v", value)`. 
+
+You can modify this default behavior by passing in one of the `ReportEntryVisibility` enum to `AddReportEntry`:
+
+- `ReportEntryVisibilityAlways`: the default behavior - the `ReportEntry` is always emitted.
+- `ReportEntryVisibilityFailureOrVerbose`: the `ReportEntry` is only emitted if the spec fails or the tests are run with `-v` (similar to `GinkgoWriter`s behavior).
+- `ReportEntryVisibilityNever`: the `ReportEntry` is never emitted though it appears in any generated machine-readable reports (e.g. by setting `--json-report`).
+
+The console reporter passes the string representation of the `ReportEntry.Value` through Ginkgo's `formatter`.  This allows you to generate colorful console output using the color codes documented in `github.com/onsi/ginkgo/formatter/formatter.go`.  For example:
+
+```go
+type StringerStruct struct {
+    Label string
+    Count int
+}
+
+// ColorableString for ReportEntry to use
+func (s StringerStruct) ColorableString() string {
+    return fmt.Sprintf("{{red}}%s {{yellow}}{{bold}}%d{{/}}", s.Label, s.Count)
+}
+
+// non-colorable String() is used by go's string formatting support but ignored by ReportEntry
+func (s StringerStruct) String() string {
+    return fmt.Sprintf("%s %d", s.Label, s.Count)
+}
+
+
+It("is reported", func() {
+    AddReportEntry("Report", StringerStruct{Label: "Mahomes", Count: 15})
+})
+```
+
+Will emit a report that has the word "Mahomes" in red and the number 15 in bold and yellow.
+
+Lastly, it is possible to pass a pointer into `AddReportEntry`.  Ginkgo will compute the string representation of the passed in pointer at the last possible moment - so any changes to the object _after_ it is reported will be captured in the final report.  This is useful for building libraries on top of `AddReportEntry` - users can simply register objects when they're created and any subsequent mutations will appear in the generated report.  You can see an example of this in the [Benchmarking Code](#benchmarking-code) pattern section of the patterns chapter.
+
+### Profiling your Suites
 #### Computing Coverage
 #### Other Profiles
 
@@ -2477,9 +2738,11 @@ As you can see, Ginkgo provides several CLI flags for controlling how specs are 
   ### Patterns for Parallel Integration Specs
   One of Ginkgo's strengths centers around building and running large complex integration suites.  Integration suites are spec suites that exercise multiple related components to validate the behavior of the integrated system as a whole.  They are notorious for being difficult to write, susceptible to random failure, and painfully slow.  They also happen to be incredibly valuable, particularly when building large complex distributed systems.
   #### Asynchronous Testing
-  #### Testing External Processes
-  #### Managing External Processes in Parallel Test Suites
   #### Managing External Resources in Parallel Test Suites
+  #### Testing External Processes
+  Gotchas - external processes that don't quit can cause ginkgo -p to hang
+  Gotchas - setting cmd.Stdout => os.Stdout can cause Ginkgo to hang/bail out.  See issue #851 PauseOutputInterception()/ResumeOutputInterception()
+  #### Managing External Processes in Parallel Test Suites
   #### Alternatives to `BeforeAll` - central server pattern
 
   ### Benchmarking Code
