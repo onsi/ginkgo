@@ -38,8 +38,8 @@ In this section we  cover installing Ginkgo, Gomega, and the `ginkgo` CLI.  We b
 Ginkgo uses [go modules](https://go.dev/blog/using-go-modules).  To add Ginkgo to your project, assuming you have a `go.mod` file setup, just `go get` it:
 
 ```bash
-$> go get github.com/onsi/ginkgo/ginkgo
-$> go get github.com/onsi/gomega/...
+go get github.com/onsi/ginkgo/ginkgo
+go get github.com/onsi/gomega/...
 ```
 
 This fetches Ginkgo and installs the `ginkgo` executable under `$GOBIN` - you'll want that on your `$PATH`.  It also fetches the core Gomega matcher library and its set of supporting libraries.
@@ -59,8 +59,8 @@ In most Ginkgo suites there is only one `TestX` function - the entry point for G
 Say you have a package named `books` that you'd like to add a Ginkgo suite to.  To bootstrap the suite run:
 
 ```bash
-$> cd path/to/books
-$> ginkgo bootstrap
+cd path/to/books
+ginkgo bootstrap
 Generating ginkgo test suite bootstrap for books in:
     books_suite_test.go
 ```
@@ -105,7 +105,7 @@ Finally the `RunSpecs()` call tells Ginkgo to start the test suite, passing it t
 With the bootstrap file in place, you can now run your suite using the `ginkgo` command:
 
 ```bash
-$> ginkgo
+ginkgo
 
 Running Suite: Books Suite - path/to/books
 ==========================================================
@@ -129,7 +129,7 @@ Alright, we've successfully set up and run our first suite.  Of course that suit
 While you can add all your specs directly into `books_suite_test.go` you'll generally prefer to place your specs in separate files.  This is particularly true if you have packages with multiple files that need to be tested.  Let's say our `book` package includes a `book.go` model and we'd like to test its behavior.  We can generate a test file like so:
 
 ```bash
-$> ginkgo generate book
+ginkgo generate book
 Generating ginkgo test for Book in:
   book_test.go
 ```
@@ -210,7 +210,7 @@ Because there are two subject nodes, Ginkgo will identify two specs to run.  For
 Assuming a `book.Book` model with this behavior we can run the tests:
 
 ```bash
-$> ginkgo
+ginkgo
 Running Suite: Books Suite - path/to/books
 ==========================================================
 Random Seed: 1634748172
@@ -1539,13 +1539,13 @@ Ginkgo's default behavior is to only randomize the order of top-level containers
 When running on CI, or before committing code, it's good practice to instruct Ginkgo to randomize **all** specs in a suite.  You do this with the `--randomize-all` flag:
 
 ```bash
-$> ginkgo --randomize-all
+ginkgo --randomize-all
 ```
 
 Ginkgo uses the current time to seed the randomization and prints out the seed near the beginning of the suite output.  If you notice intermittent spec failures that you think may be due to spec pollution, you can use the seed from a failing suite to exactly reproduce the spec order for that suite.  To do this pass the `--seed=SEED` flag:
 
 ```bash
-$> ginkgo --seed=17
+ginkgo --seed=17
 ```
 
 Because Ginkgo randomizes specs you should make sure that each spec runs from a clean independent slate.  Principles like ["Declare in container nodes, initialize in setup nodes"](#avoid-spec-pollution-dont-initialize-variables-in-container-nodes) help you accomplish this: when variables are initialized in setup nodes each spec is guaranteed to get a fresh, correctly initialized, state to operate on.  For example:
@@ -1657,13 +1657,13 @@ As spec suites grow in size and complexity they have a tendency to get slower.  
 To run a Ginkgo suite in parallel you simply pass the `-p` flag to `ginkgo`:
 
 ```bash
-$> ginkgo -p
+ginkgo -p
 ```
 
-this will automatically detect the optimal number of test processes to spawn based on the number of cores on your maching.  You can, instead, specify this number manually via `-processes=N`:
+this will automatically detect the optimal number of test processes to spawn based on the number of cores on your maching.  You can, instead, specify this number manually via `-procs=N`:
 
 ```bash
-$> ginkgo -processes=N
+ginkgo -procs=N
 ```
 
 And that's it!  Ginkgo will automatically run your specs in parallel and take care of collating the results into a single coherent output stream.
@@ -1867,7 +1867,7 @@ One last word before we close out the topic of Spec Parallelization.  Ginkgo's p
 We recommend embracing the `ginkgo` CLI as part of your toolchain and workflow.  It's designed to make the process of writing and iterating on complex spec suites as painless as possible.  Consider, for example, the `watch` subcommand:
 
 ```bash
-$> ginkgo watch -p
+ginkgo watch -p
 ```
 
 is all you need to have Ginkgo rerun your suite - in parallel -  whenever it detects a change in the suite or any of its dependencies.  Run that in a terminal while you build out your code and get immediate feedback as you evolve your suite!
@@ -2200,7 +2200,7 @@ You can unfocus _all_ specs in a suite by running `ginkgo unfocus`.  This simply
 #### Spec Labels
 `Pending`, `Skip`, and `Focus` provide adhoc mechanisms for filtering suites.  For particularly large and complex suites, however, you may need a more structured mechanism for organizing and filtering specs.  For such usecases, Ginkgo provides labels.
 
-Labels are simply textual tags that can be attached to Ginkgo container and setup nodes via the `Label` decoration.  Here are the ways you can attach labels to a node:
+Labels are simply textual tags that can be attached to Ginkgo container and setup nodes via the `Label` decorator.  Here are the ways you can attach labels to a node:
 
 ```go
 It("is labelled", Label("first label", "second label"), func() { ... })
@@ -2311,7 +2311,7 @@ To sum up, we've seen that Ginkgo supports the following mechanisms for organizi
 - Specs that are marked as `Pending` at compile-time never run.
 - At run-time, specs can be individually skipped by calling `Skip()`
 - Specs that are programmatically focused with the `Focus` decorator at compile-time run to the exclusion of other specs.
-- Specs can be labelled with the `Label()` decoration.  `ginkgo --label-filter=QUERY` will apply a label filter query and only run specs that pass the filter.
+- Specs can be labelled with the `Label()` decorator.  `ginkgo --label-filter=QUERY` will apply a label filter query and only run specs that pass the filter.
 - `ginkgo --focus-file=FILE_FILTER/--skip-file=FILE_FILTER` will filter specs based on their source code location.
 - `ginkgo --focus=REGEXP/--skip=REGEXP` will filter specs based on their descriptions.
 
@@ -2329,7 +2329,7 @@ Ginkgo wants to help you write reliable, deterministic, tests.  Flaky specs - i.
 Ginkgo provides a few mechanisms to help you suss out and debug flaky specs.  If you suspect a flaky spec you can rerun a suite repeatedly until it fails via:
 
 ```bash
-$> ginkgo --until-it-fails
+ginkgo --until-it-fails
 ```
 
 This will compile the suite once and then run it repeatedly, forever, until a failure is detected.  This flag pairs well with `--randomize-all` and `-p` to try and suss out failures due to accidental spec dependencies.
@@ -2337,7 +2337,7 @@ This will compile the suite once and then run it repeatedly, forever, until a fa
 Since `--until-it-fails` runs indefinitely, until a failure is detected, it is not appropriate for CI environments.  If you'd like to help ensure that flaky specs don't creep into your codebase you can use:
 
 ```bash
-$> ginkgo --repeat=N
+ginkgo --repeat=N
 ```
 
 to have Ginkgo repeat your test suite up to `N` times or until a failure occurs, whichever comes first.  This is especially valuable in CI environments.
@@ -2351,7 +2351,7 @@ However.  There are times when the cost of preventing and/or debugging flaky spe
 You can retry all specs in a suite via:
 
 ```bash
-$> ginkgo --flake-attempts=N
+ginkgo --flake-attempts=N
 ```
 
 Now, when a spec fails Ginkgo will not automatically mark the suite as failed.  Instead it will attempt to rerun the spec up to `N` times.  If the spec succeeds during a retry, Ginkgo moves on and marks the suite as successful but reports that the spec needed to be retried.
@@ -2413,7 +2413,7 @@ When you run `ginkgo` the Ginkgo CLI first looks for a spec suite in the current
 You can have `ginkgo` run multiple spec suites by pointing it at multiple package locations (i.e. directories) like so:
 
 ```bash
-$> ginkgo <flags> path/to/package-1 path/to/package-2 ...
+ginkgo <flags> path/to/package-1 path/to/package-2 ...
 ```
 
 Ginkgo will enter each of these directory and look for a spec suite.  If it finds one it will compile the suite and run it.  Note that you need to include any `ginkgo` flags **before** the list of packages.
@@ -2421,11 +2421,11 @@ Ginkgo will enter each of these directory and look for a spec suite.  If it find
 You can also have `ginkgo` recursively find and run all spec suites within the current directory:
 
 ```bash
-$> ginkgo -r
+ginkgo -r
 
 - or, equivalently,
 
-$> ginkgo <flags> ./...
+ginkgo <flags> ./...
 ```
 
 Now Ginkgo will walk the file tree and search for spec suites.  It will compile any it finds and run them.
@@ -2437,7 +2437,7 @@ Ginkgo provides a few additional configuration flags when running multiple suite
 You can ask Ginkgo to skip certain packages via:
 
 ```bash
-$> ginkgo -r --skip-package=list,of,packages
+ginkgo -r --skip-package=list,of,packages
 ```
 
 `--skip-package` takes a comma-separated list of package names.  If any part of the package's **path** matches one of the entries in this list that package is skipped: it is not compiled and it is not run.
@@ -2445,13 +2445,13 @@ $> ginkgo -r --skip-package=list,of,packages
 By default, Ginkgo runs suites in the order it finds them.  You can have Ginkgo randomize the order in which suites run withL
 
 ```bash
-$> ginkgo -r --randomize-suites
+ginkgo -r --randomize-suites
 ```
 
 Finally, Ginkgo's default behavior when running multiple suites is to stop execution after the first suite that fails.  (Note that Ginkgo will run _all_ the specs in that suite unless `--fail-fast` is specified.)  You can alter this behavior and have Ginkgo run _all_ suites regardless of failure with:
 
 ```bash
-$> ginkgo -r --keep-going
+ginkgo -r --keep-going
 ```
 
 As you can see, Ginkgo provides several CLI flags for controlling how specs are run.  Be sure to check out the [Recommended Continuous Integration Configuration](#recommended-continuous-integration-configuration) section of the patterns chapter for pointers on which flags are best used in CI environments.
@@ -2499,7 +2499,7 @@ Ginkgo natively supports generating and aggregating reports in a number of machi
 A JSON-formatted report that faithfully captures all available information about a Ginkgo spec run can be generated via:
 
 ```bash
-$> ginkgo --json-report=report.json
+ginkgo --json-report=report.json
 ```
 
 The resulting JSON file encodes an array of `types.Report`.  Each entry in that array lists detailed information about an individual spec suite and includes a list of `types.SpecReport` that captures detailed information about each spec.  These types are documented in [godoc](https://pkg.go.dev/github.com/onsi/ginkgo/types).
@@ -2509,7 +2509,7 @@ When possible, we recommend building tooling on top of Ginkgo's JSON format and 
 Ginkgo also supports generating JUnit reports with 
 
 ```bash
-$> ginkgo --junit-report=report.xml
+ginkgo --junit-report=report.xml
 ```
 
 The JUnit report is compatible with the JUnit specification, however Ginkgo specs carry much more metadata than can be easily mapped onto the JUnit spec so some information is lost and/or a bit harder to decode than using Ginkgo's native JSON format.
@@ -2519,7 +2519,7 @@ Ginkgo also supports Teamcity reports with `ginkgo --teamcity-report=report.team
 Of course, you can generate multiple formats simultaneously by passing in multiple flags:
 
 ```bash
-$> ginkgo --json-report=report.json --junit-report=report.xml
+ginkgo --json-report=report.json --junit-report=report.xml
 ```
 
 By default, when any of these command-line report flags are provided Ginkgo will generate a single report file, per format, at the passed-in file name.  If Ginkgo is running multiple suites (e.g. `ginkgo -r --json-report=report.json`) then _all_ the suite reports will be encoded in the single report file.
@@ -2726,53 +2726,376 @@ Will emit a report that has the word "Mahomes" in red and the number 15 in bold 
 Lastly, it is possible to pass a pointer into `AddReportEntry`.  Ginkgo will compute the string representation of the passed in pointer at the last possible moment - so any changes to the object _after_ it is reported will be captured in the final report.  This is useful for building libraries on top of `AddReportEntry` - users can simply register objects when they're created and any subsequent mutations will appear in the generated report.  You can see an example of this in the [Benchmarking Code](#benchmarking-code) pattern section of the patterns chapter.
 
 ### Profiling your Suites
+Go supports a rich set of profiling features to gather information about your running test suite.  Ginkgo exposes all of these and manages them for you when you are running multiple suites and/or parallel suites.
+
+Ginkgo supports `--race` to analyze race conditions, `--cover` to compute code coverage, `--vet` to evaluate and vet your code, `--cpuprofile` to profile CPU performacne, `--memprofile` to profile memory usage, `--blockprofile` to profile blocking goroutines, and `--mutexprofile` to profile locking around mutexes.
+
+`ginkgo -race` runs the race detector and emits any detected race conditions as the suite runs.  If any are detected the suite is marked as failed.
+
+`ginkgo -vet` allows you to configure the set of checks that are applied when your code is compiled.  `ginkgo` defaults to the set of default checks that `go test` uses and you can specify additional checks by passing a comma-separated list to `--vet`.  The set of available checks can be found by running `go doc cmd/vet`.
+
 #### Computing Coverage
+`ginkgo -cover` will compute and emit code coverage.  When running multiple suites Ginkgo will emit coverage for each suite and then emit a composite coverage across all running suites.  As with `go test` the default behavior for a given suite is to measure the coverage it provides for the code in the suite's package - however you can extend coverage to additional packages using `--coverpkg`.  You can also specify the `--covermode` to be one of `set` ("was this code called at all?"), `count` (how many times was it called?) and `atomic` (same as count, but threadsafe and expensive).  If you run `ginkgo --race --cover` the `--covermode` is automatically set to `atomic`.
+
+When run with `--cover`, Ginkgo will generate a single `coverprofile.out` file that captures the coverage statistics of all the suites that ran.  You can change the name of this file by specifiying `-coverprofile=filename`.  If you would like to keep separate coverprofiles for each suite use the `--keep-separate-coverprofiles` option.
+
+Ginkgo also honors the `--output-dir` flag when generating coverprofiles.  If you specify `--output-dir` the generated coverprofile will be placed in the requested directory.  If you also specify `--keep-separate-coverprofiles` individual package coverprofiles will be placed in the requested directory and namespaced with a prefix that contains the name of the package in question.
+
 #### Other Profiles
+Running `ginkgo` with any of `--cpuprofile=X`, `--memprofile=X`, `--blockprofile=X`, and `--mutexprofile=X` will generate corresponding profile files for suite that runs.  Doing so will also preserve the test binary generated by Ginkgo to enable users to use `go tool pprof <BINARY> <PROFILE>` to analyze the profile.
+
+By default, the test binary and various profile files are stored in the individual directories of any suites that Ginkgo runs.  If you specify `--output-dir`, however, then these assets are moved to the requested directory and namespaced with a prefix that contains the name of the package in question.
 
 ## Ginkgo and Gomega Patterns
-  ### Recommended Continuous Integration Configuration
-  ### Configuring Suites Programatically
-  ### Custom Command-Line Flags
-  ### Dynamically Generating Specs
+So far we've introduced and described the majority of Ginkgo's capabilities and building blocks.  Hopefully the previous chapters have helped give you a mental model for how Ginkgo specs are written and run.
 
-  ### Patterns for Parallel Integration Specs
-  One of Ginkgo's strengths centers around building and running large complex integration suites.  Integration suites are spec suites that exercise multiple related components to validate the behavior of the integrated system as a whole.  They are notorious for being difficult to write, susceptible to random failure, and painfully slow.  They also happen to be incredibly valuable, particularly when building large complex distributed systems.
-  #### Asynchronous Testing
-  #### Managing External Resources in Parallel Test Suites
-  #### Testing External Processes
-  Gotchas - external processes that don't quit can cause ginkgo -p to hang
-  Gotchas - setting cmd.Stdout => os.Stdout can cause Ginkgo to hang/bail out.  See issue #851 PauseOutputInterception()/ResumeOutputInterception()
-  #### Managing External Processes in Parallel Test Suites
-  #### Alternatives to `BeforeAll` - central server pattern
+Im this chapter we'll switch gears and illustrate common patterns for how Ginkgo's building blocks can be put together to solve for real-world problems.  Since Ginkgo and Gomega are so often paired this chapter will assume that you are using both together - as you'll see, the combination can unlock some powerful, and expressive, testing patterns.
 
-  ### Benchmarking Code
+### Recommended Continuous Integration Configuration
 
-  ### Locally-scoped Shared Behaviors
-    #### Pattern 1: Extract a function that defines the shared `It`s
-    #### Pattern 2: Extract functions that return closures, and pass the results to `It`s
-  ### Global Shared Behaviors
-    #### Pattern 1
-    #### Pattern 2
-  ### Table Patterns
-    #### Managing Complex Parameters
+The `ginkgo` CLI supports a number of flags to control how your suites are run.  We recommend the following set of flags when running in a continuous integration environment:
 
-## Spec Decorator Reference
-  #### Node Decorations Overview
-  #### The `Serial` Decoration
-  #### The `Ordered` Decoration
-  #### The `Label` Decoration
-  #### The `Focus` and `Pending` Decoration
-  #### The `Offset` Decoration
-  #### The `CodeLocation` Decoration
-  #### The `FlakeAttempts` Decoration
+```bash
+ginkgo -r --procs=N --compilers=N --randomize-all --randomize-suites --fail-on-pending --keep-going --cover --coverprofile=cover.profile --race --trace --json-report=report.json --timeout=TIMEOUT
+```
 
-## `ginkgo` CLI Reference
-  ### Running Tests
-  ### Watching For Changes
-  ### Precompiling Tests
-  ### Generators
-  ### Creating an Outline of Tests
-  ### Other Subcommands
+Here's why:
+
+- `-r` will recursively find and run all suites in the current directory.
+- `-procs=N` will run each suite in parallel.  This can substantially speed up suites and you should experiment with different values of `N`.  Note that it is not recommended that you run specs in parallel with `-p` on CI.  Some CI services run on shared machines that will report (e.g.) `32` cores but will not actually give an individual account access to all those compute resources!
+- `--compilers=N` will control how many cores to use to compile suites in parallel.  You may need to set this explicitly to avoid accidentally trying to use all `32` cores on that CI machine!
+- `--randomize-all` and `--randomize-suites` will randomize all specs and randomize the order in which suites run.  This will help you suss out spec pollution early!
+- `--keep-going` will instruct Ginkgo to keep running suites, even after a suite fails.  This can help you get a set of all failures instead of stopping after the first failed suite.
+- `--cover` and `--coverprofile=cover.profile` will compute coverage scores and generate a single coverage file for all your specs.
+- `--race` will run the race detector.
+- `--trace` will instruct Ginkgo to generate a stack trace for all failures (instead of simply including the location where the failure occured).  This isn't usually necessary but can be helpful in CI environments where you may not have access to a fast feedback loop to iterate on and debug code.
+- `--json-report=report.json` will generate a JSON formatted report file.  You can store these off and use them later to get structured access to the suite and spec results.
+- `--timeout` allows you to specify a timeout for the `ginkgo` run.  The default duration is one hour, which may or may not be enough!
+
+### Supporting Suite Configuration
+
+
+### Custom Command-Line Flags
+### Dynamically Generating Specs
+### Patterns for Parallel Integration Specs
+One of Ginkgo's strengths centers around building and running large complex integration suites.  Integration suites are spec suites that exercise multiple related components to validate the behavior of the integrated system as a whole.  They are notorious for being difficult to write, susceptible to random failure, and painfully slow.  They also happen to be incredibly valuable, particularly when building large complex distributed systems.
+#### Asynchronous Testing
+#### Managing External Resources in Parallel Test Suites
+#### Testing External Processes
+Gotchas - external processes that don't quit can cause ginkgo -p to hang
+Gotchas - setting cmd.Stdout => os.Stdout can cause Ginkgo to hang/bail out.  See issue #851 PauseOutputInterception()/ResumeOutputInterception()
+#### Managing External Processes in Parallel Test Suites
+#### Alternatives to `BeforeAll` - central server pattern
+
+### Locally-scoped Shared Behaviors
+#### Pattern 1: Extract a function that defines the shared `It`s
+#### Pattern 2: Extract functions that return closures, and pass the results to `It`s
+### Global Shared Behaviors
+#### Pattern 1
+#### Pattern 2
+### Table Patterns
+#### Managing Complex Parameters
+### Benchmarking Code
+### Building Custom Matchers
+
+## Decorator Reference
+We've seen a number of Decorators detailed throughout this documentation.  This reference collects them all in one place.
+
+#### Node Decorators Overview
+Ginkgo's container nodes, subject nodes, and setup nodes all accept decorators.  Decorators are specially typed arguments passed into the node constructors.  They can appear anywhere in the `args ...interface{}` list in the constructor signatures:
+
+```go
+func Describe(text string, args ...interface{})
+func It(text string, args ...interface{})
+func BeforeEach(args ...interface{})
+```
+
+Ginkgo will vet the passed in decorators and exit with a clear error message if it detects any invalid configurations. 
+
+Moreover, Ginkgo also supports passing in arbitrarily nested slices of decorators.  Ginkgo will unroll these slices and process the flattened list.  This makes it easier to pass around groups of decorators.  For example, this is valid:
+
+```go
+markFlaky := []interface{}{Label("flaky"), FlakeAttempts(3)}
+
+var _ = Describe("a bunch of flaky controller tests", markFlaky, Label("controller"), func() {
+    ...
+}
+```
+The resulting tests will be decorated with `FlakeAttempts(3)` and the two labels `flaky` and `controller`.
+
+#### The `Serial` Decorator
+The `Serial` decorator applies to container nodes and subject nodes only.  It is an error to try to apply the `Serial` decorator to a setup node.
+
+`Serial` allows the user to mark specs and containers of specs as only eligible to run in serial.  Ginkgo will guarantee that these specs never run in parallel with other specs.
+
+If a container is marked as `Serial` then all the specs defined in that container will be marked as `Serial`.
+
+You cannot mark specs and containers as `Serial` if they appear in an `Ordered` container.  Instead, mark the `Ordered` container as `Serial`.
+
+#### The `Ordered` Decorator
+The `Ordered` decorator applies to container nodes only.  It is an error to try to apply the `Ordered` decorator to a setup or subject node.  It is an error to nest an `Ordered` container within another `Ordered` container - however you may nest an `Ordered` container within a non-ordered container and vice versa.
+
+`Ordered` allows the user to [mark containers of specs as ordered](#ordered-containers).  Ginkgo will guarantee that the container's specs will run in the order they appear in and will never run in parallel with one another (though they may run in parallel with other specs unless the `Serial` decorator is also applied to the `Ordered` container).
+
+When a spec in an `Ordered` container fails, all subsequent specs in the ordered container are skipped.  Only `Ordered` containers can contain `BeforeAll` and `AfterAll` setup nodes.
+
+#### The `Label` Decorator
+The `Label` decorator applies to container nodes and subject nodes only.  It is an error to try to apply the `Label` decorator to a setup node.
+
+`Label` allows the user to annotate specs and containers of specs with labels.  The `Label` decorator takes a variadic set of strings allowing you to apply multiple labels simultaneously.  Labels are arbitrary strings that do not include the characters `"&|!,()/"`.  Specs can have as many labels as you'd like and the set of labels for a given spec is the union of all the labels of the container nodes and the subject node.
+
+Labels can be used to control which subset of tests to run.  This is done by providing the `--label-filter` flag to the `ginkgo` cli.  More details can be found at [Spec Labels](#spec-labels).
+
+#### The `Focus` and `Pending` Decorator
+The `Focus` and `Pending` decorators apply to container nodes and subject nodes only.  It is an error to try to `Focus` or `Pending` a setup node.
+
+Using these decorators is identical to using the `FX` or `PX` form of the node constructor.  For example:
+
+```go
+FDescribe("container", func() {
+    It("runs", func() {})
+    PIt("is pending", func() {})
+})
+```
+
+and
+
+```go
+Describe("container", Focus, func() {
+    It("runs", func() {})
+    It("is pending", Pending, func() {})
+})
+```
+
+are equivalent.
+
+It is an error to decorate a node as both `Pending` and `Focus`:
+
+```go
+It("is invalid", Focus, Pending, func() {}) //this will cause Ginkgo to exit with an error
+```
+
+The `Focus` and `Pending` decorators are propagated through the test hierarchy as described in [Pending Specs](#pending-specs) and [Focused Specs](#focused-specs)
+
+#### The `Offset` Decorator
+The `Offset(uint)` decorator applies to all decorable nodes.  The `Offset(uint)` decorator allows the user to change the stack-frame offset used to compute the location of the test node.  This is useful when building shared test behaviors.  For example:
+
+```go
+SharedBehaviorIt := func() {
+    It("does something common and complicated", Offset(1), func() {
+        ...
+    })
+}
+
+Describe("thing A", func() {
+    SharedBehaviorIt()
+})
+
+Describe("thing B", func() {
+    SharedBehaviorIt()
+})
+```
+
+now, if the `It` defined in `SharedBehaviorIt` the location reported by Ginkgo will point to the line where `SharedBehaviorIt` is *invoked*.
+
+`Offset`s only apply to the node that they decorate.  Setting the `Offset` for a container node does not affect the `Offset`s computed in its child nodes.
+
+If multiple `Offset`s are provided on a given node, only the last one is used.
+
+#### The `CodeLocation` Decorator
+In addition to `Offset`, users can decorate nodes with a `types.CodeLocation`.  `CodeLocation`s are the structs Ginkgo uses to capture location information.  You can, for example, set a custom location using `types.NewCustomCodeLocation(message string)`.  Now when the location of the node is emitted the passed in `message` will be printed out instead of the usual `file:line` location.
+
+Passing a `types.CodeLocation` decorator in has the same semantics as passing `Offset` in: it only applies to the node in question.
+
+#### The `FlakeAttempts` Decorator
+The `FlakeAttempts(uint)` decorator applies container and subject nodes.  It is an error to apply `FlakeAttempts` to a setup node.
+
+`FlakeAttempts` allows the user to flag specific tests or groups of tests as potentially flaky.  Ginkgo will run tests up to the number of times specified in `FlakeAttempts` until they pass.  For example:
+
+```go
+Describe("flaky tests", FlakeAttempts(3), func() {
+    It("is flaky", func() {
+        ...
+    })
+
+    It("is also flaky", func() {
+        ...
+    })
+
+    It("is _really_ flaky", FlakeAttempts(5) func() {
+        ...
+    })
+
+    It("is _not_ flaky", FlakeAttempts(1), func() {
+        ...
+    })
+})
+```
+
+With this setup, `"is flaky"` and `"is also flaky"` will run up to 3 times.  `"is _really_ flaky"` will run up to 5 times.  `"is _not_ flaky"` will run only once.  Note that if multiple `FlakeAttempts` appear in a spec's hierarchy, the most deeply nested `FlakeAttempts` wins.  If multiple `FlakeAttempts` are passed into a given node, the last one wins.
+
+If `ginkgo --flake-attempts=N` is set the value passed in by the CLI will override all the decorated values.  Every test will now run up to `N` times.
+
+## `ginkgo` CLI Overview
+
+This chapter provides a quick overview and tour of the Ginkgo CLI.  For comprehensive details about all of the Ginkgo CLI's flags, run `ginkgo help`.  To get information about Ginkgo's implicit `run` command (i.e. what you get when you just run `ginkgo`) run `ginkgo help run`.
+
+The Ginkgo CLI is the recommended and supported tool for running Ginkgo suites.  While you _can_ run Ginkgo suites with `go test` you must use the CLI to run suites in parallel and to aggregate profiles.  There are also a (small) number of `go test` flags that Ginkgo does not support - an error will be emitted if you attempt to use these (for example, `go test -count=N`, use `ginkgo -repeat=N` instead).
+
+In addition to Ginkgo's own flags, the `ginkgo` CLI also supports passing through (nearly) all `go test` flags and `go build` flags.  These are documented under `ginkgo help run` and `ginkgo help build` (which provides a detailed list of available `go build` flags).  If you think Ginkgo's missing anything, please open an [issue](https://github.com/onsi/ginkgo/issues/new).
+
+### Running Specs
+
+By default:
+
+```bash
+ginkgo
+```
+
+Will run the suite in the current directory.
+
+You can run multiple suites by passing them in as arguments:
+
+```bash
+ginkgo path/to/suite path/to/other/suite
+```
+
+or by running:
+
+```bash
+ginkgo -r
+#or
+ginkgo ./...
+```
+
+which will recurse through the current file tree and run any suites it finds.
+
+To pass additional arguments or custom flags down to your suite use `--` to separate your arguments from arguments intended for `ginkgo`:
+
+```bash
+ginkgo -- <PASS-THROUGHS>
+```
+
+Finally, note that any Ginkgo flags must appear _before_ the list of packages.  Putting it all together:
+
+```bash
+ginkgo <GINKGO-FLAGS> <PACKAGES> -- <PASS-THROUGHS>
+```
+
+By default Ginkgo is running the `run` subcommand.  So all these examples can also be written as `ginkgo run <GINKGO-FLAGS> <PACKAGES> -- <PASS-THROUGHS>`.  To get help about Ginkgo's run flags you'll need to run `ginkgo help run`.
+
+### Precompiling Suites
+
+It is often convenient to precompile suites and distribute them as binaries.  You can do this with `ginkgo build`:
+
+```bash
+ginkgo build path/to/suite /path/to/other/suite
+```
+
+This will produce precompiled binaries called `package-name.test`.  You can then run `ginkgo package-name.test` _or_ `./package-name.test` to invoke the binary without going through a compilation step.
+
+Since the `ginkgo` CLI is a [necessary component when running specs in parallel](#spec-parallelization) to run precompiled specs in parallel you must:
+
+```bash
+ginkgo -p ./path/to/suite.test
+```
+
+As with the rest of the go tool chain, you can cross-compile and target different platforms using the standard `GOOS` and `GOARCH` environment variables.  For example: 
+
+```bash
+GOOS=linux GOARCH=amd64 ginkgo build path/to/package
+```
+
+will build a linux binary.
+
+Finally, the `build` command accepts a subset of the flags of the `run` command.  This is because some flags apply at compile time whereas others apply at run-time only.  This can be a bit confusing with the `go test` toolchain but Ginkgo tries to make things clearer by carefully controlling the availability of flags across the two commands.
+
+### Watching for Changes
+
+To help enable a fast feedback loop during development, Ginkgo provides a `watch` subcommand that watches suites and their dependencies for changes.  When a change is detected `ginkgo watch` will automatically rerun the suite.
+
+`ginkgo watch` accepts most of `ginkgo run`'s flags.  So, you can do things like:
+
+```bash
+ginkgo watch -r -p
+```
+
+to monitor all packages, recursively, for changes and run them in parallel when changes are detected.
+
+For each monitored package, Ginkgo also monitors that package's dependencies.  By default `ginkgo watch` monitors a package's immediate dependencies.  You can adjust this using the `-depth` flag.  Set `-depth` to `0` to disable monitoring dependencies and set `-depth` to something greater than `1` to monitor deeper down the dependency graph.
+
+
+### Generators
+
+As discussed above, Ginkgo provides a pair of generator functions to help you bootstrap a suite and add a spec file to it:
+
+```bash
+ginkgo bootstrap
+```
+
+will generate a file named `PACKAGE_suite_test.go` and
+
+```bash
+ginkgo generate <SUBJECT>
+```
+
+will generate a file named `SUBJECT_test.go` (or `PACKAGE_test.go` if `<SUBJECT>` is not provided).  Both generators support custom templates using `--template`.  Take a look at the [Ginkgo's CLI code](https://github.com/onsi/ginkgo/tree/master/ginkgo/ginkgo/generators) to see what's available in the template.
+
+### Creating an Outline of Specs
+
+If you want to see an outline of the Ginkgo specs in an individual file, you can use the `ginkgo outline` command:
+
+```bash
+ginkgo outline book_test.go
+```
+
+This generates an outline in a comma-separated-values (CSV) format. Column headers are on the first line, followed by Ginkgo containers, specs, and other identifiers, in the order they appear in the file:
+
+    Name,Text,Start,End,Spec,Focused,Pending
+    Describe,Book,124,973,false,false,false
+    BeforeEach,,217,507,false,false,false
+    Describe,Categorizing book length,513,970,false,false,false
+    Context,With more than 300 pages,567,753,false,false,false
+    It,should be a novel,624,742,true,false,false
+    Context,With fewer than 300 pages,763,963,false,false,false
+    It,should be a short story,821,952,true,false,false
+
+The columns are:
+
+- Name (string): The name of a container, spec, or other identifier in the core DSL.
+- Text (string): The description of a container or spec. (If it is not a literal, it is undefined in the outline.)
+- Start (int): Position of the first character in the container or spec.
+- End (int): Position of the character immediately after the container or spec.
+- Spec (bool): True, if the identifier is a spec.
+- Focused (bool): True, if focused. (Conforms to the rules in [Focused Specs](#focused-specs).)
+- Pending (bool): True, if pending. (Conforms to the rules in [Pending Specs](#pending-specs).)
+
+You can set a different output format with the `-format` flag. Accepted formats are `csv`, `indent`, and `json`. The `ident` format is like `csv`, but uses identation to show the nesting of containers and specs. Both the `csv` and `json` formats can be read by another program, e.g., an editor plugin that displays a tree view of Ginkgo tests in a file, or presents a menu for the user to quickly navigate to a container or spec.
+
+`ginkgo outline` is intended for integration with third-party libraries and applications.  If you simply want to know how a suite will run without running it try `ginkgo -v --dry-run` instead.
+
+### Other Subcommands
+
+To unfocus any programmatically focused specs in the current directory or subdirectories, run:
+
+```bash
+ginkgo unfocus
+```
+
+To get a list of `Label`s used in a suite run
+
+```bash
+ginkgo labels
+```
+
+`labels` (naively) parses your spec files and looks for calls to the `Label` decorator.
+
+To get the current version of the `ginkgo` CLI run:
+
+```bash
+ginkgo version
+```
+
 
 ## Third-Party Integrations
   ### Sample .travis.yml
