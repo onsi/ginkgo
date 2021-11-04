@@ -1606,7 +1606,7 @@ Describe("checking out a book", func() {
     var err error
 
     It("can fetch a book from a library", func() {
-        book, err = libraryClient.FetchByTitle("Les Miserables")
+        book, err = libraryClient.FindByTitle("Les Miserables")
         Expect(err).NotTo(HaveOccurred())
         Expect(book.Title).To(Equal("Les Miserables"))
     })
@@ -1616,7 +1616,7 @@ Describe("checking out a book", func() {
     })
 
     It("no longer has the book in stock", func() {
-        book, err = libraryClient.FetchByTitle("Les Miserables")
+        book, err = libraryClient.FindByTitle("Les Miserables")
         Expect(err).To(MatchError(books.NOT_IN_STOCK))
         Expect(book).To(BeNil())
     })
@@ -1632,7 +1632,7 @@ You can fix these specs by creating a single `It` to test the behavior of checki
 Describe("checking out a book", func() {
     It("can perform a checkout flow", func() {
         By("fetching a book")
-        book, err := libraryClient.FetchByTitle("Les Miserables")
+        book, err := libraryClient.FindByTitle("Les Miserables")
         Expect(err).NotTo(HaveOccurred())
         Expect(book.Title).To(Equal("Les Miserables"))
 
@@ -2768,33 +2768,1038 @@ Here's why:
 - `--keep-going` will instruct Ginkgo to keep running suites, even after a suite fails.  This can help you get a set of all failures instead of stopping after the first failed suite.
 - `--cover` and `--coverprofile=cover.profile` will compute coverage scores and generate a single coverage file for all your specs.
 - `--race` will run the race detector.
-- `--trace` will instruct Ginkgo to generate a stack trace for all failures (instead of simply including the location where the failure occured).  This isn't usually necessary but can be helpful in CI environments where you may not have access to a fast feedback loop to iterate on and debug code.
+- `--trace` will instruct Ginkgo to generate a stack trace for all failures (instead of simply including the location where the failure occurred).  This isn't usually necessary but can be helpful in CI environments where you may not have access to a fast feedback loop to iterate on and debug code.
 - `--json-report=report.json` will generate a JSON formatted report file.  You can store these off and use them later to get structured access to the suite and spec results.
 - `--timeout` allows you to specify a timeout for the `ginkgo` run.  The default duration is one hour, which may or may not be enough!
 
-### Supporting Suite Configuration
+### Supporting Custom Suite Configuration
 
+There are contexts where you may want to change some aspects of a suite's behavior based on user-provided configuration.  There are two widely adopted means of doing this: environment variables and command-line flags.
 
-### Custom Command-Line Flags
+We'll explore both these options in this section by building out a concrete usecase.  Let's imagine a suite that is intended to ensure that a service is up and running correctly (these are sometimes referred to as smoketest suites).  We want to be able to point our suite at an arbitrary server address/port.  We also want to configure how our suite runs depending on the environment we're smoketesting - we'll want to be minimally invasive for `PRODUCTION` environments, but can perform a more thorough check for `STAGING` environments.
+
+Here's a sketch of what this might look like.
+
+#### Supporting Custom Suite Configuration: Environment Variables
+Setting and parsing environment variables is fairly straightforward.  We'll configure the server address with a `SMOKETEST_SERVER_ADDR` environment variable and we'll configure the environment with a `SMOKETEST_ENV` variable.
+
+Our suite might look like:
+
+```go
+// This is the testing hook in our bootstrap file
+func TestSmokeTest(t *testing.T) {
+    RegisterFailHandler(Fail)
+    RunSpecs(t, "Smoketest Suite")
+}
+
+var client *client.Client
+var _ = BeforeSuite(func() {
+    // Some basic validations
+    Expect(os.Getenv("SMOKETEST_SERVER_ADDR")).NotTo(BeZero(), "Please make sure SMOKETEST_SERVER_ADDR is set correctly.")
+    Expect(os.Getenv("SMOKETEST_ENV")).To(Or(Equal("PRODUCTION"), Equal("STAGING")), "SMOKETEST_ENV must be set to PRODUCTION or STAGING.")
+
+    //set up a client 
+    client = client.NewClient(os.Getenv("SMOKETEST_SERVER_ADDR"))
+})
+
+var _ = Describe("Smoketests", func() {
+    Describe("Minimally-invasive", func() {
+        It("can connect to the server", func() {
+            Eventually(client.Connect).Should(Succeed())
+        })
+
+        It("can get a list of books", func() {
+            Expect(client.ListBooks()).NotTo(BeEmpty())
+        })
+    })
+
+    if os.Getenv("SMOKETEST_ENV") == "STAGING" {
+        Describe("Ensure basic CRUD operations", func() {
+            It("can create, updated, and delete a book", func() {
+                book := &books.Book{
+                    Title: "This Book is a Test",
+                    Author: "Ginkgo",
+                    Pages: 17,
+                }
+                Expect(client.Store(book)).To(Succeed())
+                Expect(client.FetchByTitle("This Book is a Test")).To(Equal(book))
+                Expect(client.Delete(book)).To(Succeed())
+                Expect(client.FetchByTitle("This Book is a Test")).To(BeNil())
+            })
+        })
+    }
+})
+```
+
+users could then run:
+
+```bash
+SMOKETEST_SERVER_ADDR="127.0.0.1:3000" SMOKETEST_ENV="STAGING" ginkgo
+```
+
+to run all three specs against a local server listening on port `3000`.  If the user fails to correctly provide the configuration environment variables, the `BeforeSuite` checks will fail and `Gomega` will emit the description strings (e.g. "Please make sure SMOKETEST_SERVER_ADDR is set correctly.") to help the user know what they missed.
+
+As you can see, environment variables are convenient and easily accessible from anywhere in the suite.  We use them during the Run Phase to configure the client.  But we also use them at the Tree Construction Phase to control which specs are included in the suite.  There are some clearer ways to accomplish the latter so keep reading!
+
+#### Supporting Custom Configuration: Custom Command-Line Flags
+An alternative to environment variables is to provide custom command-line flags to the suite.  These take a bit more setting up but have the benefit of being a bit more self-documenting and structured.
+
+The tricky bits here are:
+
+1. Injecting your command line flags into Go's `flags` list before the test process parses flags.
+2. Understanding when in the spec lifecycle the parsed flags are available.
+3. Remembering to pass the flags in correctly.
+
+Here's a fleshed out example:
+
+```go
+var serverAddr, smokeEnv string
+
+// Register your flags in an init function.  This ensures they are registered _before_ `go test` calls flag.Parse().
+func init() {
+    flag.StringVar(&serverAddr, "server-addr", "", "Address of the server to smoke-check")
+    flag.StringVar(&smokeEnv, "environment", "", "Environment to smoke-check")
+}
+
+// This is the testing hook in our bootstrap file
+func TestSmokeTest(t *testing.T) {
+    RegisterFailHandler(Fail)
+    RunSpecs(t, "Smoketest Suite")
+}
+
+var client *client.Client
+var _ = BeforeSuite(func() {
+    // Some basic validations - at this point the flags have been parsed so we can access them
+    Expect(serverAddr).NotTo(BeZero(), "Please make sure --server-addr is set correctly.")
+    Expect(smokeEnv).To(Or(Equal("PRODUCTION"), Equal("STAGING")), "--environment must be set to PRODUCTION or STAGING.")
+
+    //set up a client 
+    client = client.NewClient(serverAddr)
+})
+
+var _ = Describe("Smoketests", func() {
+    Describe("Minimally-invasive", func() {
+        It("can connect to the server", func() {
+            Eventually(client.Connect).Should(Succeed())
+        })
+
+        It("can get a list of books", func() {
+            Expect(client.ListBooks()).NotTo(BeEmpty())
+        })
+    })
+
+    if smokeEnv == "STAGING" {
+        Describe("Ensure basic CRUD operations", func() {
+            It("can create, updated, and delete a book", func() {
+                book := &books.Book{
+                    Title: "This Book is a Test",
+                    Author: "Ginkgo",
+                    Pages: 17,
+                }
+                Expect(client.Store(book)).To(Succeed())
+                Expect(client.FetchByTitle("This Book is a Test")).To(Equal(book))
+                Expect(client.Delete(book)).To(Succeed())
+                Expect(client.FetchByTitle("This Book is a Test")).To(BeNil())
+            })
+        })
+    }
+})
+```
+
+We would invoke this suite with
+
+```bash
+ginkgo -- --server-addr="127.0.0.1:3000" --environment="STAGING"
+```
+
+note the `--` separating the arguments `ginkgo` from the arguments passed down to the suite.  You would put Ginkgo's arguments to the left of `--`.  For example, to run in parallel:
+
+```bash
+ginkgo -p -- --server-addr="127.0.0.1:3000" --environment="STAGING"
+```
+
+One more note before we move on.  As shown in this example, parsed flag variables are available both during the Run Phase (e.g. when we call `client.NewClient(serverAddr)`) _and_ during the Tree Construction Phase (e.g. when we guard the `CRUD` specs with `if smokeEnv == "STAGING"`).  However flag variables are _not_ available at the **top-level** of the suite.
+
+Here's a trivial, but instructive, example.  Say we wanted to add the value of `environment` to the name the top-level `Describe`:
+
+```go
+...
+
+var describeName = fmt.Sprintf("Smoketests - %s", smokeEnv)
+var _ = Describe(describeName, func() {
+    ...
+})
+
+...
+```
+
+Counterintuitively, this will always yield `"Smoketests - "`.  The reason is that `fmt.Sprintf` is being called as go is traversing the top-level identifiers in the suite.  At this point, `init` functions are being _defined_ but have not yet been invoked.  So (a) we haven't actually registered our flags yet and, more importantly, (b) `go test` hasn't _parsed_ the flags yet.  Our `smokeEnv` variable is therefore empty.  There's no way around this - in general you should avoid trying to access configuration information at the top-level.  However, if you must then you will need to use use environment variables instead of flags.
+
+#### Overriding Ginkgo's command-line configuration in the suite
+
+The previous two examples used an `if` guard to control whether specs were included in the spec tree based on user-provided configuration.  This approach _works_ but can be a bit confusing - specs that are "skipped" in this way never appear in any generated reports, and the total number of specs in the suite depends on configuration.  It would be cleaner and clearer to leverage Ginkgo's filtering mechanisms.  You could, for example, use `Skip`:
+
+```go
+var _ = Describe("Smoketests", func() {
+    Describe("Minimally-invasive", func() {
+        It("can connect to the server", func() {
+            ...
+        })
+
+        It("can get a list of books", func() {
+            ...
+        })
+    })
+
+    Describe("Ensure basic CRUD operations", func() {
+        BeforeEach(func(){
+            if environment != "STAGING" {
+                Skip("CRUD spec only runs on staging")
+            }
+        })
+
+        It("can create, updated, and delete a book", func() {
+            ...
+        })
+    })
+})
+```
+
+this works just fine - however as the suite grows you may see that `environment` check start to spread throughout the suite.  You could, instead, use Ginkgo's label mechanisms.  Here we're explicitly labeling specs with their allowed environments:
+
+```go
+var _ = Describe("Smoketests", func() {
+    Describe("Minimally-invasive", Label("PRODUCTION", "STAGING")func() {
+        It("can connect to the server", func() {
+            ...
+        })
+
+        It("can get a list of books", func() {
+            ...
+        })
+    })
+
+    Describe("Ensure basic CRUD operations", Label("STAGING"), func() {
+        It("can create, updated, and delete a book", func() {
+            ...
+        })
+    })
+})
+```
+
+We could then use Ginkgo's expressive filter queries to control which specs do/don't run.  However that would require us to change our contract with the user.  They'll now need to run:
+
+```bash
+ginkgo --label-filter="STAGING" -- --server-addr="127.0.0.1"
+```
+
+this isn't great.  Ideally we'd maintain the same contract and allow the user to express their intent through the existing semantics of "environment" and take care of managing the label-filter in the suite.
+
+You can accomplish this in Ginkgo by overriding Ginkgo's configuration _before_ running the specs.  Here's our fully-worked example showing how:
+
+```go
+var serverAddr, smokeEnv string
+
+// Register your flags in an init function.  This ensures they are registered _before_ `go test` calls flag.Parse().
+func init() {
+    flag.StringVar(&serverAddr, "server-addr", "", "Address of the server to smoke-check")
+    flag.StringVar(&smokeEnv, "environment", "", "Environment to smoke-check")
+}
+
+// This is the testing hook in our bootstrap file
+func TestSmokeTest(t *testing.T) {
+    RegisterFailHandler(Fail)
+
+    //we're moving the validation up here since we're about to use the flag variables before entering the RunPhase
+    //thankfully Gomega can run within normal `testing` tests, we simply create a new Gomega by wrapping `testing.T`
+    g := NewGomegaWithT(t)
+    g.Expect(serverAddr).NotTo(BeZero(), "Please make sure --server-addr is set correctly.")
+    g.Expect(smokeEnv).To(Or(Equal("PRODUCTION"), Equal("STAGING")), "--environment must be set to PRODUCTION or STAGING.")
+
+    //we're now guaranteed to have validated configuration variables
+    //let's update Ginkgo's configuration using them
+    //first we grab Ginkgo's current configuration
+    suiteConfig, _ := GinkgoConfiguration() //the second argument is the reporter configuration which we won't be adjusting
+
+    //now we modify the label-filter
+    if suiteConfig.LabelFilter == "" {
+        suiteConfig.LabelFilter = smokeEnv
+    }  else {
+        // if the user has specified a label-filter we extend it:
+        suiteConfig.LabelFilter = "(" + suiteConfig.LabelFilter + ") && " + smokeEnv 
+    }
+
+    // finally, we pass the modified configuration in to RunSpecs
+    RunSpecs(t, "Smoketest Suite", suiteConfig)
+}
+
+var client *client.Client
+var _ = BeforeSuite(func() {
+    client = client.NewClient(serverAddr)
+})
+
+var _ = Describe("Smoketests", func() {
+    Describe("Minimally-invasive", Label("PRODUCTION", "STAGING"), func() {
+        It("can connect to the server", func() {
+            Eventually(client.Connect).Should(Succeed())
+        })
+
+        It("can get a list of books", func() {
+            Expect(client.ListBooks()).NotTo(BeEmpty())
+        })
+    })
+
+    Describe("Ensure basic CRUD operations", Label("STAGING"), func() {
+        It("can create, updated, and delete a book", func() {
+            book := &books.Book{
+                Title: "This Book is a Test",
+                Author: "Ginkgo",
+                Pages: 17,
+            }
+            Expect(client.Store(book)).To(Succeed())
+            Expect(client.FindByTitle("This Book is a Test")).To(Equal(book))
+            Expect(client.Delete(book)).To(Succeed())
+            Expect(client.FindByTitle("This Book is a Test")).To(BeNil())
+        })
+    })
+})
+```
+
+In this way we can provide alternative, more semantically appropriate, interfaces to consumers of our suite and build on top of Ginkgo's existing building blocks.
+
 ### Dynamically Generating Specs
+
+There are several patterns for dynamically generating specs with Ginkgo.  You can use a simple loop to generate specs.  For example:
+
+```go
+Describe("Storing and retrieving books by category", func() {
+    for _, category := range []books.Category{books.CategoryNovel, books.CategoryShortStory, books.CategoryBiography} {
+        category := category
+        It(fmt.Sprintf("can store and retrieve %s books", category), func() {
+            book := &books.Book{
+                Title: "This Book is a Test",
+                Author: "Ginkgo",
+                Category: category,
+            }
+            Expect(library.Store(book)).To(Succeed())
+            DeferCleanup(library.Delete, book)
+            Expect(library.FindByCategory(category)).To(ContainElement(book))            
+        })
+    }
+})
+```
+
+This will generate several `It`s - one for each category.  Note that you must assign a copy of the loop variable to a local variable (that's what `category := category` is doing) - otherwise the `It` closure will capture the mutating loop variable and all the specs will run against the last element in the loop.  It is idiomatic to give the local copy the same name as the loop variable.
+
+Of course, this particular example might be better written as a [table](#table-specs)!
+
+There are contexts where external information needs to be loaded in order to figure out which specs to dynamically generate.  For example, let's say we maintain a `json` file that lists a set of fixture books that we want to test storing/retrieving from the library.  There are many ways to approach writing such a test - but let's say we want to maximize parallelizability of our suite and so want to generate a separate `It` for each book fixture.
+
+Many Ginkgo users attempt the following approach.  It's a common gotcha:
+
+```go
+/* INVALID */
+var fixtureBooks []*books.Book
+
+var _ = BeforeSuite(func() {
+    fixtureBooks = LoadFixturesFrom("./fixtures/books.json")
+    Expect(fixtureBooks).NotTo(BeEmpty())
+})
+
+Describe("Storing and retrieving the book fixtures", func() {
+    for _, book := range fixtureBooks {
+        book := book
+        It(fmt.Sprintf("can store and retreive %s", book.Title), func() {
+            Expect(library.Store(book)).To(Succeed())
+            DeferCleanup(library.Delete, book)
+            Expect(library.FindByTitle(book.Title)).To(Equal(book))                        
+        })
+    }
+})
+```
+
+This will not work.  The fixtures are loaded in the `BeforeSuite` closure which runs during the **Run Phase**... _after_ the **Tree Construction Phase** where we loop over `fixtureBooks`.  If you need to perform work that influences the structure of the spec tree you must do it  _before_ or _during_ the Tree Construction Phase.  In this case, it is idiomatic to place the relevant code in the `Test` function in the bootstrap file:
+
+```go
+var fixtureBooks []*books.Book
+
+func TestBooks(t *testing.T) {
+    RegisterFailHandler(Fail)
+
+    // perform work that needs to be done before the Tree Construction Phase here
+    // note that we wrap `t` with a new Gomega instance to make assertions about the fixtures here.
+    g := NewGomegaWithT(t)
+    fixtureBooks = LoadFixturesFrom("./fixtures/books.json")
+    g.Expect(fixtureBooks).NotTo(BeEmpty())
+
+    // finally, we pass the modified configuration in to RunSpecs
+    RunSpecs(t, "Books Suite")
+}
+
+Describe("Storing and retrieving the book fixtures", func() {
+    for _, book := range fixtureBooks {
+        book := book
+        It(fmt.Sprintf("can store and retrieve %s", book.Title), func() {
+            Expect(library.Store(book)).To(Succeed())
+            DeferCleanup(library.Delete, book)
+            Expect(library.FindByTitle(book.Title)).To(Equal(book))                        
+        })
+    }
+})
+```
+
+### Shared Behaviors
+It's common to want to extract subsets of spec behavior for reuse - these are typically called "Shared Behaviors".  
+
+It is often the case that within a particular suite there will be a number of different `Context`s that assert the exact same behavior, in that they have identical `It`s within them.  The only difference between these `Context`s is the set up done in their respective `BeforeEach`s.  Rather than repeat the `It`s for these `Context`s, you can extract the code into a shared-scope closure and avoid repeating yourself.  For example:
+
+```go
+Describe("Storing books in the library", func() {
+    var book *books.Book{}
+
+    Describe("the happy path", func() {
+        BeforeEach(func() {
+            book = &books.Book{
+                Title:  "Les Miserables",
+                Author: "Victor Hugo",
+                Pages:  2783,
+            }
+        })
+
+        It("validates that the book can be stored", func() {
+            Expect(library.IsStorable(book)).To(BeTrue())
+        })
+
+        It("can store the book", func() {
+            Expect(library.Store(book)).To(Succeed())
+        })
+    })
+
+    Describe("failure modes", func() {
+        AssertFailedBehavior := func() {
+            It("validates that the book can't be stored", func() {
+                Expect(library.IsStorable(book)).To(BeFalse())
+            })
+
+            It("fails to store the book", func() {
+                Expect(library.Store(book)).To(MatchError(books.ErrStoringBook))
+            })
+        }
+
+        Context("when the book has no title", func() {
+            BeforeEach(func() {
+                book = &books.Book{
+                    Author: "Victor Hugo",
+                    Pages:  2783,
+                }
+            })
+
+            AssertFailedBehavior()
+        })
+
+        Context("when the book has no author", func() {
+            BeforeEach(func() {
+                book = &books.Book{
+                    Title: "Les Miserables",
+                    Pages:  2783,
+                }
+            })
+
+            AssertFailedBehavior()
+        })
+
+        Context("when the book is nil", func() {
+            BeforeEach(func() {
+                book = nil
+            })
+
+            AssertFailedBehavior()
+        })        
+    })
+})
+```
+
+Since `AssertFailedBehavior` is defined in the same stack of closures as the other nodes, it has access to the shared `book` variable.  Note that the `AssertFailedBehavior` function is called within the body of the `Context` container block.  This will happen during The Tree Construction phase and result in a spec tree that includes the `It`s defined in the `AssertFailedBehavior` function for each context.  
+
+### Patterns for Asynchronous Testing
+
+It is common, especially in integration suites, to be testing behaviors that occur asynchronously (either within the same process or, in the case of distributed systems, outside the current test process in some combination of external systems).  Ginkgo and Gomega provide the building blocks you need to write effective asynchronous specs efficiently.
+
+Rather than an exhaustive/detailed review we'll simply walk through some common patterns.  Throughout you'll see that you should generally try to use Gomega's `Eventually` and `Consistently` to make [asynchronous assertions](#https://onsi.github.io/gomega/#making-asynchronous-assertions).
+
+Both `Eventually` and `Consistently` perform asynchronous assertions by polling the provided input.  In the case of `Eventually`, Gomega polls the input repeatedly until the matcher is satisfied - once that happens the assertion exits successfully and execution continues.  If the matcher is never satisfied `Eventually` will time out with a useful error message.  Both the timeout and polling interval are [configurable](https://onsi.github.io/gomega/#eventually).
+
+In the case of `Consistently`, Gomega polls the the input repeatedly and asserts the matcher is satisfied every time.  `Consistently` only exits early if a failure occurs - otherwise it continues polling until the specified interval elapses.  This is often the only way to assert that something "does not happen" in an asynchronous system.
+
+`Eventually` and `Consistently` can accept three types of input.  You can pass in bare values and assert that some aspect of the value changes eventually.  This is most commonly done with Go channels or Gomega's 
+[`gbytes`](https://onsi.github.io/gomega/#gbytes-testing-streaming-buffers) and [`gexec`](https://onsi.github.io/gomega/#gexec-testing-external-processes) packages.  You can also pass in functions and assert that their return values `Eventually` or `Consistently` satisfy a matcher - we'll cover those later.  Lastly, you can pass in functions that take a `Gomega` argument - these allow you to make assertions within the function and are a way to assert that a series of assertions _eventually_ succeeds.  We'll cover _that_ later as well.  Let's look at these various input types through the lens of some concrete use-cases.
+
+#### Testing an in-process Asynchronous Service.
+Let's imagine an in-process asynchronous service that can prepare books for publishing and emit updates to a buffer.  Since publishing is expensive the publish service returns a channel that will include the published book bits and runs the actual publishing process in a separate Goroutine.  We could test such a service like so:
+
+```go
+Describe("Publishing books", func() {
+    var book *books.Book
+    BeforeEach(func() {
+        book = loadBookWithContent("les_miserables.fixture")
+        Expect(book).NotTo(BeNil())
+    })
+
+    It("can publish a book, emitting information as it goes", func() {
+        buffer := gbytes.NewBuffer() //gbytes provides a thread-safe buffer that works with the `gbytes.Say` matcher
+        
+        // we begin publishing the book.  This kicks off a goroutine and returns a channel
+        c := publisher.Publish(book, buffer)
+
+        //gbytes.Say allows us to assert on output to a stream
+        Eventually(buffer).Should(gbytes.Say(`Publishing "Les Miserables...`))
+        Eventually(buffer).Should(gbytes.Say(`Published page 1/2783`))
+        Eventually(buffer).Should(gbytes.Say(`Published page 2782/2783`))
+        Eventually(buffer).Should(gbytes.Say(`Publish complete!`))
+
+        //rather than call <-c which could block the spec forever we use Eventually to poll the channel and
+        //store any received values in a pointer
+        var result publisher.PublishResult
+        Eventually(c).Should(Receive(&result))
+
+        //we make some synchronous assertions on the result
+        Expect(result.Title).To(Equal("Les Miserables"))
+        Expect(result.EpubSize).To(BeNumerically(">", 10))
+        Expect(result.EpubContent).To(ContainSubstring("I've ransomed you from fear and hatred, and now I give you back to God."))
+
+        //we expect the publisher to close the channel when it's done
+        Eventually(c).Should(BeClosed())
+    })
+})
+```
+
+As you can see Gomega allows us to make some pretty complex asynchronous assertions pretty easily!
+
+#### Testing Local Processes
+Launching and testing an external process is actually quite similar to testing an in-process asynchronous service (the example above).  You typically leverage Goemga's [`gexec`](https://onsi.github.io/gomega/#gexec-testing-external-processes) and [`gbytes`](https://onsi.github.io/gomega/#gbytes-testing-streaming-buffers) packages.  Let's imagine our book-publishing service was a actually a command-line tool we wanted to test:
+
+```go
+//We compile the publisher in a BeforeSuite so its available to our specs
+//Not that this step can be skipped if the publisher binary is already precompiled
+var publisherPath string
+BeforeSuite(func() {
+    var err error
+    publisherPath, err = gexec.Build("path/to/publisher")
+    Expect(err).NotTo(HaveOccurred())
+    DeferCleanup(gexec.CleanupBuildArtifacts)    
+})
+
+Describe("Publishing books", func() {
+    It("can publish a book, emitting information as it goes", func() {
+        //First, we create a command to invoke the publisher and pass appropriate args
+        cmd := exec.Command(publisherPath, "-o=les-miserables.epub", "les-miserables.fixture")
+
+        //Now we launch the command with `gexec`.  This returns a session that wraps the running command.  
+        //We also tell `gexec` to tee any stdout/stderr output from the process to `GinkgoWriter` - this will
+        //ensure we get all the process output if the spec fails.
+        session, err := gexec.Start(cmd, GinkgoWriter, GinkgoWriter)
+        Expect(err).NotTo(HaveOccurred())
+
+        //At this point the process is running in the background
+        //In addition to teeing to GinkgoWriter gexec will capture any stdout/stderr output to
+        //gbytes buffers.  This allows us to make assertions against its stdout output using `gbytes.Say`
+        Eventually(session).Should(gbytes.Say(`Publishing "Les Miserables...`))
+        Eventually(session).Should(gbytes.Say(`Published page 1/2783`))
+        Eventually(session).Should(gbytes.Say(`Published page 2782/2783`))
+        Eventually(session).Should(gbytes.Say(`Publish complete!`))
+
+        //We can also assert the session has exited 
+        Eventually(session).Should(gexec.Exit(0)) //with exit code 0
+
+        //At this point we should have the `les-miserables.epub` artifact
+        Expect("les-miserables.epub").To(BeAnExistingFile())
+
+        result, err := epub.Load("les-miserables.epub")
+        Expect(err).NotTo(HaveOccurred())
+
+        //we make some synchronous assertions on the result
+        Expect(result.Title).To(Equal("Les Miserables"))
+        Expect(result.EpubSize).To(BeNumerically(">", 10))
+        Expect(result.EpubContent).To(ContainSubstring("I've ransomed you from fear and hatred, and now I give you back to God."))
+    })
+})
+```
+
+#### Testing Blocking Functions
+It's common in Go for functions to block and perform complex operations synchronously - and leave the work of spawning goroutines and managing thread-safety to the user.  You can test such patterns easily with Gomega.  For example, let's test a flow that performs a few expensive operations and assert that everything finishes eventually.
+
+```go
+Describe("Change book font-size", func() {
+    var book *books.Book
+    BeforeEach(func() {
+        book = loadBookWithContent("les_miserables.fixture")
+        Expect(book).NotTo(BeNil())
+    })
+  
+    It("can repaginate books without losing any content", func() {
+        done := make(chan interface{})
+        go func() {
+            defer GinkgoRecover()
+
+            content := book.RawContent()
+            Expect(book.Pages).To(Equal(2783))
+
+            //this might be quite expensive and will block...
+            err := book.SetFontSize(28)
+            Expect(err).NotTo(HaveOccurred())
+
+            Expect(book.Pages).To(BeNumerically(">", 2783))
+            Expect(book.RawContent()).To(Equal(content))
+
+            close(done)
+        }()
+
+        Eventually(done).Should(BeClosed())
+    })  
+})
+```
+
+This use of a `done` channel is idiomatic and guards the spec against potentially hanging forever.
+
+#### Testing External Systems
+When integration testing an external system, particularly a distributed system, you'll often find yourself needing to wait for the external state to converge and become eventually consistent.  Gomega makes it easy to poll and validate that the system under test eventually exhibits the desired behavior.  This is typically done by passing functions in to `Eventually` and `Consistently`.
+
+For example, let's imagine testing how an external library service handles notifying users about holds on their books.  Here's what a fully worked example might look like:
+
+```go
+var library *library.Client
+var _ = BeforeSuite(func() {
+    var err error
+    library, err = library.NewClient(os.Getenv("LIBRARY_SERVICE"))
+    Expect(err).NotTo(HaveOccurred())
+
+    Eventually(library.Ping).Should(Succeed())
+})
+
+var _ = Describe("Getting notifications about holds", func() {
+    var book *books.Book
+    var sarah, jane *user.User
+    BeforeEach(func() {
+        book = &books.Book{
+            Title: "My test book",
+            Author: "Ginkgo",
+            Pages: 17,
+        }
+
+        Expect(library.Store(book)).To(Succeed())
+        DeferCleanup(library.Delete, book)
+
+        sarah = user.NewUser("Sarah", "integration-test-account+sarah@gmail.com")
+        jane = user.NewUser("Jane", "integration-test-account+jane@gmail.com")
+        
+        By("Sarah checks the book out")
+        Expect(sarah.CheckOut(library, book)).To(Succeed())
+    })
+
+    It("notifies the user when their hold is ready", func() {
+        By("Jane can't check the book out so she places a hold")
+        Expect(jane.CheckOut(library, book)).To(MatchError(books.ErrNoAvailableCopies))
+        Expect(jane.PlaceHold(library, book)).To(Succeed())
+
+        By("when Sarah returns the book")
+        Expect(sarah.Return(library, book)).To(Succeed())
+
+        By("Jane eventually gets notified that her book is available in the library app...")
+        Eventually(func() ([]user.Notification, error) {
+            return jane.FetchNotifications()
+        }).Should(ContainElement(user.Notification{Title: book.Title, State: book.ReadyForPickup}))
+
+        By("...and in her email...")
+        Eventually(func() ([]string, error) {
+            messages, err := gmail.Fetch(jane.EmailAddress)
+            if err != nil {
+                return nil, err
+            }
+            subjects := []string{}
+            for _, message := range messages {
+                subjects = append(subjects, message.Subject)
+            }
+            return subjects, nil
+        }).Should(ContainElement(fmt.Sprintf(`"%s" is available for pickup`, book.Title)))
+
+        Expect(jane.CheckOut(library, book)).To(Succeed())
+    })
+})
+```
+
+As you can see we are able to clearly test both synchronous concerns (blocking calls to the library service that return immediately) with asynchronous concerns (out-of-band things that happen after a library call has been made).  The DSL allows us to clearly express our intent and capture the flow of this spec with relatively little noise.
+
+One important thing warrants calling out, however.  Notice that we aren't using `Eventually` to assert that individual calls to the `library` or `user` client don't time out.  `Eventually` assumes that the function it is polling will return in a timely manner.  It does not monitor the duration of the function call to apply a timeout.  Rather, it calls the function synchronously and then asserts against the result immediately - it then waits for the polling interval before trying again.  It is expected that the client under test can handle connection timeout issues and return in a timely manner.  One common pattern, shown here, is to place an assertion in a `BeforeSuite` that validates that the external service we need to communicate with is up and ready to receive network traffic.  That's what `Eventually(library.Ping).Should(Succeed())` is doing.  Once we've established the server is up we can proceed to test with confidence.
+
+`Eventually` has a few more tricks that we can leverage to clean this code up a bit.  Since `Eventually` accepts functions we can simply replace this:
+
+```go
+Eventually(func() ([]user.Notification, error) {
+    return jane.FetchNotifications()
+}).Should(ContainElement(user.Notification{Title: book.Title, State: book.ReadyForPickup}))
+```
+
+with this:
+
+```go
+Eventually(jane.FetchNotifications).Should(ContainElement(user.Notification{Title: book.Title, State: book.ReadyForPickup}))
+```
+
+Note that `Eventually` automatically asserts a niladic error as it polls the `FetchNotifications` function.  Also note that we are passing in a reference to the method on the `jane` instance - not invoking it.  `Eventually(jane.FetchNotifications())` would not work - you must pass in `Eventually(jane.FetchNotifications)`!
+
+`Eventually` can _also_ accept functions that take a single `Gomega` parameter.  These functions are then passed a local `Gomega` that can be used to make assertions _inside_ the function as it is polled.  `Eventually` will retry the function if an assertion fails.  This would allow us to replace:
+
+```go
+Eventually(func() ([]string, error) {
+    messages, err := gmail.Fetch(jane.EmailAddress)
+    if err != nil {
+        return nil, err
+    }
+    subjects := []string{}
+    for _, message := range messages {
+        subjects = append(subjects, message.Subject)
+    }
+    return subjects, nil
+}).Should(ContainElement(fmt.Sprintf(`"%s" is available for pickup`, book.Title)))
+```
+
+with
+
+```go
+Eventually(func(g Gomega) ([]string) {
+    messages, err := gmail.Fetch(jane.EmailAddress)
+    g.Expect(err).NotTo(HaveOccurred())
+    subjects := []string{}
+    for _, message := range messages {
+        subjects = append(subjects, message.Subject)
+    }
+    return subjects, nil
+}).Should(ContainElement(fmt.Sprintf(`"%s" is available for pickup`, book.Title)))
+```
+
+we can even push the entire assertion into the polled function:
+
+```go
+Eventually(func(g Gomega) {
+    messages, err := gmail.Fetch(jane.EmailAddress)
+    g.Expect(err).NotTo(HaveOccurred())
+    subjects := []string{}
+    for _, message := range messages {
+        subjects = append(subjects, message.Subject)
+    }
+    expectedSubject := fmt.Sprintf(`"%s" is available for pickup`, book.Title)
+    g.Expect(subjects).To(ContainElement(expectedSubject))
+    return subjects, nil
+}).Should(Succeed())
+```
+
+this approach highlights a special-case use of the `Succeed()` matcher with `Eventually(func(g Gomega) {})` - `Eventually` will keep retrying the function until no failures are detected.
+
+> You may be wondering why we need to pass in a dedicated `Gomega` instance to the polled function.  That's because the default global-level assertions are implicitly tied to Ginkgo's `Fail` handler.  The first failed assertion in an `Eventually` would cause the spec to fail with no possibility to retry.  By passing in a fresh `Gomega` instance, `Eventually` can monitor for failures itself and control the final failure/success state of the assertion it is governing.
+
+Finally, since we're on the topic of simplifying things, we can make use of the fact that `ContainElement` can take a matcher to compose it with the `WithTransform` matcher and get rid of the `subjects` loop:
+
+```go
+Eventually(func(g Gomega) {
+    messages, err := gmail.Fetch(jane.EmailAddress)
+    g.Expect(err).NotTo(HaveOccurred())
+    expectedSubject := fmt.Sprintf(`"%s" is available for pickup`, book.Title)
+    subjectGetter := func(m gmail.Message) string { return m.Subject }
+    g.Expect(subjects).To(ContainElement(WithTransform(subjectGetter, Equal(expectedSubject))))
+    return subjects, nil
+}).Should(Succeed())
+```
+
 ### Patterns for Parallel Integration Specs
 One of Ginkgo's strengths centers around building and running large complex integration suites.  Integration suites are spec suites that exercise multiple related components to validate the behavior of the integrated system as a whole.  They are notorious for being difficult to write, susceptible to random failure, and painfully slow.  They also happen to be incredibly valuable, particularly when building large complex distributed systems.
-#### Asynchronous Testing
-#### Managing External Resources in Parallel Test Suites
-#### Testing External Processes
-Gotchas - external processes that don't quit can cause ginkgo -p to hang
-Gotchas - setting cmd.Stdout => os.Stdout can cause Ginkgo to hang/bail out.  See issue #851 PauseOutputInterception()/ResumeOutputInterception()
-#### Managing External Processes in Parallel Test Suites
-#### Alternatives to `BeforeAll` - central server pattern
 
-### Locally-scoped Shared Behaviors
-#### Pattern 1: Extract a function that defines the shared `It`s
-#### Pattern 2: Extract functions that return closures, and pass the results to `It`s
-### Global Shared Behaviors
-#### Pattern 1
-#### Pattern 2
+The [Patterns for Asynchronous Testing](#patterns-for-asynchronous-testing) section above goes into depth about patterns for testing asynchronous systems like these.  This section will cover patterns for ensuring such specs can run in parallel.  Make sure to read the [Spec Parallelization](#spec-parallelization) section to build a mental model for how Ginkgo supports parallelization first - it's important to understand that parallel specs are running in **separate** processes and are coordinated via the Ginkgo CLI.
+
+#### Managing External Processes in Parallel Suites
+
+We covered how to use `gexec` and `gbytes` to compile, launch, and test external processes in the [Testing Local Processes](#testing-local-processes) portion of the asynchronous testing section.  We'll extend the example there to cover how to design such a test to work well in parallel.
+
+First recall that we used a `BeforeSuite` to compile our `publisher` binary:
+
+```go
+var publisherPath string
+BeforeSuite(func() {
+    var err error
+    publisherPath, err = gexec.Build("path/to/publisher")
+    Expect(err).NotTo(HaveOccurred())
+    DeferCleanup(gexec.CleanupBuildArtifacts)    
+})
+```
+
+This code will work fine in parallel as well (under the hood `gexec.Build` places build artifacts in a randomly-generated temporary directory - this is why you need to call `gexec.CleanupBuildArtifacts` to clean 
+up); but it's inefficient and all your parallel processes will spend time up front compiling multiple copies of the same binary.  Instead, we can use `SynchronizedBeforeSuite` to perform the compilation step just once:
+
+```go
+var publisherPath string
+SynchronizedBeforeSuite(func() []byte {
+    path, err := gexec.Build("path/to/publisher")
+    Expect(err).NotTo(HaveOccurred())
+    DeferCleanup(gexec.CleanupBuildArtifacts)
+    return []byte(path)
+}, func(path []byte) {
+    publisherPath = string(path)
+})
+```
+
+Now only process #1 will compile the publisher.  All other processes will wait until it's done.  Once complete it will pass the path to the compiled artifact to all other processes.  Note that the `DeferCleanup` in the `SynchronizedBeforeSuite` will have the same runtime semantics as a `SynchronizedAfterSuite` so `gexec` will not cleanup after itself until _all_ processes have finished running.
+
+Now any spec running on any process can simply launch it's own instance of the `publisher` process via `gexec` and make assertions on its output with `gbytes`.  The only thing to be aware of is potential interactions between the multiple publisher processes if they happen to access some sort of shared singleton resources...  Keep reading!
+
+#### Managing External Resources in Parallel Suites: Files
+
+The filesystem is a shared singleton resource.  Each parallel process in a parallel spec run will have access to the same shared filesystem.  As such it is important to avoid spec pollution caused by accidental collisions.  For example, consider the following publisher specs:
+
+```go
+Describe("Publishing books", func() {
+    It("can publish a complete epub", func() {
+        cmd := exec.Command(publisherPath, "-o=out.epub", "les-miserables.fixture")
+        session, err := gexec.Start(cmd, GinkgoWriter, GinkgoWriter)
+        Expect(err).NotTo(HaveOccurred())
+        Eventually(session).Should(gexec.Exit(0)) //with exit code 0
+
+        result, err := epub.Load("out.epub")
+        Expect(err).NotTo(HaveOccurred())
+        Expect(result.EpubPages).To(Equal(2783))
+    })
+
+    It("can publish a preview that contains just the first chapter", func() {        
+        cmd := exec.Command(publisherPath, "-o=out.epub", "--preview", "les-miserables.fixture")
+        session, err := gexec.Start(cmd, GinkgoWriter, GinkgoWriter)
+        Expect(err).NotTo(HaveOccurred())
+        Eventually(session).Should(gexec.Exit(0)) //with exit code 0
+
+        result, err := epub.Load("out.epub")
+        Expect(err).NotTo(HaveOccurred())
+        Expect(result.EpubPages).To(BeNumerically("<", 2783))
+        Expect(result.EpubContent).To(ContainSubstring("Chapter 1"))
+        Expect(result.EpubContent).NotTo(ContainSubstring("Chapter 2"))
+    })
+})
+```
+
+these specs will always run fine in series - but can fail in subtle and confusing ways when run in parallel!  Since both publish to the same `out.epub` file simultaneously collisions are possible.
+
+There are multiple ways to approach this.  Perhaps the obvious way would be to manually ensure a different output name for each spec:
+
+```go
+Describe("Publishing books", func() {
+    It("can publish a complete epub", func() {
+        cmd := exec.Command(publisherPath, "-o=complete.epub", "les-miserables.fixture")
+        ...
+    })
+
+    It("can publish a preview that contains just the first chapter", func() {        
+        cmd := exec.Command(publisherPath, "-o=preview.epub", "--preview", "les-miserables.fixture")
+        ...
+    })
+})
+```
+
+that's... _ok_.  But it's asking for trouble by putting the namespacing burden on the user.
+
+A better alternative would be to carve out a separate namespace for each spec.  For example, we could create a temporary directory:
+
+```go
+var tmpDir string
+BeforeEach(func() {
+    tmpDir = GinkgoT().TempDir()
+})
+
+Describe("Publishing books", func() {
+    It("can publish a complete epub", func() {
+        path := filepath.Join(tmpDir, "out.epub")
+        cmd := exec.Command(publisherPath, "-o="+path, "les-miserables.fixture")
+        ...
+    })
+
+    It("can publish a preview that contains just the first chapter", func() {        
+        path := filepath.Join(tmpDir, "out.epub")
+        cmd := exec.Command(publisherPath, "-o="+path, "--preview", "les-miserables.fixture")
+        ...
+    })
+})
+
+```
+(here we're using `GinkgoT().TempDir()` to access Ginkgo's implementation of `t.TempDir()` which cleans up after itself - there's no magic here.  You could have simply called `os.MkdirTemp` and cleaned up afterwards yourself.)
+
+This approach works fine but has the sometimes unfortunate side-effect of placing your files in a random location which can make debugging a bit more tedious.
+
+Another approach - and the one used by Ginkgo's own integration suite - is to use the current parallel process index to shard the filesystem:
+
+```go
+var pathTo func(path string) string
+
+BeforeEach(func() {
+    //shard based on our current process index.
+    //this starts at 1 and goes up to N, the number of parallel processes.
+    dir := fmt.Sprintf("./tmp-%d", GinkgoParallelProcess())
+    os.MkdirAll(dir)
+    DeferCleanup(os.RemoveAll, dir)
+    pathTo = func(path string) string { return filepath.Join(dir, path)}
+})
+
+Describe("Publishing books", func() {
+    It("can publish a complete epub", func() {
+        path := pathTo("out.epub")
+        cmd := exec.Command(publisherPath, "-o="+path, "les-miserables.fixture")
+        ...
+    })
+
+    It("can publish a preview that contains just the first chapter", func() {        
+        path := pathTo("out.epub")
+        cmd := exec.Command(publisherPath, "-o="+path, "--preview", "les-miserables.fixture")
+        ...
+    })
+})
+```
+
+this will create a namespaced local temp dir and provides a convenience function for specs to access paths to the directory.  The directory is cleaned up after each spec.
+
+One nice thing about this approach is our ability to preserve the artifacts in the temporary directory in case of failure.  A common pattern when debugging is to use `--fail-fast` to indicate that the suite should stop running as soon as the first failure occurs.  We can key off of that config to change the behavior of our cleanup code:
+
+```go
+var pathTo func(path string) string
+
+BeforeEach(func() {
+    //shard based on our current process index.
+    //this starts at 1 and goes up to N, the number of parallel processes.
+    dir := fmt.Sprintf("./tmp-%d", GinkgoParallelProcess())
+    os.MkdirAll(dir)
+
+    DeferCleanup(func() {
+        suiteConfig, _ := GinkgoConfiguration()
+        if CurrentSpecReport().Failed() && suiteConfig.FailFast {
+            GinkgoWriter.Printf("Preserving artifacts in %s\n", dir)
+            return
+        }
+        Expect(os.RemoveAll(dir)).To(Succeed())
+    })
+
+    pathTo = func(path string) string { return filepath.Join(dir, path)}
+})
+```
+
+now, the temporary directory will be preserved in the event of spec failure, but only if `--fail-fast` is configured.
+
+#### Managing External Resources in Parallel Suites: Ports
+Another shared singleton resources is the set of available ports on the local machine.  If you need to be able to explicitly specify a port to use during a spec (e.g. you're spinning up an external process that needs to be told what port to listen on) you'll need to be careful how you carve up the available set of ports.  For example, the following would not work:
+
+```go
+var libraryAddr string
+
+BeforeSuite(func() {
+    libraryAddr := "127.0.0.1:50000"
+    library.Serve(listenAddr)
+    client = library.NewClient(listenAddr)
+})
+```
+
+when running in parallel each process will attempt to listen on port 50000 and a race with only one winner will ensue.  You could, instead, have the server you're spinning up figure out a free port to use and report it back - but that is not always possible in the case where a service must be explicitly configured.
+
+Instead, you can key off of the current parallel process index to give each process a unique port.  In this case we could:
+
+```go
+var libraryAddr string
+
+BeforeSuite(func() {
+    libraryAddr := fmt.Sprintf("127.0.0.1:%d", 50000 + GinkgoParallelProcess())
+    library.Serve(listenAddr)
+    client = library.NewClient(listenAddr)
+})
+```
+
+now each process will have its own unique port.
+
+#### Patterns for Testing against Databases
+Stateful services that store data in external databases benefit greatly from a robust comprehensive test suite.  Unfortunately, many testers shy away from full-stack testing that includes the database for fear of slowing their suites down.  Fake/mock databases only get you so far, however.  In this section we outline patterns for spinning up real databases and testing against them in ways that are parallelizable and, therefore, able to leverage the many cores in modern machines to keep our full-stack tests fast.
+
+The core challenge with stateful testing is to ensure that specs do not pollute one-another.  This applies in the serial context where a one spec can change the state of the database in a way that causes a subsequent spec to fail.  This also applies in the parallel context where multiple specs can write to the same database at the same time in contradictory ways.  Thankfully there are patterns that make mitigating these sorts of pollution straightforward and transparent to the user writing specs.
+
+Throughout these examples we have a `DBRunner` library that can spin up instances of a database and a `DBClient` library that can connect to that instance and perform actions.  We aren't going to pick any particular database technology as these patterns apply across most of them.
+
+##### A Database for Every Spec
+
+Here's an incredibly expensive but sure-fire way to make sure each spec has a clean slate of data:
+
+```go
+var client *DBClient.Client
+var _ = BeforeEach(func() {
+    db, err := DBRunner.Start()
+    Expect(err).NotTo(HaveOccurred())
+    DeferCleanup(db.Stop)
+
+    client = DBClient.New(db)
+    Expect(client.Connect()).To(Succeed())
+    DeferCleanup(client.Disconnect)
+
+    client.InitializeSchema()
+})
+```
+
+Now, each spec will get a fresh running database, with a clean initialized schema, to use.  This will work - but will probably be quite slow, even when running in parallel.
+
+##### A Database for Every Parallel Process
+
+Instead, a more common pattern is to spin up a database for each parallel process and reset its state between specs.
+
+```go
+var client *DBClient.Client
+var snapshot *DBClient.Snapshot
+var _ = BeforeSuite(func() {
+    db, err := DBRunner.Start()
+    Expect(err).NotTo(HaveOccurred())
+    DeferCleanup(db.Stop)
+
+    client = DBClient.New(db)
+    Expect(client.Connect()).To(Succeed())
+    DeferCleanup(client.Disconnect)
+
+    client.InitializeSchema()
+    snapshot, err = client.TakeSnapshot()
+    Expect(err).NotTo(HaveOccurred())
+})
+
+var _ = BeforeEach(func() {
+    Expect(client.RestoreSnapshot(snapshot)).To(Succeed())
+})
+```
+
+here we've assumed the `client` can take and restore a snapshot of the database.  This could be as simple as truncating tables in a sql database or clearing out a root key in a hierarchical key-value store.  Such methods are usually quite _fast_ - certainly fast enough to warrant full-stack testing over mock/fake-heavy testing.
+
+With this approach each parallel process has its own dedicated database so there is no chance for cross-spec pollution when running in parallel.  Within each parallel process the dedicated database is cleared out between specs so there's no chance for spec pollution from one spec to the next.
+
+This all works if you have the ability to spin up a local copy of the database.  But there are times when you must rely on an external stateful singleton resource and need to test against it.  We'll explore patterns for testing those next.
+
+#### Patterns for Testing against Singletons
+There are times when your spec suite must run against a stateful shared singleton system.  Perhaps it is simply too expensive to spin up multiple systems (e.g. each "system" is actually a memory-hungry cluster of distributed systems; or, perhaps, you are testing against a real-life instance of a service and can't spin up another instance).
+
+In such cases the recommended pattern for ensuring your specs are parallelizable is to embrace sharding the external service by the parallel process index.  Exactly how this is done will depend on the nature of the system.
+
+Here are some examples to give you a sense for how to approach this:
+
+- If you're testing against a shared hierarchical key-value store (in which the keys are represented as `/paths/to/values` - e.g. S3, etcd) you can write your specs and code to accept a configurable root key such that all values are stored under `/{ROOT}/path/to/value`.  The suite can then configure `ROOT = fmt.Sprintf("test-%d", GinkgoParallelProcess())`
+- If you're testing an external multi-tenant service you can have your suite create a unique tenant per parallel process.  Perhaps something like `service.CreateUser(fmt.Sprintf("test-user-%d", GinkgoParallelProcess()))`
+- If you're testing an external service that supports namespace you can request a dedicated namespace per parallel process (e.g. a dedicated Cloud Foundry org and space, or a dedicated Kubernetes namespace).
+
+The details will be context dependent - but generally speaking you should be able to find a way to shard access to the singleton system by `GinkgoParallelProcess()`.  You'll also need to figure out how to reset the shard between specs to ensure that each spec has a clean slate to operate from.
+
+#### Some Subtle Parallel Testing Gotchas
+
+We'll round out the parallel testing patterns with a couple of esoteric gotchas.
+
+There's a somewhat obscure issue where an external process that oulives the current spec suite can cause the spec suite to hang mysteriously.  If you've hit that issue read through this [GitHub issue](#https://github.com/onsi/gomega/issues/473) - there's likely a stdout/stderr pipe that's sticking around preventing Go's `cmd.Wait()` from returning.
+
+When you spin up a process yourself you should generally have it pipe its output to `GinkgoWriter`.  If you pipe to `os.Stdout` and/or `os.Stderr` and the process outlives the current spec you'll cause Ginkgo's output interceptor to hang.  Ginkgo will actually catch this and print out a long error message telling you what to do.  You can learn more on the associated [GitHub issue](#https://github.com/onsi/ginkgo/issues/851)
+
 ### Table Patterns
 #### Managing Complex Parameters
+#### Generating many Entries
+(loop)
 ### Benchmarking Code
 ### Building Custom Matchers
 
