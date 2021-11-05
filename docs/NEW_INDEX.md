@@ -21,7 +21,7 @@ Specifically, Pivotal was one of the lead contributors to Cloud Foundry.  A spra
 
 The need was twofold: organizational and technical. As a growing organization Pivotal woudl benefit from a shared testing framework to be used across its many teams writing Go.  Engineers jumping from one team to another needed to be able to hit the ground running; we needed fewer testing bikesheds and more shared testing patterns.  And our test-driven development culture put a premium on tests as first-class citizens: they needed to be easy to write, easy to read, and easy to maintain.
 
-Moreover, the _nature_ of the code being built - complex distributed systems - required a testing framework that could provide for the needs unique to unit-testing and integration-testing such a system.  We needed to make testing [asynchronous behavior](https://onsi.github.io/gomega/#making-asynchronous-assertions) ubiqutous and straightforward.  We needed to have [parallelizable integration tests](#parallelism) to ensure our test run-times didn't get out of control.  We needed a test framework that helped us [suss out](#spec-randomization) flaky tests and fix them.
+Moreover, the _nature_ of the code being built - complex distributed systems - required a testing framework that could provide for the needs unique to unit-testing and integration-testing such a system.  We needed to make testing [asynchronous behavior](https://onsi.github.io/gomega/#making-asynchronous-assertions) ubiquitous and straightforward.  We needed to have [parallelizable integration tests](#parallelism) to ensure our test run-times didn't get out of control.  We needed a test framework that helped us [suss out](#spec-randomization) flaky tests and fix them.
 
 This was the context that led to Ginkgo.  Over the years the Go testing ecosystem has grown and evolved - sometimes [bringing](https://go.dev/blog/subtests) it [closer](https://golang.org/doc/go1.17#testing) to Ginkgo.  Throughout, the community's reactions to Ginkgo have been... interesting.  Some enjoy the expressive framework and rich set of matchers - for many the DSL is familiar and the `ginkgo` CLI is productive.  Others have found the DSL off-putting, arguing that Ginkgo is not "the Go way" and that Go developers should eschew third party libraries in general.  That's OK; the world is plenty large enough for options to abound :)
 
@@ -201,7 +201,7 @@ We use **container nodes** like `Describe` and `Context` to organize the differe
 
 We use **setup nodes** like `BeforeEach` to set up the state of our specs.  In this case, we are instantiating two new book models: `lesMis` and `foxInSocks`.
 
-Finally, we use **subject nodes** like `It` to write a spec that makes assertions about the subject under test.  In this case, we are ensuring that `book.Category()` returns the correct category ``enum` based on the length of the book.  We make these assertions using Gomega's `Equal` matcher and `Expect` syntax.  You can learn much more about [Gomega here](https://onsi.github.io/gomega/#making-assertions) - the examples used throughout these docs should be self-explanatory.
+Finally, we use **subject nodes** like `It` to write a spec that makes assertions about the subject under test.  In this case, we are ensuring that `book.Category()` returns the correct category `enum` based on the length of the book.  We make these assertions using Gomega's `Equal` matcher and `Expect` syntax.  You can learn much more about [Gomega here](https://onsi.github.io/gomega/#making-assertions) - the examples used throughout these docs should be self-explanatory.
 
 The container, setup, and subject nodes form a **spec tree**.  Ginkgo uses the tree to construct a flattened list of specs where each spec can have multiple setup nodes but will only have one subject node.
 
@@ -1255,7 +1255,7 @@ DescribeTable("Extracting the author's first and last name",
 
 You'll be notified with a clear message at runtime if the parameter types don't match the spec closure signature.
 
-#### Mental Model: Table Specs are just Synctatic Sugar
+#### Mental Model: Table Specs are just Syntactic Sugar
 `DescribeTable` is simply providing syntactic sugar to convert its inputs into a set of standard Ginkgo nodes.  During the [Tree Construction Phase](#mental-model-how-ginkgo-traverses-the-spec-hierarchy) `DescribeTable` is generating a single container node that contains one subject node per table entry.  The description for the container node will be the description passed to `DescribeTable` and the descriptions for the subject nodes will be the descriptions passed to the `Entry`s.  During the Run Phase, when specs run, each subject node will simply invoke the spec closure passed to `DescribeTable`, passing in the parameters associated with the `Entry`.
 
 To put it another way, the table test above is equivalent to:
@@ -1416,7 +1416,7 @@ var _ = Describe("Math", func() {
 })
 ```
 
-Mercifully, Ginkgo's table DSL provides a few mechanisms to programatically generate entry descriptions.
+Mercifully, Ginkgo's table DSL provides a few mechanisms to programmatically generate entry descriptions.
 
 **`nil` Descriptions**
 
@@ -1570,7 +1570,7 @@ Describe("Bookmark", func() {
 })
 ```
 
-This suite only passes if the "has no bookmarks" spec runs before the "can add bookmarks" spec.  Instead, you should initializ the book variable in a setup node:
+This suite only passes if the "has no bookmarks" spec runs before the "can add bookmarks" spec.  Instead, you should initialize the book variable in a setup node:
 
 ```go
 Describe("Bookmark", func() {
@@ -1660,7 +1660,7 @@ To run a Ginkgo suite in parallel you simply pass the `-p` flag to `ginkgo`:
 ginkgo -p
 ```
 
-this will automatically detect the optimal number of test processes to spawn based on the number of cores on your maching.  You can, instead, specify this number manually via `-procs=N`:
+this will automatically detect the optimal number of test processes to spawn based on the number of cores on your machine.  You can, instead, specify this number manually via `-procs=N`:
 
 ```bash
 ginkgo -procs=N
@@ -1913,7 +1913,7 @@ Describe("Never in parallel please", Serial, func() {
 })
 ```
 
-Then both specs generated by the subject nodes in this container will be marked as `Serial`.  If we transfer the `Serial` decorator to one of the subject nodes, hwoever:
+Then both specs generated by the subject nodes in this container will be marked as `Serial`.  If we transfer the `Serial` decorator to one of the subject nodes, however:
 
 ```go
 Describe("Never in parallel please",  func() {
@@ -2198,7 +2198,7 @@ When Ginkgo detects that a passing test suite has programmatically focused tests
 You can unfocus _all_ specs in a suite by running `ginkgo unfocus`.  This simply strips off any `F`s off of `FDescribe`, `FContext`, `FIt`, etc... and removes an `Focus` decorators.
 
 #### Spec Labels
-`Pending`, `Skip`, and `Focus` provide adhoc mechanisms for filtering suites.  For particularly large and complex suites, however, you may need a more structured mechanism for organizing and filtering specs.  For such usecases, Ginkgo provides labels.
+`Pending`, `Skip`, and `Focus` provide ad-hoc mechanisms for filtering suites.  For particularly large and complex suites, however, you may need a more structured mechanism for organizing and filtering specs.  For such usecases, Ginkgo provides labels.
 
 Labels are simply textual tags that can be attached to Ginkgo container and setup nodes via the `Label` decorator.  Here are the ways you can attach labels to a node:
 
@@ -2572,7 +2572,7 @@ Describe("Manipulating books at the central library", func() {
 
 In this example, the `AfterEach` closure is using `CurrentSpecReport()` to discover whether or not the current spec has failed.  If it has debug information is fetched from the library server and emitted to the `GinkgoWriter`.
 
-Given `CurrentSpecReport()` you can imagine generating custom report information with something like a top-level `AfterEach`.  For example, let's say we want to write report infromation to a local file using a custom format _and_ send updates to a remote server.  You might try something like:
+Given `CurrentSpecReport()` you can imagine generating custom report information with something like a top-level `AfterEach`.  For example, let's say we want to write report information to a local file using a custom format _and_ send updates to a remote server.  You might try something like:
 
 ```go
 /*INVALID*/
@@ -2728,7 +2728,7 @@ Lastly, it is possible to pass a pointer into `AddReportEntry`.  Ginkgo will com
 ### Profiling your Suites
 Go supports a rich set of profiling features to gather information about your running test suite.  Ginkgo exposes all of these and manages them for you when you are running multiple suites and/or parallel suites.
 
-Ginkgo supports `--race` to analyze race conditions, `--cover` to compute code coverage, `--vet` to evaluate and vet your code, `--cpuprofile` to profile CPU performacne, `--memprofile` to profile memory usage, `--blockprofile` to profile blocking goroutines, and `--mutexprofile` to profile locking around mutexes.
+Ginkgo supports `--race` to analyze race conditions, `--cover` to compute code coverage, `--vet` to evaluate and vet your code, `--cpuprofile` to profile CPU performance, `--memprofile` to profile memory usage, `--blockprofile` to profile blocking goroutines, and `--mutexprofile` to profile locking around mutexes.
 
 `ginkgo -race` runs the race detector and emits any detected race conditions as the suite runs.  If any are detected the suite is marked as failed.
 
@@ -2737,7 +2737,7 @@ Ginkgo supports `--race` to analyze race conditions, `--cover` to compute code c
 #### Computing Coverage
 `ginkgo -cover` will compute and emit code coverage.  When running multiple suites Ginkgo will emit coverage for each suite and then emit a composite coverage across all running suites.  As with `go test` the default behavior for a given suite is to measure the coverage it provides for the code in the suite's package - however you can extend coverage to additional packages using `--coverpkg`.  You can also specify the `--covermode` to be one of `set` ("was this code called at all?"), `count` (how many times was it called?) and `atomic` (same as count, but threadsafe and expensive).  If you run `ginkgo --race --cover` the `--covermode` is automatically set to `atomic`.
 
-When run with `--cover`, Ginkgo will generate a single `coverprofile.out` file that captures the coverage statistics of all the suites that ran.  You can change the name of this file by specifiying `-coverprofile=filename`.  If you would like to keep separate coverprofiles for each suite use the `--keep-separate-coverprofiles` option.
+When run with `--cover`, Ginkgo will generate a single `coverprofile.out` file that captures the coverage statistics of all the suites that ran.  You can change the name of this file by specifying `-coverprofile=filename`.  If you would like to keep separate coverprofiles for each suite use the `--keep-separate-coverprofiles` option.
 
 Ginkgo also honors the `--output-dir` flag when generating coverprofiles.  If you specify `--output-dir` the generated coverprofile will be placed in the requested directory.  If you also specify `--keep-separate-coverprofiles` individual package coverprofiles will be placed in the requested directory and namespaced with a prefix that contains the name of the package in question.
 
@@ -2749,7 +2749,7 @@ By default, the test binary and various profile files are stored in the individu
 ## Ginkgo and Gomega Patterns
 So far we've introduced and described the majority of Ginkgo's capabilities and building blocks.  Hopefully the previous chapters have helped give you a mental model for how Ginkgo specs are written and run.
 
-Im this chapter we'll switch gears and illustrate common patterns for how Ginkgo's building blocks can be put together to solve for real-world problems.  Since Ginkgo and Gomega are so often paired this chapter will assume that you are using both together - as you'll see, the combination can unlock some powerful, and expressive, testing patterns.
+In this chapter we'll switch gears and illustrate common patterns for how Ginkgo's building blocks can be put together to solve for real-world problems.  Since Ginkgo and Gomega are so often paired this chapter will assume that you are using both together - as you'll see, the combination can unlock some powerful, and expressive, testing patterns.
 
 ### Recommended Continuous Integration Configuration
 
@@ -3221,6 +3221,93 @@ Describe("Storing books in the library", func() {
 
 Since `AssertFailedBehavior` is defined in the same stack of closures as the other nodes, it has access to the shared `book` variable.  Note that the `AssertFailedBehavior` function is called within the body of the `Context` container block.  This will happen during The Tree Construction phase and result in a spec tree that includes the `It`s defined in the `AssertFailedBehavior` function for each context.  
 
+### Table Specs Patterns
+
+We introduced Ginkgo's support for Table Specs in an [earlier section](#table-specs).  Here we'll just outline a couple of useful patterns.
+
+Tables specs allow you to specify a spec function that takes arbitrary parameters and entries to feed parameters to the function.  This works well when you've got a small handful of parameters but can become unwieldy with more parameters.  For example:
+
+```go
+var book *books.Book
+BeforeEach(func() {
+    book = LoadFixture("les-miserables.json")
+})
+DescribeTable("Repaginating Books",
+    func(fontSize int, lineHeight float64, pageWidth float64, pageHeight float64, expectedPages int) {
+        book.SetFontSize(fontSize)
+        book.SetLineHeight(lineHeight)
+        book.SetPageDimensions(pageWidth, pageHeight)
+        Expect(book.RecomputePages()).To(BeNumerically("~", expectedPages, 30))
+    },
+    func(fontSize int, lineHeight float64, pageWidth float64, pageHeight float64, expectedPages int) string {
+        return fmt.Sprintf("FontSize: %d, LineHeight: %.2f, Page:%.2fx%.2f => %d", fontSize, lineHeight, pageWidth, pageHeight, expectedPages)
+    }
+    Entry(nil, 12, 1.2, 8.5, 11, 2783),
+    Entry(nil, 14, 1.3, 8.5, 11, 3120),
+    Entry(nil, 10, 1.2, 8.5, 11, 2100),
+    Entry(nil, 12, 2.0, 8.5, 11, 6135),
+    Entry(nil, 12, 1, 5, 6, 12321),
+)
+```
+
+These entries are inscrutable!  A common pattern in this case is to define a type to capture the entry information:
+
+```go
+var book *books.Book
+type BookFormatting struct {
+    FontSize int
+    LineHeight float64
+    PageWidth float64
+    PageHeight float64
+}
+
+BeforeEach(func() {
+    book = LoadFixture("les-miserables.json")
+})
+DescribeTable("Repaginating Books",
+    func(formatting BookFormatting, expectedPages int) {
+        book.SetFontSize(formatting.FontSize)
+        book.SetLineHeight(formatting.LineHeight)
+        book.SetPageDimensions(formatting.PageWidth, formatting.PageHeight)
+        Expect(book.RecomputePages()).To(BeNumerically("~", expectedPages, 30))
+    },
+    func(formatting BookFormatting, expectedPages int) string {
+        return fmt.Sprintf("FontSize: %d, LineHeight: %.2f, Page:%.2fx%.2f => %d", 
+            formatting.fontSize, formatting.lineHeight, 
+            formatting.pageWidth, formatting.pageHeight,
+            expectedPages)
+    }
+    Entry(nil, BookFormatting{FontSize: 12, LineHeight: 1.2, PageWidth:8.5, PageHeight:11}, 2783),
+    Entry(nil, BookFormatting{FontSize: 14, LineHeight: 1.3, PageWidth:8.5, 11}, 3120),
+    Entry(nil, BookFormatting{FontSize: 10, LineHeight: 1.2, PageWidth:8.5, 11}, 2100),
+    Entry(nil, BookFormatting{FontSize: 12, LineHeight: 2.0, PageWidth:8.5, 11}, 6135),
+    Entry(nil, BookFormatting{FontSize: 12, LineHeight: 1, PageWidth:5, PageHeight:6}, 12321),
+)
+```
+
+This is longer but certainly easier to read!
+
+Another Table Spec pattern involves the reuse of table of Entries.  If you have multiple cases to run against the same set of entries you can save of the entries in a `[]TableEntry` slice and then pass the slice to multiple `DescribeTable` functions.  For example:
+
+```go
+
+var InvalidBookEntries = []TableEntry{
+    Entry("Empty book", &books.Book{}),
+    Entry("Only title", &books.Book{Title: "Les Miserables"}),
+    Entry("Only author", &books.Book{Author: "Victor Hugo"}),
+    Entry("Missing pages", &books.Book{Title: "Les Miserables", Author: "Victor Hugo"}),
+}
+
+DescribeTable("Storing invalid books always errors", func(book *books.Book) {
+    Expect(library.Store(book)).To(MatchError(books.ErrInvalidBook))
+}, InvalidBookEntries)
+
+DescribeTable("Reading invalid books always errors", func(book *books.Book) {
+    Expect(user.Read(book)).To(MatchError(books.ErrInvalidBook))
+}, InvalidBookEntries)
+
+```
+
 ### Patterns for Asynchronous Testing
 
 It is common, especially in integration suites, to be testing behaviors that occur asynchronously (either within the same process or, in the case of distributed systems, outside the current test process in some combination of external systems).  Ginkgo and Gomega provide the building blocks you need to write effective asynchronous specs efficiently.
@@ -3658,7 +3745,7 @@ Describe("Publishing books", func() {
 })
 ```
 
-this will create a namespaced local temp dir and provides a convenience function for specs to access paths to the directory.  The directory is cleaned up after each spec.
+this will create a namespaced local temp directory and provides a convenience function for specs to access paths to the directory.  The directory is cleaned up after each spec.
 
 One nice thing about this approach is our ability to preserve the artifacts in the temporary directory in case of failure.  A common pattern when debugging is to use `--fail-fast` to indicate that the suite should stop running as soon as the first failure occurs.  We can key off of that config to change the behavior of our cleanup code:
 
@@ -3769,7 +3856,7 @@ var _ = BeforeEach(func() {
 })
 ```
 
-here we've assumed the `client` can take and restore a snapshot of the database.  This could be as simple as truncating tables in a sql database or clearing out a root key in a hierarchical key-value store.  Such methods are usually quite _fast_ - certainly fast enough to warrant full-stack testing over mock/fake-heavy testing.
+here we've assumed the `client` can take and restore a snapshot of the database.  This could be as simple as truncating tables in a SQL database or clearing out a root key in a hierarchical key-value store.  Such methods are usually quite _fast_ - certainly fast enough to warrant full-stack testing over mock/fake-heavy testing.
 
 With this approach each parallel process has its own dedicated database so there is no chance for cross-spec pollution when running in parallel.  Within each parallel process the dedicated database is cleared out between specs so there's no chance for spec pollution from one spec to the next.
 
@@ -3792,16 +3879,196 @@ The details will be context dependent - but generally speaking you should be abl
 
 We'll round out the parallel testing patterns with a couple of esoteric gotchas.
 
-There's a somewhat obscure issue where an external process that oulives the current spec suite can cause the spec suite to hang mysteriously.  If you've hit that issue read through this [GitHub issue](#https://github.com/onsi/gomega/issues/473) - there's likely a stdout/stderr pipe that's sticking around preventing Go's `cmd.Wait()` from returning.
+There's a somewhat obscure issue where an external process that outlives the current spec suite can cause the spec suite to hang mysteriously.  If you've hit that issue read through this [GitHub issue](#https://github.com/onsi/gomega/issues/473) - there's likely a stdout/stderr pipe that's sticking around preventing Go's `cmd.Wait()` from returning.
 
 When you spin up a process yourself you should generally have it pipe its output to `GinkgoWriter`.  If you pipe to `os.Stdout` and/or `os.Stderr` and the process outlives the current spec you'll cause Ginkgo's output interceptor to hang.  Ginkgo will actually catch this and print out a long error message telling you what to do.  You can learn more on the associated [GitHub issue](#https://github.com/onsi/ginkgo/issues/851)
 
-### Table Patterns
-#### Managing Complex Parameters
-#### Generating many Entries
-(loop)
 ### Benchmarking Code
+
+Go's built-in `testing` package provides support for running `Benchmark`s.  Earlier versions of Ginkgo subject-node variants that were able to mimic Go's `Benchmark` tests.  As of Ginkgo 2.0 these nodes are no longer available.  Instead, Ginkgo users can benchmark their code using Gomega's substantially more flexible `gmeasure` package.  If you're interested, check out the `gmeasure` [docs](https://onsi.github.io/gomega/#gmeasure-benchmarking-code).  Here we'll just provide a quick example to show how `gmeasure` integrates into Ginkgo's reporting infrastructure.
+
+`gmeasure` is structured around the metaphor of Experiments.  With `gmeasure` you create ``Experiments` that can record multiple named `Measurements`.  Each named `Measurement` can record multiple values (either `float64` or `duration`).  `Experiments` can then produce reports to show the statistical distribution of their `Measurements` and different `Measurements`, potentially from different `Experiments` can be ranked and compared.  `Experiments` can also be cached using an `ExperimentCache` - this can be helpful to avoid rerunning expensive experiments _and_ to save off "gold-master" experiments to compare against to identify potential regressions in performance - orchestrating all that is left to the user.
+
+Here's an example where we profile how long it takes to repaginate books:
+
+```go
+
+Describe("Repaginating Books", func() {
+    var book *books.Book
+    BeforeEach(func() {
+        book = LoadFixture("les-miserables.json")
+    })
+
+    // this is a spec that validates the behavior is correct
+    // note that we can mix validation specs alongside performance specs
+    It("can repaginate books", func() {
+        Expect(book.CurrentFontSize()).To(Equal(12))
+        originalPages := book.Pages
+
+        book.SetFontSize(10)
+        Expect(book.RecomputePages()).To(BeNumerically(">", originalPages))
+    })
+
+    // this is our performance spec.  we mark it as Serial to ensure it does not run in
+    // parallel with other specs (which could affect performance measurements)
+    // we also label it with "measurement" - this is optional but would allow us to filter out
+    // measurement-related specs more easily
+    It("repaginates books efficiently", Serial, Label("measurement"), func() {
+        //we create a new experiment
+        experiment := gmeasure.NewExperiment("Repaginating Books")
+
+        //Register the experiment as a ReportEntry - this will cause Ginkgo's reporter infrastructure
+        //to print out the experiment's report and to include the experiment in any generated reports
+        AddReportEntry(experiment.Name, experiment)
+
+        //we sample a function repeatedly to get a statistically significant set of measurements
+        experiment.Sample(func(idx int) {
+            book = LoadFixture("les-miserables.json") //always start with a fresh copy
+            book.SetFontSize(10)
+
+            //measure how long it takes to RecomputePages() and store the duration in a "repagination" measurement
+            experiment.MeasureDuration("repagination", func() {
+                book.RecomputePages()
+            })
+        }, gmeasure.SamplingConfig{N:20, Duration: time.Minute}) //we'll sample the function up to 20 times or up to a minute, whichever comes first.
+    })
+})
+```
+
+Now when this spec runs Ginkgo will print out a report detailing the experiment:
+
+```
+Will run 1 of 1 specs
+------------------------------
+• [2.029 seconds]
+Repaginating Books repaginates books efficiently [measurement]
+/path/to/books_test.go:19
+
+  Begin Report Entries >>
+    Repaginating Books - /path/to/books_test.go:21 @ 11/04/21 13:42:57.936
+      Repaginating Books
+      Name                    | N  | Min   | Median | Mean    | StdDev | Max
+      ==========================================================================
+      repagination [duration] | 20 | 5.1ms | 104ms  | 101.4ms | 52.1ms | 196.4ms
+  << End Report Entries
+```
+
+This is helpful - but the real value in a performance suite like this would be to capture possible performance regressions.  There are multiple ways of doing this - you could use an [Experiment Cache](https://onsi.github.io/gomega/#caching-experiments) and make the suite [configurable](#supporting-custom-suite-configuration) such that a baseline experiment is stored to disk when the suite is so configured.  Then, when the suite runs, it simply loads the baseline from the cache and compares it to the measured duration.  Ginkgo's own performance suite does this.
+
+Alternatively you can just hard-code an expected value after running the experiment and make an appropriate assertion.  For example:
+
+```go
+It("repaginates books efficiently", Serial, Label("measurement"), func() {
+    experiment := gmeasure.NewExperiment("Repaginating Books")
+    AddReportEntry(experiment.Name, experiment)
+
+    experiment.Sample(func(idx int) {
+        book = LoadFixture("les-miserables.json")
+        book.SetFontSize(10)
+
+        experiment.MeasureDuration("repagination", func() {
+            book.RecomputePages()
+        })
+    }, gmeasure.SamplingConfig{N:20, Duration: time.Minute})
+
+    //we get the median repagination duration from the experiment we just ran
+    repaginationStats := experiment.GetStats("repagination")
+    medianDuration := repaginationStats.DurationFor(gmeasure.StatMedian)
+
+    //and assert that it hasn't changed much from ~100ms
+    Expect(medianDuration).To(BeNumerically("~", 100*time.Millisecond, 50*time.Millisecond))
+})
+```
+
+now the spec will fail if the pagination time ever changes drastically from its measured value.  Of course the actual runtime will depend on the machine and test environment you're running on - so some caveats will apply.  Nonetheless an upper bound spec such as:
+
+```go
+Expect(medianDuration).To(BeNumerically("<", 300*time.Millisecond))
+```
+
+could still be a useful smoketest to catch any major regressions early in the development cycle.
+
 ### Building Custom Matchers
+As you've seen throughout this documentation, Gomega allows you to write expressive assertions.  You can build on Gomega's building blocks to construct custom matchers tuned to the semantics of your codebase.
+
+One way to do this is by implementing Gomega's `GomegaMatcher` interface.
+
+A simpler, alternative, however, is to simply compose matchers together in a simple function.  For example, let's write a matcher that asserts that our book is valid, has a given title, author, and page-count.  Rather than repeat this all the time:
+
+```go
+Expect(book.IsValid()).To(BeTrue())
+Expect(book.Title).To(Equal("Les Miserables"))
+Expect(book.Author).To(Equal("Victor Hugo"))
+Expect(book.Pages).To(Equal(2783))
+```
+
+we can implement a function that returns a composite Gomega matcher:
+
+```go
+func BeAValidBook(title string, author string, pages int) types.GomegaMatcher {
+    return And(
+        WithTransform(func(book *books.Book) bool {
+            return book.IsValid()
+        }, BeTrue()),
+        HaveField("Title", Equal(title)),
+        HaveField("Author", Equal(author)),
+        HaveField("Pages", Equal(pages)),
+    )
+}
+```
+
+this function uses Gomega's `And` matcher to require that the four passed-in matchers are satisfied.  It then uses `WithTransform` to accept the passed-in book and call it's `IsValid()` method, then asserts the returned value is `true`.  It then uses the `HaveField` matcher to make assertions on the fields within the `Book` struct.
+
+Now we can write:
+
+```go
+Expect(book).To(BeAValidBook("Les Miserables", "Victor Hugo", 2783))
+```
+
+We can go one step further and use typed parameters to pick and choose which pieces of `Book` we want to test with our matcher.  This is a bit contrived for our simple example but can be quite useful in more complex domains:
+
+```go
+
+type Title string
+type Author string
+type Pages int
+
+func BeAValidBook(params ...interface{}) types.GomegaMatcher {
+    matchers := []types.GomegaMatcher{
+        WithTransform(func(book *books.Book) bool {
+            return book.IsValid()
+        }, BeTrue())
+    }
+
+    if len(params) > 0 {
+        fields := gstruct.Fields{}
+
+        for _, param := range params {
+            switch v := param.(type) {
+            case Title:
+                matchers = append(matchers, HaveField("Title", Equal(v)))
+            case Author:
+                matchers = append(matchers, HaveField("Author", Equal(v)))
+            case Pages:
+                matchers = append(matchers, HaveField("Pages", Equal(v)))
+            default:
+                Fail("Unknown type %T in BeAValidBook() \n", v)
+            }
+        }
+    }
+
+    return And(matchers...)
+}
+```
+
+Now we can do things like:
+
+```go
+Expect(book).To(BeAValidBook()) //simply asserts IsValid() is true
+Expect(book).To(BeAValidBook(Title("Les Miserables")))
+Expect(book).To(BeAValidBook(Author("Victor Hugo")))
+Expect(book).To(BeAValidBook(Title("Les Miserables"), Pages(2783)))
+```
 
 ## Decorator Reference
 We've seen a number of Decorators detailed throughout this documentation.  This reference collects them all in one place.
@@ -3849,7 +4116,7 @@ The `Label` decorator applies to container nodes and subject nodes only.  It is 
 
 `Label` allows the user to annotate specs and containers of specs with labels.  The `Label` decorator takes a variadic set of strings allowing you to apply multiple labels simultaneously.  Labels are arbitrary strings that do not include the characters `"&|!,()/"`.  Specs can have as many labels as you'd like and the set of labels for a given spec is the union of all the labels of the container nodes and the subject node.
 
-Labels can be used to control which subset of tests to run.  This is done by providing the `--label-filter` flag to the `ginkgo` cli.  More details can be found at [Spec Labels](#spec-labels).
+Labels can be used to control which subset of tests to run.  This is done by providing the `--label-filter` flag to the `ginkgo` CLI.  More details can be found at [Spec Labels](#spec-labels).
 
 #### The `Focus` and `Pending` Decorator
 The `Focus` and `Pending` decorators apply to container nodes and subject nodes only.  It is an error to try to `Focus` or `Pending` a setup node.
@@ -4101,20 +4368,71 @@ To get the current version of the `ginkgo` CLI run:
 ginkgo version
 ```
 
-
 ## Third-Party Integrations
-  ### Sample .travis.yml
-  ### Providing a `testing.T`
-  ### Using Other Matcher Libraries
-  ### Integrating with Gomock
+
+### Using Third-party Libraries
+
+Most third-party Go `testing` integrations (e.g. matcher libraries, mocking libraries) take and wrap a `*testing.T` to provide functionality.  Unfortunately there is no formal interface for `*testing.T` however Ginkgo provides a function, `GinkgoT()` that returns a struct that implements all the methods that `*testing.T` implements.  Most libraries accept the `*testing.T` object via an interface and you can usually simply pass in `GinkgoT()` and expect the library to work.
+
+For example, you can choose to use [testify](https://github.com/stretchr/testify) instead of Gomega like so:
+
+```go
+package foo_test
+
+import (
+    . "github.com/onsi/ginkgo"
+
+    "github.com/stretchr/testify/assert"
+)
+
+var _ = Describe(func("foo") {
+    It("should testify to its correctness", func(){
+        assert.Equal(GinkgoT(), foo{}.Name(), "foo")
+    })
+})
+```
+
+Similarly if you're using [Gomock](https://code.google.com/p/gomock/) you can simply pass `GinkgoT()` to your controller:
+
+
+```go
+import (
+    "code.google.com/p/gomock/gomock"
+
+    . "github.com/onsi/ginkgo"
+    . "github.com/onsi/gomega"
+)
+
+var _ = Describe("Consumer", func() {
+    var (
+        mockCtrl *gomock.Controller
+        mockThing *mockthing.MockThing
+        consumer *Consumer
+    )
+
+    BeforeEach(func() {
+        mockCtrl = gomock.NewController(GinkgoT())
+        mockThing = mockthing.NewMockThing(mockCtrl)
+        consumer = NewConsumer(mockThing)
+    })
+
+
+    It("should consume things", func() {
+        mockThing.EXPECT().OmNom()
+        consumer.Consume()
+    })
+})
+```
+
+Since `GinkgoT()` implements `Cleanup()` (using `DeferCleanup()` under the hood) Gomock will automatically register a call to `mockCtrl.Finish()` when the controller is created.
+
+When using Gomock you may want to run `ginkgo` with the `-trace` flag to print out stack traces for failures which will help you trace down where, in your code, invalid calls occured.
 
 ### IDE Support
-
 Ginkgo works best from the command-line, and [`ginkgo watch`](#watching-for-changes) makes it easy to rerun tests on the command line whenever changes are detected.
 
-There are a set of [completions](https://github.com/onsi/ginkgo-sublime-completions) available for [Sublime Text](https://www.sublimetext.com/) (just use [Package Control](https://sublime.wbond.net/) to install `Ginkgo Completions`) and for [VSCode](https://code.visualstudio.com/) (use the extensions installer and install vscode-ginkgo).
+There are a set of [completions](https://github.com/onsi/ginkgo-sublime-completions) available for [Sublime Text](https://www.sublimetext.com/) (just use [Package Control](https://sublime.wbond.net/) to install `Ginkgo Completions`) and for [VS Code](https://code.visualstudio.com/) (use the extensions installer and install vscode-ginkgo).  There is also a VS Code extension to run specs from VSCode called [Ginkgo Test Explorer](https://github.com/joselitofilho/ginkgoTestExplorer).
 
 IDE authors can set the `GINKGO_EDITOR_INTEGRATION` environment variable to any non-empty value to enable coverage to be displayed for focused specs. By default, Ginkgo will fail with a non-zero exit code if specs are focused to ensure they do not pass in CI.
-
 
 {% endraw  %}
