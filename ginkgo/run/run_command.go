@@ -189,7 +189,7 @@ OUTER_LOOP:
 		}
 	} else {
 		fmt.Fprintln(formatter.ColorableStdOut, "")
-		if suites.CountWithState(internal.TestSuiteStateFailureStates...) > 1 {
+		if len(suites) > 1 && suites.CountWithState(internal.TestSuiteStateFailureStates...) > 0 {
 			fmt.Fprintln(formatter.ColorableStdOut,
 				internal.FailedSuitesReport(suites, formatter.NewWithNoColorBool(r.reporterConfig.NoColor)))
 		}
