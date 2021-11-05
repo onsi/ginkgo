@@ -45,6 +45,7 @@ The subsequent arguments can include the following:
   - a function that accepts the same parameters as the Table Body function but returns a string.  This function is used to generate the names for entries with nil descriptions.
   - a format string of type EntryDescription.  This format string is used to generate names for entries with nil descriptions.
   - individual table entries.  These are constructed via Entry() and provide parameters for each test case.
+  - a slice of []TableEntry - the slice will be unrolled and each `TableEntry` will be added to the table.  This allows you to share slices of entries between tables.
 
 The first argument to `Entry` is a description.  This can be a string, an EntryDescription(), a function that returns a string, or nil.  When nil, the Entry's name is generated using the table-level entry description function.  If none is provided than a default name is constructed from the passed-in parameters.
 The sbusequent arguments to `Entry` can include any Ginkgo decorators.  These are filtered out and applied to the generated test.  The remaining parameters are then passed into the Table Body function when running the tests.
@@ -149,6 +150,8 @@ func generateTable(description string, args ...interface{}) {
 		switch t := reflect.TypeOf(arg); {
 		case t == reflect.TypeOf(TableEntry{}):
 			entries = append(entries, arg.(TableEntry))
+		case t == reflect.TypeOf([]TableEntry{}):
+			entries = append(entries, arg.([]TableEntry)...)
 		case t == reflect.TypeOf(EntryDescription("")):
 			tableLevelEntryDescription = arg.(EntryDescription).render
 		case t.Kind() == reflect.Func && t.NumOut() == 1 && t.Out(0) == reflect.TypeOf(""):
