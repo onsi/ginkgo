@@ -484,7 +484,7 @@ func (g ginkgoErrors) UnreachableParallelHost(host string) error {
 func (g ginkgoErrors) DryRunInParallelConfiguration() error {
 	return GinkgoError{
 		Heading: "Ginkgo only performs -dryRun in serial mode.",
-		Message: "Please try running ginkgo -dryRun again, but without -p or -nodes to ensure the test is running in series.",
+		Message: "Please try running ginkgo -dryRun again, but without -p or -procs to ensure the test is running in series.",
 	}
 }
 
@@ -512,7 +512,7 @@ func (g ginkgoErrors) InvalidGoFlagCount() error {
 func (g ginkgoErrors) InvalidGoFlagParallel() error {
 	return GinkgoError{
 		Heading: "Use of go test -parallel",
-		Message: "Go test's implementation of parallelization does not actually parallelize Ginkgo tests.  Please use the ginkgo cli and `ginkgo -p` or `ginkgo -nodes=N` instead.",
+		Message: "Go test's implementation of parallelization does not actually parallelize Ginkgo tests.  Please use the ginkgo cli and `ginkgo -p` or `ginkgo -procs=N` instead.",
 	}
 }
 

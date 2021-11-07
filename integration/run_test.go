@@ -261,13 +261,13 @@ var _ = Describe("Running Specs", func() {
 			fm.MountFixture("passing_ginkgo_tests")
 		})
 
-		Context("with a specific number of -nodes", func() {
-			It("should use the specified number of nodes", func() {
-				session := startGinkgo(fm.PathTo("passing_ginkgo_tests"), "--no-color", "-succinct", "-nodes=2")
+		Context("with a specific number of -procs", func() {
+			It("should use the specified number of processes", func() {
+				session := startGinkgo(fm.PathTo("passing_ginkgo_tests"), "--no-color", "-succinct", "--procs=2")
 				Eventually(session).Should(gexec.Exit(0))
 				output := string(session.Out.Contents())
 
-				Ω(output).Should(MatchRegexp(`\[\d+\] Passing_ginkgo_tests Suite - 4/4 specs - 2 nodes [%s]{4} SUCCESS! \d+(\.\d+)?[muµ]s`, regexp.QuoteMeta(denoter)))
+				Ω(output).Should(MatchRegexp(`\[\d+\] Passing_ginkgo_tests Suite - 4/4 specs - 2 procs [%s]{4} SUCCESS! \d+(\.\d+)?[muµ]s`, regexp.QuoteMeta(denoter)))
 				Ω(output).Should(ContainSubstring("Test Suite Passed"))
 			})
 		})
@@ -285,7 +285,7 @@ var _ = Describe("Running Specs", func() {
 				if nodes > 4 {
 					nodes = nodes - 1
 				}
-				Ω(output).Should(MatchRegexp(`\[\d+\] Passing_ginkgo_tests Suite - 4/4 specs - %d nodes [%s]{4} SUCCESS! \d+(\.\d+)?[muµ]?s`, nodes, regexp.QuoteMeta(denoter)))
+				Ω(output).Should(MatchRegexp(`\[\d+\] Passing_ginkgo_tests Suite - 4/4 specs - %d procs [%s]{4} SUCCESS! \d+(\.\d+)?[muµ]?s`, nodes, regexp.QuoteMeta(denoter)))
 				Ω(output).Should(ContainSubstring("Test Suite Passed"))
 			})
 		})
@@ -298,11 +298,11 @@ var _ = Describe("Running Specs", func() {
 
 		It("runs the serial specs after all the parallel specs have finished", func() {
 			By("running a carefully crafted test without the serial decorator")
-			session := startGinkgo(fm.PathTo("serial"), "--no-color", "-nodes=2", "--randomize-all", "--fail-fast", "--", "--no-serial")
+			session := startGinkgo(fm.PathTo("serial"), "--no-color", "--procs=2", "--randomize-all", "--fail-fast", "--", "--no-serial")
 			Eventually(session).Should(gexec.Exit(1))
 
 			By("running a carefully crafted test with the serial decorator")
-			session = startGinkgo(fm.PathTo("serial"), "--no-color", "-nodes=2", "--randomize-all", "--fail-fast")
+			session = startGinkgo(fm.PathTo("serial"), "--no-color", "--procs=2", "--randomize-all", "--fail-fast")
 			Eventually(session).Should(gexec.Exit(0))
 		})
 	})
@@ -314,11 +314,11 @@ var _ = Describe("Running Specs", func() {
 
 		It("always preserve spec order within ordered contexts", func() {
 			By("running a carefully crafted test without the ordered decorator")
-			session := startGinkgo(fm.PathTo("ordered"), "--no-color", "-nodes=2", "-v", "--randomize-all", "--fail-fast", "--", "--no-ordered")
+			session := startGinkgo(fm.PathTo("ordered"), "--no-color", "--procs=2", "-v", "--randomize-all", "--fail-fast", "--", "--no-ordered")
 			Eventually(session).Should(gexec.Exit(1))
 
 			By("running a carefully crafted test with the ordered decorator")
-			session = startGinkgo(fm.PathTo("ordered"), "--no-color", "-nodes=2", "-v", "--randomize-all", "--fail-fast")
+			session = startGinkgo(fm.PathTo("ordered"), "--no-color", "--procs=2", "-v", "--randomize-all", "--fail-fast")
 			Eventually(session).Should(gexec.Exit(0))
 		})
 	})
@@ -427,7 +427,7 @@ var _ = Describe("Running Specs", func() {
 		})
 
 		It("doesn't miss any tests (a sanity test)", func() {
-			session := startGinkgo(fm.PathTo("large"), "--no-color", "--nodes=3", "--json-report=report.json")
+			session := startGinkgo(fm.PathTo("large"), "--no-color", "--procs=3", "--json-report=report.json")
 			Eventually(session).Should(gexec.Exit(0))
 			report := Reports(fm.LoadJSONReports("large", "report.json")[0].SpecReports)
 

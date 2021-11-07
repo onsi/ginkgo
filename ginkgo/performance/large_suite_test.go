@@ -78,7 +78,7 @@ var _ = Describe("Running a large test suite", Ordered, Serial, func() {
 				session := startGinkgoWithEnv(
 					pfm.PathTo("large_suite"),
 					env,
-					fmt.Sprintf("-nodes=%d", nodes),
+					fmt.Sprintf("--procs=%d", nodes),
 					fmt.Sprintf("--output-interceptor-mode=%s", interceptor),
 					"large_suite.test",
 				)
@@ -90,7 +90,7 @@ var _ = Describe("Running a large test suite", Ordered, Serial, func() {
 			session := startGinkgoWithEnv(
 				pfm.PathTo("large_suite"),
 				env,
-				fmt.Sprintf("-nodes=%d", nodes),
+				fmt.Sprintf("--procs=%d", nodes),
 				fmt.Sprintf("--output-interceptor-mode=%s", interceptor),
 				"--cpuprofile=CPU.profile",
 				"--blockprofile=BLOCK.profile",

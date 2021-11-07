@@ -509,7 +509,7 @@ var _ = Describe("Subcommand", func() {
 			output := string(session.Out.Contents())
 
 			Ω(output).Should(ContainSubstring("-succinct"))
-			Ω(output).Should(ContainSubstring("-nodes"))
+			Ω(output).Should(ContainSubstring("-procs"))
 		})
 	})
 })

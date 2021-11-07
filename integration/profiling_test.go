@@ -89,7 +89,7 @@ var _ = Describe("Profiling Specs", func() {
 				seriesCoverage := processCoverageProfile(fm.PathTo("coverage", "coverprofile.out"))
 				fm.RemoveFile("coverage", "coverprofile.out")
 
-				parallelSession := startGinkgo(fm.PathTo("coverage"), "--no-color", "-nodes=2", "-cover")
+				parallelSession := startGinkgo(fm.PathTo("coverage"), "--no-color", "--procs=2", "-cover")
 				Eventually(parallelSession).Should(gexec.Exit(0))
 				Ω(parallelSession.Out).Should(gbytes.Say(`coverage: 80\.0% of statements`))
 				parallelCoverage := processCoverageProfile(fm.PathTo("coverage", "coverprofile.out"))
@@ -107,7 +107,7 @@ var _ = Describe("Profiling Specs", func() {
 				seriesCoverage := processCoverageProfile(fm.PathTo("coverage", "coverprofile.out"))
 				fm.RemoveFile("coverage", "coverprofile.out")
 
-				parallelSession := startGinkgo(fm.PathTo("coverage"), "--no-color", "-nodes=2", coverPkgFlag)
+				parallelSession := startGinkgo(fm.PathTo("coverage"), "--no-color", "--procs=2", coverPkgFlag)
 				Eventually(parallelSession).Should(gexec.Exit(0))
 				Ω(parallelSession.Out).Should(gbytes.Say(`coverage: 71\.4% of statements`))
 				parallelCoverage := processCoverageProfile(fm.PathTo("coverage", "coverprofile.out"))
@@ -132,7 +132,7 @@ var _ = Describe("Profiling Specs", func() {
 			})
 
 			It("generates a single cover profile", func() {
-				session := startGinkgo(fm.PathTo("combined_coverage"), "--no-color", "--cover", "-r", "-nodes=2", "--covermode=atomic")
+				session := startGinkgo(fm.PathTo("combined_coverage"), "--no-color", "--cover", "-r", "--procs=2", "--covermode=atomic")
 				Eventually(session).Should(gexec.Exit(0))
 				Ω(fm.PathTo("combined_coverage", "coverprofile.out")).Should(BeAnExistingFile())
 				Ω(fm.PathTo("combined_coverage", "first_package/coverprofile.out")).ShouldNot(BeAnExistingFile())
@@ -155,7 +155,7 @@ var _ = Describe("Profiling Specs", func() {
 
 			Context("when -keep-separate-coverprofiles is set", func() {
 				It("generates separate coverprofiles", Label("slow"), func() {
-					session := startGinkgo(fm.PathTo("combined_coverage"), "--no-color", "--cover", "-r", "-nodes=2", "--keep-separate-coverprofiles")
+					session := startGinkgo(fm.PathTo("combined_coverage"), "--no-color", "--cover", "-r", "--procs=2", "--keep-separate-coverprofiles")
 					Eventually(session).Should(gexec.Exit(0))
 					Ω(fm.PathTo("combined_coverage", "coverprofile.out")).ShouldNot(BeAnExistingFile())
 					Ω(fm.PathTo("combined_coverage", "first_package/coverprofile.out")).Should(BeAnExistingFile())
@@ -171,7 +171,7 @@ var _ = Describe("Profiling Specs", func() {
 			})
 
 			It("puts the cover profile in -output-dir", func() {
-				session := startGinkgo(fm.PathTo("combined_coverage"), "--no-color", "--cover", "-r", "-nodes=2", "--output-dir=./output")
+				session := startGinkgo(fm.PathTo("combined_coverage"), "--no-color", "--cover", "-r", "--procs=2", "--output-dir=./output")
 				Eventually(session).Should(gexec.Exit(0))
 				Ω(fm.PathTo("combined_coverage", "output/coverprofile.out")).Should(BeAnExistingFile())
 
@@ -181,7 +181,7 @@ var _ = Describe("Profiling Specs", func() {
 
 			Context("when -keep-separate-coverprofiles is set", func() {
 				It("puts namespaced coverprofiels in the -output-dir", func() {
-					session := startGinkgo(fm.PathTo("combined_coverage"), "--no-color", "--cover", "-r", "-nodes=2", "--output-dir=./output", "--keep-separate-coverprofiles")
+					session := startGinkgo(fm.PathTo("combined_coverage"), "--no-color", "--cover", "-r", "--procs=2", "--output-dir=./output", "--keep-separate-coverprofiles")
 					Eventually(session).Should(gexec.Exit(0))
 					Ω(fm.PathTo("combined_coverage", "output/coverprofile.out")).ShouldNot(BeAnExistingFile())
 					Ω(fm.PathTo("combined_coverage", "output/first_package_coverprofile.out")).Should(BeAnExistingFile())
@@ -252,13 +252,13 @@ var _ = Describe("Profiling Specs", func() {
 			Entry("when running in parallel",
 				func(pkg string) string { return fm.PathTo("profile", pkg+"/"+pkg+".test") },
 				func(pkg string, profile string) string { return fm.PathTo("profile", pkg+"/"+profile) },
-				"-nodes=3",
+				"--procs=3",
 			),
 
 			Entry("when --output-dir is set", Label("slow"),
 				func(pkg string) string { return fm.PathTo("profile", "profiles/"+pkg+".test") },
 				func(pkg string, profile string) string { return fm.PathTo("profile", "profiles/"+pkg+"_"+profile) },
-				"-nodes=3", "--output-dir=./profiles",
+				"--procs=3", "--output-dir=./profiles",
 			),
 		)
 

@@ -16,7 +16,7 @@ var _ = Describe("Abort", func() {
 	var session *gexec.Session
 	BeforeEach(func() {
 		fm.MountFixture("abort")
-		session = startGinkgo(fm.PathTo("abort"), "--no-color", "--json-report=out.json", "--junit-report=out.xml", "--nodes=2")
+		session = startGinkgo(fm.PathTo("abort"), "--no-color", "--json-report=out.json", "--junit-report=out.xml", "--procs=2")
 		Eventually(session).Should(gexec.Exit(1))
 	})
 

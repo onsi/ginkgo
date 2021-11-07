@@ -65,7 +65,7 @@ func (r *DefaultReporter) SuiteWillBegin(report types.Report) {
 		r.emit(r.f("[%d] {{bold}}%s{{/}} ", report.SuiteConfig.RandomSeed, report.SuiteDescription))
 		r.emit(r.f("- %d/%d specs ", report.PreRunStats.SpecsThatWillRun, report.PreRunStats.TotalSpecs))
 		if report.SuiteConfig.ParallelTotal > 1 {
-			r.emit(r.f("- %d nodes ", report.SuiteConfig.ParallelTotal))
+			r.emit(r.f("- %d procs ", report.SuiteConfig.ParallelTotal))
 		}
 	} else {
 		banner := r.f("Running Suite: %s - %s", report.SuiteDescription, report.SuitePath)
@@ -80,7 +80,7 @@ func (r *DefaultReporter) SuiteWillBegin(report types.Report) {
 		r.emit("\n")
 		r.emitBlock(r.f("Will run {{bold}}%d{{/}} of {{bold}}%d{{/}} specs", report.PreRunStats.SpecsThatWillRun, report.PreRunStats.TotalSpecs))
 		if report.SuiteConfig.ParallelTotal > 1 {
-			r.emitBlock(r.f("Running in parallel across {{bold}}%d{{/}} nodes", report.SuiteConfig.ParallelTotal))
+			r.emitBlock(r.f("Running in parallel across {{bold}}%d{{/}} processes", report.SuiteConfig.ParallelTotal))
 		}
 	}
 }

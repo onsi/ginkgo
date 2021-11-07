@@ -27,7 +27,7 @@ func RunCompiledSuite(suite TestSuite, ginkgoConfig types.SuiteConfig, reporterC
 		return suite
 	}
 
-	if suite.IsGinkgo && cliConfig.ComputedNodes() > 1 {
+	if suite.IsGinkgo && cliConfig.ComputedProcs() > 1 {
 		suite = runParallel(suite, ginkgoConfig, reporterConfig, cliConfig, goFlagsConfig, additionalArgs)
 	} else if suite.IsGinkgo {
 		suite = runSerial(suite, ginkgoConfig, reporterConfig, cliConfig, goFlagsConfig, additionalArgs)
@@ -111,7 +111,7 @@ func runParallel(suite TestSuite, ginkgoConfig types.SuiteConfig, reporterConfig
 		hasProgrammaticFocus bool
 	}
 
-	numNodes := cliConfig.ComputedNodes()
+	numNodes := cliConfig.ComputedProcs()
 	nodeOutput := make([]*bytes.Buffer, numNodes)
 	coverProfiles := []string{}
 
@@ -173,7 +173,7 @@ func runParallel(suite TestSuite, ginkgoConfig types.SuiteConfig, reporterConfig
 	}
 
 	passed := true
-	for node := 1; node <= cliConfig.ComputedNodes(); node++ {
+	for node := 1; node <= cliConfig.ComputedProcs(); node++ {
 		result := <-nodeResults
 		passed = passed && result.passed
 		suite.HasProgrammaticFocus = suite.HasProgrammaticFocus || result.hasProgrammaticFocus
@@ -191,14 +191,14 @@ func runParallel(suite TestSuite, ginkgoConfig types.SuiteConfig, reporterConfig
 		//the serve never got back to us.  Something must have gone wrong.
 		fmt.Fprintln(os.Stderr, "** Ginkgo timed out waiting for all parallel nodes to report back. **")
 		fmt.Fprintf(os.Stderr, "%s (%s)\n", suite.PackageName, suite.Path)
-		for node := 1; node <= cliConfig.ComputedNodes(); node++ {
+		for node := 1; node <= cliConfig.ComputedProcs(); node++ {
 			fmt.Fprintf(os.Stderr, "Output from node %d:\n", node)
 			fmt.Fprintln(os.Stderr, formatter.Fi(1, "%s", nodeOutput[node-1].String()))
 		}
 		fmt.Fprintf(os.Stderr, "** End **")
 	}
 
-	for node := 1; node <= cliConfig.ComputedNodes(); node++ {
+	for node := 1; node <= cliConfig.ComputedProcs(); node++ {
 		output := nodeOutput[node-1].String()
 		if node == 1 && checkForNoTestsWarning(nodeOutput[0]) && cliConfig.RequireSuite {
 			suite.State = TestSuiteStateFailed

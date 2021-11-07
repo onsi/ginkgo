@@ -20,7 +20,7 @@ var _ = Describe("ReportEntries", func() {
 	Describe("when running a test that adds report entries", func() {
 		BeforeEach(func() {
 			fm.MountFixture("report_entries")
-			session := startGinkgo(fm.PathTo("report_entries"), "--no-color", "-nodes=2", "--json-report=out.json", "--junit-report=out.xml")
+			session := startGinkgo(fm.PathTo("report_entries"), "--no-color", "--procs=2", "--json-report=out.json", "--junit-report=out.xml")
 			Eventually(session).Should(gexec.Exit(1))
 			output = string(session.Out.Contents())
 			report = fm.LoadJSONReports("report_entries", "out.json")[0]
@@ -152,7 +152,7 @@ var _ = Describe("ReportEntries", func() {
 	Describe("when running in verbose mode", func() {
 		BeforeEach(func() {
 			fm.MountFixture("report_entries")
-			session := startGinkgo(fm.PathTo("report_entries"), "--no-color", "-nodes=2", "-v")
+			session := startGinkgo(fm.PathTo("report_entries"), "--no-color", "--procs=2", "-v")
 			Eventually(session).Should(gexec.Exit(1))
 			output = string(session.Out.Contents())
 		})

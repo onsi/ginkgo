@@ -34,7 +34,7 @@ var _ = Describe("OutputInterceptor", func() {
 		})
 
 		It("can pause and resume interception", func() {
-			sess := startGinkgo(fm.PathTo("pause_resume_interception"), "--no-color", "--nodes=2", "--json-report=report.json")
+			sess := startGinkgo(fm.PathTo("pause_resume_interception"), "--no-color", "--procs=2", "--json-report=report.json")
 			Eventually(sess).Should(gexec.Exit(0))
 
 			output := string(sess.Out.Contents())

@@ -111,7 +111,7 @@ var _ = Describe("Flags Specs", func() {
 
 		Context("when running in parallel", func() {
 			It("should fail fast when told to", func() {
-				session := startGinkgo(fm.PathTo("fail_then_hang"), "--fail-fast", "--nodes=2")
+				session := startGinkgo(fm.PathTo("fail_then_hang"), "--fail-fast", "--procs=2")
 				Eventually(session).Should(gexec.Exit(1))
 				output := string(session.Out.Contents())
 

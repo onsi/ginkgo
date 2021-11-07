@@ -55,7 +55,7 @@ var _ = Describe("Failing Specs", func() {
 		})
 
 		It("emits the error message even if running in parallel", func() {
-			session := startGinkgo(fm.PathTo("malformed"), "--no-color", "-nodes=2")
+			session := startGinkgo(fm.PathTo("malformed"), "--no-color", "--procs=2")
 			Eventually(session).Should(gexec.Exit(1))
 			output := string(session.Out.Contents()) + string(session.Err.Contents())
 

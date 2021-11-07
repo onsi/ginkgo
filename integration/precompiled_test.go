@@ -38,9 +38,9 @@ var _ = Describe("ginkgo build", func() {
 	})
 
 	It("should be possible to run the test binary in parallel", func() {
-		session := startGinkgo(fm.PathTo("passing_ginkgo_tests"), "--nodes=2", "--no-color", "./passing_ginkgo_tests.test")
+		session := startGinkgo(fm.PathTo("passing_ginkgo_tests"), "--procs=2", "--no-color", "./passing_ginkgo_tests.test")
 		Eventually(session).Should(gexec.Exit(0))
 		Ω(session).Should(gbytes.Say("Running Suite: Passing_ginkgo_tests Suite"))
-		Ω(session).Should(gbytes.Say("Running in parallel across 2 nodes"))
+		Ω(session).Should(gbytes.Say("Running in parallel across 2 processes"))
 	})
 })

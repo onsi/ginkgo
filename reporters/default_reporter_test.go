@@ -218,7 +218,7 @@ var _ = Describe("DefaultReporter", func() {
 			"Random Seed: {{bold}}17{{/}}",
 			"",
 			"Will run {{bold}}15{{/}} of {{bold}}20{{/}} specs",
-			"Running in parallel across {{bold}}3{{/}} nodes",
+			"Running in parallel across {{bold}}3{{/}} processes",
 			"",
 		),
 		Entry("when succinct and in series",
@@ -235,7 +235,7 @@ var _ = Describe("DefaultReporter", func() {
 				SuiteDescription: "My Suite", SuitePath: "/path/to/suite", PreRunStats: types.PreRunStats{SpecsThatWillRun: 15, TotalSpecs: 20},
 				SuiteConfig: types.SuiteConfig{RandomSeed: 17, ParallelTotal: 3},
 			},
-			"[17] {{bold}}My Suite{{/}} - 15/20 specs - 3 nodes ",
+			"[17] {{bold}}My Suite{{/}} - 15/20 specs - 3 procs ",
 		),
 	)
 

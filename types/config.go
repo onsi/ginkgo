@@ -119,7 +119,7 @@ type CLIConfig struct {
 	NumCompilers int
 
 	//for run and watch only
-	Nodes                     int
+	Procs                     int
 	Parallel                  bool
 	AfterRunHook              string
 	OutputDir                 string
@@ -144,9 +144,9 @@ func NewDefaultCLIConfig() CLIConfig {
 	}
 }
 
-func (g CLIConfig) ComputedNodes() int {
-	if g.Nodes > 0 {
-		return g.Nodes
+func (g CLIConfig) ComputedProcs() int {
+	if g.Procs > 0 {
+		return g.Procs
 	}
 
 	n := 1
@@ -240,7 +240,7 @@ var FlagSections = GinkgoFlagSections{
 	{Key: "order", Style: "{{green}}", Heading: "Controlling Test Order"},
 	{Key: "parallel", Style: "{{yellow}}", Heading: "Controlling Test Parallelism"},
 	{Key: "low-level-parallel", Style: "{{yellow}}", Heading: "Controlling Test Parallelism",
-		Description: "These are set by the Ginkgo CLI, {{red}}{{bold}}do not set them manually{{/}} via go test.\nUse ginkgo -p or ginkgo -nodes=N instead."},
+		Description: "These are set by the Ginkgo CLI, {{red}}{{bold}}do not set them manually{{/}} via go test.\nUse ginkgo -p or ginkgo -procs=N instead."},
 	{Key: "filter", Style: "{{cyan}}", Heading: "Filtering Tests"},
 	{Key: "failure", Style: "{{red}}", Heading: "Failure Handling"},
 	{Key: "output", Style: "{{magenta}}", Heading: "Controlling Output Formatting"},
@@ -436,8 +436,10 @@ var GinkgoCLISharedFlags = GinkgoFlags{
 
 // GinkgoCLIRunAndWatchFlags provides flags shared by the Ginkgo CLI's build and watch commands (but not run)
 var GinkgoCLIRunAndWatchFlags = GinkgoFlags{
-	{KeyPath: "C.Nodes", Name: "nodes", SectionKey: "parallel", UsageDefaultValue: "1 (run in series)",
+	{KeyPath: "C.Procs", Name: "procs", SectionKey: "parallel", UsageDefaultValue: "1 (run in series)",
 		Usage: "The number of parallel test nodes to run."},
+	{KeyPath: "C.Procs", Name: "nodes", SectionKey: "parallel", UsageDefaultValue: "1 (run in series)",
+		Usage: "--nodes is an alias for --procs"},
 	{KeyPath: "C.Parallel", Name: "p", SectionKey: "parallel",
 		Usage: "If set, ginkgo will run in parallel with an auto-detected number of nodes."},
 	{KeyPath: "C.AfterRunHook", Name: "after-run-hook", SectionKey: "misc", DeprecatedName: "afterSuiteHook", DeprecatedDocLink: "changed-command-line-flags",

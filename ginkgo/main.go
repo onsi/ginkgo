@@ -33,18 +33,11 @@ To run tests in parallel
 
 	ginkgo -p
 
-this will automatically detect the optimal number of nodes to use.  Alternatively, you can specify the number of nodes with:
+this will automatically detect the optimal number of nodes to use.  Alternatively, you can specify the number of parallel processes with:
 
-	ginkgo -nodes=N
+	ginkgo -procs=N
 
 (note that you don't need to provide -p in this case).
-
-By default the Ginkgo CLI will spin up a server that the individual test processes send test output to.  The CLI aggregates this output and then presents coherent test output, one test at a time, as each test completes.
-An alternative is to have the parallel nodes run and stream interleaved output back.  This useful for debugging, particularly in contexts where tests hang/fail to start.  To get this interleaved output:
-
-	ginkgo -nodes=N -stream=true
-
-On windows, the default value for stream is true.
 
 By default, when running multiple tests (with -r or a list of packages) Ginkgo will abort when a test fails.  To have Ginkgo run subsequent test suites instead you can:
 

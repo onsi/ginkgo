@@ -27,7 +27,7 @@ var _ = Describe("SuiteSetup", func() {
 
 		Context("when run across multiple nodes", func() {
 			It("should run the first BeforeSuite function (BEFORE_A) on node 1, the second (BEFORE_B) on all the nodes, the first AfterSuite (AFTER_A) on all the nodes, and then the second (AFTER_B) on Node 1 *after* everything else is finished", func() {
-				session := startGinkgo(fm.PathTo("synchronized_setup_tests"), "--no-color", "--nodes=3")
+				session := startGinkgo(fm.PathTo("synchronized_setup_tests"), "--no-color", "--procs=3")
 				Eventually(session).Should(gexec.Exit(0))
 				output := string(session.Out.Contents())
 
@@ -74,7 +74,7 @@ var _ = Describe("SuiteSetup", func() {
 		})
 
 		It("should fail and let the user know that node 1 disappeared prematurely", func() {
-			session := startGinkgo(fm.PathTo("exiting_synchronized_setup"), "--no-color", "--nodes=3")
+			session := startGinkgo(fm.PathTo("exiting_synchronized_setup"), "--no-color", "--procs=3")
 			Eventually(session).Should(gexec.Exit(1))
 			output := string(session.Out.Contents()) + string(session.Err.Contents())
 
