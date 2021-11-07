@@ -6,7 +6,6 @@ import (
 	. "github.com/onsi/ginkgo"
 	. "github.com/onsi/ginkgo/internal/test_helpers"
 	. "github.com/onsi/gomega"
-	. "github.com/onsi/gomega/gstruct"
 
 	"github.com/onsi/ginkgo/types"
 )
@@ -72,50 +71,50 @@ var _ = Describe("Running Tests in Series - the happy path", func() {
 
 	Describe("reporting", func() {
 		It("reports the suite summary correctly when starting", func() {
-			Ω(reporter.Begin).Should(MatchFields(IgnoreExtras, Fields{
-				"SuitePath":        Equal("/path/to/suite"),
-				"SuiteDescription": Equal("happy-path run suite"),
-				"SuiteSucceeded":   BeFalse(),
-			}))
-			Ω(reporter.Begin.PreRunStats.TotalSpecs).Should(Equal(4))
-			Ω(reporter.Begin.PreRunStats.SpecsThatWillRun).Should(Equal(4))
+			Ω(reporter.Begin).Should(SatisfyAll(
+				HaveField("SuitePath", "/path/to/suite"),
+				HaveField("SuiteDescription", "happy-path run suite"),
+				HaveField("SuiteSucceeded", BeFalse()),
+				HaveField("PreRunStats.TotalSpecs", 4),
+				HaveField("PreRunStats.SpecsThatWillRun", 4),
+			))
 		})
 
 		It("reports the suite summary correctly when complete", func() {
-			Ω(reporter.End).Should(MatchFields(IgnoreExtras, Fields{
-				"SuitePath":        Equal("/path/to/suite"),
-				"SuiteDescription": Equal("happy-path run suite"),
-				"SuiteSucceeded":   BeTrue(),
-				"RunTime":          BeNumerically(">=", time.Millisecond*(10+20+10+20)),
-			}))
-			Ω(reporter.End.PreRunStats.TotalSpecs).Should(Equal(4))
-			Ω(reporter.End.PreRunStats.SpecsThatWillRun).Should(Equal(4))
+			Ω(reporter.End).Should(SatisfyAll(
+				HaveField("SuitePath", "/path/to/suite"),
+				HaveField("SuiteDescription", "happy-path run suite"),
+				HaveField("SuiteSucceeded", BeTrue()),
+				HaveField("RunTime", BeNumerically(">=", time.Millisecond*(10+20+10+20))),
+				HaveField("PreRunStats.TotalSpecs", 4),
+				HaveField("PreRunStats.SpecsThatWillRun", 4),
+			))
 			Ω(reporter.End.SpecReports.WithLeafNodeType(types.NodeTypeIt).CountWithState(types.SpecStatePassed)).Should(Equal(4))
 		})
 
 		It("reports the correct suite node summaries", func() {
-			Ω(reporter.Did.FindByLeafNodeType(types.NodeTypeBeforeSuite)).Should(MatchFields(IgnoreExtras, Fields{
-				"LeafNodeType":               Equal(types.NodeTypeBeforeSuite),
-				"State":                      Equal(types.SpecStatePassed),
-				"RunTime":                    BeNumerically(">=", 10*time.Millisecond),
-				"Failure":                    BeZero(),
-				"CapturedGinkgoWriterOutput": Equal("before-suite\n"),
-				"CapturedStdOutErr":          Equal("output-intercepted-in-before-suite"),
-				"ParallelProcess":            Equal(1),
-			}))
+			Ω(reporter.Did.FindByLeafNodeType(types.NodeTypeBeforeSuite)).Should(SatisfyAll(
+				HaveField("LeafNodeType", types.NodeTypeBeforeSuite),
+				HaveField("State", types.SpecStatePassed),
+				HaveField("RunTime", BeNumerically(">=", 10*time.Millisecond)),
+				HaveField("Failure", BeZero()),
+				HaveField("CapturedGinkgoWriterOutput", "before-suite\n"),
+				HaveField("CapturedStdOutErr", "output-intercepted-in-before-suite"),
+				HaveField("ParallelProcess", 1),
+			))
 
 			beforeSuiteReport := reporter.Did.FindByLeafNodeType(types.NodeTypeBeforeSuite)
 			Ω(beforeSuiteReport.EndTime.Sub(beforeSuiteReport.StartTime)).Should(BeNumerically("~", beforeSuiteReport.RunTime))
 
-			Ω(reporter.Did.FindByLeafNodeType(types.NodeTypeAfterSuite)).Should(MatchFields(IgnoreExtras, Fields{
-				"LeafNodeType":               Equal(types.NodeTypeAfterSuite),
-				"State":                      Equal(types.SpecStatePassed),
-				"RunTime":                    BeNumerically(">=", 20*time.Millisecond),
-				"Failure":                    BeZero(),
-				"CapturedGinkgoWriterOutput": BeZero(),
-				"CapturedStdOutErr":          Equal("output-intercepted-in-after-suite"),
-				"ParallelProcess":            Equal(1),
-			}))
+			Ω(reporter.Did.FindByLeafNodeType(types.NodeTypeAfterSuite)).Should(SatisfyAll(
+				HaveField("LeafNodeType", types.NodeTypeAfterSuite),
+				HaveField("State", types.SpecStatePassed),
+				HaveField("RunTime", BeNumerically(">=", 20*time.Millisecond)),
+				HaveField("Failure", BeZero()),
+				HaveField("CapturedGinkgoWriterOutput", BeZero()),
+				HaveField("CapturedStdOutErr", "output-intercepted-in-after-suite"),
+				HaveField("ParallelProcess", 1),
+			))
 
 			afterSuiteReport := reporter.Did.FindByLeafNodeType(types.NodeTypeAfterSuite)
 			Ω(afterSuiteReport.EndTime.Sub(afterSuiteReport.StartTime)).Should(BeNumerically("~", afterSuiteReport.RunTime))
@@ -130,17 +129,17 @@ var _ = Describe("Running Tests in Series - the happy path", func() {
 			Ω(reporter.Did.WithState(types.SpecStatePassed).Names()).Should(Equal([]string{"A", "B", "C", "D"}))
 
 			//spot-check
-			Ω(reporter.Did.Find("C")).Should(MatchFields(IgnoreExtras, Fields{
-				"LeafNodeType":               Equal(types.NodeTypeIt),
-				"LeafNodeText":               Equal("C"),
-				"ContainerHierarchyTexts":    Equal([]string{"top-level-container", "nested-container"}),
-				"State":                      Equal(types.SpecStatePassed),
-				"Failure":                    BeZero(),
-				"NumAttempts":                Equal(1),
-				"CapturedGinkgoWriterOutput": Equal("before-each\nC\n"),
-				"CapturedStdOutErr":          Equal("output-intercepted-in-C"),
-				"ParallelProcess":            Equal(1),
-			}))
+			Ω(reporter.Did.Find("C")).Should(SatisfyAll(
+				HaveField("LeafNodeType", types.NodeTypeIt),
+				HaveField("LeafNodeText", "C"),
+				HaveField("ContainerHierarchyTexts", []string{"top-level-container", "nested-container"}),
+				HaveField("State", types.SpecStatePassed),
+				HaveField("Failure", BeZero()),
+				HaveField("NumAttempts", 1),
+				HaveField("CapturedGinkgoWriterOutput", "before-each\nC\n"),
+				HaveField("CapturedStdOutErr", "output-intercepted-in-C"),
+				HaveField("ParallelProcess", 1),
+			))
 
 		})
 

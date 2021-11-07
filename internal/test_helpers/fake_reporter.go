@@ -172,152 +172,108 @@ type CapturedStdOutput string
 type NumAttempts int
 
 func HavePassed(options ...interface{}) OmegaMatcher {
-	fields := Fields{
-		"State":   Equal(types.SpecStatePassed),
-		"Failure": BeZero(),
+	matchers := []OmegaMatcher{
+		HaveField("State", types.SpecStatePassed),
+		HaveField("Failure", BeZero()),
 	}
 	for _, option := range options {
-		t := reflect.TypeOf(option)
-		if t == reflect.TypeOf(CapturedGinkgoWriterOutput("")) {
-			fields["CapturedGinkgoWriterOutput"] = Equal(string(option.(CapturedGinkgoWriterOutput)))
-		} else if t == reflect.TypeOf(CapturedStdOutput("")) {
-			fields["CapturedStdOutErr"] = Equal(string(option.(CapturedStdOutput)))
-		} else if t == reflect.TypeOf(NumAttempts(0)) {
-			fields["NumAttempts"] = Equal(int(option.(NumAttempts)))
-		} else if t == reflect.TypeOf(types.NodeTypeIt) {
-			fields["LeafNodeType"] = Equal(option.(types.NodeType))
+		var matcher OmegaMatcher
+		switch v := option.(type) {
+		case CapturedGinkgoWriterOutput:
+			matcher = HaveField("CapturedGinkgoWriterOutput", string(v))
+		case CapturedStdOutput:
+			matcher = HaveField("CapturedStdOutErr", string(v))
+		case types.NodeType:
+			matcher = HaveField("LeafNodeType", v)
+		case NumAttempts:
+			matcher = HaveField("NumAttempts", int(v))
+		}
+		if matcher != nil {
+			matchers = append(matchers, matcher)
 		}
 	}
-	return MatchFields(IgnoreExtras, fields)
+
+	return And(matchers...)
 }
 
 func BePending() OmegaMatcher {
-	return MatchFields(IgnoreExtras, Fields{
-		"State":   Equal(types.SpecStatePending),
-		"Failure": BeZero(),
-	})
+	return And(
+		HaveField("State", types.SpecStatePending),
+		HaveField("Failure", BeZero()),
+	)
 }
 
 func HaveBeenSkipped() OmegaMatcher {
-	return MatchFields(IgnoreExtras, Fields{
-		"State":   Equal(types.SpecStateSkipped),
-		"Failure": BeZero(),
-	})
+	return And(
+		HaveField("State", types.SpecStateSkipped),
+		HaveField("Failure", BeZero()),
+	)
 }
 
 func HaveBeenSkippedWithMessage(message string, options ...interface{}) OmegaMatcher {
-	fields := Fields{
-		"State": Equal(types.SpecStateSkipped),
-		"Failure": MatchFields(IgnoreExtras, Fields{
-			"Message": Equal(message),
-		}),
+	matchers := []OmegaMatcher{
+		HaveField("State", types.SpecStateSkipped),
+		HaveField("Failure.Message", Equal(message)),
 	}
-	for _, option := range options {
-		t := reflect.TypeOf(option)
-		if t == reflect.TypeOf(NumAttempts(0)) {
-			fields["NumAttempts"] = Equal(int(option.(NumAttempts)))
-		}
 
+	for _, option := range options {
+		switch v := option.(type) {
+		case NumAttempts:
+			matchers = append(matchers, HaveField("NumAttempts", int(v)))
+		}
 	}
-	return MatchFields(IgnoreExtras, fields)
+	return And(matchers...)
 }
 
 func HaveBeenInterrupted(cause interrupt_handler.InterruptCause) OmegaMatcher {
-	return MatchFields(IgnoreExtras, Fields{
-		"State": Equal(types.SpecStateInterrupted),
-		"Failure": MatchFields(IgnoreExtras, Fields{
-			"Message": HavePrefix(cause.String()),
-		}),
-	})
+	return And(
+		HaveField("State", types.SpecStateInterrupted),
+		HaveField("Failure.Message", HavePrefix(cause.String())),
+	)
 }
 
 type FailureNodeType types.NodeType
 
-func HaveFailed(options ...interface{}) OmegaMatcher {
-	fields := Fields{
-		"State": Equal(types.SpecStateFailed),
+func failureMatcherForState(state types.SpecState, messageField string, options ...interface{}) OmegaMatcher {
+	matchers := []OmegaMatcher{
+		HaveField("State", state),
 	}
-	failureFields := Fields{}
 	for _, option := range options {
-		t := reflect.TypeOf(option)
-		if t == reflect.TypeOf(CapturedGinkgoWriterOutput("")) {
-			fields["CapturedGinkgoWriterOutput"] = Equal(string(option.(CapturedGinkgoWriterOutput)))
-		} else if t == reflect.TypeOf(CapturedStdOutput("")) {
-			fields["CapturedStdOutErr"] = Equal(string(option.(CapturedStdOutput)))
-		} else if t == reflect.TypeOf(types.NodeTypeIt) {
-			fields["LeafNodeType"] = Equal(option.(types.NodeType))
-		} else if t == reflect.TypeOf(types.FailureNodeIsLeafNode) {
-			failureFields["FailureNodeContext"] = Equal(option.(types.FailureNodeContext))
-		} else if t.Kind() == reflect.String {
-			failureFields["Message"] = Equal(option.(string))
-		} else if t == reflect.TypeOf(types.CodeLocation{}) {
-			failureFields["Location"] = Equal(option.(types.CodeLocation))
-		} else if t == reflect.TypeOf(FailureNodeType(types.NodeTypeIt)) {
-			failureFields["FailureNodeType"] = Equal(types.NodeType(option.(FailureNodeType)))
-		} else if t == reflect.TypeOf(NumAttempts(0)) {
-			fields["NumAttempts"] = Equal(int(option.(NumAttempts)))
+		var matcher OmegaMatcher
+		switch v := option.(type) {
+		case CapturedGinkgoWriterOutput:
+			matcher = HaveField("CapturedGinkgoWriterOutput", string(v))
+		case CapturedStdOutput:
+			matcher = HaveField("CapturedStdOutErr", string(v))
+		case types.NodeType:
+			matcher = HaveField("LeafNodeType", v)
+		case types.FailureNodeContext:
+			matcher = HaveField("Failure.FailureNodeContext", v)
+		case string:
+			matcher = HaveField(messageField, ContainSubstring(v))
+		case types.CodeLocation:
+			matcher = HaveField("Failure.Location", v)
+		case FailureNodeType:
+			matcher = HaveField("Failure.FailureNodeType", types.NodeType(v))
+		case NumAttempts:
+			matcher = HaveField("NumAttempts", int(v))
+		}
+		if matcher != nil {
+			matchers = append(matchers, matcher)
 		}
 	}
-	if len(failureFields) > 0 {
-		fields["Failure"] = MatchFields(IgnoreExtras, failureFields)
-	}
-	return MatchFields(IgnoreExtras, fields)
+
+	return And(matchers...)
+}
+
+func HaveFailed(options ...interface{}) OmegaMatcher {
+	return failureMatcherForState(types.SpecStateFailed, "Failure.Message", options...)
 }
 
 func HaveAborted(options ...interface{}) OmegaMatcher {
-	fields := Fields{
-		"State": Equal(types.SpecStateAborted),
-	}
-	failureFields := Fields{}
-	for _, option := range options {
-		t := reflect.TypeOf(option)
-		if t == reflect.TypeOf(CapturedGinkgoWriterOutput("")) {
-			fields["CapturedGinkgoWriterOutput"] = Equal(string(option.(CapturedGinkgoWriterOutput)))
-		} else if t == reflect.TypeOf(CapturedStdOutput("")) {
-			fields["CapturedStdOutErr"] = Equal(string(option.(CapturedStdOutput)))
-		} else if t == reflect.TypeOf(types.NodeTypeIt) {
-			fields["LeafNodeType"] = Equal(option.(types.NodeType))
-		} else if t == reflect.TypeOf(types.FailureNodeIsLeafNode) {
-			failureFields["FailureNodeContext"] = Equal(option.(types.FailureNodeContext))
-		} else if t.Kind() == reflect.String {
-			failureFields["Message"] = Equal(option.(string))
-		} else if t == reflect.TypeOf(types.CodeLocation{}) {
-			failureFields["Location"] = Equal(option.(types.CodeLocation))
-		} else if t == reflect.TypeOf(FailureNodeType(types.NodeTypeIt)) {
-			failureFields["FailureNodeType"] = Equal(types.NodeType(option.(FailureNodeType)))
-		} else if t == reflect.TypeOf(NumAttempts(0)) {
-			fields["NumAttempts"] = Equal(int(option.(NumAttempts)))
-		}
-	}
-	if len(failureFields) > 0 {
-		fields["Failure"] = MatchFields(IgnoreExtras, failureFields)
-	}
-	return MatchFields(IgnoreExtras, fields)
+	return failureMatcherForState(types.SpecStateAborted, "Failure.Message", options...)
 }
 
 func HavePanicked(options ...interface{}) OmegaMatcher {
-	fields := Fields{
-		"State": Equal(types.SpecStatePanicked),
-	}
-	failureFields := Fields{}
-	for _, option := range options {
-		t := reflect.TypeOf(option)
-		if t == reflect.TypeOf(CapturedGinkgoWriterOutput("")) {
-			fields["CapturedGinkgoWriterOutput"] = Equal(string(option.(CapturedGinkgoWriterOutput)))
-		} else if t == reflect.TypeOf(CapturedStdOutput("")) {
-			fields["CapturedStdOutErr"] = Equal(string(option.(CapturedStdOutput)))
-		} else if t.Kind() == reflect.String {
-			failureFields["ForwardedPanic"] = ContainSubstring(option.(string))
-		} else if t == reflect.TypeOf(types.FailureNodeIsLeafNode) {
-			failureFields["FailureNodeContext"] = Equal(option.(types.FailureNodeContext))
-		} else if t == reflect.TypeOf(types.NodeTypeIt) {
-			fields["LeafNodeType"] = Equal(option.(types.NodeType))
-		} else if t == reflect.TypeOf(NumAttempts(0)) {
-			fields["NumAttempts"] = Equal(int(option.(NumAttempts)))
-		}
-	}
-	if len(failureFields) > 0 {
-		fields["Failure"] = MatchFields(IgnoreExtras, failureFields)
-	}
-	return MatchFields(IgnoreExtras, fields)
+	return failureMatcherForState(types.SpecStatePanicked, "Failure.ForwardedPanic", options...)
 }

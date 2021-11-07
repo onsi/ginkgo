@@ -10,7 +10,6 @@ import (
 	"github.com/onsi/ginkgo/types"
 	. "github.com/onsi/gomega"
 	"github.com/onsi/gomega/gbytes"
-	"github.com/onsi/gomega/gstruct"
 )
 
 var _ = Describe("Command", func() {
@@ -43,11 +42,11 @@ var _ = Describe("Command", func() {
 			It("aborts with usage", func() {
 				Ω(func() {
 					c.Run([]string{"-not-a-flag=oops"}, []string{"additional", "args"})
-				}).Should(PanicWith(gstruct.MatchFields(gstruct.IgnoreExtras, gstruct.Fields{
-					"ExitCode":  Equal(1),
-					"Error":     HaveOccurred(),
-					"EmitUsage": BeTrue(),
-				})))
+				}).Should(PanicWith(SatisfyAll(
+					HaveField("ExitCode", 1),
+					HaveField("Error", HaveOccurred()),
+					HaveField("EmitUsage", BeTrue()),
+				)))
 
 				Ω(rt).Should(HaveTrackedNothing())
 			})

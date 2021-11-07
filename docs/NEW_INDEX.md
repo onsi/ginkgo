@@ -4041,8 +4041,6 @@ func BeAValidBook(params ...interface{}) types.GomegaMatcher {
     }
 
     if len(params) > 0 {
-        fields := gstruct.Fields{}
-
         for _, param := range params {
             switch v := param.(type) {
             case Title:
