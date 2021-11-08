@@ -126,7 +126,7 @@ func (r *DefaultReporter) DidRun(report types.SpecReport) {
 	switch report.State {
 	case types.SpecStatePassed:
 		highlightColor, succinctLocationBlock = "{{green}}", v.LT(types.VerbosityLevelVerbose)
-		emitGinkgoWriterOutput = (r.conf.ReportPassed || v.GTE(types.VerbosityLevelVerbose)) && hasGW
+		emitGinkgoWriterOutput = (r.conf.AlwaysEmitGinkgoWriter || v.GTE(types.VerbosityLevelVerbose)) && hasGW
 		if report.LeafNodeType.Is(types.NodeTypesForSuiteLevelNodes) {
 			if v.GTE(types.VerbosityLevelVerbose) || hasStd || hasEmittableReports {
 				header = fmt.Sprintf("%s PASSED", denoter)

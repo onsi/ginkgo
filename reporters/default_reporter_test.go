@@ -146,7 +146,7 @@ func C(flags ...ConfigFlags) types.ReporterConfig {
 		Succinct:          f.Has(Succinct),
 		Verbose:           f.Has(Verbose),
 		VeryVerbose:       f.Has(VeryVerbose),
-		ReportPassed:      f.Has(ReportPassed),
+		AlwaysEmitGinkgoWriter:      f.Has(ReportPassed),
 		FullTrace:         f.Has(FullTrace),
 	}
 }

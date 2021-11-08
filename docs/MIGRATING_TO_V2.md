@@ -525,6 +525,9 @@ Both these flags tweaked the reporter's behavior for pending and skipped tests b
 ### Changed: `-slowSpecThreshold`
 `-slowSpecThreshold` is now `-slow-spec-threshold` and takes a `time.Duration` (e.g. `5s` or `3m`) instead of a `float64` number of seconds.
 
+### Renamed: `-reportPassed`
+`-reportPassed` is now `--always-emit-ginkgo-writer` which better captures the intent of the flag; namely to always emit any GinkgoWriter content, even if the spec has passed.
+
 ### Removed: `-debug`
 The `-debug` flag has been removed.  It functioned primarily as a band-aid to Ginkgo V1's poor handling of stuck parallel tests. The new [interrupt behavior](#interrupt-behavior) in V2 resolves the root issues behind the `-debug` flag.
 

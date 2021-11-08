@@ -76,13 +76,13 @@ func (vl VerbosityLevel) LT(comp VerbosityLevel) bool {
 
 // Configuration for Ginkgo's reporter
 type ReporterConfig struct {
-	NoColor           bool
-	SlowSpecThreshold time.Duration
-	Succinct          bool
-	Verbose           bool
-	VeryVerbose       bool
-	FullTrace         bool
-	ReportPassed      bool
+	NoColor                bool
+	SlowSpecThreshold      time.Duration
+	Succinct               bool
+	Verbose                bool
+	VeryVerbose            bool
+	FullTrace              bool
+	AlwaysEmitGinkgoWriter bool
 
 	JSONReport     string
 	JUnitReport    string
@@ -316,7 +316,7 @@ var ReporterConfigFlags = GinkgoFlags{
 		Usage: "If set, default reporter prints out a very succinct report"},
 	{KeyPath: "R.FullTrace", Name: "trace", SectionKey: "output",
 		Usage: "If set, default reporter prints out the full stack trace when a failure occurs"},
-	{KeyPath: "R.ReportPassed", Name: "report-passed", SectionKey: "output", DeprecatedName: "reportPassed", DeprecatedDocLink: "changed-command-line-flags",
+	{KeyPath: "R.AlwaysEmitGinkgoWriter", Name: "always-emit-ginkgo-writer", SectionKey: "output", DeprecatedName: "reportPassed", DeprecatedDocLink: "renamed--reportpassed",
 		Usage: "If set, default reporter prints out captured output of passed tests."},
 
 	{KeyPath: "R.JSONReport", Name: "json-report", UsageArgument: "filename.json", SectionKey: "output",
