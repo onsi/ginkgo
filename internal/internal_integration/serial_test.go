@@ -44,12 +44,12 @@ var _ = Describe("Serial", func() {
 			SetUpForParallel(2)
 		})
 
-		Describe("when running as node 1", func() {
+		Describe("when running as proc 1", func() {
 			BeforeEach(func() {
 				conf.ParallelProcess = 1
 			})
 
-			It("participates in running parallel tests, then runs the serial tests after all other nodes have finished", func() {
+			It("participates in running parallel tests, then runs the serial tests after all other procs have finished", func() {
 				done := make(chan interface{})
 				go func() {
 					defer GinkgoRecover()
@@ -65,7 +65,7 @@ var _ = Describe("Serial", func() {
 			})
 		})
 
-		Describe("when running as a non-primary node", func() {
+		Describe("when running as a non-primary proc", func() {
 			BeforeEach(func() {
 				conf.ParallelProcess = 2
 			})

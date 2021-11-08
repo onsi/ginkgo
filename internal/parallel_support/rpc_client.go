@@ -89,9 +89,9 @@ func (client *rpcClient) BlockUntilSynchronizedBeforeSuiteData() ([]byte, error)
 	var data []byte
 	err := client.poll("Server.BeforeSuiteState", &data)
 	if err == ErrorGone {
-		return nil, types.GinkgoErrors.SynchronizedBeforeSuiteDisappearedOnNode1()
+		return nil, types.GinkgoErrors.SynchronizedBeforeSuiteDisappearedOnProc1()
 	} else if err == ErrorFailed {
-		return nil, types.GinkgoErrors.SynchronizedBeforeSuiteFailedOnNode1()
+		return nil, types.GinkgoErrors.SynchronizedBeforeSuiteFailedOnProc1()
 	}
 	return data, err
 }

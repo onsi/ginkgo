@@ -16,12 +16,12 @@ var _ = Describe("Running tests in parallel", func() {
 	var rt2 *RunTracker
 	var serialValidator chan interface{}
 
-	var fixture = func(rt *RunTracker, node int) {
+	var fixture = func(rt *RunTracker, proc int) {
 		SynchronizedBeforeSuite(func() []byte {
 			rt.Run("before-suite-1")
 			return []byte("floop")
-		}, func(node1Data []byte) {
-			rt.Run("before-suite-2 " + string(node1Data))
+		}, func(proc1Data []byte) {
+			rt.Run("before-suite-2 " + string(proc1Data))
 		})
 
 		It("A", rt.T("A", func() {
@@ -77,7 +77,7 @@ var _ = Describe("Running tests in parallel", func() {
 		})
 
 		SynchronizedAfterSuite(rt.T("after-suite-1", func() {
-			if node == 2 {
+			if proc == 2 {
 				close(serialValidator)
 			}
 		}), rt.T("after-suite-2"))
@@ -85,7 +85,7 @@ var _ = Describe("Running tests in parallel", func() {
 
 	BeforeEach(func() {
 		serialValidator = make(chan interface{})
-		//set up configuration for node 1 and node 2
+		//set up configuration for proc 1 and proc 2
 
 		//SetUpForParallel starts up a server, sets up a client, and sets up the exitChannels map - they're all cleaned up automatically after the test
 		SetUpForParallel(2)
@@ -116,7 +116,7 @@ var _ = Describe("Running tests in parallel", func() {
 		exit1 := exitChannels[1] //avoid a race around exitChannels access in a separate goroutine
 		//now launch suite 1...
 		go func() {
-			success, _ := suite1.Run("node 1", "/path/to/suite", failer, reporter, writer, outputInterceptor, interruptHandler, client, conf)
+			success, _ := suite1.Run("proc 1", "/path/to/suite", failer, reporter, writer, outputInterceptor, interruptHandler, client, conf)
 			finished <- success
 			close(exit1)
 		}()
@@ -125,7 +125,7 @@ var _ = Describe("Running tests in parallel", func() {
 		reporter2 = &FakeReporter{}
 		exit2 := exitChannels[2] //avoid a race around exitChannels access in a separate goroutine
 		go func() {
-			success, _ := suite2.Run("node 2", "/path/to/suite", internal.NewFailer(), reporter2, writer, outputInterceptor, interruptHandler, client, conf2)
+			success, _ := suite2.Run("proc 2", "/path/to/suite", internal.NewFailer(), reporter2, writer, outputInterceptor, interruptHandler, client, conf2)
 			finished <- success
 			close(exit2)
 		}()
@@ -136,7 +136,7 @@ var _ = Describe("Running tests in parallel", func() {
 		// and now we're ready to make asserts on the various run trackers and reporters
 	})
 
-	It("distributes tests across the parallel nodes and runs them", func() {
+	It("distributes tests across the parallel procs and runs them", func() {
 		Ω(rt).Should(HaveRun("before-suite-1"))
 		Ω(rt).Should(HaveRun("before-suite-2 floop"))
 		Ω(rt).Should(HaveRun("after-suite-1"))
@@ -159,7 +159,7 @@ var _ = Describe("Running tests in parallel", func() {
 		Ω(names).Should(ConsistOf("A", "B", "C", "D", "E", "F", "G", "H", "I", "OA", "OB", "OC", "OSA", "OSB"))
 	})
 
-	It("only runs serial tests on node 1, after the other node has finished", func() {
+	It("only runs serial tests on proc 1, after the other proc has finished", func() {
 		names := reporter.Did.Names()
 		Ω(names).Should(ContainElements("G", "H", "I", "OSA", "OSB"))
 		for idx, name := range names {

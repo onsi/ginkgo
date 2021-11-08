@@ -471,7 +471,7 @@ func SynchronizedBeforeSuite(process1Body func() []byte, allProcessBody func([]b
 //external singleton resources shared across processes when running tests in parallel.
 //
 //SynchronizedAfterSuite accomplishes this by taking *two* function arguments.  The first runs on all processes.  The second runs only on parallel process #1
-//and *only* after all other nodes have finished and exited.  This ensures that process #1, and any resources it is running, remain alive until
+//and *only* after all other processes have finished and exited.  This ensures that process #1, and any resources it is running, remain alive until
 //all other processes are finished.
 //
 //Here's a pseudo-code example that complements that given in SynchronizedBeforeSuite.  Here, SynchronizedAfterSuite is used to tear down the shared database

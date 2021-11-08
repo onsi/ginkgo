@@ -31,11 +31,11 @@ type Node struct {
 	CodeLocation types.CodeLocation
 	NestingLevel int
 
-	SynchronizedBeforeSuiteNode1Body    func() []byte
-	SynchronizedBeforeSuiteAllNodesBody func([]byte)
+	SynchronizedBeforeSuiteProc1Body    func() []byte
+	SynchronizedBeforeSuiteAllProcsBody func([]byte)
 
-	SynchronizedAfterSuiteAllNodesBody func()
-	SynchronizedAfterSuiteNode1Body    func()
+	SynchronizedAfterSuiteAllProcsBody func()
+	SynchronizedAfterSuiteProc1Body    func()
 
 	ReportEachBody       func(types.SpecReport)
 	ReportAfterSuiteBody func(types.Report)
@@ -238,22 +238,22 @@ func NewNode(deprecationTracker *types.DeprecationTracker, nodeType types.NodeTy
 	return node, errors
 }
 
-func NewSynchronizedBeforeSuiteNode(node1Body func() []byte, allNodesBody func([]byte), codeLocation types.CodeLocation) (Node, []error) {
+func NewSynchronizedBeforeSuiteNode(proc1Body func() []byte, allProcsBody func([]byte), codeLocation types.CodeLocation) (Node, []error) {
 	return Node{
 		ID:                                  UniqueNodeID(),
 		NodeType:                            types.NodeTypeSynchronizedBeforeSuite,
-		SynchronizedBeforeSuiteNode1Body:    node1Body,
-		SynchronizedBeforeSuiteAllNodesBody: allNodesBody,
+		SynchronizedBeforeSuiteProc1Body:    proc1Body,
+		SynchronizedBeforeSuiteAllProcsBody: allProcsBody,
 		CodeLocation:                        codeLocation,
 	}, nil
 }
 
-func NewSynchronizedAfterSuiteNode(allNodesBody func(), node1Body func(), codeLocation types.CodeLocation) (Node, []error) {
+func NewSynchronizedAfterSuiteNode(allProcsBody func(), proc1Body func(), codeLocation types.CodeLocation) (Node, []error) {
 	return Node{
 		ID:                                 UniqueNodeID(),
 		NodeType:                           types.NodeTypeSynchronizedAfterSuite,
-		SynchronizedAfterSuiteAllNodesBody: allNodesBody,
-		SynchronizedAfterSuiteNode1Body:    node1Body,
+		SynchronizedAfterSuiteAllProcsBody: allProcsBody,
+		SynchronizedAfterSuiteProc1Body:    proc1Body,
 		CodeLocation:                       codeLocation,
 	}, nil
 }

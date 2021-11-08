@@ -114,10 +114,10 @@ func (handler *ServerHandler) registerAlive(node int, alive func() bool) {
 	handler.alives[node-1] = alive
 }
 
-func (handler *ServerHandler) nodeIsAlive(node int) bool {
+func (handler *ServerHandler) procIsAlive(proc int) bool {
 	handler.lock.Lock()
 	defer handler.lock.Unlock()
-	alive := handler.alives[node-1]
+	alive := handler.alives[proc-1]
 	if alive == nil {
 		return true
 	}
@@ -126,7 +126,7 @@ func (handler *ServerHandler) nodeIsAlive(node int) bool {
 
 func (handler *ServerHandler) haveNonprimaryNodesFinished() bool {
 	for i := 2; i <= handler.parallelTotal; i++ {
-		if handler.nodeIsAlive(i) {
+		if handler.procIsAlive(i) {
 			return false
 		}
 	}
@@ -150,7 +150,7 @@ func (handler *ServerHandler) BeforeSuiteFailed(_ Void, _ *Void) error {
 }
 
 func (handler *ServerHandler) BeforeSuiteState(_ Void, data *[]byte) error {
-	node1IsAlive := handler.nodeIsAlive(1)
+	proc1IsAlive := handler.procIsAlive(1)
 	handler.lock.Lock()
 	defer handler.lock.Unlock()
 	beforeSuiteState := handler.beforeSuiteState
@@ -161,7 +161,7 @@ func (handler *ServerHandler) BeforeSuiteState(_ Void, data *[]byte) error {
 	case types.SpecStateFailed:
 		return ErrorFailed
 	default:
-		if node1IsAlive {
+		if proc1IsAlive {
 			return ErrorEarly
 		} else {
 			return ErrorGone

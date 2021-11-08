@@ -597,13 +597,13 @@ func (suite *Suite) runSuiteNode(node Node, failer *Failer, interruptChannel cha
 		}
 	case types.NodeTypeSynchronizedBeforeSuite:
 		var data []byte
-		var runAllNodes bool
+		var runAllProcs bool
 		if suiteConfig.ParallelProcess == 1 {
 			if suiteConfig.ParallelTotal > 1 {
 				outputInterceptor.StopInterceptingAndReturnOutput()
 				outputInterceptor.StartInterceptingOutputAndForwardTo(suite.client)
 			}
-			node.Body = func() { data = node.SynchronizedBeforeSuiteNode1Body() }
+			node.Body = func() { data = node.SynchronizedBeforeSuiteProc1Body() }
 			suite.currentSpecReport.State, suite.currentSpecReport.Failure = suite.runNode(node, failer, interruptChannel, interruptHandler, "", writer, suiteConfig)
 			if suiteConfig.ParallelTotal > 1 {
 				suite.currentSpecReport.CapturedStdOutErr += outputInterceptor.StopInterceptingAndReturnOutput()
@@ -614,17 +614,17 @@ func (suite *Suite) runSuiteNode(node Node, failer *Failer, interruptChannel cha
 					err = suite.client.PostSynchronizedBeforeSuiteFailed()
 				}
 			}
-			runAllNodes = suite.currentSpecReport.State.Is(types.SpecStatePassed) && err == nil
+			runAllProcs = suite.currentSpecReport.State.Is(types.SpecStatePassed) && err == nil
 		} else {
 			data, err = suite.client.BlockUntilSynchronizedBeforeSuiteData()
-			runAllNodes = err == nil
+			runAllProcs = err == nil
 		}
-		if runAllNodes {
-			node.Body = func() { node.SynchronizedBeforeSuiteAllNodesBody(data) }
+		if runAllProcs {
+			node.Body = func() { node.SynchronizedBeforeSuiteAllProcsBody(data) }
 			suite.currentSpecReport.State, suite.currentSpecReport.Failure = suite.runNode(node, failer, interruptChannel, interruptHandler, "", writer, suiteConfig)
 		}
 	case types.NodeTypeSynchronizedAfterSuite:
-		node.Body = node.SynchronizedAfterSuiteAllNodesBody
+		node.Body = node.SynchronizedAfterSuiteAllProcsBody
 		suite.currentSpecReport.State, suite.currentSpecReport.Failure = suite.runNode(node, failer, interruptChannel, interruptHandler, "", writer, suiteConfig)
 		if suiteConfig.ParallelProcess == 1 {
 			if suiteConfig.ParallelTotal > 1 {
@@ -636,7 +636,7 @@ func (suite *Suite) runSuiteNode(node Node, failer *Failer, interruptChannel cha
 					outputInterceptor.StartInterceptingOutputAndForwardTo(suite.client)
 				}
 
-				node.Body = node.SynchronizedAfterSuiteNode1Body
+				node.Body = node.SynchronizedAfterSuiteProc1Body
 				state, failure := suite.runNode(node, failer, interruptChannel, interruptHandler, "", writer, suiteConfig)
 				if suite.currentSpecReport.State.Is(types.SpecStatePassed) {
 					suite.currentSpecReport.State, suite.currentSpecReport.Failure = state, failure

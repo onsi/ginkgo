@@ -402,19 +402,19 @@ var _ = Describe("Node", func() {
 	Describe("The other node constructors", func() {
 		Describe("NewSynchronizedBeforeSuiteNode", func() {
 			It("returns a correctly configured node", func() {
-				var ranNode1, ranAllNodes bool
-				node1Body := func() []byte { ranNode1 = true; return nil }
-				allNodesBody := func(_ []byte) { ranAllNodes = true }
-				node, errors := internal.NewSynchronizedBeforeSuiteNode(node1Body, allNodesBody, cl)
+				var ranProc1, ranAllProcs bool
+				proc1Body := func() []byte { ranProc1 = true; return nil }
+				allProcsBody := func(_ []byte) { ranAllProcs = true }
+				node, errors := internal.NewSynchronizedBeforeSuiteNode(proc1Body, allProcsBody, cl)
 				Ω(errors).Should(BeEmpty())
 				Ω(node.ID).Should(BeNumerically(">", 0))
 				Ω(node.NodeType).Should(Equal(types.NodeTypeSynchronizedBeforeSuite))
 
-				node.SynchronizedBeforeSuiteNode1Body()
-				Ω(ranNode1).Should(BeTrue())
+				node.SynchronizedBeforeSuiteProc1Body()
+				Ω(ranProc1).Should(BeTrue())
 
-				node.SynchronizedBeforeSuiteAllNodesBody(nil)
-				Ω(ranAllNodes).Should(BeTrue())
+				node.SynchronizedBeforeSuiteAllProcsBody(nil)
+				Ω(ranAllProcs).Should(BeTrue())
 
 				Ω(node.CodeLocation).Should(Equal(cl))
 				Ω(node.NestingLevel).Should(Equal(0))
@@ -423,20 +423,20 @@ var _ = Describe("Node", func() {
 
 		Describe("NewSynchronizedAfterSuiteNode", func() {
 			It("returns a correctly configured node", func() {
-				var ranNode1, ranAllNodes bool
-				allNodesBody := func() { ranAllNodes = true }
-				node1Body := func() { ranNode1 = true }
+				var ranProc1, ranAllProcs bool
+				allProcsBody := func() { ranAllProcs = true }
+				proc1Body := func() { ranProc1 = true }
 
-				node, errors := internal.NewSynchronizedAfterSuiteNode(allNodesBody, node1Body, cl)
+				node, errors := internal.NewSynchronizedAfterSuiteNode(allProcsBody, proc1Body, cl)
 				Ω(errors).Should(BeEmpty())
 				Ω(node.ID).Should(BeNumerically(">", 0))
 				Ω(node.NodeType).Should(Equal(types.NodeTypeSynchronizedAfterSuite))
 
-				node.SynchronizedAfterSuiteAllNodesBody()
-				Ω(ranAllNodes).Should(BeTrue())
+				node.SynchronizedAfterSuiteAllProcsBody()
+				Ω(ranAllProcs).Should(BeTrue())
 
-				node.SynchronizedAfterSuiteNode1Body()
-				Ω(ranNode1).Should(BeTrue())
+				node.SynchronizedAfterSuiteProc1Body()
+				Ω(ranProc1).Should(BeTrue())
 
 				Ω(node.CodeLocation).Should(Equal(cl))
 				Ω(node.NestingLevel).Should(Equal(0))

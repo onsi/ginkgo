@@ -106,13 +106,13 @@ func runSerial(suite TestSuite, ginkgoConfig types.SuiteConfig, reporterConfig t
 }
 
 func runParallel(suite TestSuite, ginkgoConfig types.SuiteConfig, reporterConfig types.ReporterConfig, cliConfig types.CLIConfig, goFlagsConfig types.GoFlagsConfig, additionalArgs []string) TestSuite {
-	type nodeResult struct {
+	type procResult struct {
 		passed               bool
 		hasProgrammaticFocus bool
 	}
 
-	numNodes := cliConfig.ComputedProcs()
-	nodeOutput := make([]*bytes.Buffer, numNodes)
+	numProcs := cliConfig.ComputedProcs()
+	procOutput := make([]*bytes.Buffer, numProcs)
 	coverProfiles := []string{}
 
 	blockProfiles := []string{}
@@ -120,52 +120,52 @@ func runParallel(suite TestSuite, ginkgoConfig types.SuiteConfig, reporterConfig
 	memProfiles := []string{}
 	mutexProfiles := []string{}
 
-	nodeResults := make(chan nodeResult)
+	procResults := make(chan procResult)
 
-	server, err := parallel_support.NewServer(numNodes, reporters.NewDefaultReporter(reporterConfig, formatter.ColorableStdOut))
+	server, err := parallel_support.NewServer(numProcs, reporters.NewDefaultReporter(reporterConfig, formatter.ColorableStdOut))
 	command.AbortIfError("Failed to start parallel spec server", err)
 	server.Start()
 	defer server.Close()
 
-	for node := 1; node <= numNodes; node++ {
-		nodeGinkgoConfig := ginkgoConfig
-		nodeGinkgoConfig.ParallelProcess, nodeGinkgoConfig.ParallelTotal, nodeGinkgoConfig.ParallelHost = node, numNodes, server.Address()
+	for proc := 1; proc <= numProcs; proc++ {
+		procGinkgoConfig := ginkgoConfig
+		procGinkgoConfig.ParallelProcess, procGinkgoConfig.ParallelTotal, procGinkgoConfig.ParallelHost = proc, numProcs, server.Address()
 
-		nodeGoFlagsConfig := goFlagsConfig
+		procGoFlagsConfig := goFlagsConfig
 		if goFlagsConfig.Cover {
-			nodeGoFlagsConfig.CoverProfile = fmt.Sprintf("%s.%d", goFlagsConfig.CoverProfile, node)
-			coverProfiles = append(coverProfiles, filepath.Join(suite.Path, nodeGoFlagsConfig.CoverProfile))
+			procGoFlagsConfig.CoverProfile = fmt.Sprintf("%s.%d", goFlagsConfig.CoverProfile, proc)
+			coverProfiles = append(coverProfiles, filepath.Join(suite.Path, procGoFlagsConfig.CoverProfile))
 		}
 		if goFlagsConfig.BlockProfile != "" {
-			nodeGoFlagsConfig.BlockProfile = fmt.Sprintf("%s.%d", goFlagsConfig.BlockProfile, node)
-			blockProfiles = append(blockProfiles, filepath.Join(suite.Path, nodeGoFlagsConfig.BlockProfile))
+			procGoFlagsConfig.BlockProfile = fmt.Sprintf("%s.%d", goFlagsConfig.BlockProfile, proc)
+			blockProfiles = append(blockProfiles, filepath.Join(suite.Path, procGoFlagsConfig.BlockProfile))
 		}
 		if goFlagsConfig.CPUProfile != "" {
-			nodeGoFlagsConfig.CPUProfile = fmt.Sprintf("%s.%d", goFlagsConfig.CPUProfile, node)
-			cpuProfiles = append(cpuProfiles, filepath.Join(suite.Path, nodeGoFlagsConfig.CPUProfile))
+			procGoFlagsConfig.CPUProfile = fmt.Sprintf("%s.%d", goFlagsConfig.CPUProfile, proc)
+			cpuProfiles = append(cpuProfiles, filepath.Join(suite.Path, procGoFlagsConfig.CPUProfile))
 		}
 		if goFlagsConfig.MemProfile != "" {
-			nodeGoFlagsConfig.MemProfile = fmt.Sprintf("%s.%d", goFlagsConfig.MemProfile, node)
-			memProfiles = append(memProfiles, filepath.Join(suite.Path, nodeGoFlagsConfig.MemProfile))
+			procGoFlagsConfig.MemProfile = fmt.Sprintf("%s.%d", goFlagsConfig.MemProfile, proc)
+			memProfiles = append(memProfiles, filepath.Join(suite.Path, procGoFlagsConfig.MemProfile))
 		}
 		if goFlagsConfig.MutexProfile != "" {
-			nodeGoFlagsConfig.MutexProfile = fmt.Sprintf("%s.%d", goFlagsConfig.MutexProfile, node)
-			mutexProfiles = append(mutexProfiles, filepath.Join(suite.Path, nodeGoFlagsConfig.MutexProfile))
+			procGoFlagsConfig.MutexProfile = fmt.Sprintf("%s.%d", goFlagsConfig.MutexProfile, proc)
+			mutexProfiles = append(mutexProfiles, filepath.Join(suite.Path, procGoFlagsConfig.MutexProfile))
 		}
 
-		args, err := types.GenerateGinkgoTestRunArgs(nodeGinkgoConfig, reporterConfig, nodeGoFlagsConfig)
+		args, err := types.GenerateGinkgoTestRunArgs(procGinkgoConfig, reporterConfig, procGoFlagsConfig)
 		command.AbortIfError("Failed to generate test run argumnets", err)
 		args = append([]string{"--test.timeout=0"}, args...)
 		args = append(args, additionalArgs...)
 
 		cmd, buf := buildAndStartCommand(suite, args, false)
-		nodeOutput[node-1] = buf
-		server.RegisterAlive(node, func() bool { return cmd.ProcessState == nil || !cmd.ProcessState.Exited() })
+		procOutput[proc-1] = buf
+		server.RegisterAlive(proc, func() bool { return cmd.ProcessState == nil || !cmd.ProcessState.Exited() })
 
 		go func() {
 			cmd.Wait()
 			exitStatus := cmd.ProcessState.Sys().(syscall.WaitStatus).ExitStatus()
-			nodeResults <- nodeResult{
+			procResults <- procResult{
 				passed:               (exitStatus == 0) || (exitStatus == types.GINKGO_FOCUS_EXIT_CODE),
 				hasProgrammaticFocus: exitStatus == types.GINKGO_FOCUS_EXIT_CODE,
 			}
@@ -173,8 +173,8 @@ func runParallel(suite TestSuite, ginkgoConfig types.SuiteConfig, reporterConfig
 	}
 
 	passed := true
-	for node := 1; node <= cliConfig.ComputedProcs(); node++ {
-		result := <-nodeResults
+	for proc := 1; proc <= cliConfig.ComputedProcs(); proc++ {
+		result := <-procResults
 		passed = passed && result.passed
 		suite.HasProgrammaticFocus = suite.HasProgrammaticFocus || result.hasProgrammaticFocus
 	}
@@ -189,18 +189,18 @@ func runParallel(suite TestSuite, ginkgoConfig types.SuiteConfig, reporterConfig
 		fmt.Println("")
 	case <-time.After(time.Second):
 		//the serve never got back to us.  Something must have gone wrong.
-		fmt.Fprintln(os.Stderr, "** Ginkgo timed out waiting for all parallel nodes to report back. **")
+		fmt.Fprintln(os.Stderr, "** Ginkgo timed out waiting for all parallel procs to report back. **")
 		fmt.Fprintf(os.Stderr, "%s (%s)\n", suite.PackageName, suite.Path)
-		for node := 1; node <= cliConfig.ComputedProcs(); node++ {
-			fmt.Fprintf(os.Stderr, "Output from node %d:\n", node)
-			fmt.Fprintln(os.Stderr, formatter.Fi(1, "%s", nodeOutput[node-1].String()))
+		for proc := 1; proc <= cliConfig.ComputedProcs(); proc++ {
+			fmt.Fprintf(os.Stderr, "Output from proc %d:\n", proc)
+			fmt.Fprintln(os.Stderr, formatter.Fi(1, "%s", procOutput[proc-1].String()))
 		}
 		fmt.Fprintf(os.Stderr, "** End **")
 	}
 
-	for node := 1; node <= cliConfig.ComputedProcs(); node++ {
-		output := nodeOutput[node-1].String()
-		if node == 1 && checkForNoTestsWarning(nodeOutput[0]) && cliConfig.RequireSuite {
+	for proc := 1; proc <= cliConfig.ComputedProcs(); proc++ {
+		output := procOutput[proc-1].String()
+		if proc == 1 && checkForNoTestsWarning(procOutput[0]) && cliConfig.RequireSuite {
 			suite.State = TestSuiteStateFailed
 		}
 		if strings.Contains(output, "deprecated Ginkgo functionality") {

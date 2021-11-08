@@ -80,7 +80,7 @@ var _ = Describe("The Parallel Support Client & Server", func() {
 					endReport3 = types.Report{StartTime: t.Add(-time.Second), EndTime: t.Add(2 * time.Second), SuiteSucceeded: false, SpecReports: types.SpecReports{specReportC}}
 				})
 
-				Context("before all nodes have reported SuiteWillBegin", func() {
+				Context("before all procs have reported SuiteWillBegin", func() {
 					BeforeEach(func() {
 						Ω(client.PostSuiteWillBegin(beginReport)).Should(Succeed())
 						Ω(client.PostDidRun(specReportA)).Should(Succeed())
@@ -94,7 +94,7 @@ var _ = Describe("The Parallel Support Client & Server", func() {
 						Ω(reporter.Did).Should(BeEmpty())
 					})
 
-					Context("when the final node reports SuiteWillBegin", func() {
+					Context("when the final proc reports SuiteWillBegin", func() {
 						BeforeEach(func() {
 							Ω(client.PostSuiteWillBegin(thirdBeginReport)).Should(Succeed())
 						})
@@ -208,9 +208,9 @@ var _ = Describe("The Parallel Support Client & Server", func() {
 			})
 
 			Describe("Synchronization endpoints", func() {
-				var node1Exited, node2Exited, node3Exited chan interface{}
+				var proc1Exited, proc2Exited, proc3Exited chan interface{}
 				BeforeEach(func() {
-					node1Exited, node2Exited, node3Exited = make(chan interface{}), make(chan interface{}), make(chan interface{})
+					proc1Exited, proc2Exited, proc3Exited = make(chan interface{}), make(chan interface{}), make(chan interface{})
 					aliveFunc := func(c chan interface{}) func() bool {
 						return func() bool {
 							select {
@@ -221,45 +221,45 @@ var _ = Describe("The Parallel Support Client & Server", func() {
 							}
 						}
 					}
-					server.RegisterAlive(1, aliveFunc(node1Exited))
-					server.RegisterAlive(2, aliveFunc(node2Exited))
-					server.RegisterAlive(3, aliveFunc(node3Exited))
+					server.RegisterAlive(1, aliveFunc(proc1Exited))
+					server.RegisterAlive(2, aliveFunc(proc2Exited))
+					server.RegisterAlive(3, aliveFunc(proc3Exited))
 				})
 
 				Describe("Managing SynchronizedBeforeSuite synchronization", func() {
-					Context("when node 1 succeeds and returns data", func() {
-						It("passes that data along to other nodes", func() {
+					Context("when proc 1 succeeds and returns data", func() {
+						It("passes that data along to other procs", func() {
 							Ω(client.PostSynchronizedBeforeSuiteSucceeded([]byte("hello there"))).Should(Succeed())
 							Ω(client.BlockUntilSynchronizedBeforeSuiteData()).Should(Equal([]byte("hello there")))
 						})
 					})
 
-					Context("when node 1 succeeds and the data happens to be nil", func() {
+					Context("when proc 1 succeeds and the data happens to be nil", func() {
 						It("passes reports success and returns nil", func() {
 							Ω(client.PostSynchronizedBeforeSuiteSucceeded(nil)).Should(Succeed())
 							Ω(client.BlockUntilSynchronizedBeforeSuiteData()).Should(BeNil())
 						})
 					})
 
-					Context("when node 1 fails", func() {
+					Context("when proc 1 fails", func() {
 						It("returns a meaningful error", func() {
 							Ω(client.PostSynchronizedBeforeSuiteFailed()).Should(Succeed())
 							data, err := client.BlockUntilSynchronizedBeforeSuiteData()
 							Ω(data).Should(BeNil())
-							Ω(err).Should(MatchError(types.GinkgoErrors.SynchronizedBeforeSuiteFailedOnNode1()))
+							Ω(err).Should(MatchError(types.GinkgoErrors.SynchronizedBeforeSuiteFailedOnProc1()))
 						})
 					})
 
-					Context("when node 1 disappears before reporting back", func() {
+					Context("when proc 1 disappears before reporting back", func() {
 						It("returns a meaningful error", func() {
-							close(node1Exited)
+							close(proc1Exited)
 							data, err := client.BlockUntilSynchronizedBeforeSuiteData()
 							Ω(data).Should(BeNil())
-							Ω(err).Should(MatchError(types.GinkgoErrors.SynchronizedBeforeSuiteDisappearedOnNode1()))
+							Ω(err).Should(MatchError(types.GinkgoErrors.SynchronizedBeforeSuiteDisappearedOnProc1()))
 						})
 					})
 
-					Context("when node 1 hasn't responded yet", func() {
+					Context("when proc 1 hasn't responded yet", func() {
 						It("blocks until it does", func() {
 							done := make(chan interface{})
 							go func() {
@@ -275,7 +275,7 @@ var _ = Describe("The Parallel Support Client & Server", func() {
 				})
 
 				Describe("BlockUntilNonprimaryNodesHaveFinished", func() {
-					It("blocks until non-primary nodes exit", func() {
+					It("blocks until non-primary procs exit", func() {
 						done := make(chan interface{})
 						go func() {
 							defer GinkgoRecover()
@@ -283,9 +283,9 @@ var _ = Describe("The Parallel Support Client & Server", func() {
 							close(done)
 						}()
 						Consistently(done).ShouldNot(BeClosed())
-						close(node2Exited)
+						close(proc2Exited)
 						Consistently(done).ShouldNot(BeClosed())
-						close(node3Exited)
+						close(proc3Exited)
 						Eventually(done).Should(BeClosed())
 					})
 				})
@@ -301,7 +301,7 @@ var _ = Describe("The Parallel Support Client & Server", func() {
 						endReport3 = types.Report{SpecReports: types.SpecReports{specReportB}}
 					})
 
-					It("blocks until all non-primary nodes exit, then returns the aggregated report", func() {
+					It("blocks until all non-primary procs exit, then returns the aggregated report", func() {
 						done := make(chan interface{})
 						go func() {
 							defer GinkgoRecover()
@@ -313,15 +313,15 @@ var _ = Describe("The Parallel Support Client & Server", func() {
 						Consistently(done).ShouldNot(BeClosed())
 
 						Ω(client.PostSuiteDidEnd(endReport2)).Should(Succeed())
-						close(node2Exited)
+						close(proc2Exited)
 						Consistently(done).ShouldNot(BeClosed())
 
 						Ω(client.PostSuiteDidEnd(endReport3)).Should(Succeed())
-						close(node3Exited)
+						close(proc3Exited)
 						Eventually(done).Should(BeClosed())
 					})
 
-					Context("when a non-primary node disappears without reporting back", func() {
+					Context("when a non-primary proc disappears without reporting back", func() {
 						It("blocks returns an appropriate error", func() {
 							done := make(chan interface{})
 							go func() {
@@ -334,10 +334,10 @@ var _ = Describe("The Parallel Support Client & Server", func() {
 							Consistently(done).ShouldNot(BeClosed())
 
 							Ω(client.PostSuiteDidEnd(endReport2)).Should(Succeed())
-							close(node2Exited)
+							close(proc2Exited)
 							Consistently(done).ShouldNot(BeClosed())
 
-							close(node3Exited)
+							close(proc3Exited)
 							Eventually(done).Should(BeClosed())
 						})
 					})

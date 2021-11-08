@@ -424,16 +424,16 @@ func (g ginkgoErrors) AggregatedReportUnavailableDueToNodeDisappearing() error {
 	}
 }
 
-func (g ginkgoErrors) SynchronizedBeforeSuiteFailedOnNode1() error {
+func (g ginkgoErrors) SynchronizedBeforeSuiteFailedOnProc1() error {
 	return GinkgoError{
 		Heading: "SynchronizedBeforeSuite failed on Ginkgo parallel process #1",
 		Message: "The first SynchronizedBeforeSuite function running on Ginkgo parallel process #1 failed.  This test suite will now abort.",
 	}
 }
 
-func (g ginkgoErrors) SynchronizedBeforeSuiteDisappearedOnNode1() error {
+func (g ginkgoErrors) SynchronizedBeforeSuiteDisappearedOnProc1() error {
 	return GinkgoError{
-		Heading: "Node 1 disappeard before SynchronizedBeforeSuite could report back",
+		Heading: "Process #1 disappeard before SynchronizedBeforeSuite could report back",
 		Message: "Ginkgo parallel process #1 disappeared before the first SynchronizedBeforeSuite function completed.  This test suite will now abort.",
 	}
 }

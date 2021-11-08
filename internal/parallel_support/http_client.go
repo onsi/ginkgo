@@ -106,20 +106,20 @@ func (client *httpClient) BlockUntilSynchronizedBeforeSuiteData() ([]byte, error
 	var data []byte
 	err := client.poll("/before-suite-state", &data)
 	if err == ErrorGone {
-		return nil, types.GinkgoErrors.SynchronizedBeforeSuiteDisappearedOnNode1()
+		return nil, types.GinkgoErrors.SynchronizedBeforeSuiteDisappearedOnProc1()
 	} else if err == ErrorFailed {
-		return nil, types.GinkgoErrors.SynchronizedBeforeSuiteFailedOnNode1()
+		return nil, types.GinkgoErrors.SynchronizedBeforeSuiteFailedOnProc1()
 	}
 	return data, err
 }
 
 func (client *httpClient) BlockUntilNonprimaryNodesHaveFinished() error {
-	return client.poll("/have-nonprimary-nodes-finished", nil)
+	return client.poll("/have-nonprimary-procs-finished", nil)
 }
 
 func (client *httpClient) BlockUntilAggregatedNonprimaryNodesReport() (types.Report, error) {
 	var report types.Report
-	err := client.poll("/aggregated-nonprimary-nodes-report", &report)
+	err := client.poll("/aggregated-nonprimary-procs-report", &report)
 	if err == ErrorGone {
 		return types.Report{}, types.GinkgoErrors.AggregatedReportUnavailableDueToNodeDisappearing()
 	}

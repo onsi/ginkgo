@@ -10,7 +10,7 @@ import (
 	. "github.com/onsi/gomega"
 )
 
-var _ = Describe("Sending reports to ReportAfterSuite nodes", func() {
+var _ = Describe("Sending reports to ReportAfterSuite procs", func() {
 	var failInReportAfterSuiteA, interruptSuiteB bool
 	var fixture func()
 
@@ -76,7 +76,7 @@ var _ = Describe("Sending reports to ReportAfterSuite nodes", func() {
 				))
 			})
 
-			It("reports on the report nodes", func() {
+			It("reports on the report procs", func() {
 				Ω(reporter.Did.Find("Report A")).Should(HavePassed(
 					types.NodeTypeReportAfterSuite,
 					CapturedGinkgoWriterOutput("gw-report-A"),
@@ -112,7 +112,7 @@ var _ = Describe("Sending reports to ReportAfterSuite nodes", func() {
 			})
 		})
 
-		Context("when a ReportAfterSuite node fails", func() {
+		Context("when a ReportAfterSuite proc fails", func() {
 			BeforeEach(func() {
 				failInReportAfterSuiteA = true
 				success, _ := RunFixture("report-A-fails", fixture)
@@ -176,14 +176,14 @@ var _ = Describe("Sending reports to ReportAfterSuite nodes", func() {
 			}
 		})
 
-		Context("on node 1", func() {
+		Context("on proc 1", func() {
 			BeforeEach(func() {
 				conf.ParallelProcess = 1
 			})
 
 			Context("the happy path", func() {
 				BeforeEach(func() {
-					// node 2 has reported back and exited
+					// proc 2 has reported back and exited
 					client.PostSuiteDidEnd(otherNodeReport)
 					close(exitChannels[2])
 					success, _ := RunFixture("happy-path", fixture)
@@ -199,7 +199,7 @@ var _ = Describe("Sending reports to ReportAfterSuite nodes", func() {
 					))
 				})
 
-				It("passes the report in to each reporter, including information from other nodes", func() {
+				It("passes the report in to each reporter, including information from other procs", func() {
 					reportA := rt.DataFor("report-A")["report"].(types.Report)
 					reportB := rt.DataFor("report-B")["report"].(types.Report)
 
@@ -222,8 +222,8 @@ var _ = Describe("Sending reports to ReportAfterSuite nodes", func() {
 				})
 			})
 
-			Describe("waiting for reports from other nodes", func() {
-				It("blocks until the other nodes have finished", func() {
+			Describe("waiting for reports from other procs", func() {
+				It("blocks until the other procs have finished", func() {
 					done := make(chan interface{})
 					go func() {
 						defer GinkgoRecover()
@@ -239,14 +239,14 @@ var _ = Describe("Sending reports to ReportAfterSuite nodes", func() {
 				})
 			})
 
-			Context("when a non-primary node disappears before it reports", func() {
+			Context("when a non-primary proc disappears before it reports", func() {
 				BeforeEach(func() {
-					close(exitChannels[2]) //node 2 disappears before reporting
-					success, _ := RunFixture("disappearing-node-2", fixture)
+					close(exitChannels[2]) //proc 2 disappears before reporting
+					success, _ := RunFixture("disappearing-proc-2", fixture)
 					Ω(success).Should(BeFalse())
 				})
 
-				It("does not run the ReportAfterSuite nodes", func() {
+				It("does not run the ReportAfterSuite procs", func() {
 					Ω(rt).Should(HaveTracked(
 						"before-suite",
 						"A", "B", "C",
@@ -254,21 +254,21 @@ var _ = Describe("Sending reports to ReportAfterSuite nodes", func() {
 					))
 				})
 
-				It("reports all the ReportAfterSuite nodes as failed", func() {
+				It("reports all the ReportAfterSuite procs as failed", func() {
 					Ω(reporter.Did.Find("Report A")).Should(HaveFailed(types.GinkgoErrors.AggregatedReportUnavailableDueToNodeDisappearing().Error()))
 					Ω(reporter.Did.Find("Report B")).Should(HaveFailed(types.GinkgoErrors.AggregatedReportUnavailableDueToNodeDisappearing().Error()))
 				})
 			})
 		})
 
-		Context("on a non-primary node", func() {
+		Context("on a non-primary proc", func() {
 			BeforeEach(func() {
 				conf.ParallelProcess = 2
 				success, _ := RunFixture("happy-path", fixture)
 				Ω(success).Should(BeFalse())
 			})
 
-			It("does not run the ReportAfterSuite nodes", func() {
+			It("does not run the ReportAfterSuite procs", func() {
 				Ω(rt).Should(HaveTracked(
 					"before-suite",
 					"A", "B", "C",

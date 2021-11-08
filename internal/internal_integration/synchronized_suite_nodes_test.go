@@ -9,38 +9,38 @@ import (
 )
 
 var _ = Describe("Synchronized Suite Nodes", func() {
-	var failInBeforeSuiteNode1, failInBeforeSuiteAllNodes, failInAfterSuiteAllNodes, failInAfterSuiteNode1 bool
+	var failInBeforeSuiteProc1, failInBeforeSuiteAllProcs, failInAfterSuiteAllProcs, failInAfterSuiteProc1 bool
 	var fixture func()
 
 	BeforeEach(func() {
-		failInBeforeSuiteNode1, failInBeforeSuiteAllNodes, failInAfterSuiteAllNodes, failInAfterSuiteNode1 = false, false, false, false
+		failInBeforeSuiteProc1, failInBeforeSuiteAllProcs, failInAfterSuiteAllProcs, failInAfterSuiteProc1 = false, false, false, false
 		fixture = func() {
 			SynchronizedBeforeSuite(func() []byte {
-				outputInterceptor.AppendInterceptedOutput("before-suite-node-1")
-				rt.Run("before-suite-node-1")
-				if failInBeforeSuiteNode1 {
-					F("fail-in-before-suite-node-1", cl)
+				outputInterceptor.AppendInterceptedOutput("before-suite-proc-1")
+				rt.Run("before-suite-proc-1")
+				if failInBeforeSuiteProc1 {
+					F("fail-in-before-suite-proc-1", cl)
 				}
 				return []byte("hey there")
 			}, func(data []byte) {
-				outputInterceptor.AppendInterceptedOutput("before-suite-all-nodes")
-				rt.RunWithData("before-suite-all-nodes", "data", string(data))
-				if failInBeforeSuiteAllNodes {
-					F("fail-in-before-suite-all-nodes", cl)
+				outputInterceptor.AppendInterceptedOutput("before-suite-all-procs")
+				rt.RunWithData("before-suite-all-procs", "data", string(data))
+				if failInBeforeSuiteAllProcs {
+					F("fail-in-before-suite-all-procs", cl)
 				}
 			})
 			It("test", rt.T("test"))
 			SynchronizedAfterSuite(func() {
-				outputInterceptor.AppendInterceptedOutput("after-suite-all-nodes")
-				rt.Run("after-suite-all-nodes")
-				if failInAfterSuiteAllNodes {
-					F("fail-in-after-suite-all-nodes", cl)
+				outputInterceptor.AppendInterceptedOutput("after-suite-all-procs")
+				rt.Run("after-suite-all-procs")
+				if failInAfterSuiteAllProcs {
+					F("fail-in-after-suite-all-procs", cl)
 				}
 			}, func() {
-				outputInterceptor.AppendInterceptedOutput("after-suite-node-1")
-				rt.Run("after-suite-node-1")
-				if failInAfterSuiteNode1 {
-					F("fail-in-after-suite-node-1", cl)
+				outputInterceptor.AppendInterceptedOutput("after-suite-proc-1")
+				rt.Run("after-suite-proc-1")
+				if failInAfterSuiteProc1 {
+					F("fail-in-after-suite-proc-1", cl)
 				}
 			})
 		}
@@ -60,9 +60,9 @@ var _ = Describe("Synchronized Suite Nodes", func() {
 
 			It("runs all the functions", func() {
 				Ω(rt).Should(HaveTracked(
-					"before-suite-node-1", "before-suite-all-nodes",
+					"before-suite-proc-1", "before-suite-all-procs",
 					"test",
-					"after-suite-all-nodes", "after-suite-node-1",
+					"after-suite-all-procs", "after-suite-proc-1",
 				))
 			})
 
@@ -77,92 +77,92 @@ var _ = Describe("Synchronized Suite Nodes", func() {
 			})
 
 			It("passes data between the two SynchronizedBeforeSuite functions", func() {
-				Ω(rt).Should(HaveRunWithData("before-suite-all-nodes", "data", "hey there"))
+				Ω(rt).Should(HaveRunWithData("before-suite-all-procs", "data", "hey there"))
 			})
 		})
 
-		Describe("when the SynchronizedBeforeSuite node1 function fails", func() {
+		Describe("when the SynchronizedBeforeSuite proc1 function fails", func() {
 			BeforeEach(func() {
-				failInBeforeSuiteNode1 = true
-				success, _ := RunFixture("fail in SynchronizedBeforeSuite node1", fixture)
+				failInBeforeSuiteProc1 = true
+				success, _ := RunFixture("fail in SynchronizedBeforeSuite proc1", fixture)
 				Ω(success).Should(BeFalse())
 			})
 
-			It("doens't run the allNodes function or any of the tests", func() {
+			It("doens't run the allProcs function or any of the tests", func() {
 				Ω(rt).Should(HaveTracked(
-					"before-suite-node-1",
-					"after-suite-all-nodes", "after-suite-node-1",
+					"before-suite-proc-1",
+					"after-suite-all-procs", "after-suite-proc-1",
 				))
 			})
 
 			It("reports on the SynchronizedBeforeSuite and SynchronizedAfterSuite correctly", func() {
-				Ω(reporter.Did.FindByLeafNodeType(types.NodeTypeSynchronizedBeforeSuite)).Should(HaveFailed("fail-in-before-suite-node-1"))
+				Ω(reporter.Did.FindByLeafNodeType(types.NodeTypeSynchronizedBeforeSuite)).Should(HaveFailed("fail-in-before-suite-proc-1"))
 				Ω(reporter.Did.FindByLeafNodeType(types.NodeTypeSynchronizedAfterSuite)).Should(HavePassed())
 			})
 		})
 
-		Describe("when the SynchronizedBeforeSuite allNodes function fails", func() {
+		Describe("when the SynchronizedBeforeSuite allProcs function fails", func() {
 			BeforeEach(func() {
-				failInBeforeSuiteAllNodes = true
-				success, _ := RunFixture("fail in SynchronizedBeforeSuite allNodes", fixture)
+				failInBeforeSuiteAllProcs = true
+				success, _ := RunFixture("fail in SynchronizedBeforeSuite allProcs", fixture)
 				Ω(success).Should(BeFalse())
 			})
 
 			It("doesn't run the tests", func() {
 				Ω(rt).Should(HaveTracked(
-					"before-suite-node-1", "before-suite-all-nodes",
-					"after-suite-all-nodes", "after-suite-node-1",
+					"before-suite-proc-1", "before-suite-all-procs",
+					"after-suite-all-procs", "after-suite-proc-1",
 				))
-				Ω(rt).Should(HaveRunWithData("before-suite-all-nodes", "data", "hey there"))
+				Ω(rt).Should(HaveRunWithData("before-suite-all-procs", "data", "hey there"))
 			})
 
 			It("reports on the SynchronizedBeforeSuite and SynchronizedAfterSuite correctly", func() {
-				Ω(reporter.Did.FindByLeafNodeType(types.NodeTypeSynchronizedBeforeSuite)).Should(HaveFailed("fail-in-before-suite-all-nodes"))
+				Ω(reporter.Did.FindByLeafNodeType(types.NodeTypeSynchronizedBeforeSuite)).Should(HaveFailed("fail-in-before-suite-all-procs"))
 				Ω(reporter.Did.FindByLeafNodeType(types.NodeTypeSynchronizedAfterSuite)).Should(HavePassed())
 			})
 		})
 
-		Describe("when the SynchronizedAfterSuite allNodes function fails", func() {
+		Describe("when the SynchronizedAfterSuite allProcs function fails", func() {
 			BeforeEach(func() {
-				failInAfterSuiteAllNodes = true
-				success, _ := RunFixture("fail in SynchronizedAfterSuite allNodes", fixture)
+				failInAfterSuiteAllProcs = true
+				success, _ := RunFixture("fail in SynchronizedAfterSuite allProcs", fixture)
 				Ω(success).Should(BeFalse())
 			})
 
-			It("nonetheless runs the node-1 function", func() {
+			It("nonetheless runs the proc-1 function", func() {
 				Ω(rt).Should(HaveTracked(
-					"before-suite-node-1", "before-suite-all-nodes",
+					"before-suite-proc-1", "before-suite-all-procs",
 					"test",
-					"after-suite-all-nodes", "after-suite-node-1",
+					"after-suite-all-procs", "after-suite-proc-1",
 				))
-				Ω(rt).Should(HaveRunWithData("before-suite-all-nodes", "data", "hey there"))
+				Ω(rt).Should(HaveRunWithData("before-suite-all-procs", "data", "hey there"))
 			})
 
 			It("reports on the SynchronizedBeforeSuite and SynchronizedAfterSuite correctly", func() {
 				Ω(reporter.Did.FindByLeafNodeType(types.NodeTypeSynchronizedBeforeSuite)).Should(HavePassed())
-				Ω(reporter.Did.FindByLeafNodeType(types.NodeTypeSynchronizedAfterSuite)).Should(HaveFailed("fail-in-after-suite-all-nodes"))
+				Ω(reporter.Did.FindByLeafNodeType(types.NodeTypeSynchronizedAfterSuite)).Should(HaveFailed("fail-in-after-suite-all-procs"))
 			})
 		})
 
-		Describe("when the SynchronizedAfterSuite node1 function fails", func() {
+		Describe("when the SynchronizedAfterSuite proc1 function fails", func() {
 			BeforeEach(func() {
-				failInAfterSuiteNode1 = true
-				success, _ := RunFixture("fail in SynchronizedAfterSuite node1", fixture)
+				failInAfterSuiteProc1 = true
+				success, _ := RunFixture("fail in SynchronizedAfterSuite proc1", fixture)
 				Ω(success).Should(BeFalse())
 			})
 
 			It("will have run everything", func() {
 				Ω(rt).Should(HaveTracked(
-					"before-suite-node-1", "before-suite-all-nodes",
+					"before-suite-proc-1", "before-suite-all-procs",
 					"test",
-					"after-suite-all-nodes", "after-suite-node-1",
+					"after-suite-all-procs", "after-suite-proc-1",
 				))
-				Ω(rt).Should(HaveRunWithData("before-suite-all-nodes", "data", "hey there"))
+				Ω(rt).Should(HaveRunWithData("before-suite-all-procs", "data", "hey there"))
 			})
 
 			It("reports on the SynchronizedBeforeSuite and SynchronizedAfterSuite correctly", func() {
 				Ω(reporter.Did.FindByLeafNodeType(types.NodeTypeSynchronizedBeforeSuite)).Should(HavePassed())
-				Ω(reporter.Did.FindByLeafNodeType(types.NodeTypeSynchronizedAfterSuite)).Should(HaveFailed("fail-in-after-suite-node-1"))
+				Ω(reporter.Did.FindByLeafNodeType(types.NodeTypeSynchronizedAfterSuite)).Should(HaveFailed("fail-in-after-suite-proc-1"))
 			})
 		})
 	})
@@ -176,23 +176,23 @@ var _ = Describe("Synchronized Suite Nodes", func() {
 			server.SetOutputDestination(serverOutputBuffer)
 		})
 
-		Describe("when running as node 1", func() {
+		Describe("when running as proc 1", func() {
 			BeforeEach(func() {
 				conf.ParallelProcess = 1
 			})
 
 			Describe("happy path", func() {
 				BeforeEach(func() {
-					close(exitChannels[2]) //trigger node 2 exiting so the node1 after suite runs
+					close(exitChannels[2]) //trigger proc 2 exiting so the proc1 after suite runs
 					success, _ := RunFixture("happy-path", fixture)
 					Ω(success).Should(BeTrue())
 				})
 
 				It("runs all the functions", func() {
 					Ω(rt).Should(HaveTracked(
-						"before-suite-node-1", "before-suite-all-nodes",
+						"before-suite-proc-1", "before-suite-all-procs",
 						"test",
-						"after-suite-all-nodes", "after-suite-node-1",
+						"after-suite-all-procs", "after-suite-proc-1",
 					))
 				})
 
@@ -202,21 +202,21 @@ var _ = Describe("Synchronized Suite Nodes", func() {
 				})
 
 				It("passes data between the two SynchronizedBeforeSuite functions and up to the server", func() {
-					Ω(rt).Should(HaveRunWithData("before-suite-all-nodes", "data", "hey there"))
+					Ω(rt).Should(HaveRunWithData("before-suite-all-procs", "data", "hey there"))
 					Ω(client.BlockUntilSynchronizedBeforeSuiteData()).Should(Equal([]byte("hey there")))
 				})
 
-				It("emits the output of the node-1 BeforeSuite function and the node-1 AfterSuite fnction", func() {
-					Ω(string(serverOutputBuffer.Contents())).Should(Equal("before-suite-node-1after-suite-node-1"))
-					Ω(reporter.Did.FindByLeafNodeType(types.NodeTypeSynchronizedBeforeSuite)).Should(HavePassed(CapturedStdOutput("before-suite-node-1before-suite-all-nodes")))
-					Ω(reporter.Did.FindByLeafNodeType(types.NodeTypeSynchronizedAfterSuite)).Should(HavePassed(CapturedStdOutput("after-suite-all-nodesafter-suite-node-1")))
+				It("emits the output of the proc-1 BeforeSuite function and the proc-1 AfterSuite fnction", func() {
+					Ω(string(serverOutputBuffer.Contents())).Should(Equal("before-suite-proc-1after-suite-proc-1"))
+					Ω(reporter.Did.FindByLeafNodeType(types.NodeTypeSynchronizedBeforeSuite)).Should(HavePassed(CapturedStdOutput("before-suite-proc-1before-suite-all-procs")))
+					Ω(reporter.Did.FindByLeafNodeType(types.NodeTypeSynchronizedAfterSuite)).Should(HavePassed(CapturedStdOutput("after-suite-all-procsafter-suite-proc-1")))
 				})
 			})
 
-			Describe("when the BeforeSuite node1 function fails", func() {
+			Describe("when the BeforeSuite proc1 function fails", func() {
 				BeforeEach(func() {
-					close(exitChannels[2]) //trigger node 2 exiting so the node1 after suite runs
-					failInBeforeSuiteNode1 = true
+					close(exitChannels[2]) //trigger proc 2 exiting so the proc1 after suite runs
+					failInBeforeSuiteProc1 = true
 					success, _ := RunFixture("happy-path", fixture)
 					Ω(success).Should(BeFalse())
 				})
@@ -224,11 +224,11 @@ var _ = Describe("Synchronized Suite Nodes", func() {
 				It("tells the server", func() {
 					data, err := client.BlockUntilSynchronizedBeforeSuiteData()
 					Ω(data).Should(BeNil())
-					Ω(err).Should(MatchError(types.GinkgoErrors.SynchronizedBeforeSuiteFailedOnNode1()))
+					Ω(err).Should(MatchError(types.GinkgoErrors.SynchronizedBeforeSuiteFailedOnProc1()))
 				})
 			})
 
-			Describe("waiting for all nodes to finish before running the AfterSuite node 1 function", func() {
+			Describe("waiting for all procs to finish before running the AfterSuite proc 1 function", func() {
 				It("waits for the server to give it the all clear", func() {
 					done := make(chan interface{})
 					go func() {
@@ -244,7 +244,7 @@ var _ = Describe("Synchronized Suite Nodes", func() {
 			})
 		})
 
-		Describe("when running as another node", func() {
+		Describe("when running as another proc", func() {
 			BeforeEach(func() {
 				conf.ParallelProcess = 2
 			})
@@ -256,11 +256,11 @@ var _ = Describe("Synchronized Suite Nodes", func() {
 					Ω(success).Should(BeTrue())
 				})
 
-				It("runs all the all-nodes functions", func() {
+				It("runs all the all-procs functions", func() {
 					Ω(rt).Should(HaveTracked(
-						"before-suite-all-nodes",
+						"before-suite-all-procs",
 						"test",
-						"after-suite-all-nodes",
+						"after-suite-all-procs",
 					))
 				})
 
@@ -269,12 +269,12 @@ var _ = Describe("Synchronized Suite Nodes", func() {
 					Ω(reporter.Did.FindByLeafNodeType(types.NodeTypeSynchronizedAfterSuite)).Should(HavePassed())
 				})
 
-				It("gets data for the SynchronizedBeforeSuite all nodes function from the server", func() {
-					Ω(rt).Should(HaveRunWithData("before-suite-all-nodes", "data", "hola hola"))
+				It("gets data for the SynchronizedBeforeSuite all procs function from the server", func() {
+					Ω(rt).Should(HaveRunWithData("before-suite-all-procs", "data", "hola hola"))
 				})
 			})
 
-			Describe("waiting for the data from node 1", func() {
+			Describe("waiting for the data from proc 1", func() {
 				It("waits for the server to give it the data", func() {
 					done := make(chan interface{})
 					go func() {
@@ -286,11 +286,11 @@ var _ = Describe("Synchronized Suite Nodes", func() {
 					Consistently(done).ShouldNot(BeClosed())
 					client.PostSynchronizedBeforeSuiteSucceeded([]byte("hola hola"))
 					Eventually(done).Should(BeClosed())
-					Ω(rt).Should(HaveRunWithData("before-suite-all-nodes", "data", "hola hola"))
+					Ω(rt).Should(HaveRunWithData("before-suite-all-procs", "data", "hola hola"))
 				})
 			})
 
-			Describe("when node 1 fails the SynchronizedBeforeSuite node1 function", func() {
+			Describe("when proc 1 fails the SynchronizedBeforeSuite proc1 function", func() {
 				It("fails and only runs the after suite", func() {
 					done := make(chan interface{})
 					go func() {
@@ -303,13 +303,13 @@ var _ = Describe("Synchronized Suite Nodes", func() {
 					client.PostSynchronizedBeforeSuiteFailed()
 					Eventually(done).Should(BeClosed())
 
-					Ω(rt).Should(HaveTracked("after-suite-all-nodes"))
+					Ω(rt).Should(HaveTracked("after-suite-all-procs"))
 
-					Ω(reporter.Did.FindByLeafNodeType(types.NodeTypeSynchronizedBeforeSuite)).Should(HaveFailed(types.GinkgoErrors.SynchronizedBeforeSuiteFailedOnNode1().Error()))
+					Ω(reporter.Did.FindByLeafNodeType(types.NodeTypeSynchronizedBeforeSuite)).Should(HaveFailed(types.GinkgoErrors.SynchronizedBeforeSuiteFailedOnProc1().Error()))
 				})
 			})
 
-			Describe("when node 1 disappears before the node 1 function returns", func() {
+			Describe("when proc 1 disappears before the proc 1 function returns", func() {
 				It("fails and only runs the after suite", func() {
 					done := make(chan interface{})
 					go func() {
@@ -322,9 +322,9 @@ var _ = Describe("Synchronized Suite Nodes", func() {
 					close(exitChannels[1])
 					Eventually(done).Should(BeClosed())
 
-					Ω(rt).Should(HaveTracked("after-suite-all-nodes"))
+					Ω(rt).Should(HaveTracked("after-suite-all-procs"))
 
-					Ω(reporter.Did.FindByLeafNodeType(types.NodeTypeSynchronizedBeforeSuite)).Should(HaveFailed(types.GinkgoErrors.SynchronizedBeforeSuiteDisappearedOnNode1().Error()))
+					Ω(reporter.Did.FindByLeafNodeType(types.NodeTypeSynchronizedBeforeSuite)).Should(HaveFailed(types.GinkgoErrors.SynchronizedBeforeSuiteDisappearedOnProc1().Error()))
 				})
 			})
 		})

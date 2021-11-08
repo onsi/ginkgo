@@ -14,8 +14,8 @@ var _ = Describe("SuiteSetup", func() {
 			fm.MountFixture("synchronized_setup_tests")
 		})
 
-		Context("when run with one node", func() {
-			It("should do all the work on that one node", func() {
+		Context("when run with one proc", func() {
+			It("should do all the work on that one proc", func() {
 				session := startGinkgo(fm.PathTo("synchronized_setup_tests"), "--no-color")
 				Eventually(session).Should(gexec.Exit(0))
 				output := string(session.Out.Contents())
@@ -25,8 +25,8 @@ var _ = Describe("SuiteSetup", func() {
 			})
 		})
 
-		Context("when run across multiple nodes", func() {
-			It("should run the first BeforeSuite function (BEFORE_A) on node 1, the second (BEFORE_B) on all the nodes, the first AfterSuite (AFTER_A) on all the nodes, and then the second (AFTER_B) on Node 1 *after* everything else is finished", func() {
+		Context("when run across multiple procs", func() {
+			It("should run the first BeforeSuite function (BEFORE_A) on proc 1, the second (BEFORE_B) on all the procs, the first AfterSuite (AFTER_A) on all the procs, and then the second (AFTER_B) on Node 1 *after* everything else is finished", func() {
 				session := startGinkgo(fm.PathTo("synchronized_setup_tests"), "--no-color", "--procs=3")
 				Eventually(session).Should(gexec.Exit(0))
 				output := string(session.Out.Contents())
@@ -38,7 +38,7 @@ var _ = Describe("SuiteSetup", func() {
 						numOccurrences += 1
 					}
 				}
-				Ω(numOccurrences).Should(Equal(2)) // once when it's emitted because it's in the synchronizedBeforeSuite node.  And once again when it's captured in the spec report that includes the stdout output.
+				Ω(numOccurrences).Should(Equal(2)) // once when it's emitted because it's in the synchronizedBeforeSuite proc.  And once again when it's captured in the spec report that includes the stdout output.
 
 				numOccurrences = 0
 				for _, line := range strings.Split(output, "\n") {
@@ -47,7 +47,7 @@ var _ = Describe("SuiteSetup", func() {
 						numOccurrences += 1
 					}
 				}
-				Ω(numOccurrences).Should(Equal(2)) // once when it's emitted because it's in the synchronizedAfterSuite node.  And once again when it's captured in the spec report that includes the stdout output.
+				Ω(numOccurrences).Should(Equal(2)) // once when it's emitted because it's in the synchronizedAfterSuite proc.  And once again when it's captured in the spec report that includes the stdout output.
 
 				Ω(output).Should(ContainSubstring("BEFORE_A_1"))
 				Ω(output).Should(ContainSubstring("BEFORE_B_1: DATA"))
@@ -73,13 +73,13 @@ var _ = Describe("SuiteSetup", func() {
 			fm.MountFixture("exiting_synchronized_setup")
 		})
 
-		It("should fail and let the user know that node 1 disappeared prematurely", func() {
+		It("should fail and let the user know that proc 1 disappeared prematurely", func() {
 			session := startGinkgo(fm.PathTo("exiting_synchronized_setup"), "--no-color", "--procs=3")
 			Eventually(session).Should(gexec.Exit(1))
 			output := string(session.Out.Contents()) + string(session.Err.Contents())
 
 			Ω(output).Should(ContainSubstring("Node 1 disappeard before SynchronizedBeforeSuite could report back"))
-			Ω(output).Should(ContainSubstring("Ginkgo timed out waiting for all parallel nodes to report back"))
+			Ω(output).Should(ContainSubstring("Ginkgo timed out waiting for all parallel procs to report back"))
 		})
 	})
 })
