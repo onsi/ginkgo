@@ -14,6 +14,7 @@ var _ = Describe("when config.DryRun is enabled", func() {
 		RunFixture("dry run", func() {
 			BeforeSuite(rt.T("before-suite"))
 			BeforeEach(rt.T("bef"))
+			ReportBeforeEach(func(_ SpecReport) { rt.Run("report-before-each") })
 			Describe("container", func() {
 				It("A", rt.T("A"))
 				It("B", rt.T("B", func() { F() }))
@@ -23,6 +24,8 @@ var _ = Describe("when config.DryRun is enabled", func() {
 			})
 			AfterEach(rt.T("aft"))
 			AfterSuite(rt.T("after-suite"))
+			ReportAfterEach(func(_ SpecReport) { rt.Run("report-after-each") })
+			ReportAfterSuite("", func(_ Report) { rt.Run("report-after-suite") })
 		})
 	})
 

@@ -534,6 +534,10 @@ func (suite *Suite) runSpec(spec Spec, isLastSpecInGroup bool, failer *Failer, i
 }
 
 func (suite *Suite) reportEach(spec Spec, nodeType types.NodeType, failer *Failer, interruptHandler interrupt_handler.InterruptHandlerInterface, writer WriterInterface, outputInterceptor OutputInterceptor, suiteConfig types.SuiteConfig) {
+	if suiteConfig.DryRun {
+		return
+	}
+
 	nodes := spec.Nodes.WithType(nodeType)
 	if nodeType == types.NodeTypeReportAfterEach {
 		nodes = nodes.SortedByDescendingNestingLevel()
