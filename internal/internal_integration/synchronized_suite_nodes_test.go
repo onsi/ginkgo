@@ -203,7 +203,10 @@ var _ = Describe("Synchronized Suite Nodes", func() {
 
 				It("passes data between the two SynchronizedBeforeSuite functions and up to the server", func() {
 					Ω(rt).Should(HaveRunWithData("before-suite-all-procs", "data", "hey there"))
-					Ω(client.BlockUntilSynchronizedBeforeSuiteData()).Should(Equal([]byte("hey there")))
+					state, data, err := client.BlockUntilSynchronizedBeforeSuiteData()
+					Ω(state).Should(Equal(types.SpecStatePassed))
+					Ω(data).Should(Equal([]byte("hey there")))
+					Ω(err).ShouldNot(HaveOccurred())
 				})
 
 				It("emits the output of the proc-1 BeforeSuite function and the proc-1 AfterSuite fnction", func() {
@@ -222,9 +225,10 @@ var _ = Describe("Synchronized Suite Nodes", func() {
 				})
 
 				It("tells the server", func() {
-					data, err := client.BlockUntilSynchronizedBeforeSuiteData()
+					state, data, err := client.BlockUntilSynchronizedBeforeSuiteData()
+					Ω(state).Should(Equal(types.SpecStateFailed))
 					Ω(data).Should(BeNil())
-					Ω(err).Should(MatchError(types.GinkgoErrors.SynchronizedBeforeSuiteFailedOnProc1()))
+					Ω(err).ShouldNot(HaveOccurred())
 				})
 			})
 
@@ -251,7 +255,7 @@ var _ = Describe("Synchronized Suite Nodes", func() {
 
 			Describe("happy path", func() {
 				BeforeEach(func() {
-					client.PostSynchronizedBeforeSuiteSucceeded([]byte("hola hola"))
+					client.PostSynchronizedBeforeSuiteCompleted(types.SpecStatePassed, []byte("hola hola"))
 					success, _ := RunFixture("happy-path", fixture)
 					Ω(success).Should(BeTrue())
 				})
@@ -284,7 +288,7 @@ var _ = Describe("Synchronized Suite Nodes", func() {
 						close(done)
 					}()
 					Consistently(done).ShouldNot(BeClosed())
-					client.PostSynchronizedBeforeSuiteSucceeded([]byte("hola hola"))
+					client.PostSynchronizedBeforeSuiteCompleted(types.SpecStatePassed, []byte("hola hola"))
 					Eventually(done).Should(BeClosed())
 					Ω(rt).Should(HaveRunWithData("before-suite-all-procs", "data", "hola hola"))
 				})
@@ -300,12 +304,31 @@ var _ = Describe("Synchronized Suite Nodes", func() {
 						close(done)
 					}()
 					Consistently(done).ShouldNot(BeClosed())
-					client.PostSynchronizedBeforeSuiteFailed()
+					client.PostSynchronizedBeforeSuiteCompleted(types.SpecStateFailed, nil)
 					Eventually(done).Should(BeClosed())
 
 					Ω(rt).Should(HaveTracked("after-suite-all-procs"))
 
 					Ω(reporter.Did.FindByLeafNodeType(types.NodeTypeSynchronizedBeforeSuite)).Should(HaveFailed(types.GinkgoErrors.SynchronizedBeforeSuiteFailedOnProc1().Error()))
+				})
+			})
+
+			Describe("when the proc1 SynchronizedBeforeSuite function Skips()", func() {
+				It("fails and only runs the after suite", func() {
+					done := make(chan interface{})
+					go func() {
+						defer GinkgoRecover()
+						success, _ := RunFixture("happy-path", fixture)
+						Ω(success).Should(BeTrue())
+						close(done)
+					}()
+					Consistently(done).ShouldNot(BeClosed())
+					client.PostSynchronizedBeforeSuiteCompleted(types.SpecStateSkipped, nil)
+					Eventually(done).Should(BeClosed())
+
+					Ω(rt).Should(HaveTracked("after-suite-all-procs"))
+
+					Ω(reporter.Did.FindByLeafNodeType(types.NodeTypeSynchronizedBeforeSuite)).Should(HaveBeenSkipped())
 				})
 			})
 

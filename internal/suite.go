@@ -285,7 +285,7 @@ func (suite *Suite) runSpecs(description string, suitePath string, hasProgrammat
 			if groupedSpecIdx >= len(groupedSpecIndices) {
 				if suiteConfig.ParallelProcess == 1 && len(serialGroupedSpecIndices) > 0 {
 					groupedSpecIndices, serialGroupedSpecIndices, nextIndex = serialGroupedSpecIndices, GroupedSpecIndices{}, MakeIncrementingIndexCounter()
-					suite.client.BlockUntilNonprimaryNodesHaveFinished()
+					suite.client.BlockUntilNonprimaryProcsHaveFinished()
 					continue
 				}
 				break
@@ -590,7 +590,7 @@ func (suite *Suite) runSuiteNode(node Node, failer *Failer, interruptChannel cha
 		suite.currentSpecReport.State, suite.currentSpecReport.Failure = suite.runNode(node, failer, interruptChannel, interruptHandler, "", writer, suiteConfig)
 	case types.NodeTypeCleanupAfterSuite:
 		if suiteConfig.ParallelTotal > 1 && suiteConfig.ParallelProcess == 1 {
-			err = suite.client.BlockUntilNonprimaryNodesHaveFinished()
+			err = suite.client.BlockUntilNonprimaryProcsHaveFinished()
 		}
 		if err == nil {
 			suite.currentSpecReport.State, suite.currentSpecReport.Failure = suite.runNode(node, failer, interruptChannel, interruptHandler, "", writer, suiteConfig)
@@ -609,15 +609,23 @@ func (suite *Suite) runSuiteNode(node Node, failer *Failer, interruptChannel cha
 				suite.currentSpecReport.CapturedStdOutErr += outputInterceptor.StopInterceptingAndReturnOutput()
 				outputInterceptor.StartInterceptingOutput()
 				if suite.currentSpecReport.State.Is(types.SpecStatePassed) {
-					err = suite.client.PostSynchronizedBeforeSuiteSucceeded(data)
+					err = suite.client.PostSynchronizedBeforeSuiteCompleted(types.SpecStatePassed, data)
 				} else {
-					err = suite.client.PostSynchronizedBeforeSuiteFailed()
+					err = suite.client.PostSynchronizedBeforeSuiteCompleted(suite.currentSpecReport.State, nil)
 				}
 			}
 			runAllProcs = suite.currentSpecReport.State.Is(types.SpecStatePassed) && err == nil
 		} else {
-			data, err = suite.client.BlockUntilSynchronizedBeforeSuiteData()
-			runAllProcs = err == nil
+			var proc1State types.SpecState
+			proc1State, data, err = suite.client.BlockUntilSynchronizedBeforeSuiteData()
+			switch proc1State {
+			case types.SpecStatePassed:
+				runAllProcs = true
+			case types.SpecStateFailed, types.SpecStatePanicked:
+				err = types.GinkgoErrors.SynchronizedBeforeSuiteFailedOnProc1()
+			case types.SpecStateInterrupted, types.SpecStateAborted, types.SpecStateSkipped:
+				suite.currentSpecReport.State = proc1State
+			}
 		}
 		if runAllProcs {
 			node.Body = func() { node.SynchronizedBeforeSuiteAllProcsBody(data) }
@@ -628,7 +636,7 @@ func (suite *Suite) runSuiteNode(node Node, failer *Failer, interruptChannel cha
 		suite.currentSpecReport.State, suite.currentSpecReport.Failure = suite.runNode(node, failer, interruptChannel, interruptHandler, "", writer, suiteConfig)
 		if suiteConfig.ParallelProcess == 1 {
 			if suiteConfig.ParallelTotal > 1 {
-				err = suite.client.BlockUntilNonprimaryNodesHaveFinished()
+				err = suite.client.BlockUntilNonprimaryProcsHaveFinished()
 			}
 			if err == nil {
 				if suiteConfig.ParallelTotal > 1 {
@@ -668,7 +676,7 @@ func (suite *Suite) runReportAfterSuiteNode(node Node, report types.Report, fail
 	suite.currentSpecReport.StartTime = time.Now()
 
 	if suiteConfig.ParallelTotal > 1 {
-		aggregatedReport, err := suite.client.BlockUntilAggregatedNonprimaryNodesReport()
+		aggregatedReport, err := suite.client.BlockUntilAggregatedNonprimaryProcsReport()
 		if err != nil {
 			suite.currentSpecReport.State, suite.currentSpecReport.Failure = types.SpecStateFailed, suite.failureForLeafNodeWithMessage(node, err.Error())
 			return

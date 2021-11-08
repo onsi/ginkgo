@@ -23,7 +23,7 @@ type ServerHandler struct {
 	reporter          reporters.Reporter
 	alives            []func() bool
 	lock              *sync.Mutex
-	beforeSuiteState  beforeSuiteState
+	beforeSuiteState  BeforeSuiteState
 	parallelTotal     int
 	counter           int
 	counterLock       *sync.Mutex
@@ -41,7 +41,7 @@ func newServerHandler(parallelTotal int, reporter reporters.Reporter) *ServerHan
 		lock:              &sync.Mutex{},
 		counterLock:       &sync.Mutex{},
 		alives:            make([]func() bool, parallelTotal),
-		beforeSuiteState:  beforeSuiteState{Data: nil, State: types.SpecStateInvalid},
+		beforeSuiteState:  BeforeSuiteState{Data: nil, State: types.SpecStateInvalid},
 		parallelTotal:     parallelTotal,
 		outputDestination: os.Stdout,
 		done:              make(chan interface{}),
@@ -108,10 +108,10 @@ func (handler *ServerHandler) EmitOutput(output []byte, n *int) error {
 	return err
 }
 
-func (handler *ServerHandler) registerAlive(node int, alive func() bool) {
+func (handler *ServerHandler) registerAlive(proc int, alive func() bool) {
 	handler.lock.Lock()
 	defer handler.lock.Unlock()
-	handler.alives[node-1] = alive
+	handler.alives[proc-1] = alive
 }
 
 func (handler *ServerHandler) procIsAlive(proc int) bool {
@@ -124,7 +124,7 @@ func (handler *ServerHandler) procIsAlive(proc int) bool {
 	return alive()
 }
 
-func (handler *ServerHandler) haveNonprimaryNodesFinished() bool {
+func (handler *ServerHandler) haveNonprimaryProcsFinished() bool {
 	for i := 2; i <= handler.parallelTotal; i++ {
 		if handler.procIsAlive(i) {
 			return false
@@ -133,53 +133,39 @@ func (handler *ServerHandler) haveNonprimaryNodesFinished() bool {
 	return true
 }
 
-func (handler *ServerHandler) BeforeSuiteSucceeded(data []byte, _ *Void) error {
+func (handler *ServerHandler) BeforeSuiteCompleted(beforeSuiteState BeforeSuiteState, _ *Void) error {
 	handler.lock.Lock()
 	defer handler.lock.Unlock()
-	handler.beforeSuiteState.State = types.SpecStatePassed
-	handler.beforeSuiteState.Data = data
+	handler.beforeSuiteState = beforeSuiteState
 
 	return nil
 }
 
-func (handler *ServerHandler) BeforeSuiteFailed(_ Void, _ *Void) error {
-	handler.lock.Lock()
-	defer handler.lock.Unlock()
-	handler.beforeSuiteState.State = types.SpecStateFailed
-	return nil
-}
-
-func (handler *ServerHandler) BeforeSuiteState(_ Void, data *[]byte) error {
+func (handler *ServerHandler) BeforeSuiteState(_ Void, beforeSuiteState *BeforeSuiteState) error {
 	proc1IsAlive := handler.procIsAlive(1)
 	handler.lock.Lock()
 	defer handler.lock.Unlock()
-	beforeSuiteState := handler.beforeSuiteState
-	switch beforeSuiteState.State {
-	case types.SpecStatePassed:
-		*data = beforeSuiteState.Data
-		return nil
-	case types.SpecStateFailed:
-		return ErrorFailed
-	default:
+	if handler.beforeSuiteState.State == types.SpecStateInvalid {
 		if proc1IsAlive {
 			return ErrorEarly
 		} else {
 			return ErrorGone
 		}
 	}
-
+	*beforeSuiteState = handler.beforeSuiteState
+	return nil
 }
 
-func (handler *ServerHandler) HaveNonprimaryNodesFinished(_ Void, _ *Void) error {
-	if handler.haveNonprimaryNodesFinished() {
+func (handler *ServerHandler) HaveNonprimaryProcsFinished(_ Void, _ *Void) error {
+	if handler.haveNonprimaryProcsFinished() {
 		return nil
 	} else {
 		return ErrorEarly
 	}
 }
 
-func (handler *ServerHandler) AggregatedNonprimaryNodesReport(_ Void, report *types.Report) error {
-	if handler.haveNonprimaryNodesFinished() {
+func (handler *ServerHandler) AggregatedNonprimaryProcsReport(_ Void, report *types.Report) error {
+	if handler.haveNonprimaryProcsFinished() {
 		handler.lock.Lock()
 		defer handler.lock.Unlock()
 		if handler.numSuiteDidEnds == handler.parallelTotal-1 {

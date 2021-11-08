@@ -233,7 +233,7 @@ var _ = Describe("Cleanup", func() {
 				Context("as process #2", func() {
 					BeforeEach(func() {
 						conf.ParallelProcess = 2
-						client.PostSynchronizedBeforeSuiteSucceeded([]byte("hola hola"))
+						client.PostSynchronizedBeforeSuiteCompleted(types.SpecStatePassed, []byte("hola hola"))
 						success, _ := RunFixture("DeferCleanup on SBS in parallel on process 2", fixture)
 						Ω(success).Should(BeTrue())
 					})

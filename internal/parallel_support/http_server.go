@@ -51,11 +51,10 @@ func (server *httpServer) Start() {
 	mux.HandleFunc("/emit-output", server.emitOutput)
 
 	//synchronization endpoints
-	mux.HandleFunc("/before-suite-failed", server.handleBeforeSuiteFailed)
-	mux.HandleFunc("/before-suite-succeeded", server.handleBeforeSuiteSucceeded)
+	mux.HandleFunc("/before-suite-completed", server.handleBeforeSuiteCompleted)
 	mux.HandleFunc("/before-suite-state", server.handleBeforeSuiteState)
-	mux.HandleFunc("/have-nonprimary-nodes-finished", server.handleHaveNonprimaryNodesFinished)
-	mux.HandleFunc("/aggregated-nonprimary-nodes-report", server.handleAggregatedNonprimaryNodesReport)
+	mux.HandleFunc("/have-nonprimary-procs-finished", server.handleHaveNonprimaryProcsFinished)
+	mux.HandleFunc("/aggregated-nonprimary-procs-report", server.handleAggregatedNonprimaryProcsReport)
 	mux.HandleFunc("/counter", server.handleCounter)
 	mux.HandleFunc("/up", server.handleUp)
 	mux.HandleFunc("/abort", server.handleAbort)
@@ -156,37 +155,33 @@ func (server *httpServer) emitOutput(writer http.ResponseWriter, request *http.R
 	server.handleError(server.handler.EmitOutput(output, &n), writer)
 }
 
-func (server *httpServer) handleBeforeSuiteSucceeded(writer http.ResponseWriter, request *http.Request) {
-	output, err := io.ReadAll(request.Body)
-	if err != nil {
-		writer.WriteHeader(http.StatusInternalServerError)
+func (server *httpServer) handleBeforeSuiteCompleted(writer http.ResponseWriter, request *http.Request) {
+	var beforeSuiteState BeforeSuiteState
+	if !server.decode(writer, request, &beforeSuiteState) {
 		return
 	}
-	server.handleError(server.handler.BeforeSuiteSucceeded(output, voidReceiver), writer)
-}
 
-func (server *httpServer) handleBeforeSuiteFailed(writer http.ResponseWriter, request *http.Request) {
-	server.handleError(server.handler.BeforeSuiteFailed(voidSender, voidReceiver), writer)
+	server.handleError(server.handler.BeforeSuiteCompleted(beforeSuiteState, voidReceiver), writer)
 }
 
 func (server *httpServer) handleBeforeSuiteState(writer http.ResponseWriter, request *http.Request) {
-	var data []byte
-	if server.handleError(server.handler.BeforeSuiteState(voidSender, &data), writer) {
+	var beforeSuiteState BeforeSuiteState
+	if server.handleError(server.handler.BeforeSuiteState(voidSender, &beforeSuiteState), writer) {
 		return
 	}
-	writer.Write(data)
+	json.NewEncoder(writer).Encode(beforeSuiteState)
 }
 
-func (server *httpServer) handleHaveNonprimaryNodesFinished(writer http.ResponseWriter, request *http.Request) {
-	if server.handleError(server.handler.HaveNonprimaryNodesFinished(voidSender, voidReceiver), writer) {
+func (server *httpServer) handleHaveNonprimaryProcsFinished(writer http.ResponseWriter, request *http.Request) {
+	if server.handleError(server.handler.HaveNonprimaryProcsFinished(voidSender, voidReceiver), writer) {
 		return
 	}
 	writer.WriteHeader(http.StatusOK)
 }
 
-func (server *httpServer) handleAggregatedNonprimaryNodesReport(writer http.ResponseWriter, request *http.Request) {
+func (server *httpServer) handleAggregatedNonprimaryProcsReport(writer http.ResponseWriter, request *http.Request) {
 	var aggregatedReport types.Report
-	if server.handleError(server.handler.AggregatedNonprimaryNodesReport(voidSender, &aggregatedReport), writer) {
+	if server.handleError(server.handler.AggregatedNonprimaryProcsReport(voidSender, &aggregatedReport), writer) {
 		return
 	}
 	json.NewEncoder(writer).Encode(aggregatedReport)

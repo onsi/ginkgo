@@ -94,30 +94,28 @@ func (client *httpClient) PostSuiteDidEnd(report types.Report) error {
 	return client.post("/suite-did-end", report)
 }
 
-func (client *httpClient) PostSynchronizedBeforeSuiteSucceeded(data []byte) error {
-	return client.post("/before-suite-succeeded", data)
-}
-
-func (client *httpClient) PostSynchronizedBeforeSuiteFailed() error {
-	return client.post("/before-suite-failed", nil)
-}
-
-func (client *httpClient) BlockUntilSynchronizedBeforeSuiteData() ([]byte, error) {
-	var data []byte
-	err := client.poll("/before-suite-state", &data)
-	if err == ErrorGone {
-		return nil, types.GinkgoErrors.SynchronizedBeforeSuiteDisappearedOnProc1()
-	} else if err == ErrorFailed {
-		return nil, types.GinkgoErrors.SynchronizedBeforeSuiteFailedOnProc1()
+func (client *httpClient) PostSynchronizedBeforeSuiteCompleted(state types.SpecState, data []byte) error {
+	beforeSuiteState := BeforeSuiteState{
+		State: state,
+		Data:  data,
 	}
-	return data, err
+	return client.post("/before-suite-completed", beforeSuiteState)
 }
 
-func (client *httpClient) BlockUntilNonprimaryNodesHaveFinished() error {
+func (client *httpClient) BlockUntilSynchronizedBeforeSuiteData() (types.SpecState, []byte, error) {
+	var beforeSuiteState BeforeSuiteState
+	err := client.poll("/before-suite-state", &beforeSuiteState)
+	if err == ErrorGone {
+		return types.SpecStateInvalid, nil, types.GinkgoErrors.SynchronizedBeforeSuiteDisappearedOnProc1()
+	}
+	return beforeSuiteState.State, beforeSuiteState.Data, err
+}
+
+func (client *httpClient) BlockUntilNonprimaryProcsHaveFinished() error {
 	return client.poll("/have-nonprimary-procs-finished", nil)
 }
 
-func (client *httpClient) BlockUntilAggregatedNonprimaryNodesReport() (types.Report, error) {
+func (client *httpClient) BlockUntilAggregatedNonprimaryProcsReport() (types.Report, error) {
 	var report types.Report
 	err := client.poll("/aggregated-nonprimary-procs-report", &report)
 	if err == ErrorGone {

@@ -77,32 +77,30 @@ func (client *rpcClient) Write(p []byte) (int, error) {
 	return n, err
 }
 
-func (client *rpcClient) PostSynchronizedBeforeSuiteSucceeded(data []byte) error {
-	return client.client.Call("Server.BeforeSuiteSucceeded", data, voidReceiver)
-}
-
-func (client *rpcClient) PostSynchronizedBeforeSuiteFailed() error {
-	return client.client.Call("Server.BeforeSuiteFailed", voidSender, voidReceiver)
-}
-
-func (client *rpcClient) BlockUntilSynchronizedBeforeSuiteData() ([]byte, error) {
-	var data []byte
-	err := client.poll("Server.BeforeSuiteState", &data)
-	if err == ErrorGone {
-		return nil, types.GinkgoErrors.SynchronizedBeforeSuiteDisappearedOnProc1()
-	} else if err == ErrorFailed {
-		return nil, types.GinkgoErrors.SynchronizedBeforeSuiteFailedOnProc1()
+func (client *rpcClient) PostSynchronizedBeforeSuiteCompleted(state types.SpecState, data []byte) error {
+	beforeSuiteState := BeforeSuiteState{
+		State: state,
+		Data: data,
 	}
-	return data, err
+	return client.client.Call("Server.BeforeSuiteCompleted", beforeSuiteState, voidReceiver)
 }
 
-func (client *rpcClient) BlockUntilNonprimaryNodesHaveFinished() error {
-	return client.poll("Server.HaveNonprimaryNodesFinished", voidReceiver)
+func (client *rpcClient) BlockUntilSynchronizedBeforeSuiteData() (types.SpecState, []byte, error) {
+	var beforeSuiteState BeforeSuiteState
+	err := client.poll("Server.BeforeSuiteState", &beforeSuiteState)
+	if err == ErrorGone {
+		return types.SpecStateInvalid, nil, types.GinkgoErrors.SynchronizedBeforeSuiteDisappearedOnProc1()
+	}
+	return beforeSuiteState.State, beforeSuiteState.Data, err
 }
 
-func (client *rpcClient) BlockUntilAggregatedNonprimaryNodesReport() (types.Report, error) {
+func (client *rpcClient) BlockUntilNonprimaryProcsHaveFinished() error {
+	return client.poll("Server.HaveNonprimaryProcsFinished", voidReceiver)
+}
+
+func (client *rpcClient) BlockUntilAggregatedNonprimaryProcsReport() (types.Report, error) {
 	var report types.Report
-	err := client.poll("Server.AggregatedNonprimaryNodesReport", &report)
+	err := client.poll("Server.AggregatedNonprimaryProcsReport", &report)
 	if err == ErrorGone {
 		return types.Report{}, types.GinkgoErrors.AggregatedReportUnavailableDueToNodeDisappearing()
 	}

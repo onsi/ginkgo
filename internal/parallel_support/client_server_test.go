@@ -229,31 +229,49 @@ var _ = Describe("The Parallel Support Client & Server", func() {
 				Describe("Managing SynchronizedBeforeSuite synchronization", func() {
 					Context("when proc 1 succeeds and returns data", func() {
 						It("passes that data along to other procs", func() {
-							Ω(client.PostSynchronizedBeforeSuiteSucceeded([]byte("hello there"))).Should(Succeed())
-							Ω(client.BlockUntilSynchronizedBeforeSuiteData()).Should(Equal([]byte("hello there")))
+							Ω(client.PostSynchronizedBeforeSuiteCompleted(types.SpecStatePassed, []byte("hello there"))).Should(Succeed())
+							state, data, err := client.BlockUntilSynchronizedBeforeSuiteData()
+							Ω(state).Should(Equal(types.SpecStatePassed))
+							Ω(data).Should(Equal([]byte("hello there")))
+							Ω(err).ShouldNot(HaveOccurred())
 						})
 					})
 
 					Context("when proc 1 succeeds and the data happens to be nil", func() {
 						It("passes reports success and returns nil", func() {
-							Ω(client.PostSynchronizedBeforeSuiteSucceeded(nil)).Should(Succeed())
-							Ω(client.BlockUntilSynchronizedBeforeSuiteData()).Should(BeNil())
+							Ω(client.PostSynchronizedBeforeSuiteCompleted(types.SpecStatePassed, nil)).Should(Succeed())
+							state, data, err := client.BlockUntilSynchronizedBeforeSuiteData()
+							Ω(state).Should(Equal(types.SpecStatePassed))
+							Ω(data).Should(BeNil())
+							Ω(err).ShouldNot(HaveOccurred())
+						})
+					})
+
+					Context("when proc 1 is skipped", func() {
+						It("passes that state information along to the other procs", func() {
+							Ω(client.PostSynchronizedBeforeSuiteCompleted(types.SpecStateSkipped, nil)).Should(Succeed())
+							state, data, err := client.BlockUntilSynchronizedBeforeSuiteData()
+							Ω(state).Should(Equal(types.SpecStateSkipped))
+							Ω(data).Should(BeNil())
+							Ω(err).ShouldNot(HaveOccurred())
 						})
 					})
 
 					Context("when proc 1 fails", func() {
-						It("returns a meaningful error", func() {
-							Ω(client.PostSynchronizedBeforeSuiteFailed()).Should(Succeed())
-							data, err := client.BlockUntilSynchronizedBeforeSuiteData()
+						It("passes that state information along to the other procs", func() {
+							Ω(client.PostSynchronizedBeforeSuiteCompleted(types.SpecStateFailed, nil)).Should(Succeed())
+							state, data, err := client.BlockUntilSynchronizedBeforeSuiteData()
+							Ω(state).Should(Equal(types.SpecStateFailed))
 							Ω(data).Should(BeNil())
-							Ω(err).Should(MatchError(types.GinkgoErrors.SynchronizedBeforeSuiteFailedOnProc1()))
+							Ω(err).ShouldNot(HaveOccurred())
 						})
 					})
 
 					Context("when proc 1 disappears before reporting back", func() {
 						It("returns a meaningful error", func() {
 							close(proc1Exited)
-							data, err := client.BlockUntilSynchronizedBeforeSuiteData()
+							state, data, err := client.BlockUntilSynchronizedBeforeSuiteData()
+							Ω(state).Should(Equal(types.SpecStateInvalid))
 							Ω(data).Should(BeNil())
 							Ω(err).Should(MatchError(types.GinkgoErrors.SynchronizedBeforeSuiteDisappearedOnProc1()))
 						})
@@ -264,22 +282,25 @@ var _ = Describe("The Parallel Support Client & Server", func() {
 							done := make(chan interface{})
 							go func() {
 								defer GinkgoRecover()
-								Ω(client.BlockUntilSynchronizedBeforeSuiteData()).Should(Equal([]byte("hello there")))
+								state, data, err := client.BlockUntilSynchronizedBeforeSuiteData()
+								Ω(state).Should(Equal(types.SpecStatePassed))
+								Ω(data).Should(Equal([]byte("hello there")))
+								Ω(err).ShouldNot(HaveOccurred())
 								close(done)
 							}()
 							Consistently(done).ShouldNot(BeClosed())
-							Ω(client.PostSynchronizedBeforeSuiteSucceeded([]byte("hello there"))).Should(Succeed())
+							Ω(client.PostSynchronizedBeforeSuiteCompleted(types.SpecStatePassed, []byte("hello there"))).Should(Succeed())
 							Eventually(done).Should(BeClosed())
 						})
 					})
 				})
 
-				Describe("BlockUntilNonprimaryNodesHaveFinished", func() {
+				Describe("BlockUntilNonprimaryProcsHaveFinished", func() {
 					It("blocks until non-primary procs exit", func() {
 						done := make(chan interface{})
 						go func() {
 							defer GinkgoRecover()
-							Ω(client.BlockUntilNonprimaryNodesHaveFinished()).Should(Succeed())
+							Ω(client.BlockUntilNonprimaryProcsHaveFinished()).Should(Succeed())
 							close(done)
 						}()
 						Consistently(done).ShouldNot(BeClosed())
@@ -290,7 +311,7 @@ var _ = Describe("The Parallel Support Client & Server", func() {
 					})
 				})
 
-				Describe("BlockUntilAggregatedNonprimaryNodesReport", func() {
+				Describe("BlockUntilAggregatedNonprimaryProcsReport", func() {
 					var specReportA, specReportB types.SpecReport
 					var endReport2, endReport3 types.Report
 
@@ -305,7 +326,7 @@ var _ = Describe("The Parallel Support Client & Server", func() {
 						done := make(chan interface{})
 						go func() {
 							defer GinkgoRecover()
-							report, err := client.BlockUntilAggregatedNonprimaryNodesReport()
+							report, err := client.BlockUntilAggregatedNonprimaryProcsReport()
 							Ω(err).ShouldNot(HaveOccurred())
 							Ω(report.SpecReports).Should(ConsistOf(specReportA, specReportB))
 							close(done)
@@ -326,7 +347,7 @@ var _ = Describe("The Parallel Support Client & Server", func() {
 							done := make(chan interface{})
 							go func() {
 								defer GinkgoRecover()
-								report, err := client.BlockUntilAggregatedNonprimaryNodesReport()
+								report, err := client.BlockUntilAggregatedNonprimaryProcsReport()
 								Ω(err).Should(Equal(types.GinkgoErrors.AggregatedReportUnavailableDueToNodeDisappearing()))
 								Ω(report).Should(BeZero())
 								close(done)

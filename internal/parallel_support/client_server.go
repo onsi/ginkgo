@@ -10,7 +10,7 @@ import (
 	"github.com/onsi/ginkgo/types"
 )
 
-type beforeSuiteState struct {
+type BeforeSuiteState struct {
 	Data  []byte
 	State types.SpecState
 }
@@ -42,11 +42,10 @@ type Client interface {
 	PostSuiteWillBegin(report types.Report) error
 	PostDidRun(report types.SpecReport) error
 	PostSuiteDidEnd(report types.Report) error
-	PostSynchronizedBeforeSuiteSucceeded(data []byte) error
-	PostSynchronizedBeforeSuiteFailed() error
-	BlockUntilSynchronizedBeforeSuiteData() ([]byte, error)
-	BlockUntilNonprimaryNodesHaveFinished() error
-	BlockUntilAggregatedNonprimaryNodesReport() (types.Report, error)
+	PostSynchronizedBeforeSuiteCompleted(state types.SpecState, data []byte) error
+	BlockUntilSynchronizedBeforeSuiteData() (types.SpecState, []byte, error)
+	BlockUntilNonprimaryProcsHaveFinished() error
+	BlockUntilAggregatedNonprimaryProcsReport() (types.Report, error)
 	FetchNextCounter() (int, error)
 	PostAbort() error
 	ShouldAbort() bool
