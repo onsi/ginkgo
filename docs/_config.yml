@@ -5,3 +5,5 @@ name: Ginkgo
 markdown: GFM
 highlighter: rouge
 lsi: false
+exclude:
+  - *.go

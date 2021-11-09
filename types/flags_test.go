@@ -283,7 +283,7 @@ var _ = Describe("Flags", func() {
 						Ω(deprecationTracker.DidTrackDeprecations()).Should(BeTrue())
 						report := deprecationTracker.DeprecationsReport()
 						Ω(report).Should(ContainSubstring("--int64Flag is deprecated, use --int-64-flag instead"))
-						Ω(report).Should(ContainSubstring("https://github.com/onsi/ginkgo/blob/ver2/docs/MIGRATING_TO_V2.md#no-more-camel-case"))
+						Ω(report).Should(ContainSubstring("https://onsi.github.io/ginkgo/MIGRATING_TO_V2#no-more-camel-case"))
 						Ω(report).Should(ContainSubstring("--stringFlag is deprecated, use --string-flag instead"))
 					})
 				})

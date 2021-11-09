@@ -50,7 +50,7 @@ var _ = Describe("Failing Specs", func() {
 			Eventually(session).Should(gexec.Exit(1))
 			output := string(session.Out.Contents())
 
-			Ω(output).Should(ContainSubstring("Ginkgo detected an issue with your test structure"))
+			Ω(output).Should(ContainSubstring("Ginkgo detected an issue with your spec structure"))
 			Ω(output).Should(ContainSubstring("malformed_fixture_test.go:9"))
 		})
 
@@ -59,7 +59,7 @@ var _ = Describe("Failing Specs", func() {
 			Eventually(session).Should(gexec.Exit(1))
 			output := string(session.Out.Contents()) + string(session.Err.Contents())
 
-			Ω(output).Should(ContainSubstring("Ginkgo detected an issue with your test structure"))
+			Ω(output).Should(ContainSubstring("Ginkgo detected an issue with your spec structure"))
 			Ω(output).Should(ContainSubstring("malformed_fixture_test.go:9"))
 		})
 	})

@@ -14,4 +14,9 @@ func TestGinkgoCLI(t *testing.T) {
 	RunSpecs(t, "Ginkgo CLI Suite")
 }
 
-var DOC_ANCHORS = test_helpers.LoadMarkdownHeadingAnchors("../docs/index.md")
+var anchors test_helpers.Anchors
+var _ = BeforeSuite(func() {
+	var err error
+	anchors, err = test_helpers.LoadAnchors(test_helpers.DOCS, "../")
+	Ω(err).ShouldNot(HaveOccurred())
+})

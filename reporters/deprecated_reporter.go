@@ -8,7 +8,7 @@ import (
 // Deprecated: DeprecatedReporter was how Ginkgo V1 provided support for CustomReporters
 // this has been removed in V2.
 // Please read the documentation at:
-// https://github.com/onsi/ginkgo/blob/ver2/docs/MIGRATING_TO_V2.md#removed-custom-reporters
+// https://onsi.github.io/ginkgo/MIGRATING_TO_V2#removed-custom-reporters
 // for Ginkgo's new behavior and for a migration path.
 type DeprecatedReporter interface {
 	SuiteWillBegin(config config.GinkgoConfigType, summary *types.SuiteSummary)

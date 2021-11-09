@@ -22,7 +22,7 @@ func BuildBuildCommand() command.Command {
 		Flags:    flags,
 		Usage:    "ginkgo build <FLAGS> <PACKAGES>",
 		ShortDoc: "Build the passed in <PACKAGES> (or the package in the current directory if left blank).",
-		DocLink:  "precompiling-tests",
+		DocLink:  "precompiling-suites",
 		Command: func(args []string, _ []string) {
 			var errors []error
 			cliConfig, goFlagsConfig, errors = types.VetAndInitializeCLIAndGoConfig(cliConfig, goFlagsConfig)

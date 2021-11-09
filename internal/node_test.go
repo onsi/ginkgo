@@ -184,11 +184,11 @@ var _ = Describe("Constructing nodes", func() {
 		It("does not allow non-container/it nodes to be marked", func() {
 			node, errors := internal.NewNode(dt, ntBef, "", body, cl, Focus)
 			Ω(node).Should(BeZero())
-			Ω(errors).Should(ConsistOf(types.GinkgoErrors.InvalidDecorationForNodeType(cl, ntBef, "Focus")))
+			Ω(errors).Should(ConsistOf(types.GinkgoErrors.InvalidDecoratorForNodeType(cl, ntBef, "Focus")))
 
 			node, errors = internal.NewNode(dt, ntAf, "", body, cl, Pending)
 			Ω(node).Should(BeZero())
-			Ω(errors).Should(ConsistOf(types.GinkgoErrors.InvalidDecorationForNodeType(cl, ntAf, "Pending")))
+			Ω(errors).Should(ConsistOf(types.GinkgoErrors.InvalidDecoratorForNodeType(cl, ntAf, "Pending")))
 
 			Ω(dt.DidTrackDeprecations()).Should(BeFalse())
 		})
@@ -213,7 +213,7 @@ var _ = Describe("Constructing nodes", func() {
 		It("does not allow non-container/it nodes to be marked", func() {
 			node, errors := internal.NewNode(dt, ntBef, "", body, cl, Serial)
 			Ω(node).Should(BeZero())
-			Ω(errors).Should(ConsistOf(types.GinkgoErrors.InvalidDecorationForNodeType(cl, ntBef, "Serial")))
+			Ω(errors).Should(ConsistOf(types.GinkgoErrors.InvalidDecoratorForNodeType(cl, ntBef, "Serial")))
 			Ω(dt.DidTrackDeprecations()).Should(BeFalse())
 		})
 	})
@@ -232,12 +232,12 @@ var _ = Describe("Constructing nodes", func() {
 		It("does not allow non-container nodes to be marked", func() {
 			node, errors := internal.NewNode(dt, ntBef, "", body, cl, Ordered)
 			Ω(node).Should(BeZero())
-			Ω(errors).Should(ConsistOf(types.GinkgoErrors.InvalidDecorationForNodeType(cl, ntBef, "Ordered")))
+			Ω(errors).Should(ConsistOf(types.GinkgoErrors.InvalidDecoratorForNodeType(cl, ntBef, "Ordered")))
 			Ω(dt.DidTrackDeprecations()).Should(BeFalse())
 
 			node, errors = internal.NewNode(dt, ntIt, "not even Its", body, cl, Ordered)
 			Ω(node).Should(BeZero())
-			Ω(errors).Should(ConsistOf(types.GinkgoErrors.InvalidDecorationForNodeType(cl, ntIt, "Ordered")))
+			Ω(errors).Should(ConsistOf(types.GinkgoErrors.InvalidDecoratorForNodeType(cl, ntIt, "Ordered")))
 			Ω(dt.DidTrackDeprecations()).Should(BeFalse())
 		})
 	})
@@ -262,7 +262,7 @@ var _ = Describe("Constructing nodes", func() {
 		It("cannot be applied to non-container/it nodes", func() {
 			node, errors := internal.NewNode(dt, ntBef, "", body, cl, FlakeAttempts(2))
 			Ω(node).Should(BeZero())
-			Ω(errors).Should(ConsistOf(types.GinkgoErrors.InvalidDecorationForNodeType(cl, ntBef, "FlakeAttempts")))
+			Ω(errors).Should(ConsistOf(types.GinkgoErrors.InvalidDecoratorForNodeType(cl, ntBef, "FlakeAttempts")))
 			Ω(dt.DidTrackDeprecations()).Should(BeFalse())
 		})
 	})
@@ -296,7 +296,7 @@ var _ = Describe("Constructing nodes", func() {
 		It("cannot be applied to non-container/it nodes", func() {
 			node, errors := internal.NewNode(dt, ntBef, "", body, cl, Label("A", "B", "C"))
 			Ω(node).Should(BeZero())
-			Ω(errors).Should(ConsistOf(types.GinkgoErrors.InvalidDecorationForNodeType(cl, ntBef, "Label")))
+			Ω(errors).Should(ConsistOf(types.GinkgoErrors.InvalidDecoratorForNodeType(cl, ntBef, "Label")))
 			Ω(dt.DidTrackDeprecations()).Should(BeFalse())
 		})
 
@@ -378,8 +378,8 @@ var _ = Describe("Constructing nodes", func() {
 			node, errors := internal.NewNode(dt, ntIt, "text", cl, body, Focus, "aardvark", 5)
 			Ω(node).Should(BeZero())
 			Ω(errors).Should(ConsistOf(
-				types.GinkgoErrors.UnknownDecoration(cl, ntIt, "aardvark"),
-				types.GinkgoErrors.UnknownDecoration(cl, ntIt, 5),
+				types.GinkgoErrors.UnknownDecorator(cl, ntIt, "aardvark"),
+				types.GinkgoErrors.UnknownDecorator(cl, ntIt, 5),
 			))
 			Ω(dt.DidTrackDeprecations()).Should(BeFalse())
 		})

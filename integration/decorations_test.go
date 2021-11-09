@@ -30,6 +30,6 @@ some decorated tests
 	It("exits with a clear error if decorations are misconfigured", func() {
 		session := startGinkgo(fm.PathTo("decorations", "invalid_decorations"), "-v", "--no-color")
 		Eventually(session).Should(gexec.Exit(1))
-		Ω(session).Should(gbytes.Say("Invalid Combination of Decorations: Focused and Pending"))
+		Ω(session).Should(gbytes.Say("Invalid Combination of Decorators: Focused and Pending"))
 	})
 })

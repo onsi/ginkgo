@@ -57,7 +57,7 @@ at the top of the goroutine that caused this panic.
 Alternatively, you may have made an assertion outside of a Ginkgo
 leaf node (e.g. in a container node or some out-of-band function) - please move your assertion to
 an appropriate Ginkgo node (e.g. a BeforeSuite, BeforeEach, It, etc...).`,
-		DocLink:      "marking-specs-as-failed",
+		DocLink:      "mental-model-how-ginkgo-handles-failure",
 		CodeLocation: cl,
 	}
 }
@@ -66,7 +66,7 @@ func (g ginkgoErrors) RerunningSuite() error {
 	return GinkgoError{
 		Heading: "Rerunning Suite",
 		Message: formatter.F(`It looks like you are calling RunSpecs more than once. Ginkgo does not support rerunning suites.  If you want to rerun a suite try {{bold}}ginkgo --repeat=N{{/}} or {{bold}}ginkgo --until-it-fails{{/}}`),
-		DocLink: "repeating-test-runs-and-managing-flakey-tests",
+		DocLink: "repeating-spec-runs-and-managing-flaky-specs",
 	}
 }
 
@@ -74,17 +74,17 @@ func (g ginkgoErrors) RerunningSuite() error {
 
 func (g ginkgoErrors) PushingNodeInRunPhase(nodeType NodeType, cl CodeLocation) error {
 	return GinkgoError{
-		Heading: "Ginkgo detected an issue with your test structure",
+		Heading: "Ginkgo detected an issue with your spec structure",
 		Message: formatter.F(
 			`It looks like you are trying to add a {{bold}}[%s]{{/}} node
-to the Ginkgo test tree in a leaf node {{bold}}after{{/}} the tests started running.
+to the Ginkgo spec tree in a leaf node {{bold}}after{{/}} the specs started running.
 
-To enable randomization and parallelization Ginkgo requires the test tree
+To enable randomization and parallelization Ginkgo requires the spec tree
 to be fully construted up front.  In practice, this means that you can
 only create nodes like {{bold}}[%s]{{/}} at the top-level or within the
 body of a {{bold}}Describe{{/}}, {{bold}}Context{{/}}, or {{bold}}When{{/}}.`, nodeType, nodeType),
 		CodeLocation: cl,
-		DocLink:      "understanding-ginkgos-lifecycle",
+		DocLink:      "mental-model-how-ginkgo-traverses-the-spec-hierarchy",
 	}
 }
 
@@ -92,7 +92,7 @@ func (g ginkgoErrors) CaughtPanicDuringABuildPhase(caughtPanic interface{}, cl C
 	return GinkgoError{
 		Heading: "Assertion or Panic detected during tree construction",
 		Message: formatter.F(
-			`Ginkgo detected a panic while constructing the test tree.
+			`Ginkgo detected a panic while constructing the spec tree.
 You may be trying to make an assertion in the body of a container node
 (i.e. {{bold}}Describe{{/}}, {{bold}}Context{{/}}, or {{bold}}When{{/}}).
 
@@ -102,18 +102,18 @@ Please ensure all assertions are inside leaf nodes such as {{bold}}BeforeEach{{/
 {{bold}}Here's the content of the panic that was caught:{{/}}
 %v`, caughtPanic),
 		CodeLocation: cl,
-		DocLink:      "do-not-make-assertions-in-container-node-functions",
+		DocLink:      "no-assertions-in-container-nodes",
 	}
 }
 
 func (g ginkgoErrors) SuiteNodeInNestedContext(nodeType NodeType, cl CodeLocation) error {
-	docLink := "global-setup-and-teardown-beforesuite-and-aftersuite"
+	docLink := "suite-setup-and-cleanup-beforesuite-and-aftersuite"
 	if nodeType.Is(NodeTypeReportAfterSuite) {
-		docLink = "generating-custom-reports-when-a-test-suite-completes"
+		docLink = "reporting-nodes---reportaftersuite"
 	}
 
 	return GinkgoError{
-		Heading: "Ginkgo detected an issue with your test structure",
+		Heading: "Ginkgo detected an issue with your spec structure",
 		Message: formatter.F(
 			`It looks like you are trying to add a {{bold}}[%s]{{/}} node within a container node.
 
@@ -124,15 +124,15 @@ func (g ginkgoErrors) SuiteNodeInNestedContext(nodeType NodeType, cl CodeLocatio
 }
 
 func (g ginkgoErrors) SuiteNodeDuringRunPhase(nodeType NodeType, cl CodeLocation) error {
-	docLink := "global-setup-and-teardown-beforesuite-and-aftersuite"
+	docLink := "suite-setup-and-cleanup-beforesuite-and-aftersuite"
 	if nodeType.Is(NodeTypeReportAfterSuite) {
-		docLink = "generating-custom-reports-when-a-test-suite-completes"
+		docLink = "reporting-nodes---reportaftersuite"
 	}
 
 	return GinkgoError{
-		Heading: "Ginkgo detected an issue with your test structure",
+		Heading: "Ginkgo detected an issue with your spec structure",
 		Message: formatter.F(
-			`It looks like you are trying to add a {{bold}}[%s]{{/}} node within a leaf node after the test started running.
+			`It looks like you are trying to add a {{bold}}[%s]{{/}} node within a leaf node after the spec started running.
 
 {{bold}}%s{{/}} can only be called at the top level.`, nodeType, nodeType),
 		CodeLocation: cl,
@@ -150,42 +150,42 @@ func (g ginkgoErrors) MultipleAfterSuiteNodes(nodeType NodeType, cl CodeLocation
 
 func ginkgoErrorMultipleSuiteNodes(setupOrTeardown string, nodeType NodeType, cl CodeLocation, earlierNodeType NodeType, earlierCodeLocation CodeLocation) error {
 	return GinkgoError{
-		Heading: "Ginkgo detected an issue with your test structure",
+		Heading: "Ginkgo detected an issue with your spec structure",
 		Message: formatter.F(
 			`It looks like you are trying to add a {{bold}}[%s]{{/}} node but
 you already have a {{bold}}[%s]{{/}} node defined at: {{gray}}%s{{/}}.
 
 Ginkgo only allows you to define one suite %s node.`, nodeType, earlierNodeType, earlierCodeLocation, setupOrTeardown),
 		CodeLocation: cl,
-		DocLink:      "global-setup-and-teardown-beforesuite-and-aftersuite",
+		DocLink:      "suite-setup-and-cleanup-beforesuite-and-aftersuite",
 	}
 }
 
-/* Decoration errors */
-func (g ginkgoErrors) InvalidDecorationForNodeType(cl CodeLocation, nodeType NodeType, decoration string) error {
+/* Decorator errors */
+func (g ginkgoErrors) InvalidDecoratorForNodeType(cl CodeLocation, nodeType NodeType, decoration string) error {
 	return GinkgoError{
-		Heading:      "Invalid Decoration",
+		Heading:      "Invalid Decorator",
 		Message:      formatter.F(`[%s] node cannot be passed a '%s' decoration`, nodeType, decoration),
 		CodeLocation: cl,
-		DocLink:      "node-decoration-reference",
+		DocLink:      "node-decorators-overview",
 	}
 }
 
 func (g ginkgoErrors) InvalidDeclarationOfFocusedAndPending(cl CodeLocation, nodeType NodeType) error {
 	return GinkgoError{
-		Heading:      "Invalid Combination of Decorations: Focused and Pending",
+		Heading:      "Invalid Combination of Decorators: Focused and Pending",
 		Message:      formatter.F(`[%s] node was decorated with both Focus and Pending.  At most one is allowed.`, nodeType),
 		CodeLocation: cl,
-		DocLink:      "node-decoration-reference",
+		DocLink:      "node-decorators-overview",
 	}
 }
 
-func (g ginkgoErrors) UnknownDecoration(cl CodeLocation, nodeType NodeType, decoration interface{}) error {
+func (g ginkgoErrors) UnknownDecorator(cl CodeLocation, nodeType NodeType, decoration interface{}) error {
 	return GinkgoError{
-		Heading:      "Unkown Decoration",
+		Heading:      "Unkown Decorator",
 		Message:      formatter.F(`[%s] node was passed an unkown decoration: '%#v'`, nodeType, decoration),
 		CodeLocation: cl,
-		DocLink:      "node-decoration-reference",
+		DocLink:      "node-decorators-overview",
 	}
 }
 
@@ -195,7 +195,7 @@ func (g ginkgoErrors) InvalidBodyType(t reflect.Type, cl CodeLocation, nodeType 
 		Message: formatter.F(`[%s] node must be passed {{bold}}func(){{/}} - i.e. functions that take nothing and return nothing.
 You passed {{bold}}%s{{/}} instead.`, nodeType, t),
 		CodeLocation: cl,
-		DocLink:      "node-decoration-reference",
+		DocLink:      "node-decorators-overview",
 	}
 }
 
@@ -204,7 +204,7 @@ func (g ginkgoErrors) MultipleBodyFunctions(cl CodeLocation, nodeType NodeType) 
 		Heading:      "Multiple Functions",
 		Message:      formatter.F(`[%s] node must be passed a single {{bold}}func(){{/}} - but more than one was passed in.`, nodeType),
 		CodeLocation: cl,
-		DocLink:      "node-decoration-reference",
+		DocLink:      "node-decorators-overview",
 	}
 }
 
@@ -213,7 +213,7 @@ func (g ginkgoErrors) MissingBodyFunction(cl CodeLocation, nodeType NodeType) er
 		Heading:      "Missing Functions",
 		Message:      formatter.F(`[%s] node must be passed a single {{bold}}func(){{/}} - but none was passed in.`, nodeType),
 		CodeLocation: cl,
-		DocLink:      "node-decoration-reference",
+		DocLink:      "node-decorators-overview",
 	}
 }
 
@@ -221,9 +221,9 @@ func (g ginkgoErrors) MissingBodyFunction(cl CodeLocation, nodeType NodeType) er
 func (g ginkgoErrors) InvalidSerialNodeInNonSerialOrderedContainer(cl CodeLocation, nodeType NodeType) error {
 	return GinkgoError{
 		Heading:      "Invalid Serial Node in Non-Serial Ordered Container",
-		Message:      formatter.F(`[%s] node was decorated with Serial but occurs in an Ordered container that is not marked Serial.  Move the Serial decoration to the outer-most Ordered container to mark all ordered tests within the container as serial.`, nodeType),
+		Message:      formatter.F(`[%s] node was decorated with Serial but occurs in an Ordered container that is not marked Serial.  Move the Serial decoration to the outer-most Ordered container to mark all ordered specs within the container as serial.`, nodeType),
 		CodeLocation: cl,
-		DocLink:      "node-decoration-reference",
+		DocLink:      "node-decorators-overview",
 	}
 }
 
@@ -251,7 +251,7 @@ func (g ginkgoErrors) DeferCleanupInvalidFunction(cl CodeLocation) error {
 		Heading:      "DeferCleanup requires a valid function",
 		Message:      "You must pass DeferCleanup a function to invoke.  This function must return zero or one values - if it does return, it must return an error.  The function can take arbitrarily many arguments and you should provide these to DeferCleanup to pass along to the function.",
 		CodeLocation: cl,
-		DocLink:      "cleaning-up-after-tests",
+		DocLink:      "cleaning-up-our-cleanup-code-defercleanup",
 	}
 }
 
@@ -260,7 +260,7 @@ func (g ginkgoErrors) PushingCleanupNodeDuringTreeConstruction(cl CodeLocation) 
 		Heading:      "DeferCleanup must be called inside a setup or subject node",
 		Message:      "You must call DeferCleanup inside a setup node (e.g. BeforeEach, BeforeSuite, AfterAll...) or a subject node (i.e. It).  You can't call DeferCleanup at the top-level or in a container node - use the After* family of setup nodes instead.",
 		CodeLocation: cl,
-		DocLink:      "cleaning-up-after-tests",
+		DocLink:      "cleaning-up-our-cleanup-code-defercleanup",
 	}
 }
 
@@ -269,7 +269,7 @@ func (g ginkgoErrors) PushingCleanupInReportingNode(cl CodeLocation, nodeType No
 		Heading:      fmt.Sprintf("DeferCleanup cannot be called in %s", nodeType),
 		Message:      "Please inline your cleanup code - Ginkgo won't run cleanup code after a ReportAfterEach or ReportAfterSuite.",
 		CodeLocation: cl,
-		DocLink:      "cleaning-up-after-tests",
+		DocLink:      "cleaning-up-our-cleanup-code-defercleanup",
 	}
 }
 
@@ -278,7 +278,7 @@ func (g ginkgoErrors) PushingCleanupInCleanupNode(cl CodeLocation) error {
 		Heading:      "DeferCleanup cannot be called in a DeferCleanup callback",
 		Message:      "Please inline your cleanup code - Ginkgo doesn't let you call DeferCleanup from within DeferCleanup",
 		CodeLocation: cl,
-		DocLink:      "cleaning-up-after-tests",
+		DocLink:      "cleaning-up-our-cleanup-code-defercleanup",
 	}
 }
 
@@ -294,8 +294,8 @@ func (g ginkgoErrors) TooManyReportEntryValues(cl CodeLocation, arg interface{})
 
 func (g ginkgoErrors) AddReportEntryNotDuringRunPhase(cl CodeLocation) error {
 	return GinkgoError{
-		Heading:      "Ginkgo detected an issue with your test structure",
-		Message:      formatter.F(`It looks like you are calling {{bold}}AddGinkgoReport{{/}} outside of a running test.  Make sure you call {{bold}}AddGinkgoReport{{/}} inside a runnable node such as It or BeforeEach and not inside the body of a container such as Describe or Context.`),
+		Heading:      "Ginkgo detected an issue with your spec structure",
+		Message:      formatter.F(`It looks like you are calling {{bold}}AddGinkgoReport{{/}} outside of a running spec.  Make sure you call {{bold}}AddGinkgoReport{{/}} inside a runnable node such as It or BeforeEach and not inside the body of a container such as Describe or Context.`),
 		CodeLocation: cl,
 		DocLink:      "attaching-data-to-reports",
 	}
@@ -366,7 +366,7 @@ func (g ginkgoErrors) MultipleEntryBodyFunctionsForTable(cl CodeLocation) error 
 		Heading:      "DescribeTable passed multiple functions",
 		Message:      "It looks like you are passing multiple functions into DescribeTable.  Only one function can be passed in.  This function will be called for each Entry in the table.",
 		CodeLocation: cl,
-		DocLink:      "table-driven-tests",
+		DocLink:      "table-specs",
 	}
 }
 
@@ -375,7 +375,7 @@ func (g ginkgoErrors) InvalidEntryDescription(cl CodeLocation) error {
 		Heading:      "Invalid Entry description",
 		Message:      "Entry description functions must be a string, a function that accepts the entry parameters and returns a string, or nil.",
 		CodeLocation: cl,
-		DocLink:      "table-driven-tests",
+		DocLink:      "table-specs",
 	}
 }
 
@@ -384,7 +384,7 @@ func (g ginkgoErrors) TooFewParametersToTableFunction(expected, actual int, kind
 		Heading:      fmt.Sprintf("Too few parameters passed in to %s", kind),
 		Message:      fmt.Sprintf("The %s expected %d parameters but you passed in %d", kind, expected, actual),
 		CodeLocation: cl,
-		DocLink:      "table-driven-tests",
+		DocLink:      "table-specs",
 	}
 }
 
@@ -393,7 +393,7 @@ func (g ginkgoErrors) TooManyParametersToTableFunction(expected, actual int, kin
 		Heading:      fmt.Sprintf("Too many parameters passed in to %s", kind),
 		Message:      fmt.Sprintf("The %s expected %d parameters but you passed in %d", kind, expected, actual),
 		CodeLocation: cl,
-		DocLink:      "table-driven-tests",
+		DocLink:      "table-specs",
 	}
 }
 
@@ -402,7 +402,7 @@ func (g ginkgoErrors) IncorrectParameterTypeToTableFunction(i int, expected, act
 		Heading:      fmt.Sprintf("Incorrect parameters type passed to %s", kind),
 		Message:      fmt.Sprintf("The %s expected parameter #%d to be of type <%s> but you passed in <%s>", kind, i, expected, actual),
 		CodeLocation: cl,
-		DocLink:      "table-driven-tests",
+		DocLink:      "table-specs",
 	}
 }
 
@@ -411,7 +411,7 @@ func (g ginkgoErrors) IncorrectVariadicParameterTypeToTableFunction(expected, ac
 		Heading:      fmt.Sprintf("Incorrect parameters type passed to %s", kind),
 		Message:      fmt.Sprintf("The %s expected its variadic parameters to be of type <%s> but you passed in <%s>", kind, expected, actual),
 		CodeLocation: cl,
-		DocLink:      "table-driven-tests",
+		DocLink:      "table-specs",
 	}
 }
 
@@ -427,14 +427,14 @@ func (g ginkgoErrors) AggregatedReportUnavailableDueToNodeDisappearing() error {
 func (g ginkgoErrors) SynchronizedBeforeSuiteFailedOnProc1() error {
 	return GinkgoError{
 		Heading: "SynchronizedBeforeSuite failed on Ginkgo parallel process #1",
-		Message: "The first SynchronizedBeforeSuite function running on Ginkgo parallel process #1 failed.  This test suite will now abort.",
+		Message: "The first SynchronizedBeforeSuite function running on Ginkgo parallel process #1 failed.  This suite will now abort.",
 	}
 }
 
 func (g ginkgoErrors) SynchronizedBeforeSuiteDisappearedOnProc1() error {
 	return GinkgoError{
 		Heading: "Process #1 disappeard before SynchronizedBeforeSuite could report back",
-		Message: "Ginkgo parallel process #1 disappeared before the first SynchronizedBeforeSuite function completed.  This test suite will now abort.",
+		Message: "Ginkgo parallel process #1 disappeared before the first SynchronizedBeforeSuite function completed.  This suite will now abort.",
 	}
 }
 
@@ -447,13 +447,13 @@ func (g ginkgoErrors) UnkownTypePassedToRunSpecs(value interface{}) error {
 	}
 }
 
-var sharedParallelErrorMessage = "It looks like you are trying to run tests in parallel with go test.\nThis is unsupported and you should use the ginkgo CLI instead."
+var sharedParallelErrorMessage = "It looks like you are trying to run specs in parallel with go test.\nThis is unsupported and you should use the ginkgo CLI instead."
 
 func (g ginkgoErrors) InvalidParallelTotalConfiguration() error {
 	return GinkgoError{
 		Heading: "-ginkgo.parallel.total must be >= 1",
 		Message: sharedParallelErrorMessage,
-		DocLink: "parallel-specs",
+		DocLink: "spec-parallelization",
 	}
 }
 
@@ -461,7 +461,7 @@ func (g ginkgoErrors) InvalidParallelProcessConfiguration() error {
 	return GinkgoError{
 		Heading: "-ginkgo.parallel.process is one-indexed and must be <= ginkgo.parallel.total",
 		Message: sharedParallelErrorMessage,
-		DocLink: "parallel-specs",
+		DocLink: "spec-parallelization",
 	}
 }
 
@@ -469,7 +469,7 @@ func (g ginkgoErrors) MissingParallelHostConfiguration() error {
 	return GinkgoError{
 		Heading: "-ginkgo.parallel.host is missing",
 		Message: sharedParallelErrorMessage,
-		DocLink: "parallel-specs",
+		DocLink: "spec-parallelization",
 	}
 }
 
@@ -477,14 +477,14 @@ func (g ginkgoErrors) UnreachableParallelHost(host string) error {
 	return GinkgoError{
 		Heading: "Could not reach ginkgo.parallel.host:" + host,
 		Message: sharedParallelErrorMessage,
-		DocLink: "parallel-specs",
+		DocLink: "spec-parallelization",
 	}
 }
 
 func (g ginkgoErrors) DryRunInParallelConfiguration() error {
 	return GinkgoError{
 		Heading: "Ginkgo only performs -dryRun in serial mode.",
-		Message: "Please try running ginkgo -dryRun again, but without -p or -procs to ensure the test is running in series.",
+		Message: "Please try running ginkgo -dryRun again, but without -p or -procs to ensure the suite is running in series.",
 	}
 }
 
@@ -505,20 +505,20 @@ func (g ginkgoErrors) InvalidOutputInterceptorModeConfiguration(value string) er
 func (g ginkgoErrors) InvalidGoFlagCount() error {
 	return GinkgoError{
 		Heading: "Use of go test -count",
-		Message: "Ginkgo does not support using go test -count to rerun test suites.  Only -count=1 is allowed.  To repeat test runs, please use the ginkgo cli and `ginkgo -until-it-fails` or `ginkgo -repeat=N`.",
+		Message: "Ginkgo does not support using go test -count to rerun suites.  Only -count=1 is allowed.  To repeat suite runs, please use the ginkgo cli and `ginkgo -until-it-fails` or `ginkgo -repeat=N`.",
 	}
 }
 
 func (g ginkgoErrors) InvalidGoFlagParallel() error {
 	return GinkgoError{
 		Heading: "Use of go test -parallel",
-		Message: "Go test's implementation of parallelization does not actually parallelize Ginkgo tests.  Please use the ginkgo cli and `ginkgo -p` or `ginkgo -procs=N` instead.",
+		Message: "Go test's implementation of parallelization does not actually parallelize Ginkgo specs.  Please use the ginkgo cli and `ginkgo -p` or `ginkgo -procs=N` instead.",
 	}
 }
 
 func (g ginkgoErrors) BothRepeatAndUntilItFails() error {
 	return GinkgoError{
 		Heading: "--repeat and --until-it-fails are both set",
-		Message: "--until-it-fails directs Ginkgo to rerun tests indefinitely until they fail.  --repeat directs Ginkgo to rerun tests a set number of times.  You can't set both... which would you like?",
+		Message: "--until-it-fails directs Ginkgo to rerun specs indefinitely until they fail.  --repeat directs Ginkgo to rerun specs a set number of times.  You can't set both... which would you like?",
 	}
 }

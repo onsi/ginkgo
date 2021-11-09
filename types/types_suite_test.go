@@ -13,5 +13,10 @@ func TestTypes(t *testing.T) {
 	RunSpecs(t, "Types Suite")
 }
 
-var DOC_ANCHORS = test_helpers.LoadMarkdownHeadingAnchors("../docs/index.md")
-var DEPRECATION_ANCHORS = test_helpers.LoadMarkdownHeadingAnchors("../docs/MIGRATING_TO_V2.md")
+var anchors test_helpers.Anchors
+
+var _ = BeforeSuite(func() {
+	var err error
+	anchors, err = test_helpers.LoadAnchors(test_helpers.DOCS, "../")
+	Ω(err).ShouldNot(HaveOccurred())
+})

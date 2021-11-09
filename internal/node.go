@@ -161,31 +161,31 @@ func NewNode(deprecationTracker *types.DeprecationTracker, nodeType types.NodeTy
 		case t == reflect.TypeOf(Focus):
 			node.MarkedFocus = bool(arg.(focusType))
 			if !nodeType.Is(types.NodeTypesForContainerAndIt) {
-				appendError(types.GinkgoErrors.InvalidDecorationForNodeType(node.CodeLocation, nodeType, "Focus"))
+				appendError(types.GinkgoErrors.InvalidDecoratorForNodeType(node.CodeLocation, nodeType, "Focus"))
 			}
 		case t == reflect.TypeOf(Pending):
 			node.MarkedPending = bool(arg.(pendingType))
 			if !nodeType.Is(types.NodeTypesForContainerAndIt) {
-				appendError(types.GinkgoErrors.InvalidDecorationForNodeType(node.CodeLocation, nodeType, "Pending"))
+				appendError(types.GinkgoErrors.InvalidDecoratorForNodeType(node.CodeLocation, nodeType, "Pending"))
 			}
 		case t == reflect.TypeOf(Serial):
 			node.MarkedSerial = bool(arg.(serialType))
 			if !nodeType.Is(types.NodeTypesForContainerAndIt) {
-				appendError(types.GinkgoErrors.InvalidDecorationForNodeType(node.CodeLocation, nodeType, "Serial"))
+				appendError(types.GinkgoErrors.InvalidDecoratorForNodeType(node.CodeLocation, nodeType, "Serial"))
 			}
 		case t == reflect.TypeOf(Ordered):
 			node.MarkedOrdered = bool(arg.(orderedType))
 			if !nodeType.Is(types.NodeTypeContainer) {
-				appendError(types.GinkgoErrors.InvalidDecorationForNodeType(node.CodeLocation, nodeType, "Ordered"))
+				appendError(types.GinkgoErrors.InvalidDecoratorForNodeType(node.CodeLocation, nodeType, "Ordered"))
 			}
 		case t == reflect.TypeOf(FlakeAttempts(0)):
 			node.FlakeAttempts = int(arg.(FlakeAttempts))
 			if !nodeType.Is(types.NodeTypesForContainerAndIt) {
-				appendError(types.GinkgoErrors.InvalidDecorationForNodeType(node.CodeLocation, nodeType, "FlakeAttempts"))
+				appendError(types.GinkgoErrors.InvalidDecoratorForNodeType(node.CodeLocation, nodeType, "FlakeAttempts"))
 			}
 		case t == reflect.TypeOf(Labels{}):
 			if !nodeType.Is(types.NodeTypesForContainerAndIt) {
-				appendError(types.GinkgoErrors.InvalidDecorationForNodeType(node.CodeLocation, nodeType, "Label"))
+				appendError(types.GinkgoErrors.InvalidDecoratorForNodeType(node.CodeLocation, nodeType, "Label"))
 			}
 			for _, label := range arg.(Labels) {
 				if !labelsSeen[label] {
@@ -228,7 +228,7 @@ func NewNode(deprecationTracker *types.DeprecationTracker, nodeType types.NodeTy
 		appendError(types.GinkgoErrors.MissingBodyFunction(node.CodeLocation, nodeType))
 	}
 	for _, arg := range remainingArgs {
-		appendError(types.GinkgoErrors.UnknownDecoration(node.CodeLocation, nodeType, arg))
+		appendError(types.GinkgoErrors.UnknownDecorator(node.CodeLocation, nodeType, arg))
 	}
 
 	if len(errors) > 0 {

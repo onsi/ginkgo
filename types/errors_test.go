@@ -66,6 +66,7 @@ var _ = Describe("GinkgoErrors", func() {
 	It("validates that all errors point to working documentation", func() {
 		v := reflect.ValueOf(types.GinkgoErrors)
 		Ω(v.NumMethod()).Should(BeNumerically(">", 0))
+		invalidLinks := []string{}
 		for i := 0; i < v.NumMethod(); i += 1 {
 			m := v.Method(i)
 			args := []reflect.Value{}
@@ -76,8 +77,13 @@ var _ = Describe("GinkgoErrors", func() {
 			ginkgoError := m.Call(args)[0].Interface().(types.GinkgoError)
 
 			if ginkgoError.DocLink != "" {
-				Ω(ginkgoError.DocLink).Should(BeElementOf(DOC_ANCHORS))
+				success, _ := ContainElement(ginkgoError.DocLink).Match(anchors.DocAnchors["index.md"])
+				if !success {
+					invalidLinks = append(invalidLinks, ginkgoError.DocLink)
+				}
 			}
 		}
+
+		Ω(invalidLinks).Should(BeEmpty(), "Detected invalid links.  Available links are: %s", strings.Join(anchors.DocAnchors["index.md"], "\n"))
 	})
 })

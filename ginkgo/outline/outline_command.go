@@ -48,7 +48,7 @@ func BuildOutlineCommand() command.Command {
 		Usage:         "ginkgo outline <filename>",
 		ShortDoc:      "Create an outline of Ginkgo symbols for a file",
 		Documentation: "To read from stdin, use: `ginkgo outline -`",
-		DocLink:       "creating-an-outline-of-tests",
+		DocLink:       "creating-an-outline-of-specs",
 		Flags:         flags,
 		Command: func(args []string, _ []string) {
 			outlineFile(args, conf.Format)

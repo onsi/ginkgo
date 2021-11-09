@@ -59,14 +59,14 @@ var _ = Describe("Deprecation Support", func() {
 				Ω(report).Should(HavePrefix("{{light-yellow}}You're using deprecated Ginkgo functionality:{{/}}\n{{light-yellow}}============================================={{/}}\n"))
 				Ω(report).Should(ContainSubstring(strings.Join([]string{
 					"  {{yellow}}Deprecation 1{{/}}",
-					"  {{bold}}Learn more at:{{/}} {{cyan}}{{underline}}https://github.com/onsi/ginkgo/blob/ver2/docs/MIGRATING_TO_V2.md#doclink-1{{/}}",
+					"  {{bold}}Learn more at:{{/}} {{cyan}}{{underline}}https://onsi.github.io/ginkgo/MIGRATING_TO_V2#doclink-1{{/}}",
 					"    {{gray}}foo.go:17{{/}}",
 					"    {{gray}}bar.go:30{{/}}",
 					"",
 				}, "\n")))
 				Ω(report).Should(ContainSubstring(strings.Join([]string{
 					"  {{yellow}}Deprecation 2{{/}}",
-					"  {{bold}}Learn more at:{{/}} {{cyan}}{{underline}}https://github.com/onsi/ginkgo/blob/ver2/docs/MIGRATING_TO_V2.md#doclink-2{{/}}",
+					"  {{bold}}Learn more at:{{/}} {{cyan}}{{underline}}https://onsi.github.io/ginkgo/MIGRATING_TO_V2#doclink-2{{/}}",
 					"",
 				}, "\n")))
 				Ω(report).Should(ContainSubstring(strings.Join([]string{
@@ -83,7 +83,7 @@ var _ = Describe("Deprecation Support", func() {
 					deprecation := m.Call([]reflect.Value{})[0].Interface().(types.Deprecation)
 
 					if deprecation.DocLink != "" {
-						Ω(deprecation.DocLink).Should(BeElementOf(DEPRECATION_ANCHORS))
+						Ω(anchors.DocAnchors["MIGRATING_TO_V2.md"]).Should(ContainElement(deprecation.DocLink))
 					}
 				}
 			})

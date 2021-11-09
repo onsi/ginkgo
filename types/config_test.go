@@ -23,7 +23,7 @@ var _ = Describe("Config", func() {
 		flags = flags.CopyAppend(types.GoRunFlags...)
 		for _, flag := range flags {
 			if flag.DeprecatedDocLink != "" {
-				Ω(flag.DeprecatedDocLink).Should(BeElementOf(DEPRECATION_ANCHORS))
+				Ω(anchors.DocAnchors["MIGRATING_TO_V2.md"]).Should(ContainElement(flag.DeprecatedDocLink))
 			}
 		}
 	})

@@ -119,7 +119,7 @@ func (d *DeprecationTracker) DeprecationsReport() string {
 	for deprecation, locations := range d.deprecations {
 		out += formatter.Fi(1, "{{yellow}}"+deprecation.Message+"{{/}}\n")
 		if deprecation.DocLink != "" {
-			out += formatter.Fi(1, "{{bold}}Learn more at:{{/}} {{cyan}}{{underline}}https://github.com/onsi/ginkgo/blob/ver2/docs/MIGRATING_TO_V2.md#%s{{/}}\n", deprecation.DocLink)
+			out += formatter.Fi(1, "{{bold}}Learn more at:{{/}} {{cyan}}{{underline}}https://onsi.github.io/ginkgo/MIGRATING_TO_V2#%s{{/}}\n", deprecation.DocLink)
 		}
 		for _, location := range locations {
 			out += formatter.Fi(2, "{{gray}}%s{{/}}\n", location)
