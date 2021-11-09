@@ -1,164 +1,105 @@
-![Ginkgo: A Go BDD Testing Framework](https://onsi.github.io/ginkgo/images/ginkgo.png)
+![Ginkgo](https://onsi.github.io/ginkgo/images/ginkgo.png)
 
 [![test](https://github.com/onsi/ginkgo/workflows/test/badge.svg?branch=master)](https://github.com/onsi/ginkgo/actions?query=workflow%3Atest+branch%3Amaster)
 
-Jump to the [docs](https://onsi.github.io/ginkgo/) | [中文文档](https://ke-chain.github.io/ginkgodoc) to learn more.  To start rolling your Ginkgo tests *now* [keep reading](#set-me-up)!
-
-If you have a question, comment, bug report, feature request, etc. please open a GitHub issue, or visit the [Ginkgo Slack channel](https://app.slack.com/client/T029RQSE6/CQQ50BBNW).
-
-# Ginkgo 2.0 Release Candidate is available!
-
-An effort is underway to develop and deliver Ginkgo 2.0.  The work is happening in the [ver2](https://github.com/onsi/ginkgo/tree/ver2) branch and a changelog and migration guide is being maintained on that branch [here](https://github.com/onsi/ginkgo/blob/ver2/docs/MIGRATING_TO_V2.md).  Issue [#711](https://github.com/onsi/ginkgo/issues/711) is the central place for discussion.
-
-As described in the [changelog](https://github.com/onsi/ginkgo/blob/ver2/docs/MIGRATING_TO_V2.md) and [proposal](https://docs.google.com/document/d/1h28ZknXRsTLPNNiOjdHIO-F2toCzq4xoZDXbfYaBdoQ/edit#), Ginkgo 2.0 will clean up the Ginkgo codebase, deprecate and remove some v1 functionality, and add several new much-requested features.  To help users get ready for the migration, Ginkgo v1 has started emitting deprecation warnings for features that will no longer be supported with links to documentation for how to migrate away from these features.  If you have concerns or comments please chime in on [#711](https://github.com/onsi/ginkgo/issues/711).
-
-Please start exploring and using the V2 release!  To get started follow the [Using the Release Candidate](https://github.com/onsi/ginkgo/blob/ver2/docs/MIGRATING_TO_V2.md#using-the-beta) directions in the migration guide.
-
-## TLDR
-Ginkgo builds on Go's `testing` package, allowing expressive [Behavior-Driven Development](https://en.wikipedia.org/wiki/Behavior-driven_development) ("BDD") style tests.
-It is typically (and optionally) paired with the [Gomega](https://github.com/onsi/gomega) matcher library.
+Ginkgo is a mature, well-established, testing framework for Go designed to help you write expressive specs.  Ginkgo builds on top of Go's `testing` foundation and is complemented by the [Gomega](https://github.com/onsi/gomega) matcher library.  Together, Ginkgo and Gomega let you express the intent behind your specs clearly:
 
 ```go
-Describe("the strings package", func() {
-  Context("strings.Contains()", func() {
-    When("the string contains the substring in the middle", func() {
-      It("returns `true`", func() {
-        Expect(strings.Contains("Ginkgo is awesome", "is")).To(BeTrue())
-      })
+import (
+    . "github.com/onsi/ginkgo"
+    . "github.com/onsi/gomega"
+    ...
+)
+
+Describe("Checking books out of the library", func() {
+    var library *libraries.Library
+    var book *books.Book
+    var valjean *users.User
+    BeforeEach(func() {
+        library = libraries.NewClient()
+        book = &books.Book{
+            Title: "Les Miserables",
+            Author: "Victor Hugo",
+        }
+        valjean = users.NewUser("Jean Valjean")
     })
-  })
+
+    When("the library has the book in question", func() {
+        BeforeEach(func() {
+            Expect(library.Store(book)).To(Succeed())
+        })
+
+        Context("and the book is available", func() {
+            It("lends it to the reader", func() {
+                Expect(valjean.Checkout(library, "Les Miserables")).To(Succeed())
+                Expect(valjean.Books()).To(ContainElement(book))
+                Expect(library.UserWithBook(book)).To(Equal(valjean))
+            })
+        })
+
+        Context("but the book has already been checked out", func() {
+            var javert *users.User
+            BeforeEach(func() {
+                javert = users.NewUser("Javert")
+                Expect(javert.Checkout(library, "Les Miserables")).To(Succeed())
+            })
+
+            It("tells the user", func() {
+                err := valjean.Checkout(library, "Les Miserables")
+                Expect(error).To(MatchError("Les Miserables is currently checked out"))
+            })
+
+            It("lets the user place a hold and get notified later", func() {
+                Expect(valjean.Hold(library, "Les Miserables")).To(Succeed())
+                Expect(valjean.Holds()).To(ContainElement(book))
+
+                By("when Javert returns the book")
+                Expect(javert.Return(library, book)).To(Succeed())
+
+                By("it eventually informs Valjean")
+                Eventually(valjean.Notifications).Should(ContainElement("Les Miserables is ready for pick up"))
+
+                Expect(valjean.Checkout(library, "Les Miserables")).To(Succeed())
+                Expect(valjean.Books()).To(ContainElement(book))
+                Expect(valjean.Holds()).To(BeEmpty())
+            })
+        })  
+    })
+
+    When("the library does not have the book in question", func() {
+        It("tells the reader the book is unavailable", func() {
+            err := valjean.Checkout(library, "Les Miserables")
+            Expect(error).To(MatchError("Les Miserables is not in the library catalog"))
+        })
+    })
 })
 ```
 
-## Feature List
+Jump to the [docs](https://onsi.github.io/ginkgo/) to learn more!  It's easy to [bootstrap](https://onsi.github.io/ginkgo/#bootstrapping-a-suite) and start writing your [first specs](https://onsi.github.io/ginkgo/#adding-specs-to-a-suite).
 
-- Ginkgo uses Go's `testing` package and can live alongside your existing `testing` tests.  It's easy to [bootstrap](https://onsi.github.io/ginkgo/#bootstrapping-a-suite) and start writing your [first tests](https://onsi.github.io/ginkgo/#adding-specs-to-a-suite)
+If you have a question, comment, bug report, feature request, etc. please open a GitHub issue, or visit the [Ginkgo Slack channel](https://app.slack.com/client/T029RQSE6/CQQ50BBNW).
 
-- Ginkgo allows you to write tests in Go using expressive [Behavior-Driven Development](https://en.wikipedia.org/wiki/Behavior-driven_development) ("BDD") style:
-    - Nestable [`Describe`, `Context` and `When` container blocks](https://onsi.github.io/ginkgo/#organizing-specs-with-containers-describe-and-context)
-    - [`BeforeEach` and `AfterEach` blocks](https://onsi.github.io/ginkgo/#extracting-common-setup-beforeeach) for setup and teardown
-    - [`It` and `Specify` blocks](https://onsi.github.io/ginkgo/#individual-specs-it) that hold your assertions
-    - [`JustBeforeEach` blocks](https://onsi.github.io/ginkgo/#separating-creation-and-configuration-justbeforeeach) that separate creation from configuration (also known as the subject action pattern).
-    - [`BeforeSuite` and `AfterSuite` blocks](https://onsi.github.io/ginkgo/#global-setup-and-teardown-beforesuite-and-aftersuite) to prep for and cleanup after a suite.
+## Capabilities
 
-- A comprehensive test runner that lets you:
-    - Mark specs as [pending](https://onsi.github.io/ginkgo/#pending-specs)
-    - [Focus](https://onsi.github.io/ginkgo/#filtering-specs) individual specs, and groups of specs, either programmatically or on the command line
-    - Run your tests in [random order](https://onsi.github.io/ginkgo/#spec-permutation), and then reuse random seeds to replicate the same order.
-    - Break up your test suite into parallel processes for straightforward [test parallelization](https://onsi.github.io/ginkgo/#parallel-specs)
+Whether writing basic unit specs, complex integration specs, or even performance specs - Ginkgo gives you an expressive Domain-Specific Language (DSL) that will be familiar to users coming from frameworks such as [Quick](https://github.com/Quick/Quick), [RSpec](https://rspec.info), [Jasmine](https://jasmine.github.io), [Busted](https://olivinelabs.com/busted/).  This style of testing is sometimes referred to as "Behavior-Driven Development" (BDD) though Ginkgo's utility extends beyond acceptance-level testing.
 
-- `ginkgo`: a command line interface with plenty of handy command line arguments for [running your tests](https://onsi.github.io/ginkgo/#running-tests) and [generating](https://onsi.github.io/ginkgo/#generators) test files.  Here are a few choice examples:
-    - `ginkgo -nodes=N` runs your tests in `N` parallel processes and print out coherent output in realtime
-    - `ginkgo -cover` runs your tests using Go's code coverage tool
-    - `ginkgo convert` converts an XUnit-style `testing` package to a Ginkgo-style package
-    - `ginkgo -focus="REGEXP"` and `ginkgo -skip="REGEXP"` allow you to specify a subset of tests to run via regular expression
-    - `ginkgo -r` runs all tests suites under the current directory
-    - `ginkgo -v` prints out identifying information for each tests just before it runs
+With Ginkgo's DSL you can use nestable [`Describe`, `Context` and `When` container nodes](https://onsi.github.io/ginkgo/#organizing-specs-with-container-nodes) to help you organize your specs.  [`BeforeEach` and `AfterEach` setup nodes](https://onsi.github.io/ginkgo/#extracting-common-setup-beforeeach) for setup and cleanup.  [`It` and `Specify` subject nodes](https://onsi.github.io/ginkgo/#spec-subjects-it) that hold your assertions. [`BeforeSuite` and `AfterSuite` nodes](https://onsi.github.io/ginkgo/#suite-setup-and-cleanup-beforesuite-and-aftersuite) to prep for and cleanup after a suite... and [much more!](https://onsi.github.io/ginkgo/#writing-specs)
 
-    And much more: run `ginkgo help` for details!
+At runtime, Ginkgo can run your specs in reproducibly [random order](https://onsi.github.io/ginkgo/#spec-randomization) and has sophisticated support for [spec parallelization](https://onsi.github.io/ginkgo/#spec-parallelization).  In fact, running specs in parallel is as easy as
 
-    The `ginkgo` CLI is convenient, but purely optional -- Ginkgo works just fine with `go test`
-
-- `ginkgo watch` [watches](https://onsi.github.io/ginkgo/#watching-for-changes) packages *and their dependencies* for changes, then reruns tests.  Run tests immediately as you develop!
-
-- Built-in support for testing [asynchronicity](https://onsi.github.io/ginkgo/#asynchronous-tests)
-
-- Built-in support for [benchmarking](https://onsi.github.io/ginkgo/#benchmark-tests) your code.  Control the number of benchmark samples as you gather runtimes and other, arbitrary, bits of numerical information about your code. 
-
-- [Completions for Sublime Text](https://github.com/onsi/ginkgo-sublime-completions): just use [Package Control](https://sublime.wbond.net/) to install `Ginkgo Completions`.
-
-- [Completions for VSCode](https://github.com/onsi/vscode-ginkgo): just use VSCode's extension installer to install `vscode-ginkgo`.
-
-- [Ginkgo tools for VSCode](https://marketplace.visualstudio.com/items?itemName=joselitofilho.ginkgotestexplorer): just use VSCode's extension installer to install `ginkgoTestExplorer`.
-
-- Straightforward support for third-party testing libraries such as [Gomock](https://code.google.com/p/gomock/) and [Testify](https://github.com/stretchr/testify).  Check out the [docs](https://onsi.github.io/ginkgo/#third-party-integrations) for details.
-
-- A modular architecture that lets you easily:
-    - Write [custom reporters](https://onsi.github.io/ginkgo/#writing-custom-reporters) (for example, Ginkgo comes with a [JUnit XML reporter](https://onsi.github.io/ginkgo/#generating-junit-xml-output) and a TeamCity reporter).
-    - [Adapt an existing matcher library (or write your own!)](https://onsi.github.io/ginkgo/#using-other-matcher-libraries) to work with Ginkgo
-
-## [Gomega](https://github.com/onsi/gomega): Ginkgo's Preferred Matcher Library
-
-Ginkgo is best paired with Gomega.  Learn more about Gomega [here](https://onsi.github.io/gomega/)
-
-## [Agouti](https://github.com/sclevine/agouti): A Go Acceptance Testing Framework
-
-Agouti allows you run WebDriver integration tests.  Learn more about Agouti [here](https://agouti.org)
-
-## Getting Started
-
-You'll need the Go command-line tools. Follow the [installation instructions](https://golang.org/doc/install) if you don't have it installed.
-
-### Global installation
-To install the Ginkgo command line interface:
 ```bash
-go get -u github.com/onsi/ginkgo/ginkgo
-```
-Note that this will install it to `$GOBIN`, which will need to be in the `$PATH` (or equivalent). Run `go help install` for more information.
-
-### Go module ["tools package"](https://github.com/golang/go/issues/25922):
-Create (or update) a file called `tools/tools.go` with the following contents:
-```go
-// +build tools
-
-package tools
-
-import (
-	_ "github.com/onsi/ginkgo/ginkgo"
-)
-
-// This file imports packages that are used when running go generate, or used
-// during the development process but not otherwise depended on by built code.
-```
-The Ginkgo command can then be run via `go run github.com/onsi/ginkgo/ginkgo`.
-This approach allows the version of Ginkgo to be maintained under source control for reproducible results,
-and is well suited to automated test pipelines.
-
-### Bootstrapping
-```bash
-cd path/to/package/you/want/to/test
-
-ginkgo bootstrap # set up a new ginkgo suite
-ginkgo generate  # will create a sample test file.  edit this file and add your tests then...
-
-go test # to run your tests
-
-ginkgo  # also runs your tests
-
+ginkgo -p
 ```
 
-## I'm new to Go: What are my testing options?
+By following [established patterns for writing parallel specs](https://onsi.github.io/ginkgo/#patterns-for-parallel-integration-specs) you can build even large, complex integration suites that parallelize cleanly and run performantly.
 
-Of course, I heartily recommend [Ginkgo](https://github.com/onsi/ginkgo) and [Gomega](https://github.com/onsi/gomega).  Both packages are seeing heavy, daily, production use on a number of projects and boast a mature and comprehensive feature-set.
+As your suites grow Ginkgo helps you keep your specs organized with [labels](https://onsi.github.io/ginkgo/#spec-labels) and lets you easily run [subsets of specs](https://onsi.github.io/ginkgo/#filtering-specs), either [programatically](https://onsi.github.io/ginkgo/#focused-specs) or on the [command line](https://onsi.github.io/ginkgo/#combining-filters).  And Ginkgo's reporting infrastructure will generate machine-readable output in a [variety of formats](https://onsi.github.io/ginkgo/#generating-machine-readable-reports) _and_ allow you to build your own [custom reporting infrastructure](https://onsi.github.io/ginkgo/#generating-reports-programmatically).
 
-With that said, it's great to know what your options are :)
+Ginkgo ships with `ginkgo`, a [command line tool](https://onsi.github.io/ginkgo/#ginkgo-cli-overview) with powerful support for generating, running, filtering, and profiling Ginkgo suites.  You can even have Ginkgo automatically run your specs when it detects a change with `ginkgo watch`, enabling rapid feedback loops during test-driven development.
 
-### What Go gives you out of the box
+And that's just Ginkgo!  [Gomega](https://onsi.github.io/gomega/) brings a rich, mature, family of [assertions and matchers](https://onsi.github.io/gomega/#provided-matchers) to your suites.  With Gomega you can easily mix [synchronous and asynchronous assertions](https://onsi.github.io/ginkgo/#patterns-for-asynchronous-testing) in your specs.  You can even build your own set of expressive domain-specific matchers quickly and easily by composing Gomega's [existing building blocks](https://onsi.github.io/ginkgo/#building-custom-matchers).
 
-Testing is a first class citizen in Go, however Go's built-in testing primitives are somewhat limited: The [testing](https://golang.org/pkg/testing) package provides basic XUnit style tests and no assertion library.
-
-### Matcher libraries for Go's XUnit style tests
-
-A number of matcher libraries have been written to augment Go's built-in XUnit style tests.  Here are two that have gained traction:
-
-- [testify](https://github.com/stretchr/testify)
-- [gocheck](https://labix.org/gocheck)
-
-You can also use Ginkgo's matcher library [Gomega](https://github.com/onsi/gomega) in [XUnit style tests](https://onsi.github.io/gomega/#using-gomega-with-golangs-xunitstyle-tests)
-
-### BDD style testing frameworks
-
-There are a handful of BDD-style testing frameworks written for Go.  Here are a few:
-
-- [Ginkgo](https://github.com/onsi/ginkgo) ;)
-- [GoConvey](https://github.com/smartystreets/goconvey) 
-- [Goblin](https://github.com/franela/goblin)
-- [Mao](https://github.com/azer/mao)
-- [Zen](https://github.com/pranavraja/zen)
-
-Finally, @shageman has [put together](https://github.com/shageman/gotestit) a comprehensive comparison of Go testing libraries.
-
-Go explore!
+Happy Testing!
 
 ## License
 
