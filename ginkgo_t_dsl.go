@@ -2,18 +2,15 @@ package ginkgo
 
 import "github.com/onsi/ginkgo/internal/testingtproxy"
 
-//Some matcher libraries or legacy codebases require a *testing.T
-//GinkgoT implements an interface analogous to *testing.T and can be used if
-//the library in question accepts *testing.T through an interface
-//
-// For example, with testify:
-// assert.Equal(GinkgoT(), 123, 123, "they should be equal")
-//
-// Or with gomock:
-// gomock.NewController(GinkgoT())
-//
-// GinkgoT() takes an optional offset argument that can be used to get the
-// correct line number associated with the failure.
+/*
+GinkgoT() implements an interface analogous to *testing.T and can be used with
+third-party libraries that accept *testing.T through an interface.
+
+GinkgoT() takes an optional offset argument that can be used to get the
+correct line number associated with the failure.
+
+You can learn more here: https://onsi.github.io/ginkgo/#using-third-party-libraries
+*/
 func GinkgoT(optionalOffset ...int) GinkgoTInterface {
 	offset := 3
 	if len(optionalOffset) > 0 {
@@ -22,8 +19,9 @@ func GinkgoT(optionalOffset ...int) GinkgoTInterface {
 	return testingtproxy.New(GinkgoWriter, Fail, Skip, DeferCleanup, CurrentSpecReport, offset)
 }
 
-//The interface returned by GinkgoT().  This covers most of the methods
-//in the testing package's T.
+/*
+The interface returned by GinkgoT().  This covers most of the methods in the testing package's T.
+*/
 type GinkgoTInterface interface {
 	Cleanup(func())
 	Setenv(kev, value string)

@@ -10,49 +10,52 @@ import (
 )
 
 /*
-===================================================
-   Deprecations for v2
-===================================================
-*/
+Deprecated: Done Channel for asynchronous testing
 
-// Deprecated Done Channel for asynchronous testing
+The Done channel pattern is no longer supported in Ginkgo 2.0.
+See here for better patterns for asynchronouse testing: https://onsi.github.io/ginkgo/#patterns-for-asynchronous-testing
+
+For a migration guide see: https://onsi.github.io/ginkgo/MIGRATING_TO_V2#removed-async-testing
+*/
 type Done = internal.Done
 
-//Deprecated: Custom Ginkgo test reporters are no longer supported
-//Please read the documentation at:
-//https://github.com/onsi/ginkgo/blob/ver2/docs/MIGRATING_TO_V2.md#removed-custom-reporters
-//for Ginkgo's new behavior and for a migration path.
+/*
+Deprecated: Custom Ginkgo test reporters are deprecated in Ginkgo 2.0.
+
+Use Ginkgo's reporting nodes instead and 2.0 reporting infrastructure instead. You can learn more here: https://onsi.github.io/ginkgo/#reporting-infrastructure
+For a migration guide see: https://onsi.github.io/ginkgo/MIGRATING_TO_V2#removed-custom-reporters
+*/
 type Reporter = reporters.DeprecatedReporter
 
-//Deprecated: Custom Reporters have been removed in v2.  RunSpecsWithDefaultAndCustomReporters will simply call RunSpecs()
-//
-//Please read the documentation at:
-//https://github.com/onsi/ginkgo/blob/ver2/docs/MIGRATING_TO_V2.md#removed-custom-reporters
-//for Ginkgo's new behavior and for a migration path.
+/*
+Deprecated: Custom Reporters have been removed in Ginkgo 2.0.  RunSpecsWithDefaultAndCustomReporters will simply call RunSpecs()
+
+Use Ginkgo's reporting nodes instead and 2.0 reporting infrastructure instead. You can learn more here: https://onsi.github.io/ginkgo/#reporting-infrastructure
+For a migration guide see: https://onsi.github.io/ginkgo/MIGRATING_TO_V2#removed-custom-reporters
+*/
 func RunSpecsWithDefaultAndCustomReporters(t GinkgoTestingT, description string, _ []Reporter) bool {
 	deprecationTracker.TrackDeprecation(types.Deprecations.CustomReporter())
 	return RunSpecs(t, description)
 }
 
-//Deprecated: Custom Reporters have been removed in v2.  RunSpecsWithCustomReporters will simply call RunSpecs()
-//
-//Please read the documentation at:
-//https://github.com/onsi/ginkgo/blob/ver2/docs/MIGRATING_TO_V2.md#removed-custom-reporters
-//for Ginkgo's new behavior and for a migration path.
+/*
+Deprecated: Custom Reporters have been removed in Ginkgo 2.0.  RunSpecsWithCustomReporters will simply call RunSpecs()
+
+Use Ginkgo's reporting nodes instead and 2.0 reporting infrastructure instead. You can learn more here: https://onsi.github.io/ginkgo/#reporting-infrastructure
+For a migration guide see: https://onsi.github.io/ginkgo/MIGRATING_TO_V2#removed-custom-reporters
+*/
 func RunSpecsWithCustomReporters(t GinkgoTestingT, description string, _ []Reporter) bool {
 	deprecationTracker.TrackDeprecation(types.Deprecations.CustomReporter())
 	return RunSpecs(t, description)
 }
 
-//GinkgoTestDescription represents the information about the current running test returned by CurrentGinkgoTestDescription
-//	FullTestText: a concatenation of ComponentTexts and the TestText
-//	ComponentTexts: a list of all texts for the Describes & Contexts leading up to the current test
-//	TestText: the text in the It node
-//	FileName: the name of the file containing the current test
-//	LineNumber: the line number for the current test
-//	Failed: if the current test has failed, this will be true (useful in an AfterEach)
-//
-//Deprecated: Use CurrentSpecReport() instead
+/*
+Deprecated: GinkgoTestDescription has been replaced with SpecReport.
+
+Use CurrentSpecReport() instead.
+You can learn more here: https://onsi.github.io/ginkgo/#getting-a-report-for-the-current-spec
+The SpecReport type is documented here: https://pkg.go.dev/github.com/onsi/ginkgo/types#SpecReport
+*/
 type DeprecatedGinkgoTestDescription struct {
 	FullTestText   string
 	ComponentTexts []string
@@ -66,8 +69,13 @@ type DeprecatedGinkgoTestDescription struct {
 }
 type GinkgoTestDescription = DeprecatedGinkgoTestDescription
 
-//CurrentGinkgoTestDescripton returns information about the current running test.
-//Deprecated: Use CurrentSpecReport() instead
+/*
+Deprecated: CurrentGinkgoTestDescription has been replaced with CurrentSpecReport.
+
+Use CurrentSpecReport() instead.
+You can learn more here: https://onsi.github.io/ginkgo/#getting-a-report-for-the-current-spec
+The SpecReport type is documented here: https://pkg.go.dev/github.com/onsi/ginkgo/types#SpecReport
+*/
 func CurrentGinkgoTestDescription() DeprecatedGinkgoTestDescription {
 	deprecationTracker.TrackDeprecation(
 		types.Deprecations.CurrentGinkgoTestDescription(),
@@ -92,6 +100,9 @@ func CurrentGinkgoTestDescription() DeprecatedGinkgoTestDescription {
 	}
 }
 
+/*
+Deprecated: GinkgoParallelNode() has been renamed to GinkgoParallelProcess()
+*/
 func GinkgoParallelNode() int {
 	deprecationTracker.TrackDeprecation(
 		types.Deprecations.ParallelNode(),
@@ -100,14 +111,24 @@ func GinkgoParallelNode() int {
 	return GinkgoParallelProcess()
 }
 
-//deprecated benchmarker
+/*
+Deprecated: Benchmarker has been removed from Ginkgo 2.0
+
+Use Gomega's gmeasure package instead.
+You can learn more here: https://onsi.github.io/ginkgo/#benchmarking-code
+*/
 type Benchmarker interface {
 	Time(name string, body func(), info ...interface{}) (elapsedTime time.Duration)
 	RecordValue(name string, value float64, info ...interface{})
 	RecordValueWithPrecision(name string, value float64, units string, precision int, info ...interface{})
 }
 
-//deprecated Measure
+/*
+Deprecated: Measure() has been removed from Ginkgo 2.0
+
+Use Gomega's gmeasure package instead.
+You can learn more here: https://onsi.github.io/ginkgo/#benchmarking-code
+*/
 func Measure(_ ...interface{}) bool {
 	deprecationTracker.TrackDeprecation(types.Deprecations.Measure(), types.NewCodeLocation(1))
 	return true
