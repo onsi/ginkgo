@@ -57,7 +57,8 @@ Describe("Checking books out of the library", func() {
                 Expect(javert.Return(library, book)).To(Succeed())
 
                 By("it eventually informs Valjean")
-                Eventually(valjean.Notifications).Should(ContainElement("Les Miserables is ready for pick up"))
+                expectedNotification := "Les Miserables is ready for pick up"
+                Eventually(valjean.Notifications).Should(ContainElement(expectedNotification))
 
                 Expect(valjean.Checkout(library, "Les Miserables")).To(Succeed())
                 Expect(valjean.Books()).To(ContainElement(book))
