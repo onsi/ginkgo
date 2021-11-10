@@ -27,8 +27,6 @@ This was the context that led to Ginkgo.  Over the years the Go testing ecosyste
 
 Happy Testing!
 
----
-
 ## Getting Started
 
 In this section we  cover installing Ginkgo, Gomega, and the `ginkgo` CLI.  We bootstrap a Ginkgo suite, write our first spec, and run it.
@@ -62,7 +60,7 @@ Say you have a package named `books` that you'd like to add a Ginkgo suite to.  
 cd path/to/books
 ginkgo bootstrap
 Generating ginkgo test suite bootstrap for books in:
-    books_suite_test.go
+  books_suite_test.go
 ```
 
 This will generate a file named `books_suite_test.go` in the `books` directory containing:
@@ -71,14 +69,14 @@ This will generate a file named `books_suite_test.go` in the `books` directory c
 package books_test
 
 import (
-    . "github.com/onsi/ginkgo/v2"
-    . "github.com/onsi/gomega"
-    "testing"
+  . "github.com/onsi/ginkgo/v2"
+  . "github.com/onsi/gomega"
+  "testing"
 )
 
 func TestBooks(t *testing.T) {
-    RegisterFailHandler(Fail)
-    RunSpecs(t, "Books Suite")
+  RegisterFailHandler(Fail)
+  RunSpecs(t, "Books Suite")
 }
 ```
 
@@ -140,10 +138,10 @@ This will generate a test file named `book_test.go` containing:
 package books_test
 
 import (
-    . "github.com/onsi/ginkgo/v2"
-    . "github.com/onsi/gomega"
+  . "github.com/onsi/ginkgo/v2"
+  . "github.com/onsi/gomega"
 
-    "path/to/books"
+  "path/to/books"
 )
 
 var _ = Describe("Books", func() {
@@ -161,35 +159,35 @@ Let's add a few specs, now, to describe our book model's ability to categorize b
 
 ```go
 var _ = Describe("Books", func() {
-    var foxInSocks, lesMis *books.Book
+  var foxInSocks, lesMis *books.Book
 
-    BeforeEach(func() {
-        lesMis = &books.Book{
-            Title:  "Les Miserables",
-            Author: "Victor Hugo",
-            Pages:  2783,
-        }
+  BeforeEach(func() {
+    lesMis = &books.Book{
+      Title:  "Les Miserables",
+      Author: "Victor Hugo",
+      Pages:  2783,
+    }
 
-        foxInSocks = &books.Book{
-            Title:  "Fox In Socks",
-            Author: "Dr. Seuss",
-            Pages:  24,
-        }
+    foxInSocks = &books.Book{
+      Title:  "Fox In Socks",
+      Author: "Dr. Seuss",
+      Pages:  24,
+    }
+  })
+
+  Describe("Categorizing books", func() {
+    Context("with more than 300 pages", func() {
+      It("should be a novel", func() {
+        Expect(lesMis.Category()).To(Equal(books.CategoryNovel))
+      })
     })
 
-    Describe("Categorizing books", func() {
-        Context("with more than 300 pages", func() {
-            It("should be a novel", func() {
-                Expect(lesMis.Category()).To(Equal(books.CategoryNovel))
-            })
-        })
-
-        Context("with fewer than 300 pages", func() {
-            It("should be a short story", func() {
-                Expect(foxInSocks.Category()).To(Equal(books.CategoryShortStory))
-            })
-        })
+    Context("with fewer than 300 pages", func() {
+      It("should be a short story", func() {
+        Expect(foxInSocks.Category()).To(Equal(books.CategoryShortStory))
+      })
     })
+  })
 })
 ```
 
@@ -239,15 +237,15 @@ Every Ginkgo spec has exactly one subject node.  You can add a single spec to a 
 
 ```go
 var _ = Describe("Books", func() {
-    It("can extract the author's last name", func() {
-        book = &books.Book{
-            Title: "Les Miserables",
-            Author: "Victor Hugo",
-            Pages: 2783,
-        }
+  It("can extract the author's last name", func() {
+    book = &books.Book{
+      Title: "Les Miserables",
+      Author: "Victor Hugo",
+      Pages: 2783,
+    }
 
-        Expect(book.AuthorLastName()).To(Equal("Hugo"))
-    })
+    Expect(book.AuthorLastName()).To(Equal("Hugo"))
+  })
 })
 ```
 
@@ -260,34 +258,34 @@ You can remove duplication and share common setup across specs using `BeforeEach
 
 ```go
 var _ = Describe("Books", func() {
-    var book *books.Book
+  var book *books.Book
 
-    BeforeEach(func() {
-        book = &books.Book{
-            Title: "Les Miserables",
-            Author: "Victor Hugo",
-            Pages: 2783,
-        }
-        Expect(book.IsValid()).To(BeTrue())
-    })
+  BeforeEach(func() {
+    book = &books.Book{
+      Title: "Les Miserables",
+      Author: "Victor Hugo",
+      Pages: 2783,
+    }
+    Expect(book.IsValid()).To(BeTrue())
+  })
 
-    It("can extract the author's last name", func() {
-        Expect(book.AuthorLastName()).To(Equal("Hugo"))
-    })
+  It("can extract the author's last name", func() {
+    Expect(book.AuthorLastName()).To(Equal("Hugo"))
+  })
 
-    It("interprets a single author name as a last name", func() {
-        book.Author = "Hugo"
-        Expect(book.AuthorLastName()).To(Equal("Hugo"))
-    })
+  It("interprets a single author name as a last name", func() {
+    book.Author = "Hugo"
+    Expect(book.AuthorLastName()).To(Equal("Hugo"))
+  })
 
-    It("can extract the author's first name", func() {
-        Expect(book.AuthorFirstName()).To(Equal("Victor"))
-    })
+  It("can extract the author's first name", func() {
+    Expect(book.AuthorFirstName()).To(Equal("Victor"))
+  })
 
-    It("returns no first name when there is a single author name", func() {
-        book.Author = "Hugo"
-        Expect(book.AuthorFirstName()).To(BeZero()) //BeZero asserts the value is the zero-value for its type.  In this case: ""
-    })
+  It("returns no first name when there is a single author name", func() {
+    book.Author = "Hugo"
+    Expect(book.AuthorFirstName()).To(BeZero()) //BeZero asserts the value is the zero-value for its type.  In this case: ""
+  })
 })
 ```
 
@@ -308,43 +306,43 @@ Our `book` suite is getting longer and would benefit from some hierarchical orga
 
 ```go
 var _ = Describe("Books", func() {
-    var book *books.Book
+  var book *books.Book
 
-    BeforeEach(func() {
-        book = &books.Book{
-            Title: "Les Miserables",
-            Author: "Victor Hugo",
-            Pages: 2783,
-        }
-        Expect(book.IsValid()).To(BeTrue())
+  BeforeEach(func() {
+    book = &books.Book{
+      Title: "Les Miserables",
+      Author: "Victor Hugo",
+      Pages: 2783,
+    }
+    Expect(book.IsValid()).To(BeTrue())
+  })
+
+  Describe("Extracting the author's first and last name", func() {
+    Context("When the author has both names", func() {
+      It("can extract the author's last name", func() {        
+        Expect(book.AuthorLastName()).To(Equal("Hugo"))
+      })
+
+      It("can extract the author's first name", func() {
+        Expect(book.AuthorFirstName()).To(Equal("Victor"))
+      })      
     })
 
-    Describe("Extracting the author's first and last name", func() {
-        Context("When the author has both names", func() {
-            It("can extract the author's last name", func() {                
-                Expect(book.AuthorLastName()).To(Equal("Hugo"))
-            })
+    Context("When the author only has one name", func() {
+      BeforeEach(func() {
+        book.Author = "Hugo"
+      })  
 
-            It("can extract the author's first name", func() {
-                Expect(book.AuthorFirstName()).To(Equal("Victor"))
-            })            
-        })
+      It("interprets the single author name as a last name", func() {
+        Expect(book.AuthorLastName()).To(Equal("Hugo"))
+      })
 
-        Context("When the author only has one name", func() {
-            BeforeEach(func() {
-                book.Author = "Hugo"
-            })  
-
-            It("interprets the single author name as a last name", func() {
-                Expect(book.AuthorLastName()).To(Equal("Hugo"))
-            })
-
-            It("returns empty for the first name", func() {
-                Expect(book.AuthorFirstName()).To(BeZero())
-            })
-        })
-
+      It("returns empty for the first name", func() {
+        Expect(book.AuthorFirstName()).To(BeZero())
+      })
     })
+
+  })
 })
 ```
 
@@ -356,65 +354,65 @@ Organizing our specs in this way can also help us reason about our spec coverage
 
 ```go
 var _ = Describe("Books", func() {
-    var book *books.Book
+  var book *books.Book
 
-    BeforeEach(func() {
-        book = &books.Book{
-            Title: "Les Miserables",
-            Author: "Victor Hugo",
-            Pages: 2783,
-        }
-        Expect(book.IsValid()).To(BeTrue())
+  BeforeEach(func() {
+    book = &books.Book{
+      Title: "Les Miserables",
+      Author: "Victor Hugo",
+      Pages: 2783,
+    }
+    Expect(book.IsValid()).To(BeTrue())
+  })
+
+  Describe("Extracting the author's first and last name", func() {
+    Context("When the author has both names", func() {
+      It("can extract the author's last name", func() {        
+        Expect(book.AuthorLastName()).To(Equal("Hugo"))
+      })
+
+      It("can extract the author's first name", func() {
+        Expect(book.AuthorFirstName()).To(Equal("Victor"))
+      })      
     })
 
-    Describe("Extracting the author's first and last name", func() {
-        Context("When the author has both names", func() {
-            It("can extract the author's last name", func() {                
-                Expect(book.AuthorLastName()).To(Equal("Hugo"))
-            })
+    Context("When the author only has one name", func() {
+      BeforeEach(func() {
+        book.Author = "Hugo"
+      })  
 
-            It("can extract the author's first name", func() {
-                Expect(book.AuthorFirstName()).To(Equal("Victor"))
-            })            
-        })
+      It("interprets the single author name as a last name", func() {
+        Expect(book.AuthorLastName()).To(Equal("Hugo"))
+      })
 
-        Context("When the author only has one name", func() {
-            BeforeEach(func() {
-                book.Author = "Hugo"
-            })  
-
-            It("interprets the single author name as a last name", func() {
-                Expect(book.AuthorLastName()).To(Equal("Hugo"))
-            })
-
-            It("returns empty for the first name", func() {
-                Expect(book.AuthorFirstName()).To(BeZero())
-            })
-        })
-
-        Context("When the author has a middle name", func() {
-            BeforeEach(func() {
-                book.Author = "Victor Marie Hugo"
-            })  
-
-            It("can extract the author's last name", func() {                
-                Expect(book.AuthorLastName()).To(Equal("Victor"))
-            })
-
-            It("can extract the author's first name", func() {
-                Expect(book.AuthorFirstName()).To(Equal("Victor"))
-            })            
-        })
-
-        Context("When the author has no name", func() {
-            It("should not be a valid book and returns empty for first and last name", func() {
-                book.Author = ""
-                Expect(book.IsValid()).To(BeFalse())
-                Expect(book.AuthorLastName()).To(BeZero())
-                Expect(book.AuthorFirstName()).To(BeZero())
-            })
-        })
+      It("returns empty for the first name", func() {
+        Expect(book.AuthorFirstName()).To(BeZero())
+      })
     })
+
+    Context("When the author has a middle name", func() {
+      BeforeEach(func() {
+        book.Author = "Victor Marie Hugo"
+      })  
+
+      It("can extract the author's last name", func() {        
+        Expect(book.AuthorLastName()).To(Equal("Victor"))
+      })
+
+      It("can extract the author's first name", func() {
+        Expect(book.AuthorFirstName()).To(Equal("Victor"))
+      })      
+    })
+
+    Context("When the author has no name", func() {
+      It("should not be a valid book and returns empty for first and last name", func() {
+        book.Author = ""
+        Expect(book.IsValid()).To(BeFalse())
+        Expect(book.AuthorLastName()).To(BeZero())
+        Expect(book.AuthorFirstName()).To(BeZero())
+      })
+    })
+  })
 })
 ```
 
@@ -425,69 +423,69 @@ Let's keep going and add spec out some additional behavior.  Let's test how our 
 
 ```go
 var _ = Describe("Books", func() {
-    var book *books.Book
+  var book *books.Book
 
-    BeforeEach(func() {
-        book = &books.Book{
-            Title: "Les Miserables",
-            Author: "Victor Hugo",
-            Pages: 2783,
-        }
-        Expect(book.IsValid()).To(BeTrue())
+  BeforeEach(func() {
+    book = &books.Book{
+      Title: "Les Miserables",
+      Author: "Victor Hugo",
+      Pages: 2783,
+    }
+    Expect(book.IsValid()).To(BeTrue())
+  })
+
+  Describe("Extracting the author's first and last name", func() { ... })
+
+  Describe("JSON encoding and decoding", func() {
+    It("survives the round trip", func() {
+      encoded, err := book.AsJSON()
+      Expect(err).NotTo(HaveOccurred())
+
+      decoded, err := books.NewBookFromJSON(encoded)
+      Expect(err).NotTo(HaveOccurred())
+
+      Expect(decoded).To(Equal(book))
     })
 
-    Describe("Extracting the author's first and last name", func() { ... })
+    Describe("some JSON decoding edge cases", func() {
+      var err error
 
-    Describe("JSON encoding and decoding", func() {
-        It("survives the round trip", func() {
-            encoded, err := book.AsJSON()
-            Expect(err).NotTo(HaveOccurred())
-
-            decoded, err := books.NewBookFromJSON(encoded)
-            Expect(err).NotTo(HaveOccurred())
-
-            Expect(decoded).To(Equal(book))
+      When("the JSON fails to parse", func() {
+        BeforeEach(func() {
+          book, err = NewBookFromJSON(`{
+            "title":"Les Miserables",
+            "author":"Victor Hugo",
+            "pages":2783oops
+          }`)
         })
 
-        Describe("some JSON decoding edge cases", func() {
-            var err error
-
-            When("the JSON fails to parse", func() {
-                BeforeEach(func() {
-                    book, err = NewBookFromJSON(`{
-                        "title":"Les Miserables",
-                        "author":"Victor Hugo",
-                        "pages":2783oops
-                    }`)
-                })
-
-                It("returns a nil book", func() {
-                    Expect(book).To(BeNil())
-                })
-
-                It("errors", func() {
-                    Expect(err).To(MatchError(books.ErrInvalidJSON))
-                })
-            })
-
-            When("the JSON is incomplete", func() {
-                BeforeEach(func() {
-                    book, err = NewBookFromJSON(`{
-                        "title":"Les Miserables",
-                        "author":"Victor Hugo",
-                    }`)
-                })
-
-                It("returns a nil book", func() {
-                    Expect(book).To(BeNil())
-                })
-
-                It("errors", func() {
-                    Expect(err).To(MatchError(books.ErrIncompleteJSON))
-                })
-            })            
+        It("returns a nil book", func() {
+          Expect(book).To(BeNil())
         })
+
+        It("errors", func() {
+          Expect(err).To(MatchError(books.ErrInvalidJSON))
+        })
+      })
+
+      When("the JSON is incomplete", func() {
+        BeforeEach(func() {
+          book, err = NewBookFromJSON(`{
+            "title":"Les Miserables",
+            "author":"Victor Hugo",
+          }`)
+        })
+
+        It("returns a nil book", func() {
+          Expect(book).To(BeNil())
+        })
+
+        It("errors", func() {
+          Expect(err).To(MatchError(books.ErrIncompleteJSON))
+        })
+      })      
     })
+  })
 })
 ```
 
@@ -505,49 +503,49 @@ Let's paint a picture of what that looks like in practice.  Consider the followi
 
 ```go
 var _ = Describe("Books", func() {
-    var book *books.Book
+  var book *books.Book
 
-    BeforeEach(func() {
-        //Closure A
-        book = &books.Book{
-            Title: "Les Miserables",
-            Author: "Victor Hugo",
-            Pages: 2783,
-        }
-        Expect(book.IsValid()).To(BeTrue())
+  BeforeEach(func() {
+    //Closure A
+    book = &books.Book{
+      Title: "Les Miserables",
+      Author: "Victor Hugo",
+      Pages: 2783,
+    }
+    Expect(book.IsValid()).To(BeTrue())
+  })
+
+  Describe("Extracting names", func() {
+    When("author has both names", func() {
+      It("extracts the last name", func() {        
+        //Closure B
+        Expect(book.AuthorLastName()).To(Equal("Hugo"))
+      })
+
+      It("extracts the first name", func() {
+        //Closure C
+        Expect(book.AuthorFirstName()).To(Equal("Victor"))
+      })      
     })
 
-    Describe("Extracting names", func() {
-        When("author has both names", func() {
-            It("extracts the last name", func() {                
-                //Closure B
-                Expect(book.AuthorLastName()).To(Equal("Hugo"))
-            })
+    When("author has one name", func() {
+      BeforeEach(func() {
+        //Closure D
+        book.Author = "Hugo"
+      })  
 
-            It("extracts the first name", func() {
-                //Closure C
-                Expect(book.AuthorFirstName()).To(Equal("Victor"))
-            })            
-        })
+      It("extracts the last name", func() {
+        //Closure E
+        Expect(book.AuthorLastName()).To(Equal("Hugo"))
+      })
 
-        When("author has one name", func() {
-            BeforeEach(func() {
-                //Closure D
-                book.Author = "Hugo"
-            })  
-
-            It("extracts the last name", func() {
-                //Closure E
-                Expect(book.AuthorLastName()).To(Equal("Hugo"))
-            })
-
-            It("returns empty first name", func() {
-                //Closure F
-                Expect(book.AuthorFirstName()).To(BeZero())
-            })
-        })
-
+      It("returns empty first name", func() {
+        //Closure F
+        Expect(book.AuthorFirstName()).To(BeZero())
+      })
     })
+
+  })
 })
 ```
 
@@ -557,13 +555,13 @@ We could represent the spec tree that Ginkgo generates as follows:
 Describe: "Books"
   |_BeforeEach: <Closure-A>
   |_Describe: "Extracting names"
-    |_When: "author has both names"
-      |_It: "extracts the last name", <Closure-B>
-      |_It: "extracts the first name", <Closure-C>
-    |_When: "author has one name"
-      |_BeforeEach: <Closure-D>
-      |_It: "extracts the last name", <Closure-E>
-      |_It: "returns empty first name", <Closure-F>
+  |_When: "author has both names"
+    |_It: "extracts the last name", <Closure-B>
+    |_It: "extracts the first name", <Closure-C>
+  |_When: "author has one name"
+    |_BeforeEach: <Closure-D>
+    |_It: "extracts the last name", <Closure-E>
+    |_It: "returns empty first name", <Closure-F>
 ```
 
 Note that Ginkgo is saving off just the setup and subject node closures.
@@ -600,11 +598,11 @@ Since the spec tree is constructed by traversing container nodes all Ginkgo node
 ```go
 /* === INVALID === */
 var _ = It("has a color", func() {
-    Context("when blue", func() { // NO! Nodes can only be nested in containers
-        It("is blue", func() { // NO! Nodes can only be nested in containers
+  Context("when blue", func() { // NO! Nodes can only be nested in containers
+    It("is blue", func() { // NO! Nodes can only be nested in containers
 
-        })
     })
+  })
 })
 ```
 
@@ -617,10 +615,10 @@ Because container nodes are invoked to construct the spec tree, but never when r
 ```go
 /* === INVALID === */
 var _ = Describe("book", func() {
-    var book *Book
-    Expect(book.Title()).To(BeFalse()) // NO!  Place in a setup node instead.
+  var book *Book
+  Expect(book.Title()).To(BeFalse()) // NO!  Place in a setup node instead.
 
-    It("tests something", func() {...})
+  It("tests something", func() {...})
 })
 ```
 
@@ -634,42 +632,42 @@ invalid can potentially infuriating to debug:
 ```go
 /* === INVALID === */
 var _ = Describe("book", func() {
-    book := &book.Book{ // No!
-        Title:  "Les Miserables",
-        Author: "Victor Hugo",
-        Pages:  2783,
-    }
+  book := &book.Book{ // No!
+    Title:  "Les Miserables",
+    Author: "Victor Hugo",
+    Pages:  2783,
+  }
 
-    It("is invalid with no author", func() {
-        book.Author = "" // bam! we've changed the closure variable and it will never be reset.
-        Expect(book.IsValid()).To(BeFalse())
-    })
+  It("is invalid with no author", func() {
+    book.Author = "" // bam! we've changed the closure variable and it will never be reset.
+    Expect(book.IsValid()).To(BeFalse())
+  })
 
-    It("is valid with an author", func() {
-        Expect(book.IsValid()).To(BeTrue()) // this will fail if it runs after the previous test
-    })
+  It("is valid with an author", func() {
+    Expect(book.IsValid()).To(BeTrue()) // this will fail if it runs after the previous test
+  })
 })
 
 /* === DO THIS INSTEAD === */
 var _ = Describe("book", func() {
-    var book *books.Book // declare in container nodes
+  var book *books.Book // declare in container nodes
 
-    BeforeEach(func() {
-        book = &books.Book {  //initialize in setup nodes
-            Title:  "Les Miserables",
-            Author: "Victor Hugo",
-            Pages:  2783,
-        }        
-    })
+  BeforeEach(func() {
+    book = &books.Book {  //initialize in setup nodes
+      Title:  "Les Miserables",
+      Author: "Victor Hugo",
+      Pages:  2783,
+    }    
+  })
 
-    It("is invalid with no author", func() {
-        book.Author = ""
-        Expect(book.IsValid()).To(BeFalse())
-    })
+  It("is invalid with no author", func() {
+    book.Author = ""
+    Expect(book.IsValid()).To(BeFalse())
+  })
 
-    It("is valid with an author", func() {
-        Expect(book.IsValid()).To(BeTrue())
-    })
+  It("is valid with an author", func() {
+    Expect(book.IsValid()).To(BeTrue())
+  })
 })
 
 ```
@@ -684,43 +682,43 @@ Let's get back to our growing Book suite and explore a few more Ginkgo nodes.  S
 
 ```go
 Describe("some JSON decoding edge cases", func() {
-    var book *books.Book
-    var err error
+  var book *books.Book
+  var err error
 
-    When("the JSON fails to parse", func() {
-        BeforeEach(func() {
-            book, err = NewBookFromJSON(`{
-                "title":"Les Miserables",
-                "author":"Victor Hugo",
-                "pages":2783oops
-            }`)
-        })
-
-        It("returns a nil book", func() {
-            Expect(book).To(BeNil())
-        })
-
-        It("errors", func() {
-            Expect(err).To(MatchError(books.ErrInvalidJSON))
-        })
+  When("the JSON fails to parse", func() {
+    BeforeEach(func() {
+      book, err = NewBookFromJSON(`{
+        "title":"Les Miserables",
+        "author":"Victor Hugo",
+        "pages":2783oops
+      }`)
     })
 
-    When("the JSON is incomplete", func() {
-        BeforeEach(func() {
-            book, err = NewBookFromJSON(`{
-                "title":"Les Miserables",
-                "author":"Victor Hugo",
-            }`)
-        })
+    It("returns a nil book", func() {
+      Expect(book).To(BeNil())
+    })
 
-        It("returns a nil book", func() {
-            Expect(book).To(BeNil())
-        })
+    It("errors", func() {
+      Expect(err).To(MatchError(books.ErrInvalidJSON))
+    })
+  })
 
-        It("errors", func() {
-            Expect(err).To(MatchError(books.ErrIncompleteJSON))
-        })
-    })            
+  When("the JSON is incomplete", func() {
+    BeforeEach(func() {
+      book, err = NewBookFromJSON(`{
+        "title":"Les Miserables",
+        "author":"Victor Hugo",
+      }`)
+    })
+
+    It("returns a nil book", func() {
+      Expect(book).To(BeNil())
+    })
+
+    It("errors", func() {
+      Expect(err).To(MatchError(books.ErrIncompleteJSON))
+    })
+  })      
 })
 ```
 
@@ -729,24 +727,24 @@ In each case we're creating a new `book` from an invalid snippet of JSON, ensuri
 ```go
 /* INVALID */
 Describe("some JSON decoding edge cases", func() {
-    var book *books.Book
-    var err error
-    BeforeEach(func() {
-        book, err = NewBookFromJSON(???)
-        Expect(book).To(BeNil())
-    })
+  var book *books.Book
+  var err error
+  BeforeEach(func() {
+    book, err = NewBookFromJSON(???)
+    Expect(book).To(BeNil())
+  })
 
-    When("the JSON fails to parse", func() {
-        It("errors", func() {
-            Expect(err).To(MatchError(books.ErrInvalidJSON))
-        })
+  When("the JSON fails to parse", func() {
+    It("errors", func() {
+      Expect(err).To(MatchError(books.ErrInvalidJSON))
     })
+  })
 
-    When("the JSON is incomplete", func() {
-        It("errors", func() {
-            Expect(err).To(MatchError(books.ErrIncompleteJSON))
-        })
-    })            
+  When("the JSON is incomplete", func() {
+    It("errors", func() {
+      Expect(err).To(MatchError(books.ErrIncompleteJSON))
+    })
+  })      
 })
 ```
 
@@ -754,40 +752,40 @@ but there's no way using `BeforeEach` and `It` nodes to configure the json we us
 
 ```go
 Describe("some JSON decoding edge cases", func() {
-    var book *books.Book
-    var err error
-    var json string
-    JustBeforeEach(func() {
-        book, err = NewBookFromJSON(json)
-        Expect(book).To(BeNil())
+  var book *books.Book
+  var err error
+  var json string
+  JustBeforeEach(func() {
+    book, err = NewBookFromJSON(json)
+    Expect(book).To(BeNil())
+  })
+
+  When("the JSON fails to parse", func() {
+    BeforeEach(func() {
+      json = `{
+        "title":"Les Miserables",
+        "author":"Victor Hugo",
+        "pages":2783oops
+      }`
     })
 
-    When("the JSON fails to parse", func() {
-        BeforeEach(func() {
-            json = `{
-                "title":"Les Miserables",
-                "author":"Victor Hugo",
-                "pages":2783oops
-            }`
-        })
-
-        It("errors", func() {
-            Expect(err).To(MatchError(books.ErrInvalidJSON))
-        })
+    It("errors", func() {
+      Expect(err).To(MatchError(books.ErrInvalidJSON))
     })
+  })
 
-    When("the JSON is incomplete", func() {
-        BeforeEach(func() {
-            json = `{
-                "title":"Les Miserables",
-                "author":"Victor Hugo",
-            }`
-        })
-        
-        It("errors", func() {
-            Expect(err).To(MatchError(books.ErrIncompleteJSON))
-        })
-    })            
+  When("the JSON is incomplete", func() {
+    BeforeEach(func() {
+      json = `{
+        "title":"Les Miserables",
+        "author":"Victor Hugo",
+      }`
+    })
+    
+    It("errors", func() {
+      Expect(err).To(MatchError(books.ErrIncompleteJSON))
+    })
+  })      
 })
 ```
 
@@ -805,51 +803,51 @@ Here's a simple (if contrived!) example to get us started.  Let's suspend disbel
 
 ```go
 Describe("Reporting book weight", func() {
-    var book *books.Book
+  var book *books.Book
 
+  BeforeEach(func() {
+    book = &books.Book{
+      Title: "Les Miserables",
+      Author: "Victor Hugo",
+      Pages: 2783,
+      Weight: 500,
+    }
+  })
+
+  Context("with no WEIGHT_UNITS environment set", func() {
     BeforeEach(func() {
-        book = &books.Book{
-            Title: "Les Miserables",
-            Author: "Victor Hugo",
-            Pages: 2783,
-            Weight: 500,
-        }
+      err := os.Clearenv("WEIGHT_UNITS")
+      Expect(err).NotTo(HaveOccurred())
     })
 
-    Context("with no WEIGHT_UNITS environment set", func() {
-        BeforeEach(func() {
-            err := os.Clearenv("WEIGHT_UNITS")
-            Expect(err).NotTo(HaveOccurred())
-        })
+    It("reports the weight in grams", func() {
+      Expect(book.HumanReadableWeight()).To(Equal("500g"))
+    })
+  })
 
-        It("reports the weight in grams", func() {
-            Expect(book.HumanReadableWeight()).To(Equal("500g"))
-        })
+  Context("when WEIGHT_UNITS is set to oz", func() {
+    BeforeEach(func() {
+      err := os.Setenv("WEIGHT_UNITS", "oz")      
+      Expect(err).NotTo(HaveOccurred())
     })
 
-    Context("when WEIGHT_UNITS is set to oz", func() {
-        BeforeEach(func() {
-            err := os.Setenv("WEIGHT_UNITS", "oz")            
-            Expect(err).NotTo(HaveOccurred())
-        })
+    It("reports the weight in ounces", func() {
+      Expect(book.HumanReadableWeight()).To(Equal("17.6oz"))
+    })
+  })
 
-        It("reports the weight in ounces", func() {
-            Expect(book.HumanReadableWeight()).To(Equal("17.6oz"))
-        })
+  Context("when WEIGHT_UNITS is invalid", func() {
+    BeforeEach(func() {
+      err := os.Setenv("WEIGHT_UNITS", "smoots")
+      Expect(err).NotTo(HaveOccurred())
     })
 
-    Context("when WEIGHT_UNITS is invalid", func() {
-        BeforeEach(func() {
-            err := os.Setenv("WEIGHT_UNITS", "smoots")
-            Expect(err).NotTo(HaveOccurred())
-        })
-
-        It("errors", func() {
-            weight, err := book.HumanReadableWeight()
-            Expect(weight).To(BeZero())
-            Expect(err).To(HaveOccurred())
-        })
+    It("errors", func() {
+      weight, err := book.HumanReadableWeight()
+      Expect(weight).To(BeZero())
+      Expect(err).To(HaveOccurred())
     })
+  })
 })
 ```
 
@@ -859,56 +857,56 @@ Let's fix this up using an `AfterEach`:
 
 ```go
 Describe("Reporting book weight", func() {
-    var book *books.Book
+  var book *books.Book
 
+  BeforeEach(func() {
+    book = &books.Book{
+      Title: "Les Miserables",
+      Author: "Victor Hugo",
+      Pages: 2783,
+      Weight: 500,
+    }
+  })
+
+  AfterEach(func() {
+    err := os.Clearenv("WEIGHT_UNITS")
+    Expect(err).NotTo(HaveOccurred())
+  })
+
+  Context("with no WEIGHT_UNITS environment set", func() {
     BeforeEach(func() {
-        book = &books.Book{
-            Title: "Les Miserables",
-            Author: "Victor Hugo",
-            Pages: 2783,
-            Weight: 500,
-        }
+      err := os.Clearenv("WEIGHT_UNITS")
+      Expect(err).NotTo(HaveOccurred())
     })
 
-    AfterEach(func() {
-        err := os.Clearenv("WEIGHT_UNITS")
-        Expect(err).NotTo(HaveOccurred())
+    It("reports the weight in grams", func() {
+      Expect(book.HumanReadableWeight()).To(Equal("500g"))
+    })
+  })
+
+  Context("when WEIGHT_UNITS is set to oz", func() {
+    BeforeEach(func() {
+      err := os.Setenv("WEIGHT_UNITS", "oz")      
+      Expect(err).NotTo(HaveOccurred())
     })
 
-    Context("with no WEIGHT_UNITS environment set", func() {
-        BeforeEach(func() {
-            err := os.Clearenv("WEIGHT_UNITS")
-            Expect(err).NotTo(HaveOccurred())
-        })
+    It("reports the weight in ounces", func() {
+      Expect(book.HumanReadableWeight()).To(Equal("17.6oz"))
+    })
+  })
 
-        It("reports the weight in grams", func() {
-            Expect(book.HumanReadableWeight()).To(Equal("500g"))
-        })
+  Context("when WEIGHT_UNITS is invalid", func() {
+    BeforeEach(func() {
+      err := os.Setenv("WEIGHT_UNITS", "smoots")
+      Expect(err).NotTo(HaveOccurred())
     })
 
-    Context("when WEIGHT_UNITS is set to oz", func() {
-        BeforeEach(func() {
-            err := os.Setenv("WEIGHT_UNITS", "oz")            
-            Expect(err).NotTo(HaveOccurred())
-        })
-
-        It("reports the weight in ounces", func() {
-            Expect(book.HumanReadableWeight()).To(Equal("17.6oz"))
-        })
+    It("errors", func() {
+      weight, err := book.HumanReadableWeight()
+      Expect(weight).To(BeZero())
+      Expect(err).To(HaveOccurred())
     })
-
-    Context("when WEIGHT_UNITS is invalid", func() {
-        BeforeEach(func() {
-            err := os.Setenv("WEIGHT_UNITS", "smoots")
-            Expect(err).NotTo(HaveOccurred())
-        })
-
-        It("errors", func() {
-            weight, err := book.HumanReadableWeight()
-            Expect(weight).To(BeZero())
-            Expect(err).To(HaveOccurred())
-        })
-    })
+  })
 })
 ```
 
@@ -918,24 +916,24 @@ Now we're guaranteed to clear out `WEIGHT_UNITS` after each spec as Ginkgo will 
 
 ```go
 Describe("Reporting book weight", func() {
-    var book *books.Book
-    var originalWeightUnits string
+  var book *books.Book
+  var originalWeightUnits string
 
-    BeforeEach(func() {
-        book = &books.Book{
-            Title: "Les Miserables",
-            Author: "Victor Hugo",
-            Pages: 2783,
-            Weight: 500,
-        }
-        originalWeightUnits = os.Getenv("WEIGHT_UNITS")
-    })
+  BeforeEach(func() {
+    book = &books.Book{
+      Title: "Les Miserables",
+      Author: "Victor Hugo",
+      Pages: 2783,
+      Weight: 500,
+    }
+    originalWeightUnits = os.Getenv("WEIGHT_UNITS")
+  })
 
-    AfterEach(func() {
-        err := os.Setenv("WEIGHT_UNITS", originalWeightUnits)
-        Expect(err).NotTo(HaveOccurred())
-    })
-    ...
+  AfterEach(func() {
+    err := os.Setenv("WEIGHT_UNITS", originalWeightUnits)
+    Expect(err).NotTo(HaveOccurred())
+  })
+  ...
 })
 ```
 
@@ -957,17 +955,17 @@ Ginkgo provides the `DeferCleanup()` function to help solve for this usecase and
 
 ```go
 Describe("Reporting book weight", func() {
-    var book *books.Book
+  var book *books.Book
 
-    BeforeEach(func() {
-        ...
-        originalWeightUnits := os.Getenv("WEIGHT_UNITS")
-        DeferCleanup(func() {            
-            err := os.Setenv("WEIGHT_UNITS", originalWeightUnits)
-            Expect(err).NotTo(HaveOccurred())
-        })
-    })
+  BeforeEach(func() {
     ...
+    originalWeightUnits := os.Getenv("WEIGHT_UNITS")
+    DeferCleanup(func() {      
+      err := os.Setenv("WEIGHT_UNITS", originalWeightUnits)
+      Expect(err).NotTo(HaveOccurred())
+    })
+  })
+  ...
 })
 ```
 
@@ -981,16 +979,16 @@ As shown above `DeferCleanup` can be passed a function that takes no arguments a
 
 ```go
 Describe("Reporting book weight", func() {
-    var book *books.Book
+  var book *books.Book
 
-    BeforeEach(func() {
-        ...
-        originalWeightUnits := os.Getenv("WEIGHT_UNITS")
-        DeferCleanup(func() error {            
-            return os.Setenv("WEIGHT_UNITS", originalWeightUnits)
-        })
-    })
+  BeforeEach(func() {
     ...
+    originalWeightUnits := os.Getenv("WEIGHT_UNITS")
+    DeferCleanup(func() error {      
+      return os.Setenv("WEIGHT_UNITS", originalWeightUnits)
+    })
+  })
+  ...
 })
 ```
 
@@ -998,13 +996,13 @@ You can also pass in a function that accepts arguments, then pass those argument
 
 ```go
 Describe("Reporting book weight", func() {
-    var book *books.Book
+  var book *books.Book
 
-    BeforeEach(func() {
-        ...
-        DeferCleanup(os.Setenv, "WEIGHT_UNITS", os.Getenv("WEIGHT_UNITS"))
-    })
+  BeforeEach(func() {
     ...
+    DeferCleanup(os.Setenv, "WEIGHT_UNITS", os.Getenv("WEIGHT_UNITS"))
+  })
+  ...
 })
 ```
 
@@ -1016,20 +1014,20 @@ We haven't discussed it but Ginkgo also provides a `JustAfterEach` setup node.  
 
 ```go
 Describe("Saving books to a database", func() {
-    AfterEach(func() {
-        dbClient.Clear() //clear out the database between tests
-    })
+  AfterEach(func() {
+    dbClient.Clear() //clear out the database between tests
+  })
 
-    JustAfterEach(func() {
-        if CurrentSpecReport().Failed() {
-            AddReportEntry("db-dump", dbClient.Dump())
-        }
-    })
+  JustAfterEach(func() {
+    if CurrentSpecReport().Failed() {
+      AddReportEntry("db-dump", dbClient.Dump())
+    }
+  })
 
-    It("saves the book", func() {
-        err := dbClient.Save(book)
-        Expect(err).NotTo(HaveOccurred())
-    })
+  It("saves the book", func() {
+    err := dbClient.Save(book)
+    Expect(err).NotTo(HaveOccurred())
+  })
 
 })
 ```
@@ -1052,32 +1050,32 @@ Let's continue to build out our book tests.  Books can be stored and retrieved f
 package books_test
 
 import (
-    . "github.com/onsi/ginkgo"
-    . "github.com/onsi/gomega"
+  . "github.com/onsi/ginkgo"
+  . "github.com/onsi/gomega"
 
-    "path/to/db"
+  "path/to/db"
 
-    "testing"
+  "testing"
 )
 
 var dbRunner *db.Runner
 var dbClient *db.Client
 
 func TestBooks(t *testing.T) {
-    RegisterFailHandler(Fail)
-    RunSpecs(t, "Books Suite")
+  RegisterFailHandler(Fail)
+  RunSpecs(t, "Books Suite")
 }
 
 var _ = BeforeSuite(func() {
-    dbRunner = db.NewRunner()
-    Expect(dbRunner.Start()).To(Succeed())
+  dbRunner = db.NewRunner()
+  Expect(dbRunner.Start()).To(Succeed())
 
-    dbClient = db.NewClient()
-    Expect(dbClient.Connect(dbRunner.Address())).To(Succeed())
+  dbClient = db.NewClient()
+  Expect(dbClient.Connect(dbRunner.Address())).To(Succeed())
 })
 
 var _ = AfterSuite(func() {
-    Expect(dbRunner.Stop()).To(Succeed())
+  Expect(dbRunner.Stop()).To(Succeed())
 })
 
 var _ = AfterEach(func() {
@@ -1095,12 +1093,12 @@ Finally, the `AfterSuite` closure will run after all the tests to tear down the 
 
 ```go
 var _ = BeforeSuite(func() {
-    dbRunner = db.NewRunner()
-    Expect(dbRunner.Start()).To(Succeed())
-    DeferCleanup(dbRunner.Stop)
+  dbRunner = db.NewRunner()
+  Expect(dbRunner.Start()).To(Succeed())
+  DeferCleanup(dbRunner.Stop)
 
-    dbClient = db.NewClient()
-    Expect(dbClient.Connect(dbRunner.Address())).To(Succeed())
+  dbClient = db.NewClient()
+  Expect(dbClient.Connect(dbRunner.Address())).To(Succeed())
 })
 ```
 
@@ -1130,10 +1128,10 @@ You typically use a matcher library, like [Gomega](https://github.com/onsi/gomeg
 
 ```
 It("can read books", func() {
-    if book.Title == "Les Miserables" && user.Age <= 3 {
-        Fail("User is too young for this book")
-    }
-    user.Read(book)
+  if book.Title == "Les Miserables" && user.Age <= 3 {
+    Fail("User is too young for this book")
+  }
+  user.Read(book)
 })
 ```
 
@@ -1147,13 +1145,13 @@ Ginkgo orchestrates this behavior by rescuing the panic thrown by `Fail` and unw
 
 ```go
 It("panics in a goroutine", func() {
-    var c chan interface{}
-    go func() {
-        defer GinkgoRecover()
-        Fail("boom")
-        close(c)
-    }()
-    <-c
+  var c chan interface{}
+  go func() {
+    defer GinkgoRecover()
+    Fail("boom")
+    close(c)
+  }()
+  <-c
 })
 ```
 
@@ -1184,37 +1182,37 @@ As a rule, you should try to keep your subject and setup closures short and to t
 
 ```go
 var _ = Describe("Browsing the library", func() {
-    BeforeEach(func() {
-        By("Fetching a token and logging in")
+  BeforeEach(func() {
+    By("Fetching a token and logging in")
 
-        authToken, err := authClient.GetToken("gopher", "literati")
-        Expect(err).NotTo(HaveOccurred())
+    authToken, err := authClient.GetToken("gopher", "literati")
+    Expect(err).NotTo(HaveOccurred())
 
-        Expect(libraryClient.Login(authToken)).To(Succeed())
-    })
+    Expect(libraryClient.Login(authToken)).To(Succeed())
+  })
 
-    It("should be a pleasant experience", func() {
-        By("Entering an aisle")
-        aisle, err := libraryClient.EnterAisle()
-        Expect(err).NotTo(HaveOccurred())
+  It("should be a pleasant experience", func() {
+    By("Entering an aisle")
+    aisle, err := libraryClient.EnterAisle()
+    Expect(err).NotTo(HaveOccurred())
 
-        By("Browsing for books")
-        books, err := aisle.GetBooks()
-        Expect(err).NotTo(HaveOccurred())
-        Expect(books).To(HaveLen(7))
+    By("Browsing for books")
+    books, err := aisle.GetBooks()
+    Expect(err).NotTo(HaveOccurred())
+    Expect(books).To(HaveLen(7))
 
-        By("Finding a particular book")
-        book, err := books.FindByTitle("Les Miserables")
-        Expect(err).NotTo(HaveOccurred())
-        Expect(book.Title).To(Equal("Les Miserables"))
+    By("Finding a particular book")
+    book, err := books.FindByTitle("Les Miserables")
+    Expect(err).NotTo(HaveOccurred())
+    Expect(book.Title).To(Equal("Les Miserables"))
 
-        By("Checking a book out")
-        Expect(libraryClient.CheckOut(book)).To(Succeed())
-        books, err = aisle.GetBooks()
-        Expect(err).NotTo(HaveOccurred())
-        Expect(books).To(HaveLen(6))
-        Expect(books).NotTo(ContainElement(book))
-    })
+    By("Checking a book out")
+    Expect(libraryClient.CheckOut(book)).To(Succeed())
+    books, err = aisle.GetBooks()
+    Expect(err).NotTo(HaveOccurred())
+    Expect(books).To(HaveLen(6))
+    Expect(books).NotTo(ContainElement(book))
+  })
 })
 ```
 
@@ -1234,20 +1232,20 @@ Let's write a table spec to describe the Author name functions we tested earlier
 
 ```go
 DescribeTable("Extracting the author's first and last name",
-    func(author string, isValid bool, firstName string, lastName string) {
-        book := &books.Book{
-            Title: "My Book"
-            Author: author,
-            Pages: 10,
-        }
-        Expect(book.IsValid()).To(Equal(isValid))
-        Expect(book.AuthorFirstName()).To(Equal(firstName))
-        Expect(book.AuthorLastName()).To(Equal(lastName))
-    },
-    Entry("When author has both names", "Victor Hugo", true, "Victor", "Hugo"),
-    Entry("When author has one name", "Hugo", true, "", "Hugo"),
-    Entry("When author has a middle name", "Victor Marie Hugo", true, "Victor", "Hugo"),
-    Entry("When author has no name", "", false, "", ""),
+  func(author string, isValid bool, firstName string, lastName string) {
+    book := &books.Book{
+      Title: "My Book"
+      Author: author,
+      Pages: 10,
+    }
+    Expect(book.IsValid()).To(Equal(isValid))
+    Expect(book.AuthorFirstName()).To(Equal(firstName))
+    Expect(book.AuthorLastName()).To(Equal(lastName))
+  },
+  Entry("When author has both names", "Victor Hugo", true, "Victor", "Hugo"),
+  Entry("When author has one name", "Hugo", true, "", "Hugo"),
+  Entry("When author has a middle name", "Victor Marie Hugo", true, "Victor", "Hugo"),
+  Entry("When author has no name", "", false, "", ""),
 )
 ```
 
@@ -1262,49 +1260,49 @@ To put it another way, the table test above is equivalent to:
 
 ```go
 Describe("Extracting the author's first and last name", func() {
-    It("When author has both names", func() {
-        book := &books.Book{
-            Title: "My Book"
-            Author: "Victor Hugo",
-            Pages: 10,
-        }
-        Expect(book.IsValid()).To(Equal(true))
-        Expect(book.AuthorFirstName()).To(Equal("Victor"))
-        Expect(book.AuthorLastName()).To(Equal("Hugo"))
-    })
+  It("When author has both names", func() {
+    book := &books.Book{
+      Title: "My Book"
+      Author: "Victor Hugo",
+      Pages: 10,
+    }
+    Expect(book.IsValid()).To(Equal(true))
+    Expect(book.AuthorFirstName()).To(Equal("Victor"))
+    Expect(book.AuthorLastName()).To(Equal("Hugo"))
+  })
 
-    It("When author has one name", func() {
-        book := &books.Book{
-            Title: "My Book"
-            Author: "Hugo",
-            Pages: 10,
-        }
-        Expect(book.IsValid()).To(Equal(true))
-        Expect(book.AuthorFirstName()).To(Equal(""))
-        Expect(book.AuthorLastName()).To(Equal("Hugo"))
-    })
+  It("When author has one name", func() {
+    book := &books.Book{
+      Title: "My Book"
+      Author: "Hugo",
+      Pages: 10,
+    }
+    Expect(book.IsValid()).To(Equal(true))
+    Expect(book.AuthorFirstName()).To(Equal(""))
+    Expect(book.AuthorLastName()).To(Equal("Hugo"))
+  })
 
-    It("When author has a middle name", func() {
-        book := &books.Book{
-            Title: "My Book"
-            Author: "Victor Marie Hugo",
-            Pages: 10,
-        }
-        Expect(book.IsValid()).To(Equal(true))
-        Expect(book.AuthorFirstName()).To(Equal("Victor"))
-        Expect(book.AuthorLastName()).To(Equal("Hugo"))
-    })    
+  It("When author has a middle name", func() {
+    book := &books.Book{
+      Title: "My Book"
+      Author: "Victor Marie Hugo",
+      Pages: 10,
+    }
+    Expect(book.IsValid()).To(Equal(true))
+    Expect(book.AuthorFirstName()).To(Equal("Victor"))
+    Expect(book.AuthorLastName()).To(Equal("Hugo"))
+  })  
 
-    It("When author has no name", func() {
-        book := &books.Book{
-            Title: "My Book"
-            Author: "",
-            Pages: 10,
-        }
-        Expect(book.IsValid()).To(Equal(false))
-        Expect(book.AuthorFirstName()).To(Equal(""))
-        Expect(book.AuthorLastName()).To(Equal(""))
-    })    
+  It("When author has no name", func() {
+    book := &books.Book{
+      Title: "My Book"
+      Author: "",
+      Pages: 10,
+    }
+    Expect(book.IsValid()).To(Equal(false))
+    Expect(book.AuthorFirstName()).To(Equal(""))
+    Expect(book.AuthorLastName()).To(Equal(""))
+  })  
 })
 ```
 
@@ -1314,29 +1312,29 @@ Since `DescribeTable` is simply generating a container node you can nest it with
 
 ```go
 Describe("book", func() {
-    var book *books.Book
+  var book *books.Book
 
-    BeforeEach(func() {
-        book = &books.Book{
-            Title: "Les Miserables",
-            Author: "Victor Hugo",
-            Pages: 2783,
-        }
-        Expect(book.IsValid()).To(BeTrue())
-    })
+  BeforeEach(func() {
+    book = &books.Book{
+      Title: "Les Miserables",
+      Author: "Victor Hugo",
+      Pages: 2783,
+    }
+    Expect(book.IsValid()).To(BeTrue())
+  })
 
-    DescribeTable("Extracting the author's first and last name",
-        func(author string, isValid bool, firstName string, lastName string) {
-            book.Author = author
-            Expect(book.IsValid()).To(Equal(isValid))
-            Expect(book.AuthorFirstName()).To(Equal(firstName))
-            Expect(book.AuthorLastName()).To(Equal(lastName))
-        },
-        Entry("When author has both names", "Victor Hugo", true, "Victor", "Hugo"),
-        Entry("When author has one name", "Hugo", true, "", "Hugo"),
-        Entry("When author has a middle name", "Victor Marie Hugo", true, "Victor", "Hugo"),
-        Entry("When author has no name", "", false, "", ""),
-    )
+  DescribeTable("Extracting the author's first and last name",
+    func(author string, isValid bool, firstName string, lastName string) {
+      book.Author = author
+      Expect(book.IsValid()).To(Equal(isValid))
+      Expect(book.AuthorFirstName()).To(Equal(firstName))
+      Expect(book.AuthorLastName()).To(Equal(lastName))
+    },
+    Entry("When author has both names", "Victor Hugo", true, "Victor", "Hugo"),
+    Entry("When author has one name", "Hugo", true, "", "Hugo"),
+    Entry("When author has a middle name", "Victor Marie Hugo", true, "Victor", "Hugo"),
+    Entry("When author has no name", "", false, "", ""),
+  )
 
 })
 ```
@@ -1348,22 +1346,22 @@ The fact that `DescribeTable` is constructed during the Tree Construction Phase 
 ```go
 /* INVALID */
 Describe("book", func() {
-    var shelf map[string]*books.Book //Shelf is declared here
+  var shelf map[string]*books.Book //Shelf is declared here
 
-    BeforeEach(func() {
-        shelf = map[string]*books.Book{ //...and initialized here
-            "Les Miserables": &books.Book{Title: "Les Miserables", Author: "Victor Hugo", Pages: 2783},
-            "Fox In Socks": &books.Book{Title: "Fox In Socks", Author: "Dr. Seuss", Pages: 24},
-        }
-    })
+  BeforeEach(func() {
+    shelf = map[string]*books.Book{ //...and initialized here
+      "Les Miserables": &books.Book{Title: "Les Miserables", Author: "Victor Hugo", Pages: 2783},
+      "Fox In Socks": &books.Book{Title: "Fox In Socks", Author: "Dr. Seuss", Pages: 24},
+    }
+  })
 
-    DescribeTable("Categorizing books",
-        func(book *books.Book, category books.Category) {
-            Expect(book.Category()).To(Equal(category))
-        },
-        Entry("Novels", shelf["Les Miserables"], books.CategoryNovel),
-        Entry("Novels", shelf["Fox in Socks"], books.CategoryShortStory),
-    )
+  DescribeTable("Categorizing books",
+    func(book *books.Book, category books.Category) {
+      Expect(book.Category()).To(Equal(category))
+    },
+    Entry("Novels", shelf["Les Miserables"], books.CategoryNovel),
+    Entry("Novels", shelf["Fox in Socks"], books.CategoryShortStory),
+  )
 })
 ```
 
@@ -1374,22 +1372,22 @@ To get around this we must move access of the `shelf` variable into the body of 
 ```go
 /* INVALID */
 Describe("book", func() {
-    var shelf map[string]*books.Book //Shelf is declared here
+  var shelf map[string]*books.Book //Shelf is declared here
 
-    BeforeEach(func() {
-        shelf = map[string]*books.Book{ //...and initialized here
-            "Les Miserables": &books.Book{Title: "Les Miserables", Author: "Victor Hugo", Pages: 2783},
-            "Fox In Socks": &books.Book{Title: "Fox In Socks", Author: "Dr. Seuss", Pages: 24},
-        }
-    })
+  BeforeEach(func() {
+    shelf = map[string]*books.Book{ //...and initialized here
+      "Les Miserables": &books.Book{Title: "Les Miserables", Author: "Victor Hugo", Pages: 2783},
+      "Fox In Socks": &books.Book{Title: "Fox In Socks", Author: "Dr. Seuss", Pages: 24},
+    }
+  })
 
-    DescribeTable("Categorizing books",
-        func(key string, category books.Category) {
-            Expect(shelf[key]).To(Equal(category))
-        },
-        Entry("Novels", "Les Miserables", books.CategoryNovel),
-        Entry("Novels", "Fox in Socks", books.CategoryShortStory),
-    )
+  DescribeTable("Categorizing books",
+    func(key string, category books.Category) {
+      Expect(shelf[key]).To(Equal(category))
+    },
+    Entry("Novels", "Les Miserables", books.CategoryNovel),
+    Entry("Novels", "Fox in Socks", books.CategoryShortStory),
+  )
 })
 ```
 
@@ -1404,15 +1402,15 @@ There are times, though, when adding a description manually can be tedious, repe
 
 ```go
 var _ = Describe("Math", func() {
-    DescribeTable("addition",
-        func(a, b, c int) {
-            Expect(a+b).To(Equal(c))
-        },
-        Entry("1+2=3", 1, 2, 3),
-        Entry("-1+2=1", -1, 2, 1),
-        Entry("0+0=0", 0, 0, 0),
-        Entry("10+100=101", 10, 100, 110), //OOPS TYPO
-    )
+  DescribeTable("addition",
+    func(a, b, c int) {
+      Expect(a+b).To(Equal(c))
+    },
+    Entry("1+2=3", 1, 2, 3),
+    Entry("-1+2=1", -1, 2, 1),
+    Entry("0+0=0", 0, 0, 0),
+    Entry("10+100=101", 10, 100, 110), //OOPS TYPO
+  )
 })
 ```
 
@@ -1424,15 +1422,15 @@ First - Entries can have their descriptions auto-generated by passing `nil` for 
 
 ```go
 var _ = Describe("Math", func() {
-    DescribeTable("addition",
-        func(a, b, c int) {
-            Expect(a+b).To(Equal(c))
-        },
-        Entry(nil, 1, 2, 3),
-        Entry(nil, -1, 2, 1),
-        Entry(nil, 0, 0, 0),
-        Entry(nil, 10, 100, 110),
-    )
+  DescribeTable("addition",
+    func(a, b, c int) {
+      Expect(a+b).To(Equal(c))
+    },
+    Entry(nil, 1, 2, 3),
+    Entry(nil, -1, 2, 1),
+    Entry(nil, 0, 0, 0),
+    Entry(nil, 10, 100, 110),
+  )
 })
 ```
 
@@ -1444,18 +1442,18 @@ Second - you can pass a table-level Entry **description closure** to render entr
 
 ```go
 var _ = Describe("Math", func() {
-    DescribeTable("addition",
-        func(a, b, c int) {
-            Expect(a+b).To(Equal(c))
-        },
-        func(a, b, c int) string {
-            return fmt.Sprintf("%d + %d = %d", a, b, c)
-        }        
-        Entry(nil, 1, 2, 3),
-        Entry(nil, -1, 2, 1),
-        Entry(nil, 0, 0, 0),
-        Entry(nil, 10, 100, 110),
-    )
+  DescribeTable("addition",
+    func(a, b, c int) {
+      Expect(a+b).To(Equal(c))
+    },
+    func(a, b, c int) string {
+      return fmt.Sprintf("%d + %d = %d", a, b, c)
+    }    
+    Entry(nil, 1, 2, 3),
+    Entry(nil, -1, 2, 1),
+    Entry(nil, 0, 0, 0),
+    Entry(nil, 10, 100, 110),
+  )
 })
 ```
 
@@ -1469,16 +1467,16 @@ There's also a convenience decorator called `EntryDescription` to specify Entry 
 
 ```go
 var _ = Describe("Math", func() {
-    DescribeTable("addition",
-        func(a, b, c int) {
-            Expect(a+b).To(Equal(c))
-        },
-        EntryDescription("%d + %d = %d")
-        Entry(nil, 1, 2, 3),
-        Entry(nil, -1, 2, 1),
-        Entry(nil, 0, 0, 0),
-        Entry(nil, 10, 100, 110),
-    )
+  DescribeTable("addition",
+    func(a, b, c int) {
+      Expect(a+b).To(Equal(c))
+    },
+    EntryDescription("%d + %d = %d")
+    Entry(nil, 1, 2, 3),
+    Entry(nil, -1, 2, 1),
+    Entry(nil, 0, 0, 0),
+    Entry(nil, 10, 100, 110),
+  )
 })
 ```
 
@@ -1492,17 +1490,17 @@ For example:
 
 ```go
 var _ = Describe("Math", func() {
-    DescribeTable("addition",
-        func(a, b, c int) {
-            Expect(a+b).To(Equal(c))
-        },
-        EntryDescription("%d + %d = %d")
-        Entry(nil, 1, 2, 3),
-        Entry(nil, -1, 2, 1),
-        Entry("zeros", 0, 0, 0),
-        Entry(EntryDescription("%[3]d = %[1]d + %[2]d"), 10, 100, 110)
-        Entry(func(a, b, c int) string {fmt.Sprintf("%d = %d", a + b, c)}, 4, 3, 7)
-    )
+  DescribeTable("addition",
+    func(a, b, c int) {
+      Expect(a+b).To(Equal(c))
+    },
+    EntryDescription("%d + %d = %d")
+    Entry(nil, 1, 2, 3),
+    Entry(nil, -1, 2, 1),
+    Entry("zeros", 0, 0, 0),
+    Entry(EntryDescription("%[3]d = %[1]d + %[2]d"), 10, 100, 110)
+    Entry(func(a, b, c int) string {fmt.Sprintf("%d = %d", a + b, c)}, 4, 3, 7)
+  )
 })
 ```
 
@@ -1553,20 +1551,20 @@ Because Ginkgo randomizes specs you should make sure that each spec runs from a 
 ```go
 /* INVALID */
 Describe("Bookmark", func() {
-    book := &books.Book{
-        Title:  "Les Miserables",
-        Author: "Victor Hugo",
-        Pages:  2783,
-    }
+  book := &books.Book{
+    Title:  "Les Miserables",
+    Author: "Victor Hugo",
+    Pages:  2783,
+  }
 
-    It("has no bookmarks by default", func() {
-        Expect(book.Bookmarks()).To(BeEmpty())
-    })
+  It("has no bookmarks by default", func() {
+    Expect(book.Bookmarks()).To(BeEmpty())
+  })
 
-    It("can add bookmarks", func() {
-        book.AddBookmark(173)
-        Expect(book.Bookmarks()).To(ContainElement(173))
-    })
+  It("can add bookmarks", func() {
+    book.AddBookmark(173)
+    Expect(book.Bookmarks()).To(ContainElement(173))
+  })
 })
 ```
 
@@ -1574,24 +1572,24 @@ This suite only passes if the "has no bookmarks" spec runs before the "can add b
 
 ```go
 Describe("Bookmark", func() {
-    var book *books.Book
+  var book *books.Book
 
-    BeforeEach(func() {
-        book = &books.Book{
-            Title:  "Les Miserables",
-            Author: "Victor Hugo",
-            Pages:  2783,
-        }        
-    })
+  BeforeEach(func() {
+    book = &books.Book{
+      Title:  "Les Miserables",
+      Author: "Victor Hugo",
+      Pages:  2783,
+    }    
+  })
 
-    It("has no bookmarks by default", func() {
-        Expect(book.Bookmarks()).To(BeEmpty())
-    })
+  It("has no bookmarks by default", func() {
+    Expect(book.Bookmarks()).To(BeEmpty())
+  })
 
-    It("can add bookmarks", func() {
-        book.AddBookmark(173)
-        Expect(book.Bookmarks()).To(ContainElement(173))
-    })
+  It("can add bookmarks", func() {
+    book.AddBookmark(173)
+    Expect(book.Bookmarks()).To(ContainElement(173))
+  })
 })
 ```
 
@@ -1602,24 +1600,24 @@ For example:
 ```go
 /* INVALID */
 Describe("checking out a book", func() {
-    var book *book.Bookmarks
-    var err error
+  var book *book.Bookmarks
+  var err error
 
-    It("can fetch a book from a library", func() {
-        book, err = libraryClient.FindByTitle("Les Miserables")
-        Expect(err).NotTo(HaveOccurred())
-        Expect(book.Title).To(Equal("Les Miserables"))
-    })
+  It("can fetch a book from a library", func() {
+    book, err = libraryClient.FindByTitle("Les Miserables")
+    Expect(err).NotTo(HaveOccurred())
+    Expect(book.Title).To(Equal("Les Miserables"))
+  })
 
-    It("can check out the book", func() {
-        Expect(library.CheckOut(book)).To(Succeed())
-    })
+  It("can check out the book", func() {
+    Expect(library.CheckOut(book)).To(Succeed())
+  })
 
-    It("no longer has the book in stock", func() {
-        book, err = libraryClient.FindByTitle("Les Miserables")
-        Expect(err).To(MatchError(books.NOT_IN_STOCK))
-        Expect(book).To(BeNil())
-    })
+  It("no longer has the book in stock", func() {
+    book, err = libraryClient.FindByTitle("Les Miserables")
+    Expect(err).To(MatchError(books.NOT_IN_STOCK))
+    Expect(book).To(BeNil())
+  })
 })
 ```
 
@@ -1630,21 +1628,21 @@ You can fix these specs by creating a single `It` to test the behavior of checki
 ```go
 /* INVALID */
 Describe("checking out a book", func() {
-    It("can perform a checkout flow", func() {
-        By("fetching a book")
-        book, err := libraryClient.FindByTitle("Les Miserables")
-        Expect(err).NotTo(HaveOccurred())
-        Expect(book.Title).To(Equal("Les Miserables"))
+  It("can perform a checkout flow", func() {
+    By("fetching a book")
+    book, err := libraryClient.FindByTitle("Les Miserables")
+    Expect(err).NotTo(HaveOccurred())
+    Expect(book.Title).To(Equal("Les Miserables"))
 
-        By("checking out the book")
-        Expect(library.CheckOut(book)).To(Succeed())
+    By("checking out the book")
+    Expect(library.CheckOut(book)).To(Succeed())
 
 
-        By("validating the book is no longer in stock")
-        book, err = libraryClient.FetchByTitle("Les Miserables")
-        Expect(err).To(MatchError(books.NOT_IN_STOCK))
-        Expect(book).To(BeNil())
-    })
+    By("validating the book is no longer in stock")
+    book, err = libraryClient.FetchByTitle("Les Miserables")
+    Expect(err).To(MatchError(books.NOT_IN_STOCK))
+    Expect(book).To(BeNil())
+  })
 })
 ```
 
@@ -1674,24 +1672,24 @@ At this point, though, you may be scratching your head.  _How_ does Ginkgo suppo
 
 ```go
 Describe("Bookmark", func() {
-    var book *books.Book
+  var book *books.Book
 
-    BeforeEach(func() {
-        book = &books.Book{
-            Title:  "Les Miserables",
-            Author: "Victor Hugo",
-            Pages:  2783,
-        }        
-    })
+  BeforeEach(func() {
+    book = &books.Book{
+      Title:  "Les Miserables",
+      Author: "Victor Hugo",
+      Pages:  2783,
+    }    
+  })
 
-    It("has no bookmarks by default", func() {
-        Expect(book.Bookmarks()).To(BeEmpty())
-    })
+  It("has no bookmarks by default", func() {
+    Expect(book.Bookmarks()).To(BeEmpty())
+  })
 
-    It("can add bookmarks", func() {
-        book.AddBookmark(173)
-        Expect(book.Bookmarks()).To(ContainElement(173))
-    })
+  It("can add bookmarks", func() {
+    book.AddBookmark(173)
+    Expect(book.Bookmarks()).To(ContainElement(173))
+  })
 })
 ```
 
@@ -1717,42 +1715,42 @@ Ginkgo numbers the running parallel processes from `1` to `N`.  A spec can get t
 
 ```go
 Describe("Storing books in an external database", func() {
+  BeforeEach(func() {
+    namespace := fmt.Sprintf("namespace-%d", GinkgoParallelProcess())
+    Expect(dbClient.SetNamespace(namespace)).To(Succeed())
+    DeferCleanup(dbClient.ClearNamespace, namespace)
+  })
+
+  It("returns empty when there are no books", func() {
+    Expect(dbClient.Books()).To(BeEmpty())
+  })
+
+  Context("when a book is in the database", func() {
+    var book *books.Book
     BeforeEach(func() {
-        namespace := fmt.Sprintf("namespace-%d", GinkgoParallelProcess())
-        Expect(dbClient.SetNamespace(namespace)).To(Succeed())
-        DeferCleanup(dbClient.ClearNamespace, namespace)
+      lesMiserables = &books.Book{
+        Title:  "Les Miserables",
+        Author: "Victor Hugo",
+        Pages:  2783,
+      }
+      Expect(dbClient.Store(book)).To(Succeed())
     })
 
-    It("returns empty when there are no books", func() {
-        Expect(dbClient.Books()).To(BeEmpty())
+    It("can fetch the book", func() {
+      Expect(dbClient.Books()).To(ConsistOf(book))
     })
 
-    Context("when a book is in the database", func() {
-        var book *books.Book
-        BeforeEach(func() {
-            lesMiserables = &books.Book{
-                Title:  "Les Miserables",
-                Author: "Victor Hugo",
-                Pages:  2783,
-            }
-            Expect(dbClient.Store(book)).To(Succeed())
-        })
-
-        It("can fetch the book", func() {
-            Expect(dbClient.Books()).To(ConsistOf(book))
-        })
-
-        It("can update the book", func() {
-            book.Author = "Victor Marie Hugo"
-            Expect(dbClient.Store(book)).To(Succeed())
-            Expect(dbClient.Books()).To(ConsistOf(book))
-        })
-
-        It("can delete the book", func() {
-            Expect(dbClient.Delete(book)).To(Succeed())
-            Expect(dbClient.Books()).To(BeEmpty())            
-        })
+    It("can update the book", func() {
+      book.Author = "Victor Marie Hugo"
+      Expect(dbClient.Store(book)).To(Succeed())
+      Expect(dbClient.Books()).To(ConsistOf(book))
     })
+
+    It("can delete the book", func() {
+      Expect(dbClient.Delete(book)).To(Succeed())
+      Expect(dbClient.Books()).To(BeEmpty())      
+    })
+  })
 })
 ```
 
@@ -1778,16 +1776,16 @@ var dbClient *db.Client
 var dbRunner *db.Runner
 
 var _ = BeforeSuite(func() {
-    dbRunner := db.NewRunner()
-    Expect(dbRunner.Start()).To(Succeed())
+  dbRunner := db.NewRunner()
+  Expect(dbRunner.Start()).To(Succeed())
 
-    dbClient = db.NewClient()
-    Expect(dbClient.Connect(dbRunner.Address())).To(Succeed())
+  dbClient = db.NewClient()
+  Expect(dbClient.Connect(dbRunner.Address())).To(Succeed())
 })
 
 var _ = AfterSuite(func() {
-    Expect(dbClient.Cleanup()).To(Succeed())
-    Expect(dbRunner.Stop()).To(Succeed())
+  Expect(dbClient.Cleanup()).To(Succeed())
+  Expect(dbRunner.Stop()).To(Succeed())
 })
 ```
 
@@ -1798,13 +1796,13 @@ Ginkgo supports this usecase with `SynchronizedBeforeSuite` and `SynchronizedAft
 ```go
 
 func SynchronizedBeforeSuite(
-    process1 func() []byte,
-    allProcesses func([]byte),
+  process1 func() []byte,
+  allProcesses func([]byte),
 )
 
 func SynchronizedAfterSuite(
-    allProcesses func(),
-    process1 func(),
+  allProcesses func(),
+  process1 func(),
 )
 ```
 
@@ -1821,23 +1819,23 @@ var dbClient *db.Client
 var dbRunner *db.Runner
 
 var _ = SynchronizedBeforeSuite(func() []byte {
-    //runs *only* on process #1
-    dbRunner := db.NewRunner()
-    Expect(dbRunner.Start()).To(Succeed())
-    return []byte(dbRunner.Address())
+  //runs *only* on process #1
+  dbRunner := db.NewRunner()
+  Expect(dbRunner.Start()).To(Succeed())
+  return []byte(dbRunner.Address())
 }), func(address []byte) {
-    //runs on *all* processes
-    dbClient = db.NewClient()
-    Expect(dbClient.Connect(string(address))).To(Succeed())
-    dbClient.SetNamespace(fmt.Sprintf("namespace-%d", GinkgoParallelProcess()))
+  //runs on *all* processes
+  dbClient = db.NewClient()
+  Expect(dbClient.Connect(string(address))).To(Succeed())
+  dbClient.SetNamespace(fmt.Sprintf("namespace-%d", GinkgoParallelProcess()))
 })
 
 var _ = SynchronizedAfterSuite(func() {
-    //runs on *all* processes
-    Expect(dbClient.Cleanup()).To(Succeed())    
+  //runs on *all* processes
+  Expect(dbClient.Cleanup()).To(Succeed())  
 }, func() {
-    //runs *only* on process #1
-    Expect(dbRunner.Stop()).To(Succeed())
+  //runs *only* on process #1
+  Expect(dbRunner.Stop()).To(Succeed())
 })
 ```
 
@@ -1849,17 +1847,17 @@ Bu the way, we can clean all this up further using `DeferCleanup`.  `DeferCleanu
 var dbClient *db.Client
 
 var _ = SynchronizedBeforeSuite(func() []byte {
-    //runs *only* on process #1
-    dbRunner := db.NewRunner()
-    Expect(dbRunner.Start()).To(Succeed())
-    DeferCleanup(dbRunner.Stop)
-    return []byte(dbRunner.Address())
+  //runs *only* on process #1
+  dbRunner := db.NewRunner()
+  Expect(dbRunner.Start()).To(Succeed())
+  DeferCleanup(dbRunner.Stop)
+  return []byte(dbRunner.Address())
 }), func(address []byte) {
-    //runs on *all* processes
-    dbClient = db.NewClient()
-    Expect(dbClient.Connect(string(address))).To(Succeed())
-    dbClient.SetNamespace(fmt.Sprintf("namespace-%d", GinkgoParallelProcess()))
-    DeferCleanup(dbClient.Cleanup)
+  //runs on *all* processes
+  dbClient = db.NewClient()
+  Expect(dbClient.Connect(string(address))).To(Succeed())
+  dbClient.SetNamespace(fmt.Sprintf("namespace-%d", GinkgoParallelProcess()))
+  DeferCleanup(dbClient.Cleanup)
 })
 ```
 
@@ -1905,13 +1903,13 @@ So, if `Serial` is applied to a container like so:
 
 ```go
 Describe("Never in parallel please", Serial, func() {
-    It("tests one behavior", func() {
-        
-    })
+  It("tests one behavior", func() {
+    
+  })
 
-    It("tests another behavior", func() {
-        
-    })
+  It("tests another behavior", func() {
+    
+  })
 })
 ```
 
@@ -1919,13 +1917,13 @@ Then both specs generated by the subject nodes in this container will be marked 
 
 ```go
 Describe("Never in parallel please",  func() {
-    It("tests one behavior", func() {
-        
-    })
+  It("tests one behavior", func() {
+    
+  })
 
-    It("tests another behavior", Serial, func() {
-        
-    })
+  It("tests another behavior", Serial, func() {
+    
+  })
 })
 ```
 
@@ -1955,13 +1953,13 @@ Whatever the reason, Ginkgo allows you to decorate container and subject nodes w
 ```go
 
 Describe("Something expensive", Serial, func() {
-    It("is a resource hog that can't run in parallel", func() {
-        ...
-    })
+  It("is a resource hog that can't run in parallel", func() {
+    ...
+  })
 
-    It("is another resource hog that can't run in parallel", func() {
-        ...
-    })
+  It("is another resource hog that can't run in parallel", func() {
+    ...
+  })
 })
 ```
 
@@ -1980,24 +1978,24 @@ Ginkgo provides `Ordered` containers to solve for these usecases.  Specs in `Ord
 ```go
 /* INVALID */
 Describe("checking out a book", func() {
-    var book *book.Bookmarks
-    var err error
+  var book *book.Bookmarks
+  var err error
 
-    It("can fetch a book from a library", func() {
-        book, err = libraryClient.FetchByTitle("Les Miserables")
-        Expect(err).NotTo(HaveOccurred())
-        Expect(book.Title).To(Equal("Les Miserables"))
-    })
+  It("can fetch a book from a library", func() {
+    book, err = libraryClient.FetchByTitle("Les Miserables")
+    Expect(err).NotTo(HaveOccurred())
+    Expect(book.Title).To(Equal("Les Miserables"))
+  })
 
-    It("can check out the book", func() {
-        Expect(library.CheckOut(book)).To(Succeed())
-    })
+  It("can check out the book", func() {
+    Expect(library.CheckOut(book)).To(Succeed())
+  })
 
-    It("no longer has the book in stock", func() {
-        book, err = libraryClient.FetchByTitle("Les Miserables")
-        Expect(err).To(MatchError(books.NOT_IN_STOCK))
-        Expect(book).To(BeNil())
-    })
+  It("no longer has the book in stock", func() {
+    book, err = libraryClient.FetchByTitle("Les Miserables")
+    Expect(err).To(MatchError(books.NOT_IN_STOCK))
+    Expect(book).To(BeNil())
+  })
 })
 ```
 
@@ -2007,24 +2005,24 @@ When we introduced this example we recommended condensing the tests into a singl
 
 ```go
 Describe("checking out a book", Ordered, func() {
-    var book *book.Bookmarks
-    var err error
+  var book *book.Bookmarks
+  var err error
 
-    It("can fetch a book from a library", func() {
-        book, err = libraryClient.FetchByTitle("Les Miserables")
-        Expect(err).NotTo(HaveOccurred())
-        Expect(book.Title).To(Equal("Les Miserables"))
-    })
+  It("can fetch a book from a library", func() {
+    book, err = libraryClient.FetchByTitle("Les Miserables")
+    Expect(err).NotTo(HaveOccurred())
+    Expect(book.Title).To(Equal("Les Miserables"))
+  })
 
-    It("can check out the book", func() {
-        Expect(library.CheckOut(book)).To(Succeed())
-    })
+  It("can check out the book", func() {
+    Expect(library.CheckOut(book)).To(Succeed())
+  })
 
-    It("no longer has the book in stock", func() {
-        book, err = libraryClient.FetchByTitle("Les Miserables")
-        Expect(err).To(MatchError(books.NOT_IN_STOCK))
-        Expect(book).To(BeNil())
-    })
+  It("no longer has the book in stock", func() {
+    book, err = libraryClient.FetchByTitle("Les Miserables")
+    Expect(err).To(MatchError(books.NOT_IN_STOCK))
+    Expect(book).To(BeNil())
+  })
 })
 ```
 
@@ -2044,34 +2042,34 @@ There are, however, two new setup node variants that can be used within `Ordered
 
 ```go
 Describe("checking out a book", Ordered, func() {
-    var libraryClient *library.Client
-    var book *book.Bookmarks
-    var err error
+  var libraryClient *library.Client
+  var book *book.Bookmarks
+  var err error
 
-    BeforeAll(func() {
-        libraryClient = library.NewClient()
-        Expect(libraryClient.Connect()).To(Succeed())
-    })
+  BeforeAll(func() {
+    libraryClient = library.NewClient()
+    Expect(libraryClient.Connect()).To(Succeed())
+  })
 
-    It("can fetch a book from a library", func() {
-        book, err = libraryClient.FetchByTitle("Les Miserables")
-        Expect(err).NotTo(HaveOccurred())
-        Expect(book.Title).To(Equal("Les Miserables"))
-    })
+  It("can fetch a book from a library", func() {
+    book, err = libraryClient.FetchByTitle("Les Miserables")
+    Expect(err).NotTo(HaveOccurred())
+    Expect(book.Title).To(Equal("Les Miserables"))
+  })
 
-    It("can check out the book", func() {
-        Expect(library.CheckOut(book)).To(Succeed())
-    })
+  It("can check out the book", func() {
+    Expect(library.CheckOut(book)).To(Succeed())
+  })
 
-    It("no longer has the book in stock", func() {
-        book, err = libraryClient.FetchByTitle("Les Miserables")
-        Expect(err).To(MatchError(books.NOT_IN_STOCK))
-        Expect(book).To(BeNil())
-    })
+  It("no longer has the book in stock", func() {
+    book, err = libraryClient.FetchByTitle("Les Miserables")
+    Expect(err).To(MatchError(books.NOT_IN_STOCK))
+    Expect(book).To(BeNil())
+  })
 
-    AfterAll(func() {
-        Expect(libraryClient.Disconnect()).To(Succeed())
-    })
+  AfterAll(func() {
+    Expect(libraryClient.Disconnect()).To(Succeed())
+  })
 })
 ```
 
@@ -2083,9 +2081,9 @@ As always, you can also use `DeferCleanup`.  Since `DeferCleanupe` is context aw
 
 ```go
 BeforeAll(func() {
-    libraryClient = library.NewClient()
-    Expect(libraryClient.Connect()).To(Succeed())    
-    DeferCleanup(libraryClient.Disconnect)
+  libraryClient = library.NewClient()
+  Expect(libraryClient.Connect()).To(Succeed())  
+  DeferCleanup(libraryClient.Disconnect)
 })
 
 ```
@@ -2139,10 +2137,10 @@ If you need to skip a spec at runtime you can use Ginkgo's `Skip(...)` function.
 
 ```go
 It("should do something, if it can", func() {
-    if !someCondition {
-        Skip("Special condition wasn't met.")
-    }
-    ...
+  if !someCondition {
+    Skip("Special condition wasn't met.")
+  }
+  ...
 })
 ```
 
@@ -2177,8 +2175,8 @@ You can nest focus declarations.  Doing so follows a simple rule: if a child nod
 
 ```go
 FDescribe("some specs you're debugging", func() {
-    It("might be failing", func() { ... })
-    It("might also be failing", func() { ... })
+  It("might be failing", func() { ... })
+  It("might also be failing", func() { ... })
 })
 ```
 
@@ -2186,8 +2184,8 @@ will run both specs.  Let's say you discover that the second spec is the one fai
 
 ```go
 FDescribe("some specs you're debugging", func() {
-    It("might be failing", func() { ... })
-    FIt("might also be failing", func() { ... })
+  It("might be failing", func() { ... })
+  FIt("might also be failing", func() { ... })
 })
 ```
 
@@ -2213,25 +2211,25 @@ Labels can container arbitrary strings but cannot contain any of the characters 
 
 ```go
 Describe("Storing books", Label("integration", "storage"), func() {
-    It("can save entire shelves of books to the central library", Label("network", "slow", "library storage"), func() {
-        // has labels [integration, storage, network, slow, library storage]
-    })
+  It("can save entire shelves of books to the central library", Label("network", "slow", "library storage"), func() {
+    // has labels [integration, storage, network, slow, library storage]
+  })
 
-    It("cannot delete books from the central library", Label("network", "library storage"), func() {
-        // has labels [integration, storage, network, library storage]        
-    })
+  It("cannot delete books from the central library", Label("network", "library storage"), func() {
+    // has labels [integration, storage, network, library storage]    
+  })
 
-    It("can check if a book is stored in the central library", Label("network", "slow", "library query"), func() {
-        // has labels [integration, storage, network, slow, library query]        
-    })
+  It("can check if a book is stored in the central library", Label("network", "slow", "library query"), func() {
+    // has labels [integration, storage, network, slow, library query]    
+  })
 
-    It("can save books locally", Label("local"), func() {
-        // has labels [integration, storage, local]        
-    })
+  It("can save books locally", Label("local"), func() {
+    // has labels [integration, storage, local]    
+  })
 
-    It("can delete books locally", Label("local"), func() {
-        // has labels [integration, storage, local]                
-    })
+  It("can delete books locally", Label("local"), func() {
+    // has labels [integration, storage, local]        
+  })
 })
 ```
 
@@ -2281,11 +2279,11 @@ When these flags are provided Ginkgo matches the passed-in regular expression ag
 
 ```go
 Describe("Studying books", func() {
-    Context("when the book is long", func() {
-        It("can be read over multiple sessions", func() {
-            
-        })
+  Context("when the book is long", func() {
+    It("can be read over multiple sessions", func() {
+      
     })
+  })
 })
 ```
 
@@ -2362,17 +2360,19 @@ You can take a more granular approach by decorating individual subject nodes or 
 
 ```go
 Describe("Storing books", func() {
-    It("can save books to the central library", FlakeAttempts(3), func() {
-        // this spec has been marked as flaky and will be retried up to 3 times
-    })
+  It("can save books to the central library", FlakeAttempts(3), func() {
+    // this spec has been marked as flaky and will be retried up to 3 times
+  })
 
-    It("can save books locally", func() {
-        // this spec must always pass on the first try
-    })
+  It("can save books locally", func() {
+    // this spec must always pass on the first try
+  })
 })
 ```
 
-It bears repeating: you should use `FlakeAttempts` judiciously.  The best approach to managing flaky spec suites is to debug flakes early and resolve them.  More often than not they are telling you something important about your architecture.  In a world of competing priorities and finite resources, however, `FlakeAttempts` provides a means to explicitly accept the technical debt of flaky specs and move on.
+Ginkgo's retry behavior generally works as you'd expect with most specs, however there is some complexity when `FlakeAttempts` is applied to `Ordered` containers.  In brief, Ginkgo generally guarantees that `BeforeAll` and `AfterAll` node closures only run once - but `FlakeAttempts` can modify this behavior.  If a failure occurs within a subject node in an `Ordered` container (i.e. in an `It`) then Ginkgo will rerun that `It` but not the `BeforeAll` or `AfterAll`.  However, if a failure occurs in a `BeforeAll` Ginkgo will immmediately run the `AfterAll` (to clean up) then rerun the `BeforeAll`.
+
+Stepping back - it bears repeating: you should use `FlakeAttempts` judiciously.  The best approach to managing flaky spec suites is to debug flakes early and resolve them.  More often than not they are telling you something important about your architecture.  In a world of competing priorities and finite resources, however, `FlakeAttempts` provides a means to explicitly accept the technical debt of flaky specs and move on.
 
 ### Interrupting, Aborting, and Timing Out Suites
 
@@ -2397,9 +2397,9 @@ All three mechanisms have same effects.  They:
 - Immediately interrupt the current spec.
 - Run any cleanup nodes (`AfterEach`, `JustAfterEach`, `AfterAll`, `DeferCleanup` code, etc.)
 - Emit as much information about the interrupted spec as possible.  This includes:
-    - anything written to the `GinkgoWriter`
-    - the location of the node that was running at the time of interrupt.
-    - (for timeout and signal interrupts) a full dump of all running goroutines.
+  - anything written to the `GinkgoWriter`
+  - the location of the node that was running at the time of interrupt.
+  - (for timeout and signal interrupts) a full dump of all running goroutines.
 - Skip any subsequent specs.
 - Run any `AfterSuite` closures.
 - Exit, marking the suite as failed.
@@ -2547,28 +2547,28 @@ There are several uses for this data.  For example, you can write code that perf
 
 ```go
 Describe("Manipulating books at the central library", func() {
-    It("can fetch all books", func() {
-        Expect(libraryClient.FetchBooks()).NotTo(BeEmpty())
-    })
+  It("can fetch all books", func() {
+    Expect(libraryClient.FetchBooks()).NotTo(BeEmpty())
+  })
 
-    It("can fetch a specific book", func() {
-        book, err := libraryClient.FetchBook("Les Miserables")
-        Expect(err).NotTo(HaveOccurred())
-        Expect(book.AuthorLastName()).To(Equal("Hugo"))        
-    })
+  It("can fetch a specific book", func() {
+    book, err := libraryClient.FetchBook("Les Miserables")
+    Expect(err).NotTo(HaveOccurred())
+    Expect(book.AuthorLastName()).To(Equal("Hugo"))    
+  })
 
-    It("can update a book", func() {
-        book, err := libraryClient.FetchBook("Les Miserables")
-        Expect(err).NotTo(HaveOccurred())
-        book.Author = "Victor Marie Hugo"
-        Expect(libraryClient.SaveBook(book)).To(Succeed())
-    })
+  It("can update a book", func() {
+    book, err := libraryClient.FetchBook("Les Miserables")
+    Expect(err).NotTo(HaveOccurred())
+    book.Author = "Victor Marie Hugo"
+    Expect(libraryClient.SaveBook(book)).To(Succeed())
+  })
 
-    AfterEach(func() {
-        if CurrentSpecReport().Failed() {
-            GinkgoWriter.Println(libraryClient.DebugLogs())
-        }
-    })
+  AfterEach(func() {
+    if CurrentSpecReport().Failed() {
+      GinkgoWriter.Println(libraryClient.DebugLogs())
+    }
+  })
 })
 ```
 
@@ -2581,15 +2581,15 @@ Given `CurrentSpecReport()` you can imagine generating custom report information
 
 var report *os.File
 BeforeSuite(func() {
-    report = os.Create("report.custom")
-    DeferCleanup(report.Close)
+  report = os.Create("report.custom")
+  DeferCleanup(report.Close)
 })
 
 AfterEach(func() {
-    report := CurrentSpecReport()
-    customFormat := fmt.Sprintf("%s | %s", report.State, report.FullText())
-    fmt.Fprintln(report, customFormat)
-    client.SendReport(customFormat)
+  report := CurrentSpecReport()
+  customFormat := fmt.Sprintf("%s | %s", report.State, report.FullText())
+  fmt.Fprintln(report, customFormat)
+  client.SendReport(customFormat)
 })
 ```
 
@@ -2609,8 +2609,8 @@ Ginkgo provides three reporting-focused nodes `ReportAfterEach`, `ReportAfterSui
 
 ```go
 ReportAfterEach(func(report SpecReport) {
-    customFormat := fmt.Sprintf("%s | %s", report.State, report.FullText())
-    client.SendReport(customFormat)
+  customFormat := fmt.Sprintf("%s | %s", report.State, report.FullText())
+  client.SendReport(customFormat)
 })
 ```
 
@@ -2629,11 +2629,11 @@ You should be aware that when running in parallel, each parallel process will be
 /* INVALID */
 var reportFile *os.File
 BeforeSuite(func() {
-    reportFile = os.Open("report.custom")
+  reportFile = os.Open("report.custom")
 })
 
 ReportAfterEach(func(report SpecReport) {
-    fmt.Fprintf(reportFile, "%s | %s\n", report.FullText(), report.State)
+  fmt.Fprintf(reportFile, "%s | %s\n", report.FullText(), report.State)
 })
 ```
 
@@ -2644,7 +2644,7 @@ you'll end up with multiple processes writing to the same file and the output wi
 
 ```go
 var _ = ReportAfterSuite(func(report Report) {
-    // process report
+  // process report
 })
 ```
 
@@ -2658,11 +2658,11 @@ So, we can rewrite our invalid `ReportAfterEach` example from above into a valid
 
 ```go
 ReportAfterSuite(func(report Report) {
-    f := os.Open("report.custom")
-    for _, specReport := range report.SpecReports {
-        fmt.Fprintf(f, "%s | %s\n", report.FullText(), report.State)
-    }
-    f.Close()
+  f := os.Open("report.custom")
+  for _, specReport := range report.SpecReports {
+    fmt.Fprintf(f, "%s | %s\n", report.FullText(), report.State)
+  }
+  f.Close()
 })
 ```
 
@@ -2703,23 +2703,23 @@ The console reporter passes the string representation of the `ReportEntry.Value`
 
 ```go
 type StringerStruct struct {
-    Label string
-    Count int
+  Label string
+  Count int
 }
 
 // ColorableString for ReportEntry to use
 func (s StringerStruct) ColorableString() string {
-    return fmt.Sprintf("{{red}}%s {{yellow}}{{bold}}%d{{/}}", s.Label, s.Count)
+  return fmt.Sprintf("{{red}}%s {{yellow}}{{bold}}%d{{/}}", s.Label, s.Count)
 }
 
 // non-colorable String() is used by go's string formatting support but ignored by ReportEntry
 func (s StringerStruct) String() string {
-    return fmt.Sprintf("%s %d", s.Label, s.Count)
+  return fmt.Sprintf("%s %d", s.Label, s.Count)
 }
 
 
 It("is reported", func() {
-    AddReportEntry("Report", StringerStruct{Label: "Mahomes", Count: 15})
+  AddReportEntry("Report", StringerStruct{Label: "Mahomes", Count: 15})
 })
 ```
 
@@ -2790,46 +2790,46 @@ Our suite might look like:
 ```go
 // This is the testing hook in our bootstrap file
 func TestSmokeTest(t *testing.T) {
-    RegisterFailHandler(Fail)
-    RunSpecs(t, "Smoketest Suite")
+  RegisterFailHandler(Fail)
+  RunSpecs(t, "Smoketest Suite")
 }
 
 var client *client.Client
 var _ = BeforeSuite(func() {
-    // Some basic validations
-    Expect(os.Getenv("SMOKETEST_SERVER_ADDR")).NotTo(BeZero(), "Please make sure SMOKETEST_SERVER_ADDR is set correctly.")
-    Expect(os.Getenv("SMOKETEST_ENV")).To(Or(Equal("PRODUCTION"), Equal("STAGING")), "SMOKETEST_ENV must be set to PRODUCTION or STAGING.")
+  // Some basic validations
+  Expect(os.Getenv("SMOKETEST_SERVER_ADDR")).NotTo(BeZero(), "Please make sure SMOKETEST_SERVER_ADDR is set correctly.")
+  Expect(os.Getenv("SMOKETEST_ENV")).To(Or(Equal("PRODUCTION"), Equal("STAGING")), "SMOKETEST_ENV must be set to PRODUCTION or STAGING.")
 
-    //set up a client 
-    client = client.NewClient(os.Getenv("SMOKETEST_SERVER_ADDR"))
+  //set up a client 
+  client = client.NewClient(os.Getenv("SMOKETEST_SERVER_ADDR"))
 })
 
 var _ = Describe("Smoketests", func() {
-    Describe("Minimally-invasive", func() {
-        It("can connect to the server", func() {
-            Eventually(client.Connect).Should(Succeed())
-        })
-
-        It("can get a list of books", func() {
-            Expect(client.ListBooks()).NotTo(BeEmpty())
-        })
+  Describe("Minimally-invasive", func() {
+    It("can connect to the server", func() {
+      Eventually(client.Connect).Should(Succeed())
     })
 
-    if os.Getenv("SMOKETEST_ENV") == "STAGING" {
-        Describe("Ensure basic CRUD operations", func() {
-            It("can create, updated, and delete a book", func() {
-                book := &books.Book{
-                    Title: "This Book is a Test",
-                    Author: "Ginkgo",
-                    Pages: 17,
-                }
-                Expect(client.Store(book)).To(Succeed())
-                Expect(client.FetchByTitle("This Book is a Test")).To(Equal(book))
-                Expect(client.Delete(book)).To(Succeed())
-                Expect(client.FetchByTitle("This Book is a Test")).To(BeNil())
-            })
-        })
-    }
+    It("can get a list of books", func() {
+      Expect(client.ListBooks()).NotTo(BeEmpty())
+    })
+  })
+
+  if os.Getenv("SMOKETEST_ENV") == "STAGING" {
+    Describe("Ensure basic CRUD operations", func() {
+      It("can create, updated, and delete a book", func() {
+        book := &books.Book{
+          Title: "This Book is a Test",
+          Author: "Ginkgo",
+          Pages: 17,
+        }
+        Expect(client.Store(book)).To(Succeed())
+        Expect(client.FetchByTitle("This Book is a Test")).To(Equal(book))
+        Expect(client.Delete(book)).To(Succeed())
+        Expect(client.FetchByTitle("This Book is a Test")).To(BeNil())
+      })
+    })
+  }
 })
 ```
 
@@ -2859,52 +2859,52 @@ var serverAddr, smokeEnv string
 
 // Register your flags in an init function.  This ensures they are registered _before_ `go test` calls flag.Parse().
 func init() {
-    flag.StringVar(&serverAddr, "server-addr", "", "Address of the server to smoke-check")
-    flag.StringVar(&smokeEnv, "environment", "", "Environment to smoke-check")
+  flag.StringVar(&serverAddr, "server-addr", "", "Address of the server to smoke-check")
+  flag.StringVar(&smokeEnv, "environment", "", "Environment to smoke-check")
 }
 
 // This is the testing hook in our bootstrap file
 func TestSmokeTest(t *testing.T) {
-    RegisterFailHandler(Fail)
-    RunSpecs(t, "Smoketest Suite")
+  RegisterFailHandler(Fail)
+  RunSpecs(t, "Smoketest Suite")
 }
 
 var client *client.Client
 var _ = BeforeSuite(func() {
-    // Some basic validations - at this point the flags have been parsed so we can access them
-    Expect(serverAddr).NotTo(BeZero(), "Please make sure --server-addr is set correctly.")
-    Expect(smokeEnv).To(Or(Equal("PRODUCTION"), Equal("STAGING")), "--environment must be set to PRODUCTION or STAGING.")
+  // Some basic validations - at this point the flags have been parsed so we can access them
+  Expect(serverAddr).NotTo(BeZero(), "Please make sure --server-addr is set correctly.")
+  Expect(smokeEnv).To(Or(Equal("PRODUCTION"), Equal("STAGING")), "--environment must be set to PRODUCTION or STAGING.")
 
-    //set up a client 
-    client = client.NewClient(serverAddr)
+  //set up a client 
+  client = client.NewClient(serverAddr)
 })
 
 var _ = Describe("Smoketests", func() {
-    Describe("Minimally-invasive", func() {
-        It("can connect to the server", func() {
-            Eventually(client.Connect).Should(Succeed())
-        })
-
-        It("can get a list of books", func() {
-            Expect(client.ListBooks()).NotTo(BeEmpty())
-        })
+  Describe("Minimally-invasive", func() {
+    It("can connect to the server", func() {
+      Eventually(client.Connect).Should(Succeed())
     })
 
-    if smokeEnv == "STAGING" {
-        Describe("Ensure basic CRUD operations", func() {
-            It("can create, updated, and delete a book", func() {
-                book := &books.Book{
-                    Title: "This Book is a Test",
-                    Author: "Ginkgo",
-                    Pages: 17,
-                }
-                Expect(client.Store(book)).To(Succeed())
-                Expect(client.FetchByTitle("This Book is a Test")).To(Equal(book))
-                Expect(client.Delete(book)).To(Succeed())
-                Expect(client.FetchByTitle("This Book is a Test")).To(BeNil())
-            })
-        })
-    }
+    It("can get a list of books", func() {
+      Expect(client.ListBooks()).NotTo(BeEmpty())
+    })
+  })
+
+  if smokeEnv == "STAGING" {
+    Describe("Ensure basic CRUD operations", func() {
+      It("can create, updated, and delete a book", func() {
+        book := &books.Book{
+          Title: "This Book is a Test",
+          Author: "Ginkgo",
+          Pages: 17,
+        }
+        Expect(client.Store(book)).To(Succeed())
+        Expect(client.FetchByTitle("This Book is a Test")).To(Equal(book))
+        Expect(client.Delete(book)).To(Succeed())
+        Expect(client.FetchByTitle("This Book is a Test")).To(BeNil())
+      })
+    })
+  }
 })
 ```
 
@@ -2929,7 +2929,7 @@ Here's a trivial, but instructive, example.  Say we wanted to add the value of `
 
 var describeName = fmt.Sprintf("Smoketests - %s", smokeEnv)
 var _ = Describe(describeName, func() {
-    ...
+  ...
 })
 
 ...
@@ -2943,27 +2943,27 @@ The previous two examples used an `if` guard to control whether specs were inclu
 
 ```go
 var _ = Describe("Smoketests", func() {
-    Describe("Minimally-invasive", func() {
-        It("can connect to the server", func() {
-            ...
-        })
-
-        It("can get a list of books", func() {
-            ...
-        })
+  Describe("Minimally-invasive", func() {
+    It("can connect to the server", func() {
+      ...
     })
 
-    Describe("Ensure basic CRUD operations", func() {
-        BeforeEach(func(){
-            if environment != "STAGING" {
-                Skip("CRUD spec only runs on staging")
-            }
-        })
-
-        It("can create, updated, and delete a book", func() {
-            ...
-        })
+    It("can get a list of books", func() {
+      ...
     })
+  })
+
+  Describe("Ensure basic CRUD operations", func() {
+    BeforeEach(func(){
+      if environment != "STAGING" {
+        Skip("CRUD spec only runs on staging")
+      }
+    })
+
+    It("can create, updated, and delete a book", func() {
+      ...
+    })
+  })
 })
 ```
 
@@ -2971,21 +2971,21 @@ this works just fine - however as the suite grows you may see that `environment`
 
 ```go
 var _ = Describe("Smoketests", func() {
-    Describe("Minimally-invasive", Label("PRODUCTION", "STAGING")func() {
-        It("can connect to the server", func() {
-            ...
-        })
-
-        It("can get a list of books", func() {
-            ...
-        })
+  Describe("Minimally-invasive", Label("PRODUCTION", "STAGING")func() {
+    It("can connect to the server", func() {
+      ...
     })
 
-    Describe("Ensure basic CRUD operations", Label("STAGING"), func() {
-        It("can create, updated, and delete a book", func() {
-            ...
-        })
+    It("can get a list of books", func() {
+      ...
     })
+  })
+
+  Describe("Ensure basic CRUD operations", Label("STAGING"), func() {
+    It("can create, updated, and delete a book", func() {
+      ...
+    })
+  })
 })
 ```
 
@@ -3004,66 +3004,66 @@ var serverAddr, smokeEnv string
 
 // Register your flags in an init function.  This ensures they are registered _before_ `go test` calls flag.Parse().
 func init() {
-    flag.StringVar(&serverAddr, "server-addr", "", "Address of the server to smoke-check")
-    flag.StringVar(&smokeEnv, "environment", "", "Environment to smoke-check")
+  flag.StringVar(&serverAddr, "server-addr", "", "Address of the server to smoke-check")
+  flag.StringVar(&smokeEnv, "environment", "", "Environment to smoke-check")
 }
 
 // This is the testing hook in our bootstrap file
 func TestSmokeTest(t *testing.T) {
-    RegisterFailHandler(Fail)
+  RegisterFailHandler(Fail)
 
-    //we're moving the validation up here since we're about to use the flag variables before entering the RunPhase
-    //thankfully Gomega can run within normal `testing` tests, we simply create a new Gomega by wrapping `testing.T`
-    g := NewGomegaWithT(t)
-    g.Expect(serverAddr).NotTo(BeZero(), "Please make sure --server-addr is set correctly.")
-    g.Expect(smokeEnv).To(Or(Equal("PRODUCTION"), Equal("STAGING")), "--environment must be set to PRODUCTION or STAGING.")
+  //we're moving the validation up here since we're about to use the flag variables before entering the RunPhase
+  //thankfully Gomega can run within normal `testing` tests, we simply create a new Gomega by wrapping `testing.T`
+  g := NewGomegaWithT(t)
+  g.Expect(serverAddr).NotTo(BeZero(), "Please make sure --server-addr is set correctly.")
+  g.Expect(smokeEnv).To(Or(Equal("PRODUCTION"), Equal("STAGING")), "--environment must be set to PRODUCTION or STAGING.")
 
-    //we're now guaranteed to have validated configuration variables
-    //let's update Ginkgo's configuration using them
-    //first we grab Ginkgo's current configuration
-    suiteConfig, _ := GinkgoConfiguration() //the second argument is the reporter configuration which we won't be adjusting
+  //we're now guaranteed to have validated configuration variables
+  //let's update Ginkgo's configuration using them
+  //first we grab Ginkgo's current configuration
+  suiteConfig, _ := GinkgoConfiguration() //the second argument is the reporter configuration which we won't be adjusting
 
-    //now we modify the label-filter
-    if suiteConfig.LabelFilter == "" {
-        suiteConfig.LabelFilter = smokeEnv
-    }  else {
-        // if the user has specified a label-filter we extend it:
-        suiteConfig.LabelFilter = "(" + suiteConfig.LabelFilter + ") && " + smokeEnv 
-    }
+  //now we modify the label-filter
+  if suiteConfig.LabelFilter == "" {
+    suiteConfig.LabelFilter = smokeEnv
+  }  else {
+    // if the user has specified a label-filter we extend it:
+    suiteConfig.LabelFilter = "(" + suiteConfig.LabelFilter + ") && " + smokeEnv 
+  }
 
-    // finally, we pass the modified configuration in to RunSpecs
-    RunSpecs(t, "Smoketest Suite", suiteConfig)
+  // finally, we pass the modified configuration in to RunSpecs
+  RunSpecs(t, "Smoketest Suite", suiteConfig)
 }
 
 var client *client.Client
 var _ = BeforeSuite(func() {
-    client = client.NewClient(serverAddr)
+  client = client.NewClient(serverAddr)
 })
 
 var _ = Describe("Smoketests", func() {
-    Describe("Minimally-invasive", Label("PRODUCTION", "STAGING"), func() {
-        It("can connect to the server", func() {
-            Eventually(client.Connect).Should(Succeed())
-        })
-
-        It("can get a list of books", func() {
-            Expect(client.ListBooks()).NotTo(BeEmpty())
-        })
+  Describe("Minimally-invasive", Label("PRODUCTION", "STAGING"), func() {
+    It("can connect to the server", func() {
+      Eventually(client.Connect).Should(Succeed())
     })
 
-    Describe("Ensure basic CRUD operations", Label("STAGING"), func() {
-        It("can create, updated, and delete a book", func() {
-            book := &books.Book{
-                Title: "This Book is a Test",
-                Author: "Ginkgo",
-                Pages: 17,
-            }
-            Expect(client.Store(book)).To(Succeed())
-            Expect(client.FindByTitle("This Book is a Test")).To(Equal(book))
-            Expect(client.Delete(book)).To(Succeed())
-            Expect(client.FindByTitle("This Book is a Test")).To(BeNil())
-        })
+    It("can get a list of books", func() {
+      Expect(client.ListBooks()).NotTo(BeEmpty())
     })
+  })
+
+  Describe("Ensure basic CRUD operations", Label("STAGING"), func() {
+    It("can create, updated, and delete a book", func() {
+      book := &books.Book{
+        Title: "This Book is a Test",
+        Author: "Ginkgo",
+        Pages: 17,
+      }
+      Expect(client.Store(book)).To(Succeed())
+      Expect(client.FindByTitle("This Book is a Test")).To(Equal(book))
+      Expect(client.Delete(book)).To(Succeed())
+      Expect(client.FindByTitle("This Book is a Test")).To(BeNil())
+    })
+  })
 })
 ```
 
@@ -3075,19 +3075,19 @@ There are several patterns for dynamically generating specs with Ginkgo.  You ca
 
 ```go
 Describe("Storing and retrieving books by category", func() {
-    for _, category := range []books.Category{books.CategoryNovel, books.CategoryShortStory, books.CategoryBiography} {
-        category := category
-        It(fmt.Sprintf("can store and retrieve %s books", category), func() {
-            book := &books.Book{
-                Title: "This Book is a Test",
-                Author: "Ginkgo",
-                Category: category,
-            }
-            Expect(library.Store(book)).To(Succeed())
-            DeferCleanup(library.Delete, book)
-            Expect(library.FindByCategory(category)).To(ContainElement(book))            
-        })
-    }
+  for _, category := range []books.Category{books.CategoryNovel, books.CategoryShortStory, books.CategoryBiography} {
+    category := category
+    It(fmt.Sprintf("can store and retrieve %s books", category), func() {
+      book := &books.Book{
+        Title: "This Book is a Test",
+        Author: "Ginkgo",
+        Category: category,
+      }
+      Expect(library.Store(book)).To(Succeed())
+      DeferCleanup(library.Delete, book)
+      Expect(library.FindByCategory(category)).To(ContainElement(book))      
+    })
+  }
 })
 ```
 
@@ -3104,19 +3104,19 @@ Many Ginkgo users attempt the following approach.  It's a common gotcha:
 var fixtureBooks []*books.Book
 
 var _ = BeforeSuite(func() {
-    fixtureBooks = LoadFixturesFrom("./fixtures/books.json")
-    Expect(fixtureBooks).NotTo(BeEmpty())
+  fixtureBooks = LoadFixturesFrom("./fixtures/books.json")
+  Expect(fixtureBooks).NotTo(BeEmpty())
 })
 
 Describe("Storing and retrieving the book fixtures", func() {
-    for _, book := range fixtureBooks {
-        book := book
-        It(fmt.Sprintf("can store and retreive %s", book.Title), func() {
-            Expect(library.Store(book)).To(Succeed())
-            DeferCleanup(library.Delete, book)
-            Expect(library.FindByTitle(book.Title)).To(Equal(book))                        
-        })
-    }
+  for _, book := range fixtureBooks {
+    book := book
+    It(fmt.Sprintf("can store and retreive %s", book.Title), func() {
+      Expect(library.Store(book)).To(Succeed())
+      DeferCleanup(library.Delete, book)
+      Expect(library.FindByTitle(book.Title)).To(Equal(book))            
+    })
+  }
 })
 ```
 
@@ -3126,27 +3126,27 @@ This will not work.  The fixtures are loaded in the `BeforeSuite` closure which 
 var fixtureBooks []*books.Book
 
 func TestBooks(t *testing.T) {
-    RegisterFailHandler(Fail)
+  RegisterFailHandler(Fail)
 
-    // perform work that needs to be done before the Tree Construction Phase here
-    // note that we wrap `t` with a new Gomega instance to make assertions about the fixtures here.
-    g := NewGomegaWithT(t)
-    fixtureBooks = LoadFixturesFrom("./fixtures/books.json")
-    g.Expect(fixtureBooks).NotTo(BeEmpty())
+  // perform work that needs to be done before the Tree Construction Phase here
+  // note that we wrap `t` with a new Gomega instance to make assertions about the fixtures here.
+  g := NewGomegaWithT(t)
+  fixtureBooks = LoadFixturesFrom("./fixtures/books.json")
+  g.Expect(fixtureBooks).NotTo(BeEmpty())
 
-    // finally, we pass the modified configuration in to RunSpecs
-    RunSpecs(t, "Books Suite")
+  // finally, we pass the modified configuration in to RunSpecs
+  RunSpecs(t, "Books Suite")
 }
 
 Describe("Storing and retrieving the book fixtures", func() {
-    for _, book := range fixtureBooks {
-        book := book
-        It(fmt.Sprintf("can store and retrieve %s", book.Title), func() {
-            Expect(library.Store(book)).To(Succeed())
-            DeferCleanup(library.Delete, book)
-            Expect(library.FindByTitle(book.Title)).To(Equal(book))                        
-        })
-    }
+  for _, book := range fixtureBooks {
+    book := book
+    It(fmt.Sprintf("can store and retrieve %s", book.Title), func() {
+      Expect(library.Store(book)).To(Succeed())
+      DeferCleanup(library.Delete, book)
+      Expect(library.FindByTitle(book.Title)).To(Equal(book))            
+    })
+  }
 })
 ```
 
@@ -3157,67 +3157,67 @@ It is often the case that within a particular suite there will be a number of di
 
 ```go
 Describe("Storing books in the library", func() {
-    var book *books.Book{}
+  var book *books.Book{}
 
-    Describe("the happy path", func() {
-        BeforeEach(func() {
-            book = &books.Book{
-                Title:  "Les Miserables",
-                Author: "Victor Hugo",
-                Pages:  2783,
-            }
-        })
-
-        It("validates that the book can be stored", func() {
-            Expect(library.IsStorable(book)).To(BeTrue())
-        })
-
-        It("can store the book", func() {
-            Expect(library.Store(book)).To(Succeed())
-        })
+  Describe("the happy path", func() {
+    BeforeEach(func() {
+      book = &books.Book{
+        Title:  "Les Miserables",
+        Author: "Victor Hugo",
+        Pages:  2783,
+      }
     })
 
-    Describe("failure modes", func() {
-        AssertFailedBehavior := func() {
-            It("validates that the book can't be stored", func() {
-                Expect(library.IsStorable(book)).To(BeFalse())
-            })
+    It("validates that the book can be stored", func() {
+      Expect(library.IsStorable(book)).To(BeTrue())
+    })
 
-            It("fails to store the book", func() {
-                Expect(library.Store(book)).To(MatchError(books.ErrStoringBook))
-            })
+    It("can store the book", func() {
+      Expect(library.Store(book)).To(Succeed())
+    })
+  })
+
+  Describe("failure modes", func() {
+    AssertFailedBehavior := func() {
+      It("validates that the book can't be stored", func() {
+        Expect(library.IsStorable(book)).To(BeFalse())
+      })
+
+      It("fails to store the book", func() {
+        Expect(library.Store(book)).To(MatchError(books.ErrStoringBook))
+      })
+    }
+
+    Context("when the book has no title", func() {
+      BeforeEach(func() {
+        book = &books.Book{
+          Author: "Victor Hugo",
+          Pages:  2783,
         }
+      })
 
-        Context("when the book has no title", func() {
-            BeforeEach(func() {
-                book = &books.Book{
-                    Author: "Victor Hugo",
-                    Pages:  2783,
-                }
-            })
-
-            AssertFailedBehavior()
-        })
-
-        Context("when the book has no author", func() {
-            BeforeEach(func() {
-                book = &books.Book{
-                    Title: "Les Miserables",
-                    Pages:  2783,
-                }
-            })
-
-            AssertFailedBehavior()
-        })
-
-        Context("when the book is nil", func() {
-            BeforeEach(func() {
-                book = nil
-            })
-
-            AssertFailedBehavior()
-        })        
+      AssertFailedBehavior()
     })
+
+    Context("when the book has no author", func() {
+      BeforeEach(func() {
+        book = &books.Book{
+          Title: "Les Miserables",
+          Pages:  2783,
+        }
+      })
+
+      AssertFailedBehavior()
+    })
+
+    Context("when the book is nil", func() {
+      BeforeEach(func() {
+        book = nil
+      })
+
+      AssertFailedBehavior()
+    })    
+  })
 })
 ```
 
@@ -3232,23 +3232,23 @@ Tables specs allow you to specify a spec function that takes arbitrary parameter
 ```go
 var book *books.Book
 BeforeEach(func() {
-    book = LoadFixture("les-miserables.json")
+  book = LoadFixture("les-miserables.json")
 })
 DescribeTable("Repaginating Books",
-    func(fontSize int, lineHeight float64, pageWidth float64, pageHeight float64, expectedPages int) {
-        book.SetFontSize(fontSize)
-        book.SetLineHeight(lineHeight)
-        book.SetPageDimensions(pageWidth, pageHeight)
-        Expect(book.RecomputePages()).To(BeNumerically("~", expectedPages, 30))
-    },
-    func(fontSize int, lineHeight float64, pageWidth float64, pageHeight float64, expectedPages int) string {
-        return fmt.Sprintf("FontSize: %d, LineHeight: %.2f, Page:%.2fx%.2f => %d", fontSize, lineHeight, pageWidth, pageHeight, expectedPages)
-    }
-    Entry(nil, 12, 1.2, 8.5, 11, 2783),
-    Entry(nil, 14, 1.3, 8.5, 11, 3120),
-    Entry(nil, 10, 1.2, 8.5, 11, 2100),
-    Entry(nil, 12, 2.0, 8.5, 11, 6135),
-    Entry(nil, 12, 1, 5, 6, 12321),
+  func(fontSize int, lineHeight float64, pageWidth float64, pageHeight float64, expectedPages int) {
+    book.SetFontSize(fontSize)
+    book.SetLineHeight(lineHeight)
+    book.SetPageDimensions(pageWidth, pageHeight)
+    Expect(book.RecomputePages()).To(BeNumerically("~", expectedPages, 30))
+  },
+  func(fontSize int, lineHeight float64, pageWidth float64, pageHeight float64, expectedPages int) string {
+    return fmt.Sprintf("FontSize: %d, LineHeight: %.2f, Page:%.2fx%.2f => %d", fontSize, lineHeight, pageWidth, pageHeight, expectedPages)
+  }
+  Entry(nil, 12, 1.2, 8.5, 11, 2783),
+  Entry(nil, 14, 1.3, 8.5, 11, 3120),
+  Entry(nil, 10, 1.2, 8.5, 11, 2100),
+  Entry(nil, 12, 2.0, 8.5, 11, 6135),
+  Entry(nil, 12, 1, 5, 6, 12321),
 )
 ```
 
@@ -3257,33 +3257,33 @@ These entries are inscrutable!  A common pattern in this case is to define a typ
 ```go
 var book *books.Book
 type BookFormatting struct {
-    FontSize int
-    LineHeight float64
-    PageWidth float64
-    PageHeight float64
+  FontSize int
+  LineHeight float64
+  PageWidth float64
+  PageHeight float64
 }
 
 BeforeEach(func() {
-    book = LoadFixture("les-miserables.json")
+  book = LoadFixture("les-miserables.json")
 })
 DescribeTable("Repaginating Books",
-    func(formatting BookFormatting, expectedPages int) {
-        book.SetFontSize(formatting.FontSize)
-        book.SetLineHeight(formatting.LineHeight)
-        book.SetPageDimensions(formatting.PageWidth, formatting.PageHeight)
-        Expect(book.RecomputePages()).To(BeNumerically("~", expectedPages, 30))
-    },
-    func(formatting BookFormatting, expectedPages int) string {
-        return fmt.Sprintf("FontSize: %d, LineHeight: %.2f, Page:%.2fx%.2f => %d", 
-            formatting.fontSize, formatting.lineHeight, 
-            formatting.pageWidth, formatting.pageHeight,
-            expectedPages)
-    }
-    Entry(nil, BookFormatting{FontSize: 12, LineHeight: 1.2, PageWidth:8.5, PageHeight:11}, 2783),
-    Entry(nil, BookFormatting{FontSize: 14, LineHeight: 1.3, PageWidth:8.5, 11}, 3120),
-    Entry(nil, BookFormatting{FontSize: 10, LineHeight: 1.2, PageWidth:8.5, 11}, 2100),
-    Entry(nil, BookFormatting{FontSize: 12, LineHeight: 2.0, PageWidth:8.5, 11}, 6135),
-    Entry(nil, BookFormatting{FontSize: 12, LineHeight: 1, PageWidth:5, PageHeight:6}, 12321),
+  func(formatting BookFormatting, expectedPages int) {
+    book.SetFontSize(formatting.FontSize)
+    book.SetLineHeight(formatting.LineHeight)
+    book.SetPageDimensions(formatting.PageWidth, formatting.PageHeight)
+    Expect(book.RecomputePages()).To(BeNumerically("~", expectedPages, 30))
+  },
+  func(formatting BookFormatting, expectedPages int) string {
+    return fmt.Sprintf("FontSize: %d, LineHeight: %.2f, Page:%.2fx%.2f => %d", 
+      formatting.fontSize, formatting.lineHeight, 
+      formatting.pageWidth, formatting.pageHeight,
+      expectedPages)
+  }
+  Entry(nil, BookFormatting{FontSize: 12, LineHeight: 1.2, PageWidth:8.5, PageHeight:11}, 2783),
+  Entry(nil, BookFormatting{FontSize: 14, LineHeight: 1.3, PageWidth:8.5, 11}, 3120),
+  Entry(nil, BookFormatting{FontSize: 10, LineHeight: 1.2, PageWidth:8.5, 11}, 2100),
+  Entry(nil, BookFormatting{FontSize: 12, LineHeight: 2.0, PageWidth:8.5, 11}, 6135),
+  Entry(nil, BookFormatting{FontSize: 12, LineHeight: 1, PageWidth:5, PageHeight:6}, 12321),
 )
 ```
 
@@ -3294,18 +3294,18 @@ Another Table Spec pattern involves the reuse of table of Entries.  If you have 
 ```go
 
 var InvalidBookEntries = []TableEntry{
-    Entry("Empty book", &books.Book{}),
-    Entry("Only title", &books.Book{Title: "Les Miserables"}),
-    Entry("Only author", &books.Book{Author: "Victor Hugo"}),
-    Entry("Missing pages", &books.Book{Title: "Les Miserables", Author: "Victor Hugo"}),
+  Entry("Empty book", &books.Book{}),
+  Entry("Only title", &books.Book{Title: "Les Miserables"}),
+  Entry("Only author", &books.Book{Author: "Victor Hugo"}),
+  Entry("Missing pages", &books.Book{Title: "Les Miserables", Author: "Victor Hugo"}),
 }
 
 DescribeTable("Storing invalid books always errors", func(book *books.Book) {
-    Expect(library.Store(book)).To(MatchError(books.ErrInvalidBook))
+  Expect(library.Store(book)).To(MatchError(books.ErrInvalidBook))
 }, InvalidBookEntries)
 
 DescribeTable("Reading invalid books always errors", func(book *books.Book) {
-    Expect(user.Read(book)).To(MatchError(books.ErrInvalidBook))
+  Expect(user.Read(book)).To(MatchError(books.ErrInvalidBook))
 }, InvalidBookEntries)
 
 ```
@@ -3328,37 +3328,37 @@ Let's imagine an in-process asynchronous service that can prepare books for publ
 
 ```go
 Describe("Publishing books", func() {
-    var book *books.Book
-    BeforeEach(func() {
-        book = loadBookWithContent("les_miserables.fixture")
-        Expect(book).NotTo(BeNil())
-    })
+  var book *books.Book
+  BeforeEach(func() {
+    book = loadBookWithContent("les_miserables.fixture")
+    Expect(book).NotTo(BeNil())
+  })
 
-    It("can publish a book, emitting information as it goes", func() {
-        buffer := gbytes.NewBuffer() //gbytes provides a thread-safe buffer that works with the `gbytes.Say` matcher
-        
-        // we begin publishing the book.  This kicks off a goroutine and returns a channel
-        c := publisher.Publish(book, buffer)
+  It("can publish a book, emitting information as it goes", func() {
+    buffer := gbytes.NewBuffer() //gbytes provides a thread-safe buffer that works with the `gbytes.Say` matcher
+    
+    // we begin publishing the book.  This kicks off a goroutine and returns a channel
+    c := publisher.Publish(book, buffer)
 
-        //gbytes.Say allows us to assert on output to a stream
-        Eventually(buffer).Should(gbytes.Say(`Publishing "Les Miserables...`))
-        Eventually(buffer).Should(gbytes.Say(`Published page 1/2783`))
-        Eventually(buffer).Should(gbytes.Say(`Published page 2782/2783`))
-        Eventually(buffer).Should(gbytes.Say(`Publish complete!`))
+    //gbytes.Say allows us to assert on output to a stream
+    Eventually(buffer).Should(gbytes.Say(`Publishing "Les Miserables...`))
+    Eventually(buffer).Should(gbytes.Say(`Published page 1/2783`))
+    Eventually(buffer).Should(gbytes.Say(`Published page 2782/2783`))
+    Eventually(buffer).Should(gbytes.Say(`Publish complete!`))
 
-        //rather than call <-c which could block the spec forever we use Eventually to poll the channel and
-        //store any received values in a pointer
-        var result publisher.PublishResult
-        Eventually(c).Should(Receive(&result))
+    //rather than call <-c which could block the spec forever we use Eventually to poll the channel and
+    //store any received values in a pointer
+    var result publisher.PublishResult
+    Eventually(c).Should(Receive(&result))
 
-        //we make some synchronous assertions on the result
-        Expect(result.Title).To(Equal("Les Miserables"))
-        Expect(result.EpubSize).To(BeNumerically(">", 10))
-        Expect(result.EpubContent).To(ContainSubstring("I've ransomed you from fear and hatred, and now I give you back to God."))
+    //we make some synchronous assertions on the result
+    Expect(result.Title).To(Equal("Les Miserables"))
+    Expect(result.EpubSize).To(BeNumerically(">", 10))
+    Expect(result.EpubContent).To(ContainSubstring("I've ransomed you from fear and hatred, and now I give you back to God."))
 
-        //we expect the publisher to close the channel when it's done
-        Eventually(c).Should(BeClosed())
-    })
+    //we expect the publisher to close the channel when it's done
+    Eventually(c).Should(BeClosed())
+  })
 })
 ```
 
@@ -3372,45 +3372,45 @@ Launching and testing an external process is actually quite similar to testing a
 //Not that this step can be skipped if the publisher binary is already precompiled
 var publisherPath string
 BeforeSuite(func() {
-    var err error
-    publisherPath, err = gexec.Build("path/to/publisher")
-    Expect(err).NotTo(HaveOccurred())
-    DeferCleanup(gexec.CleanupBuildArtifacts)    
+  var err error
+  publisherPath, err = gexec.Build("path/to/publisher")
+  Expect(err).NotTo(HaveOccurred())
+  DeferCleanup(gexec.CleanupBuildArtifacts)  
 })
 
 Describe("Publishing books", func() {
-    It("can publish a book, emitting information as it goes", func() {
-        //First, we create a command to invoke the publisher and pass appropriate args
-        cmd := exec.Command(publisherPath, "-o=les-miserables.epub", "les-miserables.fixture")
+  It("can publish a book, emitting information as it goes", func() {
+    //First, we create a command to invoke the publisher and pass appropriate args
+    cmd := exec.Command(publisherPath, "-o=les-miserables.epub", "les-miserables.fixture")
 
-        //Now we launch the command with `gexec`.  This returns a session that wraps the running command.  
-        //We also tell `gexec` to tee any stdout/stderr output from the process to `GinkgoWriter` - this will
-        //ensure we get all the process output if the spec fails.
-        session, err := gexec.Start(cmd, GinkgoWriter, GinkgoWriter)
-        Expect(err).NotTo(HaveOccurred())
+    //Now we launch the command with `gexec`.  This returns a session that wraps the running command.  
+    //We also tell `gexec` to tee any stdout/stderr output from the process to `GinkgoWriter` - this will
+    //ensure we get all the process output if the spec fails.
+    session, err := gexec.Start(cmd, GinkgoWriter, GinkgoWriter)
+    Expect(err).NotTo(HaveOccurred())
 
-        //At this point the process is running in the background
-        //In addition to teeing to GinkgoWriter gexec will capture any stdout/stderr output to
-        //gbytes buffers.  This allows us to make assertions against its stdout output using `gbytes.Say`
-        Eventually(session).Should(gbytes.Say(`Publishing "Les Miserables...`))
-        Eventually(session).Should(gbytes.Say(`Published page 1/2783`))
-        Eventually(session).Should(gbytes.Say(`Published page 2782/2783`))
-        Eventually(session).Should(gbytes.Say(`Publish complete!`))
+    //At this point the process is running in the background
+    //In addition to teeing to GinkgoWriter gexec will capture any stdout/stderr output to
+    //gbytes buffers.  This allows us to make assertions against its stdout output using `gbytes.Say`
+    Eventually(session).Should(gbytes.Say(`Publishing "Les Miserables...`))
+    Eventually(session).Should(gbytes.Say(`Published page 1/2783`))
+    Eventually(session).Should(gbytes.Say(`Published page 2782/2783`))
+    Eventually(session).Should(gbytes.Say(`Publish complete!`))
 
-        //We can also assert the session has exited 
-        Eventually(session).Should(gexec.Exit(0)) //with exit code 0
+    //We can also assert the session has exited 
+    Eventually(session).Should(gexec.Exit(0)) //with exit code 0
 
-        //At this point we should have the `les-miserables.epub` artifact
-        Expect("les-miserables.epub").To(BeAnExistingFile())
+    //At this point we should have the `les-miserables.epub` artifact
+    Expect("les-miserables.epub").To(BeAnExistingFile())
 
-        result, err := epub.Load("les-miserables.epub")
-        Expect(err).NotTo(HaveOccurred())
+    result, err := epub.Load("les-miserables.epub")
+    Expect(err).NotTo(HaveOccurred())
 
-        //we make some synchronous assertions on the result
-        Expect(result.Title).To(Equal("Les Miserables"))
-        Expect(result.EpubSize).To(BeNumerically(">", 10))
-        Expect(result.EpubContent).To(ContainSubstring("I've ransomed you from fear and hatred, and now I give you back to God."))
-    })
+    //we make some synchronous assertions on the result
+    Expect(result.Title).To(Equal("Les Miserables"))
+    Expect(result.EpubSize).To(BeNumerically(">", 10))
+    Expect(result.EpubContent).To(ContainSubstring("I've ransomed you from fear and hatred, and now I give you back to God."))
+  })
 })
 ```
 
@@ -3419,32 +3419,32 @@ It's common in Go for functions to block and perform complex operations synchron
 
 ```go
 Describe("Change book font-size", func() {
-    var book *books.Book
-    BeforeEach(func() {
-        book = loadBookWithContent("les_miserables.fixture")
-        Expect(book).NotTo(BeNil())
-    })
+  var book *books.Book
+  BeforeEach(func() {
+    book = loadBookWithContent("les_miserables.fixture")
+    Expect(book).NotTo(BeNil())
+  })
   
-    It("can repaginate books without losing any content", func() {
-        done := make(chan interface{})
-        go func() {
-            defer GinkgoRecover()
+  It("can repaginate books without losing any content", func() {
+    done := make(chan interface{})
+    go func() {
+      defer GinkgoRecover()
 
-            content := book.RawContent()
-            Expect(book.Pages).To(Equal(2783))
+      content := book.RawContent()
+      Expect(book.Pages).To(Equal(2783))
 
-            //this might be quite expensive and will block...
-            err := book.SetFontSize(28)
-            Expect(err).NotTo(HaveOccurred())
+      //this might be quite expensive and will block...
+      err := book.SetFontSize(28)
+      Expect(err).NotTo(HaveOccurred())
 
-            Expect(book.Pages).To(BeNumerically(">", 2783))
-            Expect(book.RawContent()).To(Equal(content))
+      Expect(book.Pages).To(BeNumerically(">", 2783))
+      Expect(book.RawContent()).To(Equal(content))
 
-            close(done)
-        }()
+      close(done)
+    }()
 
-        Eventually(done).Should(BeClosed())
-    })  
+    Eventually(done).Should(BeClosed())
+  })  
 })
 ```
 
@@ -3458,61 +3458,61 @@ For example, let's imagine testing how an external library service handles notif
 ```go
 var library *library.Client
 var _ = BeforeSuite(func() {
-    var err error
-    library, err = library.NewClient(os.Getenv("LIBRARY_SERVICE"))
-    Expect(err).NotTo(HaveOccurred())
+  var err error
+  library, err = library.NewClient(os.Getenv("LIBRARY_SERVICE"))
+  Expect(err).NotTo(HaveOccurred())
 
-    Eventually(library.Ping).Should(Succeed())
+  Eventually(library.Ping).Should(Succeed())
 })
 
 var _ = Describe("Getting notifications about holds", func() {
-    var book *books.Book
-    var sarah, jane *user.User
-    BeforeEach(func() {
-        book = &books.Book{
-            Title: "My test book",
-            Author: "Ginkgo",
-            Pages: 17,
-        }
+  var book *books.Book
+  var sarah, jane *user.User
+  BeforeEach(func() {
+    book = &books.Book{
+      Title: "My test book",
+      Author: "Ginkgo",
+      Pages: 17,
+    }
 
-        Expect(library.Store(book)).To(Succeed())
-        DeferCleanup(library.Delete, book)
+    Expect(library.Store(book)).To(Succeed())
+    DeferCleanup(library.Delete, book)
 
-        sarah = user.NewUser("Sarah", "integration-test-account+sarah@gmail.com")
-        jane = user.NewUser("Jane", "integration-test-account+jane@gmail.com")
-        
-        By("Sarah checks the book out")
-        Expect(sarah.CheckOut(library, book)).To(Succeed())
-    })
+    sarah = user.NewUser("Sarah", "integration-test-account+sarah@gmail.com")
+    jane = user.NewUser("Jane", "integration-test-account+jane@gmail.com")
+    
+    By("Sarah checks the book out")
+    Expect(sarah.CheckOut(library, book)).To(Succeed())
+  })
 
-    It("notifies the user when their hold is ready", func() {
-        By("Jane can't check the book out so she places a hold")
-        Expect(jane.CheckOut(library, book)).To(MatchError(books.ErrNoAvailableCopies))
-        Expect(jane.PlaceHold(library, book)).To(Succeed())
+  It("notifies the user when their hold is ready", func() {
+    By("Jane can't check the book out so she places a hold")
+    Expect(jane.CheckOut(library, book)).To(MatchError(books.ErrNoAvailableCopies))
+    Expect(jane.PlaceHold(library, book)).To(Succeed())
 
-        By("when Sarah returns the book")
-        Expect(sarah.Return(library, book)).To(Succeed())
+    By("when Sarah returns the book")
+    Expect(sarah.Return(library, book)).To(Succeed())
 
-        By("Jane eventually gets notified that her book is available in the library app...")
-        Eventually(func() ([]user.Notification, error) {
-            return jane.FetchNotifications()
-        }).Should(ContainElement(user.Notification{Title: book.Title, State: book.ReadyForPickup}))
+    By("Jane eventually gets notified that her book is available in the library app...")
+    Eventually(func() ([]user.Notification, error) {
+      return jane.FetchNotifications()
+    }).Should(ContainElement(user.Notification{Title: book.Title, State: book.ReadyForPickup}))
 
-        By("...and in her email...")
-        Eventually(func() ([]string, error) {
-            messages, err := gmail.Fetch(jane.EmailAddress)
-            if err != nil {
-                return nil, err
-            }
-            subjects := []string{}
-            for _, message := range messages {
-                subjects = append(subjects, message.Subject)
-            }
-            return subjects, nil
-        }).Should(ContainElement(fmt.Sprintf(`"%s" is available for pickup`, book.Title)))
+    By("...and in her email...")
+    Eventually(func() ([]string, error) {
+      messages, err := gmail.Fetch(jane.EmailAddress)
+      if err != nil {
+        return nil, err
+      }
+      subjects := []string{}
+      for _, message := range messages {
+        subjects = append(subjects, message.Subject)
+      }
+      return subjects, nil
+    }).Should(ContainElement(fmt.Sprintf(`"%s" is available for pickup`, book.Title)))
 
-        Expect(jane.CheckOut(library, book)).To(Succeed())
-    })
+    Expect(jane.CheckOut(library, book)).To(Succeed())
+  })
 })
 ```
 
@@ -3524,7 +3524,7 @@ One important thing warrants calling out, however.  Notice that we aren't using 
 
 ```go
 Eventually(func() ([]user.Notification, error) {
-    return jane.FetchNotifications()
+  return jane.FetchNotifications()
 }).Should(ContainElement(user.Notification{Title: book.Title, State: book.ReadyForPickup}))
 ```
 
@@ -3540,15 +3540,15 @@ Note that `Eventually` automatically asserts a niladic error as it polls the `Fe
 
 ```go
 Eventually(func() ([]string, error) {
-    messages, err := gmail.Fetch(jane.EmailAddress)
-    if err != nil {
-        return nil, err
-    }
-    subjects := []string{}
-    for _, message := range messages {
-        subjects = append(subjects, message.Subject)
-    }
-    return subjects, nil
+  messages, err := gmail.Fetch(jane.EmailAddress)
+  if err != nil {
+    return nil, err
+  }
+  subjects := []string{}
+  for _, message := range messages {
+    subjects = append(subjects, message.Subject)
+  }
+  return subjects, nil
 }).Should(ContainElement(fmt.Sprintf(`"%s" is available for pickup`, book.Title)))
 ```
 
@@ -3556,13 +3556,13 @@ with
 
 ```go
 Eventually(func(g Gomega) ([]string) {
-    messages, err := gmail.Fetch(jane.EmailAddress)
-    g.Expect(err).NotTo(HaveOccurred())
-    subjects := []string{}
-    for _, message := range messages {
-        subjects = append(subjects, message.Subject)
-    }
-    return subjects, nil
+  messages, err := gmail.Fetch(jane.EmailAddress)
+  g.Expect(err).NotTo(HaveOccurred())
+  subjects := []string{}
+  for _, message := range messages {
+    subjects = append(subjects, message.Subject)
+  }
+  return subjects, nil
 }).Should(ContainElement(fmt.Sprintf(`"%s" is available for pickup`, book.Title)))
 ```
 
@@ -3570,15 +3570,15 @@ we can even push the entire assertion into the polled function:
 
 ```go
 Eventually(func(g Gomega) {
-    messages, err := gmail.Fetch(jane.EmailAddress)
-    g.Expect(err).NotTo(HaveOccurred())
-    subjects := []string{}
-    for _, message := range messages {
-        subjects = append(subjects, message.Subject)
-    }
-    expectedSubject := fmt.Sprintf(`"%s" is available for pickup`, book.Title)
-    g.Expect(subjects).To(ContainElement(expectedSubject))
-    return subjects, nil
+  messages, err := gmail.Fetch(jane.EmailAddress)
+  g.Expect(err).NotTo(HaveOccurred())
+  subjects := []string{}
+  for _, message := range messages {
+    subjects = append(subjects, message.Subject)
+  }
+  expectedSubject := fmt.Sprintf(`"%s" is available for pickup`, book.Title)
+  g.Expect(subjects).To(ContainElement(expectedSubject))
+  return subjects, nil
 }).Should(Succeed())
 ```
 
@@ -3590,12 +3590,12 @@ Finally, since we're on the topic of simplifying things, we can make use of the 
 
 ```go
 Eventually(func(g Gomega) {
-    messages, err := gmail.Fetch(jane.EmailAddress)
-    g.Expect(err).NotTo(HaveOccurred())
-    expectedSubject := fmt.Sprintf(`"%s" is available for pickup`, book.Title)
-    subjectGetter := func(m gmail.Message) string { return m.Subject }
-    g.Expect(subjects).To(ContainElement(WithTransform(subjectGetter, Equal(expectedSubject))))
-    return subjects, nil
+  messages, err := gmail.Fetch(jane.EmailAddress)
+  g.Expect(err).NotTo(HaveOccurred())
+  expectedSubject := fmt.Sprintf(`"%s" is available for pickup`, book.Title)
+  subjectGetter := func(m gmail.Message) string { return m.Subject }
+  g.Expect(subjects).To(ContainElement(WithTransform(subjectGetter, Equal(expectedSubject))))
+  return subjects, nil
 }).Should(Succeed())
 ```
 
@@ -3613,10 +3613,10 @@ First recall that we used a `BeforeSuite` to compile our `publisher` binary:
 ```go
 var publisherPath string
 BeforeSuite(func() {
-    var err error
-    publisherPath, err = gexec.Build("path/to/publisher")
-    Expect(err).NotTo(HaveOccurred())
-    DeferCleanup(gexec.CleanupBuildArtifacts)    
+  var err error
+  publisherPath, err = gexec.Build("path/to/publisher")
+  Expect(err).NotTo(HaveOccurred())
+  DeferCleanup(gexec.CleanupBuildArtifacts)  
 })
 ```
 
@@ -3626,12 +3626,12 @@ up); but it's inefficient and all your parallel processes will spend time up fro
 ```go
 var publisherPath string
 SynchronizedBeforeSuite(func() []byte {
-    path, err := gexec.Build("path/to/publisher")
-    Expect(err).NotTo(HaveOccurred())
-    DeferCleanup(gexec.CleanupBuildArtifacts)
-    return []byte(path)
+  path, err := gexec.Build("path/to/publisher")
+  Expect(err).NotTo(HaveOccurred())
+  DeferCleanup(gexec.CleanupBuildArtifacts)
+  return []byte(path)
 }, func(path []byte) {
-    publisherPath = string(path)
+  publisherPath = string(path)
 })
 ```
 
@@ -3645,29 +3645,29 @@ The filesystem is a shared singleton resource.  Each parallel process in a paral
 
 ```go
 Describe("Publishing books", func() {
-    It("can publish a complete epub", func() {
-        cmd := exec.Command(publisherPath, "-o=out.epub", "les-miserables.fixture")
-        session, err := gexec.Start(cmd, GinkgoWriter, GinkgoWriter)
-        Expect(err).NotTo(HaveOccurred())
-        Eventually(session).Should(gexec.Exit(0)) //with exit code 0
+  It("can publish a complete epub", func() {
+    cmd := exec.Command(publisherPath, "-o=out.epub", "les-miserables.fixture")
+    session, err := gexec.Start(cmd, GinkgoWriter, GinkgoWriter)
+    Expect(err).NotTo(HaveOccurred())
+    Eventually(session).Should(gexec.Exit(0)) //with exit code 0
 
-        result, err := epub.Load("out.epub")
-        Expect(err).NotTo(HaveOccurred())
-        Expect(result.EpubPages).To(Equal(2783))
-    })
+    result, err := epub.Load("out.epub")
+    Expect(err).NotTo(HaveOccurred())
+    Expect(result.EpubPages).To(Equal(2783))
+  })
 
-    It("can publish a preview that contains just the first chapter", func() {        
-        cmd := exec.Command(publisherPath, "-o=out.epub", "--preview", "les-miserables.fixture")
-        session, err := gexec.Start(cmd, GinkgoWriter, GinkgoWriter)
-        Expect(err).NotTo(HaveOccurred())
-        Eventually(session).Should(gexec.Exit(0)) //with exit code 0
+  It("can publish a preview that contains just the first chapter", func() {    
+    cmd := exec.Command(publisherPath, "-o=out.epub", "--preview", "les-miserables.fixture")
+    session, err := gexec.Start(cmd, GinkgoWriter, GinkgoWriter)
+    Expect(err).NotTo(HaveOccurred())
+    Eventually(session).Should(gexec.Exit(0)) //with exit code 0
 
-        result, err := epub.Load("out.epub")
-        Expect(err).NotTo(HaveOccurred())
-        Expect(result.EpubPages).To(BeNumerically("<", 2783))
-        Expect(result.EpubContent).To(ContainSubstring("Chapter 1"))
-        Expect(result.EpubContent).NotTo(ContainSubstring("Chapter 2"))
-    })
+    result, err := epub.Load("out.epub")
+    Expect(err).NotTo(HaveOccurred())
+    Expect(result.EpubPages).To(BeNumerically("<", 2783))
+    Expect(result.EpubContent).To(ContainSubstring("Chapter 1"))
+    Expect(result.EpubContent).NotTo(ContainSubstring("Chapter 2"))
+  })
 })
 ```
 
@@ -3677,15 +3677,15 @@ There are multiple ways to approach this.  Perhaps the obvious way would be to m
 
 ```go
 Describe("Publishing books", func() {
-    It("can publish a complete epub", func() {
-        cmd := exec.Command(publisherPath, "-o=complete.epub", "les-miserables.fixture")
-        ...
-    })
+  It("can publish a complete epub", func() {
+    cmd := exec.Command(publisherPath, "-o=complete.epub", "les-miserables.fixture")
+    ...
+  })
 
-    It("can publish a preview that contains just the first chapter", func() {        
-        cmd := exec.Command(publisherPath, "-o=preview.epub", "--preview", "les-miserables.fixture")
-        ...
-    })
+  It("can publish a preview that contains just the first chapter", func() {    
+    cmd := exec.Command(publisherPath, "-o=preview.epub", "--preview", "les-miserables.fixture")
+    ...
+  })
 })
 ```
 
@@ -3696,21 +3696,21 @@ A better alternative would be to carve out a separate namespace for each spec.  
 ```go
 var tmpDir string
 BeforeEach(func() {
-    tmpDir = GinkgoT().TempDir()
+  tmpDir = GinkgoT().TempDir()
 })
 
 Describe("Publishing books", func() {
-    It("can publish a complete epub", func() {
-        path := filepath.Join(tmpDir, "out.epub")
-        cmd := exec.Command(publisherPath, "-o="+path, "les-miserables.fixture")
-        ...
-    })
+  It("can publish a complete epub", func() {
+    path := filepath.Join(tmpDir, "out.epub")
+    cmd := exec.Command(publisherPath, "-o="+path, "les-miserables.fixture")
+    ...
+  })
 
-    It("can publish a preview that contains just the first chapter", func() {        
-        path := filepath.Join(tmpDir, "out.epub")
-        cmd := exec.Command(publisherPath, "-o="+path, "--preview", "les-miserables.fixture")
-        ...
-    })
+  It("can publish a preview that contains just the first chapter", func() {    
+    path := filepath.Join(tmpDir, "out.epub")
+    cmd := exec.Command(publisherPath, "-o="+path, "--preview", "les-miserables.fixture")
+    ...
+  })
 })
 
 ```
@@ -3724,26 +3724,26 @@ Another approach - and the one used by Ginkgo's own integration suite - is to us
 var pathTo func(path string) string
 
 BeforeEach(func() {
-    //shard based on our current process index.
-    //this starts at 1 and goes up to N, the number of parallel processes.
-    dir := fmt.Sprintf("./tmp-%d", GinkgoParallelProcess())
-    os.MkdirAll(dir)
-    DeferCleanup(os.RemoveAll, dir)
-    pathTo = func(path string) string { return filepath.Join(dir, path)}
+  //shard based on our current process index.
+  //this starts at 1 and goes up to N, the number of parallel processes.
+  dir := fmt.Sprintf("./tmp-%d", GinkgoParallelProcess())
+  os.MkdirAll(dir)
+  DeferCleanup(os.RemoveAll, dir)
+  pathTo = func(path string) string { return filepath.Join(dir, path)}
 })
 
 Describe("Publishing books", func() {
-    It("can publish a complete epub", func() {
-        path := pathTo("out.epub")
-        cmd := exec.Command(publisherPath, "-o="+path, "les-miserables.fixture")
-        ...
-    })
+  It("can publish a complete epub", func() {
+    path := pathTo("out.epub")
+    cmd := exec.Command(publisherPath, "-o="+path, "les-miserables.fixture")
+    ...
+  })
 
-    It("can publish a preview that contains just the first chapter", func() {        
-        path := pathTo("out.epub")
-        cmd := exec.Command(publisherPath, "-o="+path, "--preview", "les-miserables.fixture")
-        ...
-    })
+  It("can publish a preview that contains just the first chapter", func() {    
+    path := pathTo("out.epub")
+    cmd := exec.Command(publisherPath, "-o="+path, "--preview", "les-miserables.fixture")
+    ...
+  })
 })
 ```
 
@@ -3755,21 +3755,21 @@ One nice thing about this approach is our ability to preserve the artifacts in t
 var pathTo func(path string) string
 
 BeforeEach(func() {
-    //shard based on our current process index.
-    //this starts at 1 and goes up to N, the number of parallel processes.
-    dir := fmt.Sprintf("./tmp-%d", GinkgoParallelProcess())
-    os.MkdirAll(dir)
+  //shard based on our current process index.
+  //this starts at 1 and goes up to N, the number of parallel processes.
+  dir := fmt.Sprintf("./tmp-%d", GinkgoParallelProcess())
+  os.MkdirAll(dir)
 
-    DeferCleanup(func() {
-        suiteConfig, _ := GinkgoConfiguration()
-        if CurrentSpecReport().Failed() && suiteConfig.FailFast {
-            GinkgoWriter.Printf("Preserving artifacts in %s\n", dir)
-            return
-        }
-        Expect(os.RemoveAll(dir)).To(Succeed())
-    })
+  DeferCleanup(func() {
+    suiteConfig, _ := GinkgoConfiguration()
+    if CurrentSpecReport().Failed() && suiteConfig.FailFast {
+      GinkgoWriter.Printf("Preserving artifacts in %s\n", dir)
+      return
+    }
+    Expect(os.RemoveAll(dir)).To(Succeed())
+  })
 
-    pathTo = func(path string) string { return filepath.Join(dir, path)}
+  pathTo = func(path string) string { return filepath.Join(dir, path)}
 })
 ```
 
@@ -3782,9 +3782,9 @@ Another shared singleton resources is the set of available ports on the local ma
 var libraryAddr string
 
 BeforeSuite(func() {
-    libraryAddr := "127.0.0.1:50000"
-    library.Serve(listenAddr)
-    client = library.NewClient(listenAddr)
+  libraryAddr := "127.0.0.1:50000"
+  library.Serve(listenAddr)
+  client = library.NewClient(listenAddr)
 })
 ```
 
@@ -3796,9 +3796,9 @@ Instead, you can key off of the current parallel process index to give each proc
 var libraryAddr string
 
 BeforeSuite(func() {
-    libraryAddr := fmt.Sprintf("127.0.0.1:%d", 50000 + GinkgoParallelProcess())
-    library.Serve(listenAddr)
-    client = library.NewClient(listenAddr)
+  libraryAddr := fmt.Sprintf("127.0.0.1:%d", 50000 + GinkgoParallelProcess())
+  library.Serve(listenAddr)
+  client = library.NewClient(listenAddr)
 })
 ```
 
@@ -3818,15 +3818,15 @@ Here's an incredibly expensive but sure-fire way to make sure each spec has a cl
 ```go
 var client *DBClient.Client
 var _ = BeforeEach(func() {
-    db, err := DBRunner.Start()
-    Expect(err).NotTo(HaveOccurred())
-    DeferCleanup(db.Stop)
+  db, err := DBRunner.Start()
+  Expect(err).NotTo(HaveOccurred())
+  DeferCleanup(db.Stop)
 
-    client = DBClient.New(db)
-    Expect(client.Connect()).To(Succeed())
-    DeferCleanup(client.Disconnect)
+  client = DBClient.New(db)
+  Expect(client.Connect()).To(Succeed())
+  DeferCleanup(client.Disconnect)
 
-    client.InitializeSchema()
+  client.InitializeSchema()
 })
 ```
 
@@ -3840,21 +3840,21 @@ Instead, a more common pattern is to spin up a database for each parallel proces
 var client *DBClient.Client
 var snapshot *DBClient.Snapshot
 var _ = BeforeSuite(func() {
-    db, err := DBRunner.Start()
-    Expect(err).NotTo(HaveOccurred())
-    DeferCleanup(db.Stop)
+  db, err := DBRunner.Start()
+  Expect(err).NotTo(HaveOccurred())
+  DeferCleanup(db.Stop)
 
-    client = DBClient.New(db)
-    Expect(client.Connect()).To(Succeed())
-    DeferCleanup(client.Disconnect)
+  client = DBClient.New(db)
+  Expect(client.Connect()).To(Succeed())
+  DeferCleanup(client.Disconnect)
 
-    client.InitializeSchema()
-    snapshot, err = client.TakeSnapshot()
-    Expect(err).NotTo(HaveOccurred())
+  client.InitializeSchema()
+  snapshot, err = client.TakeSnapshot()
+  Expect(err).NotTo(HaveOccurred())
 })
 
 var _ = BeforeEach(func() {
-    Expect(client.RestoreSnapshot(snapshot)).To(Succeed())
+  Expect(client.RestoreSnapshot(snapshot)).To(Succeed())
 })
 ```
 
@@ -3896,44 +3896,44 @@ Here's an example where we profile how long it takes to repaginate books:
 ```go
 
 Describe("Repaginating Books", func() {
-    var book *books.Book
-    BeforeEach(func() {
-        book = LoadFixture("les-miserables.json")
-    })
+  var book *books.Book
+  BeforeEach(func() {
+    book = LoadFixture("les-miserables.json")
+  })
 
-    // this is a spec that validates the behavior is correct
-    // note that we can mix validation specs alongside performance specs
-    It("can repaginate books", func() {
-        Expect(book.CurrentFontSize()).To(Equal(12))
-        originalPages := book.Pages
+  // this is a spec that validates the behavior is correct
+  // note that we can mix validation specs alongside performance specs
+  It("can repaginate books", func() {
+    Expect(book.CurrentFontSize()).To(Equal(12))
+    originalPages := book.Pages
 
-        book.SetFontSize(10)
-        Expect(book.RecomputePages()).To(BeNumerically(">", originalPages))
-    })
+    book.SetFontSize(10)
+    Expect(book.RecomputePages()).To(BeNumerically(">", originalPages))
+  })
 
-    // this is our performance spec.  we mark it as Serial to ensure it does not run in
-    // parallel with other specs (which could affect performance measurements)
-    // we also label it with "measurement" - this is optional but would allow us to filter out
-    // measurement-related specs more easily
-    It("repaginates books efficiently", Serial, Label("measurement"), func() {
-        //we create a new experiment
-        experiment := gmeasure.NewExperiment("Repaginating Books")
+  // this is our performance spec.  we mark it as Serial to ensure it does not run in
+  // parallel with other specs (which could affect performance measurements)
+  // we also label it with "measurement" - this is optional but would allow us to filter out
+  // measurement-related specs more easily
+  It("repaginates books efficiently", Serial, Label("measurement"), func() {
+    //we create a new experiment
+    experiment := gmeasure.NewExperiment("Repaginating Books")
 
-        //Register the experiment as a ReportEntry - this will cause Ginkgo's reporter infrastructure
-        //to print out the experiment's report and to include the experiment in any generated reports
-        AddReportEntry(experiment.Name, experiment)
+    //Register the experiment as a ReportEntry - this will cause Ginkgo's reporter infrastructure
+    //to print out the experiment's report and to include the experiment in any generated reports
+    AddReportEntry(experiment.Name, experiment)
 
-        //we sample a function repeatedly to get a statistically significant set of measurements
-        experiment.Sample(func(idx int) {
-            book = LoadFixture("les-miserables.json") //always start with a fresh copy
-            book.SetFontSize(10)
+    //we sample a function repeatedly to get a statistically significant set of measurements
+    experiment.Sample(func(idx int) {
+      book = LoadFixture("les-miserables.json") //always start with a fresh copy
+      book.SetFontSize(10)
 
-            //measure how long it takes to RecomputePages() and store the duration in a "repagination" measurement
-            experiment.MeasureDuration("repagination", func() {
-                book.RecomputePages()
-            })
-        }, gmeasure.SamplingConfig{N:20, Duration: time.Minute}) //we'll sample the function up to 20 times or up to a minute, whichever comes first.
-    })
+      //measure how long it takes to RecomputePages() and store the duration in a "repagination" measurement
+      experiment.MeasureDuration("repagination", func() {
+        book.RecomputePages()
+      })
+    }, gmeasure.SamplingConfig{N:20, Duration: time.Minute}) //we'll sample the function up to 20 times or up to a minute, whichever comes first.
+  })
 })
 ```
 
@@ -3947,11 +3947,11 @@ Repaginating Books repaginates books efficiently [measurement]
 /path/to/books_test.go:19
 
   Begin Report Entries >>
-    Repaginating Books - /path/to/books_test.go:21 @ 11/04/21 13:42:57.936
-      Repaginating Books
-      Name                    | N  | Min   | Median | Mean    | StdDev | Max
-      ==========================================================================
-      repagination [duration] | 20 | 5.1ms | 104ms  | 101.4ms | 52.1ms | 196.4ms
+  Repaginating Books - /path/to/books_test.go:21 @ 11/04/21 13:42:57.936
+    Repaginating Books
+    Name          | N  | Min   | Median | Mean  | StdDev | Max
+    ==========================================================================
+    repagination [duration] | 20 | 5.1ms | 104ms  | 101.4ms | 52.1ms | 196.4ms
   << End Report Entries
 ```
 
@@ -3961,24 +3961,24 @@ Alternatively you can just hard-code an expected value after running the experim
 
 ```go
 It("repaginates books efficiently", Serial, Label("measurement"), func() {
-    experiment := gmeasure.NewExperiment("Repaginating Books")
-    AddReportEntry(experiment.Name, experiment)
+  experiment := gmeasure.NewExperiment("Repaginating Books")
+  AddReportEntry(experiment.Name, experiment)
 
-    experiment.Sample(func(idx int) {
-        book = LoadFixture("les-miserables.json")
-        book.SetFontSize(10)
+  experiment.Sample(func(idx int) {
+    book = LoadFixture("les-miserables.json")
+    book.SetFontSize(10)
 
-        experiment.MeasureDuration("repagination", func() {
-            book.RecomputePages()
-        })
-    }, gmeasure.SamplingConfig{N:20, Duration: time.Minute})
+    experiment.MeasureDuration("repagination", func() {
+      book.RecomputePages()
+    })
+  }, gmeasure.SamplingConfig{N:20, Duration: time.Minute})
 
-    //we get the median repagination duration from the experiment we just ran
-    repaginationStats := experiment.GetStats("repagination")
-    medianDuration := repaginationStats.DurationFor(gmeasure.StatMedian)
+  //we get the median repagination duration from the experiment we just ran
+  repaginationStats := experiment.GetStats("repagination")
+  medianDuration := repaginationStats.DurationFor(gmeasure.StatMedian)
 
-    //and assert that it hasn't changed much from ~100ms
-    Expect(medianDuration).To(BeNumerically("~", 100*time.Millisecond, 50*time.Millisecond))
+  //and assert that it hasn't changed much from ~100ms
+  Expect(medianDuration).To(BeNumerically("~", 100*time.Millisecond, 50*time.Millisecond))
 })
 ```
 
@@ -4008,14 +4008,14 @@ we can implement a function that returns a composite Gomega matcher:
 
 ```go
 func BeAValidBook(title string, author string, pages int) types.GomegaMatcher {
-    return And(
-        WithTransform(func(book *books.Book) bool {
-            return book.IsValid()
-        }, BeTrue()),
-        HaveField("Title", Equal(title)),
-        HaveField("Author", Equal(author)),
-        HaveField("Pages", Equal(pages)),
-    )
+  return And(
+    WithTransform(func(book *books.Book) bool {
+      return book.IsValid()
+    }, BeTrue()),
+    HaveField("Title", Equal(title)),
+    HaveField("Author", Equal(author)),
+    HaveField("Pages", Equal(pages)),
+  )
 }
 ```
 
@@ -4036,28 +4036,28 @@ type Author string
 type Pages int
 
 func BeAValidBook(params ...interface{}) types.GomegaMatcher {
-    matchers := []types.GomegaMatcher{
-        WithTransform(func(book *books.Book) bool {
-            return book.IsValid()
-        }, BeTrue())
-    }
+  matchers := []types.GomegaMatcher{
+    WithTransform(func(book *books.Book) bool {
+      return book.IsValid()
+    }, BeTrue())
+  }
 
-    if len(params) > 0 {
-        for _, param := range params {
-            switch v := param.(type) {
-            case Title:
-                matchers = append(matchers, HaveField("Title", Equal(v)))
-            case Author:
-                matchers = append(matchers, HaveField("Author", Equal(v)))
-            case Pages:
-                matchers = append(matchers, HaveField("Pages", Equal(v)))
-            default:
-                Fail("Unknown type %T in BeAValidBook() \n", v)
-            }
-        }
+  if len(params) > 0 {
+    for _, param := range params {
+      switch v := param.(type) {
+      case Title:
+        matchers = append(matchers, HaveField("Title", Equal(v)))
+      case Author:
+        matchers = append(matchers, HaveField("Author", Equal(v)))
+      case Pages:
+        matchers = append(matchers, HaveField("Pages", Equal(v)))
+      default:
+        Fail("Unknown type %T in BeAValidBook() \n", v)
+      }
     }
+  }
 
-    return And(matchers...)
+  return And(matchers...)
 }
 ```
 
@@ -4090,7 +4090,7 @@ Moreover, Ginkgo also supports passing in arbitrarily nested slices of decorator
 markFlaky := []interface{}{Label("flaky"), FlakeAttempts(3)}
 
 var _ = Describe("a bunch of flaky controller tests", markFlaky, Label("controller"), func() {
-    ...
+  ...
 }
 ```
 The resulting tests will be decorated with `FlakeAttempts(3)` and the two labels `flaky` and `controller`.
@@ -4125,8 +4125,8 @@ Using these decorators is identical to using the `FX` or `PX` form of the node c
 
 ```go
 FDescribe("container", func() {
-    It("runs", func() {})
-    PIt("is pending", func() {})
+  It("runs", func() {})
+  PIt("is pending", func() {})
 })
 ```
 
@@ -4134,8 +4134,8 @@ and
 
 ```go
 Describe("container", Focus, func() {
-    It("runs", func() {})
-    It("is pending", Pending, func() {})
+  It("runs", func() {})
+  It("is pending", Pending, func() {})
 })
 ```
 
@@ -4154,17 +4154,17 @@ The `Offset(uint)` decorator applies to all decorable nodes.  The `Offset(uint)`
 
 ```go
 SharedBehaviorIt := func() {
-    It("does something common and complicated", Offset(1), func() {
-        ...
-    })
+  It("does something common and complicated", Offset(1), func() {
+    ...
+  })
 }
 
 Describe("thing A", func() {
-    SharedBehaviorIt()
+  SharedBehaviorIt()
 })
 
 Describe("thing B", func() {
-    SharedBehaviorIt()
+  SharedBehaviorIt()
 })
 ```
 
@@ -4186,21 +4186,21 @@ The `FlakeAttempts(uint)` decorator applies container and subject nodes.  It is 
 
 ```go
 Describe("flaky tests", FlakeAttempts(3), func() {
-    It("is flaky", func() {
-        ...
-    })
+  It("is flaky", func() {
+    ...
+  })
 
-    It("is also flaky", func() {
-        ...
-    })
+  It("is also flaky", func() {
+    ...
+  })
 
-    It("is _really_ flaky", FlakeAttempts(5) func() {
-        ...
-    })
+  It("is _really_ flaky", FlakeAttempts(5) func() {
+    ...
+  })
 
-    It("is _not_ flaky", FlakeAttempts(1), func() {
-        ...
-    })
+  It("is _not_ flaky", FlakeAttempts(1), func() {
+    ...
+  })
 })
 ```
 
@@ -4323,14 +4323,14 @@ ginkgo outline book_test.go
 
 This generates an outline in a comma-separated-values (CSV) format. Column headers are on the first line, followed by Ginkgo containers, specs, and other identifiers, in the order they appear in the file:
 
-    Name,Text,Start,End,Spec,Focused,Pending
-    Describe,Book,124,973,false,false,false
-    BeforeEach,,217,507,false,false,false
-    Describe,Categorizing book length,513,970,false,false,false
-    Context,With more than 300 pages,567,753,false,false,false
-    It,should be a novel,624,742,true,false,false
-    Context,With fewer than 300 pages,763,963,false,false,false
-    It,should be a short story,821,952,true,false,false
+  Name,Text,Start,End,Spec,Focused,Pending
+  Describe,Book,124,973,false,false,false
+  BeforeEach,,217,507,false,false,false
+  Describe,Categorizing book length,513,970,false,false,false
+  Context,With more than 300 pages,567,753,false,false,false
+  It,should be a novel,624,742,true,false,false
+  Context,With fewer than 300 pages,763,963,false,false,false
+  It,should be a short story,821,952,true,false,false
 
 The columns are:
 
@@ -4380,15 +4380,15 @@ For example, you can choose to use [testify](https://github.com/stretchr/testify
 package foo_test
 
 import (
-    . "github.com/onsi/ginkgo"
+  . "github.com/onsi/ginkgo"
 
-    "github.com/stretchr/testify/assert"
+  "github.com/stretchr/testify/assert"
 )
 
 var _ = Describe(func("foo") {
-    It("should testify to its correctness", func(){
-        assert.Equal(GinkgoT(), foo{}.Name(), "foo")
-    })
+  It("should testify to its correctness", func(){
+    assert.Equal(GinkgoT(), foo{}.Name(), "foo")
+  })
 })
 ```
 
@@ -4397,30 +4397,30 @@ Similarly if you're using [Gomock](https://code.google.com/p/gomock/) you can si
 
 ```go
 import (
-    "code.google.com/p/gomock/gomock"
+  "code.google.com/p/gomock/gomock"
 
-    . "github.com/onsi/ginkgo"
-    . "github.com/onsi/gomega"
+  . "github.com/onsi/ginkgo"
+  . "github.com/onsi/gomega"
 )
 
 var _ = Describe("Consumer", func() {
-    var (
-        mockCtrl *gomock.Controller
-        mockThing *mockthing.MockThing
-        consumer *Consumer
-    )
+  var (
+    mockCtrl *gomock.Controller
+    mockThing *mockthing.MockThing
+    consumer *Consumer
+  )
 
-    BeforeEach(func() {
-        mockCtrl = gomock.NewController(GinkgoT())
-        mockThing = mockthing.NewMockThing(mockCtrl)
-        consumer = NewConsumer(mockThing)
-    })
+  BeforeEach(func() {
+    mockCtrl = gomock.NewController(GinkgoT())
+    mockThing = mockthing.NewMockThing(mockCtrl)
+    consumer = NewConsumer(mockThing)
+  })
 
 
-    It("should consume things", func() {
-        mockThing.EXPECT().OmNom()
-        consumer.Consume()
-    })
+  It("should consume things", func() {
+    mockThing.EXPECT().OmNom()
+    consumer.Consume()
+  })
 })
 ```
 

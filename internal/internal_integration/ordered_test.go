@@ -479,7 +479,7 @@ var _ = Describe("Ordered", func() {
 	//here be more, bigger, dragons!
 	Describe("Interplay between BeforeAll/AfterAll and FlakeAttempts", func() {
 		BeforeEach(func() {
-			conf.FlakeAttempts = 3
+			conf.FlakeAttempts = 4
 		})
 
 		Context("when the first test is flaky", func() {
@@ -499,8 +499,8 @@ var _ = Describe("Ordered", func() {
 			})
 
 			It("runs the BeforeAll just once", func() {
-				Ω(rt).Should(HaveTracked("BA", "A", "A", "A", "AA"))
-				Ω(reporter.Did.Find("A")).Should(HaveFailed("fail", NumAttempts(3)))
+				Ω(rt).Should(HaveTracked("BA", "A", "A", "A", "A", "AA"))
+				Ω(reporter.Did.Find("A")).Should(HaveFailed("fail", NumAttempts(4)))
 			})
 		})
 
@@ -522,8 +522,8 @@ var _ = Describe("Ordered", func() {
 				})
 
 				It("runs the AfterAll when the test fails once", func() {
-					Ω(rt).Should(HaveTracked("BA", "A", "B", "B", "B", "AA"))
-					Ω(reporter.Did.Find("B")).Should(HaveFailed("fail", NumAttempts(3)))
+					Ω(rt).Should(HaveTracked("BA", "A", "B", "B", "B", "B", "AA"))
+					Ω(reporter.Did.Find("B")).Should(HaveFailed("fail", NumAttempts(4)))
 				})
 			})
 
@@ -571,8 +571,73 @@ var _ = Describe("Ordered", func() {
 			})
 
 			It("runs the AfterAll just once", func() {
-				Ω(rt).Should(HaveTracked("BA", "A", "B", "C", "C", "C", "AA"))
-				Ω(reporter.Did.Find("C")).Should(HaveFailed("fail", NumAttempts(3)))
+				Ω(rt).Should(HaveTracked("BA", "A", "B", "C", "C", "C", "C", "AA"))
+				Ω(reporter.Did.Find("C")).Should(HaveFailed("fail", NumAttempts(4)))
+			})
+		})
+
+		Context("when the BeforeAll is flaky", func() {
+			BeforeEach(func() {
+				success, _ := RunFixture("flaky first test", func() {
+					i, j := 0, 0
+					Context("container", Ordered, func() {
+						BeforeAll(rt.T("BA", func() {
+							DeferCleanup(rt.T("DC-BA-1"))
+							i += 1
+							if i <= 2 {
+								F("before-all-fail")
+							}
+							DeferCleanup(rt.T("DC-BA-2"))
+						}))
+						It("A", rt.T("A", func() {
+							j += 1
+							if j < 2 {
+								F("A-fail")
+							}
+						}))
+						It("B", rt.T("B"))
+						It("C", rt.T("C"))
+						AfterAll(rt.T("AA"))
+					})
+				})
+				Ω(success).Should(BeTrue())
+			})
+
+			It("reruns the BeforeAll until it succeeds, and reruns the AferAll and any DeferCleanups after each failed BeforeAll", func() {
+				Ω(rt).Should(HaveTracked(
+					"BA", "AA", "DC-BA-1",
+					"BA", "AA", "DC-BA-1",
+					"BA", "A",
+					"A", "B", "C",
+					"AA", "DC-BA-2", "DC-BA-1",
+				))
+				Ω(reporter.Did.Find("A")).Should(HavePassed(NumAttempts(4)))
+			})
+		})
+
+		Context("when an AfterAll is flaky", func() {
+			BeforeEach(func() {
+				success, _ := RunFixture("flaky first test", func() {
+					i := 0
+					Context("container", Ordered, func() {
+						BeforeAll(rt.T("BA"))
+						It("A", rt.T("A"))
+						It("B", rt.T("B"))
+						It("C", rt.T("C"))
+						AfterAll(rt.T("AA", func() {
+							i += 1
+							if i < 3 {
+								F("fail")
+							}
+						}))
+					})
+				})
+				Ω(success).Should(BeTrue())
+			})
+
+			It("reruns the AfterAll until it succeeds", func() {
+				Ω(rt).Should(HaveTracked("BA", "A", "B", "C", "AA", "C", "AA", "C", "AA"))
+				Ω(reporter.Did.Find("C")).Should(HavePassed(NumAttempts(3)))
 			})
 		})
 	})
