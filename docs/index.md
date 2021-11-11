@@ -3,6 +3,8 @@ layout: default
 title: Ginkgo
 ---
 {% raw  %}
+![Ginkgo](./assets/images/ginkgo.png)
+
 [Ginkgo](https://github.com/onsi/ginkgo) is a testing framework for Go designed to help you write expressive tests.  It is best paired with the [Gomega](https://github.com/onsi/gomega) matcher library.  When combined, Ginkgo and Gomega provide a rich and expressive DSL ([Domain-specific Language](https://en.wikipedia.org/wiki/Domain-specific_language)) for writing tests.
 
 Ginkgo is sometimes described as a "Behavior Driven Development" (BDD) framework.  In reality, Ginkgo is a general purpose testing framework in active use across a wide variety of testing contexts: unit tests, integration tests, acceptance test, performance tests, etc.
@@ -23,7 +25,7 @@ The need was twofold: organizational and technical. As a growing organization Pi
 
 Moreover, the _nature_ of the code being built - complex distributed systems - required a testing framework that could provide for the needs unique to unit-testing and integration-testing such a system.  We needed to make testing [asynchronous behavior](https://onsi.github.io/gomega/#making-asynchronous-assertions) ubiquitous and straightforward.  We needed to have [parallelizable integration tests](#spec-parallelization) to ensure our test run-times didn't get out of control.  We needed a test framework that helped us [suss out](#spec-randomization) flaky tests and fix them.
 
-This was the context that led to Ginkgo.  Over the years the Go testing ecosystem has grown and evolved - sometimes [bringing](https://go.dev/blog/subtests) it [closer](https://golang.org/doc/go1.17#testing) to Ginkgo.  Throughout, the community's reactions to Ginkgo have been... interesting.  Some enjoy the expressive framework and rich set of matchers - for many the DSL is familiar and the LI is productive.  Others have found the DSL off-putting, arguing that Ginkgo is not "the Go way" and that Go developers should eschew third party libraries in general.  That's OK; the world is plenty large enough for options to abound :)
+This was the context that led to Ginkgo.  Over the years the Go testing ecosystem has grown and evolved - sometimes [bringing](https://go.dev/blog/subtests) it [closer](https://golang.org/doc/go1.17#testing) to Ginkgo.  Throughout, the community's reactions to Ginkgo have been... interesting.  Some enjoy the expressive framework and rich set of matchers - for many the DSL is familiar and the CLI is productive.  Others have found the DSL off-putting, arguing that Ginkgo is not "the Go way" and that Go developers should eschew third party libraries in general.  That's OK; the world is plenty large enough for options to abound :)
 
 Happy Testing!
 
@@ -647,8 +649,11 @@ var _ = Describe("book", func() {
     Expect(book.IsValid()).To(BeTrue()) // this will fail if it runs after the previous test
   })
 })
+```
 
-/* === DO THIS INSTEAD === */
+you should do this instead:
+
+```go
 var _ = Describe("book", func() {
   var book *books.Book // declare in container nodes
 
@@ -725,7 +730,7 @@ Describe("some JSON decoding edge cases", func() {
 In each case we're creating a new `book` from an invalid snippet of JSON, ensuring the `book` is `nil` and checking that the correct error was returned.  There's some degree of deduplication that could be attained here.  We could try to pull out a shared `BeforeEach` like so:
 
 ```go
-/* INVALID */
+/* === INVALID === */
 Describe("some JSON decoding edge cases", func() {
   var book *books.Book
   var err error
@@ -1344,7 +1349,7 @@ the `BeforeEach` closure will run before each table entry spec and set up a fres
 The fact that `DescribeTable` is constructed during the Tree Construction Phase can trip users up sometimes.  Specifically, variables declared in container nodes have not been initialized yet during the Tree Construction Phase.  Because of this, the following will not work:
 
 ```go
-/* INVALID */
+/* === INVALID === */
 Describe("book", func() {
   var shelf map[string]*books.Book //Shelf is declared here
 
@@ -1370,7 +1375,6 @@ These specs will fail.  When `DescribeTable` and `Entry` are invoked during the 
 To get around this we must move access of the `shelf` variable into the body of the spec closure so that it can run at the appropriate time during the Run Phase.  We can do this like so:
 
 ```go
-/* INVALID */
 Describe("book", func() {
   var shelf map[string]*books.Book //Shelf is declared here
 
@@ -1549,7 +1553,7 @@ ginkgo --seed=17
 Because Ginkgo randomizes specs you should make sure that each spec runs from a clean independent slate.  Principles like ["Declare in container nodes, initialize in setup nodes"](#avoid-spec-pollution-dont-initialize-variables-in-container-nodes) help you accomplish this: when variables are initialized in setup nodes each spec is guaranteed to get a fresh, correctly initialized, state to operate on.  For example:
 
 ```go
-/* INVALID */
+/* === INVALID === */
 Describe("Bookmark", func() {
   book := &books.Book{
     Title:  "Les Miserables",
@@ -1598,7 +1602,7 @@ In addition to avoiding accidental spec pollution you should make sure to avoid 
 For example:
 
 ```go
-/* INVALID */
+/* === INVALID === */
 Describe("checking out a book", func() {
   var book *book.Bookmarks
   var err error
@@ -1626,7 +1630,6 @@ These specs are not independent - the assume that they run in order.  This means
 You can fix these specs by creating a single `It` to test the behavior of checking out a book:
 
 ```go
-/* INVALID */
 Describe("checking out a book", func() {
   It("can perform a checkout flow", func() {
     By("fetching a book")
@@ -1976,7 +1979,7 @@ There are contexts, however, when you must guarantee the order in which a set of
 Ginkgo provides `Ordered` containers to solve for these usecases.  Specs in `Ordered` containers are guaranteed to run in the order in which they appear.  Let's pull out an example from before; recall that the following is invalid:
 
 ```go
-/* INVALID */
+/* === INVALID === */
 Describe("checking out a book", func() {
   var book *book.Bookmarks
   var err error
@@ -2577,8 +2580,7 @@ In this example, the `AfterEach` closure is using `CurrentSpecReport()` to disco
 Given `CurrentSpecReport()` you can imagine generating custom report information with something like a top-level `AfterEach`.  For example, let's say we want to write report information to a local file using a custom format _and_ send updates to a remote server.  You might try something like:
 
 ```go
-/*INVALID*/
-
+/* === INVALID === */
 var report *os.File
 BeforeSuite(func() {
   report = os.Create("report.custom")
@@ -2626,7 +2628,7 @@ Also, `ReportAfterEach` closures **cannot** be interrupted.  This is to ensure t
 You should be aware that when running in parallel, each parallel process will be running specs and their `ReportAfterEach`es.  This means that multiple `ReportAfterEach` blocks can be running concurrently on independent processes.  Given that, code like this won't work:
 
 ```go
-/* INVALID */
+/* === INVALID === */
 var reportFile *os.File
 BeforeSuite(func() {
   reportFile = os.Open("report.custom")
@@ -3100,7 +3102,7 @@ There are contexts where external information needs to be loaded in order to fig
 Many Ginkgo users attempt the following approach.  It's a common gotcha:
 
 ```go
-/* INVALID */
+/* === INVALID === */
 var fixtureBooks []*books.Book
 
 var _ = BeforeSuite(func() {

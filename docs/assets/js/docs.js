@@ -51,6 +51,12 @@
     }
   })
 
+  document.querySelectorAll("div.highlight").forEach(el => {
+    if (el.innerText.includes("/* === INVALID === */")) {
+      el.classList.add("invalid")
+    }
+  })
+
   document.getElementById("disclosure").addEventListener("click", (e) => {
     document.getElementById("container").classList.toggle("reveal-sidebar")
   })

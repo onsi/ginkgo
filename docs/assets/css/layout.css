@@ -4,14 +4,13 @@
 	--breakpoint: 640px;
 	--ginkgo-green: #2dad6c;
 	--ginkgo-green-darker: #0d8d5c;
-	--ginkgo-green-faint: #f8fff8;
+	--ginkgo-green-faint: #fafffa;
 }
 
 body {
     font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Helvetica, Arial, sans-serif, "Apple Color Emoji", "Segoe UI Emoji", "Segoe UI Symbol";
     font-size: 14px;
 	margin: 0;
-	background-color: #fff;
 }
 
 #header {
@@ -52,6 +51,14 @@ body {
 	display:none;
 }
 
+img[src="./assets/images/ginkgo.png"] {
+	max-width: 80%;
+	max-height: 200px;
+	display: block;
+	margin-left: auto;
+	margin-right: auto;
+}
+
 /* code styling */
 
 .markdown-body div.highlight {
@@ -65,6 +72,11 @@ body {
 
 .markdown-body .highlight pre, .markdown-body pre {
 	background-color: transparent;
+}
+
+div.highlight.invalid {
+	border: solid 2px #f0aaaa;
+	background-color: #f0dddd;
 }
 
 /* sidebar items */
@@ -301,6 +313,7 @@ a:last-of-type .logo {
 	body {
 		font-size: 10pt;
 		margin:  0.25in;
+		background-image: none;
 	}
 	#header {
 		display:  none;
