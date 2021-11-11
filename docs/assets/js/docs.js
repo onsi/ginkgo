@@ -51,6 +51,8 @@
     }
   })
 
+  document.querySelector("img[alt=Ginkgo]").id = top
+
   document.querySelectorAll("div.highlight").forEach(el => {
     if (el.innerText.includes("/* === INVALID === */")) {
       el.classList.add("invalid")
