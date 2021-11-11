@@ -51,7 +51,7 @@ body {
 	display:none;
 }
 
-img[src="./assets/images/ginkgo.png"] {
+img[alt="Ginkgo"] {
 	max-width: 80%;
 	max-height: 200px;
 	display: block;
@@ -132,6 +132,8 @@ div.highlight.invalid {
 	font-size: 1.8rem;
 	margin-left:10px;
 	font-weight: bold;
+	text-decoration: none;
+	color: #fff;
 }
 
 .spacer {

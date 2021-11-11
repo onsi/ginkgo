@@ -3,7 +3,7 @@ layout: default
 title: Ginkgo
 ---
 {% raw  %}
-![Ginkgo](./assets/images/ginkgo.png)
+![Ginkgo](./images/ginkgo.png)
 
 [Ginkgo](https://github.com/onsi/ginkgo) is a testing framework for Go designed to help you write expressive tests.  It is best paired with the [Gomega](https://github.com/onsi/gomega) matcher library.  When combined, Ginkgo and Gomega provide a rich and expressive DSL ([Domain-specific Language](https://en.wikipedia.org/wiki/Domain-specific_language)) for writing tests.
 
