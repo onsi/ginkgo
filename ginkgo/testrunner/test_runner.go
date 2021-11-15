@@ -7,6 +7,7 @@ import (
 	"os"
 	"os/exec"
 	"path/filepath"
+	"runtime"
 	"strconv"
 	"strings"
 	"syscall"
@@ -422,7 +423,11 @@ func (t *TestRunner) cmd(ginkgoArgs []string, stream io.Writer, node int) *exec.
 
 	path := t.compilationTargetPath
 	if t.Suite.Precompiled {
-		path, _ = filepath.Abs(filepath.Join(t.Suite.Path, fmt.Sprintf("%s.test", t.Suite.PackageName)))
+		windowsExt := ""
+		if runtime.GOOS == "windows" {
+			windowsExt = ".exe"
+		}
+		path, _ = filepath.Abs(filepath.Join(t.Suite.Path, fmt.Sprintf("%s.test%s", t.Suite.PackageName, windowsExt)))
 	}
 
 	cmd := exec.Command(path, args...)
