@@ -200,6 +200,7 @@ func CurrentGinkgoTestDescription() GinkgoTestDescription {
 //See http://onsi.github.io/ginkgo/#benchmark_tests for more details
 type Benchmarker interface {
 	Time(name string, body func(), info ...interface{}) (elapsedTime time.Duration)
+	TimeWithPrecision(name string, body func(), units string, precision int, info ...interface{}) (elapsedTime time.Duration)
 	RecordValue(name string, value float64, info ...interface{})
 	RecordValueWithPrecision(name string, value float64, units string, precision int, info ...interface{})
 }
