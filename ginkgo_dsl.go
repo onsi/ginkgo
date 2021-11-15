@@ -319,6 +319,12 @@ func Describe(text string, body func()) bool {
 	return true
 }
 
+// You can wrap the method in your own meta framework and still get valid errors
+func DescribeSkip(text string, skip int, body func()) bool {
+	globalSuite.PushContainerNode(text, body, types.FlagTypeNone, codelocation.New(skip + 1))
+	return true
+}
+
 //You can focus the tests within a describe block using FDescribe
 func FDescribe(text string, body func()) bool {
 	global.Suite.PushContainerNode(text, body, types.FlagTypeFocused, codelocation.New(1))
@@ -406,6 +412,12 @@ func It(text string, body interface{}, timeout ...float64) bool {
 	return true
 }
 
+// You can wrap it with your own framework
+func ItSkip(text string, skip int, body interface{}, timeout ...float64) bool {
+	globalSuite.PushItNode(text, body, types.FlagTypeNone, codelocation.New(skip + 1), parseTimeout(timeout...))
+	return true
+}
+
 //You can focus individual Its using FIt
 func FIt(text string, body interface{}, timeout ...float64) bool {
 	validateBodyFunc(body, codelocation.New(1))
@@ -416,6 +428,12 @@ func FIt(text string, body interface{}, timeout ...float64) bool {
 //You can mark Its as pending using PIt
 func PIt(text string, _ ...interface{}) bool {
 	global.Suite.PushItNode(text, func() {}, types.FlagTypePending, codelocation.New(1), 0)
+	return true
+}
+
+// You can wrap PIt in your own framework
+func PItSkip(text string, skip int, _ ...interface{}) bool {
+	globalSuite.PushItNode(text, func() {}, types.FlagTypePending, codelocation.New(skip + 1), 0)
 	return true
 }
 
