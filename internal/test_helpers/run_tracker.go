@@ -1,8 +1,11 @@
 package test_helpers
 
 import (
+	"fmt"
+	"strings"
 	"sync"
 
+	"github.com/onsi/ginkgo/formatter"
 	. "github.com/onsi/gomega"
 	"github.com/onsi/gomega/types"
 )
@@ -102,14 +105,58 @@ func HaveRunWithData(run string, kv ...interface{}) OmegaMatcher {
 	)
 }
 
-func HaveTracked(runs ...string) OmegaMatcher {
-	return WithTransform(func(rt *RunTracker) []string {
-		return rt.TrackedRuns()
-	}, Equal(runs))
-}
-
 func HaveTrackedNothing() OmegaMatcher {
 	return WithTransform(func(rt *RunTracker) []string {
 		return rt.TrackedRuns()
 	}, BeEmpty())
+}
+
+type HaveTrackedMatcher struct {
+	expectedRuns []string
+	message      string
+}
+
+func (m *HaveTrackedMatcher) Match(actual interface{}) (bool, error) {
+	rt, ok := actual.(*RunTracker)
+	if !ok {
+		return false, fmt.Errorf("HaveTracked() must be passed a RunTracker - got %T instead", actual)
+	}
+	actualRuns := rt.TrackedRuns()
+	n := len(actualRuns)
+	if n < len(m.expectedRuns) {
+		n = len(m.expectedRuns)
+	}
+	failureMessage, success := &strings.Builder{}, true
+	fmt.Fprintf(failureMessage, "{{/}}%10s == %-10s{{/}}\n", "Actual", "Expected")
+	fmt.Fprintf(failureMessage, "{{/}}========================\n{{/}}")
+	for i := 0; i < n; i++ {
+		var expected, actual string
+		if i < len(actualRuns) {
+			actual = actualRuns[i]
+		}
+		if i < len(m.expectedRuns) {
+			expected = m.expectedRuns[i]
+		}
+		if actual != expected {
+			success = false
+			fmt.Fprintf(failureMessage, "{{red}}%10s != %-10s{{/}}\n", actual, expected)
+		} else {
+			fmt.Fprintf(failureMessage, "{{green}}%10s == %-10s{{/}}\n", actual, expected)
+		}
+
+	}
+	m.message = failureMessage.String()
+	return success, nil
+
+}
+func (m *HaveTrackedMatcher) FailureMessage(actual interface{}) string {
+	return "Expected runs did not match tracked runs:\n" + formatter.F(m.message)
+
+}
+func (m *HaveTrackedMatcher) NegatedFailureMessage(actual interface{}) string {
+	return "Expected runs matched tracked runs:\n" + formatter.F(m.message)
+}
+
+func HaveTracked(runs ...string) OmegaMatcher {
+	return &HaveTrackedMatcher{expectedRuns: runs}
 }

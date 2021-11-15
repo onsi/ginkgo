@@ -57,3 +57,11 @@ func (s Specs) CountWithoutSkip() int {
 	}
 	return n
 }
+
+func (s Specs) AtIndices(indices SpecIndices) Specs {
+	out := make(Specs, len(indices))
+	for i, idx := range indices {
+		out[i] = s[idx]
+	}
+	return out
+}

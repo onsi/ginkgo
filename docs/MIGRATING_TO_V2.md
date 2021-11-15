@@ -70,7 +70,7 @@ Here's a list of new decorators.  They are documented in more detail in the [Nod
 Specs can now be labelled with the `Serial` decoration.  Specs labelled as `Serial` will never run in parallel with other specs.  Instead, Ginkgo will run them on a single test process _after_ all the parallel tests have finished running.
 
 #### Ordered Decoration
-Spec containers (i.e. `Describe` and `Context` blocks) can now be labelled with the `Ordered` decoration.  Specs within `Ordered` containers will always run in the order they appear and will never be randomized.  In addition, when running in parallel, specs in an `Ordered` containers will always run on the same process to ensure spec order is preserved.  When a spec in an `Ordered` container fails, all subsquent specs in the container are skipped.
+Spec containers (i.e. `Describe` and `Context` blocks) can now be labelled with the `Ordered` decoration.  Specs within `Ordered` containers will always run in the order they appear and will never be randomized.  In addition, when running in parallel, specs in an `Ordered` containers will always run on the same process to ensure spec order is preserved.  When a spec in an `Ordered` container fails, all subsequent specs in the container are skipped.
 
 `Ordered` containers also support `BeforeAll` and `AfterAll` setup nodes.  These nodes will run just once - the `BeforeAll` will run before any ordered tests in the container run; the `AfterAll` will run after all the ordered tests in the container are finished.
 

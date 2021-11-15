@@ -821,6 +821,21 @@ var _ = Describe("Nodes", func() {
 				})
 			})
 		})
+
+		Describe("Filter", func() {
+			It("returns a copy of the nodes list containing nodes that pass the filter", func() {
+				filtered := nodes.Filter(func(n Node) bool {
+					return n.NodeType.Is(types.NodeTypeBeforeEach | types.NodeTypeIt)
+				})
+				Ω(filtered).Should(Equal(Nodes{nBef1, nBef2, nIt}))
+				Ω(nodes).Should(Equal(Nodes{nCon, nBef1, nBef2, nIt, nAf}))
+
+				filtered = nodes.Filter(func(n Node) bool {
+					return false
+				})
+				Ω(filtered).Should(BeEmpty())
+			})
+		})
 	})
 
 	Describe("SortedByDescendingNestingLevel", func() {
@@ -976,6 +991,22 @@ var _ = Describe("Nodes", func() {
 				It("returns empty string", func() {
 					Ω(nodes.BestTextFor(nBef2)).Should(Equal(""))
 				})
+			})
+		})
+	})
+
+	Describe("ContainsNodeID", func() {
+		Context("when there is a node with the matching ID", func() {
+			It("returns true", func() {
+				nodes := Nodes{N(), N(), N()}
+				Ω(nodes.ContainsNodeID(nodes[1].ID)).Should(BeTrue())
+			})
+		})
+
+		Context("when there is no node with matching ID", func() {
+			It("returns false", func() {
+				nodes := Nodes{N(), N(), N()}
+				Ω(nodes.ContainsNodeID(nodes[2].ID + 1)).Should(BeFalse())
 			})
 		})
 	})

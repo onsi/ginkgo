@@ -46,6 +46,8 @@ type Node struct {
 	MarkedOrdered bool
 	FlakeAttempts int
 	Labels        Labels
+
+	NodeIDWhereCleanupWasGenerated uint
 }
 
 // Decoration Types
@@ -433,6 +435,24 @@ func (n Nodes) WithoutNode(nodeToExclude Node) Nodes {
 	return out
 }
 
+func (n Nodes) Filter(filter func(Node) bool) Nodes {
+	trufa, count := make([]bool, len(n)), 0
+	for i := range n {
+		if filter(n[i]) {
+			trufa[i] = true
+			count += 1
+		}
+	}
+	out, j := make(Nodes, count), 0
+	for i := range n {
+		if trufa[i] {
+			out[j] = n[i]
+			j++
+		}
+	}
+	return out
+}
+
 func (n Nodes) WithinNestingLevel(deepestNestingLevel int) Nodes {
 	count := 0
 	for i := range n {
@@ -532,6 +552,15 @@ func (n Nodes) BestTextFor(node Node) string {
 	}
 
 	return ""
+}
+
+func (n Nodes) ContainsNodeID(id uint) bool {
+	for i := range n {
+		if n[i].ID == id {
+			return true
+		}
+	}
+	return false
 }
 
 func (n Nodes) HasNodeMarkedPending() bool {

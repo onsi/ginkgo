@@ -2031,7 +2031,7 @@ Describe("checking out a book", Ordered, func() {
 
 here we've decorated the `Describe` container as `Ordered`.  Ginkgo will guarantee that specs in an `Ordered` container will run sequentially, in the order they are written.  Specs in an `Ordered` container may run in parallel with respect to _other_ specs, but they will always run sequentially on the same parallel process.  This allows specs in `Ordered` containers to rely on mutating local closure state.
 
-The `Ordered` decorator can only appear on a container node.  Any container nodes nested within a container node will automatically be considered `Ordered` and there is no way to mark a node within an `Ordered` container as "not `Ordered`".  In fact, to prevent confusion, Ginkgo doesn't let you add an `Ordered` decorator to a container node if one of its parent containers is already decorated with `Ordered`.
+The `Ordered` decorator can only appear on a container node.  Any container nodes nested within a container node will automatically be considered `Ordered` and there is no way to mark a node within an `Ordered` container as "not `Ordered`".
 
 > Ginkgo did not include support for `Ordered` containers for quite some time.  As you can see `Ordered` containers make it possible to circumvent the "Declare in container nodes, initialize in setup nodes" principle; and they make it possible to write dependent specs  This comes at a cost, of course - specs in `Ordered` containers cannot be fully parallelized which can result in slower suite runtimes.  Despite these cons, pragmatism prevailed and `Ordered` containers were introduced in response to real-world needs in the community.  Nonetheless, we recommend using `Ordered` containers only when needed.
 
@@ -2078,9 +2078,9 @@ Describe("checking out a book", Ordered, func() {
 
 here we only set up the `libraryCLient` once before all the specs run, and then tear it down once all the specs complete.
 
-`BeforeAll` and `AfterAll` nodes can only be introduced within an `Ordered` container.  To avoid potentially complex and confusing behavior they cannot be nested within other containers within an `Ordered` container.
+`BeforeAll` and `AfterAll` nodes can only be introduced within an `Ordered` container.  `BeforeAll` and `AfterAll` can also be nested within containers that appear in `Ordered` containers - in such cases they will run before/after the specs in that nested container.
 
-As always, you can also use `DeferCleanup`.  Since `DeferCleanupe` is context aware, it will detect when it is called in a `BeforeAll` and behave like an `AfterAll`.  The following is equivalent to the example above:
+As always, you can also use `DeferCleanup`.  Since `DeferCleanupe` is context aware, it will detect when it is called in a `BeforeAll` and behave like an `AfterAll` at the same nesting level.  The following is equivalent to the example above:
 
 ```go
 BeforeAll(func() {
@@ -2373,7 +2373,7 @@ Describe("Storing books", func() {
 })
 ```
 
-Ginkgo's retry behavior generally works as you'd expect with most specs, however there is some complexity when `FlakeAttempts` is applied to `Ordered` containers.  In brief, Ginkgo generally guarantees that `BeforeAll` and `AfterAll` node closures only run once - but `FlakeAttempts` can modify this behavior.  If a failure occurs within a subject node in an `Ordered` container (i.e. in an `It`) then Ginkgo will rerun that `It` but not the `BeforeAll` or `AfterAll`.  However, if a failure occurs in a `BeforeAll` Ginkgo will immmediately run the `AfterAll` (to clean up) then rerun the `BeforeAll`.
+Ginkgo's retry behavior generally works as you'd expect with most specs, however there is some complexity when `FlakeAttempts` is applied to `Ordered` containers.  In brief, Ginkgo generally guarantees that `BeforeAll` and `AfterAll` node closures only run once - but `FlakeAttempts` can modify this behavior.  If a failure occurs within a subject node in an `Ordered` container (i.e. in an `It`) then Ginkgo will rerun that `It` but not the `BeforeAll` or `AfterAll`.  However, if a failure occurs in a `BeforeAll` Ginkgo will immediately run the `AfterAll` (to clean up) then rerun the `BeforeAll`.
 
 Stepping back - it bears repeating: you should use `FlakeAttempts` judiciously.  The best approach to managing flaky spec suites is to debug flakes early and resolve them.  More often than not they are telling you something important about your architecture.  In a world of competing priorities and finite resources, however, `FlakeAttempts` provides a means to explicitly accept the technical debt of flaky specs and move on.
 

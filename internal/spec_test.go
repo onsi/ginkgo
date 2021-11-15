@@ -2,6 +2,7 @@ package internal_test
 
 import (
 	. "github.com/onsi/ginkgo"
+	"github.com/onsi/ginkgo/internal"
 	. "github.com/onsi/gomega"
 )
 
@@ -97,6 +98,13 @@ var _ = Describe("Spec and Specs", func() {
 		It("returns the number of specs that have skip set to false", func() {
 			specs := Specs{{Skip: false}, {Skip: true}, {Skip: true}, {Skip: false}, {Skip: false}}
 			Ω(specs.CountWithoutSkip()).Should(Equal(3))
+		})
+	})
+
+	Describe("specs.AtIndices", func() {
+		It("returns the subset of specs at the specified indices", func() {
+			specs := Specs{S(N()), S(N()), S(N()), S(N())}
+			Ω(specs.AtIndices(internal.SpecIndices{1, 3})).Should(Equal(Specs{specs[1], specs[3]}))
 		})
 	})
 })
