@@ -35,7 +35,7 @@ func TestPerformance(t *testing.T) {
 	SetDefaultEventuallyTimeout(30 * time.Second)
 	format.TruncatedDiff = false
 	RegisterFailHandler(Fail)
-	RunSpecs(t, "Performance Suite")
+	RunSpecs(t, "Performance Suite", Label("performance"))
 }
 
 var _ = SynchronizedBeforeSuite(func() []byte {

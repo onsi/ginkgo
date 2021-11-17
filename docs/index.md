@@ -2260,6 +2260,18 @@ You can list the labels used in a given package using the `ginkgo labels` subcom
 
 You can iterate on different filters quickly with `ginkgo --dry-run -v --label-filter=FILTER`.  This will cause Ginkgo to tell you which specs it will run for a given filter without actually running anything.
 
+Finally, in addition to specifying Labels on subject and container nodes you can also specify suite-wide labels by decorating the `RunSpecs` command with `Label`:
+
+```go
+func TestBooks(t *testing.T) {
+  RegisterFailHandler(Fail)
+  RunSpecs(t, "Books Suite", Label("books", "this-is-a-suite-level-label"))
+}
+```
+
+Suite-level labels apply to the entire suite making it easy to filter out entire suites using label filters.
+
+
 #### Location-Based Filtering
 
 Ginkgo allows you to filter specs based on their source code location from the command line.  You do this using the `ginkgo --focus-file` and `ginkgo --skip-file` flags.  Ginkgo will only run specs that are in files that _do_ match the `--focus-file` filter *and* _don't_ match the `--skip-file` filter.  You can provide multiple `--focus-file` and `--skip-file` flags.  The `--focus-file`s will be ORed together and the `--skip-file`s will be ORed together.
@@ -4114,7 +4126,7 @@ The `Ordered` decorator applies to container nodes only.  It is an error to try 
 When a spec in an `Ordered` container fails, all subsequent specs in the ordered container are skipped.  Only `Ordered` containers can contain `BeforeAll` and `AfterAll` setup nodes.
 
 #### The Label Decorator
-The `Label` decorator applies to container nodes and subject nodes only.  It is an error to try to apply the `Label` decorator to a setup node.
+The `Label` decorator applies to container nodes and subject nodes only.  It is an error to try to apply the `Label` decorator to a setup node.  You can also apply the `Label` decorator to your `RunSpecs` invocation to annotate the entire suite with a label.
 
 `Label` allows the user to annotate specs and containers of specs with labels.  The `Label` decorator takes a variadic set of strings allowing you to apply multiple labels simultaneously.  Labels are arbitrary strings that do not include the characters `"&|!,()/"`.  Specs can have as many labels as you'd like and the set of labels for a given spec is the union of all the labels of the container nodes and the subject node.
 

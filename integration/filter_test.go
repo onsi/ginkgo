@@ -24,7 +24,7 @@ var _ = Describe("Filter", func() {
 			"--focus-file=sprocket", "--focus-file=widget:1-24", "--focus-file=_b:24-42",
 			"--skip-file=_c",
 			"--json-report=report.json",
-			"--label-filter=!SLOW",
+			"--label-filter=TopLevelLabel && !SLOW",
 		)
 		Eventually(session).Should(gexec.Exit(0))
 		specs := Reports(fm.LoadJSONReports("filter", "report.json")[0].SpecReports)
@@ -102,7 +102,7 @@ var _ = Describe("Filter", func() {
 		It("can list labels", func() {
 			session := startGinkgo(fm.TmpDir, "labels", "-r")
 			Eventually(session).Should(gexec.Exit(0))
-			Ω(session).Should(gbytes.Say(`filter: \["slow"\]`))
+			Ω(session).Should(gbytes.Say(`filter: \["TopLevelLabel", "slow"\]`))
 			Ω(session).Should(gbytes.Say(`labels: \["beluga", "bird", "cat", "chicken", "cow", "dog", "giraffe", "koala", "monkey", "otter", "owl", "panda"\]`))
 			Ω(session).Should(gbytes.Say(`nolabels: No labels found`))
 			Ω(session).Should(gbytes.Say(`onepkg: \["beluga", "bird", "cat", "chicken", "cow", "dog", "giraffe", "koala", "monkey", "otter", "owl", "panda"\]`))

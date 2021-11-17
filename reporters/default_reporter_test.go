@@ -141,13 +141,13 @@ func C(flags ...ConfigFlags) types.ReporterConfig {
 	Ω(f.Has(VeryVerbose) && f.Has(Succinct)).Should(BeFalse(), "Setting more than one of Succinct, Verbose, or VeryVerbose is a configuration error")
 	Ω(f.Has(VeryVerbose) && f.Has(Verbose)).Should(BeFalse(), "Setting more than one of Succinct, Verbose, or VeryVerbose is a configuration error")
 	return types.ReporterConfig{
-		NoColor:           true,
-		SlowSpecThreshold: SlowSpecThreshold,
-		Succinct:          f.Has(Succinct),
-		Verbose:           f.Has(Verbose),
-		VeryVerbose:       f.Has(VeryVerbose),
-		AlwaysEmitGinkgoWriter:      f.Has(ReportPassed),
-		FullTrace:         f.Has(FullTrace),
+		NoColor:                true,
+		SlowSpecThreshold:      SlowSpecThreshold,
+		Succinct:               f.Has(Succinct),
+		Verbose:                f.Has(Verbose),
+		VeryVerbose:            f.Has(VeryVerbose),
+		AlwaysEmitGinkgoWriter: f.Has(ReportPassed),
+		FullTrace:              f.Has(FullTrace),
 	}
 }
 
@@ -189,6 +189,34 @@ var _ = Describe("DefaultReporter", func() {
 			},
 			"Running Suite: My Suite - /path/to/suite",
 			"========================================",
+			"Random Seed: {{bold}}17{{/}}",
+			"",
+			"Will run {{bold}}15{{/}} of {{bold}}20{{/}} specs",
+			"",
+		),
+		Entry("With Labels",
+			C(),
+			types.Report{
+				SuiteDescription: "My Suite", SuitePath: "/path/to/suite", SuiteLabels: []string{"dog", "fish"}, PreRunStats: types.PreRunStats{SpecsThatWillRun: 15, TotalSpecs: 20},
+				SuiteConfig: types.SuiteConfig{RandomSeed: 17, ParallelTotal: 1},
+			},
+			"Running Suite: My Suite - /path/to/suite",
+			"{{coral}}[dog, fish]{{/}} ",
+			"========================================",
+			"Random Seed: {{bold}}17{{/}}",
+			"",
+			"Will run {{bold}}15{{/}} of {{bold}}20{{/}} specs",
+			"",
+		),
+		Entry("With long Labels",
+			C(),
+			types.Report{
+				SuiteDescription: "My Suite", SuitePath: "/path/to/suite", SuiteLabels: []string{"dog", "fish", "kalamazoo", "kangaroo", "chicken", "asparagus"}, PreRunStats: types.PreRunStats{SpecsThatWillRun: 15, TotalSpecs: 20},
+				SuiteConfig: types.SuiteConfig{RandomSeed: 17, ParallelTotal: 1},
+			},
+			"Running Suite: My Suite - /path/to/suite",
+			"{{coral}}[dog, fish, kalamazoo, kangaroo, chicken, asparagus]{{/}} ",
+			"====================================================",
 			"Random Seed: {{bold}}17{{/}}",
 			"",
 			"Will run {{bold}}15{{/}} of {{bold}}20{{/}} specs",
@@ -236,6 +264,15 @@ var _ = Describe("DefaultReporter", func() {
 				SuiteConfig: types.SuiteConfig{RandomSeed: 17, ParallelTotal: 3},
 			},
 			"[17] {{bold}}My Suite{{/}} - 15/20 specs - 3 procs ",
+		),
+
+		Entry("when succinct and with labels",
+			C(Succinct),
+			types.Report{
+				SuiteDescription: "My Suite", SuitePath: "/path/to/suite", SuiteLabels: Label("dog, fish"), PreRunStats: types.PreRunStats{SpecsThatWillRun: 15, TotalSpecs: 20},
+				SuiteConfig: types.SuiteConfig{RandomSeed: 17, ParallelTotal: 3},
+			},
+			"[17] {{bold}}My Suite{{/}} {{coral}}[dog, fish]{{/}} - 15/20 specs - 3 procs ",
 		),
 	)
 

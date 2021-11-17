@@ -50,10 +50,10 @@ In addition, in V1.x when running multiple test suites Ginkgo would give each su
 
 **Finally, the default timeout has been reduced from `24h` down to `1h`.**  Users with long-running tests may need to adjust the timeout in their CI scripts.
 
-### Spec Decorations
+### Spec Decorators
 Specs can now be decorated with a series of new spec decorators.  These decorators enable fine-grained control over certain aspects of the spec's creation and lifecycle. 
 
-To support decorations, the signature for Ginkgo's container, setup, and It nodes have been changed to:
+To support decorators, the signature for Ginkgo's container, setup, and It nodes have been changed to:
 
 ```go
 func Describe(text string, args ...interface{})
@@ -64,20 +64,20 @@ Note that this change is backwards compatible with v1.X.
 
 Ginkgo supports passing in decorators _and_ arbitrarily nested slices of decorators.  Ginkgo will unroll any slices and process the flattened list of decorators.  This makes it easier to pass around and combine groups of decorators.  In addition, decorators can be passed into the table-related DSL: `DescribeTable` and `Entry`.
 
-Here's a list of new decorators.  They are documented in more detail in the [Node Decoration Reference](https://github.com/onsi/ginkgo/blob/ver2/docs/index.md#node-decoration-reference) section of the documentation.
+Here's a list of new decorators.  They are documented in more detail in the [Node Decorator Reference](https://github.com/onsi/ginkgo/blob/ver2/docs/index.md#node-decorators-overview) section of the documentation.
 
-#### Serial Decoration
-Specs can now be labelled with the `Serial` decoration.  Specs labelled as `Serial` will never run in parallel with other specs.  Instead, Ginkgo will run them on a single test process _after_ all the parallel tests have finished running.
+#### Serial Decorator
+Specs can now be labelled with the `Serial` decorator.  Specs labelled as `Serial` will never run in parallel with other specs.  Instead, Ginkgo will run them on a single test process _after_ all the parallel tests have finished running.
 
-#### Ordered Decoration
-Spec containers (i.e. `Describe` and `Context` blocks) can now be labelled with the `Ordered` decoration.  Specs within `Ordered` containers will always run in the order they appear and will never be randomized.  In addition, when running in parallel, specs in an `Ordered` containers will always run on the same process to ensure spec order is preserved.  When a spec in an `Ordered` container fails, all subsequent specs in the container are skipped.
+#### Ordered Decorator
+Spec containers (i.e. `Describe` and `Context` blocks) can now be labelled with the `Ordered` decorator.  Specs within `Ordered` containers will always run in the order they appear and will never be randomized.  In addition, when running in parallel, specs in an `Ordered` containers will always run on the same process to ensure spec order is preserved.  When a spec in an `Ordered` container fails, all subsequent specs in the container are skipped.
 
 `Ordered` containers also support `BeforeAll` and `AfterAll` setup nodes.  These nodes will run just once - the `BeforeAll` will run before any ordered tests in the container run; the `AfterAll` will run after all the ordered tests in the container are finished.
 
 Ordered containers are documented in more details in the [Ordered Container](https://github.com/onsi/ginkgo/blob/ver2/docs/index.md#ordered-containers) section of the documentation.
 
-#### Label Decoration
-Specs can now be labelled with the `Label` decoration (see [Spec Labels](#spec-labels) below for details):
+#### Label Decorator
+Specs can now be labelled with the `Label` decorator (see [Spec Labels](#spec-labels) below for details):
 
 ```go
 Describe("a labelled container", Label("red", "white"), Label("blue"), func() {
@@ -91,8 +91,8 @@ the labels associated with a given spec is the union of the labels attached to t
 
 Labels can be arbitrary strings however they cannot include any of the following characters: `"&|!,()/"`.
 
-#### Focus Decoration
-In addition to `FDescribe` and `FIt`, specs can now be focused using the new `Focus` decoration:
+#### Focus Decorator
+In addition to `FDescribe` and `FIt`, specs can now be focused using the new `Focus` decorator:
 
 ```go
 Describe("a focused container", Focus, func() {
@@ -100,8 +100,8 @@ Describe("a focused container", Focus, func() {
 })
 ```
 
-#### Pending Decoration
-In addition to `PDescribe` and `PIt`, specs can now be focused using the new `Pending` decoration:
+#### Pending Decorator
+In addition to `PDescribe` and `PIt`, specs can now be focused using the new `Pending` decorator:
 
 ```go
 Describe("a focused container", Pending, func() {
@@ -109,8 +109,8 @@ Describe("a focused container", Pending, func() {
 })
 ```
 
-#### Offset Decoration
-The `Offset(uint)` decoration allows the user to change the stack-frame offset used to compute the location of the test node.  This is useful when building shared test behaviors.  For example:
+#### Offset Decorator
+The `Offset(uint)` decorator allows the user to change the stack-frame offset used to compute the location of the test node.  This is useful when building shared test behaviors.  For example:
 
 ```go
 SharedBehaviorIt := func() {
@@ -130,8 +130,8 @@ Describe("thing B", func() {
 
 now, if the `It` defined in `SharedBehaviorIt` the location reported by Ginkgo will point to the line where `SharedBehaviorIt` is *invoked*.
 
-#### FlakeAttempts Decoration
-The `FlakeAttempts(uint)` decoration allows the user to flag specific tests or groups of tests as potentially flaky.  Ginkgo will run tests up to the number of times specified in `FlakeAttempts` until they pass.  For example:
+#### FlakeAttempts Decorator
+The `FlakeAttempts(uint)` decorator allows the user to flag specific tests or groups of tests as potentially flaky.  Ginkgo will run tests up to the number of times specified in `FlakeAttempts` until they pass.  For example:
 
 ```go
 Describe("flaky tests", FlakeAttempts(3), func() {
@@ -158,7 +158,7 @@ With this setup, `"is flaky"` and `"is also flaky"` will run up to 3 times.  `"i
 Note that if `ginkgo --flake-attempts=N` is set the value passed in by the CLI will override all the decorated values.  Every test will now run up to `N` times.
 
 ### Spec Labels
-Users can now label specs using the [`Label` decoration](#label-decoration).  Labels provide more fine-grained control for organizing specs and running specific subsets of labelled specs.  Labels are arbitrary strings however they cannot contain the characters `"&|!,()/"`.  A given spec inherits the labels of all its containers and any labels attached to the spec's `It`, for example:
+Users can now label specs using the [`Label` decorator](#label-decorator).  Labels provide more fine-grained control for organizing specs and running specific subsets of labelled specs.  Labels are arbitrary strings however they cannot contain the characters `"&|!,()/"`.  A given spec inherits the labels of all its containers and any labels attached to the spec's `It`, for example:
 
 ```go
 Describe("Extracting widgets", Label("integration", "extracting widgets"), func() {
@@ -185,6 +185,12 @@ Describe("Editing widgets", Label("integration", "editing widgets"), func() {
 		//has labels [integration, editing widgets, network]
 	})
 })
+```
+
+In addition an entire suite can be decorated by passing a `Label` decorator to `RunSpecs`:
+
+```go
+RunSpecs(t, "My Suite", Label("top-level-label", "labels-all-specs"))
 ```
 
 You can filter by label using the new `ginkgo --label-filter` flag.  Label filter accepts a simple filter language that supports the following:
@@ -291,7 +297,7 @@ AddReportEntry(name string, args ...interface{})
 You can access the report entries attached to a spec by getting the `CurrentSpecReport()` or registering a `ReportAfterEach()` - the returned report will include the attached `ReportEntries`.  You can fetch the value associated with the `ReportEntry` by calling `entry.GetRawValue()`.  When called in-process this returns the object that was passed to `AddReportEntry`.  When called after hydrating a report from JSON `entry.GetRawValue()` will include a parsed JSON `interface{}` - if you want to hydrate the JSON yourself into an object of known type you can `json.Unmarshal([]byte(entry.Value.AsJSON), &object)`.
 
 #### Supported Args
-`AddReportEntry` supports the `Offset` and `CodeLocation` decorations.  These will control the source code location associated with the generated `ReportEntry`.  You can also pass in a `time.Time` to override the `ReportEntry`'s timestamp. It also supports passing in a `ReportEntryVisibility` enum to control the report's visibility (see below).
+`AddReportEntry` supports the `Offset` and `CodeLocation` decorators.  These will control the source code location associated with the generated `ReportEntry`.  You can also pass in a `time.Time` to override the `ReportEntry`'s timestamp. It also supports passing in a `ReportEntryVisibility` enum to control the report's visibility (see below).
 
 #### Controlling Output
 By default, Ginkgo's console reporter will emit any `ReportEntry` attached to a spec.  It will emit the `ReportEntry` name, location, and time.  If the `ReportEntry` value is non-nil it will also emit a representation of the value.  If the value implements `fmt.Stringer` or `types.ColorableStringer` then `value.String()` or `value.ColorableString()` (which takes precedence) is used to generate the representation, otherwise Ginkgo uses `fmt.Sprintf("%#v", value)`. 

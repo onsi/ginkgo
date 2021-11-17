@@ -34,7 +34,7 @@ func TestIntegration(t *testing.T) {
 	SetDefaultEventuallyTimeout(30 * time.Second)
 	format.TruncatedDiff = false
 	RegisterFailHandler(Fail)
-	RunSpecs(t, "Integration Suite")
+	RunSpecs(t, "Integration Suite", Label("integration"))
 }
 
 var _ = SynchronizedBeforeSuite(func() []byte {

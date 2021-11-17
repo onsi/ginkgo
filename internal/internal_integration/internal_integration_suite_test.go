@@ -74,7 +74,7 @@ func RunFixture(description string, callback func()) (bool, bool) {
 	WithSuite(suite, func() {
 		callback()
 		Ω(suite.BuildTree()).Should(Succeed())
-		success, hasProgrammaticFocus = suite.Run(description, "/path/to/suite", failer, reporter, writer, outputInterceptor, interruptHandler, client, conf)
+		success, hasProgrammaticFocus = suite.Run(description, Label("TopLevelLabel"), "/path/to/suite", failer, reporter, writer, outputInterceptor, interruptHandler, client, conf)
 	})
 	return success, hasProgrammaticFocus
 }

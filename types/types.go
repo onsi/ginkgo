@@ -14,8 +14,11 @@ type Report struct {
 	//SuitePath captures the absolute path to the test suite
 	SuitePath string
 
-	//SuiteDescription cpatures the description string passed to the DSL's RunSpecs() command
+	//SuiteDescription captures the description string passed to the DSL's RunSpecs() function
 	SuiteDescription string
+
+	//SuiteLabels captures any labels attached to the suite by the DSL's RunSpecs() function
+	SuiteLabels []string
 
 	//SuiteSucceeded captures the success or failure status of the test run
 	//If true, the test run is considered successful.

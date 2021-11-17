@@ -201,22 +201,27 @@ Note that some configuration changes can lead to undefined behavior.  For exampl
 you should not change ParallelProcess or ParallelTotal as the Ginkgo CLI is responsible
 for setting these and orchestrating parallel specs across the parallel processes.  See http://onsi.github.io/ginkgo/#spec-parallelization
 for more on how specs are parallelized in Ginkgo.
+
+You can also pass suite-level Label() decorators to RunSpecs.  The passed-in labels will apply to all specs in the suite.
 */
-func RunSpecs(t GinkgoTestingT, description string, configs ...interface{}) bool {
+func RunSpecs(t GinkgoTestingT, description string, args ...interface{}) bool {
 	if suiteDidRun {
 		exitIfErr(types.GinkgoErrors.RerunningSuite())
 	}
 	suiteDidRun = true
 
+	suiteLabels := Labels{}
 	configErrors := []error{}
-	for _, config := range configs {
-		switch config := config.(type) {
+	for _, arg := range args {
+		switch arg := arg.(type) {
 		case types.SuiteConfig:
-			suiteConfig = config
+			suiteConfig = arg
 		case types.ReporterConfig:
-			reporterConfig = config
+			reporterConfig = arg
+		case Labels:
+			suiteLabels = append(suiteLabels, arg...)
 		default:
-			configErrors = append(configErrors, types.GinkgoErrors.UnkownTypePassedToRunSpecs(config))
+			configErrors = append(configErrors, types.GinkgoErrors.UnkownTypePassedToRunSpecs(arg))
 		}
 	}
 	exitIfErrors(configErrors)
@@ -272,7 +277,7 @@ func RunSpecs(t GinkgoTestingT, description string, configs ...interface{}) bool
 	suitePath, err = filepath.Abs(suitePath)
 	exitIfErr(err)
 
-	passed, hasFocusedTests := global.Suite.Run(description, suitePath, global.Failer, reporter, writer, outputInterceptor, interrupt_handler.NewInterruptHandler(suiteConfig.Timeout, client), client, suiteConfig)
+	passed, hasFocusedTests := global.Suite.Run(description, suiteLabels, suitePath, global.Failer, reporter, writer, outputInterceptor, interrupt_handler.NewInterruptHandler(suiteConfig.Timeout, client), client, suiteConfig)
 	outputInterceptor.Shutdown()
 
 	flagSet.ValidateDeprecations(deprecationTracker)

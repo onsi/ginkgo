@@ -66,6 +66,20 @@ type Offset uint
 type Done chan<- interface{} // Deprecated Done Channel for asynchronous testing
 type Labels []string
 
+func UnionOfLabels(labels ...Labels) Labels {
+	out := Labels{}
+	seen := map[string]bool{}
+	for _, labelSet := range labels {
+		for _, label := range labelSet {
+			if !seen[label] {
+				seen[label] = true
+				out = append(out, label)
+			}
+		}
+	}
+	return out
+}
+
 func PartitionDecorations(args ...interface{}) ([]interface{}, []interface{}) {
 	decorations := []interface{}{}
 	remainingArgs := []interface{}{}

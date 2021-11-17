@@ -63,6 +63,9 @@ func NewDefaultReporter(conf types.ReporterConfig, writer io.Writer) *DefaultRep
 func (r *DefaultReporter) SuiteWillBegin(report types.Report) {
 	if r.conf.Verbosity().Is(types.VerbosityLevelSuccinct) {
 		r.emit(r.f("[%d] {{bold}}%s{{/}} ", report.SuiteConfig.RandomSeed, report.SuiteDescription))
+		if len(report.SuiteLabels) > 0 {
+			r.emit(r.f("{{coral}}[%s]{{/}} ", strings.Join(report.SuiteLabels, ", ")))
+		}
 		r.emit(r.f("- %d/%d specs ", report.PreRunStats.SpecsThatWillRun, report.PreRunStats.TotalSpecs))
 		if report.SuiteConfig.ParallelTotal > 1 {
 			r.emit(r.f("- %d procs ", report.SuiteConfig.ParallelTotal))
@@ -70,7 +73,15 @@ func (r *DefaultReporter) SuiteWillBegin(report types.Report) {
 	} else {
 		banner := r.f("Running Suite: %s - %s", report.SuiteDescription, report.SuitePath)
 		r.emitBlock(banner)
-		r.emitBlock(strings.Repeat("=", len(banner)))
+		bannerWidth := len(banner)
+		if len(report.SuiteLabels) > 0 {
+			labels := strings.Join(report.SuiteLabels, ", ")
+			r.emitBlock(r.f("{{coral}}[%s]{{/}} ", labels))
+			if len(labels)+2 > bannerWidth {
+				bannerWidth = len(labels) + 2
+			}
+		}
+		r.emitBlock(strings.Repeat("=", bannerWidth))
 
 		out := r.f("Random Seed: {{bold}}%d{{/}}", report.SuiteConfig.RandomSeed)
 		if report.SuiteConfig.RandomizeAllSpecs {

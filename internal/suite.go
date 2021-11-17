@@ -63,13 +63,13 @@ func (suite *Suite) BuildTree() error {
 	return nil
 }
 
-func (suite *Suite) Run(description string, suitePath string, failer *Failer, reporter reporters.Reporter, writer WriterInterface, outputInterceptor OutputInterceptor, interruptHandler interrupt_handler.InterruptHandlerInterface, client parallel_support.Client, suiteConfig types.SuiteConfig) (bool, bool) {
+func (suite *Suite) Run(description string, suiteLabels Labels, suitePath string, failer *Failer, reporter reporters.Reporter, writer WriterInterface, outputInterceptor OutputInterceptor, interruptHandler interrupt_handler.InterruptHandlerInterface, client parallel_support.Client, suiteConfig types.SuiteConfig) (bool, bool) {
 	if suite.phase != PhaseBuildTree {
 		panic("cannot run before building the tree = call suite.BuildTree() first")
 	}
 	ApplyNestedFocusPolicyToTree(suite.tree)
 	specs := GenerateSpecsFromTreeRoot(suite.tree)
-	specs, hasProgrammaticFocus := ApplyFocusToSpecs(specs, description, suiteConfig)
+	specs, hasProgrammaticFocus := ApplyFocusToSpecs(specs, description, suiteLabels, suiteConfig)
 
 	suite.phase = PhaseRun
 	suite.client = client
@@ -80,7 +80,7 @@ func (suite *Suite) Run(description string, suitePath string, failer *Failer, re
 	suite.interruptHandler = interruptHandler
 	suite.config = suiteConfig
 
-	success := suite.runSpecs(description, suitePath, hasProgrammaticFocus, specs)
+	success := suite.runSpecs(description, suiteLabels, suitePath, hasProgrammaticFocus, specs)
 
 	return success, hasProgrammaticFocus
 }
@@ -245,12 +245,13 @@ func (suite *Suite) processCurrentSpecReport() {
 	}
 }
 
-func (suite *Suite) runSpecs(description string, suitePath string, hasProgrammaticFocus bool, specs Specs) bool {
+func (suite *Suite) runSpecs(description string, suiteLabels Labels, suitePath string, hasProgrammaticFocus bool, specs Specs) bool {
 	numSpecsThatWillBeRun := specs.CountWithoutSkip()
 
 	suite.report = types.Report{
 		SuitePath:                 suitePath,
 		SuiteDescription:          description,
+		SuiteLabels:               suiteLabels,
 		SuiteConfig:               suite.config,
 		SuiteHasProgrammaticFocus: hasProgrammaticFocus,
 		PreRunStats: types.PreRunStats{

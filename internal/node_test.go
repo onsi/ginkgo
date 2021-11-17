@@ -74,6 +74,12 @@ var _ = Describe("Partitioning Decorations", func() {
 	})
 })
 
+var _ = Describe("Combining Labels", func() {
+	It("can combine labels and produce the unique union", func() {
+		Ω(internal.UnionOfLabels(Label("a", "b", "c"), Label("b", "c", "d"), Label("e", "a", "f"))).Should(Equal(Label("a", "b", "c", "d", "e", "f")))
+	})
+})
+
 var _ = Describe("Constructing nodes", func() {
 	var dt *types.DeprecationTracker
 	var didRun bool
@@ -1076,7 +1082,7 @@ var _ = Describe("Nodes", func() {
 	})
 })
 
-var _ = Describe("Iteration Performance", Serial, func() {
+var _ = Describe("Iteration Performance", Serial, Label("performance"), func() {
 	BeforeEach(func() {
 		if os.Getenv("PERF") == "" {
 			Skip("")

@@ -78,6 +78,7 @@ var _ = Describe("Focus", func() {
 	Describe("ApplyFocusToSpecs", func() {
 		var specs Specs
 		var description string
+		var suiteLabels Labels
 		var conf types.SuiteConfig
 
 		harvestSkips := func(specs Specs) []bool {
@@ -90,6 +91,7 @@ var _ = Describe("Focus", func() {
 
 		BeforeEach(func() {
 			description = "Silmarillion Suite"
+			suiteLabels = Labels{"SuiteLabel", "TopLevelLabel"}
 			conf = types.SuiteConfig{}
 		})
 
@@ -105,7 +107,7 @@ var _ = Describe("Focus", func() {
 			})
 
 			It("skips those specs", func() {
-				specs, hasProgrammaticFocus := internal.ApplyFocusToSpecs(specs, description, conf)
+				specs, hasProgrammaticFocus := internal.ApplyFocusToSpecs(specs, description, suiteLabels, conf)
 				Ω(harvestSkips(specs)).Should(Equal([]bool{false, false, true, false, true}))
 				Ω(hasProgrammaticFocus).Should(BeFalse())
 			})
@@ -122,7 +124,7 @@ var _ = Describe("Focus", func() {
 				}
 			})
 			It("skips any other specs and notes that it has programmatic focus", func() {
-				specs, hasProgrammaticFocus := internal.ApplyFocusToSpecs(specs, description, conf)
+				specs, hasProgrammaticFocus := internal.ApplyFocusToSpecs(specs, description, suiteLabels, conf)
 				Ω(harvestSkips(specs)).Should(Equal([]bool{true, true, false, true, false}))
 				Ω(hasProgrammaticFocus).Should(BeTrue())
 			})
@@ -137,7 +139,7 @@ var _ = Describe("Focus", func() {
 					}
 				})
 				It("does not skip any other specs and notes that it does not have programmatic focus", func() {
-					specs, hasProgrammaticFocus := internal.ApplyFocusToSpecs(specs, description, conf)
+					specs, hasProgrammaticFocus := internal.ApplyFocusToSpecs(specs, description, suiteLabels, conf)
 					Ω(harvestSkips(specs)).Should(Equal([]bool{false, false, true, false}))
 					Ω(hasProgrammaticFocus).Should(BeFalse())
 				})
@@ -163,14 +165,14 @@ var _ = Describe("Focus", func() {
 				})
 
 				It("overrides any programmatic focus, runs only specs that match the focus string, and continues to skip specs with nodes marked pending", func() {
-					specs, hasProgrammaticFocus := internal.ApplyFocusToSpecs(specs, description, conf)
+					specs, hasProgrammaticFocus := internal.ApplyFocusToSpecs(specs, description, suiteLabels, conf)
 					Ω(harvestSkips(specs)).Should(Equal([]bool{false, false, false, false, true, true, true}))
 					Ω(hasProgrammaticFocus).Should(BeFalse())
 				})
 
 				It("includes the description string in the search", func() {
 					conf.FocusStrings = []string{"Silmaril"}
-					specs, hasProgrammaticFocus := internal.ApplyFocusToSpecs(specs, description, conf)
+					specs, hasProgrammaticFocus := internal.ApplyFocusToSpecs(specs, description, suiteLabels, conf)
 					Ω(harvestSkips(specs)).Should(Equal([]bool{false, false, false, false, true, false, false}))
 					Ω(hasProgrammaticFocus).Should(BeFalse())
 				})
@@ -182,14 +184,14 @@ var _ = Describe("Focus", func() {
 				})
 
 				It("overrides any programmatic focus, and runs specs that don't match the skip strings, and continues to skip specs with nodes marked pending", func() {
-					specs, hasProgrammaticFocus := internal.ApplyFocusToSpecs(specs, description, conf)
+					specs, hasProgrammaticFocus := internal.ApplyFocusToSpecs(specs, description, suiteLabels, conf)
 					Ω(harvestSkips(specs)).Should(Equal([]bool{true, true, true, false, true, false, false}))
 					Ω(hasProgrammaticFocus).Should(BeFalse())
 				})
 
 				It("includes the description string in the search", func() {
 					conf.SkipStrings = []string{"Silmaril"}
-					specs, hasProgrammaticFocus := internal.ApplyFocusToSpecs(specs, description, conf)
+					specs, hasProgrammaticFocus := internal.ApplyFocusToSpecs(specs, description, suiteLabels, conf)
 					Ω(harvestSkips(specs)).Should(Equal([]bool{true, true, true, true, true, true, true}))
 					Ω(hasProgrammaticFocus).Should(BeFalse())
 				})
@@ -202,7 +204,7 @@ var _ = Describe("Focus", func() {
 				})
 
 				It("ORs both together", func() {
-					specs, hasProgrammaticFocus := internal.ApplyFocusToSpecs(specs, description, conf)
+					specs, hasProgrammaticFocus := internal.ApplyFocusToSpecs(specs, description, suiteLabels, conf)
 					Ω(harvestSkips(specs)).Should(Equal([]bool{false, true, true, false, true, true, true}))
 					Ω(hasProgrammaticFocus).Should(BeFalse())
 				})
@@ -225,7 +227,7 @@ var _ = Describe("Focus", func() {
 			})
 
 			It("applies a file-based focus and skip filter", func() {
-				specs, hasProgrammaticFocus := internal.ApplyFocusToSpecs(specs, description, conf)
+				specs, hasProgrammaticFocus := internal.ApplyFocusToSpecs(specs, description, suiteLabels, conf)
 				Ω(harvestSkips(specs)).Should(Equal([]bool{false, false, true, true, true, false}))
 				Ω(hasProgrammaticFocus).Should(BeFalse())
 			})
@@ -245,10 +247,25 @@ var _ = Describe("Focus", func() {
 			})
 
 			It("applies the label filters", func() {
-				specs, hasProgrammaticFocus := internal.ApplyFocusToSpecs(specs, description, conf)
+				specs, hasProgrammaticFocus := internal.ApplyFocusToSpecs(specs, description, suiteLabels, conf)
 				Ω(harvestSkips(specs)).Should(Equal([]bool{true, false, true, true, false, true}))
 				Ω(hasProgrammaticFocus).Should(BeFalse())
 
+			})
+		})
+
+		Context("when configured with a label filter that filters on the suite level label", func() {
+			BeforeEach(func() {
+				conf.LabelFilter = "cat && TopLevelLabel"
+				specs = Specs{
+					S(N(ntCon, Label("cat", "dog")), N(ntIt, "A", Label("fish"))), //include because cat and suite has TopLevelLabel
+					S(N(ntCon, Label("dog")), N(ntIt, "B", Label("apple"))),       //skip because no cat
+				}
+			})
+			It("honors the suite level label", func() {
+				specs, hasProgrammaticFocus := internal.ApplyFocusToSpecs(specs, description, suiteLabels, conf)
+				Ω(harvestSkips(specs)).Should(Equal([]bool{false, true}))
+				Ω(hasProgrammaticFocus).Should(BeFalse())
 			})
 		})
 
@@ -272,7 +289,7 @@ var _ = Describe("Focus", func() {
 			})
 
 			It("applies all filters", func() {
-				specs, hasProgrammaticFocus := internal.ApplyFocusToSpecs(specs, description, conf)
+				specs, hasProgrammaticFocus := internal.ApplyFocusToSpecs(specs, description, suiteLabels, conf)
 				Ω(harvestSkips(specs)).Should(Equal([]bool{false, true, true, true, true, true, true}))
 				Ω(hasProgrammaticFocus).Should(BeFalse())
 			})

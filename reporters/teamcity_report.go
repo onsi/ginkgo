@@ -32,7 +32,12 @@ func GenerateTeamcityReport(report types.Report, dst string) error {
 		return err
 	}
 
-	fmt.Fprintf(f, "##teamcity[testSuiteStarted name='%s']\n", tcEscape(report.SuiteDescription))
+	name := report.SuiteDescription
+	labels := report.SuiteLabels
+	if len(labels) > 0 {
+		name = name + " [" + strings.Join(labels, ", ") + "]"
+	}
+	fmt.Fprintf(f, "##teamcity[testSuiteStarted name='%s']\n", tcEscape(name))
 	for _, spec := range report.SpecReports {
 		name := fmt.Sprintf("[%s]", spec.LeafNodeType)
 		if spec.FullText() != "" {
@@ -40,7 +45,7 @@ func GenerateTeamcityReport(report types.Report, dst string) error {
 		}
 		labels := spec.Labels()
 		if len(labels) > 0 {
-			name = name + " [" + strings.Join(labels, ",") + "]"
+			name = name + " [" + strings.Join(labels, ", ") + "]"
 		}
 
 		name = tcEscape(name)

@@ -138,6 +138,7 @@ func GenerateJUnitReport(report types.Report, dst string) error {
 				{"SuiteSucceeded", fmt.Sprintf("%t", report.SuiteSucceeded)},
 				{"SuiteHasProgrammaticFocus", fmt.Sprintf("%t", report.SuiteHasProgrammaticFocus)},
 				{"SpecialSuiteFailureReason", strings.Join(report.SpecialSuiteFailureReasons, ",")},
+				{"SuiteLabels", fmt.Sprintf("[%s]", strings.Join(report.SuiteLabels, ","))},
 				{"RandomSeed", fmt.Sprintf("%d", report.SuiteConfig.RandomSeed)},
 				{"RandomizeAllSpecs", fmt.Sprintf("%t", report.SuiteConfig.RandomizeAllSpecs)},
 				{"LabelFilter", report.SuiteConfig.LabelFilter},

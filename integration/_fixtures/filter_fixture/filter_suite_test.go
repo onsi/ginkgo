@@ -9,5 +9,5 @@ import (
 
 func TestFilterFixture(t *testing.T) {
 	RegisterFailHandler(Fail)
-	RunSpecs(t, "FilterFixture Suite")
+	RunSpecs(t, "FilterFixture Suite", Label("TopLevelLabel"))
 }

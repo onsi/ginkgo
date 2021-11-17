@@ -57,7 +57,7 @@ func ApplyNestedFocusPolicyToTree(tree *TreeNode) {
 
 	*Note:* specs with pending nodes are Skipped when created by NewSpec.
 */
-func ApplyFocusToSpecs(specs Specs, description string, suiteConfig types.SuiteConfig) (Specs, bool) {
+func ApplyFocusToSpecs(specs Specs, description string, suiteLabels Labels, suiteConfig types.SuiteConfig) (Specs, bool) {
 	focusString := strings.Join(suiteConfig.FocusStrings, "|")
 	skipString := strings.Join(suiteConfig.SkipStrings, "|")
 
@@ -82,7 +82,9 @@ func ApplyFocusToSpecs(specs Specs, description string, suiteConfig types.SuiteC
 
 	if suiteConfig.LabelFilter != "" {
 		labelFilter, _ := types.ParseLabelFilter(suiteConfig.LabelFilter)
-		skipChecks = append(skipChecks, func(spec Spec) bool { return !labelFilter(spec.Nodes.UnionOfLabels()) })
+		skipChecks = append(skipChecks, func(spec Spec) bool { 
+			return !labelFilter(UnionOfLabels(suiteLabels, spec.Nodes.UnionOfLabels())) 
+		})
 	}
 
 	if len(suiteConfig.FocusFiles) > 0 {

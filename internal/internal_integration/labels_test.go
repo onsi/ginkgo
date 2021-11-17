@@ -30,7 +30,7 @@ var _ = Describe("Labels", func() {
 			})
 		}
 		BeforeEach(func() {
-			conf.LabelFilter = "dog || cow"
+			conf.LabelFilter = "TopLevelLabel && (dog || cow)"
 			success, hPF := RunFixture("labelled tests", fixture)
 			Ω(success).Should(BeTrue())
 			Ω(hPF).Should(BeFalse())
@@ -70,12 +70,48 @@ var _ = Describe("Labels", func() {
 			Ω(reporter.Did.Find("H").Labels()).Should(Equal([]string{"giraffe", "cow", "fish", "chicken"}))
 		})
 
+		It("includes suite labels in the suite report", func() {
+			Ω(reporter.Begin.SuiteLabels).Should(Equal([]string{"TopLevelLabel"}))
+			Ω(reporter.End.SuiteLabels).Should(Equal([]string{"TopLevelLabel"}))
+		})
+
 		It("honors the LabelFilter config and skips tests appropriately", func() {
 			Ω(rt).Should(HaveTracked("B", "C", "D", "F", "H"))
 			Ω(reporter.Did.WithState(types.SpecStatePassed).Names()).Should(ConsistOf("B", "C", "D", "F", "H"))
 			Ω(reporter.Did.WithState(types.SpecStateSkipped).Names()).Should(ConsistOf("A", "E"))
 			Ω(reporter.Did.WithState(types.SpecStatePending).Names()).Should(ConsistOf("G"))
 			Ω(reporter.End).Should(BeASuiteSummary(true, NPassed(5), NSkipped(2), NPending(1), NSpecs(8), NWillRun(5)))
+		})
+	})
+
+	Context("when a suite-level label is filtered out by the label-filter", func() {
+		BeforeEach(func() {
+			conf.LabelFilter = "!TopLevelLabel"
+			success, hPF := RunFixture("labelled tests", func() {
+				BeforeSuite(rt.T("before-suite"))
+				Describe("outer container", func() {
+					It("A", rt.T("A"))
+					It("B", rt.T("B"))
+				})
+				ReportAfterEach(func(r SpecReport) {
+					rt.Run("RAE-" + r.LeafNodeText)
+				})
+				AfterSuite(rt.T("after-suite"))
+				ReportAfterSuite("AfterSuite", func(r Report) {
+					rt.Run("RAS")
+				})
+			})
+			Ω(success).Should(BeTrue())
+			Ω(hPF).Should(BeFalse())
+		})
+
+		It("doesn't run anything except for reporters", func() {
+			Ω(rt).Should(HaveTracked("RAE-A", "RAE-B", "RAS"))
+		})
+
+		It("skip severything", func() {
+			Ω(reporter.Did.Find("A")).Should(HaveBeenSkipped())
+			Ω(reporter.Did.Find("B")).Should(HaveBeenSkipped())
 		})
 	})
 })

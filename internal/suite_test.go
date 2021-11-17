@@ -63,7 +63,7 @@ var _ = Describe("Suite", func() {
 				Ω(rt).Should(HaveTracked("traversing outer", "traversing nested"))
 
 				rt.Reset()
-				suite.Run("suite", "/path/to/suite", failer, reporter, writer, outputInterceptor, interruptHandler, client, conf)
+				suite.Run("suite", Labels{}, "/path/to/suite", failer, reporter, writer, outputInterceptor, interruptHandler, client, conf)
 				Ω(rt).Should(HaveTracked("running it"))
 
 				Ω(err1).ShouldNot(HaveOccurred())
@@ -88,7 +88,7 @@ var _ = Describe("Suite", func() {
 			})
 
 			It("errors", func() {
-				suite.Run("suite", "/path/to/suite", failer, reporter, writer, outputInterceptor, interruptHandler, client, conf)
+				suite.Run("suite", Labels{}, "/path/to/suite", failer, reporter, writer, outputInterceptor, interruptHandler, client, conf)
 				Ω(pushNodeErrDuringRun).Should(HaveOccurred())
 				Ω(rt).Should(HaveTracked("in it"))
 			})
@@ -239,7 +239,7 @@ var _ = Describe("Suite", func() {
 
 					Ω(err).ShouldNot(HaveOccurred())
 					Ω(suite.BuildTree()).Should(Succeed())
-					suite.Run("suite", "/path/to/suite", failer, reporter, writer, outputInterceptor, interruptHandler, client, conf)
+					suite.Run("suite", Labels{}, "/path/to/suite", failer, reporter, writer, outputInterceptor, interruptHandler, client, conf)
 					Ω(pushSuiteNodeErr).Should(HaveOccurred())
 				})
 			})
@@ -282,7 +282,7 @@ var _ = Describe("Suite", func() {
 					Ω(errors[1]).ShouldNot(HaveOccurred())
 					Ω(errors[2]).ShouldNot(HaveOccurred())
 
-					suite.Run("suite", "/path/to/suite", failer, reporter, writer, outputInterceptor, interruptHandler, client, conf)
+					suite.Run("suite", Labels{}, "/path/to/suite", failer, reporter, writer, outputInterceptor, interruptHandler, client, conf)
 					Ω(errors[3]).Should(MatchError(types.GinkgoErrors.PushingCleanupInReportingNode(cl, types.NodeTypeReportBeforeEach)))
 				})
 			})
@@ -304,7 +304,7 @@ var _ = Describe("Suite", func() {
 					Ω(errors[1]).ShouldNot(HaveOccurred())
 					Ω(errors[2]).ShouldNot(HaveOccurred())
 
-					suite.Run("suite", "/path/to/suite", failer, reporter, writer, outputInterceptor, interruptHandler, client, conf)
+					suite.Run("suite", Labels{}, "/path/to/suite", failer, reporter, writer, outputInterceptor, interruptHandler, client, conf)
 					Ω(errors[3]).Should(MatchError(types.GinkgoErrors.PushingCleanupInReportingNode(cl, types.NodeTypeReportAfterEach)))
 				})
 			})
@@ -326,7 +326,7 @@ var _ = Describe("Suite", func() {
 					Ω(suite.BuildTree()).Should(Succeed())
 					Ω(errors[2]).ShouldNot(HaveOccurred())
 
-					suite.Run("suite", "/path/to/suite", failer, reporter, writer, outputInterceptor, interruptHandler, client, conf)
+					suite.Run("suite", Labels{}, "/path/to/suite", failer, reporter, writer, outputInterceptor, interruptHandler, client, conf)
 					Ω(errors[3]).Should(MatchError(types.GinkgoErrors.PushingCleanupInReportingNode(cl, types.NodeTypeReportAfterSuite)))
 				})
 			})
@@ -343,7 +343,7 @@ var _ = Describe("Suite", func() {
 					}))
 					Ω(errors[0]).ShouldNot(HaveOccurred())
 					Ω(suite.BuildTree()).Should(Succeed())
-					suite.Run("suite", "/path/to/suite", failer, reporter, writer, outputInterceptor, interruptHandler, client, conf)
+					suite.Run("suite", Labels{}, "/path/to/suite", failer, reporter, writer, outputInterceptor, interruptHandler, client, conf)
 					Ω(errors[1]).ShouldNot(HaveOccurred())
 					Ω(errors[2]).Should(MatchError(types.GinkgoErrors.PushingCleanupInCleanupNode(cl)))
 				})
