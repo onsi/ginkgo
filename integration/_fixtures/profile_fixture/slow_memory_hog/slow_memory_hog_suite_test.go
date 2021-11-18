@@ -3,10 +3,10 @@ package slow_memory_hog_test
 import (
 	"testing"
 
-	. "github.com/onsi/ginkgo"
+	. "github.com/onsi/ginkgo/v2"
 	. "github.com/onsi/gomega"
 
-	"github.com/onsi/ginkgo/integration/_fixtures/profile_fixture/slow_memory_hog"
+	"github.com/onsi/ginkgo/v2/integration/_fixtures/profile_fixture/slow_memory_hog"
 )
 
 func TestSlowMemoryHog(t *testing.T) {

@@ -16,7 +16,7 @@ Thanks for supporting Ginkgo!
 Fork the repo, then:
 
 ```
-go get github.com/onsi/ginkgo
+go get github.com/onsi/ginkgo/v2
 go get github.com/onsi/gomega/...
 cd $GOPATH/src/github.com/onsi/ginkgo
 git remote add fork git@github.com:<NAME>/ginkgo.git

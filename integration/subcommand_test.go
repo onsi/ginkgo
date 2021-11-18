@@ -4,8 +4,8 @@ import (
 	"os"
 	"strings"
 
-	. "github.com/onsi/ginkgo"
-	"github.com/onsi/ginkgo/types"
+	. "github.com/onsi/ginkgo/v2"
+	"github.com/onsi/ginkgo/v2/types"
 	. "github.com/onsi/gomega"
 	"github.com/onsi/gomega/gexec"
 )
@@ -32,7 +32,7 @@ var _ = Describe("Subcommand", func() {
 			Ω(content).Should(ContainSubstring("RegisterFailHandler"))
 			Ω(content).Should(ContainSubstring("RunSpecs"))
 
-			Ω(content).Should(ContainSubstring("\t" + `. "github.com/onsi/ginkgo"`))
+			Ω(content).Should(ContainSubstring("\t" + `. "github.com/onsi/ginkgo/v2"`))
 			Ω(content).Should(ContainSubstring("\t" + `. "github.com/onsi/gomega"`))
 
 			session = startGinkgo(fm.PathTo(pkg))
@@ -71,7 +71,7 @@ var _ = Describe("Subcommand", func() {
 			Ω(content).Should(ContainSubstring("gomega.RegisterFailHandler"))
 			Ω(content).Should(ContainSubstring("ginkgo.RunSpecs"))
 
-			Ω(content).Should(ContainSubstring("\t" + `"github.com/onsi/ginkgo"`))
+			Ω(content).Should(ContainSubstring("\t" + `"github.com/onsi/ginkgo/v2"`))
 			Ω(content).Should(ContainSubstring("\t" + `"github.com/onsi/gomega"`))
 
 			session = startGinkgo(fm.PathTo(pkg))
@@ -100,7 +100,7 @@ var _ = Describe("Subcommand", func() {
 
 			content := fm.ContentOf(pkg, "foo_suite_test.go")
 			Ω(content).Should(ContainSubstring("package foo_test"))
-			Ω(content).Should(ContainSubstring(`. "github.com/onsi/ginkgo"`))
+			Ω(content).Should(ContainSubstring(`. "github.com/onsi/ginkgo/v2"`))
 			Ω(content).Should(ContainSubstring(`. "github.com/onsi/gomega"`))
 			Ω(content).Should(ContainSubstring(`"binary"`))
 			Ω(content).Should(ContainSubstring("// This is a foo_test test"))
@@ -128,7 +128,7 @@ var _ = Describe("Subcommand", func() {
 
 			content := fm.ContentOf(pkg, "foo_suite_test.go")
 			Ω(content).Should(ContainSubstring("package foo_test"))
-			Ω(content).Should(ContainSubstring(`. "github.com/onsi/ginkgo"`))
+			Ω(content).Should(ContainSubstring(`. "github.com/onsi/ginkgo/v2"`))
 			Ω(content).Should(ContainSubstring(`. "github.com/onsi/gomega"`))
 			Ω(content).Should(ContainSubstring(`"binary"`))
 			Ω(content).Should(ContainSubstring("// This is a foo_testfoo_testfoo_test test"))
@@ -156,7 +156,7 @@ var _ = Describe("Subcommand", func() {
 				content := fm.ContentOf(pkg, "foo_bar_test.go")
 				Ω(content).Should(ContainSubstring("package foo_bar_test"))
 				Ω(content).Should(ContainSubstring(`var _ = Describe("FooBar", func() {`))
-				Ω(content).Should(ContainSubstring("\t" + `. "github.com/onsi/ginkgo"`))
+				Ω(content).Should(ContainSubstring("\t" + `. "github.com/onsi/ginkgo/v2"`))
 				Ω(content).Should(ContainSubstring("\t" + `. "github.com/onsi/gomega"`))
 
 				By("compiling correctly (we append to the file to make sure gomega is used)")
@@ -199,7 +199,7 @@ var _ = Describe("Subcommand", func() {
 
 				content := fm.ContentOf(pkg, "foo_bar_test.go")
 				Ω(content).Should(ContainSubstring("package foo_bar_test"))
-				Ω(content).Should(ContainSubstring(`. "github.com/onsi/ginkgo"`))
+				Ω(content).Should(ContainSubstring(`. "github.com/onsi/ginkgo/v2"`))
 				Ω(content).Should(ContainSubstring(`. "github.com/onsi/gomega"`))
 				Ω(content).Should(ContainSubstring(`/foo_bar"`))
 				Ω(content).Should(ContainSubstring("// This is a foo_bar_test test"))
@@ -225,7 +225,7 @@ var _ = Describe("Subcommand", func() {
 
 				content := fm.ContentOf(pkg, "foo_bar_test.go")
 				Ω(content).Should(ContainSubstring("package foo_bar_test"))
-				Ω(content).Should(ContainSubstring(`. "github.com/onsi/ginkgo"`))
+				Ω(content).Should(ContainSubstring(`. "github.com/onsi/ginkgo/v2"`))
 				Ω(content).Should(ContainSubstring(`. "github.com/onsi/gomega"`))
 				Ω(content).Should(ContainSubstring(`/foo_bar"`))
 				Ω(content).Should(ContainSubstring("// This is a foo_bar_testfoo_bar_testfoo_bar_test test"))
@@ -332,9 +332,9 @@ var _ = Describe("Subcommand", func() {
 
 				content := fm.ContentOf(pkg, "foo_bar_test.go")
 				Ω(content).Should(ContainSubstring("package foo_bar_test"))
-				Ω(content).ShouldNot(ContainSubstring("\t" + `. "github.com/onsi/ginkgo"`))
+				Ω(content).ShouldNot(ContainSubstring("\t" + `. "github.com/onsi/ginkgo/v2"`))
 				Ω(content).ShouldNot(ContainSubstring("\t" + `. "github.com/onsi/gomega"`))
-				Ω(content).Should(ContainSubstring("\t" + `"github.com/onsi/ginkgo"`))
+				Ω(content).Should(ContainSubstring("\t" + `"github.com/onsi/ginkgo/v2"`))
 				Ω(content).Should(ContainSubstring("\t" + `"github.com/onsi/gomega"`))
 
 				By("compiling correctly (we append to the file to make sure gomega is used)")

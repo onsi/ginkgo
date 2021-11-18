@@ -5,8 +5,8 @@ import (
 	"reflect"
 	"strings"
 
-	"github.com/onsi/ginkgo/internal"
-	"github.com/onsi/ginkgo/types"
+	"github.com/onsi/ginkgo/v2/internal"
+	"github.com/onsi/ginkgo/v2/types"
 )
 
 /*

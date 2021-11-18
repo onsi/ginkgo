@@ -4,11 +4,11 @@ import (
 	"fmt"
 	"time"
 
-	"github.com/onsi/ginkgo/formatter"
-	"github.com/onsi/ginkgo/internal/interrupt_handler"
-	"github.com/onsi/ginkgo/internal/parallel_support"
-	"github.com/onsi/ginkgo/reporters"
-	"github.com/onsi/ginkgo/types"
+	"github.com/onsi/ginkgo/v2/formatter"
+	"github.com/onsi/ginkgo/v2/internal/interrupt_handler"
+	"github.com/onsi/ginkgo/v2/internal/parallel_support"
+	"github.com/onsi/ginkgo/v2/reporters"
+	"github.com/onsi/ginkgo/v2/types"
 )
 
 type Phase uint

@@ -1,7 +1,7 @@
 package global
 
 import (
-	"github.com/onsi/ginkgo/internal"
+	"github.com/onsi/ginkgo/v2/internal"
 )
 
 var Suite *internal.Suite

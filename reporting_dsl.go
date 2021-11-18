@@ -4,21 +4,21 @@ import (
 	"fmt"
 	"strings"
 
-	"github.com/onsi/ginkgo/internal"
-	"github.com/onsi/ginkgo/internal/global"
-	"github.com/onsi/ginkgo/reporters"
-	"github.com/onsi/ginkgo/types"
+	"github.com/onsi/ginkgo/v2/internal"
+	"github.com/onsi/ginkgo/v2/internal/global"
+	"github.com/onsi/ginkgo/v2/reporters"
+	"github.com/onsi/ginkgo/v2/types"
 )
 
 /*
 Report represents the report for a Suite.
-It is documented here: https://pkg.go.dev/github.com/onsi/ginkgo/types#Report
+It is documented here: https://pkg.go.dev/github.com/onsi/ginkgo/v2/types#Report
 */
 type Report = types.Report
 
 /*
 Report represents the report for a Spec.
-It is documented here: https://pkg.go.dev/github.com/onsi/ginkgo/types#SpecReport
+It is documented here: https://pkg.go.dev/github.com/onsi/ginkgo/v2/types#SpecReport
 */
 type SpecReport = types.SpecReport
 

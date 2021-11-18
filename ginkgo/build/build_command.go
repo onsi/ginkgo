@@ -3,9 +3,9 @@ package build
 import (
 	"fmt"
 
-	"github.com/onsi/ginkgo/ginkgo/command"
-	"github.com/onsi/ginkgo/ginkgo/internal"
-	"github.com/onsi/ginkgo/types"
+	"github.com/onsi/ginkgo/v2/ginkgo/command"
+	"github.com/onsi/ginkgo/v2/ginkgo/internal"
+	"github.com/onsi/ginkgo/v2/types"
 )
 
 func BuildBuildCommand() command.Command {

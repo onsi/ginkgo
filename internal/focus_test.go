@@ -1,11 +1,11 @@
 package internal_test
 
 import (
-	. "github.com/onsi/ginkgo"
+	. "github.com/onsi/ginkgo/v2"
 	. "github.com/onsi/gomega"
 
-	"github.com/onsi/ginkgo/internal"
-	"github.com/onsi/ginkgo/types"
+	"github.com/onsi/ginkgo/v2/internal"
+	"github.com/onsi/ginkgo/v2/types"
 )
 
 var _ = Describe("Focus", func() {

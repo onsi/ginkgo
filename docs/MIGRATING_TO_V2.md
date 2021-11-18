@@ -13,20 +13,22 @@ The work on 2.0 is tracked in this [Pivotal Tracker backlog](https://www.pivotal
 
 A release candidate for Ginkgo 2.0 is now available.  The GA release should come out in the Fall of 2021 but we'd love to get feedback and usage of the RC underway.
 
-Currently, 2.0 lives on a branch and we have not formally bumped the major version number of Ginkgo yet.  If you are using `go mod` you'll need to do the following to use Ginkgo 2.0 in an existing or new project:
+Currently, 2.0 lives on a branch called `ver2` and major version number of Ginkgo has been bumped to v2.  If you are using `go mod` you'll need to do the following to use Ginkgo 2.0 in an existing or new project:
 
-1. Get the `ver2` branch of Ginkgo.  This will create a pseudo-version of Ginkgo tied to the tip of the `ver2` branch:
+1. Get the `2.0.0-rc2` tag of `ginkgo/v2`:
 	```bash
-	go get github.com/onsi/ginkgo@ver2
+	go get github.com/onsi/ginkgo/v2@2.0.0-rc2
 	```
 
 2. Install the V2 CLI.  Running this may require you to run a few addition `go get`s - just follow the go toolchain's instructions until you successfully get ginkgo v2 compiled:
 	```bash
-	go install github.com/onsi/ginkgo/ginkgo
-	ginkgo version //should print out "Ginkgo Version 2.0.0-rc1"
+	go install github.com/onsi/ginkgo/v2/ginkgo
+	ginkgo version //should print out "Ginkgo Version 2.0.0-rc2"
 	```
 
-And that's it!  For the RC you do not need to modify your Ginkgo import statements.  Once the GA is released the version number will be bumped to 2.0, the V2 branch will be merged into master, and users will need to update their import statements to `github.com/onsi/ginkgo/v2`.  V1 will no longer be supported once V2 goes GA.
+3. Update all your import statements from `import github.com/onsi/ginkgo` to `import github.com/onsi/ginkgo/v2`.  You can use your text editor to replace all instances of `"github.com/onsi/ginkgo` with `"github.com/onsi/ginkgo/v2`
+
+And that's it!
 
 Please share any feedback about the RC on the [Ginkgo 2.0](https://github.com/onsi/ginkgo/issues/711) issue.  Updated V2 documentation is being maintained [here](https://github.com/onsi/ginkgo/blob/ver2/docs/index.md) though this migration guide has all the details around new features and backward incompatible changes.  Updating to V2 will require you to make some changes to your test suites however the intent is that this work should be relatively minimal for most users.
 
@@ -470,10 +472,10 @@ Alternatively, you can use the new `--json-report` flag to produce a machine rea
 Finally, if you still need the real-time reporting capabilities that 1.X's custom reporters provided you can use [`ReportBeforeEach` and `ReportAfterEach`](#capturing-report-information-about-each-spec-as-the-test-suite-runs) to get information about each spec as it completes.
 
 ### Changed: First-class Support for Table Testing
-The table extension has been moved into the core Ginkgo DSL and the table functionality has been improved while maintaining backward compatibility.  Users no longer need to `import "github.com/onsi/ginkgo/extenstions/table"`.  Instead the table DSL is automatically pulled in by importing `"github.com/onsi/ginkgo"`.
+The table extension has been moved into the core Ginkgo DSL and the table functionality has been improved while maintaining backward compatibility.  Users no longer need to `import "github.com/onsi/ginkgo/v2/extenstions/table"`.  Instead the table DSL is automatically pulled in by importing `"github.com/onsi/ginkgo/v2"`.
 
 #### Migration Strategy:
-Remove `"github.com/onsi/ginkgo/extensions/table` imports.  Code that was dot-importing both Ginkgo and the table extension should automatically work.  If you were not dot-importing you will need to replace references to `table.DescribeTable` and `table.Entry` with `ginkgo.DescribeTable` and `ginkgo.Entry`.
+Remove `"github.com/onsi/ginkgo/v2/extensions/table` imports.  Code that was dot-importing both Ginkgo and the table extension should automatically work.  If you were not dot-importing you will need to replace references to `table.DescribeTable` and `table.Entry` with `ginkgo.DescribeTable` and `ginkgo.Entry`.
 
 
 ### Changed: CurrentGinkgoTestDescription()

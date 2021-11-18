@@ -3,10 +3,10 @@ package ginkgo
 import (
 	"time"
 
-	"github.com/onsi/ginkgo/internal"
-	"github.com/onsi/ginkgo/internal/global"
-	"github.com/onsi/ginkgo/reporters"
-	"github.com/onsi/ginkgo/types"
+	"github.com/onsi/ginkgo/v2/internal"
+	"github.com/onsi/ginkgo/v2/internal/global"
+	"github.com/onsi/ginkgo/v2/reporters"
+	"github.com/onsi/ginkgo/v2/types"
 )
 
 /*
@@ -54,7 +54,7 @@ Deprecated: GinkgoTestDescription has been replaced with SpecReport.
 
 Use CurrentSpecReport() instead.
 You can learn more here: https://onsi.github.io/ginkgo/#getting-a-report-for-the-current-spec
-The SpecReport type is documented here: https://pkg.go.dev/github.com/onsi/ginkgo/types#SpecReport
+The SpecReport type is documented here: https://pkg.go.dev/github.com/onsi/ginkgo/v2/types#SpecReport
 */
 type DeprecatedGinkgoTestDescription struct {
 	FullTestText   string
@@ -74,7 +74,7 @@ Deprecated: CurrentGinkgoTestDescription has been replaced with CurrentSpecRepor
 
 Use CurrentSpecReport() instead.
 You can learn more here: https://onsi.github.io/ginkgo/#getting-a-report-for-the-current-spec
-The SpecReport type is documented here: https://pkg.go.dev/github.com/onsi/ginkgo/types#SpecReport
+The SpecReport type is documented here: https://pkg.go.dev/github.com/onsi/ginkgo/v2/types#SpecReport
 */
 func CurrentGinkgoTestDescription() DeprecatedGinkgoTestDescription {
 	deprecationTracker.TrackDeprecation(

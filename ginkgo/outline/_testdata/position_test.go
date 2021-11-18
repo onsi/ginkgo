@@ -1,11 +1,11 @@
 package example_test
 
 import (
-	. "github.com/onsi/ginkgo"
+	. "github.com/onsi/ginkgo/v2"
 )
 
-// Describe start=101, end=237
-var _ = Describe("101,237", func() {
+// Describe start=104, end=240
+var _ = Describe("104,240", func() {
 
 	/*
 	* block comment
@@ -14,8 +14,8 @@ var _ = Describe("101,237", func() {
 
 	// line comment
 
-	// It start=206, end=233
-	It("206,233", func() {
+	// It start=209, end=236
+	It("209,236", func() {
 
 	})
 

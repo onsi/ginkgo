@@ -13,8 +13,8 @@ import (
 	"runtime"
 	"strings"
 
-	"github.com/onsi/ginkgo/formatter"
-	"github.com/onsi/ginkgo/types"
+	"github.com/onsi/ginkgo/v2/formatter"
+	"github.com/onsi/ginkgo/v2/types"
 )
 
 type DefaultReporter struct {

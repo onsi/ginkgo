@@ -13,7 +13,7 @@ import (
 	"os"
 	"strings"
 
-	"github.com/onsi/ginkgo/types"
+	"github.com/onsi/ginkgo/v2/types"
 )
 
 func tcEscape(s string) string {

@@ -3,8 +3,8 @@ package formatter_test
 import (
 	"strings"
 
-	. "github.com/onsi/ginkgo"
-	"github.com/onsi/ginkgo/formatter"
+	. "github.com/onsi/ginkgo/v2"
+	"github.com/onsi/ginkgo/v2/formatter"
 	. "github.com/onsi/gomega"
 )
 

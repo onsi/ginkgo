@@ -9,8 +9,8 @@ import (
 	"syscall"
 	"time"
 
-	"github.com/onsi/ginkgo/formatter"
-	"github.com/onsi/ginkgo/internal/parallel_support"
+	"github.com/onsi/ginkgo/v2/formatter"
+	"github.com/onsi/ginkgo/v2/internal/parallel_support"
 )
 
 const TIMEOUT_REPEAT_INTERRUPT_MAXIMUM_DURATION = 30 * time.Second

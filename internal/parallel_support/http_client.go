@@ -8,7 +8,7 @@ import (
 	"net/http"
 	"time"
 
-	"github.com/onsi/ginkgo/types"
+	"github.com/onsi/ginkgo/v2/types"
 )
 
 type httpClient struct {

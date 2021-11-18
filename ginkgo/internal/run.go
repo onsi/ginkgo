@@ -11,11 +11,11 @@ import (
 	"syscall"
 	"time"
 
-	"github.com/onsi/ginkgo/formatter"
-	"github.com/onsi/ginkgo/ginkgo/command"
-	"github.com/onsi/ginkgo/internal/parallel_support"
-	"github.com/onsi/ginkgo/reporters"
-	"github.com/onsi/ginkgo/types"
+	"github.com/onsi/ginkgo/v2/formatter"
+	"github.com/onsi/ginkgo/v2/ginkgo/command"
+	"github.com/onsi/ginkgo/v2/internal/parallel_support"
+	"github.com/onsi/ginkgo/v2/reporters"
+	"github.com/onsi/ginkgo/v2/types"
 )
 
 func RunCompiledSuite(suite TestSuite, ginkgoConfig types.SuiteConfig, reporterConfig types.ReporterConfig, cliConfig types.CLIConfig, goFlagsConfig types.GoFlagsConfig, additionalArgs []string) TestSuite {

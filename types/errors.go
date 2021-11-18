@@ -5,7 +5,7 @@ import (
 	"reflect"
 	"strings"
 
-	"github.com/onsi/ginkgo/formatter"
+	"github.com/onsi/ginkgo/v2/formatter"
 )
 
 type GinkgoError struct {

@@ -4,10 +4,10 @@ import (
 	"fmt"
 	"time"
 
-	. "github.com/onsi/ginkgo"
-	"github.com/onsi/ginkgo/internal/interrupt_handler"
-	. "github.com/onsi/ginkgo/internal/test_helpers"
-	"github.com/onsi/ginkgo/types"
+	. "github.com/onsi/ginkgo/v2"
+	"github.com/onsi/ginkgo/v2/internal/interrupt_handler"
+	. "github.com/onsi/ginkgo/v2/internal/test_helpers"
+	"github.com/onsi/ginkgo/v2/types"
 	. "github.com/onsi/gomega"
 )
 

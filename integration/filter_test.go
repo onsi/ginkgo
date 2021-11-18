@@ -3,13 +3,13 @@ package integration_test
 import (
 	"strings"
 
-	. "github.com/onsi/ginkgo"
+	. "github.com/onsi/ginkgo/v2"
 	. "github.com/onsi/gomega"
 	"github.com/onsi/gomega/gbytes"
 	"github.com/onsi/gomega/gexec"
 
-	. "github.com/onsi/ginkgo/internal/test_helpers"
-	"github.com/onsi/ginkgo/types"
+	. "github.com/onsi/ginkgo/v2/internal/test_helpers"
+	"github.com/onsi/ginkgo/v2/types"
 )
 
 var _ = Describe("Filter", func() {

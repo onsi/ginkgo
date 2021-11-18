@@ -11,8 +11,8 @@ import (
 	"strings"
 	"testing"
 
-	. "github.com/onsi/ginkgo"
-	"github.com/onsi/ginkgo/internal/test_helpers"
+	. "github.com/onsi/ginkgo/v2"
+	"github.com/onsi/ginkgo/v2/internal/test_helpers"
 	. "github.com/onsi/gomega"
 )
 
@@ -84,7 +84,7 @@ var _ = Describe("Validating godoc links", func() {
 			parsedFiles = append(parsedFiles, parsed)
 		}
 
-		p, err := doc.NewFromFiles(fset, parsedFiles, "github.com/onsi/ginkgo")
+		p, err := doc.NewFromFiles(fset, parsedFiles, "github.com/onsi/ginkgo/v2")
 		Ω(err).ShouldNot(HaveOccurred())
 
 		var b strings.Builder

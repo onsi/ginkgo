@@ -10,8 +10,8 @@ import (
 	"strconv"
 
 	"github.com/google/pprof/profile"
-	"github.com/onsi/ginkgo/reporters"
-	"github.com/onsi/ginkgo/types"
+	"github.com/onsi/ginkgo/v2/reporters"
+	"github.com/onsi/ginkgo/v2/types"
 )
 
 func AbsPathForGeneratedAsset(assetName string, suite TestSuite, cliConfig types.CLIConfig, process int) string {

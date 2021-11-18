@@ -1,6 +1,6 @@
 package internal
 
-import "github.com/onsi/ginkgo/types"
+import "github.com/onsi/ginkgo/v2/types"
 
 type TreeNode struct {
 	Node     Node

@@ -6,8 +6,8 @@ import (
 	"os"
 	"os/exec"
 
-	"github.com/onsi/ginkgo/formatter"
-	"github.com/onsi/ginkgo/ginkgo/command"
+	"github.com/onsi/ginkgo/v2/formatter"
+	"github.com/onsi/ginkgo/v2/ginkgo/command"
 )
 
 func FileExists(path string) bool {

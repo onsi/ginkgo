@@ -16,7 +16,7 @@
 // usually, you will never need to worry about the global state of ginkgo
 package globals
 
-import "github.com/onsi/ginkgo/internal/global"
+import "github.com/onsi/ginkgo/v2/internal/global"
 
 // Reset calls `global.InitializeGlobals()` which will basically create a new instance
 // of Suite, and therefore, will effectively reset the global variables to the init state.

@@ -12,7 +12,7 @@ import (
 	"strings"
 	"sync"
 
-	"github.com/onsi/ginkgo/ginkgo/command"
+	"github.com/onsi/ginkgo/v2/ginkgo/command"
 )
 
 func BuildUnfocusCommand() command.Command {

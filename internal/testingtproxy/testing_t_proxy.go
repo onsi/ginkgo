@@ -5,8 +5,8 @@ import (
 	"io"
 	"os"
 
-	"github.com/onsi/ginkgo/internal"
-	"github.com/onsi/ginkgo/types"
+	"github.com/onsi/ginkgo/v2/internal"
+	"github.com/onsi/ginkgo/v2/types"
 )
 
 type failFunc func(message string, callerSkip ...int)

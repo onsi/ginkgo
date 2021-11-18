@@ -3,7 +3,7 @@ package test_helpers
 import (
 	"sync"
 
-	"github.com/onsi/ginkgo/internal/interrupt_handler"
+	"github.com/onsi/ginkgo/v2/internal/interrupt_handler"
 )
 
 type FakeInterruptHandler struct {

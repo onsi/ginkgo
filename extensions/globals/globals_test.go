@@ -3,8 +3,8 @@ package globals_test
 import (
 	"testing"
 
-	"github.com/onsi/ginkgo/extensions/globals"
-	"github.com/onsi/ginkgo/internal/global"
+	"github.com/onsi/ginkgo/v2/extensions/globals"
+	"github.com/onsi/ginkgo/v2/internal/global"
 )
 
 func TestGlobals(t *testing.T) {

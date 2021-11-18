@@ -9,7 +9,7 @@ import (
 	"regexp"
 	"strings"
 
-	"github.com/onsi/ginkgo/types"
+	"github.com/onsi/ginkgo/v2/types"
 )
 
 const TIMEOUT_ELAPSED_FAILURE_REASON = "Suite did not run because the timeout elapsed"
@@ -268,7 +268,7 @@ func packageNameForSuite(dir string) string {
 
 func filesHaveGinkgoSuite(dir string, files []os.DirEntry) bool {
 	reTestFile := regexp.MustCompile(`_test\.go$`)
-	reGinkgo := regexp.MustCompile(`package ginkgo|\/ginkgo"`)
+	reGinkgo := regexp.MustCompile(`package ginkgo|\/ginkgo"|\/ginkgo\/v2"`)
 
 	for _, file := range files {
 		if !file.IsDir() && reTestFile.Match([]byte(file.Name())) {

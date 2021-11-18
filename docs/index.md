@@ -31,18 +31,18 @@ Happy Testing!
 
 ## Getting Started
 
-In this section we  cover installing Ginkgo, Gomega, and the `ginkgo` CLI.  We bootstrap a Ginkgo suite, write our first spec, and run it.
+In this section we cover installing Ginkgo, Gomega, and the `ginkgo` CLI.  We bootstrap a Ginkgo suite, write our first spec, and run it.
 
 ### Installing Ginkgo
 
 Ginkgo uses [go modules](https://go.dev/blog/using-go-modules).  To add Ginkgo to your project, assuming you have a `go.mod` file setup, just `go get` it:
 
 ```bash
-go get github.com/onsi/ginkgo/ginkgo
+go get github.com/onsi/ginkgo/v2/ginkgo
 go get github.com/onsi/gomega/...
 ```
 
-This fetches Ginkgo and installs the `ginkgo` executable under `$GOBIN` - you'll want that on your `$PATH`.  It also fetches the core Gomega matcher library and its set of supporting libraries.
+This fetches Ginkgo and installs the `ginkgo` executable under `$GOBIN` - you'll want that on your `$PATH`.  It also fetches the core Gomega matcher library and its set of supporting libraries.  Note that the current supported major version of Ginkgo is `v2`.
 
 You should now be able to run `ginkgo version` at the command line and see the Ginkgo CLI emit a version number.
 
@@ -1055,7 +1055,7 @@ Let's continue to build out our book tests.  Books can be stored and retrieved f
 package books_test
 
 import (
-  . "github.com/onsi/ginkgo"
+  . "github.com/onsi/ginkgo/v2"
   . "github.com/onsi/gomega"
 
   "path/to/db"
@@ -2519,7 +2519,7 @@ A JSON-formatted report that faithfully captures all available information about
 ginkgo --json-report=report.json
 ```
 
-The resulting JSON file encodes an array of `types.Report`.  Each entry in that array lists detailed information about an individual spec suite and includes a list of `types.SpecReport` that captures detailed information about each spec.  These types are documented in [godoc](https://pkg.go.dev/github.com/onsi/ginkgo/types).
+The resulting JSON file encodes an array of `types.Report`.  Each entry in that array lists detailed information about an individual spec suite and includes a list of `types.SpecReport` that captures detailed information about each spec.  These types are documented in [godoc](https://pkg.go.dev/github.com/onsi/ginkgo/v2/types).
 
 When possible, we recommend building tooling on top of Ginkgo's JSON format and using Ginkgo's `types` package directly to access the suite and spec reports.  The structs in the package include several helper functions to interpret the report.
 
@@ -2619,7 +2619,7 @@ Ginkgo's reporting infrastructure provides an alternative solution for this use 
 
 Ginkgo provides three reporting-focused nodes `ReportAfterEach`, `ReportAfterSuite`, and `ReportBeforeEach`.
 
-`ReportAfterEach` behaves similarly to a standard `AfterEach` node and can be declared anywhere an `AfterEach` node can be declared.  `ReportAfterEach` takes a closure that accepts a single [`SpecReport`](https://pkg.go.dev/github.com/onsi/ginkgo/types#SpecReport) argument.  For example, we could implement a top-level ReportAfterEach that emits information about every spec to a remote server:
+`ReportAfterEach` behaves similarly to a standard `AfterEach` node and can be declared anywhere an `AfterEach` node can be declared.  `ReportAfterEach` takes a closure that accepts a single [`SpecReport`](https://pkg.go.dev/github.com/onsi/ginkgo/v2/types#SpecReport) argument.  For example, we could implement a top-level ReportAfterEach that emits information about every spec to a remote server:
 
 ```go
 ReportAfterEach(func(report SpecReport) {
@@ -2654,7 +2654,7 @@ ReportAfterEach(func(report SpecReport) {
 you'll end up with multiple processes writing to the same file and the output will be a mess.  There is a better approach for this usecase...
 
 #### Reporting Nodes - ReportAfterSuite
-`ReportAfterSuite` nodes behave similarly to `AfterSuite` and can be placed at the top-level of your suite (typically in the suite bootstrap file).  `ReportAfterSuite` nodes take a closure that accepts a single [`Report`]((https://pkg.go.dev/github.com/onsi/ginkgo/types#Report)) argument:
+`ReportAfterSuite` nodes behave similarly to `AfterSuite` and can be placed at the top-level of your suite (typically in the suite bootstrap file).  `ReportAfterSuite` nodes take a closure that accepts a single [`Report`]((https://pkg.go.dev/github.com/onsi/ginkgo/v2/types#Report)) argument:
 
 ```go
 var _ = ReportAfterSuite(func(report Report) {
@@ -2713,7 +2713,7 @@ You can modify this default behavior by passing in one of the `ReportEntryVisibi
 - `ReportEntryVisibilityFailureOrVerbose`: the `ReportEntry` is only emitted if the spec fails or the tests are run with `-v` (similar to `GinkgoWriter`s behavior).
 - `ReportEntryVisibilityNever`: the `ReportEntry` is never emitted though it appears in any generated machine-readable reports (e.g. by setting `--json-report`).
 
-The console reporter passes the string representation of the `ReportEntry.Value` through Ginkgo's `formatter`.  This allows you to generate colorful console output using the color codes documented in `github.com/onsi/ginkgo/formatter/formatter.go`.  For example:
+The console reporter passes the string representation of the `ReportEntry.Value` through Ginkgo's `formatter`.  This allows you to generate colorful console output using the color codes documented in `github.com/onsi/ginkgo/v2/formatter/formatter.go`.  For example:
 
 ```go
 type StringerStruct struct {
@@ -2787,6 +2787,15 @@ Here's why:
 - `--trace` will instruct Ginkgo to generate a stack trace for all failures (instead of simply including the location where the failure occurred).  This isn't usually necessary but can be helpful in CI environments where you may not have access to a fast feedback loop to iterate on and debug code.
 - `--json-report=report.json` will generate a JSON formatted report file.  You can store these off and use them later to get structured access to the suite and spec results.
 - `--timeout` allows you to specify a timeout for the `ginkgo` run.  The default duration is one hour, which may or may not be enough!
+
+When running on CI you'll want to make sure the version of the Ginkgo CLI you are using matches the version of Ginkgo in your `go.mod` file.  You can ensure this by invoking the `ginkgo` command via `go run`:
+
+```bash
+go run github.com/onsi/ginkgo/v2/ginkgo
+```
+
+You can invoke `ginkgo` in this way from any directory governed by a project's `go.mod` file.
+
 
 ### Supporting Custom Suite Configuration
 
@@ -4394,7 +4403,7 @@ For example, you can choose to use [testify](https://github.com/stretchr/testify
 package foo_test
 
 import (
-  . "github.com/onsi/ginkgo"
+  . "github.com/onsi/ginkgo/v2"
 
   "github.com/stretchr/testify/assert"
 )
@@ -4413,7 +4422,7 @@ Similarly if you're using [Gomock](https://code.google.com/p/gomock/) you can si
 import (
   "code.google.com/p/gomock/gomock"
 
-  . "github.com/onsi/ginkgo"
+  . "github.com/onsi/ginkgo/v2"
   . "github.com/onsi/gomega"
 )
 

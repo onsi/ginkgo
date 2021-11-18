@@ -11,9 +11,9 @@ import (
 	"path/filepath"
 	"runtime"
 
-	. "github.com/onsi/ginkgo"
-	"github.com/onsi/ginkgo/reporters"
-	"github.com/onsi/ginkgo/types"
+	. "github.com/onsi/ginkgo/v2"
+	"github.com/onsi/ginkgo/v2/reporters"
+	"github.com/onsi/ginkgo/v2/types"
 	. "github.com/onsi/gomega"
 	"github.com/onsi/gomega/format"
 	"github.com/onsi/gomega/gexec"
@@ -110,7 +110,7 @@ func (f FixtureManager) copyAndRewrite(src string, dst string) {
 		srcContent, err := os.ReadFile(srcPath)
 		Ω(err).ShouldNot(HaveOccurred())
 		//rewrite import statements so that fixtures can work in the fixture folder when developing them, and in the tmp folder when under test
-		srcContent = bytes.ReplaceAll(srcContent, []byte("github.com/onsi/ginkgo/integration/_fixtures"), []byte(f.PackageRoot()))
+		srcContent = bytes.ReplaceAll(srcContent, []byte("github.com/onsi/ginkgo/v2/integration/_fixtures"), []byte(f.PackageRoot()))
 		srcContent = bytes.ReplaceAll(srcContent, []byte("_fixture"), []byte(""))
 		Ω(os.WriteFile(dstPath, srcContent, 0666)).Should(Succeed())
 	}
@@ -187,7 +187,7 @@ func (f FixtureManager) RemoveFile(pkg string, target string) {
 }
 
 func (f FixtureManager) PackageRoot() string {
-	return "github.com/onsi/ginkgo/integration/" + f.TmpDir
+	return "github.com/onsi/ginkgo/v2/integration/" + f.TmpDir
 }
 
 func (f FixtureManager) PackageNameFor(target string) string {

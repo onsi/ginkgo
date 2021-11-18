@@ -4,7 +4,7 @@ import (
 	"reflect"
 	"time"
 
-	"github.com/onsi/ginkgo/types"
+	"github.com/onsi/ginkgo/v2/types"
 )
 
 type ReportEntry = types.ReportEntry

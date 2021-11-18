@@ -1,9 +1,9 @@
 package D_test
 
 import (
-	. "github.com/onsi/ginkgo/integration/_fixtures/watch_fixture/D"
+	. "github.com/onsi/ginkgo/v2/integration/_fixtures/watch_fixture/D"
 
-	. "github.com/onsi/ginkgo"
+	. "github.com/onsi/ginkgo/v2"
 	. "github.com/onsi/gomega"
 )
 

@@ -6,7 +6,7 @@ Ginkgo is a mature, well-established, testing framework for Go designed to help 
 
 ```go
 import (
-    . "github.com/onsi/ginkgo"
+    . "github.com/onsi/ginkgo/v2"
     . "github.com/onsi/gomega"
     ...
 )
