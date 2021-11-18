@@ -6,7 +6,6 @@ import (
 	"io"
 	"os"
 	"os/exec"
-	"path/filepath"
 	"regexp"
 	"strings"
 	"syscall"
@@ -83,6 +82,31 @@ func runGoTest(suite TestSuite, cliConfig types.CLIConfig, goFlagsConfig types.G
 }
 
 func runSerial(suite TestSuite, ginkgoConfig types.SuiteConfig, reporterConfig types.ReporterConfig, cliConfig types.CLIConfig, goFlagsConfig types.GoFlagsConfig, additionalArgs []string) TestSuite {
+	if goFlagsConfig.Cover {
+		goFlagsConfig.CoverProfile = AbsPathForGeneratedAsset(goFlagsConfig.CoverProfile, suite, cliConfig, 0)
+	}
+	if goFlagsConfig.BlockProfile != "" {
+		goFlagsConfig.BlockProfile = AbsPathForGeneratedAsset(goFlagsConfig.BlockProfile, suite, cliConfig, 0)
+	}
+	if goFlagsConfig.CPUProfile != "" {
+		goFlagsConfig.CPUProfile = AbsPathForGeneratedAsset(goFlagsConfig.CPUProfile, suite, cliConfig, 0)
+	}
+	if goFlagsConfig.MemProfile != "" {
+		goFlagsConfig.MemProfile = AbsPathForGeneratedAsset(goFlagsConfig.MemProfile, suite, cliConfig, 0)
+	}
+	if goFlagsConfig.MutexProfile != "" {
+		goFlagsConfig.MutexProfile = AbsPathForGeneratedAsset(goFlagsConfig.MutexProfile, suite, cliConfig, 0)
+	}
+	if reporterConfig.JSONReport != "" {
+		reporterConfig.JSONReport = AbsPathForGeneratedAsset(reporterConfig.JSONReport, suite, cliConfig, 0)
+	}
+	if reporterConfig.JUnitReport != "" {
+		reporterConfig.JUnitReport = AbsPathForGeneratedAsset(reporterConfig.JUnitReport, suite, cliConfig, 0)
+	}
+	if reporterConfig.TeamcityReport != "" {
+		reporterConfig.TeamcityReport = AbsPathForGeneratedAsset(reporterConfig.TeamcityReport, suite, cliConfig, 0)
+	}
+
 	args, err := types.GenerateGinkgoTestRunArgs(ginkgoConfig, reporterConfig, goFlagsConfig)
 	command.AbortIfError("Failed to generate test run arguments", err)
 	args = append([]string{"--test.timeout=0"}, args...)
@@ -127,30 +151,40 @@ func runParallel(suite TestSuite, ginkgoConfig types.SuiteConfig, reporterConfig
 	server.Start()
 	defer server.Close()
 
+	if reporterConfig.JSONReport != "" {
+		reporterConfig.JSONReport = AbsPathForGeneratedAsset(reporterConfig.JSONReport, suite, cliConfig, 0)
+	}
+	if reporterConfig.JUnitReport != "" {
+		reporterConfig.JUnitReport = AbsPathForGeneratedAsset(reporterConfig.JUnitReport, suite, cliConfig, 0)
+	}
+	if reporterConfig.TeamcityReport != "" {
+		reporterConfig.TeamcityReport = AbsPathForGeneratedAsset(reporterConfig.TeamcityReport, suite, cliConfig, 0)
+	}
+
 	for proc := 1; proc <= numProcs; proc++ {
 		procGinkgoConfig := ginkgoConfig
 		procGinkgoConfig.ParallelProcess, procGinkgoConfig.ParallelTotal, procGinkgoConfig.ParallelHost = proc, numProcs, server.Address()
 
 		procGoFlagsConfig := goFlagsConfig
 		if goFlagsConfig.Cover {
-			procGoFlagsConfig.CoverProfile = fmt.Sprintf("%s.%d", goFlagsConfig.CoverProfile, proc)
-			coverProfiles = append(coverProfiles, filepath.Join(suite.Path, procGoFlagsConfig.CoverProfile))
+			procGoFlagsConfig.CoverProfile = AbsPathForGeneratedAsset(goFlagsConfig.CoverProfile, suite, cliConfig, proc)
+			coverProfiles = append(coverProfiles, procGoFlagsConfig.CoverProfile)
 		}
 		if goFlagsConfig.BlockProfile != "" {
-			procGoFlagsConfig.BlockProfile = fmt.Sprintf("%s.%d", goFlagsConfig.BlockProfile, proc)
-			blockProfiles = append(blockProfiles, filepath.Join(suite.Path, procGoFlagsConfig.BlockProfile))
+			procGoFlagsConfig.BlockProfile = AbsPathForGeneratedAsset(goFlagsConfig.BlockProfile, suite, cliConfig, proc)
+			blockProfiles = append(blockProfiles, procGoFlagsConfig.BlockProfile)
 		}
 		if goFlagsConfig.CPUProfile != "" {
-			procGoFlagsConfig.CPUProfile = fmt.Sprintf("%s.%d", goFlagsConfig.CPUProfile, proc)
-			cpuProfiles = append(cpuProfiles, filepath.Join(suite.Path, procGoFlagsConfig.CPUProfile))
+			procGoFlagsConfig.CPUProfile = AbsPathForGeneratedAsset(goFlagsConfig.CPUProfile, suite, cliConfig, proc)
+			cpuProfiles = append(cpuProfiles, procGoFlagsConfig.CPUProfile)
 		}
 		if goFlagsConfig.MemProfile != "" {
-			procGoFlagsConfig.MemProfile = fmt.Sprintf("%s.%d", goFlagsConfig.MemProfile, proc)
-			memProfiles = append(memProfiles, filepath.Join(suite.Path, procGoFlagsConfig.MemProfile))
+			procGoFlagsConfig.MemProfile = AbsPathForGeneratedAsset(goFlagsConfig.MemProfile, suite, cliConfig, proc)
+			memProfiles = append(memProfiles, procGoFlagsConfig.MemProfile)
 		}
 		if goFlagsConfig.MutexProfile != "" {
-			procGoFlagsConfig.MutexProfile = fmt.Sprintf("%s.%d", goFlagsConfig.MutexProfile, proc)
-			mutexProfiles = append(mutexProfiles, filepath.Join(suite.Path, procGoFlagsConfig.MutexProfile))
+			procGoFlagsConfig.MutexProfile = AbsPathForGeneratedAsset(goFlagsConfig.MutexProfile, suite, cliConfig, proc)
+			mutexProfiles = append(mutexProfiles, procGoFlagsConfig.MutexProfile)
 		}
 
 		args, err := types.GenerateGinkgoTestRunArgs(procGinkgoConfig, reporterConfig, procGoFlagsConfig)
@@ -209,7 +243,7 @@ func runParallel(suite TestSuite, ginkgoConfig types.SuiteConfig, reporterConfig
 	}
 
 	if len(coverProfiles) > 0 {
-		coverProfile := filepath.Join(suite.Path, goFlagsConfig.CoverProfile)
+		coverProfile := AbsPathForGeneratedAsset(goFlagsConfig.CoverProfile, suite, cliConfig, 0)
 		err := MergeAndCleanupCoverProfiles(coverProfiles, coverProfile)
 		command.AbortIfError("Failed to combine cover profiles", err)
 
@@ -222,22 +256,22 @@ func runParallel(suite TestSuite, ginkgoConfig types.SuiteConfig, reporterConfig
 		}
 	}
 	if len(blockProfiles) > 0 {
-		blockProfile := filepath.Join(suite.Path, goFlagsConfig.BlockProfile)
+		blockProfile := AbsPathForGeneratedAsset(goFlagsConfig.BlockProfile, suite, cliConfig, 0)
 		err := MergeProfiles(blockProfiles, blockProfile)
 		command.AbortIfError("Failed to combine blockprofiles", err)
 	}
 	if len(cpuProfiles) > 0 {
-		cpuProfile := filepath.Join(suite.Path, goFlagsConfig.CPUProfile)
+		cpuProfile := AbsPathForGeneratedAsset(goFlagsConfig.CPUProfile, suite, cliConfig, 0)
 		err := MergeProfiles(cpuProfiles, cpuProfile)
 		command.AbortIfError("Failed to combine cpuprofiles", err)
 	}
 	if len(memProfiles) > 0 {
-		memProfile := filepath.Join(suite.Path, goFlagsConfig.MemProfile)
+		memProfile := AbsPathForGeneratedAsset(goFlagsConfig.MemProfile, suite, cliConfig, 0)
 		err := MergeProfiles(memProfiles, memProfile)
 		command.AbortIfError("Failed to combine memprofiles", err)
 	}
 	if len(mutexProfiles) > 0 {
-		mutexProfile := filepath.Join(suite.Path, goFlagsConfig.MutexProfile)
+		mutexProfile := AbsPathForGeneratedAsset(goFlagsConfig.MutexProfile, suite, cliConfig, 0)
 		err := MergeProfiles(mutexProfiles, mutexProfile)
 		command.AbortIfError("Failed to combine mutexprofiles", err)
 	}

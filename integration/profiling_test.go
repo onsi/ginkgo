@@ -1,6 +1,7 @@
 package integration_test
 
 import (
+	"os"
 	"os/exec"
 	"regexp"
 	"strconv"
@@ -274,6 +275,116 @@ var _ = Describe("Profiling Specs", func() {
 					Ω(fm.PathTo("profile", "profiles", pkg+"_cpu.out")).Should(BeAnExistingFile(), "generate a correctly named cpu profile")
 				}
 			})
+		})
+	})
+
+	Context("with a read-only tree and a readable output-dir", func() {
+		BeforeEach(func() {
+			fm.MountFixture("profile")
+			sess := startGinkgo(fm.PathTo("profile"), "build", "-r", "-cover")
+			Eventually(sess).Should(gexec.Exit(0))
+			fm.MkEmpty("output")
+			Ω(os.Chmod(fm.PathTo("profile", "block_contest"), 0555)).Should(Succeed())
+			Ω(os.Chmod(fm.PathTo("profile", "lock_contest"), 0555)).Should(Succeed())
+			Ω(os.Chmod(fm.PathTo("profile", "slow_memory_hog"), 0555)).Should(Succeed())
+			Ω(os.Chmod(fm.PathTo("profile"), 0555)).Should(Succeed())
+		})
+
+		AfterEach(func() {
+			Ω(os.Chmod(fm.PathTo("profile"), 0755)).Should(Succeed())
+			Ω(os.Chmod(fm.PathTo("profile", "block_contest"), 0755)).Should(Succeed())
+			Ω(os.Chmod(fm.PathTo("profile", "lock_contest"), 0755)).Should(Succeed())
+			Ω(os.Chmod(fm.PathTo("profile", "slow_memory_hog"), 0755)).Should(Succeed())
+		})
+
+		It("never tries to write to the tree, and only emits to ouput-dir", func() {
+			sess := startGinkgo(fm.PathTo("profile"),
+				"--output-dir=../output",
+				"--cpuprofile=cpu.out",
+				"--memprofile=mem.out",
+				"--blockprofile=block.out",
+				"--mutexprofile=mutex.out",
+				"--coverprofile=cover.out",
+				"--json-report=report.json",
+				"--junit-report=report.xml",
+				"--teamcity-report=report.tm",
+				"--procs=2",
+				"./block_contest/block_contest.test",
+				"./lock_contest/lock_contest.test",
+				"./slow_memory_hog/slow_memory_hog.test",
+			)
+			Eventually(sess).Should(gexec.Exit(0))
+			Ω(fm.ListDir("output")).Should(ConsistOf(
+				"cover.out",
+				"report.json",
+				"report.xml",
+				"report.tm",
+				"block_contest_cpu.out",
+				"lock_contest_cpu.out",
+				"slow_memory_hog_cpu.out",
+				"block_contest_mem.out",
+				"lock_contest_mem.out",
+				"slow_memory_hog_mem.out",
+				"block_contest_block.out",
+				"lock_contest_block.out",
+				"slow_memory_hog_block.out",
+				"block_contest_mutex.out",
+				"lock_contest_mutex.out",
+				"slow_memory_hog_mutex.out",
+				"block_contest.test",
+				"lock_contest.test",
+				"slow_memory_hog.test",
+			))
+		})
+
+		It("also works when keeping separate reports and profiles and only emits to ouput-dir", func() {
+			sess := startGinkgo(fm.PathTo("profile"),
+				"--output-dir=../output",
+				"--cpuprofile=cpu.out",
+				"--memprofile=mem.out",
+				"--blockprofile=block.out",
+				"--mutexprofile=mutex.out",
+				"--coverprofile=cover.out",
+				"--json-report=report.json",
+				"--junit-report=report.xml",
+				"--teamcity-report=report.tm",
+				"--procs=2",
+				"--keep-separate-coverprofiles",
+				"--keep-separate-reports",
+				"./block_contest/block_contest.test",
+				"./lock_contest/lock_contest.test",
+				"./slow_memory_hog/slow_memory_hog.test",
+			)
+			Eventually(sess).Should(gexec.Exit(0))
+			Ω(fm.ListDir("output")).Should(ConsistOf(
+				"block_contest_cover.out",
+				"lock_contest_cover.out",
+				"slow_memory_hog_cover.out",
+				"block_contest_report.json",
+				"lock_contest_report.json",
+				"slow_memory_hog_report.json",
+				"block_contest_report.xml",
+				"lock_contest_report.xml",
+				"slow_memory_hog_report.xml",
+				"block_contest_report.tm",
+				"lock_contest_report.tm",
+				"slow_memory_hog_report.tm",
+				"block_contest_cpu.out",
+				"lock_contest_cpu.out",
+				"slow_memory_hog_cpu.out",
+				"block_contest_mem.out",
+				"lock_contest_mem.out",
+				"slow_memory_hog_mem.out",
+				"block_contest_block.out",
+				"lock_contest_block.out",
+				"slow_memory_hog_block.out",
+				"block_contest_mutex.out",
+				"lock_contest_mutex.out",
+				"slow_memory_hog_mutex.out",
+				"block_contest.test",
+				"lock_contest.test",
+				"slow_memory_hog.test",
+			))
 		})
 	})
 })

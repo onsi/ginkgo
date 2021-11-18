@@ -151,6 +151,17 @@ func (f FixtureManager) ContentOf(pkg string, target string) string {
 	return string(content)
 }
 
+func (f FixtureManager) ListDir(pkg string, target ...string) []string {
+	path := f.PathTo(pkg, target...)
+	files, err := os.ReadDir(path)
+	ExpectWithOffset(1, err).NotTo(HaveOccurred())
+	out := []string{}
+	for _, f := range files {
+		out = append(out, f.Name())
+	}
+	return out
+}
+
 func (f FixtureManager) LoadJSONReports(pkg string, target string) []types.Report {
 	data := []byte(f.ContentOf(pkg, target))
 	reports := []types.Report{}
@@ -226,7 +237,9 @@ func raceDetectorSupported() bool {
 	switch runtime.GOOS {
 	case "linux":
 		return runtime.GOARCH == "amd64" || runtime.GOARCH == "ppc64le" || runtime.GOARCH == "arm64"
-	case "darwin", "freebsd", "netbsd", "windows":
+	case "darwin":
+		return runtime.GOARCH == "amd64" || runtime.GOARCH == "arm64"
+	case "freebsd", "netbsd", "windows":
 		return runtime.GOARCH == "amd64"
 	default:
 		return false
