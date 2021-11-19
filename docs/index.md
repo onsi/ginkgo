@@ -2769,10 +2769,29 @@ In this chapter we'll switch gears and illustrate common patterns for how Ginkgo
 
 ### Recommended Continuous Integration Configuration
 
-The `ginkgo` CLI supports a number of flags to control how your suites are run.  We recommend the following set of flags when running in a continuous integration environment:
+When running in CI you'll want to make sure that the version of the `ginkgo` CLI you are using matches the version of Ginkgo in your `go.mod` file.  You can ensure this by invoking the `ginkgo` command via `go run`:
+
+`go run github.com/onsi/ginkgo/v2/ginkgo`
+
+This alone, however, is often not enought.  The Ginkgo CLi includes additional dependencies that aren't part of the Ginkgo library - since your code doesn't import the cli these dependencies probably aren't in your `go.sum` file.  To get around this it is idiomatic Go to introduce a `tools.go` file.  This can go anywhere in your module - for example, Gomega places its `tools.go` at the top-level.  Your `tools.go` file should look like:
+
+```go
+//go:build tools
+// +build tools
+
+package main
+
+import (
+  _ "github.com/onsi/ginkgo/v2/ginkgo"
+)
+```
+
+The `//go:build tools` constraint ensures this code is never actuall built, however the `_ "github.com/onsi/ginkgo/v2/ginkgo` import statement is enough to convince `go mod` to include the Ginkgo CLI dependencies in your `go.sum` file.
+
+Once you have `ginkgo` running on CI, you'll want to pick and choose the optimal set of flags for your test runs.  We recommend the following set of flags when running in a continuous integration environment:
 
 ```bash
-ginkgo -r --procs=N --compilers=N --randomize-all --randomize-suites --fail-on-pending --keep-going --cover --coverprofile=cover.profile --race --trace --json-report=report.json --timeout=TIMEOUT
+go run github.com/onsi/ginkgo/v2/ginkgo -r --procs=N --compilers=N --randomize-all --randomize-suites --fail-on-pending --keep-going --cover --coverprofile=cover.profile --race --trace --json-report=report.json --timeout=TIMEOUT
 ```
 
 Here's why:
@@ -2787,15 +2806,6 @@ Here's why:
 - `--trace` will instruct Ginkgo to generate a stack trace for all failures (instead of simply including the location where the failure occurred).  This isn't usually necessary but can be helpful in CI environments where you may not have access to a fast feedback loop to iterate on and debug code.
 - `--json-report=report.json` will generate a JSON formatted report file.  You can store these off and use them later to get structured access to the suite and spec results.
 - `--timeout` allows you to specify a timeout for the `ginkgo` run.  The default duration is one hour, which may or may not be enough!
-
-When running on CI you'll want to make sure the version of the Ginkgo CLI you are using matches the version of Ginkgo in your `go.mod` file.  You can ensure this by invoking the `ginkgo` command via `go run`:
-
-```bash
-go run github.com/onsi/ginkgo/v2/ginkgo
-```
-
-You can invoke `ginkgo` in this way from any directory governed by a project's `go.mod` file.
-
 
 ### Supporting Custom Suite Configuration
 
