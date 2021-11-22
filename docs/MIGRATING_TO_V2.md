@@ -17,7 +17,7 @@ Currently, 2.0 lives on a branch called `ver2` and major version number of Ginkg
 
 1. Get the `2.0.0-rc2` tag of `ginkgo/v2`:
 	```bash
-	go get github.com/onsi/ginkgo/v2@2.0.0-rc2
+	go get github.com/onsi/ginkgo/v2@v2.0.0-rc2
 	```
 
 2. Install the V2 CLI.  Running this may require you to run a few addition `go get`s - just follow the go toolchain's instructions until you successfully get ginkgo v2 compiled:
