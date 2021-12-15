@@ -71,8 +71,8 @@ var _ = Describe("Reporting", func() {
 				"panics - panicked",
 				"is pending - pending",
 				"is skipped - skipped",
-				"1: [DeferCleanup (AfterSuite)] - passed",
-				"1: [DeferCleanup (AfterSuite)] - passed",
+				"1: [DeferCleanup (Suite)] - passed",
+				"1: [DeferCleanup (Suite)] - passed",
 				"",
 			))
 		})
@@ -95,10 +95,10 @@ var _ = Describe("Reporting", func() {
 					"panics - panicked",
 					"is pending - pending",
 					"is skipped - skipped",
-					"1: [DeferCleanup (AfterSuite)] - passed",
-					"1: [DeferCleanup (AfterSuite)] - passed",
-					"2: [DeferCleanup (AfterSuite)] - passed",
-					"2: [DeferCleanup (AfterSuite)] - passed",
+					"1: [DeferCleanup (Suite)] - passed",
+					"1: [DeferCleanup (Suite)] - passed",
+					"2: [DeferCleanup (Suite)] - passed",
+					"2: [DeferCleanup (Suite)] - passed",
 					"",
 				))
 			})
@@ -197,7 +197,7 @@ var _ = Describe("Reporting", func() {
 			Ω(getTestCase("[It] reporting test is pending", suite.TestCases).Status).Should(Equal("pending"))
 			Ω(getTestCase("[It] reporting test is pending", suite.TestCases).Skipped.Message).Should(Equal("pending"))
 
-			Ω(getTestCase("[DeferCleanup (AfterSuite)]", suite.TestCases).Status).Should(Equal("passed"))
+			Ω(getTestCase("[DeferCleanup (Suite)]", suite.TestCases).Status).Should(Equal("passed"))
 			Ω(getTestCase("[ReportAfterSuite] my report", suite.TestCases).Status).Should(Equal("failed"))
 
 			Ω(getTestCase("[It] reporting test is skipped", suite.TestCases).Status).Should(Equal("skipped"))

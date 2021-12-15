@@ -502,7 +502,7 @@ const (
 )
 
 var NodeTypesForContainerAndIt = NodeTypeContainer | NodeTypeIt
-var NodeTypesForSuiteLevelNodes = NodeTypeBeforeSuite | NodeTypeSynchronizedBeforeSuite | NodeTypeAfterSuite | NodeTypeSynchronizedAfterSuite | NodeTypeReportAfterSuite
+var NodeTypesForSuiteLevelNodes = NodeTypeBeforeSuite | NodeTypeSynchronizedBeforeSuite | NodeTypeAfterSuite | NodeTypeSynchronizedAfterSuite | NodeTypeReportAfterSuite | NodeTypeCleanupAfterSuite
 
 var ntEnumSupport = NewEnumSupport(map[uint]string{
 	uint(NodeTypeInvalid):                 "INVALID NODE TYPE",
@@ -522,9 +522,9 @@ var ntEnumSupport = NewEnumSupport(map[uint]string{
 	uint(NodeTypeReportAfterEach):         "ReportAfterEach",
 	uint(NodeTypeReportAfterSuite):        "ReportAfterSuite",
 	uint(NodeTypeCleanupInvalid):          "INVALID CLEANUP NODE",
-	uint(NodeTypeCleanupAfterEach):        "DeferCleanup (AfterEach)",
-	uint(NodeTypeCleanupAfterAll):         "DeferCleanup (AfterAll)",
-	uint(NodeTypeCleanupAfterSuite):       "DeferCleanup (AfterSuite)",
+	uint(NodeTypeCleanupAfterEach):        "DeferCleanup",
+	uint(NodeTypeCleanupAfterAll):         "DeferCleanup (All)",
+	uint(NodeTypeCleanupAfterSuite):       "DeferCleanup (Suite)",
 })
 
 func (nt NodeType) String() string {

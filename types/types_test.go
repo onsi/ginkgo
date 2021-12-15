@@ -98,9 +98,9 @@ var _ = Describe("Types", func() {
 			Entry(nil, types.NodeTypeReportAfterEach, "ReportAfterEach"),
 			Entry(nil, types.NodeTypeReportAfterSuite, "ReportAfterSuite"),
 			Entry(nil, types.NodeTypeCleanupInvalid, "INVALID CLEANUP NODE"),
-			Entry(nil, types.NodeTypeCleanupAfterEach, "DeferCleanup (AfterEach)"),
-			Entry(nil, types.NodeTypeCleanupAfterAll, "DeferCleanup (AfterAll)"),
-			Entry(nil, types.NodeTypeCleanupAfterSuite, "DeferCleanup (AfterSuite)"),
+			Entry(nil, types.NodeTypeCleanupAfterEach, "DeferCleanup"),
+			Entry(nil, types.NodeTypeCleanupAfterAll, "DeferCleanup (All)"),
+			Entry(nil, types.NodeTypeCleanupAfterSuite, "DeferCleanup (Suite)"),
 			Entry(nil, types.NodeTypeInvalid, "INVALID NODE TYPE"),
 		)
 	})
