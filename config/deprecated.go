@@ -48,22 +48,22 @@ type DeprecatedDefaultReporterConfigType struct {
 	ReportFile        string
 }
 
-// Sadly there is no way to graefully deprecate access to these global config variables.
-// Users who need access to Ginkgo's configuration should use the DLS's GinkgoConfiguraiton() method
+// Sadly there is no way to gracefully deprecate access to these global config variables.
+// Users who need access to Ginkgo's configuration should use the DSL's GinkgoConfiguraiton() method
 // These new unwieldy type names exist to give users a hint when they try to compile and the compilation fails
-type GinkgoConfigIsNoLongerAccessibleFromTheConfigPackageUseTheDLSsGinkgoConfigurationFunctionInstead struct{}
+type GinkgoConfigIsNoLongerAccessibleFromTheConfigPackageUseTheDSLsGinkgoConfigurationFunctionInstead struct{}
 
-// Sadly there is no way to graefully deprecate access to these global config variables.
-// Users who need access to Ginkgo's configuration should use the DLS's GinkgoConfiguraiton() method
+// Sadly there is no way to gracefully deprecate access to these global config variables.
+// Users who need access to Ginkgo's configuration should use the DSL's GinkgoConfiguraiton() method
 // These new unwieldy type names exist to give users a hint when they try to compile and the compilation fails
-var GinkgoConfig = GinkgoConfigIsNoLongerAccessibleFromTheConfigPackageUseTheDLSsGinkgoConfigurationFunctionInstead{}
+var GinkgoConfig = GinkgoConfigIsNoLongerAccessibleFromTheConfigPackageUseTheDSLsGinkgoConfigurationFunctionInstead{}
 
-// Sadly there is no way to graefully deprecate access to these global config variables.
-// Users who need access to Ginkgo's configuration should use the DLS's GinkgoConfiguraiton() method
+// Sadly there is no way to gracefully deprecate access to these global config variables.
+// Users who need access to Ginkgo's configuration should use the DSL's GinkgoConfiguraiton() method
 // These new unwieldy type names exist to give users a hint when they try to compile and the compilation fails
-type DefaultReporterConfigIsNoLongerAccessibleFromTheConfigPackageUseTheDLSsGinkgoConfigurationFunctionInstead struct{}
+type DefaultReporterConfigIsNoLongerAccessibleFromTheConfigPackageUseTheDSLsGinkgoConfigurationFunctionInstead struct{}
 
-// Sadly there is no way to graefully deprecate access to these global config variables.
-// Users who need access to Ginkgo's configuration should use the DLS's GinkgoConfiguraiton() method
+// Sadly there is no way to gracefully deprecate access to these global config variables.
+// Users who need access to Ginkgo's configuration should use the DSL's GinkgoConfiguraiton() method
 // These new unwieldy type names exist to give users a hint when they try to compile and the compilation fails
-var DefaultReporterConfig = DefaultReporterConfigIsNoLongerAccessibleFromTheConfigPackageUseTheDLSsGinkgoConfigurationFunctionInstead{}
+var DefaultReporterConfig = DefaultReporterConfigIsNoLongerAccessibleFromTheConfigPackageUseTheDSLsGinkgoConfigurationFunctionInstead{}
