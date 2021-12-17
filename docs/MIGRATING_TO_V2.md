@@ -15,15 +15,15 @@ A release candidate for Ginkgo 2.0 is now available.  The GA release should come
 
 Currently, 2.0 lives on a branch called `ver2` and major version number of Ginkgo has been bumped to v2.  If you are using `go mod` you'll need to do the following to use Ginkgo 2.0 in an existing or new project:
 
-1. Get the `2.0.0-rc2` tag of `ginkgo/v2`:
+1. Get the `2.0.0-rc3` tag of `ginkgo/v2`:
 	```bash
-	go get github.com/onsi/ginkgo/v2@v2.0.0-rc2
+	go get github.com/onsi/ginkgo/v2@v2.0.0-rc3
 	```
 
 2. Install the V2 CLI.  Running this may require you to run a few addition `go get`s - just follow the go toolchain's instructions until you successfully get ginkgo v2 compiled:
 	```bash
 	go install github.com/onsi/ginkgo/v2/ginkgo
-	ginkgo version //should print out "Ginkgo Version 2.0.0-rc2"
+	ginkgo version //should print out "Ginkgo Version 2.0.0-rc3"
 	```
 
 3. Update all your import statements from `import github.com/onsi/ginkgo` to `import github.com/onsi/ginkgo/v2`.  You can use your text editor to replace all instances of `"github.com/onsi/ginkgo` with `"github.com/onsi/ginkgo/v2`
