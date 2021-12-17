@@ -5,8 +5,6 @@ import (
 
 	. "github.com/onsi/ginkgo/v2"
 	. "github.com/onsi/ginkgo/v2/internal/test_helpers"
-	"github.com/onsi/ginkgo/v2/reporters"
-	"github.com/onsi/ginkgo/v2/types"
 	. "github.com/onsi/gomega"
 	"github.com/onsi/gomega/gbytes"
 	"github.com/onsi/gomega/gexec"
@@ -14,17 +12,13 @@ import (
 
 var _ = Describe("ReportEntries", func() {
 	var output string
-	var report types.Report
-	var junit reporters.JUnitTestSuite
 
-	Describe("when running a test that adds report entries", func() {
-		BeforeEach(func() {
+	Describe("when running a test that adds report entries", Ordered, func() {
+		BeforeAll(func() {
 			fm.MountFixture("report_entries")
 			session := startGinkgo(fm.PathTo("report_entries"), "--no-color", "--procs=2", "--json-report=out.json", "--junit-report=out.xml")
 			Eventually(session).Should(gexec.Exit(1))
 			output = string(session.Out.Contents())
-			report = fm.LoadJSONReports("report_entries", "out.json")[0]
-			junit = fm.LoadJUnitReport("report_entries", "out.xml").TestSuites[0]
 		})
 
 		It("should honor the report visibilities and stringer formatting when emitting output", func() {
@@ -50,6 +44,7 @@ var _ = Describe("ReportEntries", func() {
 		})
 
 		It("captures all report entries in the JSON report", func() {
+			report := fm.LoadJSONReports("report_entries", "out.json")[0]
 			reports := Reports(report.SpecReports)
 			passes := reports.Find("passes")
 			Ω(passes.ReportEntries).Should(HaveLen(6))
@@ -118,6 +113,7 @@ var _ = Describe("ReportEntries", func() {
 		})
 
 		It("captures all report entries in the JUnit report", func() {
+			junit := fm.LoadJUnitReport("report_entries", "out.xml").TestSuites[0]
 			var content string
 			for _, testCase := range junit.TestCases {
 				if testCase.Name == "[It] top-level container passes" {

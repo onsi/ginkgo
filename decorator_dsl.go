@@ -55,6 +55,16 @@ You can learn more about decorators here: https://onsi.github.io/ginkgo/#decorat
 const Ordered = internal.Ordered
 
 /*
+OncePerOrdered is a decorator that allows you to mark outer BeforeEach, AfterEach, JustBeforeEach, and JustAfterEach setup nodes to run once
+per ordered context.  Normally these setup nodes run around each individual spec, with OncePerOrdered they will run once around the set of specs in an ordered container.
+The behavior for non-Ordered containers/specs is unchanged.
+
+You can learh more here: https://onsi.github.io/ginkgo/#setup-around-ordered-containers-the-onceperordered-decorator
+You can learn more about decorators here: https://onsi.github.io/ginkgo/#decorator-reference
+*/
+const OncePerOrdered = internal.OncePerOrdered
+
+/*
 Label decorates specs with Labels.  Multiple labels can be passed to Label and these can be arbitrary strings but must not include the following characters: "&|!,()/".
 Labels can be applied to container and subject nodes, but not setup nodes.  You can provide multiple Labels to a given node and a spec's labels is the union of all labels in its node hierarchy.
 

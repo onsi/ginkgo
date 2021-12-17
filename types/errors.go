@@ -162,10 +162,10 @@ Ginkgo only allows you to define one suite %s node.`, nodeType, earlierNodeType,
 }
 
 /* Decorator errors */
-func (g ginkgoErrors) InvalidDecoratorForNodeType(cl CodeLocation, nodeType NodeType, decoration string) error {
+func (g ginkgoErrors) InvalidDecoratorForNodeType(cl CodeLocation, nodeType NodeType, decorator string) error {
 	return GinkgoError{
 		Heading:      "Invalid Decorator",
-		Message:      formatter.F(`[%s] node cannot be passed a '%s' decoration`, nodeType, decoration),
+		Message:      formatter.F(`[%s] node cannot be passed a(n) '%s' decorator`, nodeType, decorator),
 		CodeLocation: cl,
 		DocLink:      "node-decorators-overview",
 	}
@@ -180,10 +180,10 @@ func (g ginkgoErrors) InvalidDeclarationOfFocusedAndPending(cl CodeLocation, nod
 	}
 }
 
-func (g ginkgoErrors) UnknownDecorator(cl CodeLocation, nodeType NodeType, decoration interface{}) error {
+func (g ginkgoErrors) UnknownDecorator(cl CodeLocation, nodeType NodeType, decorator interface{}) error {
 	return GinkgoError{
 		Heading:      "Unkown Decorator",
-		Message:      formatter.F(`[%s] node was passed an unkown decoration: '%#v'`, nodeType, decoration),
+		Message:      formatter.F(`[%s] node was passed an unkown decorator: '%#v'`, nodeType, decorator),
 		CodeLocation: cl,
 		DocLink:      "node-decorators-overview",
 	}
@@ -221,7 +221,7 @@ func (g ginkgoErrors) MissingBodyFunction(cl CodeLocation, nodeType NodeType) er
 func (g ginkgoErrors) InvalidSerialNodeInNonSerialOrderedContainer(cl CodeLocation, nodeType NodeType) error {
 	return GinkgoError{
 		Heading:      "Invalid Serial Node in Non-Serial Ordered Container",
-		Message:      formatter.F(`[%s] node was decorated with Serial but occurs in an Ordered container that is not marked Serial.  Move the Serial decoration to the outer-most Ordered container to mark all ordered specs within the container as serial.`, nodeType),
+		Message:      formatter.F(`[%s] node was decorated with Serial but occurs in an Ordered container that is not marked Serial.  Move the Serial decorator to the outer-most Ordered container to mark all ordered specs within the container as serial.`, nodeType),
 		CodeLocation: cl,
 		DocLink:      "node-decorators-overview",
 	}

@@ -28,62 +28,75 @@ func OrderSpecs(specs Specs, suiteConfig types.SuiteConfig) (GroupedSpecIndices,
 	// Seed a new random source based on thee configured random seed.
 	r := rand.New(rand.NewSource(suiteConfig.RandomSeed))
 
-	// Decide how to group specs for shuffling.  By default we shuffle top-level containers,
-	// but setting --randomize-all-specs causes us to shuffle all specs (excpect for Ordered specs)
-	nodeTypesToGroup := types.NodeTypesForContainerAndIt
-	if suiteConfig.RandomizeAllSpecs {
-		nodeTypesToGroup = types.NodeTypeIt
-	}
-
-	// Go through all specs and build the permutable groups.  These are groupings that can be shuffled.
-	// Along the way we extract sort keys to ensure a consistent order of specs before we permute them.
-	permutableGroups := map[uint]SpecIndices{}
-	groupIsMarkedOrdered := map[uint]bool{}
-	groupSortKeys := map[uint]string{}
-	groupIDs := []uint{}
+	// first break things into execution groups
+	// a group represents a single unit of execution and is a collection of SpecIndices
+	// usually a group is just a single spec, however ordered containers must be preserved as a single group
+	executionGroupIDs := []uint{}
+	executionGroups := map[uint]SpecIndices{}
 	for idx, spec := range specs {
-		groupingNode := spec.Nodes.FirstNodeMarkedOrdered()
-		if groupingNode.IsZero() {
-			// If a spec is not in an ordered container...
-			// ...we group based on the first node with a nodetype satisfying `nodeTypesToGroup`
-			groupingNode = spec.Nodes.FirstNodeWithType(nodeTypesToGroup)
-		} else {
-			// If a spec is in an ordered container...
-			// ...we group based on the outermost ordered container
-			groupIsMarkedOrdered[groupingNode.ID] = true
+		groupNode := spec.Nodes.FirstNodeMarkedOrdered()
+		if groupNode.IsZero() {
+			groupNode = spec.Nodes.FirstNodeWithType(types.NodeTypeIt)
 		}
-		// we've figured out which group we're in, so we add this specs index to the group.
-		permutableGroups[groupingNode.ID] = append(permutableGroups[groupingNode.ID], idx)
-		// and, while we're at it, extract the sort key for this group if we haven't already.
-		if groupSortKeys[groupingNode.ID] == "" {
-			groupSortKeys[groupingNode.ID] = groupingNode.CodeLocation.String()
-			groupIDs = append(groupIDs, groupingNode.ID)
+		executionGroups[groupNode.ID] = append(executionGroups[groupNode.ID], idx)
+		if len(executionGroups[groupNode.ID]) == 1 {
+			executionGroupIDs = append(executionGroupIDs, groupNode.ID)
 		}
 	}
 
-	// now sort the groups by the sort key.  We use the grouping node's code location and break ties using group ID
-	sort.SliceStable(groupIDs, func(i, j int) bool {
-		keyA := groupSortKeys[groupIDs[i]]
-		keyB := groupSortKeys[groupIDs[j]]
+	// now, we only shuffle all the execution groups if we're randomizing all specs, otherwise
+	// we shuffle outermost containers.  so we need to form shufflable groupings of GroupIDs
+	shufflableGroupingIDs := []uint{}
+	shufflableGroupingIDToGroupIDs := map[uint][]uint{}
+	shufflableGroupingsIDToSortKeys := map[uint]string{}
+
+	// for each execution group we're going to have to pick a node to represent how the
+	// execution group is grouped for shuffling:
+	nodeTypesToShuffle := types.NodeTypesForContainerAndIt
+	if suiteConfig.RandomizeAllSpecs {
+		nodeTypesToShuffle = types.NodeTypeIt
+	}
+
+	//so, fo reach execution group:
+	for _, groupID := range executionGroupIDs {
+		// pick out a representative spec
+		representativeSpec := specs[executionGroups[groupID][0]]
+
+		// and grab the node on the spec that will represent which shufflable group this execution group belongs tu
+		shufflableGroupingNode := representativeSpec.Nodes.FirstNodeWithType(nodeTypesToShuffle)
+
+		//add the execution group to its shufflable group
+		shufflableGroupingIDToGroupIDs[shufflableGroupingNode.ID] = append(shufflableGroupingIDToGroupIDs[shufflableGroupingNode.ID], groupID)
+
+		//and if it's the first one in
+		if len(shufflableGroupingIDToGroupIDs[shufflableGroupingNode.ID]) == 1 {
+			// record the shuffleable group ID
+			shufflableGroupingIDs = append(shufflableGroupingIDs, shufflableGroupingNode.ID)
+			// and record the sort key to use
+			shufflableGroupingsIDToSortKeys[shufflableGroupingNode.ID] = shufflableGroupingNode.CodeLocation.String()
+		}
+	}
+
+	// now we sort the shufflable groups by the sort key.  We use the shufflable group nodes code location and break ties using its node id
+	sort.SliceStable(shufflableGroupingIDs, func(i, j int) bool {
+		keyA := shufflableGroupingsIDToSortKeys[shufflableGroupingIDs[i]]
+		keyB := shufflableGroupingsIDToSortKeys[shufflableGroupingIDs[j]]
 		if keyA == keyB {
-			return groupIDs[i] < groupIDs[j]
+			return shufflableGroupingIDs[i] < shufflableGroupingIDs[j]
 		} else {
 			return keyA < keyB
 		}
 	})
 
-	// now permute the sorted group IDs and build the ordered Groups
+	// now we permute the sorted shufflable grouping IDs and build the ordered Groups
 	orderedGroups := GroupedSpecIndices{}
-	permutation := r.Perm(len(groupIDs))
+	permutation := r.Perm(len(shufflableGroupingIDs))
 	for _, j := range permutation {
-		if groupIsMarkedOrdered[groupIDs[j]] {
-			// If the group is marked ordered, we preserve the grouping to ensure ordered specs always run on the same Ginkgo process
-			orderedGroups = append(orderedGroups, permutableGroups[groupIDs[j]])
-		} else {
-			// If the group is _not_ marked ordered, we expand the grouping (it has served its purpose for permutation), in order to allow parallelizing across the specs in the group.
-			for _, idx := range permutableGroups[groupIDs[j]] {
-				orderedGroups = append(orderedGroups, SpecIndices{idx})
-			}
+		//let's get the execution group IDs for this shufflable group:
+		executionGroupIDsForJ := shufflableGroupingIDToGroupIDs[shufflableGroupingIDs[j]]
+		// and we'll add their associated specindices to the orderedGroups slice:
+		for _, executionGroupID := range executionGroupIDsForJ {
+			orderedGroups = append(orderedGroups, executionGroups[executionGroupID])
 		}
 	}
 

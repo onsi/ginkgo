@@ -7,11 +7,6 @@ import (
 	"github.com/onsi/ginkgo/v2/types"
 )
 
-// TODO:
-// - get RPC working
-// - performance test
-// - add DeferCleanup to test helper
-
 type rpcClient struct {
 	serverHost string
 	client     *rpc.Client
@@ -80,7 +75,7 @@ func (client *rpcClient) Write(p []byte) (int, error) {
 func (client *rpcClient) PostSynchronizedBeforeSuiteCompleted(state types.SpecState, data []byte) error {
 	beforeSuiteState := BeforeSuiteState{
 		State: state,
-		Data: data,
+		Data:  data,
 	}
 	return client.client.Call("Server.BeforeSuiteCompleted", beforeSuiteState, voidReceiver)
 }

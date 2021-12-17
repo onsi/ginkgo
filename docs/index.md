@@ -634,7 +634,7 @@ invalid can potentially infuriating to debug:
 ```go
 /* === INVALID === */
 var _ = Describe("book", func() {
-  book := &book.Book{ // No!
+  book := &books.Book{ // No!
     Title:  "Les Miserables",
     Author: "Victor Hugo",
     Pages:  2783,
@@ -1604,7 +1604,7 @@ For example:
 ```go
 /* === INVALID === */
 Describe("checking out a book", func() {
-  var book *book.Bookmarks
+  var book *books.Book
   var err error
 
   It("can fetch a book from a library", func() {
@@ -1981,7 +1981,7 @@ Ginkgo provides `Ordered` containers to solve for these usecases.  Specs in `Ord
 ```go
 /* === INVALID === */
 Describe("checking out a book", func() {
-  var book *book.Bookmarks
+  var book *books.Book
   var err error
 
   It("can fetch a book from a library", func() {
@@ -2008,7 +2008,7 @@ When we introduced this example we recommended condensing the tests into a singl
 
 ```go
 Describe("checking out a book", Ordered, func() {
-  var book *book.Bookmarks
+  var book *books.Book
   var err error
 
   It("can fetch a book from a library", func() {
@@ -2046,7 +2046,7 @@ There are, however, two new setup node variants that can be used within `Ordered
 ```go
 Describe("checking out a book", Ordered, func() {
   var libraryClient *library.Client
-  var book *book.Bookmarks
+  var book *books.Book
   var err error
 
   BeforeAll(func() {
@@ -2088,8 +2088,78 @@ BeforeAll(func() {
   Expect(libraryClient.Connect()).To(Succeed())  
   DeferCleanup(libraryClient.Disconnect)
 })
-
 ```
+
+#### Setup around Ordered Containers: the OncePerOrdered Decorator
+
+It's a common pattern to have setup and cleanup code at the outer-most level of a suite that is intended to ensure that every spec runs from with a clean slate.  For example, we may be testing our library service and want to ensure that each spec begins with the same library setup.  We might write something like this at the top level of our suite file:
+
+```go
+BeforeEach(func() {
+    libraryClient = library.NewClient()
+    Expect(libraryClient.Connect()).To(Succeed()
+
+    snapshot := libraryClient.TakeSnapshot()
+    DeferCleanup(libraryClient.RestoreSnapshot, snapshot)
+})
+```
+
+now, every spec will be guaranteed to start with the same initial state and we are free to write our specs without worrying about spec polution.
+
+This behavior, however, will cause specs in Ordered containers to break.  Consider this set of specs:
+
+```go
+Describe("checking out a book", Ordered, func() {
+  var book *books.Book
+  var err error
+
+  BeforeAll(func() {
+    libraryClient.AddBook( &books.Book{
+      Title:  "Les Miserables",
+      Author: "Victor Hugo",
+      Pages:  2783,
+    })
+  })
+
+  It("can fetch a book from a library", func() {
+    book, err = libraryClient.FetchByTitle("Les Miserables")
+    Expect(err).NotTo(HaveOccurred())
+    Expect(book.Title).To(Equal("Les Miserables"))
+  })
+
+  It("can check out the book", func() {
+    Expect(library.CheckOut(book)).To(Succeed())
+  })
+
+  It("no longer has the book in stock", func() {
+    book, err = libraryClient.FetchByTitle("Les Miserables")
+    Expect(err).To(MatchError(books.NOT_IN_STOCK))
+    Expect(book).To(BeNil())
+  })
+})
+```
+
+Because our outer-most `BeforeEach` runs before _every_ spec, the specs in this ordered container will fail.  Specifically the _first_ spec will pass but subsequent specs will fail as the `BeforeEach` cleans up state between them.
+
+Ginkgo provides a `OncePerOrdered` decorator that can be applied to the `BeforeEach`, `JustBeforeEach`, `AfterEach`, and `JustAfterEach` setup nodes to solve for this usecase.  The `OncePerOrdered` decorator changes the semantics of these `*Each` setup nodes from "run around each spec" to "run around each independent unit".  Individual specs and specs that are in unordered containers constitute independent units and so the `*Each` nodes run around each spec.  However specs in `Ordered` containers behave like a single unit - so `*Each` setup nodes with the `OncePerOrdered` decorator will only run once before the unit begins and/or after the unit completes.  In this way a `BeforeEach` with `OncePerOrdered` that runs before. an Ordered container is semantically equivalent to a `BeforeAll` within that container.
+
+By decorating our outermost `BeforeEach` with `OncePerOrdered`:
+
+```go
+BeforeEach(OncePerOrdered, func() {
+    libraryClient = library.NewClient()
+    Expect(libraryClient.Connect()).To(Succeed()
+
+    snapshot := libraryClient.TakeSnapshot()
+    DeferCleanup(libraryClient.RestoreSnapshot, snapshot)
+})
+```
+
+we retain the existing behavior for the entire suite _and_ get the `BeforeAll`-like behavior we need for our `Ordered` container.
+
+The `OncePerOrdered` decorator modifies the behavior of the `BeforeEach` setup node _only_ for Ordered containers at the same or lower nesting level as the setup node.  Adding a `OncePerOrdered` `BeforeEach` setup node _inside_ an `Ordered` container results in a setup node that behaves like a normal `BeforeEach` - it will run for every spec in the container.  However a container nested _within_ the container will trigger the `OncePerOrdered` behavior and the `BeforeEach` will run just once for the specs within the nested container.
+
+Lastly, the `OncePerOrdered` container cannot be applied to the `ReportBeforeEach` and `ReportAfterEach` nodes discussed below.  In Ginkgo reporting always happens at the granularity of the individual spec.
 
 #### Failure Handling in Ordered Containers
 
@@ -4138,11 +4208,16 @@ If a container is marked as `Serial` then all the specs defined in that containe
 You cannot mark specs and containers as `Serial` if they appear in an `Ordered` container.  Instead, mark the `Ordered` container as `Serial`.
 
 #### The Ordered Decorator
-The `Ordered` decorator applies to container nodes only.  It is an error to try to apply the `Ordered` decorator to a setup or subject node.  It is an error to nest an `Ordered` container within another `Ordered` container - however you may nest an `Ordered` container within a non-ordered container and vice versa.
+The `Ordered` decorator applies to container nodes only.  It is an error to try to apply the `Ordered` decorator to a setup or subject node.
 
 `Ordered` allows the user to [mark containers of specs as ordered](#ordered-containers).  Ginkgo will guarantee that the container's specs will run in the order they appear in and will never run in parallel with one another (though they may run in parallel with other specs unless the `Serial` decorator is also applied to the `Ordered` container).
 
 When a spec in an `Ordered` container fails, all subsequent specs in the ordered container are skipped.  Only `Ordered` containers can contain `BeforeAll` and `AfterAll` setup nodes.
+
+#### The OncePerOrdered Decorator
+The `OncePerOrdered` decorator applies to setup nodes only.  It is an error to try to apply the `OncePerOrdered` decorator to a container or subject node.
+
+Normally, setup nodes like `BeforeEach` run for every spec in a suite.  When decorated with `OncePerOrdered`, however, `BeforeEach` will treat any `Ordered` container at a deeper nesting level as a single executable unit and run once before the container begins (mimicking the semantics of `BeforeAll`).  The usecases for this are covered in more detail in the [Setup around Ordered Containers: the OncePerOrdered Decorator](#setup-around-ordered-containers-the-onceperordered-decorator) section of the docs.
 
 #### The Label Decorator
 The `Label` decorator applies to container nodes and subject nodes only.  It is an error to try to apply the `Label` decorator to a setup node.  You can also apply the `Label` decorator to your `RunSpecs` invocation to annotate the entire suite with a label.

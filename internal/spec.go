@@ -11,6 +11,10 @@ type Spec struct {
 	Skip  bool
 }
 
+func (s Spec) SubjectID() uint {
+	return s.Nodes.FirstNodeWithType(types.NodeTypeIt).ID
+}
+
 func (s Spec) Text() string {
 	texts := []string{}
 	for i := range s.Nodes {

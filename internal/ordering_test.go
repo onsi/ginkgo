@@ -157,7 +157,7 @@ var _ = Describe("OrderSpecs", func() {
 		})
 	})
 
-	Context("when there are ordered specs", func() {
+	Context("when there are ordered specs and randomize-all is true", func() {
 		BeforeEach(func() {
 			con1 := N(ntCon, Ordered)
 			con2 := N(ntCon)
@@ -181,6 +181,35 @@ var _ = Describe("OrderSpecs", func() {
 				Ω(serialSpecIndices).Should(BeEmpty())
 
 				Ω(getTexts(specs, groupedSpecIndices).Join()).Should(ContainSubstring("CDE"))
+			}
+		})
+	})
+
+	Context("when there are ordered specs and randomize-all is false and everything is in an enclosing container", func() {
+		BeforeEach(func() {
+			con0 := N(ntCon)
+			con1 := N(ntCon, Ordered)
+			con2 := N(ntCon)
+			specs = Specs{
+				S(con0, N("A", ntIt)),
+				S(con0, N("B", ntIt)),
+				S(con0, con1, N("C", ntIt)),
+				S(con0, con1, N("D", ntIt)),
+				S(con0, con1, N(ntCon), N("E", ntIt)),
+				S(con0, N("F", ntIt)),
+				S(con0, con2, N("G", ntIt)),
+				S(con0, con2, N("H", ntIt)),
+			}
+
+			conf.RandomizeAllSpecs = false
+		})
+
+		It("runs all the specs in order", func() {
+			for conf.RandomSeed = 1; conf.RandomSeed < 10; conf.RandomSeed += 1 {
+				groupedSpecIndices, serialSpecIndices := internal.OrderSpecs(specs, conf)
+				Ω(serialSpecIndices).Should(BeEmpty())
+
+				Ω(getTexts(specs, groupedSpecIndices).Join()).Should(Equal("ABCDEFGH"))
 			}
 		})
 	})

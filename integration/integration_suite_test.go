@@ -46,11 +46,11 @@ var _ = SynchronizedBeforeSuite(func() []byte {
 	pathToGinkgo = string(computedPathToGinkgo)
 })
 
-var _ = BeforeEach(func() {
+var _ = BeforeEach(OncePerOrdered, func() {
 	fm = NewFixtureManager(fmt.Sprintf("tmp_%d", GinkgoParallelProcess()))
 })
 
-var _ = AfterEach(func() {
+var _ = AfterEach(OncePerOrdered, func() {
 	if DEBUG {
 		return
 	}

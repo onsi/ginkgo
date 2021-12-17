@@ -69,17 +69,20 @@ Ginkgo supports passing in decorators _and_ arbitrarily nested slices of decorat
 Here's a list of new decorators.  They are documented in more detail in the [Node Decorator Reference](https://github.com/onsi/ginkgo/blob/ver2/docs/index.md#node-decorators-overview) section of the documentation.
 
 #### Serial Decorator
-Specs can now be labelled with the `Serial` decorator.  Specs labelled as `Serial` will never run in parallel with other specs.  Instead, Ginkgo will run them on a single test process _after_ all the parallel tests have finished running.
+Specs can now be decorated with the `Serial` decorator.  Specs decorated as `Serial` will never run in parallel with other specs.  Instead, Ginkgo will run them on a single test process _after_ all the parallel tests have finished running.
 
 #### Ordered Decorator
-Spec containers (i.e. `Describe` and `Context` blocks) can now be labelled with the `Ordered` decorator.  Specs within `Ordered` containers will always run in the order they appear and will never be randomized.  In addition, when running in parallel, specs in an `Ordered` containers will always run on the same process to ensure spec order is preserved.  When a spec in an `Ordered` container fails, all subsequent specs in the container are skipped.
+Spec containers (i.e. `Describe` and `Context` blocks) can now be decorated with the `Ordered` decorator.  Specs within `Ordered` containers will always run in the order they appear and will never be randomized.  In addition, when running in parallel, specs in an `Ordered` containers will always run on the same process to ensure spec order is preserved.  When a spec in an `Ordered` container fails, all subsequent specs in the container are skipped.
 
 `Ordered` containers also support `BeforeAll` and `AfterAll` setup nodes.  These nodes will run just once - the `BeforeAll` will run before any ordered tests in the container run; the `AfterAll` will run after all the ordered tests in the container are finished.
 
 Ordered containers are documented in more details in the [Ordered Container](https://github.com/onsi/ginkgo/blob/ver2/docs/index.md#ordered-containers) section of the documentation.
 
+#### OncePerOrdered Decorator
+The `OncePerOrdered` decorator can be applied to setup nodes and causes them to run just once around ordered containers.  More details in the [Setup around Ordered Containers: the OncePerOrdered Decorator](https://github.com/onsi/ginkgo/blob/ver2/docs/index.md#setup-around-ordered-containers-the-onceperordered-decorator) section of the documentation.
+
 #### Label Decorator
-Specs can now be labelled with the `Label` decorator (see [Spec Labels](#spec-labels) below for details):
+Specs can now be decorated with the `Label` decorator (see [Spec Labels](#spec-labels) below for details):
 
 ```go
 Describe("a labelled container", Label("red", "white"), Label("blue"), func() {

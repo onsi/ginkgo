@@ -22,6 +22,14 @@ var _ = Describe("Spec and Specs", func() {
 		})
 	})
 
+	Describe("spec.SubjectID()", func() {
+		It("returns the ID of the spec's it node", func() {
+			nIt := N(ntIt)
+			spec := S(N(ntCon), N(ntCon), N(ntBef), nIt, N(ntAf))
+			Ω(spec.SubjectID()).Should(Equal(nIt.ID))
+		})
+	})
+
 	Describe("spec.FirstNodeWithType", func() {
 		Context("when there are matching nodes", func() {
 			It("returns the first node matching any of the passed in node types", func() {

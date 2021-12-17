@@ -40,12 +40,13 @@ type Node struct {
 	ReportEachBody       func(types.SpecReport)
 	ReportAfterSuiteBody func(types.Report)
 
-	MarkedFocus   bool
-	MarkedPending bool
-	MarkedSerial  bool
-	MarkedOrdered bool
-	FlakeAttempts int
-	Labels        Labels
+	MarkedFocus          bool
+	MarkedPending        bool
+	MarkedSerial         bool
+	MarkedOrdered        bool
+	MarkedOncePerOrdered bool
+	FlakeAttempts        int
+	Labels               Labels
 
 	NodeIDWhereCleanupWasGenerated uint
 }
@@ -55,11 +56,13 @@ type focusType bool
 type pendingType bool
 type serialType bool
 type orderedType bool
+type honorsOrderedType bool
 
 const Focus = focusType(true)
 const Pending = pendingType(true)
 const Serial = serialType(true)
 const Ordered = orderedType(true)
+const OncePerOrdered = honorsOrderedType(true)
 
 type FlakeAttempts uint
 type Offset uint
@@ -109,6 +112,8 @@ func isDecoration(arg interface{}) bool {
 		return true
 	case t == reflect.TypeOf(Ordered):
 		return true
+	case t == reflect.TypeOf(OncePerOrdered):
+		return true
 	case t == reflect.TypeOf(FlakeAttempts(0)):
 		return true
 	case t == reflect.TypeOf(Labels{}):
@@ -155,11 +160,11 @@ func NewNode(deprecationTracker *types.DeprecationTracker, nodeType types.NodeTy
 	remainingArgs := []interface{}{}
 	//First get the CodeLocation up-to-date
 	for _, arg := range args {
-		switch t := reflect.TypeOf(arg); {
-		case t == reflect.TypeOf(Offset(0)):
-			node.CodeLocation = types.NewCodeLocation(baseOffset + int(arg.(Offset)))
-		case t == reflect.TypeOf(types.CodeLocation{}):
-			node.CodeLocation = arg.(types.CodeLocation)
+		switch v := arg.(type) {
+		case Offset:
+			node.CodeLocation = types.NewCodeLocation(baseOffset + int(v))
+		case types.CodeLocation:
+			node.CodeLocation = v
 		default:
 			remainingArgs = append(remainingArgs, arg)
 		}
@@ -171,6 +176,7 @@ func NewNode(deprecationTracker *types.DeprecationTracker, nodeType types.NodeTy
 	remainingArgs = []interface{}{}
 	//now process the rest of the args
 	for _, arg := range args {
+
 		switch t := reflect.TypeOf(arg); {
 		case t == reflect.TypeOf(float64(0)):
 			break //ignore deprecated timeouts
@@ -193,6 +199,11 @@ func NewNode(deprecationTracker *types.DeprecationTracker, nodeType types.NodeTy
 			node.MarkedOrdered = bool(arg.(orderedType))
 			if !nodeType.Is(types.NodeTypeContainer) {
 				appendError(types.GinkgoErrors.InvalidDecoratorForNodeType(node.CodeLocation, nodeType, "Ordered"))
+			}
+		case t == reflect.TypeOf(OncePerOrdered):
+			node.MarkedOncePerOrdered = bool(arg.(honorsOrderedType))
+			if !nodeType.Is(types.NodeTypeBeforeEach | types.NodeTypeJustBeforeEach | types.NodeTypeAfterEach | types.NodeTypeJustAfterEach) {
+				appendError(types.GinkgoErrors.InvalidDecoratorForNodeType(node.CodeLocation, nodeType, "OncePerOrdered"))
 			}
 		case t == reflect.TypeOf(FlakeAttempts(0)):
 			node.FlakeAttempts = int(arg.(FlakeAttempts))
@@ -467,6 +478,15 @@ func (n Nodes) Filter(filter func(Node) bool) Nodes {
 	return out
 }
 
+func (n Nodes) FirstSatisfying(filter func(Node) bool) Node {
+	for i := range n {
+		if filter(n[i]) {
+			return n[i]
+		}
+	}
+	return Node{}
+}
+
 func (n Nodes) WithinNestingLevel(deepestNestingLevel int) Nodes {
 	count := 0
 	for i := range n {
@@ -502,6 +522,15 @@ func (n Nodes) SortedByAscendingNestingLevel() Nodes {
 	})
 
 	return out
+}
+
+func (n Nodes) FirstWithNestingLevel(level int) Node {
+	for i := range n {
+		if n[i].NestingLevel == level {
+			return n[i]
+		}
+	}
+	return Node{}
 }
 
 func (n Nodes) Reverse() Nodes {

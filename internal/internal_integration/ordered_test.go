@@ -13,6 +13,7 @@ import (
 
 const SKIP_DUE_TO_EARLIER_FAILURE = "Spec skipped because an earlier spec in an ordered container failed"
 const SKIP_DUE_TO_BEFORE_ALL_SKIP = "Spec skipped because Skip() was called in BeforeAll"
+const SKIP_DUE_TO_BEFORE_EACH_SKIP = "Spec skipped because Skip() was called in BeforeEach"
 
 var DC = func(label string, callback ...func()) func() {
 	return func() {
@@ -367,7 +368,7 @@ var _ = DescribeTable("Ordered Containers",
 		AfterEach(rt.T("AE-outer"))
 	}, []string{"BE-outer", "BA", "BE", "A", "AE", "AA", "AE-outer"},
 		"A", HaveBeenInterrupted(interrupt_handler.InterruptCauseSignal),
-		"B", HaveBeenSkippedWithMessage(SKIP_DUE_TO_EARLIER_FAILURE),
+		"B", HaveBeenSkipped(),
 	),
 	Entry("when an interruption occurs in a BeforeAll, run the AfterAll and skip subsequent specs", false, func() {
 		BeforeEach(rt.T("BE-outer"))
@@ -386,7 +387,7 @@ var _ = DescribeTable("Ordered Containers",
 		AfterEach(rt.T("AE-outer"))
 	}, []string{"BE-outer", "BA", "AE", "AA", "AE-outer", "DC-BA"},
 		"A", HaveBeenInterrupted(interrupt_handler.InterruptCauseSignal),
-		"B", HaveBeenSkippedWithMessage(SKIP_DUE_TO_EARLIER_FAILURE),
+		"B", HaveBeenSkipped(),
 	),
 	Entry("when an interruption occurs in an AfterAll, run any remaining cleanup", false, func() {
 		BeforeEach(rt.T("BE-outer"))
@@ -426,7 +427,7 @@ var _ = DescribeTable("Ordered Containers",
 		AfterEach(rt.T("AE-outer"))
 	}, []string{"BE-outer", "BA", "BE", "A", "AE", "AA", "AE-outer"},
 		"A", HaveAborted("abort!"),
-		"B", HaveBeenSkippedWithMessage(SKIP_DUE_TO_EARLIER_FAILURE),
+		"B", HaveBeenSkipped(),
 	),
 	Entry("when an abort occurs in a BeforeAll, run the AfterAll and skip subsequent specs", false, func() {
 		BeforeEach(rt.T("BE-outer"))
@@ -444,7 +445,7 @@ var _ = DescribeTable("Ordered Containers",
 		AfterEach(rt.T("AE-outer"))
 	}, []string{"BE-outer", "BA", "AE", "AA", "AE-outer", "DC-BA"},
 		"A", HaveAborted("abort!"),
-		"B", HaveBeenSkippedWithMessage(SKIP_DUE_TO_EARLIER_FAILURE),
+		"B", HaveBeenSkipped(),
 	),
 	Entry("when an abort occurs in an AfterAll, run any remaining cleanup", false, func() {
 		BeforeEach(rt.T("BE-outer"))
@@ -852,5 +853,201 @@ var _ = DescribeTable("Ordered Containers",
 		"E", "AA-O", "DC-O", "E", "AA-O",
 	},
 		"A", "B", "C", "D", "E", HavePassed(),
+	),
+
+	//can you believe there are even more dragons?
+	Entry("Basic OncePerOrdered flow", true, func() {
+		BeforeEach(rt.T("BE-O-HO", DC("DC-BE-O-HO")), OncePerOrdered)
+		AfterEach(rt.T("AE-O-HO", DC("DC-AE-O-HO")), OncePerOrdered)
+
+		Context("derandomizer", func() {
+			It("A", rt.T("A"))
+			It("B", rt.T("B"))
+
+			Context("container", Ordered, func() {
+				BeforeEach(rt.T("BE-I-HO", DC("DC-BE-I-HO")), OncePerOrdered) //OncePerOrdered doesn't matter here because there are no nested containers
+				AfterEach(rt.T("AE-I-HO", DC("DC-AE-I-HO")), OncePerOrdered)  //OncePerOrdered doesn't matter here because there are no nested containers
+				It("C", rt.T("C"))
+				It("D", rt.T("D"))
+				It("E", rt.T("E"))
+				PIt("F", rt.T("F"))
+			})
+		})
+	}, []string{
+		"BE-O-HO", "A", "AE-O-HO", "DC-AE-O-HO", "DC-BE-O-HO",
+		"BE-O-HO", "B", "AE-O-HO", "DC-AE-O-HO", "DC-BE-O-HO",
+		"BE-O-HO", "BE-I-HO", "C", "AE-I-HO", "DC-AE-I-HO", "DC-BE-I-HO",
+		"BE-I-HO", "D", "AE-I-HO", "DC-AE-I-HO", "DC-BE-I-HO",
+		"BE-I-HO", "E", "AE-I-HO", "AE-O-HO", "DC-AE-O-HO", "DC-AE-I-HO", "DC-BE-I-HO", "DC-BE-O-HO",
+	},
+		"A", "B", "C", "D", "E", HavePassed(), "F", BePending(),
+	),
+
+	Entry("Basic OncePerOrdered flow when a failure occurs", false, func() {
+		BeforeEach(rt.T("BE-O-HO", DC("DC-BE-O-HO")), OncePerOrdered)
+		AfterEach(rt.T("AE-O-HO", DC("DC-AE-O-HO")), OncePerOrdered)
+
+		Context("container", Ordered, func() {
+			It("A", rt.T("A"))
+			It("B", rt.T("B", FlakeyFailerWithCleanup(1, "B")))
+			It("C", rt.T("C"))
+		})
+	}, []string{
+		"BE-O-HO", "A",
+		"B", "AE-O-HO", "DC-AE-O-HO", "B-pre", "DC-BE-O-HO",
+	},
+		"A", HavePassed(), "B", HaveFailed(), "C", HaveBeenSkippedWithMessage(SKIP_DUE_TO_EARLIER_FAILURE),
+	),
+
+	Entry("Basic OncePerOrdered flow when a failure occurs in a OncePerOrdered BeforeEach", false, func() {
+		BeforeEach(rt.T("BE-O-HO", FlakeyFailerWithCleanup(1, "BE-O-HO")), OncePerOrdered)
+		AfterEach(rt.T("AE-O-HO", DC("DC-AE-O-HO")), OncePerOrdered)
+
+		Context("container", Ordered, func() {
+			It("A", rt.T("A"))
+			It("B", rt.T("B"))
+			It("C", rt.T("C"))
+		})
+	}, []string{
+		"BE-O-HO", "AE-O-HO", "DC-AE-O-HO", "BE-O-HO-pre",
+	},
+		"A", HaveFailed(), "B", "C", HaveBeenSkippedWithMessage(SKIP_DUE_TO_EARLIER_FAILURE),
+	),
+
+	Entry("Basic OncePerOrdered flow when a skip occurs in a OncePerOrdered BeforeEach", true, func() {
+		BeforeEach(rt.T("BE-O-HO", func() { DeferCleanup(rt.T("DC-BE-O-HO")); Skip("skip") }), OncePerOrdered)
+		AfterEach(rt.T("AE-O-HO", DC("DC-AE-O-HO")), OncePerOrdered)
+
+		Context("container", Ordered, func() {
+			It("A", rt.T("A"))
+			It("B", rt.T("B"))
+			It("C", rt.T("C"))
+		})
+	}, []string{
+		"BE-O-HO", "AE-O-HO", "DC-AE-O-HO", "DC-BE-O-HO",
+	},
+		"A", HaveBeenSkippedWithMessage("skip"), "B", "C", HaveBeenSkippedWithMessage(SKIP_DUE_TO_BEFORE_EACH_SKIP),
+	),
+
+	Entry("OncePerOrdered when there's a nested container in an ordered container", true, func() {
+		Context("container", Ordered, func() {
+			BeforeAll(rt.T("BA"))
+			AfterAll(rt.T("AA"))
+			BeforeEach(rt.T("BE", DC("DC-BE")), OncePerOrdered)
+			AfterEach(rt.T("AE", DC("DC-AE")), OncePerOrdered)
+
+			It("A", rt.T("A"))
+			It("B", rt.T("B"))
+			Context("nested", func() {
+				BeforeEach(rt.T("BE-I"))
+				AfterEach(rt.T("AE-I"))
+				It("C", rt.T("C"))
+				It("D", rt.T("D"))
+				It("E", rt.T("E"))
+			})
+			It("F", rt.T("F"))
+		})
+	}, []string{
+		"BA", "BE", "A", "AE", "DC-AE", "DC-BE",
+		"BE", "B", "AE", "DC-AE", "DC-BE",
+		"BE", "BE-I", "C", "AE-I",
+		"BE-I", "D", "AE-I",
+		"BE-I", "E", "AE-I", "AE", "DC-AE", "DC-BE",
+		"BE", "F", "AE", "AA", "DC-AE", "DC-BE",
+	},
+		"A", "B", "C", "D", "E", "F", HavePassed(),
+	),
+
+	Entry("Flakey Failures", true, func() {
+		BeforeEach(rt.T("BE-O-HO", FlakeyFailerWithCleanup(2, "BE")), OncePerOrdered)
+		AfterEach(rt.T("AE-O-HO", FlakeyFailerWithCleanup(4, "AE")), OncePerOrdered)
+
+		Context("container", Ordered, FlakeAttempts(3), func() {
+			It("A", rt.T("A"))
+			It("B", rt.T("B", FlakeyFailerWithCleanup(2, "B")))
+			It("C", rt.T("C"))
+			It("D", rt.T("D"))
+		})
+	},
+		[]string{
+			"BE-O-HO", "AE-O-HO", "AE-pre", "BE-pre",
+			"BE-O-HO", "AE-O-HO", "AE-pre", "BE-pre",
+			"BE-O-HO", "A",
+			"B", "B-pre", "B", "B-pre", "B", "B-post", "B-pre",
+			"C",
+			"D", "AE-O-HO", "AE-pre",
+			"D", "AE-O-HO", "AE-pre",
+			"D", "AE-O-HO", "AE-post", "AE-pre", "BE-post", "BE-pre",
+		},
+		"A", "B", "D", HavePassed(NumAttempts(3)), "C", HavePassed(NumAttempts(1)),
+	),
+
+	//All together now!
+	Entry("Exhaustive example for setup nodes that run once per ordered container", true, func() {
+		JustBeforeEach(rt.T("JBE-O", DC("DC-JBE-O")))
+		JustBeforeEach(rt.T("JBE-O-HO", DC("DC-JBE-O-HO")), OncePerOrdered)
+		BeforeEach(rt.T("BE-O", DC("DC-O")))
+		BeforeEach(rt.T("BE-O-HO", DC("DC-O-HO")), OncePerOrdered)
+
+		AfterEach(rt.T("AE-O-HO", DC("DC-AE-HO")), OncePerOrdered)
+		AfterEach(rt.T("AE-O", DC("DC-AE-O")))
+		JustAfterEach(rt.T("JAE-O", DC("DC-JAE-O")))
+		JustAfterEach(rt.T("JAE-O-HO", DC("DC-JAE-O-HO")), OncePerOrdered)
+
+		Context("container", func() {
+			It("A", rt.T("A", DC("DC-A")))
+			It("B", rt.T("B"))
+
+			Context("container", Ordered, func() {
+				BeforeAll(rt.T("BA-1", DC("DC-BA-1")))
+				It("C", rt.T("C", DC("DC-C")))
+				It("D", rt.T("D"))
+				AfterAll(rt.T("AA-1", DC("DC-AA-1")))
+			})
+
+			It("E", rt.T("E"))
+
+			Context("container", Ordered, func() {
+				BeforeAll(rt.T("BA-2", DC("DC-BA-2")))
+				AfterAll(rt.T("AA-2", DC("DC-AA-2")))
+				JustBeforeEach(rt.T("JBE-I", DC("DC-JBE-I")))
+				JustBeforeEach(rt.T("JBE-I-HO", DC("DC-JBE-I-HO")), OncePerOrdered)
+				BeforeEach(rt.T("BE-I", DC("DC-BE-I")))
+				BeforeEach(rt.T("BE-I-HO", DC("DC-BE-I-HO")), OncePerOrdered)
+				AfterEach(rt.T("AE-I-HO", DC("DC-AE-I-HO")), OncePerOrdered)
+				AfterEach(rt.T("AE-I", DC("DC-AE-I")))
+				JustAfterEach(rt.T("JAE-I", DC("DC-JAE-I")))
+				JustAfterEach(rt.T("JAE-I-HO", DC("DC-JAE-I-HO")), OncePerOrdered)
+
+				It("F", rt.T("F", DC("DC-F")))
+				It("G", rt.T("G"))
+				Context("inner", func() {
+					BeforeAll(rt.T("BA-3", DC("DC-BA-3")))
+					BeforeEach(rt.T("BE-II", DC("DC-BE-II")))
+					BeforeEach(rt.T("BE-II-HO", DC("DC-BE-II-HO")), OncePerOrdered)
+					AfterEach(rt.T("AE-II-HO", DC("DC-AE-II-HO")), OncePerOrdered)
+					AfterEach(rt.T("AE-II", DC("DC-AE-II")))
+					It("H", rt.T("H", DC("DC-H")))
+					It("I", rt.T("I"))
+					AfterAll(rt.T("AA-3", DC("DC-AA-3")))
+				})
+				It("J", rt.T("J"))
+			})
+			It("K", rt.T("K"))
+		})
+	}, []string{
+		"BE-O", "BE-O-HO", "JBE-O", "JBE-O-HO", "A", "JAE-O", "JAE-O-HO", "AE-O-HO", "AE-O", "DC-AE-O", "DC-AE-HO", "DC-JAE-O-HO", "DC-JAE-O", "DC-A", "DC-JBE-O-HO", "DC-JBE-O", "DC-O-HO", "DC-O",
+		"BE-O", "BE-O-HO", "JBE-O", "JBE-O-HO", "B", "JAE-O", "JAE-O-HO", "AE-O-HO", "AE-O", "DC-AE-O", "DC-AE-HO", "DC-JAE-O-HO", "DC-JAE-O", "DC-JBE-O-HO", "DC-JBE-O", "DC-O-HO", "DC-O",
+		"BE-O", "BE-O-HO", "BA-1", "JBE-O", "JBE-O-HO", "C", "JAE-O", "AE-O", "DC-AE-O", "DC-JAE-O", "DC-C", "DC-JBE-O", "DC-O",
+		"BE-O", "JBE-O", "D", "JAE-O", "JAE-O-HO", "AA-1", "AE-O-HO", "AE-O", "DC-AE-O", "DC-AE-HO", "DC-JAE-O-HO", "DC-JAE-O", "DC-JBE-O", "DC-O", "DC-JBE-O-HO", "DC-O-HO", "DC-AA-1", "DC-BA-1",
+		"BE-O", "BE-O-HO", "JBE-O", "JBE-O-HO", "E", "JAE-O", "JAE-O-HO", "AE-O-HO", "AE-O", "DC-AE-O", "DC-AE-HO", "DC-JAE-O-HO", "DC-JAE-O", "DC-JBE-O-HO", "DC-JBE-O", "DC-O-HO", "DC-O",
+		"BE-O", "BE-O-HO", "BA-2", "BE-I", "BE-I-HO", "JBE-O", "JBE-O-HO", "JBE-I", "JBE-I-HO", "F", "JAE-I", "JAE-I-HO", "JAE-O", "AE-I-HO", "AE-I", "AE-O", "DC-AE-O", "DC-AE-I", "DC-AE-I-HO", "DC-JAE-O", "DC-JAE-I-HO", "DC-JAE-I", "DC-F", "DC-JBE-I-HO", "DC-JBE-I", "DC-JBE-O", "DC-BE-I-HO", "DC-BE-I", "DC-O",
+		"BE-O", "BE-I", "BE-I-HO", "JBE-O", "JBE-I", "JBE-I-HO", "G", "JAE-I", "JAE-I-HO", "JAE-O", "AE-I-HO", "AE-I", "AE-O", "DC-AE-O", "DC-AE-I", "DC-AE-I-HO", "DC-JAE-O", "DC-JAE-I-HO", "DC-JAE-I", "DC-JBE-I-HO", "DC-JBE-I", "DC-JBE-O", "DC-BE-I-HO", "DC-BE-I", "DC-O",
+		"BE-O", "BE-I", "BE-I-HO", "BA-3", "BE-II", "BE-II-HO", "JBE-O", "JBE-I", "JBE-I-HO", "H", "JAE-I", "JAE-O", "AE-II-HO", "AE-II", "AE-I", "AE-O", "DC-AE-O", "DC-AE-I", "DC-AE-II", "DC-AE-II-HO", "DC-JAE-O", "DC-JAE-I", "DC-H", "DC-JBE-I", "DC-JBE-O", "DC-BE-II-HO", "DC-BE-II", "DC-BE-I", "DC-O",
+		"BE-O", "BE-I", "BE-II", "BE-II-HO", "JBE-O", "JBE-I", "I", "JAE-I", "JAE-I-HO", "JAE-O", "AE-II-HO", "AE-II", "AA-3", "AE-I-HO", "AE-I", "AE-O", "DC-AE-O", "DC-AE-I", "DC-AE-I-HO", "DC-AE-II", "DC-AE-II-HO", "DC-JAE-O", "DC-JAE-I-HO", "DC-JAE-I", "DC-JBE-I", "DC-JBE-O", "DC-BE-II-HO", "DC-BE-II", "DC-BE-I", "DC-O", "DC-JBE-I-HO", "DC-BE-I-HO", "DC-AA-3", "DC-BA-3",
+		"BE-O", "BE-I", "BE-I-HO", "JBE-O", "JBE-I", "JBE-I-HO", "J", "JAE-I", "JAE-I-HO", "JAE-O", "JAE-O-HO", "AE-I-HO", "AE-I", "AA-2", "AE-O-HO", "AE-O", "DC-AE-O", "DC-AE-HO", "DC-AE-I", "DC-AE-I-HO", "DC-JAE-O-HO", "DC-JAE-O", "DC-JAE-I-HO", "DC-JAE-I", "DC-JBE-I-HO", "DC-JBE-I", "DC-JBE-O", "DC-BE-I-HO", "DC-BE-I", "DC-O", "DC-JBE-O-HO", "DC-O-HO", "DC-AA-2", "DC-BA-2",
+		"BE-O", "BE-O-HO", "JBE-O", "JBE-O-HO", "K", "JAE-O", "JAE-O-HO", "AE-O-HO", "AE-O", "DC-AE-O", "DC-AE-HO", "DC-JAE-O-HO", "DC-JAE-O", "DC-JBE-O-HO", "DC-JBE-O", "DC-O-HO", "DC-O",
+	},
+		"A", "B", "C", "D", "E", "F", "G", "H", "I", "J", "K", HavePassed(),
 	),
 )
