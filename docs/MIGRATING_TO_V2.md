@@ -3,36 +3,35 @@ layout: default
 title: Migrating to Ginkgo V2
 ---
 {% raw  %}
-[Ginkgo 2.0](https://github.com/onsi/ginkgo/issues/711) is a major release that adds substantial new functionality and removes/moves existing functionality.  **Please provide feedback, concerns, questions, etc. on issue [#711](https://github.com/onsi/ginkgo/issues/711).**
 
-This document serves as a changelog and migration guide for users migrating from Ginkgo 1.x to 2.0.  The intent is that the migration will take minimal user effort.
+# Ginkgo 2.0 Migration Guide
 
-The work on 2.0 is tracked in this [Pivotal Tracker backlog](https://www.pivotaltracker.com/n/projects/2493102).  The original 2.0 proposal is [here](https://docs.google.com/document/d/1h28ZknXRsTLPNNiOjdHIO-F2toCzq4xoZDXbfYaBdoQ/edit#heading=h.mzgqmkg24xoo) however this is starting to grow stale.  The tracker backlog is the most authoritative version of the roadmap.
+[Ginkgo 2.0](https://github.com/onsi/ginkgo/issues/711) is a major release that adds substantial new functionality and removes/moves existing functionality. 
 
-# Using the Beta
+This document serves as a changelog and migration guide for users migrating from Ginkgo 1.x to 2.0.  The intent is that the migration will take minimal user effort - please [open an issue](https://github.com/onsi/ginkgo/issues/new) if you run into any problems.
 
-A release candidate for Ginkgo 2.0 is now available.  The GA release should come out in the Fall of 2021 but we'd love to get feedback and usage of the RC underway.
+The 2.0 work was tracked on issue [#711](https://github.com/onsi/ginkgo/issues/711) - you can refer to that issue to find the original proposal and backlog.
 
-Currently, 2.0 lives on a branch called `ver2` and major version number of Ginkgo has been bumped to v2.  If you are using `go mod` you'll need to do the following to use Ginkgo 2.0 in an existing or new project:
+## Upgrading to Ginkgo 2.0
 
-1. Get the `2.0.0-rc3` tag of `ginkgo/v2`:
+To upgrade to Ginkgo 2.0, assuming you are using `go mod`, you'll need to do the following in an existing or new project:
+
+1. Upgrade to the v2 module:
 	```bash
-	go get github.com/onsi/ginkgo/v2@v2.0.0-rc3
+	go get github.com/onsi/ginkgo/v2
 	```
 
-2. Install the V2 CLI.  Running this may require you to run a few addition `go get`s - just follow the go toolchain's instructions until you successfully get ginkgo v2 compiled:
+2. Install the V2 CLI.  Running this may require you to run a few additional `go get`s - just follow the go toolchain's instructions until you successfully get ginkgo v2 compiled:
 	```bash
 	go install github.com/onsi/ginkgo/v2/ginkgo
-	ginkgo version //should print out "Ginkgo Version 2.0.0-rc3"
+	ginkgo version //should print out "Ginkgo Version 2.0.0"
 	```
 
 3. Update all your import statements from `import github.com/onsi/ginkgo` to `import github.com/onsi/ginkgo/v2`.  You can use your text editor to replace all instances of `"github.com/onsi/ginkgo` with `"github.com/onsi/ginkgo/v2`
 
-And that's it!
+Updating to V2 will require you to make some changes to your test suites however the intent is that this work should be relatively minimal for most users.  This migration guide should answer most questions - your first step is to simply run `ginkgo` and see what sorts of deprecation messages you get.  Please don't hesitate to [open an issue](https://github.com/onsi/ginkgo/issues/new) if you run into any problems.
 
-Please share any feedback about the RC on the [Ginkgo 2.0](https://github.com/onsi/ginkgo/issues/711) issue.  Updated V2 documentation is being maintained [here](https://github.com/onsi/ginkgo/blob/ver2/docs/index.md) though this migration guide has all the details around new features and backward incompatible changes.  Updating to V2 will require you to make some changes to your test suites however the intent is that this work should be relatively minimal for most users.
-
-# Additions and Improvements
+With the release of Ginkgo 2.0 the 1.x version is formally deprecated and no longer supported.  All future development will occur on version 2.
 
 ## Major Additions and Improvements
 
@@ -66,7 +65,7 @@ Note that this change is backwards compatible with v1.X.
 
 Ginkgo supports passing in decorators _and_ arbitrarily nested slices of decorators.  Ginkgo will unroll any slices and process the flattened list of decorators.  This makes it easier to pass around and combine groups of decorators.  In addition, decorators can be passed into the table-related DSL: `DescribeTable` and `Entry`.
 
-Here's a list of new decorators.  They are documented in more detail in the [Node Decorator Reference](https://github.com/onsi/ginkgo/blob/ver2/docs/index.md#node-decorators-overview) section of the documentation.
+Here's a list of new decorators.  They are documented in more detail in the [Node Decorator Reference](https://onsi.github.io/ginkgo/#node-decorators-overview) section of the documentation.
 
 #### Serial Decorator
 Specs can now be decorated with the `Serial` decorator.  Specs decorated as `Serial` will never run in parallel with other specs.  Instead, Ginkgo will run them on a single test process _after_ all the parallel tests have finished running.
@@ -76,10 +75,10 @@ Spec containers (i.e. `Describe` and `Context` blocks) can now be decorated with
 
 `Ordered` containers also support `BeforeAll` and `AfterAll` setup nodes.  These nodes will run just once - the `BeforeAll` will run before any ordered tests in the container run; the `AfterAll` will run after all the ordered tests in the container are finished.
 
-Ordered containers are documented in more details in the [Ordered Container](https://github.com/onsi/ginkgo/blob/ver2/docs/index.md#ordered-containers) section of the documentation.
+Ordered containers are documented in more details in the [Ordered Container](https://onsi.github.io/ginkgo/#ordered-containers) section of the documentation.
 
 #### OncePerOrdered Decorator
-The `OncePerOrdered` decorator can be applied to setup nodes and causes them to run just once around ordered containers.  More details in the [Setup around Ordered Containers: the OncePerOrdered Decorator](https://github.com/onsi/ginkgo/blob/ver2/docs/index.md#setup-around-ordered-containers-the-onceperordered-decorator) section of the documentation.
+The `OncePerOrdered` decorator can be applied to setup nodes and causes them to run just once around ordered containers.  More details in the [Setup around Ordered Containers: the OncePerOrdered Decorator](https://onsi.github.io/ginkgo/#setup-around-ordered-containers-the-onceperordered-decorator) section of the documentation.
 
 #### Label Decorator
 Specs can now be decorated with the `Label` decorator (see [Spec Labels](#spec-labels) below for details):
@@ -216,7 +215,7 @@ For example:
 
 ### DeferCleanup
 
-`DeferCleanup` allows users to move cleanup code out of `AfterEach/AfterAll/AfterSuite` and closer to the setup code that needs to be cleaned up.  Based on the context in which it is called, `DeferCleanup` will effectively register a dynamic `AfterEach/AfterAll/AfterSuite` node to clean up after the test/test group/suite.  The [docs](https://github.com/onsi/ginkgo/blob/ver2/docs/index.md#cleaning-up-after-tests) have more detailed examples.
+`DeferCleanup` allows users to move cleanup code out of `AfterEach/AfterAll/AfterSuite` and closer to the setup code that needs to be cleaned up.  Based on the context in which it is called, `DeferCleanup` will effectively register a dynamic `AfterEach/AfterAll/AfterSuite` node to clean up after the test/test group/suite.  The [docs](https://onsi.github.io/ginkgo/#spec-cleanup-aftereach-and-defercleanup) have more detailed examples.
 
 `DeferCleanup` allows `GinkgoT()` to more fully implement the `testing.T` interface.  `Cleanup`, `TempDir`, and `Setenv` are now all supported.
 
@@ -408,8 +407,6 @@ In V1 Ginkgo would run windows tests in parallel with the `--stream` option.  Th
 - A new "very verbose" setting is now available.  Setting `-vv` implies `-v` but also causes skipped tests to be emitted.
 - Ginkgo's OutputInterceptor (the component that intercepts stdout/stderr when running in parallel) should now be more performant and better handle edge cases.  It can be paused and resumed with PauseOutputInterception() and ResumeOutputInterception() and disabled entirely with --output-interceptor-mode=none.
 
-# Changes
-
 ## Major Changes
 These are major changes that will need user intervention to migrate succesfully.
 
@@ -585,5 +582,30 @@ These are minor changes that will be transparent for most users.
 - When running in series and verbose mode (i.e. `ginkgo -v`) GinkgoWriter output is emitted in real-time (existing behavior) but also emitted in the failure message for failed tests.  This allows for consistent failure messages regardless of verbosity settings and also makes it possible for the resulting JSON report to include captured GinkgoWriter information.
 
 - Removed `ginkgo blur` alias.  Use `ginkgo unfocus` instead.
+
+---
+
+# Using the Beta
+
+A release candidate for Ginkgo 2.0 is now available.  The GA release should come out in the Fall of 2021 but we'd love to get feedback and usage of the RC underway.
+
+Currently, 2.0 lives on a branch called `ver2` and major version number of Ginkgo has been bumped to v2.  If you are using `go mod` you'll need to do the following to use Ginkgo 2.0 in an existing or new project:
+
+1. Get the `2.0.0-rc3` tag of `ginkgo/v2`:
+	```bash
+	go get github.com/onsi/ginkgo/v2@v2.0.0-rc3
+	```
+
+2. Install the V2 CLI.  Running this may require you to run a few addition `go get`s - just follow the go toolchain's instructions until you successfully get ginkgo v2 compiled:
+	```bash
+	go install github.com/onsi/ginkgo/v2/ginkgo
+	ginkgo version //should print out "Ginkgo Version 2.0.0-rc3"
+	```
+
+3. Update all your import statements from `import github.com/onsi/ginkgo` to `import github.com/onsi/ginkgo/v2`.  You can use your text editor to replace all instances of `"github.com/onsi/ginkgo` with `"github.com/onsi/ginkgo/v2`
+
+And that's it!
+
+Please share any feedback about the RC on the [Ginkgo 2.0](https://github.com/onsi/ginkgo/issues/711) issue.  Updated V2 documentation is being maintained [here](https://onsi.github.io/ginkgo/) though this migration guide has all the details around new features and backward incompatible changes.  Updating to V2 will require you to make some changes to your test suites however the intent is that this work should be relatively minimal for most users.
 
 {% endraw  %}

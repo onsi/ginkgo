@@ -7,7 +7,7 @@ A Ginkgo release is a tagged git sha and a GitHub release.  To cut a release:
     - New Features (minor version)
     - Fixes (fix version)
     - Maintenance (which in general should not be mentioned in `CHANGELOG.md` as they have no user impact)
-1. Update `VERSION` in `config/config.go`
+1. Update `VERSION` in `types/version.go`
 1. Commit, push, and release:
   ```
   git commit -m "vM.m.p"
