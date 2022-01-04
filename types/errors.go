@@ -370,6 +370,15 @@ func (g ginkgoErrors) InvalidEntryDescription(cl CodeLocation) error {
 	}
 }
 
+func (g ginkgoErrors) IncorrectParameterTypeForTable(i int, name string, cl CodeLocation) error {
+	return GinkgoError{
+		Heading:      "DescribeTable passed incorrect parameter type",
+		Message:      fmt.Sprintf("Parameter #%d passed to DescribeTable is of incorrect type <%s>", i, name),
+		CodeLocation: cl,
+		DocLink:      "table-specs",
+	}
+}
+
 func (g ginkgoErrors) TooFewParametersToTableFunction(expected, actual int, kind string, cl CodeLocation) error {
 	return GinkgoError{
 		Heading:      fmt.Sprintf("Too few parameters passed in to %s", kind),
