@@ -1731,7 +1731,7 @@ Describe("Storing books in an external database", func() {
   Context("when a book is in the database", func() {
     var book *books.Book
     BeforeEach(func() {
-      lesMiserables = &books.Book{
+      book = &books.Book{
         Title:  "Les Miserables",
         Author: "Victor Hugo",
         Pages:  2783,
