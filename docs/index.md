@@ -1160,7 +1160,7 @@ It("panics in a goroutine", func() {
 })
 ```
 
-You must remember follow this pattern when making assertions in goroutines - however, if uncaught, Ginkgo's panic will include a helpful error to remind you to add `defer GinkgoRecover()` to your goroutine.
+You must remember to follow this pattern when making assertions in goroutines - however, if uncaught, Ginkgo's panic will include a helpful error to remind you to add `defer GinkgoRecover()` to your goroutine.
 
 When a failure occurs Ginkgo marks the current spec as failed and moves on to the next spec.  If, however, you'd like to stop the entire suite when the first failure occurs you can run `ginkgo --fail-fast`.
 
