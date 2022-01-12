@@ -33,6 +33,8 @@ Updating to V2 will require you to make some changes to your test suites however
 
 With the release of Ginkgo 2.0 the 1.x version is formally deprecated and no longer supported.  All future development will occur on version 2.
 
+The next sections describe the [new features in Ginkgo 2.0](#major-additions-and-improvements) and the [major changes](#major-changes) alogn with details on how to migrate your test code to adapt to the changes.  At the end of this doc is an [FAQ](#faq) with common gotchas that will be tracked as they emerge.
+
 ## Major Additions and Improvements
 
 ### Interrupt Behavior
@@ -582,6 +584,101 @@ These are minor changes that will be transparent for most users.
 - When running in series and verbose mode (i.e. `ginkgo -v`) GinkgoWriter output is emitted in real-time (existing behavior) but also emitted in the failure message for failed tests.  This allows for consistent failure messages regardless of verbosity settings and also makes it possible for the resulting JSON report to include captured GinkgoWriter information.
 
 - Removed `ginkgo blur` alias.  Use `ginkgo unfocus` instead.
+
+## FAQ
+
+As users have started adopting Ginkgo v2 they've bumped into a few specific issues.  This FAQ will grow as these issues are identified to help address them.
+
+### Can I mix Ginkgo V1 and Ginkgo V2?
+
+..._ish_.
+
+**What you _can't_ do**
+
+Under the hood Ginkgo V2 is effectively a rewrite of Ginkgo V1.  While the external interfaces are largely compatible (modulo the differences pointed out in this doc) the internals are very different.  Because of this **it is not possible** to import and use V1 _and_ V2 **in the same _package_**.
+
+In fact, trying to do so will result in a crash as Ginkgo V1's `init` function and Ginkgo V2's `init` function will register conflicting command line flags.
+
+That means you can't do something like:
+
+```go
+/* sprockets/widget_test.go */
+
+import (
+	. "github.com/onsi/ginkgo" //v1
+)
+
+var _ = It("uses V1", func() {...})
+
+/* sprockets/doodad_test.go */
+
+import (
+	. "github.com/onsi/ginkgo/v2" //v2
+)
+
+var _ = It("uses V2", func() {...})
+```
+
+It _also_ means you can't use a _dependency_ in your test that, in turn, imports a mismatched version of Ginkgo.  For example, let's say we have a test helper package:
+
+```go
+/* helpers/test_helper.go */
+
+import (
+	"github.com/onsi/ginkgo" //imports v1
+)
+
+func EnsureNoSprocketRust(sprocket *Sprocket) {
+	if sprocket.IsRusty() {
+		Fail("Sprocket rust detected")
+	}
+}
+```
+
+this test helper package imports Ginkgo V1.  If we try to use it in a test package that uses Ginkgo V2:
+
+
+```go
+/* sprockets/widget_test.go */
+
+import (
+	. "github.com/onsi/ginkgo/v2" //v2
+	"helpers" //imports v1 => boom
+)
+
+var _ = It("has no rusty sprockets", func() {
+	helpers.EnsureNoSprocketRust(sprocket)
+})
+```
+
+this won't work as the two versions of Ginkgo will be imported and result in a conflict.
+
+Lastly, you can run into this issue accidentally while upgrading to 2.0 if you update some, but not all, of the import statements in your package.
+
+**What you _can_ do**
+
+While you cannot import V1 and V2 in the same package you _can_ have some packages that use V1 and other packages that use V2 associated with a given module.  The different test packages are compiled separately and the V1 packages will use Ginkgo V1 whereas the V2 packages will use Ginkgo V2.  Go basically treats different major versions of a dependency as completely different packages.
+
+This means that your dependencies can use a different major version of Ginkgo for _their_ test suites than your codebase (as long as you aren't importing a test-helper dependency into your test suite and running into the major version clash described above).
+
+This _also_ means that you can, in principle, upgrade different test suites in your module at different times.  For example, in a fictitious `factory` module the `sprockets` package can be upgraded to Ginkgo V2 first, and the `convery_belt` package can stay at Ginkgo V1 until later.  In _practice_ however, you'll run into difficulties as the `ginkgo` cli used to invoke the tests will be at a different major version than some subset of packages under test - this basically won't work because of changes in the client/server contract between the CLI and the test library across the two major versions.  So you'll need to take care to use the correct version of the cli with the correct test package.  In general the migration to V2 is intended to be simple enough that you should rarely need to resort to having mixed-version numbers like this.
+
+### A symbol in V2 now clashes with a symbol in my codebase.  What do I do?
+If Ginkgo 2.0 introduces a new exported symbl that now clashes with your codebase (because you are dot-importing Ginkgo). Check out the [Alternatives to Dot-Importing Ginkgo](https://onsi.github.io/ginkgo/#alternatives-to-dot-importing-ginkgo) section of the documentation for some options.  You may be able to, instead, dot-import just a subset of the Ginkgo DSL using the new `github.com/onsi/ginkgo/v2/dsl` set of packages.
+
+Specificaly when upgrading from v1 to v2 if you see a dot-import clash due to a newly introduced symbol (e.g. the new `Label` decorator) you can instead choose to dot-import the core DSL and import the `decorator` dsl separately:
+
+```go
+import (
+	. "github.com/onsi/ginkgo/v2/dsl/core"	
+	"github.com/onsi/ginkgo/v2/dsl/decorators"	
+)
+
+var _ = It("gives you the core DSL", decorators.Label("and namespaced decorators"), func() {
+	...
+})
+
+```
 
 ---
 

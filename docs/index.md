@@ -1510,6 +1510,56 @@ var _ = Describe("Math", func() {
 
 Will generate entries named: `1 + 2 = 3`, `-1 + 2 = 1`, `zeros`, `110 = 10 + 100`, and `7 = 7`.
 
+### Alternatives to Dot-Importing Ginkgo
+
+As shown througout this documentation, Ginkgo users are encouraged to dot-import the Ginkgo DSL into their test suites to effectively extend the Go language with Ginkgo's expressive building blocks:
+
+```go
+import . "github.com/onsi/ginkgo/v2"
+```
+
+Some users prefer to avoid dot-importing dependencies into their code in order to keep their global namespace clean and predictable.  You can, of course, do this with Ginkgo - we recommend using a simple shorthand like `g`:
+
+```go
+import g "github.com/onsi/ginkgo/v2"
+```
+
+now you can write tests as before, albeit with a slight stutter:
+
+```go
+var _ = g.Describe("Books", func() {
+  g.BeforeEach(func() { ... })
+
+  g.It("works as before", func() {
+    g.By("you just need to repeat g. everywhere")
+  })
+})
+```
+
+Alternatively, you can choose to dot-import only _portions_ of Ginkgo's DSL into the global namespace.  The packages under `github.com/onsi/ginkgo/v2/dsl` organize the various pieces of Ginkgo into a series of subpackages.  You can choose to mix-and-match which of these are dot-imported vs namespaced.  For example, you can dot-import the core DSL (which provides the various setup, container, and subject nodes) while namespace importing the decorators DSL:
+
+```go
+import (
+  . "github.com/onsi/ginkgo/v2/dsl/core"  
+  "github.com/onsi/ginkgo/v2/dsl/decorators"  
+)
+
+var _ = It("gives you the core DSL", decorators.Label("and namespaced decorators"), func() {
+  ...
+})
+```
+
+The available DSL packages are:
+
+| Package | Contents |
+|-------|--------|
+| `github.com/onsi/ginkgo/v2/dsl/core` | The core DSL including all container, setup, and subject nodes (`Describe`, `Context`, `BeforeEach`, `BeforeSuite`, `It`, etc...) as well as the most commonly used functions (`RunSpecs`, `Skip`, `Fail`, `By`, `GinkgoT`) | 
+| `github.com/onsi/ginkgo/v2/decorators` | The decorator DSL includes all Ginkgo's decorators (e.g. `Label`, `Ordered`, `Serial`, etc...) |
+| `github.com/onsi/ginkgo/v2/reporting` | The reporting DSL includes all reporting-related nodes and types (e.g. `Report`, `CurrentSpecReport`, `ReportAfterEach`, `AddReportEntry`) |
+| `github.com/onsi/ginkgo/v2/table` | The table DSL includes all table-related types and functions (e.g. `DescribeTable`, `Entry`, `EntryDescription`) |
+
+The DSL packages simply import and then re-export pieces of the Ginkgo DSL provided by `github.com/onsi/ginkgo/v2` so there are no differences in behavior or interoperability if you use the standard dot-import for Ginkgo or pull in the various DSL packages in piecemeal.
+
 ## Running Specs
 
 The previous chapter covered the basics of [Writing Specs](#writing-specs) in Ginkgo.  We explored how Ginkgo lets you use container nodes, subject nodes, and setup nodes to construct hierarchical spec trees; and how Ginkgo transforms those trees into a list of specs to run.
