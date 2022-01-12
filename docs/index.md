@@ -2856,7 +2856,7 @@ import (
 )
 ```
 
-The `//go:build tools` constraint ensures this code is never actuall built, however the `_ "github.com/onsi/ginkgo/v2/ginkgo` import statement is enough to convince `go mod` to include the Ginkgo CLI dependencies in your `go.sum` file.
+The `//go:build tools` constraint ensures this code is never actually built, however the `_ "github.com/onsi/ginkgo/v2/ginkgo` import statement is enough to convince `go mod` to include the Ginkgo CLI dependencies in your `go.sum` file.
 
 Once you have `ginkgo` running on CI, you'll want to pick and choose the optimal set of flags for your test runs.  We recommend the following set of flags when running in a continuous integration environment:
 
