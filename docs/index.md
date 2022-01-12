@@ -3074,7 +3074,7 @@ this works just fine - however as the suite grows you may see that `environment`
 
 ```go
 var _ = Describe("Smoketests", func() {
-  Describe("Minimally-invasive", Label("PRODUCTION", "STAGING")func() {
+  Describe("Minimally-invasive", Label("PRODUCTION", "STAGING"), func() {
     It("can connect to the server", func() {
       ...
     })
