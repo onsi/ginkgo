@@ -3747,8 +3747,8 @@ Eventually(func(g Gomega) {
   g.Expect(err).NotTo(HaveOccurred())
   expectedSubject := fmt.Sprintf(`"%s" is available for pickup`, book.Title)
   subjectGetter := func(m gmail.Message) string { return m.Subject }
-  g.Expect(subjects).To(ContainElement(WithTransform(subjectGetter, Equal(expectedSubject))))
-  return subjects, nil
+  g.Expect(messages).To(ContainElement(WithTransform(subjectGetter, Equal(expectedSubject))))
+  return messages, nil
 }).Should(Succeed())
 ```
 
