@@ -21,7 +21,7 @@ type WriterInterface interface {
 	Bytes() []byte
 }
 
-//Writer impplements WriterInterface and GinkgoWriterInterface
+//Writer implements WriterInterface and GinkgoWriterInterface
 type Writer struct {
 	buffer    *bytes.Buffer
 	outWriter io.Writer
