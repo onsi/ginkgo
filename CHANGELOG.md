@@ -1,3 +1,13 @@
+## 2.1.0
+
+See [https://onsi.github.io/ginkgo/MIGRATING_TO_V2](https://onsi.github.io/ginkgo/MIGRATING_TO_V2) for details on V2.
+
+2.1.0 is a minor release with a few tweaks:
+
+- Introduce new DSL packages to enable users to pick-and-choose which portions of the DSL to dot-import. [90868e2]  More details [here](https://onsi.github.io/ginkgo/#alternatives-to-dot-importing-ginkgo).
+- Add error check for invalid/nil parameters to DescribeTable [6f8577e]
+- Myriad docs typos fixed (thanks everyone!) [718542a, ecb7098, 146654c, a8f9913, 6bdffde, 03dcd7e]
+
 ## 2.0.0
 
 See [https://onsi.github.io/ginkgo/MIGRATING_TO_V2](https://onsi.github.io/ginkgo/MIGRATING_TO_V2)
