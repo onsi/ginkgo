@@ -1,3 +1,10 @@
+## 2.1.1
+
+See [https://onsi.github.io/ginkgo/MIGRATING_TO_V2](https://onsi.github.io/ginkgo/MIGRATING_TO_V2) for details on V2.
+
+### Fixes
+- Suites that only import the new dsl packages are now correctly identified as Ginkgo suites [ec17e17]
+
 ## 2.1.0
 
 See [https://onsi.github.io/ginkgo/MIGRATING_TO_V2](https://onsi.github.io/ginkgo/MIGRATING_TO_V2) for details on V2.
