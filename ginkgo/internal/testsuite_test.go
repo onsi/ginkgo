@@ -76,6 +76,9 @@ var _ = Describe("TestSuite", func() {
 			//ginkgo tests in a deeply nested directory
 			writeFile("/colonelmustard/library", "library_test.go", `import "github.com/onsi/ginkgo/v2"`, 0666)
 
+			//ginkgo tests in a deeply nested directory
+			writeFile("/colonelmustard/library/spanner", "spanner_test.go", `import "github.com/onsi/ginkgo/v2/dsl/core"`, 0666)
+
 			//ginkgo tests deeply nested in a vendored dependency
 			writeFile("/vendor/mrspeacock/lounge", "lounge_test.go", `import "github.com/onsi/ginkgo/v2"`, 0666)
 
@@ -104,6 +107,7 @@ var _ = Describe("TestSuite", func() {
 						TS("./professorplum", "professorplum", false, TestSuiteStateUncompiled),
 						TS("./colonelmustard", "colonelmustard", true, TestSuiteStateUncompiled),
 						TS("./colonelmustard/library", "library", true, TestSuiteStateUncompiled),
+						TS("./colonelmustard/library/spanner", "spanner", true, TestSuiteStateUncompiled),
 					))
 				})
 			})
@@ -120,6 +124,7 @@ var _ = Describe("TestSuite", func() {
 						TS("./professorplum", "professorplum", false, TestSuiteStateSkippedByFilter),
 						TS("./colonelmustard", "colonelmustard", true, TestSuiteStateUncompiled),
 						TS("./colonelmustard/library", "library", true, TestSuiteStateSkippedByFilter),
+						TS("./colonelmustard/library/spanner", "spanner", true, TestSuiteStateSkippedByFilter),
 					))
 				})
 			})
@@ -160,6 +165,7 @@ var _ = Describe("TestSuite", func() {
 					Ω(suites).Should(ConsistOf(
 						TS("./colonelmustard", "colonelmustard", true, TestSuiteStateUncompiled),
 						TS("./colonelmustard/library", "library", true, TestSuiteStateUncompiled),
+						TS("./colonelmustard/library/spanner", "spanner", true, TestSuiteStateUncompiled),
 					))
 				})
 			})
@@ -176,6 +182,7 @@ var _ = Describe("TestSuite", func() {
 						TS("./professorplum", "professorplum", false, TestSuiteStateUncompiled),
 						TS("./colonelmustard", "colonelmustard", true, TestSuiteStateUncompiled),
 						TS("./colonelmustard/library", "library", true, TestSuiteStateSkippedByFilter),
+						TS("./colonelmustard/library/spanner", "spanner", true, TestSuiteStateSkippedByFilter),
 					))
 				})
 			})
@@ -205,6 +212,7 @@ var _ = Describe("TestSuite", func() {
 						TS("./professorplum", "professorplum", false, TestSuiteStateUncompiled),
 						TS("./colonelmustard", "colonelmustard", true, TestSuiteStateUncompiled),
 						TS("./colonelmustard/library", "library", true, TestSuiteStateUncompiled),
+						TS("./colonelmustard/library/spanner", "spanner", true, TestSuiteStateUncompiled),
 					))
 				})
 			})
