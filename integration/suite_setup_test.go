@@ -78,7 +78,7 @@ var _ = Describe("SuiteSetup", func() {
 			Eventually(session).Should(gexec.Exit(1))
 			output := string(session.Out.Contents()) + string(session.Err.Contents())
 
-			Ω(output).Should(ContainSubstring("Process #1 disappeard before SynchronizedBeforeSuite could report back"))
+			Ω(output).Should(ContainSubstring("Process #1 disappeared before SynchronizedBeforeSuite could report back"))
 			Ω(output).Should(ContainSubstring("Ginkgo timed out waiting for all parallel procs to report back"))
 		})
 	})

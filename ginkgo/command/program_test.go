@@ -102,7 +102,7 @@ var _ = Describe("Program", func() {
 		})
 	})
 
-	Context("when called with an unkown subcommand", func() {
+	Context("when called with an unknown subcommand", func() {
 		BeforeEach(func() {
 			program.RunAndExit([]string{"omicron", "xi"})
 		})
@@ -283,7 +283,7 @@ var _ = Describe("Program", func() {
 		})
 	})
 
-	Context("when an unkown flag is used", func() {
+	Context("when an unknown flag is used", func() {
 		BeforeEach(func() {
 			program.RunAndExit([]string{"omicron", "beta", "-zanzibar"})
 		})

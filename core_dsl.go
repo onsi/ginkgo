@@ -221,7 +221,7 @@ func RunSpecs(t GinkgoTestingT, description string, args ...interface{}) bool {
 		case Labels:
 			suiteLabels = append(suiteLabels, arg...)
 		default:
-			configErrors = append(configErrors, types.GinkgoErrors.UnkownTypePassedToRunSpecs(arg))
+			configErrors = append(configErrors, types.GinkgoErrors.UnknownTypePassedToRunSpecs(arg))
 		}
 	}
 	exitIfErrors(configErrors)
