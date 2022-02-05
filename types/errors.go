@@ -182,8 +182,8 @@ func (g ginkgoErrors) InvalidDeclarationOfFocusedAndPending(cl CodeLocation, nod
 
 func (g ginkgoErrors) UnknownDecorator(cl CodeLocation, nodeType NodeType, decorator interface{}) error {
 	return GinkgoError{
-		Heading:      "Unkown Decorator",
-		Message:      formatter.F(`[%s] node was passed an unkown decorator: '%#v'`, nodeType, decorator),
+		Heading:      "Unknown Decorator",
+		Message:      formatter.F(`[%s] node was passed an unknown decorator: '%#v'`, nodeType, decorator),
 		CodeLocation: cl,
 		DocLink:      "node-decorators-overview",
 	}
@@ -433,16 +433,16 @@ func (g ginkgoErrors) SynchronizedBeforeSuiteFailedOnProc1() error {
 
 func (g ginkgoErrors) SynchronizedBeforeSuiteDisappearedOnProc1() error {
 	return GinkgoError{
-		Heading: "Process #1 disappeard before SynchronizedBeforeSuite could report back",
+		Heading: "Process #1 disappeared before SynchronizedBeforeSuite could report back",
 		Message: "Ginkgo parallel process #1 disappeared before the first SynchronizedBeforeSuite function completed.  This suite will now abort.",
 	}
 }
 
 /* Configuration errors */
 
-func (g ginkgoErrors) UnkownTypePassedToRunSpecs(value interface{}) error {
+func (g ginkgoErrors) UnknownTypePassedToRunSpecs(value interface{}) error {
 	return GinkgoError{
-		Heading: "Unkown Type pased to RunSpecs",
+		Heading: "Unknown Type passed to RunSpecs",
 		Message: fmt.Sprintf("RunSpecs() accepts labels, and configuration of type types.SuiteConfig and/or types.ReporterConfig.\n You passed in: %v", value),
 	}
 }
