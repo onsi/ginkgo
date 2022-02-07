@@ -44,7 +44,7 @@ You can silence the RC advertisement by setting an `ACK_GINKG_RC=true` environme
 ## 1.16.1
 
 ### Fixes
-- Supress --stream deprecation warning on windows (#793)
+- Suppress --stream deprecation warning on windows (#793)
 
 ## 1.16.0
 
@@ -222,7 +222,7 @@ You can silence the RC advertisement by setting an `ACK_GINKG_RC=true` environme
 - fix: for `go vet` to pass [69338ec]
 - docs: fix for contributing instructions [7004cb1]
 - consolidate and streamline contribution docs (#494) [d848015]
-- Make generated Junit file compatable with "Maven Surefire" (#488) [e51bee6]
+- Make generated Junit file compatible with "Maven Surefire" (#488) [e51bee6]
 - all: gofmt [000d317]
 - Increase eventually timeout to 30s [c73579c]
 - Clarify asynchronous test behaviour [294d8f4]
@@ -334,7 +334,7 @@ Bug Fixes:
 - Fix incorrect failure message when a panic occurs during a parallel test run
 - Fixed an issue where a pending test within a focused context (or a focused test within a pending context) would skip all other tests.
 - Be more consistent about handling SIGTERM as well as SIGINT
-- When interupted while concurrently compiling test suites in the background, Ginkgo now cleans up the compiled artifacts.
+- When interrupted while concurrently compiling test suites in the background, Ginkgo now cleans up the compiled artifacts.
 - Fixed a long standing bug where `ginkgo -p` would hang if a process spawned by one of the Ginkgo parallel nodes does not exit. (Hooray!)
 
 ## 1.1.0 (8/2/2014)

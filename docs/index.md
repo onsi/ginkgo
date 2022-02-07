@@ -1512,7 +1512,7 @@ Will generate entries named: `1 + 2 = 3`, `-1 + 2 = 1`, `zeros`, `110 = 10 + 100
 
 ### Alternatives to Dot-Importing Ginkgo
 
-As shown througout this documentation, Ginkgo users are encouraged to dot-import the Ginkgo DSL into their test suites to effectively extend the Go language with Ginkgo's expressive building blocks:
+As shown throughout this documentation, Ginkgo users are encouraged to dot-import the Ginkgo DSL into their test suites to effectively extend the Go language with Ginkgo's expressive building blocks:
 
 ```go
 import . "github.com/onsi/ginkgo/v2"
@@ -2154,7 +2154,7 @@ BeforeEach(func() {
 })
 ```
 
-now, every spec will be guaranteed to start with the same initial state and we are free to write our specs without worrying about spec polution.
+now, every spec will be guaranteed to start with the same initial state and we are free to write our specs without worrying about spec pollution.
 
 This behavior, however, will cause specs in Ordered containers to break.  Consider this set of specs:
 
@@ -2893,7 +2893,7 @@ When running in CI you'll want to make sure that the version of the `ginkgo` CLI
 
 `go run github.com/onsi/ginkgo/v2/ginkgo`
 
-This alone, however, is often not enought.  The Ginkgo CLi includes additional dependencies that aren't part of the Ginkgo library - since your code doesn't import the cli these dependencies probably aren't in your `go.sum` file.  To get around this it is idiomatic Go to introduce a `tools.go` file.  This can go anywhere in your module - for example, Gomega places its `tools.go` at the top-level.  Your `tools.go` file should look like:
+This alone, however, is often not enough.  The Ginkgo CLi includes additional dependencies that aren't part of the Ginkgo library - since your code doesn't import the cli these dependencies probably aren't in your `go.sum` file.  To get around this it is idiomatic Go to introduce a `tools.go` file.  This can go anywhere in your module - for example, Gomega places its `tools.go` at the top-level.  Your `tools.go` file should look like:
 
 ```go
 //go:build tools
@@ -3264,7 +3264,7 @@ var _ = BeforeSuite(func() {
 Describe("Storing and retrieving the book fixtures", func() {
   for _, book := range fixtureBooks {
     book := book
-    It(fmt.Sprintf("can store and retreive %s", book.Title), func() {
+    It(fmt.Sprintf("can store and retrieve %s", book.Title), func() {
       Expect(library.Store(book)).To(Succeed())
       DeferCleanup(library.Delete, book)
       Expect(library.FindByTitle(book.Title)).To(Equal(book))            
@@ -4500,7 +4500,7 @@ The columns are:
 - Focused (bool): True, if focused. (Conforms to the rules in [Focused Specs](#focused-specs).)
 - Pending (bool): True, if pending. (Conforms to the rules in [Pending Specs](#pending-specs).)
 
-You can set a different output format with the `-format` flag. Accepted formats are `csv`, `indent`, and `json`. The `ident` format is like `csv`, but uses identation to show the nesting of containers and specs. Both the `csv` and `json` formats can be read by another program, e.g., an editor plugin that displays a tree view of Ginkgo tests in a file, or presents a menu for the user to quickly navigate to a container or spec.
+You can set a different output format with the `-format` flag. Accepted formats are `csv`, `indent`, and `json`. The `ident` format is like `csv`, but uses indentation to show the nesting of containers and specs. Both the `csv` and `json` formats can be read by another program, e.g., an editor plugin that displays a tree view of Ginkgo tests in a file, or presents a menu for the user to quickly navigate to a container or spec.
 
 `ginkgo outline` is intended for integration with third-party libraries and applications.  If you simply want to know how a suite will run without running it try `ginkgo -v --dry-run` instead.
 
@@ -4584,7 +4584,7 @@ var _ = Describe("Consumer", func() {
 
 Since `GinkgoT()` implements `Cleanup()` (using `DeferCleanup()` under the hood) Gomock will automatically register a call to `mockCtrl.Finish()` when the controller is created.
 
-When using Gomock you may want to run `ginkgo` with the `-trace` flag to print out stack traces for failures which will help you trace down where, in your code, invalid calls occured.
+When using Gomock you may want to run `ginkgo` with the `-trace` flag to print out stack traces for failures which will help you trace down where, in your code, invalid calls occurred.
 
 ### IDE Support
 Ginkgo works best from the command-line, and [`ginkgo watch`](#watching-for-changes) makes it easy to rerun tests on the command line whenever changes are detected.

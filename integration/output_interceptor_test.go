@@ -9,7 +9,7 @@ import (
 )
 
 var _ = Describe("OutputInterceptor", func() {
-	Context("excercising the edge case reported in issue #851", func() {
+	Context("exercising the edge case reported in issue #851", func() {
 		BeforeEach(func() {
 			fm.MountFixture("interceptor")
 

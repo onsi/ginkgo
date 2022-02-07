@@ -168,7 +168,7 @@ func (g CLIConfig) ComputedNumCompilers() int {
 }
 
 // Configuration for the Ginkgo CLI capturing available go flags
-// A subset of Go flags are exposed by Ginkgo.  Some are avaiable at compile time (e.g. ginkgo build) and others only at run time (e.g. ginkgo run - which has both build and run time flags).
+// A subset of Go flags are exposed by Ginkgo.  Some are available at compile time (e.g. ginkgo build) and others only at run time (e.g. ginkgo run - which has both build and run time flags).
 // More details can be found at:
 // https://docs.google.com/spreadsheets/d/1zkp-DS4hU4sAJl5eHh1UmgwxCPQhf3s5a8fbiOI8tJU/
 type GoFlagsConfig struct {
@@ -278,7 +278,7 @@ var SuiteConfigFlags = GinkgoFlags{
 		Usage: "If set, ginkgo will use the specified output interception strategy when running in parallel.  Defaults to dup on unix and swap on windows."},
 
 	{KeyPath: "S.LabelFilter", Name: "label-filter", SectionKey: "filter", UsageArgument: "expression",
-		Usage: "If set, ginkgo will only run specs with labels that match the label-filter.  The passed-in expression can include boolean operations (!, &&, ||, ','), groupings via '()', and regular expresions '/regexp/'.  e.g. '(cat || dog) && !fruit'"},
+		Usage: "If set, ginkgo will only run specs with labels that match the label-filter.  The passed-in expression can include boolean operations (!, &&, ||, ','), groupings via '()', and regular expressions '/regexp/'.  e.g. '(cat || dog) && !fruit'"},
 	{KeyPath: "S.FocusStrings", Name: "focus", SectionKey: "filter",
 		Usage: "If set, ginkgo will only run specs that match this regular expression. Can be specified multiple times, values are ORed."},
 	{KeyPath: "S.SkipStrings", Name: "skip", SectionKey: "filter",
@@ -555,7 +555,7 @@ var GoRunFlags = GinkgoFlags{
 }
 
 // VetAndInitializeCLIAndGoConfig validates that the Ginkgo CLI's configuration is sound
-// It returns a potentially mutated copy of the config that rationalizes the configuraiton to ensure consistency for downstream consumers
+// It returns a potentially mutated copy of the config that rationalizes the configuration to ensure consistency for downstream consumers
 func VetAndInitializeCLIAndGoConfig(cliConfig CLIConfig, goFlagsConfig GoFlagsConfig) (CLIConfig, GoFlagsConfig, []error) {
 	errors := []error{}
 

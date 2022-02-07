@@ -296,7 +296,7 @@ func (suite *Suite) runSpecs(description string, suiteLabels Labels, suitePath s
 			// the complexity for running groups of specs is very high because of Ordered containers and FlakeAttempts
 			// we encapsulate that complexity in the notion of a Group that can run
 			// Group is really just an extension of suite so it gets passed a suite and has access to all its internals
-			// Note that group is stateful and intedned for single use!
+			// Note that group is stateful and intended for single use!
 			newGroup(suite).run(specs.AtIndices(groupedSpecIndices[groupedSpecIdx]))
 		}
 

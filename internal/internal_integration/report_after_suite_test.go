@@ -148,7 +148,7 @@ var _ = Describe("Sending reports to ReportAfterSuite procs", func() {
 				Ω(success).Should(BeFalse())
 			})
 
-			It("ignores the interrupt and soliders on", func() {
+			It("ignores the interrupt and soldiers on", func() {
 				Ω(rt).Should(HaveTracked(
 					"before-suite",
 					"A", "B", "C",

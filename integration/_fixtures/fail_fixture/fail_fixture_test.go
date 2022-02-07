@@ -10,7 +10,7 @@ var _ = It("handles top level failures", func() {
 	println("NEVER SEE THIS")
 })
 
-var _ = Describe("Excercising different failure modes", func() {
+var _ = Describe("Exercising different failure modes", func() {
 	It("synchronous failures", func() {
 		Ω("a sync failure").Should(Equal("nope"))
 		println("NEVER SEE THIS")

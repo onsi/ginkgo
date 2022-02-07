@@ -41,7 +41,7 @@ type JUnitTestSuites struct {
 type JUnitTestSuite struct {
 	// Name maps onto the description of the test suite - maps onto Report.SuiteDescription
 	Name string `xml:"name,attr"`
-	// Package maps onto the aboslute path to the test suite - maps onto Report.SuitePath
+	// Package maps onto the absolute path to the test suite - maps onto Report.SuitePath
 	Package string `xml:"package,attr"`
 	// Tests maps onto the total number of specs in the test suite (this includes any suite nodes such as BeforeSuite)
 	Tests int `xml:"tests,attr"`
@@ -110,7 +110,7 @@ type JUnitSkipped struct {
 }
 
 type JUnitError struct {
-	//Message maps onto the panic/exception thrown - equivalent to SpecReport.Failure.ForwardedPanic - or to "interupted"
+	//Message maps onto the panic/exception thrown - equivalent to SpecReport.Failure.ForwardedPanic - or to "interrupted"
 	Message string `xml:"message,attr"`
 	//Type is one of "panicked" or "interrupted"
 	Type string `xml:"type,attr"`

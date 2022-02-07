@@ -121,7 +121,7 @@ func NewAttachedGinkgoFlagSet(flagSet *flag.FlagSet, flags GinkgoFlags, bindings
 func bindFlagSet(f GinkgoFlagSet, flagSet *flag.FlagSet) (GinkgoFlagSet, error) {
 	if flagSet == nil {
 		f.flagSet = flag.NewFlagSet("", flag.ContinueOnError)
-		//supress all output as Ginkgo is reponsible for formatting usage
+		//suppress all output as Ginkgo is responsible for formatting usage
 		f.flagSet.SetOutput(io.Discard)
 	} else {
 		f.flagSet = flagSet

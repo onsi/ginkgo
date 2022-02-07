@@ -95,7 +95,7 @@ var _ = Describe("Suite", func() {
 
 		})
 
-		Context("when the user attemps to fail during PhaseBuildTree", func() {
+		Context("when the user attempts to fail during PhaseBuildTree", func() {
 			BeforeEach(func() {
 				suite.PushNode(N(ntCon, "a top-level container", func() {
 					failer.Fail("boom", cl)

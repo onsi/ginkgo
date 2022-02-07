@@ -10,7 +10,7 @@ var _ = It("handles top level skips", func() {
 	println("NEVER SEE THIS")
 })
 
-var _ = Describe("Excercising different skip modes", func() {
+var _ = Describe("Exercising different skip modes", func() {
 	It("synchronous skip", func() {
 		Skip("a sync SKIP")
 		println("NEVER SEE THIS")

@@ -149,7 +149,7 @@ var _ = Describe("Types", func() {
 				})
 			})
 
-			Context("wtih only StdOutErr output", func() {
+			Context("with only StdOutErr output", func() {
 				It("returns that output", func() {
 					Ω(types.SpecReport{
 						CapturedStdOutErr: "hello",
@@ -157,7 +157,7 @@ var _ = Describe("Types", func() {
 				})
 			})
 
-			Context("wtih only GinkgoWriter output", func() {
+			Context("with only GinkgoWriter output", func() {
 				It("returns that output", func() {
 					Ω(types.SpecReport{
 						CapturedGinkgoWriterOutput: "hello",
@@ -285,7 +285,7 @@ var _ = Describe("Types", func() {
 				BeforeEach(func() {
 					report.Failure = types.Failure{}
 				})
-				It("round-trips correclty and doesn't include the Failure struct", func() {
+				It("round-trips correctly and doesn't include the Failure struct", func() {
 					marshalled, err := json.Marshal(report)
 					Ω(string(marshalled)).ShouldNot(ContainSubstring("Failure"))
 					Ω(err).ShouldNot(HaveOccurred())

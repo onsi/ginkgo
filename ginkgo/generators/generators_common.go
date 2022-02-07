@@ -17,7 +17,7 @@ type GeneratorsConfig struct {
 
 func getPackageAndFormattedName() (string, string, string) {
 	path, err := os.Getwd()
-	command.AbortIfError("Could not get current working diretory:", err)
+	command.AbortIfError("Could not get current working directory:", err)
 
 	dirName := strings.Replace(filepath.Base(path), "-", "_", -1)
 	dirName = strings.Replace(dirName, " ", "_", -1)

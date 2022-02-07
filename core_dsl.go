@@ -115,7 +115,7 @@ The first return value is the SuiteConfig which controls aspects of how the suit
 the second return value is the ReporterConfig which controls aspects of how Ginkgo's default
 reporter emits output.
 
-Mutating the returned configurations has no effect.  To reconfigure Ginkgo programatically you need
+Mutating the returned configurations has no effect.  To reconfigure Ginkgo programmatically you need
 to pass in your mutated copies into RunSpecs().
 
 You can learn more at https://onsi.github.io/ginkgo/#overriding-ginkgos-command-line-configuration-in-the-suite
@@ -184,7 +184,7 @@ If you bootstrapped your suite with "ginkgo bootstrap" this is already
 done for you.
 
 Ginkgo is typically configured via command-line flags.  This configuration
-can be overriden, however, and passed into RunSpecs as optional arguments:
+can be overridden, however, and passed into RunSpecs as optional arguments:
 
 	func TestMySuite(t *testing.T)  {
 		RegisterFailHandler(gomega.Fail)

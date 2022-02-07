@@ -83,7 +83,7 @@ var _ = Describe("Profiling Specs", func() {
 		}
 
 		Context("when running a single package in series or in parallel with -cover", func() {
-			It("emits the coverage pecentage and generates a cover profile", func() {
+			It("emits the coverage percentage and generates a cover profile", func() {
 				seriesSession := startGinkgo(fm.PathTo("coverage"), "--no-color", "-cover")
 				Eventually(seriesSession).Should(gexec.Exit(0))
 				Ω(seriesSession.Out).Should(gbytes.Say(`coverage: 80\.0% of statements`))

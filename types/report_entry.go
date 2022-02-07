@@ -42,7 +42,7 @@ func (rev ReportEntryValue) String() string {
 }
 
 func (rev ReportEntryValue) MarshalJSON() ([]byte, error) {
-	//All this to capture the representaiton at encoding-time, not creating time
+	//All this to capture the representation at encoding-time, not creating time
 	//This way users can Report on pointers and get their final values at reporting-time
 	out := struct {
 		AsJSON         string

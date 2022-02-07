@@ -55,7 +55,7 @@ var _ = Describe("Failer", func() {
 	})
 
 	Describe("when told to skip", func() {
-		Context("when no failure has occured", func() {
+		Context("when no failure has occurred", func() {
 			It("registers the test as skipped", func() {
 				failer.Skip("something skipped", clA)
 				state, failure := failer.Drain()
@@ -67,7 +67,7 @@ var _ = Describe("Failer", func() {
 			})
 		})
 
-		Context("when a failure has already occured", func() {
+		Context("when a failure has already occurred", func() {
 			BeforeEach(func() {
 				failer.Fail("something failed", clA)
 			})
@@ -85,7 +85,7 @@ var _ = Describe("Failer", func() {
 	})
 
 	Describe("when told to abort", func() {
-		Context("when no failure has occured", func() {
+		Context("when no failure has occurred", func() {
 			It("registers the test as aborted", func() {
 				failer.AbortSuite("something aborted", clA)
 				state, failure := failer.Drain()
@@ -97,7 +97,7 @@ var _ = Describe("Failer", func() {
 			})
 		})
 
-		Context("when a failure has already occured", func() {
+		Context("when a failure has already occurred", func() {
 			BeforeEach(func() {
 				failer.Fail("something failed", clA)
 			})
