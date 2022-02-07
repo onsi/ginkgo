@@ -49,21 +49,21 @@ type DeprecatedDefaultReporterConfigType struct {
 }
 
 // Sadly there is no way to gracefully deprecate access to these global config variables.
-// Users who need access to Ginkgo's configuration should use the DSL's GinkgoConfiguraiton() method
+// Users who need access to Ginkgo's configuration should use the DSL's GinkgoConfiguration() method
 // These new unwieldy type names exist to give users a hint when they try to compile and the compilation fails
 type GinkgoConfigIsNoLongerAccessibleFromTheConfigPackageUseTheDSLsGinkgoConfigurationFunctionInstead struct{}
 
 // Sadly there is no way to gracefully deprecate access to these global config variables.
-// Users who need access to Ginkgo's configuration should use the DSL's GinkgoConfiguraiton() method
+// Users who need access to Ginkgo's configuration should use the DSL's GinkgoConfiguration() method
 // These new unwieldy type names exist to give users a hint when they try to compile and the compilation fails
 var GinkgoConfig = GinkgoConfigIsNoLongerAccessibleFromTheConfigPackageUseTheDSLsGinkgoConfigurationFunctionInstead{}
 
 // Sadly there is no way to gracefully deprecate access to these global config variables.
-// Users who need access to Ginkgo's configuration should use the DSL's GinkgoConfiguraiton() method
+// Users who need access to Ginkgo's configuration should use the DSL's GinkgoConfiguration() method
 // These new unwieldy type names exist to give users a hint when they try to compile and the compilation fails
 type DefaultReporterConfigIsNoLongerAccessibleFromTheConfigPackageUseTheDSLsGinkgoConfigurationFunctionInstead struct{}
 
 // Sadly there is no way to gracefully deprecate access to these global config variables.
-// Users who need access to Ginkgo's configuration should use the DSL's GinkgoConfiguraiton() method
+// Users who need access to Ginkgo's configuration should use the DSL's GinkgoConfiguration() method
 // These new unwieldy type names exist to give users a hint when they try to compile and the compilation fails
 var DefaultReporterConfig = DefaultReporterConfigIsNoLongerAccessibleFromTheConfigPackageUseTheDSLsGinkgoConfigurationFunctionInstead{}
