@@ -40,7 +40,7 @@ func BuildBootstrapCommand() command.Command {
 		ShortDoc: "Bootstrap a test suite for the current package",
 		Documentation: `Tests written in Ginkgo and Gomega require a small amount of boilerplate to hook into Go's testing infrastructure.
 
-{{bold}}ginkgo boostrap{{/}} generates this boilerplate for you in a file named X_suite_test.go where X is the name of the package under test.`,
+{{bold}}ginkgo bootstrap{{/}} generates this boilerplate for you in a file named X_suite_test.go where X is the name of the package under test.`,
 		DocLink: "generators",
 		Flags:   flags,
 		Command: func(_ []string, _ []string) {

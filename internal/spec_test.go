@@ -10,8 +10,8 @@ var _ = Describe("Spec and Specs", func() {
 	Describe("spec.Text", func() {
 		Context("when the spec has nodes with texts", func() {
 			It("returns the concatenated texts of its nodes (omitting any empty texts)", func() {
-				spec := S(N(), N("Oh death,"), N(), N("where is"), N("thy"), N(), N("sting?"))
-				Ω(spec.Text()).Should(Equal("Oh death, where is thy sting?"))
+				spec := S(N(), N("Oh death,"), N(), N("where is"), N("thy"), N(), N("string?"))
+				Ω(spec.Text()).Should(Equal("Oh death, where is thy string?"))
 			})
 		})
 

@@ -108,7 +108,7 @@ var _ = Describe("Config", func() {
 		})
 
 		Context("when all is well", func() {
-			It("retuns no errors", func() {
+			It("returns no errors", func() {
 				errors := types.VetConfig(flagSet, suiteConf, repConf)
 				Ω(errors).Should(BeEmpty())
 			})

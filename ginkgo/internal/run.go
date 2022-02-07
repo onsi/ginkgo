@@ -188,7 +188,7 @@ func runParallel(suite TestSuite, ginkgoConfig types.SuiteConfig, reporterConfig
 		}
 
 		args, err := types.GenerateGinkgoTestRunArgs(procGinkgoConfig, reporterConfig, procGoFlagsConfig)
-		command.AbortIfError("Failed to generate test run argumnets", err)
+		command.AbortIfError("Failed to generate test run arguments", err)
 		args = append([]string{"--test.timeout=0"}, args...)
 		args = append(args, additionalArgs...)
 

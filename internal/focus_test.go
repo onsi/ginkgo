@@ -215,7 +215,7 @@ var _ = Describe("Focus", func() {
 			BeforeEach(func() {
 				specs = Specs{
 					S(N(CL("file_a", 1))),               //include because "file_:1" is in FocusFiles
-					S(N(CL("file_b", 3, "file_b", 15))), //include becasue "file_:15-21" is in FocusFiles
+					S(N(CL("file_b", 3, "file_b", 15))), //include because "file_:15-21" is in FocusFiles
 					S(N(CL("file_b", 17))),              //skip because "_b:17" is in SkipFiles
 					S(N(CL("file_b", 20), Pending)),     //skip because spec is flagged pending
 					S(N(CL("c", 3), Focus)),             //skip because "c" is not in FocusFiles - override programmatic focus

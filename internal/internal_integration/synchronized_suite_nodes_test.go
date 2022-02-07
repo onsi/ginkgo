@@ -88,7 +88,7 @@ var _ = Describe("Synchronized Suite Nodes", func() {
 				Ω(success).Should(BeFalse())
 			})
 
-			It("doens't run the allProcs function or any of the tests", func() {
+			It("doesn't run the allProcs function or any of the tests", func() {
 				Ω(rt).Should(HaveTracked(
 					"before-suite-proc-1",
 					"after-suite-all-procs", "after-suite-proc-1",

@@ -40,7 +40,7 @@ The next sections describe the [new features in Ginkgo 2.0](#major-additions-and
 ### Interrupt Behavior
 Interrupt behavior is substantially improved, sending an interrupt signal will now:
 	- immediately cause the current test to unwind.  Ginkgo will run any `AfterEach` blocks, then immediately skip all remaining tests, then run the `AfterSuite` block.  
-	- emit information about which node Ginkgo was running when the interrupt signal was recevied.
+	- emit information about which node Ginkgo was running when the interrupt signal was received.
 	- emit as much information as possible about the interrupted test (e.g. `GinkgoWriter` contents, `stdout` and `stderr` context).
 	- emit a stack trace of every running goroutine at the moment of interruption.
 
@@ -245,7 +245,7 @@ Ginkgo V2 provides an improved reporting infrastructure that [replaces and impro
 #### Generating machine-readable reports
 Ginkgo now natively supports generating and aggregating reports in a number of machine-readable formats - and these reports can be generated and managed by simply passing `ginkgo` command line flags.
 
-Ginkgo V2 introduces a new JSON format that faithfully captures all avialable information about a Ginkgo test suite.  JSON reports can be generated via `ginkgo --json-report=out.json`.  The resulting JSON file encodes an array of `types.Report`.  Each entry in that array lists detailed information about the test suite and includes a list of `types.SpecReport` that captures detailed information about each spec.  These types are documented [here](https://github.com/onsi/ginkgo/blob/ver2/types/types.go).
+Ginkgo V2 introduces a new JSON format that faithfully captures all available information about a Ginkgo test suite.  JSON reports can be generated via `ginkgo --json-report=out.json`.  The resulting JSON file encodes an array of `types.Report`.  Each entry in that array lists detailed information about the test suite and includes a list of `types.SpecReport` that captures detailed information about each spec.  These types are documented [here](https://github.com/onsi/ginkgo/blob/ver2/types/types.go).
 
 Ginkgo also supports generating JUnit reports with `ginkgo --junit-report=out.xml` and Teamcity reports with `ginkgo --teamcity-report=out.teamcity`.  In addition, Ginkgo V2's JUnit reporter has been improved and is now more conformant with the JUnit specification.
 
@@ -377,7 +377,7 @@ When generating profiles for `-cpuprofile=FILE`, `-blockprofile=FILE`, `-memprof
 Coverage reporting is much improved in 2.0:
 
 - `ginkgo -cover -p` now emits code coverage after the test completes, just like `ginkgo -cover` does in series.
-- When running across mulitple packages (e.g. `ginkgo -r -cover`) ginkgo will now emit a composite coverage statistic that represents the total coverage across all test suites run.  (Note that this is disabled if you set `-keep-separate-coverprofiles`).
+- When running across multiple packages (e.g. `ginkgo -r -cover`) ginkgo will now emit a composite coverage statistic that represents the total coverage across all test suites run.  (Note that this is disabled if you set `-keep-separate-coverprofiles`).
 
 In addition, Ginkgo now follows the following rules when generating cover profiles using `-cover` and/or `-coverprofile=FILE`:
 
@@ -410,7 +410,7 @@ In V1 Ginkgo would run windows tests in parallel with the `--stream` option.  Th
 - Ginkgo's OutputInterceptor (the component that intercepts stdout/stderr when running in parallel) should now be more performant and better handle edge cases.  It can be paused and resumed with PauseOutputInterception() and ResumeOutputInterception() and disabled entirely with --output-interceptor-mode=none.
 
 ## Major Changes
-These are major changes that will need user intervention to migrate succesfully.
+These are major changes that will need user intervention to migrate successfully.
 
 ### Removed: Async Testing
 As described in the [Ginkgo 2.0 Proposal](https://docs.google.com/document/d/1h28ZknXRsTLPNNiOjdHIO-F2toCzq4xoZDXbfYaBdoQ/edit#heading=h.mzgqmkg24xoo) the Ginkgo 1.x implementation of asynchronous testing using a `Done` channel was a confusing source of test-pollution.  It is removed in Ginkgo 2.0.
@@ -474,7 +474,7 @@ Alternatively, you can use the new `--json-report` flag to produce a machine rea
 Finally, if you still need the real-time reporting capabilities that 1.X's custom reporters provided you can use [`ReportBeforeEach` and `ReportAfterEach`](#capturing-report-information-about-each-spec-as-the-test-suite-runs) to get information about each spec as it completes.
 
 ### Changed: First-class Support for Table Testing
-The table extension has been moved into the core Ginkgo DSL and the table functionality has been improved while maintaining backward compatibility.  Users no longer need to `import "github.com/onsi/ginkgo/v2/extenstions/table"`.  Instead the table DSL is automatically pulled in by importing `"github.com/onsi/ginkgo/v2"`.
+The table extension has been moved into the core Ginkgo DSL and the table functionality has been improved while maintaining backward compatibility.  Users no longer need to `import "github.com/onsi/ginkgo/v2/extensions/table"`.  Instead the table DSL is automatically pulled in by importing `"github.com/onsi/ginkgo/v2"`.
 
 #### Migration Strategy:
 Remove `"github.com/onsi/ginkgo/v2/extensions/table` imports.  Code that was dot-importing both Ginkgo and the table extension should automatically work.  If you were not dot-importing you will need to replace references to `table.DescribeTable` and `table.Entry` with `ginkgo.DescribeTable` and `ginkgo.Entry`.
@@ -496,7 +496,7 @@ V1 also allowed mutating the global config objects which could lead to strange b
 #### Migration Strategy:
 Instead, configuration can be accessed using the DSL's `GinkgoConfiguration()` function.  This will return a `types.SuiteConfig` and `types.ReporterConfig`.  Users generally don't need to access this configuration - the most commonly used fields by end users are already made available via `GinkgoRandomSeed()` and `GinkgoParallelProcess()`.
 
-It is generally recommended that users use the CLI to configure Ginkgo as some aspects of configuration must apply to the CLI as well as the suite under tests - nonetheless there are contexts where it is necessary to change Ginkgo's configuration programatically.  V2 supports this by allowing users to pass updated configuration into `RunSpecs`:
+It is generally recommended that users use the CLI to configure Ginkgo as some aspects of configuration must apply to the CLI as well as the suite under tests - nonetheless there are contexts where it is necessary to change Ginkgo's configuration programmatically.  V2 supports this by allowing users to pass updated configuration into `RunSpecs`:
 
 ```go
 func TestMySuite(t *testing.T)  {
@@ -579,7 +579,7 @@ These are minor changes that will be transparent for most users.
 
 - `"top level"` is no longer the first element in `types.SpecReport.NodeTexts`.  This will only affect users who write custom reporters.
 
-- The output format of Ginkgo's Default Reporter has changed in numerous subtle ways to improve readability and the user experience.  Users who were scraping Ginkgo output programatically may need to change their scripts or use the new JSON formatted report option.
+- The output format of Ginkgo's Default Reporter has changed in numerous subtle ways to improve readability and the user experience.  Users who were scraping Ginkgo output programmatically may need to change their scripts or use the new JSON formatted report option.
 
 - When running in series and verbose mode (i.e. `ginkgo -v`) GinkgoWriter output is emitted in real-time (existing behavior) but also emitted in the failure message for failed tests.  This allows for consistent failure messages regardless of verbosity settings and also makes it possible for the resulting JSON report to include captured GinkgoWriter information.
 
@@ -666,7 +666,7 @@ This _also_ means that you can, in principle, upgrade different test suites in y
 ### A symbol in V2 now clashes with a symbol in my codebase.  What do I do?
 If Ginkgo 2.0 introduces a new exported symbl that now clashes with your codebase (because you are dot-importing Ginkgo). Check out the [Alternatives to Dot-Importing Ginkgo](https://onsi.github.io/ginkgo/#alternatives-to-dot-importing-ginkgo) section of the documentation for some options.  You may be able to, instead, dot-import just a subset of the Ginkgo DSL using the new `github.com/onsi/ginkgo/v2/dsl` set of packages.
 
-Specificaly when upgrading from v1 to v2 if you see a dot-import clash due to a newly introduced symbol (e.g. the new `Label` decorator) you can instead choose to dot-import the core DSL and import the `decorator` dsl separately:
+Specifically when upgrading from v1 to v2 if you see a dot-import clash due to a newly introduced symbol (e.g. the new `Label` decorator) you can instead choose to dot-import the core DSL and import the `decorator` dsl separately:
 
 ```go
 import (

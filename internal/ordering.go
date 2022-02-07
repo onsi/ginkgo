@@ -12,7 +12,7 @@ type SpecIndices []int
 
 func OrderSpecs(specs Specs, suiteConfig types.SuiteConfig) (GroupedSpecIndices, GroupedSpecIndices) {
 	/*
-		Ginkgo has sophisticated suport for randomizing specs.  Specs are guaranteed to have the same
+		Ginkgo has sophisticated support for randomizing specs.  Specs are guaranteed to have the same
 		order for a given seed across test runs.
 
 		By default only top-level containers and specs are shuffled - this makes for a more intuitive debugging
