@@ -80,7 +80,7 @@ func (g ginkgoErrors) PushingNodeInRunPhase(nodeType NodeType, cl CodeLocation) 
 to the Ginkgo spec tree in a leaf node {{bold}}after{{/}} the specs started running.
 
 To enable randomization and parallelization Ginkgo requires the spec tree
-to be fully construted up front.  In practice, this means that you can
+to be fully constructed up front.  In practice, this means that you can
 only create nodes like {{bold}}[%s]{{/}} at the top-level or within the
 body of a {{bold}}Describe{{/}}, {{bold}}Context{{/}}, or {{bold}}When{{/}}.`, nodeType, nodeType),
 		CodeLocation: cl,
