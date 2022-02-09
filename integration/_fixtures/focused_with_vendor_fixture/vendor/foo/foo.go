@@ -1,4 +1,0 @@
-package vendored
-
-func FIt() {
-}

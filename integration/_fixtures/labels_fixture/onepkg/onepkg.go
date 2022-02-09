@@ -1,3 +1,0 @@
-package onepkg
-
-func Stuff() {}
