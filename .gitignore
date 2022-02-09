@@ -1,7 +1,0 @@
-.DS_Store
-TODO.md
-tmp/**/*
-*.coverprofile
-.vscode
-.idea/
-*.log
