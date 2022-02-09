@@ -1,2 +1,0 @@
-{"Name":"parallel-HTTP-DUP-benchmark","Version":2}
-{"Name":"parallel-HTTP-DUP-benchmark","Measurements":[{"Type":"Duration","ExperimentName":"parallel-HTTP-DUP-benchmark","Note":"","Name":"runtime","Style":"","Units":"duration","PrecisionBundle":{"Duration":100000,"ValueFormat":"%.3f"},"Durations":[1048938295,979871652,1029311907,1017796008,973387413,945158296,959780339,974684980,960298575,958206313],"Values":null,"Annotations":["","","","","","","","","",""]}]}

@@ -1,2 +1,0 @@
-{"Name":"serial-benchmark","Version":2}
-{"Name":"serial-benchmark","Measurements":[{"Type":"Duration","ExperimentName":"serial-benchmark","Note":"","Name":"runtime","Style":"","Units":"duration","PrecisionBundle":{"Duration":100000,"ValueFormat":"%.3f"},"Durations":[388655309,146287272,146904226,147067367,139489833,142630513,144777032,146146198,151479114,140571516],"Values":null,"Annotations":["","","","","","","","","",""]}]}

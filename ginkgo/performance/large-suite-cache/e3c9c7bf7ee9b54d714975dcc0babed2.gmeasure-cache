@@ -1,2 +1,0 @@
-{"Name":"parallel-RPC-NONE-benchmark","Version":2}
-{"Name":"parallel-RPC-NONE-benchmark","Measurements":[{"Type":"Duration","ExperimentName":"parallel-RPC-NONE-benchmark","Note":"","Name":"runtime","Style":"","Units":"duration","PrecisionBundle":{"Duration":100000,"ValueFormat":"%.3f"},"Durations":[599153201,582248316,571991429,601524318,600471310,572268645,579946670,565307695,576495094,583082601],"Values":null,"Annotations":["","","","","","","","","",""]}]}

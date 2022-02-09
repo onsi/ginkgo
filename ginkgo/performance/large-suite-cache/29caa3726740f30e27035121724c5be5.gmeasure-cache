@@ -1,2 +1,0 @@
-{"Name":"parallel-RPC-DUP-benchmark","Version":2}
-{"Name":"parallel-RPC-DUP-benchmark","Measurements":[{"Type":"Duration","ExperimentName":"parallel-RPC-DUP-benchmark","Note":"","Name":"runtime","Style":"","Units":"duration","PrecisionBundle":{"Duration":100000,"ValueFormat":"%.3f"},"Durations":[716650216,771200773,711325050,673170809,713877574,697856770,714497572,669317467,671197645,735533141],"Values":null,"Annotations":["","","","","","","","","",""]}]}
