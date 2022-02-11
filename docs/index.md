@@ -557,13 +557,13 @@ We could represent the spec tree that Ginkgo generates as follows:
 Describe: "Books"
   |_BeforeEach: <Closure-A>
   |_Describe: "Extracting names"
-  |_When: "author has both names"
-    |_It: "extracts the last name", <Closure-B>
-    |_It: "extracts the first name", <Closure-C>
-  |_When: "author has one name"
-    |_BeforeEach: <Closure-D>
-    |_It: "extracts the last name", <Closure-E>
-    |_It: "returns empty first name", <Closure-F>
+    |_When: "author has both names"
+      |_It: "extracts the last name", <Closure-B>
+      |_It: "extracts the first name", <Closure-C>
+    |_When: "author has one name"
+      |_BeforeEach: <Closure-D>
+      |_It: "extracts the last name", <Closure-E>
+      |_It: "returns empty first name", <Closure-F>
 ```
 
 Note that Ginkgo is saving off just the setup and subject node closures.
