@@ -126,6 +126,24 @@ func runSerial(suite TestSuite, ginkgoConfig types.SuiteConfig, reporterConfig t
 		suite.State = TestSuiteStateFailed
 	}
 
+	if suite.HasProgrammaticFocus {
+		if goFlagsConfig.Cover {
+			fmt.Fprintln(os.Stdout, "coverage: no coverfile was generated because specs are programmatically focused")
+		}
+		if goFlagsConfig.BlockProfile != "" {
+			fmt.Fprintln(os.Stdout, "no block profile was generated because specs are programmatically focused")
+		}
+		if goFlagsConfig.CPUProfile != "" {
+			fmt.Fprintln(os.Stdout, "no cpu profile was generated because specs are programmatically focused")
+		}
+		if goFlagsConfig.MemProfile != "" {
+			fmt.Fprintln(os.Stdout, "no mem profile was generated because specs are programmatically focused")
+		}
+		if goFlagsConfig.MutexProfile != "" {
+			fmt.Fprintln(os.Stdout, "no mutex profile was generated because specs are programmatically focused")
+		}
+	}
+
 	return suite
 }
 
@@ -243,37 +261,57 @@ func runParallel(suite TestSuite, ginkgoConfig types.SuiteConfig, reporterConfig
 	}
 
 	if len(coverProfiles) > 0 {
-		coverProfile := AbsPathForGeneratedAsset(goFlagsConfig.CoverProfile, suite, cliConfig, 0)
-		err := MergeAndCleanupCoverProfiles(coverProfiles, coverProfile)
-		command.AbortIfError("Failed to combine cover profiles", err)
-
-		coverage, err := GetCoverageFromCoverProfile(coverProfile)
-		command.AbortIfError("Failed to compute coverage", err)
-		if coverage == 0 {
-			fmt.Fprintln(os.Stdout, "coverage: [no statements]")
+		if suite.HasProgrammaticFocus {
+			fmt.Fprintln(os.Stdout, "coverage: no coverfile was generated because specs are programmatically focused")
 		} else {
-			fmt.Fprintf(os.Stdout, "coverage: %.1f%% of statements\n", coverage)
+			coverProfile := AbsPathForGeneratedAsset(goFlagsConfig.CoverProfile, suite, cliConfig, 0)
+			err := MergeAndCleanupCoverProfiles(coverProfiles, coverProfile)
+			command.AbortIfError("Failed to combine cover profiles", err)
+
+			coverage, err := GetCoverageFromCoverProfile(coverProfile)
+			command.AbortIfError("Failed to compute coverage", err)
+			if coverage == 0 {
+				fmt.Fprintln(os.Stdout, "coverage: [no statements]")
+			} else {
+				fmt.Fprintf(os.Stdout, "coverage: %.1f%% of statements\n", coverage)
+			}
 		}
 	}
 	if len(blockProfiles) > 0 {
-		blockProfile := AbsPathForGeneratedAsset(goFlagsConfig.BlockProfile, suite, cliConfig, 0)
-		err := MergeProfiles(blockProfiles, blockProfile)
-		command.AbortIfError("Failed to combine blockprofiles", err)
+		if suite.HasProgrammaticFocus {
+			fmt.Fprintln(os.Stdout, "no block profile was generated because specs are programmatically focused")
+		} else {
+			blockProfile := AbsPathForGeneratedAsset(goFlagsConfig.BlockProfile, suite, cliConfig, 0)
+			err := MergeProfiles(blockProfiles, blockProfile)
+			command.AbortIfError("Failed to combine blockprofiles", err)
+		}
 	}
 	if len(cpuProfiles) > 0 {
-		cpuProfile := AbsPathForGeneratedAsset(goFlagsConfig.CPUProfile, suite, cliConfig, 0)
-		err := MergeProfiles(cpuProfiles, cpuProfile)
-		command.AbortIfError("Failed to combine cpuprofiles", err)
+		if suite.HasProgrammaticFocus {
+			fmt.Fprintln(os.Stdout, "no cpu profile was generated because specs are programmatically focused")
+		} else {
+			cpuProfile := AbsPathForGeneratedAsset(goFlagsConfig.CPUProfile, suite, cliConfig, 0)
+			err := MergeProfiles(cpuProfiles, cpuProfile)
+			command.AbortIfError("Failed to combine cpuprofiles", err)
+		}
 	}
 	if len(memProfiles) > 0 {
-		memProfile := AbsPathForGeneratedAsset(goFlagsConfig.MemProfile, suite, cliConfig, 0)
-		err := MergeProfiles(memProfiles, memProfile)
-		command.AbortIfError("Failed to combine memprofiles", err)
+		if suite.HasProgrammaticFocus {
+			fmt.Fprintln(os.Stdout, "no mem profile was generated because specs are programmatically focused")
+		} else {
+			memProfile := AbsPathForGeneratedAsset(goFlagsConfig.MemProfile, suite, cliConfig, 0)
+			err := MergeProfiles(memProfiles, memProfile)
+			command.AbortIfError("Failed to combine memprofiles", err)
+		}
 	}
 	if len(mutexProfiles) > 0 {
-		mutexProfile := AbsPathForGeneratedAsset(goFlagsConfig.MutexProfile, suite, cliConfig, 0)
-		err := MergeProfiles(mutexProfiles, mutexProfile)
-		command.AbortIfError("Failed to combine mutexprofiles", err)
+		if suite.HasProgrammaticFocus {
+			fmt.Fprintln(os.Stdout, "no mutex profile was generated because specs are programmatically focused")
+		} else {
+			mutexProfile := AbsPathForGeneratedAsset(goFlagsConfig.MutexProfile, suite, cliConfig, 0)
+			err := MergeProfiles(mutexProfiles, mutexProfile)
+			command.AbortIfError("Failed to combine mutexprofiles", err)
+		}
 	}
 
 	return suite

@@ -34,25 +34,33 @@ func FinalizeProfilesAndReportsForSuites(suites TestSuites, cliConfig types.CLIC
 	if goFlagsConfig.Cover && !cliConfig.KeepSeparateCoverprofiles {
 		coverProfiles := []string{}
 		for _, suite := range suitesWithProfiles {
-			coverProfiles = append(coverProfiles, AbsPathForGeneratedAsset(goFlagsConfig.CoverProfile, suite, cliConfig, 0))
-		}
-		dst := goFlagsConfig.CoverProfile
-		if cliConfig.OutputDir != "" {
-			dst = filepath.Join(cliConfig.OutputDir, goFlagsConfig.CoverProfile)
-		}
-		err := MergeAndCleanupCoverProfiles(coverProfiles, dst)
-		if err != nil {
-			return messages, err
+			if !suite.HasProgrammaticFocus {
+				coverProfiles = append(coverProfiles, AbsPathForGeneratedAsset(goFlagsConfig.CoverProfile, suite, cliConfig, 0))
+			}
 		}
 
-		coverage, err := GetCoverageFromCoverProfile(dst)
-		if err != nil {
-			return messages, err
-		}
-		if coverage == 0 {
-			messages = append(messages, "composite coverage: [no statements]")
+		if len(coverProfiles) > 0 {
+			dst := goFlagsConfig.CoverProfile
+			if cliConfig.OutputDir != "" {
+				dst = filepath.Join(cliConfig.OutputDir, goFlagsConfig.CoverProfile)
+			}
+			err := MergeAndCleanupCoverProfiles(coverProfiles, dst)
+			if err != nil {
+				return messages, err
+			}
+			coverage, err := GetCoverageFromCoverProfile(dst)
+			if err != nil {
+				return messages, err
+			}
+			if coverage == 0 {
+				messages = append(messages, "composite coverage: [no statements]")
+			} else if suitesWithProfiles.AnyHaveProgrammaticFocus() {
+				messages = append(messages, fmt.Sprintf("composite coverage: %.1f%% of statements however some suites did not contribute because they included programatically focused specs", coverage))
+			} else {
+				messages = append(messages, fmt.Sprintf("composite coverage: %.1f%% of statements", coverage))
+			}
 		} else {
-			messages = append(messages, fmt.Sprintf("composite coverage: %.1f%% of statements", coverage))
+			messages = append(messages, "no composite coverage computed: all suites included programatically focused specs")
 		}
 	}
 
