@@ -1,3 +1,5 @@
+// some long comment that might actually break things if we aren't careful
+
 package focused_fixture_test
 
 import (

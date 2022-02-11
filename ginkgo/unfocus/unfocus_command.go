@@ -84,7 +84,7 @@ func unfocusFile(path string) {
 		return
 	}
 
-	ast, err := parser.ParseFile(token.NewFileSet(), path, bytes.NewReader(data), 0)
+	ast, err := parser.ParseFile(token.NewFileSet(), path, bytes.NewReader(data), parser.ParseComments)
 	if err != nil {
 		fmt.Printf("error parsing file '%s': %s\n", path, err.Error())
 		return
@@ -135,7 +135,7 @@ func updateFile(path string, data []byte, eliminations [][]int64) error {
 	from := bytes.NewReader(data)
 	var cursor int64
 	for _, eliminationRange := range eliminations {
-		positionToEliminate, lengthToEliminate := eliminationRange[0], eliminationRange[1]
+		positionToEliminate, lengthToEliminate := eliminationRange[0]-1, eliminationRange[1]
 		if _, err := io.CopyN(to, from, positionToEliminate-cursor); err != nil {
 			return fmt.Errorf("error copying data: %w", err)
 		}
@@ -159,14 +159,14 @@ func scanForFocus(file *ast.File) (eliminations [][]int64) {
 		if c, ok := n.(*ast.CallExpr); ok {
 			if i, ok := c.Fun.(*ast.Ident); ok {
 				if isFocus(i.Name) {
-					eliminations = append(eliminations, []int64{int64(i.Pos() - file.Pos()), 1})
+					eliminations = append(eliminations, []int64{int64(i.Pos()), 1})
 				}
 			}
 		}
 
 		if i, ok := n.(*ast.Ident); ok {
 			if i.Name == "Focus" {
-				eliminations = append(eliminations, []int64{int64(i.Pos() - file.Pos()), 6})
+				eliminations = append(eliminations, []int64{int64(i.Pos()), 6})
 			}
 		}
 
