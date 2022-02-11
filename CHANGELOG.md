@@ -1,3 +1,11 @@
+## 2.1.2
+
+### Fixes
+
+- Track location of focused specs correctly in `ginkgo unfocus` [a612ff1]
+- Profiling suites with focused specs no longer generates an erroneous failure message [8fbfa02]
+- Several documentation typos fixed.  Big thanks to everyone who helped catch them and report/fix them!
+
 ## 2.1.1
 
 See [https://onsi.github.io/ginkgo/MIGRATING_TO_V2](https://onsi.github.io/ginkgo/MIGRATING_TO_V2) for details on V2.
