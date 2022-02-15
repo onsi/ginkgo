@@ -72,6 +72,27 @@ var _ = Describe("Suite", func() {
 			})
 		})
 
+		Describe("InRunPhase", func() {
+			It("returns true when in the run phase and false when not in the run phase", func() {
+				falsey := true
+				truey := false
+
+				err := suite.PushNode(N(ntCon, "a top-level container", func() {
+					falsey = suite.InRunPhase()
+					suite.PushNode(N(ntIt, "an it", func() {
+						truey = suite.InRunPhase()
+					}))
+				}))
+
+				Ω(suite.BuildTree()).Should(Succeed())
+				suite.Run("suite", Labels{}, "/path/to/suite", failer, reporter, writer, outputInterceptor, interruptHandler, client, conf)
+
+				Ω(err).ShouldNot(HaveOccurred())
+				Ω(truey).Should(BeTrue())
+				Ω(falsey).Should(BeFalse())
+			})
+		})
+
 		Context("when pushing nodes during PhaseRun", func() {
 			var pushNodeErrDuringRun error
 

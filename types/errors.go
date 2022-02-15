@@ -292,6 +292,16 @@ func (g ginkgoErrors) AddReportEntryNotDuringRunPhase(cl CodeLocation) error {
 	}
 }
 
+/* By errors */
+func (g ginkgoErrors) ByNotDuringRunPhase(cl CodeLocation) error {
+	return GinkgoError{
+		Heading:      "Ginkgo detected an issue with your spec structure",
+		Message:      formatter.F(`It looks like you are calling {{bold}}By{{/}} outside of a running spec.  Make sure you call {{bold}}By{{/}} inside a runnable node such as It or BeforeEach and not inside the body of a container such as Describe or Context.`),
+		CodeLocation: cl,
+		DocLink:      "documenting-complex-specs-by",
+	}
+}
+
 /* FileFilter and SkipFilter errors */
 func (g ginkgoErrors) InvalidFileFilter(filter string) error {
 	return GinkgoError{

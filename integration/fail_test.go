@@ -63,4 +63,20 @@ var _ = Describe("Failing Specs", func() {
 			Ω(output).Should(ContainSubstring("malformed_fixture_test.go:9"))
 		})
 	})
+
+	Describe("when By is called outside of a runnable node", func() {
+		BeforeEach(func() {
+			fm.MountFixture("malformed_by")
+		})
+
+		It("exits early with a helpful error message", func() {
+			session := startGinkgo(fm.PathTo("malformed_by"), "--no-color", "--procs=2")
+			Eventually(session).Should(gexec.Exit(1))
+			output := string(session.Out.Contents()) + string(session.Err.Contents())
+
+			Ω(output).Should(ContainSubstring("Ginkgo detected an issue with your spec structure"))
+			Ω(output).Should(ContainSubstring("malformed_by_fixture_suite_test.go:16"))
+
+		})
+	})
 })

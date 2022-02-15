@@ -478,6 +478,9 @@ Note that By does not generate a new Ginkgo node - rather it is simply synctacti
 You can learn more about By here: https://onsi.github.io/ginkgo/#documenting-complex-specs-by
 */
 func By(text string, callback ...func()) {
+	if !global.Suite.InRunPhase() {
+		exitIfErr(types.GinkgoErrors.ByNotDuringRunPhase(types.NewCodeLocation(1)))
+	}
 	value := struct {
 		Text     string
 		Duration time.Duration

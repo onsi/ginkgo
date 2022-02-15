@@ -85,6 +85,10 @@ func (suite *Suite) Run(description string, suiteLabels Labels, suitePath string
 	return success, hasProgrammaticFocus
 }
 
+func (suite *Suite) InRunPhase() bool {
+	return suite.phase == PhaseRun
+}
+
 /*
   Tree Construction methods
 
