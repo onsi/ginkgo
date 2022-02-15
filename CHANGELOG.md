@@ -1,3 +1,10 @@
+## 2.1.3
+
+See [https://onsi.github.io/ginkgo/MIGRATING_TO_V2](https://onsi.github.io/ginkgo/MIGRATING_TO_V2) for details on V2.
+
+### Fixes
+- Calling By in a container node now emits a useful error. [ff12cee]
+
 ## 2.1.2
 
 ### Fixes
