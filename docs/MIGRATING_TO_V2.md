@@ -680,29 +680,10 @@ var _ = It("gives you the core DSL", decorators.Label("and namespaced decorators
 
 ```
 
----
+### I've upgraded to V2 and now have race conditions in my test.  What do I do?
 
-# Using the Beta
+Most likely you are launching a goroutine that outlives the spec it was launched in and calling `By` in it.  You probably didn't intend to have the goroutine outlive its spec so you'll probably want to fix that.  More details here: https://github.com/onsi/ginkgo/issues/844
 
-A release candidate for Ginkgo 2.0 is now available.  The GA release should come out in the Fall of 2021 but we'd love to get feedback and usage of the RC underway.
-
-Currently, 2.0 lives on a branch called `ver2` and major version number of Ginkgo has been bumped to v2.  If you are using `go mod` you'll need to do the following to use Ginkgo 2.0 in an existing or new project:
-
-1. Get the `2.0.0-rc3` tag of `ginkgo/v2`:
-	```bash
-	go get github.com/onsi/ginkgo/v2@v2.0.0-rc3
-	```
-
-2. Install the V2 CLI.  Running this may require you to run a few addition `go get`s - just follow the go toolchain's instructions until you successfully get ginkgo v2 compiled:
-	```bash
-	go install github.com/onsi/ginkgo/v2/ginkgo
-	ginkgo version //should print out "Ginkgo Version 2.0.0-rc3"
-	```
-
-3. Update all your import statements from `import github.com/onsi/ginkgo` to `import github.com/onsi/ginkgo/v2`.  You can use your text editor to replace all instances of `"github.com/onsi/ginkgo` with `"github.com/onsi/ginkgo/v2`
-
-And that's it!
-
-Please share any feedback about the RC on the [Ginkgo 2.0](https://github.com/onsi/ginkgo/issues/711) issue.  Updated V2 documentation is being maintained [here](https://onsi.github.io/ginkgo/) though this migration guide has all the details around new features and backward incompatible changes.  Updating to V2 will require you to make some changes to your test suites however the intent is that this work should be relatively minimal for most users.
+If that isn't the cause of your race condition you may have come across a bug,  Please [open an issue](https://github.com/onsi/ginkgo/issues/new)!
 
 {% endraw  %}
