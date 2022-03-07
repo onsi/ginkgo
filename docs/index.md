@@ -398,7 +398,7 @@ var _ = Describe("Books", func() {
       })  
 
       It("can extract the author's last name", func() {        
-        Expect(book.AuthorLastName()).To(Equal("Victor"))
+        Expect(book.AuthorLastName()).To(Equal("Hugo"))
       })
 
       It("can extract the author's first name", func() {
