@@ -39,7 +39,7 @@ Ginkgo uses [go modules](https://go.dev/blog/using-go-modules).  To add Ginkgo t
 
 ```bash
 go install -mod=mod github.com/onsi/ginkgo/v2/ginkgo
-go install -mod=mod github.com/onsi/gomega/...
+go get github.com/onsi/gomega/...
 ```
 
 This fetches Ginkgo and installs the `ginkgo` executable under `$GOBIN` - you'll want that on your `$PATH`.  It also fetches the core Gomega matcher library and its set of supporting libraries.  Note that the current supported major version of Ginkgo is `v2`.
