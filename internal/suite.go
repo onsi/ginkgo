@@ -393,10 +393,6 @@ func (suite *Suite) runReportAfterSuite() {
 }
 
 func (suite *Suite) reportEach(spec Spec, nodeType types.NodeType) {
-	if suite.config.DryRun {
-		return
-	}
-
 	nodes := spec.Nodes.WithType(nodeType)
 	if nodeType == types.NodeTypeReportAfterEach {
 		nodes = nodes.SortedByDescendingNestingLevel()
@@ -525,11 +521,6 @@ func (suite *Suite) runSuiteNode(node Node, interruptChannel chan interface{}) {
 }
 
 func (suite *Suite) runReportAfterSuiteNode(node Node, report types.Report) {
-	if suite.config.DryRun {
-		suite.currentSpecReport.State = types.SpecStatePassed
-		return
-	}
-
 	suite.writer.Truncate()
 	suite.outputInterceptor.StartInterceptingOutput()
 	suite.currentSpecReport.StartTime = time.Now()

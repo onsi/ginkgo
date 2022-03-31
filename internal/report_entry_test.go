@@ -266,7 +266,8 @@ var _ = Describe("ReportEntry and ReportEntries", func() {
 			})
 
 			ReportAfterEach(func(report SpecReport) {
-				if report.State.Is(types.SpecStatePassed) {
+				config, _ := GinkgoConfiguration()
+				if !config.DryRun && report.State.Is(types.SpecStatePassed) {
 					Ω(report.ReportEntries[0].StringRepresentation()).Should(Equal("{{red}}bob {{green}}17{{/}}"))
 				}
 			})
@@ -289,7 +290,8 @@ var _ = Describe("ReportEntry and ReportEntries", func() {
 			})
 
 			ReportAfterEach(func(report SpecReport) {
-				if report.State.Is(types.SpecStatePassed) {
+				config, _ := GinkgoConfiguration()
+				if !config.DryRun && report.State.Is(types.SpecStatePassed) {
 					Ω(report.ReportEntries[0].StringRepresentation()).Should(Equal("{{red}}alice {{green}}42{{/}}"))
 				}
 			})

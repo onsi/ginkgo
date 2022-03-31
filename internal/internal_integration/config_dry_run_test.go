@@ -20,7 +20,7 @@ var _ = Describe("when config.DryRun is enabled", func() {
 				It("B", rt.T("B", func() { F() }))
 				PIt("C", rt.T("C", func() { F() }))
 				It("D", rt.T("D"))
-				It("E", rt.T("D"))
+				It("E", rt.T("E"))
 			})
 			AfterEach(rt.T("aft"))
 			AfterSuite(rt.T("after-suite"))
@@ -29,8 +29,15 @@ var _ = Describe("when config.DryRun is enabled", func() {
 		})
 	})
 
-	It("does not run any tests", func() {
-		Ω(rt).Should(HaveTrackedNothing())
+	It("does not run any tests but does invoke reporters", func() {
+		Ω(rt).Should(HaveTracked(
+			"report-before-each", "report-after-each", //A
+			"report-before-each", "report-after-each", //B
+			"report-before-each", "report-after-each", //C
+			"report-before-each", "report-after-each", //D
+			"report-before-each", "report-after-each", //E
+			"report-after-suite", //AfterSuite
+		))
 	})
 
 	It("reports on the tests (both that they will run and that they did run) and honors skip state", func() {
