@@ -23,7 +23,7 @@ To upgrade to Ginkgo 2.0, assuming you are using `go mod`, you'll need to do the
 
 2. Install the V2 CLI.  Running this may require you to run a few additional `go get`s - just follow the go toolchain's instructions until you successfully get ginkgo v2 compiled:
 	```bash
-	go install github.com/onsi/ginkgo/v2/ginkgo
+	go install github.com/onsi/ginkgo/v2/ginkgo@latest
 	ginkgo version //should print out "Ginkgo Version 2.0.0"
 	```
 
