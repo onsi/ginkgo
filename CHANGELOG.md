@@ -1,3 +1,13 @@
+## 2.1.4
+
+### Fixes
+- Numerous documentation typos
+- Prepend `when` when using `When` (this behavior was in 1.x but unintentionally lost during the 2.0 rewrite) [efce903]
+- improve error message when a parallel process fails to report back [a7bd1fe]
+- guard against concurrent map writes in DeprecationTracker [0976569]
+- Invoke reporting nodes during dry-run (fixes #956 and #935) [aae4480]
+- Fix ginkgo import circle [f779385]
+
 ## 2.1.3
 
 See [https://onsi.github.io/ginkgo/MIGRATING_TO_V2](https://onsi.github.io/ginkgo/MIGRATING_TO_V2) for details on V2.
