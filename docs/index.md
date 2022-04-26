@@ -2322,7 +2322,7 @@ You can unfocus _all_ specs in a suite by running `ginkgo unfocus`.  This simply
 #### Spec Labels
 `Pending`, `Skip`, and `Focus` provide ad-hoc mechanisms for filtering suites.  For particularly large and complex suites, however, you may need a more structured mechanism for organizing and filtering specs.  For such usecases, Ginkgo provides labels.
 
-Labels are simply textual tags that can be attached to Ginkgo container and setup nodes via the `Label` decorator.  Here are the ways you can attach labels to a node:
+Labels are simply textual tags that can be attached to Ginkgo container and subject nodes via the `Label` decorator.  Here are the ways you can attach labels to a node:
 
 ```go
 It("is labelled", Label("first label", "second label"), func() { ... })
