@@ -384,5 +384,11 @@ var _ = Describe("Suite", func() {
 				})
 			})
 		})
+
+		When("using when", func() {
+			It("prepends 'when' to the test name", func() {
+				Ω(CurrentSpecReport().FullText()).Should(ContainSubstring(" when using when prepends"))
+			})
+		})
 	})
 })

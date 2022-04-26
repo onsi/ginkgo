@@ -421,7 +421,23 @@ var XDescribe = PDescribe
 var Context, FContext, PContext, XContext = Describe, FDescribe, PDescribe, XDescribe
 
 /* When is an alias for Describe - it generates the exact same kind of Container node */
-var When, FWhen, PWhen, XWhen = Describe, FDescribe, PDescribe, XDescribe
+func When(text string, args ...interface{}) bool {
+	return pushNode(internal.NewNode(deprecationTracker, types.NodeTypeContainer, "when "+text, args...))
+}
+
+/* When is an alias for Describe - it generates the exact same kind of Container node */
+func FWhen(text string, args ...interface{}) bool {
+	args = append(args, internal.Focus)
+	return pushNode(internal.NewNode(deprecationTracker, types.NodeTypeContainer, "when "+text, args...))
+}
+
+/* When is an alias for Describe - it generates the exact same kind of Container node */
+func PWhen(text string, args ...interface{}) bool {
+	args = append(args, internal.Pending)
+	return pushNode(internal.NewNode(deprecationTracker, types.NodeTypeContainer, "when "+text, args...))
+}
+
+var XWhen = PWhen
 
 /*
 It nodes are Subject nodes that contain your spec code and assertions.

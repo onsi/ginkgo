@@ -56,7 +56,7 @@ var _ = Describe("Emitting progress", func() {
 			Ω(session).Should(gbytes.Say(`\[BeforeEach\] Inner Context`))
 			Ω(session).Should(gbytes.Say(`>inner before<`))
 
-			Ω(session).Should(gbytes.Say(`\[BeforeEach\] Inner When`))
+			Ω(session).Should(gbytes.Say(`\[BeforeEach\] when Inner When`))
 			Ω(session).Should(gbytes.Say(`>inner before<`))
 
 			Ω(session).Should(gbytes.Say(`\[JustBeforeEach\] ProgressFixture`))
