@@ -1239,7 +1239,7 @@ Let's write a table spec to describe the Author name functions we tested earlier
 DescribeTable("Extracting the author's first and last name",
   func(author string, isValid bool, firstName string, lastName string) {
     book := &books.Book{
-      Title: "My Book"
+      Title: "My Book",
       Author: author,
       Pages: 10,
     }
@@ -1267,7 +1267,7 @@ To put it another way, the table test above is equivalent to:
 Describe("Extracting the author's first and last name", func() {
   It("When author has both names", func() {
     book := &books.Book{
-      Title: "My Book"
+      Title: "My Book",
       Author: "Victor Hugo",
       Pages: 10,
     }
@@ -1278,7 +1278,7 @@ Describe("Extracting the author's first and last name", func() {
 
   It("When author has one name", func() {
     book := &books.Book{
-      Title: "My Book"
+      Title: "My Book",
       Author: "Hugo",
       Pages: 10,
     }
@@ -1289,7 +1289,7 @@ Describe("Extracting the author's first and last name", func() {
 
   It("When author has a middle name", func() {
     book := &books.Book{
-      Title: "My Book"
+      Title: "My Book",
       Author: "Victor Marie Hugo",
       Pages: 10,
     }
@@ -1300,7 +1300,7 @@ Describe("Extracting the author's first and last name", func() {
 
   It("When author has no name", func() {
     book := &books.Book{
-      Title: "My Book"
+      Title: "My Book",
       Author: "",
       Pages: 10,
     }
