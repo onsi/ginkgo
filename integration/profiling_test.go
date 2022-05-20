@@ -54,7 +54,7 @@ func ParseProfile(binary string, path string) ProfileLines {
 		var cumStat float64
 		if strings.Contains(cumStatEntry, "MB") {
 			var err error
-			cumStat, err = strconv.ParseFloat(strings.TrimRight(cumStatEntry, "MB"), 64)
+			cumStat, err = strconv.ParseFloat(strings.TrimSuffix(cumStatEntry, "MB"), 64)
 			ExpectWithOffset(1, err).ShouldNot(HaveOccurred())
 		} else {
 			duration, err := time.ParseDuration(cumStatEntry)
