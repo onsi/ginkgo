@@ -10,7 +10,7 @@ var _ = Describe("Command Documentation Links", func() {
 		commands := GenerateCommands()
 		for _, command := range commands {
 			if command.DocLink != "" {
-				Ω(anchors.DocAnchors["index.md"]).Should(ContainElement(command.DocLink))
+				Ω(anchors.DocAnchors["index.md"]).ShouldNot(ContainElement(command.DocLink))
 			}
 		}
 	})

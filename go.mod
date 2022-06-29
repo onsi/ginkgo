@@ -1,4 +1,4 @@
-module github.com/onsi/ginkgo/v2
+module github.com/Letty5411/ginkgo/v2
 
 go 1.18
 
