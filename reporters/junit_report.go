@@ -157,10 +157,13 @@ func GenerateJUnitReport(report types.Report, dst string) error {
 		},
 	}
 	for _, spec := range report.SpecReports {
-		name := fmt.Sprintf("[%s]", spec.LeafNodeType)
-		if spec.FullText() != "" {
-			name = name + " " + spec.FullText()
+		// keep junit reporter consistent with default reporter
+		texts := []string{}
+		texts = append(texts, spec.ContainerHierarchyTexts...)
+		if spec.LeafNodeText != "" {
+			texts = append(texts,fmt.Sprintf("[%s]", spec.LeafNodeType), spec.LeafNodeText)
 		}
+		name := strings.Join(texts, " ")
 		labels := spec.Labels()
 		if len(labels) > 0 {
 			name = name + " [" + strings.Join(labels, ", ") + "]"

@@ -251,8 +251,9 @@ func (r *DefaultReporter) DidRun(report types.SpecReport) {
 
 func (r *DefaultReporter) SuiteDidEnd(report types.Report) {
 	failures := report.SpecReports.WithState(types.SpecStateFailureStates)
-
-	if len(failures) > 0 {
+	passes := report.SpecReports.WithState(types.SpecStatePassed)
+	// report summarizing for both pass and failure
+	//if len(failures) > 0 {
 		r.emitBlock("\n\n")
 		r.emitBlock(r.f("{{red}}{{bold}}Summarizing %d Failures:{{/}}", len(failures)))
 		for _, specReport := range failures {
@@ -268,7 +269,19 @@ func (r *DefaultReporter) SuiteDidEnd(report types.Report) {
 			locationBlock := r.codeLocationBlock(specReport, highlightColor, true, true)
 			r.emitBlock(r.fi(1, highlightColor+"%s{{/}} %s", heading, locationBlock))
 		}
-	}
+		for _, specReport := range passes {
+			// only log pass summary of It node
+			highlightColor, heading := "{{green}}", "[PASS]"
+			if specReport.LeafNodeType == types.NodeTypeIt{
+				texts := []string{}
+				texts = append(texts, specReport.ContainerHierarchyTexts...)
+				if specReport.LeafNodeText != "" {
+					texts = append(texts,fmt.Sprintf("[%s]", specReport.LeafNodeType), specReport.LeafNodeText)
+				}
+				r.emitBlock(r.fi(1, highlightColor+"%s{{/}} %s", heading, strings.Join(texts, " ")))
+			}
+		}
+	//}
 
 	//summarize the suite
 	if r.conf.Verbosity().Is(types.VerbosityLevelSuccinct) && report.SuiteSucceeded {
@@ -361,6 +374,7 @@ func (r *DefaultReporter) codeLocationBlock(report types.SpecReport, highlightCo
 	} else {
 		texts = append(texts, report.LeafNodeText)
 	}
+
 	labels = append(labels, report.LeafNodeLabels)
 	locations = append(locations, report.LeafNodeLocation)
 
