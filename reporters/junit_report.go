@@ -88,6 +88,8 @@ type JUnitTestCase struct {
 	Name string `xml:"name,attr"`
 	// Classname maps onto the name of the test suite - equivalent to Report.SuiteDescription
 	Classname string `xml:"classname,attr"`
+	// Timestamp is the ISO 8601 formatted start-time of the test
+	Timestamp string `xml:"timestamp,attr"`
 	// Status maps onto the string representation of SpecReport.State
 	Status string `xml:"status,attr"`
 	// Time is the time in seconds to execute the spec - maps onto SpecReport.RunTime
@@ -168,6 +170,7 @@ func GenerateJUnitReport(report types.Report, dst string) error {
 
 		test := JUnitTestCase{
 			Name:      name,
+			Timestamp: report.StartTime.String(),
 			Classname: report.SuiteDescription,
 			Status:    spec.State.String(),
 			Time:      spec.RunTime.Seconds(),
