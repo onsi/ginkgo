@@ -2762,7 +2762,7 @@ You should be aware that when running in parallel, each parallel process will be
 /* === INVALID === */
 var reportFile *os.File
 BeforeSuite(func() {
-  reportFile = os.Open("report.custom")
+  reportFile = os.Create("report.custom")
 })
 
 ReportAfterEach(func(report SpecReport) {
@@ -2776,7 +2776,7 @@ you'll end up with multiple processes writing to the same file and the output wi
 `ReportAfterSuite` nodes behave similarly to `AfterSuite` and can be placed at the top-level of your suite (typically in the suite bootstrap file).  `ReportAfterSuite` nodes take a closure that accepts a single [`Report`]((https://pkg.go.dev/github.com/onsi/ginkgo/v2/types#Report)) argument:
 
 ```go
-var _ = ReportAfterSuite(func(report Report) {
+var _ = ReportAfterSuite("custom report", func(report Report) {
   // process report
 })
 ```
@@ -2790,10 +2790,10 @@ Finally, and most importantly, when running in parallel `ReportAfterSuite` **onl
 So, we can rewrite our invalid `ReportAfterEach` example from above into a valid `ReportAfterSuite` example:
 
 ```go
-ReportAfterSuite(func(report Report) {
-  f := os.Open("report.custom")
+ReportAfterSuite("custom report", func(report Report) {
+  f := os.Create("report.custom")
   for _, specReport := range report.SpecReports {
-    fmt.Fprintf(f, "%s | %s\n", report.FullText(), report.State)
+    fmt.Fprintf(f, "%s | %s\n", report.FullText(), specReport.State)
   }
   f.Close()
 })
