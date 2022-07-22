@@ -258,7 +258,7 @@ Ginkgo follows the following rules when generating reports using these new `--FO
 Ginkgo now provides a new node, `ReportAfterSuite`, with the following properties and constraints:
 - `ReportAfterSuite` nodes are passed a function that takes a `types.Report`:
   ```go
-  var _ = ReportAfterSuite(func(report types.Report) {
+  var _ = ReportAfterSuite("custom reporter", func(report types.Report) {
   	// do stuff with report
   })
   ```
