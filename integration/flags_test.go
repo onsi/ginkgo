@@ -145,7 +145,7 @@ var _ = Describe("Flags Specs", func() {
 		Ω(output).Should(ContainSubstring("0 Failed"))
 	})
 
-	It("should honor compiler flags", func() {
+	XIt("should honor compiler flags", func() {
 		session := startGinkgo(fm.PathTo("flags"), "-gcflags=-importmap 'math=math/cmplx'")
 		Eventually(session).Should(gexec.Exit(types.GINKGO_FOCUS_EXIT_CODE))
 		output := string(session.Out.Contents())
