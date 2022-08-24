@@ -3,6 +3,7 @@ package internal_test
 import (
 	"fmt"
 	"io"
+	"sync"
 
 	. "github.com/onsi/ginkgo/v2"
 	"github.com/onsi/ginkgo/v2/internal"
@@ -381,6 +382,64 @@ var _ = Describe("Suite", func() {
 					suite.BuildTree()
 					err = suite.AddReportEntry(entry)
 					Ω(err).Should(MatchError(types.GinkgoErrors.AddReportEntryNotDuringRunPhase(cl)))
+				})
+			})
+
+			Context("when adding report entries concurrently", func() {
+				It("succeeds", func() {
+					numEntries := 5
+					startWg := sync.WaitGroup{}
+					startWg.Add(numEntries)
+					doneWg := sync.WaitGroup{}
+					doneWg.Add(numEntries)
+
+					var errors []error
+					err := suite.PushNode(N(ntCon, "a top-level container", func() {
+						err := suite.PushNode(N(ntIt, "an it", func() {
+							for i := 0; i < numEntries; i++ {
+								go func(entryNum int) {
+									defer doneWg.Done()
+
+									startWg.Done()
+									startWg.Wait()
+
+									name := fmt.Sprintf("entry #%d", entryNum)
+									entry, err := internal.NewReportEntry(name, cl, entryNum)
+									if err != nil {
+										errors = append(errors, err)
+										return
+									}
+
+									err = suite.AddReportEntry(entry)
+									if err != nil {
+										errors = append(errors, err)
+										return
+									}
+								}(i)
+							}
+						}))
+						if err != nil {
+							errors = append(errors, err)
+						}
+					}))
+					Ω(err).ShouldNot(HaveOccurred())
+					Ω(suite.BuildTree()).Should(Succeed())
+
+					suite.Run("suite", Labels{}, "/path/to/suite", failer, reporter, writer, outputInterceptor, interruptHandler, client, conf)
+					Ω(errors).Should(BeEmpty(), "expected no suite errors: %#v", errors)
+
+					doneWg.Wait()
+
+					By("verifying all report entries were added")
+					report := suite.CurrentSpecReport()
+					Ω(report.ReportEntries).Should(HaveLen(numEntries))
+					entrySet := map[int]bool{}
+					for _, entry := range report.ReportEntries {
+						entrySet[entry.GetRawValue().(int)] = true
+					}
+					for i := 0; i < numEntries; i++ {
+						Ω(entrySet).Should(HaveKey(i), "missing entry #%d", i)
+					}
 				})
 			})
 		})

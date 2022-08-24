@@ -164,6 +164,8 @@ type SpecReport struct {
 	CapturedStdOutErr string
 
 	// ReportEntries contains any reports added via `AddReportEntry`
+	// `AddReportEntry` supports adding entries concurrently, but direct read
+	// access to the slice is not thread-safe.
 	ReportEntries ReportEntries
 }
 

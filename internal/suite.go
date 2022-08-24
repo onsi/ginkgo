@@ -2,6 +2,7 @@ package internal
 
 import (
 	"fmt"
+	"sync"
 	"time"
 
 	"github.com/onsi/ginkgo/v2/formatter"
@@ -35,18 +36,21 @@ type Suite struct {
 	interruptHandler  interrupt_handler.InterruptHandlerInterface
 	config            types.SuiteConfig
 
-	skipAll           bool
+	skipAll     bool
+	currentNode Node
+
+	reportsLock       *sync.Mutex
 	report            types.Report
 	currentSpecReport types.SpecReport
-	currentNode       Node
 
 	client parallel_support.Client
 }
 
 func NewSuite() *Suite {
 	return &Suite{
-		tree:  &TreeNode{},
-		phase: PhaseBuildTopLevel,
+		tree:        &TreeNode{},
+		phase:       PhaseBuildTopLevel,
+		reportsLock: &sync.Mutex{},
 	}
 }
 
@@ -223,6 +227,8 @@ func (suite *Suite) AddReportEntry(entry ReportEntry) error {
 	if suite.phase != PhaseRun {
 		return types.GinkgoErrors.AddReportEntryNotDuringRunPhase(entry.Location)
 	}
+	suite.reportsLock.Lock()
+	defer suite.reportsLock.Unlock()
 	suite.currentSpecReport.ReportEntries = append(suite.currentSpecReport.ReportEntries, entry)
 	return nil
 }
