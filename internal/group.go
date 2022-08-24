@@ -318,7 +318,9 @@ func (g *group) run(specs Specs) {
 		if g.suite.currentSpecReport.State.Is(types.SpecStateFailureStates) {
 			g.succeeded = false
 		}
+		g.suite.reportsLock.Lock()
 		g.suite.currentSpecReport = types.SpecReport{}
+		g.suite.reportsLock.Unlock()
 	}
 }
 

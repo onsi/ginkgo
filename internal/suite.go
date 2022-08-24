@@ -242,7 +242,9 @@ func (suite *Suite) processCurrentSpecReport() {
 	if suite.isRunningInParallel() {
 		suite.client.PostDidRun(suite.currentSpecReport)
 	}
+	suite.reportsLock.Lock()
 	suite.report.SpecReports = append(suite.report.SpecReports, suite.currentSpecReport)
+	suite.reportsLock.Unlock()
 
 	if suite.currentSpecReport.State.Is(types.SpecStateFailureStates) {
 		suite.report.SuiteSucceeded = false
@@ -415,7 +417,9 @@ func (suite *Suite) reportEach(spec Spec, nodeType types.NodeType) {
 		suite.outputInterceptor.StartInterceptingOutput()
 		report := suite.currentSpecReport
 		nodes[i].Body = func() {
+			suite.reportsLock.Lock()
 			nodes[i].ReportEachBody(report)
+			suite.reportsLock.Unlock()
 		}
 		suite.interruptHandler.SetInterruptPlaceholderMessage(formatter.Fiw(0, formatter.COLS,
 			"{{yellow}}Ginkgo received an interrupt signal but is currently running a %s node.  To avoid an invalid report the %s node will not be interrupted however subsequent tests will be skipped.{{/}}\n\n{{bold}}The running %s node is at:\n%s.{{/}}",
