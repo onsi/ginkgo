@@ -38,7 +38,7 @@ In this section we cover installing Ginkgo, Gomega, and the `ginkgo` CLI.  We bo
 Ginkgo uses [go modules](https://go.dev/blog/using-go-modules).  To add Ginkgo to your project, assuming you have a `go.mod` file setup, just `go install` it:
 
 ```bash
-go install -mod=mod github.com/onsi/ginkgo/v2/ginkgo
+go install github.com/onsi/ginkgo/v2/ginkgo
 go get github.com/onsi/gomega/...
 ```
 
