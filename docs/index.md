@@ -1254,7 +1254,7 @@ DescribeTable("Extracting the author's first and last name",
 )
 ```
 
-`DescribeTable` takes a string description, a **spec closure** to run for each table entry, and a set of entries.  Each `Entry` takes a string description, followed by a list of parameters.  `DescribeTable` will generate a spec for each `Entry` and when the specs run, the `Entry` parameters will be passed to the spec closure and must match the types expected by the the spec closure.
+`DescribeTable` takes a string description, a **spec closure** to run for each table entry, and a set of entries.  Each `Entry` takes a string description, followed by a list of parameters.  `DescribeTable` will generate a spec for each `Entry` and when the specs run, the `Entry` parameters will be passed to the spec closure and must match the types expected by the spec closure.
 
 You'll be notified with a clear message at runtime if the parameter types don't match the spec closure signature.
 
@@ -3474,7 +3474,7 @@ Rather than an exhaustive/detailed review we'll simply walk through some common 
 
 Both `Eventually` and `Consistently` perform asynchronous assertions by polling the provided input.  In the case of `Eventually`, Gomega polls the input repeatedly until the matcher is satisfied - once that happens the assertion exits successfully and execution continues.  If the matcher is never satisfied `Eventually` will time out with a useful error message.  Both the timeout and polling interval are [configurable](https://onsi.github.io/gomega/#eventually).
 
-In the case of `Consistently`, Gomega polls the the input repeatedly and asserts the matcher is satisfied every time.  `Consistently` only exits early if a failure occurs - otherwise it continues polling until the specified interval elapses.  This is often the only way to assert that something "does not happen" in an asynchronous system.
+In the case of `Consistently`, Gomega polls the input repeatedly and asserts the matcher is satisfied every time.  `Consistently` only exits early if a failure occurs - otherwise it continues polling until the specified interval elapses.  This is often the only way to assert that something "does not happen" in an asynchronous system.
 
 `Eventually` and `Consistently` can accept three types of input.  You can pass in bare values and assert that some aspect of the value changes eventually.  This is most commonly done with Go channels or Gomega's 
 [`gbytes`](https://onsi.github.io/gomega/#gbytes-testing-streaming-buffers) and [`gexec`](https://onsi.github.io/gomega/#gexec-testing-external-processes) packages.  You can also pass in functions and assert that their return values `Eventually` or `Consistently` satisfy a matcher - we'll cover those later.  Lastly, you can pass in functions that take a `Gomega` argument - these allow you to make assertions within the function and are a way to assert that a series of assertions _eventually_ succeeds.  We'll cover _that_ later as well.  Let's look at these various input types through the lens of some concrete use-cases.
