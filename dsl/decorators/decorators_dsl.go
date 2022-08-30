@@ -25,5 +25,6 @@ const Pending = ginkgo.Pending
 const Serial = ginkgo.Serial
 const Ordered = ginkgo.Ordered
 const OncePerOrdered = ginkgo.OncePerOrdered
+const SuppressProgressReporting = ginkgo.SuppressProgressReporting
 
 var Label = ginkgo.Label

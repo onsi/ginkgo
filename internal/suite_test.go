@@ -289,7 +289,7 @@ var _ = Describe("Suite", func() {
 			Context("when pushing a cleanup node in a ReportBeforeEach node", func() {
 				It("errors", func() {
 					var errors = make([]error, 4)
-					reportBeforeEachNode, _ := internal.NewReportBeforeEachNode(func(_ types.SpecReport) {
+					reportBeforeEachNode := N(types.NodeTypeReportBeforeEach, func(_ types.SpecReport) {
 						errors[3] = suite.PushNode(N(types.NodeTypeCleanupInvalid, cl))
 					}, types.NewCodeLocation(0))
 
@@ -311,7 +311,7 @@ var _ = Describe("Suite", func() {
 			Context("when pushing a cleanup node in a ReportAfterEach node", func() {
 				It("errors", func() {
 					var errors = make([]error, 4)
-					reportAfterEachNode, _ := internal.NewReportAfterEachNode(func(_ types.SpecReport) {
+					reportAfterEachNode := N(types.NodeTypeReportAfterEach, func(_ types.SpecReport) {
 						errors[3] = suite.PushNode(N(types.NodeTypeCleanupInvalid, cl))
 					}, types.NewCodeLocation(0))
 

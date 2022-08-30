@@ -35,6 +35,7 @@ var _ = Describe("Partitioning Decorations", func() {
 			Pending,
 			Serial,
 			Ordered,
+			SuppressProgressReporting,
 			nil,
 			1,
 			[]interface{}{Focus, Pending, []interface{}{Offset(2), Serial, FlakeAttempts(2)}, Ordered, Label("a", "b", "c")},
@@ -54,6 +55,7 @@ var _ = Describe("Partitioning Decorations", func() {
 			Pending,
 			Serial,
 			Ordered,
+			SuppressProgressReporting,
 			[]interface{}{Focus, Pending, []interface{}{Offset(2), Serial, FlakeAttempts(2)}, Ordered, Label("a", "b", "c")},
 			Label("A", "B", "C"),
 			Label("D"),
@@ -97,7 +99,7 @@ var _ = Describe("Constructing nodes", func() {
 
 	Describe("happy path", func() {
 		It("creates a node with a non-zero id", func() {
-			node, errors := internal.NewNode(dt, ntIt, "text", body, cl, Focus, Label("A", "B", "C"))
+			node, errors := internal.NewNode(dt, ntIt, "text", body, cl, Focus, Label("A", "B", "C"), SuppressProgressReporting)
 			Ω(node.ID).Should(BeNumerically(">", 0))
 			Ω(node.NodeType).Should(Equal(ntIt))
 			Ω(node.Text).Should(Equal("text"))
@@ -107,8 +109,49 @@ var _ = Describe("Constructing nodes", func() {
 			Ω(node.MarkedFocus).Should(BeTrue())
 			Ω(node.MarkedPending).Should(BeFalse())
 			Ω(node.NestingLevel).Should(Equal(-1))
+			Ω(node.MarkedSuppressProgressReporting).Should(BeTrue())
 			Ω(node.Labels).Should(Equal(Labels{"A", "B", "C"}))
 			ExpectAllWell(errors)
+		})
+	})
+
+	Describe("Building ReportBeforeEach nodes", func() {
+		It("returns a correctly configured node", func() {
+			var didRun bool
+			body := func(types.SpecReport) { didRun = true }
+
+			node, errors := internal.NewNode(dt, types.NodeTypeReportBeforeEach, "", body, cl)
+			Ω(errors).Should(BeEmpty())
+			Ω(node.ID).Should(BeNumerically(">", 0))
+			Ω(node.NodeType).Should(Equal(types.NodeTypeReportBeforeEach))
+
+			node.ReportEachBody(types.SpecReport{})
+			Ω(didRun).Should(BeTrue())
+
+			Ω(node.Body).Should(BeNil())
+
+			Ω(node.CodeLocation).Should(Equal(cl))
+			Ω(node.NestingLevel).Should(Equal(-1))
+		})
+	})
+
+	Describe("Building ReportAfterEach nodes", func() {
+		It("returns a correctly configured node", func() {
+			var didRun bool
+			body := func(types.SpecReport) { didRun = true }
+
+			node, errors := internal.NewNode(dt, types.NodeTypeReportAfterEach, "", body, cl)
+			Ω(errors).Should(BeEmpty())
+			Ω(node.ID).Should(BeNumerically(">", 0))
+			Ω(node.NodeType).Should(Equal(types.NodeTypeReportAfterEach))
+
+			node.ReportEachBody(types.SpecReport{})
+			Ω(didRun).Should(BeTrue())
+
+			Ω(node.Body).Should(BeNil())
+
+			Ω(node.CodeLocation).Should(Equal(cl))
+			Ω(node.NestingLevel).Should(Equal(-1))
 		})
 	})
 
@@ -273,6 +316,37 @@ var _ = Describe("Constructing nodes", func() {
 		})
 	})
 
+	Describe("the SuppressProgressReporting decoration", func() {
+		It("the node does not SuppressProgressReporting by default", func() {
+			node, errors := internal.NewNode(dt, ntIt, "text", body)
+			Ω(node.MarkedSuppressProgressReporting).Should(BeFalse())
+			ExpectAllWell(errors)
+		})
+		It("marks the node as SuppressProgressReporting", func() {
+			node, errors := internal.NewNode(dt, ntIt, "", body, SuppressProgressReporting)
+			Ω(node.MarkedSuppressProgressReporting).Should(BeTrue())
+			ExpectAllWell(errors)
+		})
+		It("does not allow container nodes to be marked", func() {
+			node, errors := internal.NewNode(dt, ntCon, "", body, cl, SuppressProgressReporting)
+			Ω(node).Should(BeZero())
+			Ω(errors).Should(ConsistOf(types.GinkgoErrors.InvalidDecoratorForNodeType(cl, ntCon, "SuppressProgressReporting")))
+			Ω(dt.DidTrackDeprecations()).Should(BeFalse())
+
+			node, errors = internal.NewNode(dt, ntIt, "text", body, cl, SuppressProgressReporting)
+			Ω(node.MarkedSuppressProgressReporting).Should(BeTrue())
+			ExpectAllWell(errors)
+
+			node, errors = internal.NewNode(dt, ntBef, "", body, cl, SuppressProgressReporting)
+			Ω(node.MarkedSuppressProgressReporting).Should(BeTrue())
+			ExpectAllWell(errors)
+
+			node, errors = internal.NewNode(dt, types.NodeTypeReportAfterEach, "", func(_ SpecReport) {}, cl, SuppressProgressReporting)
+			Ω(node.MarkedSuppressProgressReporting).Should(BeTrue())
+			ExpectAllWell(errors)
+		})
+	})
+
 	Describe("The Label decoration", func() {
 		It("has no labels by default", func() {
 			node, errors := internal.NewNode(dt, ntIt, "text", body)
@@ -338,6 +412,14 @@ var _ = Describe("Constructing nodes", func() {
 			node, errors := internal.NewNode(dt, ntIt, "text", body, body, cl)
 			Ω(node).Should(BeZero())
 			Ω(errors).Should(ConsistOf(types.GinkgoErrors.MultipleBodyFunctions(cl, ntIt)))
+			Ω(dt.DidTrackDeprecations()).Should(BeFalse())
+		})
+
+		It("errors if more than one function is provided for a ReportBeforeEach/ReportAFterEach node", func() {
+			reportBody := func(types.SpecReport) {}
+			node, errors := internal.NewNode(dt, types.NodeTypeReportAfterEach, "", reportBody, body, cl)
+			Ω(node).Should(BeZero())
+			Ω(errors).Should(ConsistOf(types.GinkgoErrors.MultipleBodyFunctions(cl, types.NodeTypeReportAfterEach)))
 			Ω(dt.DidTrackDeprecations()).Should(BeFalse())
 		})
 
@@ -446,42 +528,6 @@ var _ = Describe("Node", func() {
 
 				Ω(node.CodeLocation).Should(Equal(cl))
 				Ω(node.NestingLevel).Should(Equal(0))
-			})
-		})
-
-		Describe("NewReportBeforeEachNode", func() {
-			It("returns a correctly configured node", func() {
-				var didRun bool
-				body := func(types.SpecReport) { didRun = true }
-
-				node, errors := internal.NewReportBeforeEachNode(body, cl)
-				Ω(errors).Should(BeEmpty())
-				Ω(node.ID).Should(BeNumerically(">", 0))
-				Ω(node.NodeType).Should(Equal(types.NodeTypeReportBeforeEach))
-
-				node.ReportEachBody(types.SpecReport{})
-				Ω(didRun).Should(BeTrue())
-
-				Ω(node.CodeLocation).Should(Equal(cl))
-				Ω(node.NestingLevel).Should(Equal(-1))
-			})
-		})
-
-		Describe("NewReportAfterEachNode", func() {
-			It("returns a correctly configured node", func() {
-				var didRun bool
-				body := func(types.SpecReport) { didRun = true }
-
-				node, errors := internal.NewReportAfterEachNode(body, cl)
-				Ω(errors).Should(BeEmpty())
-				Ω(node.ID).Should(BeNumerically(">", 0))
-				Ω(node.NodeType).Should(Equal(types.NodeTypeReportAfterEach))
-
-				node.ReportEachBody(types.SpecReport{})
-				Ω(didRun).Should(BeTrue())
-
-				Ω(node.CodeLocation).Should(Equal(cl))
-				Ω(node.NestingLevel).Should(Equal(-1))
 			})
 		})
 

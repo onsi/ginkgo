@@ -569,7 +569,7 @@ func (suite *Suite) runNode(node Node, interruptChannel chan interface{}, text s
 		suite.currentNode = Node{}
 	}()
 
-	if suite.config.EmitSpecProgress {
+	if suite.config.EmitSpecProgress && !node.MarkedSuppressProgressReporting {
 		if text == "" {
 			text = "TOP-LEVEL"
 		}

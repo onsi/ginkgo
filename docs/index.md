@@ -2615,7 +2615,7 @@ There are a couple more flags that are verbosity-related but can be controlled i
 
 First, you can tell Ginkgo to always emit the `GinkgoWriter` output of every spec with `--always-emit-ginkgo-writer`.  This will emit `GinkgoWriter` output for both failed _and_ passing specs, regardless of verbosity setting.
 
-Second, you can tell Ginkgo to emit progress of a spec as Ginkgo runs each of its node closures.  You do this with `ginkgo --progress -v` (or `-vv`).  `--progress` will emit a message to the `GinkgoWriter` just before a node starts running.  By running with `-v` or `-vv` you can then stream the output to the `GinkgoWriter` immediately.  `--progress` was initially introduced to help debug specs that are stuck/hanging.  It is not longer necessary as Ginkgo's behavior during an interrupt has matured and now generally has enough information to help you identify where a spec is stuck.
+Second, you can tell Ginkgo to emit progress of a spec as Ginkgo runs each of its node closures.  You do this with `ginkgo --progress -v` (or `-vv`).  `--progress` will emit a message to the `GinkgoWriter` just before a node starts running.  By running with `-v` or `-vv` you can then stream the output to the `GinkgoWriter` immediately.  `--progress` was initially introduced to help debug specs that are stuck/hanging but is no longer strictly necessary as Ginkgo's behavior during an interrupt has matured and now generally has enough information to help you identify where a spec is stuck.  If you, nonetheless, want to run with `--progress` but want to suppress output of individual nodes (e.g. a top-level `ReportAfterEach` that always runs even if a spec is skipped) you can pass the `SuppressProgressOuput` decorator to the node in question.
 
 #### Other Settings
 Here are a grab bag of other settings:
@@ -4368,6 +4368,19 @@ Describe("flaky tests", FlakeAttempts(3), func() {
 With this setup, `"is flaky"` and `"is also flaky"` will run up to 3 times.  `"is _really_ flaky"` will run up to 5 times.  `"is _not_ flaky"` will run only once.  Note that if multiple `FlakeAttempts` appear in a spec's hierarchy, the most deeply nested `FlakeAttempts` wins.  If multiple `FlakeAttempts` are passed into a given node, the last one wins.
 
 If `ginkgo --flake-attempts=N` is set the value passed in by the CLI will override all the decorated values.  Every test will now run up to `N` times.
+
+
+#### The SuppressProgressOutput Decorator
+
+When running with `ginkgo -v -progress` Ginkgo will emit information about each node just before it runs.   This information goes to the `GinkgoWriter` and straight to the console if using `-v`.  There are contexts when this can be overly noisy.  In particular, `ReportBeforeEach` and `ReportAfterEach` nodes always run, even when a spec is skipped.  This can make Ginkgo's output noise when running with `-v -progress` as each `Report*Each` node will be announced, even for skipped specs.
+
+The `SuppressProgressOutput` decorator allows you to disable progress reporting for a given node:
+
+```go
+ReportAfterEach(func(report SpecReport) {
+   //...
+}, SuppressProgressReporting)
+```
 
 ## Ginkgo CLI Overview
 
