@@ -1,3 +1,9 @@
+## 2.1.6
+
+### Fixes
+- Add `SuppressProgressReporting` decorator to turn off --progress announcements for a given node [dfef62a]
+- chore: remove duplicate word in comments [7373214]
+
 ## 2.1.5
 
 ### Fixes
