@@ -79,10 +79,11 @@ func (s Reports) WithLeafNodeType(nodeTypes types.NodeType) Reports {
 }
 
 type FakeReporter struct {
-	Begin types.Report
-	Will  Reports
-	Did   Reports
-	End   types.Report
+	Begin              types.Report
+	Will               Reports
+	Did                Reports
+	End                types.Report
+	EmittedImmediately []string
 }
 
 func (r *FakeReporter) SuiteWillBegin(report types.Report) {
@@ -99,6 +100,9 @@ func (r *FakeReporter) DidRun(report types.SpecReport) {
 
 func (r *FakeReporter) SuiteDidEnd(report types.Report) {
 	r.End = report
+}
+func (r *FakeReporter) EmitImmediately(output string) {
+	r.EmittedImmediately = append(r.EmittedImmediately, output)
 }
 
 type NSpecs int

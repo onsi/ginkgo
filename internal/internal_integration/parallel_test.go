@@ -116,7 +116,7 @@ var _ = Describe("Running tests in parallel", func() {
 		exit1 := exitChannels[1] //avoid a race around exitChannels access in a separate goroutine
 		//now launch suite 1...
 		go func() {
-			success, _ := suite1.Run("proc 1", Label("TopLevelLabel"), "/path/to/suite", failer, reporter, writer, outputInterceptor, interruptHandler, client, conf)
+			success, _ := suite1.Run("proc 1", Label("TopLevelLabel"), "/path/to/suite", failer, reporter, writer, outputInterceptor, interruptHandler, client, noopProgressSignalRegistrar, conf)
 			finished <- success
 			close(exit1)
 		}()
@@ -125,7 +125,7 @@ var _ = Describe("Running tests in parallel", func() {
 		reporter2 = &FakeReporter{}
 		exit2 := exitChannels[2] //avoid a race around exitChannels access in a separate goroutine
 		go func() {
-			success, _ := suite2.Run("proc 2", Label("TopLevelLabel"), "/path/to/suite", internal.NewFailer(), reporter2, writer, outputInterceptor, interruptHandler, client, conf2)
+			success, _ := suite2.Run("proc 2", Label("TopLevelLabel"), "/path/to/suite", internal.NewFailer(), reporter2, writer, outputInterceptor, interruptHandler, client, noopProgressSignalRegistrar, conf2)
 			finished <- success
 			close(exit2)
 		}()

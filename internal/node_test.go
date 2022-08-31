@@ -487,13 +487,18 @@ var _ = Describe("Constructing nodes", func() {
 })
 
 var _ = Describe("Node", func() {
-	Describe("The other node constructors", func() {
-		Describe("NewSynchronizedBeforeSuiteNode", func() {
+	Describe("The nodes that take more specific functions", func() {
+		var dt *types.DeprecationTracker
+		BeforeEach(func() {
+			dt = types.NewDeprecationTracker()
+		})
+
+		Describe("SynchronizedBeforeSuite", func() {
 			It("returns a correctly configured node", func() {
 				var ranProc1, ranAllProcs bool
 				proc1Body := func() []byte { ranProc1 = true; return nil }
 				allProcsBody := func(_ []byte) { ranAllProcs = true }
-				node, errors := internal.NewSynchronizedBeforeSuiteNode(proc1Body, allProcsBody, cl)
+				node, errors := internal.NewNode(dt, types.NodeTypeSynchronizedBeforeSuite, "", proc1Body, allProcsBody, cl)
 				Ω(errors).Should(BeEmpty())
 				Ω(node.ID).Should(BeNumerically(">", 0))
 				Ω(node.NodeType).Should(Equal(types.NodeTypeSynchronizedBeforeSuite))
@@ -505,17 +510,17 @@ var _ = Describe("Node", func() {
 				Ω(ranAllProcs).Should(BeTrue())
 
 				Ω(node.CodeLocation).Should(Equal(cl))
-				Ω(node.NestingLevel).Should(Equal(0))
+				Ω(node.NestingLevel).Should(Equal(-1))
 			})
 		})
 
-		Describe("NewSynchronizedAfterSuiteNode", func() {
+		Describe("SynchronizedAfterSuiteNode", func() {
 			It("returns a correctly configured node", func() {
 				var ranProc1, ranAllProcs bool
 				allProcsBody := func() { ranAllProcs = true }
 				proc1Body := func() { ranProc1 = true }
 
-				node, errors := internal.NewSynchronizedAfterSuiteNode(allProcsBody, proc1Body, cl)
+				node, errors := internal.NewNode(dt, types.NodeTypeSynchronizedAfterSuite, "", allProcsBody, proc1Body, cl)
 				Ω(errors).Should(BeEmpty())
 				Ω(node.ID).Should(BeNumerically(">", 0))
 				Ω(node.NodeType).Should(Equal(types.NodeTypeSynchronizedAfterSuite))
@@ -527,15 +532,15 @@ var _ = Describe("Node", func() {
 				Ω(ranProc1).Should(BeTrue())
 
 				Ω(node.CodeLocation).Should(Equal(cl))
-				Ω(node.NestingLevel).Should(Equal(0))
+				Ω(node.NestingLevel).Should(Equal(-1))
 			})
 		})
 
-		Describe("NewReportAfterSuiteNode", func() {
+		Describe("ReportAfterSuiteNode", func() {
 			It("returns a correctly configured node", func() {
 				var didRun bool
 				body := func(types.Report) { didRun = true }
-				node, errors := internal.NewReportAfterSuiteNode("my custom report", body, cl)
+				node, errors := internal.NewNode(dt, types.NodeTypeReportAfterSuite, "my custom report", body, cl)
 				Ω(errors).Should(BeEmpty())
 				Ω(node.Text).Should(Equal("my custom report"))
 				Ω(node.ID).Should(BeNumerically(">", 0))
@@ -545,7 +550,7 @@ var _ = Describe("Node", func() {
 				Ω(didRun).Should(BeTrue())
 
 				Ω(node.CodeLocation).Should(Equal(cl))
-				Ω(node.NestingLevel).Should(Equal(0))
+				Ω(node.NestingLevel).Should(Equal(-1))
 			})
 		})
 

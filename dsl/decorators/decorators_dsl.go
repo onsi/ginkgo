@@ -19,6 +19,8 @@ import (
 type Offset = ginkgo.Offset
 type FlakeAttempts = ginkgo.FlakeAttempts
 type Labels = ginkgo.Labels
+type PollProgressAfter = ginkgo.PollProgressAfter
+type PollProgressInterval = ginkgo.PollProgressInterval
 
 const Focus = ginkgo.Focus
 const Pending = ginkgo.Pending

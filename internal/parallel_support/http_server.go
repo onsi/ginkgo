@@ -49,6 +49,7 @@ func (server *httpServer) Start() {
 	mux.HandleFunc("/did-run", server.didRun)
 	mux.HandleFunc("/suite-did-end", server.specSuiteDidEnd)
 	mux.HandleFunc("/emit-output", server.emitOutput)
+	mux.HandleFunc("/emit-immediately", server.emitImmediately)
 
 	//synchronization endpoints
 	mux.HandleFunc("/before-suite-completed", server.handleBeforeSuiteCompleted)
@@ -153,6 +154,15 @@ func (server *httpServer) emitOutput(writer http.ResponseWriter, request *http.R
 	}
 	var n int
 	server.handleError(server.handler.EmitOutput(output, &n), writer)
+}
+
+func (server *httpServer) emitImmediately(writer http.ResponseWriter, request *http.Request) {
+	output, err := io.ReadAll(request.Body)
+	if err != nil {
+		writer.WriteHeader(http.StatusInternalServerError)
+		return
+	}
+	server.handleError(server.handler.EmitImmediately(string(output), voidReceiver), writer)
 }
 
 func (server *httpServer) handleBeforeSuiteCompleted(writer http.ResponseWriter, request *http.Request) {

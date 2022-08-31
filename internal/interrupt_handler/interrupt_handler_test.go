@@ -4,6 +4,7 @@ import (
 	"time"
 
 	. "github.com/onsi/ginkgo/v2"
+	"github.com/onsi/ginkgo/v2/formatter"
 	"github.com/onsi/ginkgo/v2/internal/interrupt_handler"
 	"github.com/onsi/ginkgo/v2/internal/parallel_support"
 	. "github.com/onsi/ginkgo/v2/internal/test_helpers"
@@ -31,8 +32,9 @@ var _ = Describe("InterruptHandler", func() {
 			Eventually(status.Channel).Should(BeClosed())
 			cause := interruptHandler.Status().Cause
 			Ω(cause).Should(Equal(interrupt_handler.InterruptCauseTimeout))
-			Ω(interruptHandler.InterruptMessageWithStackTraces()).Should(HavePrefix("Interrupted by Timeout\n\n"))
-			Ω(interruptHandler.InterruptMessageWithStackTraces()).Should(ContainSubstring("Here's a stack trace"))
+			Ω(interruptHandler.InterruptMessageWithProgressReport("{{blue}}The Report{{/}}")).Should(HavePrefix("Interrupted by Timeout\n\n"))
+			Ω(interruptHandler.InterruptMessageWithProgressReport("{{blue}}The Report{{/}}")).Should(ContainSubstring("Here is the current progress of this Ginkgo process, and the stack of running goroutines"))
+			Ω(interruptHandler.InterruptMessageWithProgressReport("{{blue}}The Report{{/}}")).Should(ContainSubstring(formatter.F("{{blue}}The Report{{/}}")))
 		})
 
 		It("repeatedly triggers an interrupt every 1/10th of the registered timeout", func() {
@@ -67,8 +69,9 @@ var _ = Describe("InterruptHandler", func() {
 			Eventually(status.Channel).Should(BeClosed())
 			status = interruptHandler.Status()
 			Ω(status.Cause).Should(Equal(interrupt_handler.InterruptCauseAbortByOtherProcess))
-			Ω(interruptHandler.InterruptMessageWithStackTraces()).Should(HavePrefix("Interrupted by Other Ginkgo Process"))
-			Ω(interruptHandler.InterruptMessageWithStackTraces()).ShouldNot(ContainSubstring("Here's a stack trace"))
+			Ω(interruptHandler.InterruptMessageWithProgressReport("{{blue}}The Report{{/}}")).Should(HavePrefix("Interrupted by Other Ginkgo Process"))
+			Ω(interruptHandler.InterruptMessageWithProgressReport("{{blue}}The Report{{/}}")).ShouldNot(ContainSubstring("stack"))
+			Ω(interruptHandler.InterruptMessageWithProgressReport("{{blue}}The Report{{/}}")).ShouldNot(ContainSubstring(formatter.F("The Report")))
 		})
 	})
 })

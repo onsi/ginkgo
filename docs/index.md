@@ -2540,6 +2540,8 @@ All three mechanisms have same effects.  They:
 
 In short, Ginkgo does its best to cleanup and emit as much information as possible about the suite before shutting down.  If, during cleanup, any cleanup node closures get stuck Ginkgo allows you to interrupt them via subsequent interrupt signals.  In the case of a timeout, Ginkgo sends these repeat interrupt signals itself to make sure the suite shuts down eventually.
 
+If you want to get information about what is currently running in a suite _without_ interrupting it, check out the [Getting Visibility Into Long-Running Specs](#getting-visibility-into-long-running-specs) section below.
+
 ### Running Multiple Suites
 
 So far we've covered writing and running specs in individual suites.  Of course, the `ginkgo` CLI also supports running multiple suites with a single invocation on the command line.  We'll close out this chapter on running specs by covering how Ginkgo runs multiple suites.
@@ -2611,11 +2613,7 @@ The two verbose settings are most helpful when debugging spec suites.  They make
 
 When you [filter specs](#filtering-specs) using Ginkgo's various filtering mechanism Ginkgo usually emits a single cyan `S` for each skipped spec (the only exception is specs skipped with `Skip(<message>)` - Ginkgo emits the message for those specs.  You can circumvent this with `Skip("")`).  If you run with the very-verbose setting, however, Ginkgo will emit the description and location information of every skipped spec.  This can be useful if you need to debug your filter queries and can be paired with `--dry-run`.
 
-There are a couple more flags that are verbosity-related but can be controlled independently from the verbosity mode:
-
-First, you can tell Ginkgo to always emit the `GinkgoWriter` output of every spec with `--always-emit-ginkgo-writer`.  This will emit `GinkgoWriter` output for both failed _and_ passing specs, regardless of verbosity setting.
-
-Second, you can tell Ginkgo to emit progress of a spec as Ginkgo runs each of its node closures.  You do this with `ginkgo --progress -v` (or `-vv`).  `--progress` will emit a message to the `GinkgoWriter` just before a node starts running.  By running with `-v` or `-vv` you can then stream the output to the `GinkgoWriter` immediately.  `--progress` was initially introduced to help debug specs that are stuck/hanging but is no longer strictly necessary as Ginkgo's behavior during an interrupt has matured and now generally has enough information to help you identify where a spec is stuck.  If you, nonetheless, want to run with `--progress` but want to suppress output of individual nodes (e.g. a top-level `ReportAfterEach` that always runs even if a spec is skipped) you can pass the `SuppressProgressOuput` decorator to the node in question.
+Finally, you can tell Ginkgo to always emit the `GinkgoWriter` output of every spec with `--always-emit-ginkgo-writer`.  This will emit `GinkgoWriter` output for both failed _and_ passing specs, regardless of verbosity setting.
 
 #### Other Settings
 Here are a grab bag of other settings:
@@ -2625,6 +2623,17 @@ You can disable Ginkgo's color output by running `ginkgo --no-color`.
 By default, Ginkgo calls out specs that are running slowly if they exceed a certain threshold (default: 5 seconds).  This doesn't affect the status of the spec - it is still considered to have passed - but can give you an early warning that a slow spec has been introduced.  You can adjust this threshold with `ginkgo --slow-spec-threshold=<duration>`.
 
 By default, Ginkgo only emits full stack traces when a spec panics.  When a normal assertion failure occurs, Ginkgo simply emits the line at which the failure occurred.  You can, instead, have Ginkgo always emit the full stack trace by running `ginkgo --trace`.
+
+### Getting Visibility Into Long-Running Specs
+Ginkgo is often used to build large, complex, integration suites and it is a common - if painful - experience for these suites to run slowly.  Ginkgo provides numerous mechanisms that enable developers to get visibility into what part of a suite is running and where, precisely, a spec may be lagging or hanging.
+
+First, you can tell Ginkgo to emit progress of a spec as Ginkgo runs each of its nodes.  You do this with `ginkgo --progress -v`.  `--progress` will emit a message to the `GinkgoWriter` just before a node starts running.  By running with `-v` or `-vv` you can then stream the output to the `GinkgoWriter` immediately - this can help developers debugging a suite understand exactly which node is running in real-time.  If you want to run with `--progress` but want to suppress output of individual nodes (e.g. a top-level `ReportAfterEach` that always runs even if a spec is skipped) you can pass the `SuppressProgressOuput` decorator to the node in question.
+
+Second, Ginkgo can provide a **Progress Report** of what is currently running in response to the `SIGINFO` and `SIGUSR1` signals.  This improves on the behavior of `--progress` by telling you not just which node is running but exactly which line of spec code is currently running along with any relevant goroutines that were launched by the spec.  A developer waiting for a stuck spec can get this information immediately by sending either the `SIGINFO` or `SIGUSR1` signal (on MacOS/BSD systems, `SIGINFO` can be sent via `^T` - making it especially convenient).
+
+Finally - you can instruct Ginkgo to provide these Progress Reports whenever a node takes too long to complete.  You do this by passing the `--poll-progress-after=INTERVAL` flag to specify how long Ginkgo should wait before emitting a progress report.  Once this interval is passed Ginkgo can periodically emit Progress Reports - the interval between these reports is controlled via the `--poll-progress-interval=INTERVAL` flag.  By default `--poll-progress-after` is set to `0` and so Ginkgo does not emit Progress Reports.  
+
+You can ovveride the global setting of `poll-progess-after` and `poll-progress-interval` on a per-node basis by using the `PollProgressAfter(INTERVAL)` and `PollProgressInterval(INTERVAL)` decorators.  A value of `0` will explicitly turn off Progress Reports for a given node regardless of the global setting.
 
 ### Reporting Infrastructure
 Ginkgo's console output is great when running specs on the console or quickly grokking a CI run.  Of course, there are several contexts where generating a machine-readable report is crucial.  Ginkgo provides first-class CLI support for generating and aggregating reports in a number of machine-readable formats _and_ an extensible reporting infrastructure to enable additional formats and custom reporting.  We'll dig into these topics in the next few sections.
@@ -4279,7 +4288,7 @@ The `Label` decorator applies to container nodes and subject nodes only.  It is 
 
 Labels can be used to control which subset of tests to run.  This is done by providing the `--label-filter` flag to the `ginkgo` CLI.  More details can be found at [Spec Labels](#spec-labels).
 
-#### The Focus and Pending Decorator
+#### The Focus and Pending Decorators
 The `Focus` and `Pending` decorators apply to container nodes and subject nodes only.  It is an error to try to `Focus` or `Pending` a setup node.
 
 Using these decorators is identical to using the `FX` or `PX` form of the node constructor.  For example:
@@ -4381,6 +4390,12 @@ ReportAfterEach(func(report SpecReport) {
    //...
 }, SuppressProgressReporting)
 ```
+
+#### The PollProgressAfter and PollProgressInterval Decorators
+
+As described in the [Getting Visibility Into Long-Running Specs](#getting-visibility-into-long-running-specs) section, the globally specified values for `--poll-progress-after` and `--poll-progress-interval` can be overridden on a particular node using the `PollProgressAfter(INTERVAL)` and `PollProgressInterval(INTERVAL)` decorators.  Here, `INTERVAL` is a `time.Duration` and when specified Ginkgo will start emitting Progress Reports for the node after a duration of `PollProgressAfter` and will repeatedly emit a Progress Report at an interval of `PollProgressInterval`.  To turn off progress reporting for a given node, set `PollProgressAfter` to `0`.
+
+Both of these decorators can only be used on subject and setup nodes, not container nodes.
 
 ## Ginkgo CLI Overview
 

@@ -10,6 +10,7 @@ package reporters
 import (
 	"fmt"
 	"io"
+	"os"
 	"runtime"
 	"strings"
 
@@ -312,6 +313,10 @@ func (r *DefaultReporter) SuiteDidEnd(report types.Report) {
 		r.emit(r.f("{{yellow}}{{bold}}%d Pending{{/}} | ", specs.CountWithState(types.SpecStatePending)))
 		r.emit(r.f("{{cyan}}{{bold}}%d Skipped{{/}}\n", specs.CountWithState(types.SpecStateSkipped)))
 	}
+}
+
+func (r *DefaultReporter) EmitImmediately(content string) {
+	fmt.Fprintf(os.Stderr, r.formatter.F(content))
 }
 
 /* Emitting to the writer */

@@ -205,6 +205,11 @@ var _ = Describe("The Parallel Support Client & Server", func() {
 					Ω(err).ShouldNot(HaveOccurred())
 					Ω(buffer).Should(gbytes.Say("hello"))
 				})
+
+				It("also has support for sending output through the reportor which, in turn, runs it through the formatter", func() {
+					Ω(client.EmitImmediately("floop")).Should(Succeed())
+					Ω(reporter.EmittedImmediately).Should(ConsistOf("floop"))
+				})
 			})
 
 			Describe("Synchronization endpoints", func() {

@@ -150,3 +150,12 @@ func (client *httpClient) Write(p []byte) (int, error) {
 	}
 	return len(p), err
 }
+
+func (client *httpClient) EmitImmediately(content string) error {
+	resp, err := http.Post(client.serverHost+"/emit-immediately", "text/plain;charset=UTF-8 ", bytes.NewReader([]byte(content)))
+	resp.Body.Close()
+	if resp.StatusCode != http.StatusOK {
+		return fmt.Errorf("failed to emit output")
+	}
+	return err
+}

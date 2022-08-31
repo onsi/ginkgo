@@ -1,6 +1,7 @@
 package internal_integration_test
 
 import (
+	"context"
 	"io"
 	"reflect"
 	"testing"
@@ -31,6 +32,17 @@ var outputInterceptor *FakeOutputInterceptor
 var server parallel_support.Server
 var client parallel_support.Client
 var exitChannels map[int]chan interface{}
+
+var triggerProgressSignal func()
+
+func progressSignalRegistrar(handler func()) context.CancelFunc {
+	triggerProgressSignal = handler
+	return func() { triggerProgressSignal = nil }
+}
+
+func noopProgressSignalRegistrar(_ func()) context.CancelFunc {
+	return func() {}
+}
 
 var _ = BeforeEach(func() {
 	conf = types.SuiteConfig{}
@@ -74,7 +86,7 @@ func RunFixture(description string, callback func()) (bool, bool) {
 	WithSuite(suite, func() {
 		callback()
 		Ω(suite.BuildTree()).Should(Succeed())
-		success, hasProgrammaticFocus = suite.Run(description, Label("TopLevelLabel"), "/path/to/suite", failer, reporter, writer, outputInterceptor, interruptHandler, client, conf)
+		success, hasProgrammaticFocus = suite.Run(description, Label("TopLevelLabel"), "/path/to/suite", failer, reporter, writer, outputInterceptor, interruptHandler, client, progressSignalRegistrar, conf)
 	})
 	return success, hasProgrammaticFocus
 }

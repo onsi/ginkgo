@@ -33,7 +33,7 @@ var _ = Describe("When a test suite is interrupted", func() {
 		It("reports the correct failure", func() {
 			summary := reporter.Did.FindByLeafNodeType(types.NodeTypeBeforeSuite)
 			Ω(summary.State).Should(Equal(types.SpecStateInterrupted))
-			Ω(summary.Failure.Message).Should(ContainSubstring("Interrupted by Timeout\nstack trace"))
+			Ω(summary.Failure.Message).Should(ContainSubstring("Interrupted by Timeout\nIn {{bold}}{{orange}}[BeforeSuite]{{/}"))
 		})
 
 		It("reports the correct statistics", func() {
@@ -95,7 +95,7 @@ var _ = Describe("When a test suite is interrupted", func() {
 
 		It("reports the interrupted test as interrupted and emits a stack trace", func() {
 			message := reporter.Did.Find("the interrupted test").Failure.Message
-			Ω(message).Should(ContainSubstring("Interrupted by Timeout\nstack trace"))
+			Ω(message).Should(ContainSubstring("Interrupted by Timeout\n{{/}}container {{gray}}nested-container {{/}}deeply-nested-container{{/}} {{bold}}{{orange}}the interrupted test{{/}}"))
 		})
 
 		It("reports the correct statistics", func() {

@@ -91,9 +91,9 @@ func (handler *FakeInterruptHandler) EmittedInterruptPlaceholderMessage() string
 	return handler.emittedInterruptPlaceholderMessage
 }
 
-func (handler *FakeInterruptHandler) InterruptMessageWithStackTraces() string {
+func (handler *FakeInterruptHandler) InterruptMessageWithProgressReport(report string) string {
 	handler.lock.Lock()
 	defer handler.lock.Unlock()
 
-	return handler.cause.String() + "\nstack trace"
+	return handler.cause.String() + "\n" + report
 }
