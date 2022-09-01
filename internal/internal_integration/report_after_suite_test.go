@@ -107,7 +107,7 @@ var _ = Describe("Sending reports to ReportAfterSuite procs", func() {
 					Ω(reports.FindByLeafNodeType(types.NodeTypeAfterSuite)).Should(HaveFailed("fail in after-suite", CapturedGinkgoWriterOutput("gw-after-suite")))
 				}
 
-				Ω(len(reportB.SpecReports)-len(reportA.SpecReports)).Should(Equal(1), "Report B includes the invocation of ReporteAfterSuite A")
+				Ω(len(reportB.SpecReports)-len(reportA.SpecReports)).Should(Equal(1), "Report B includes the invocation of ReportAfterSuite A")
 				Ω(Reports(reportB.SpecReports).Find("Report A")).Should(Equal(reporter.Did.Find("Report A")))
 			})
 		})
@@ -217,7 +217,7 @@ var _ = Describe("Sending reports to ReportAfterSuite procs", func() {
 						Ω(reports.FindByLeafNodeType(types.NodeTypeAfterSuite)).Should(HaveFailed("fail in after-suite", CapturedGinkgoWriterOutput("gw-after-suite")))
 					}
 
-					Ω(len(reportB.SpecReports)-len(reportA.SpecReports)).Should(Equal(1), "Report B includes the invocation of ReporteAfterSuite A")
+					Ω(len(reportB.SpecReports)-len(reportA.SpecReports)).Should(Equal(1), "Report B includes the invocation of ReportAfterSuite A")
 					Ω(Reports(reportB.SpecReports).Find("Report A")).Should(Equal(reporter.Did.Find("Report A")))
 				})
 			})

@@ -57,7 +57,7 @@ var _ = Describe("Ensuring the OutputInterceptor handles the edge case where an 
 			os.Remove("file-output")
 		})
 
-		It("works successfully if the user pauses then resumes around starging an external process", func() {
+		It("works successfully if the user pauses then resumes around starting an external process", func() {
 			interceptor.StartInterceptingOutput()
 			interceptor.PauseIntercepting()
 

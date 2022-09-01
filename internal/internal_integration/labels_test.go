@@ -109,7 +109,7 @@ var _ = Describe("Labels", func() {
 			Ω(rt).Should(HaveTracked("RAE-A", "RAE-B", "RAS"))
 		})
 
-		It("skip severything", func() {
+		It("skip everything", func() {
 			Ω(reporter.Did.Find("A")).Should(HaveBeenSkipped())
 			Ω(reporter.Did.Find("B")).Should(HaveBeenSkipped())
 		})

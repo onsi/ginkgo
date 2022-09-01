@@ -182,7 +182,7 @@ var _ = Describe("Profiling Specs", func() {
 			})
 
 			Context("when -keep-separate-coverprofiles is set", func() {
-				It("puts namespaced coverprofiels in the -output-dir", func() {
+				It("puts namespaced coverprofiles in the -output-dir", func() {
 					session := startGinkgo(fm.PathTo("combined_coverage"), "--no-color", "--cover", "-r", "--procs=2", "--output-dir=./output", "--keep-separate-coverprofiles")
 					Eventually(session).Should(gexec.Exit(0))
 					Ω(fm.PathTo("combined_coverage", "output/coverprofile.out")).ShouldNot(BeAnExistingFile())
@@ -219,7 +219,7 @@ var _ = Describe("Profiling Specs", func() {
 				Ω(cpuProfile.FindCaller("slow_memory_hog.SomethingExpensive").Index).Should(BeNumerically("<=", 10))
 
 				memProfile := ParseProfile(pathToBinary("slow_memory_hog"), pathToProfile("slow_memory_hog", "mem.out"))
-				// The MemProifle for the slow_memory_hog test should list the slow_memory_hog.SomethingExpensive functions as one of the most memory-consuming functions
+				// The MemProfile for the slow_memory_hog test should list the slow_memory_hog.SomethingExpensive functions as one of the most memory-consuming functions
 				// Assrting on the amount of memory consumed should be stable across tests as the function always builds a large array of this size
 				Ω(memProfile.FindCaller("slow_memory_hog.SomethingExpensive").CumStat).Should(BeNumerically(">=", 200))
 
@@ -434,7 +434,7 @@ var _ = Describe("Profiling Specs", func() {
 			Ω(os.Chmod(fm.PathTo("profile", "slow_memory_hog"), 0755)).Should(Succeed())
 		})
 
-		It("never tries to write to the tree, and only emits to ouput-dir", func() {
+		It("never tries to write to the tree, and only emits to output-dir", func() {
 			sess := startGinkgo(fm.PathTo("profile"),
 				"--output-dir=../output",
 				"--cpuprofile=cpu.out",
@@ -474,7 +474,7 @@ var _ = Describe("Profiling Specs", func() {
 			))
 		})
 
-		It("also works when keeping separate reports and profiles and only emits to ouput-dir", func() {
+		It("also works when keeping separate reports and profiles and only emits to output-dir", func() {
 			sess := startGinkgo(fm.PathTo("profile"),
 				"--output-dir=../output",
 				"--cpuprofile=cpu.out",

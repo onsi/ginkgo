@@ -1005,7 +1005,7 @@ var _ = Describe("Nodes", func() {
 			nodes = Nodes{N(cl1), N(cl2), N()}
 		})
 
-		It("returns a types.CodeLocation sice containing the individual node code locations in order", func() {
+		It("returns a types.CodeLocation slice containing the individual node code locations in order", func() {
 			Ω(nodes.CodeLocations()).Should(Equal([]types.CodeLocation{cl1, cl2, cl}))
 		})
 	})

@@ -379,7 +379,7 @@ type Failure struct {
 	// FailureNodeContext - one of three contexts describing the node in which the failure occurred:
 	// FailureNodeIsLeafNode means the failure occurred in the leaf node of the associated SpecReport. None of the other FailureNode fields will be populated
 	// FailureNodeAtTopLevel means the failure occurred in a non-leaf node that is defined at the top-level of the spec (i.e. not in a container). FailureNodeType and FailureNodeLocation will be populated.
-	// FailureNodeInContainer means the failure occurred in a non-leaf node that is defined within a container.  FailureNodeType, FailureNodeLocaiton, and FailureNodeContainerIndex will be populated.
+	// FailureNodeInContainer means the failure occurred in a non-leaf node that is defined within a container.  FailureNodeType, FailureNodeLocation, and FailureNodeContainerIndex will be populated.
 	//
 	// FailureNodeType will contain the NodeType of the node in which the failure occurred.
 	// FailureNodeLocation will contain the CodeLocation of the node in which the failure occurred.

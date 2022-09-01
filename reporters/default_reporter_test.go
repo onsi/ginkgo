@@ -166,7 +166,7 @@ var _ = Describe("DefaultReporter", func() {
 		if len(expected) == 0 {
 			ExpectWithOffset(1, buf.Contents()).Should(BeEmpty())
 		} else {
-			ExpectWithOffset(1, string(buf.Contents())).Should(Equal(strings.Join(expected, "\n")), test_helpers.MultilneTextHelper(string(buf.Contents())))
+			ExpectWithOffset(1, string(buf.Contents())).Should(Equal(strings.Join(expected, "\n")), test_helpers.MultilineTextHelper(string(buf.Contents())))
 		}
 	}
 

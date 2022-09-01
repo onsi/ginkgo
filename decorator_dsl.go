@@ -59,7 +59,7 @@ OncePerOrdered is a decorator that allows you to mark outer BeforeEach, AfterEac
 per ordered context.  Normally these setup nodes run around each individual spec, with OncePerOrdered they will run once around the set of specs in an ordered container.
 The behavior for non-Ordered containers/specs is unchanged.
 
-You can learh more here: https://onsi.github.io/ginkgo/#setup-around-ordered-containers-the-onceperordered-decorator
+You can learn more here: https://onsi.github.io/ginkgo/#setup-around-ordered-containers-the-onceperordered-decorator
 You can learn more about decorators here: https://onsi.github.io/ginkgo/#decorator-reference
 */
 const OncePerOrdered = internal.OncePerOrdered
