@@ -98,7 +98,7 @@ type ReportEntry struct {
 	Value ReportEntryValue
 }
 
-// ColorableStringer is an interface that ReportEntry values can satisfy.  If they do then ColorableStirng() is used to generate their representation.
+// ColorableStringer is an interface that ReportEntry values can satisfy.  If they do then ColorableString() is used to generate their representation.
 type ColorableStringer interface {
 	ColorableString() string
 }

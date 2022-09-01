@@ -12,5 +12,5 @@ func TestCLIInternalSuite(t *testing.T) {
 	RunSpecs(t, "CLI Internal Suite")
 }
 
-var _ = It(`These unit tests do not cover all the functionality in ginkgo/intenral.
+var _ = It(`These unit tests do not cover all the functionality in ginkgo/internal.
 The run, compile, and profiles functions are all integration tests in ginkgo/integration.`, func() {})

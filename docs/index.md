@@ -2129,7 +2129,7 @@ here we only set up the `libraryCLient` once before all the specs run, and then 
 
 `BeforeAll` and `AfterAll` nodes can only be introduced within an `Ordered` container.  `BeforeAll` and `AfterAll` can also be nested within containers that appear in `Ordered` containers - in such cases they will run before/after the specs in that nested container.
 
-As always, you can also use `DeferCleanup`.  Since `DeferCleanupe` is context aware, it will detect when it is called in a `BeforeAll` and behave like an `AfterAll` at the same nesting level.  The following is equivalent to the example above:
+As always, you can also use `DeferCleanup`.  Since `DeferCleanup` is context aware, it will detect when it is called in a `BeforeAll` and behave like an `AfterAll` at the same nesting level.  The following is equivalent to the example above:
 
 ```go
 BeforeAll(func() {
@@ -3531,7 +3531,7 @@ Describe("Publishing books", func() {
 As you can see Gomega allows us to make some pretty complex asynchronous assertions pretty easily!
 
 #### Testing Local Processes
-Launching and testing an external process is actually quite similar to testing an in-process asynchronous service (the example above).  You typically leverage Goemga's [`gexec`](https://onsi.github.io/gomega/#gexec-testing-external-processes) and [`gbytes`](https://onsi.github.io/gomega/#gbytes-testing-streaming-buffers) packages.  Let's imagine our book-publishing service was a actually a command-line tool we wanted to test:
+Launching and testing an external process is actually quite similar to testing an in-process asynchronous service (the example above).  You typically leverage Gomega's [`gexec`](https://onsi.github.io/gomega/#gexec-testing-external-processes) and [`gbytes`](https://onsi.github.io/gomega/#gbytes-testing-streaming-buffers) packages.  Let's imagine our book-publishing service was a actually a command-line tool we wanted to test:
 
 ```go
 //We compile the publisher in a BeforeSuite so its available to our specs

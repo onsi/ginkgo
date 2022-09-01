@@ -209,7 +209,7 @@ var _ = Describe("Synchronized Suite Nodes", func() {
 					Ω(err).ShouldNot(HaveOccurred())
 				})
 
-				It("emits the output of the proc-1 BeforeSuite function and the proc-1 AfterSuite fnction", func() {
+				It("emits the output of the proc-1 BeforeSuite function and the proc-1 AfterSuite function", func() {
 					Ω(string(serverOutputBuffer.Contents())).Should(Equal("before-suite-proc-1after-suite-proc-1"))
 					Ω(reporter.Did.FindByLeafNodeType(types.NodeTypeSynchronizedBeforeSuite)).Should(HavePassed(CapturedStdOutput("before-suite-proc-1before-suite-all-procs")))
 					Ω(reporter.Did.FindByLeafNodeType(types.NodeTypeSynchronizedAfterSuite)).Should(HavePassed(CapturedStdOutput("after-suite-all-procsafter-suite-proc-1")))

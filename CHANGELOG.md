@@ -99,7 +99,7 @@ See [https://onsi.github.io/ginkgo/MIGRATING_TO_V2](https://onsi.github.io/ginkg
 Ginkgo 2.0 now has a Release Candidate.  1.16.5 advertises the existence of the RC.
 1.16.5 deprecates GinkgoParallelNode in favor of GinkgoParallelProcess
 
-You can silence the RC advertisement by setting an `ACK_GINKG_RC=true` environment variable or creating a file in your home directory called `.ack-ginkgo-rc`
+You can silence the RC advertisement by setting an `ACK_GINKGO_RC=true` environment variable or creating a file in your home directory called `.ack-ginkgo-rc`
 
 ## 1.16.4
 
@@ -206,7 +206,7 @@ You can silence the RC advertisement by setting an `ACK_GINKG_RC=true` environme
 - replace tail package with maintained one. this fixes go get errors (#667) [4ba33d4]
 - improve ginkgo performance - makes progress on #644 [a14f98e]
 - fix convert integration tests [1f8ba69]
-- fix typo succesful -> successful (#663) [1ea49cf]
+- fix typo successful -> successful (#663) [1ea49cf]
 - Fix invalid link (#658) [b886136]
 - convert utility : Include comments from source (#657) [1077c6d]
 - Explain what BDD means [d79e7fb]
@@ -300,7 +300,7 @@ You can silence the RC advertisement by setting an `ACK_GINKG_RC=true` environme
 - Make generated Junit file compatible with "Maven Surefire" (#488) [e51bee6]
 - all: gofmt [000d317]
 - Increase eventually timeout to 30s [c73579c]
-- Clarify asynchronous test behaviour [294d8f4]
+- Clarify asynchronous test behavior [294d8f4]
 - Travis badge should only show master [26d2143]
 
 ## 1.5.0 5/10/2018
@@ -318,13 +318,13 @@ You can silence the RC advertisement by setting an `ACK_GINKG_RC=true` environme
 - When running a test and calculating the coverage using the `-coverprofile` and `-outputdir` flags, Ginkgo fails with an error if the directory does not exist. This is due to an [issue in go 1.10](https://github.com/golang/go/issues/24588) (#446) [b36a6e0]
 - `unfocus` command ignores vendor folder (#459) [e5e551c, c556e43, a3b6351, 9a820dd]
 - Ignore packages whose tests are all ignored by go (#456) [7430ca7, 6d8be98]
-- Increase the threshold when checking time measuments (#455) [2f714bf, 68f622c]
+- Increase the threshold when checking time measurements (#455) [2f714bf, 68f622c]
 - Fix race condition in coverage tests (#423) [a5a8ff7, ab9c08b]
 - Add an extra new line after reporting spec run completion for test2json [874520d]
 - added name name field to junit reported testsuite [ae61c63]
 - Do not set the run time of a spec when the dryRun flag is used (#438) [457e2d9, ba8e856]
 - Process FWhen and FSpecify when unfocusing (#434) [9008c7b, ee65bd, df87dfe]
-- Synchronise the access to the state of specs to avoid race conditions (#430) [7d481bc, ae6829d]
+- Synchronies the access to the state of specs to avoid race conditions (#430) [7d481bc, ae6829d]
 - Added Duration on GinkgoTestDescription (#383) [5f49dad, 528417e, 0747408, 329d7ed]
 - Fix Ginkgo stack trace on failure for Specify (#415) [b977ede, 65ca40e, 6c46eb8]
 - Update README with Go 1.6+, Golang -> Go (#409) [17f6b97, bc14b66, 20d1598]

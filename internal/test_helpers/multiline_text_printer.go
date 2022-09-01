@@ -5,7 +5,7 @@ import (
 	"strings"
 )
 
-func MultilneTextHelper(s string) string {
+func MultilineTextHelper(s string) string {
 	lines := strings.Split(s, "\n")
 	out := "\nstrings.Join([]string{\n"
 	for _, l := range lines {
