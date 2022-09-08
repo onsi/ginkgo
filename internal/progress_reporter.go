@@ -12,7 +12,6 @@ import (
 	"runtime"
 	"strconv"
 	"strings"
-	"syscall"
 	"time"
 
 	"github.com/onsi/ginkgo/v2/formatter"
@@ -23,7 +22,9 @@ type ProgressSignalRegistrar func(func()) context.CancelFunc
 
 func RegisterForProgressSignal(handler func()) context.CancelFunc {
 	signalChannel := make(chan os.Signal, 1)
-	signal.Notify(signalChannel, syscall.SIGINFO, syscall.SIGUSR1)
+	if len(PROGRESS_SIGNALS) > 0 {
+		signal.Notify(signalChannel, PROGRESS_SIGNALS...)
+	}
 	ctx, cancel := context.WithCancel(context.Background())
 	go func() {
 		for {
