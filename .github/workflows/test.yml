@@ -19,7 +19,7 @@ jobs:
     runs-on: ubuntu-latest
     strategy:
       matrix:
-        version: [ '1.17', '1.18', '1.19' ]
+        version: [ '1.18', '1.19' ]
     name: Go ${{ matrix.version }}
     steps:
     - uses: actions/setup-go@v2
@@ -27,4 +27,4 @@ jobs:
         go-version: ${{ matrix.version }}
     - uses: actions/checkout@v3
     - run: go vet ./...
-    - run: go run ./ginkgo -r -randomize-all-specs -randomize-suites -race -trace -procs=2 -poll-progress-after=10s -poll-progress-interval=10s
+    - run: go run ./ginkgo -r -randomize-all -randomize-suites -race -trace -procs=2 -poll-progress-after=10s -poll-progress-interval=10s
