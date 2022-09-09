@@ -5,6 +5,7 @@ import (
 	"os"
 	"regexp"
 	"runtime"
+	"sort"
 	"strings"
 
 	. "github.com/onsi/ginkgo/v2"
@@ -435,8 +436,11 @@ var _ = Describe("Running Specs", func() {
 			for i := 0; i < 2048; i++ {
 				expectedNames = append(expectedNames, fmt.Sprintf("%d", i))
 			}
-			Ω(report.Names()).Should(ConsistOf(expectedNames))
 
+			names := report.Names()
+			sort.Strings(names)
+			sort.Strings(expectedNames)
+			Ω(names).Should(Equal(expectedNames))
 		})
 	})
 })
