@@ -151,7 +151,7 @@ var _ = Describe("Flags", func() {
 		})
 
 		Describe("Creation Failure Cases", func() {
-			Context("when passed an unsupported type in the map", func() {
+			Context("when passed an unsuppoted type in the map", func() {
 				BeforeEach(func() {
 					type UnsupportedStructB struct {
 						IntProperty         int
@@ -458,9 +458,9 @@ var _ = Describe("Flags", func() {
 			Ω(err).Should(MatchError("unsupported type int32"))
 			Ω(args).Should(BeEmpty())
 
-			flags[0] = types.GinkgoFlag{Name: "bad-keypath", KeyPath: "A.StringProperty"}
+			flags[0] = types.GinkgoFlag{Name: "bad-keypath", KeyPath: "A.StringProoperty"}
 			args, err = types.GenerateFlagArgs(flags, bindings)
-			Ω(err).Should(MatchError("could not load KeyPath: A.StringProperty"))
+			Ω(err).Should(MatchError("could not load KeyPath: A.StringProoperty"))
 			Ω(args).Should(BeEmpty())
 		})
 	})
