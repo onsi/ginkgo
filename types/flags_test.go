@@ -151,7 +151,7 @@ var _ = Describe("Flags", func() {
 		})
 
 		Describe("Creation Failure Cases", func() {
-			Context("when passed an unsuppoted type in the map", func() {
+			Context("when passed an unsupported type in the map", func() {
 				BeforeEach(func() {
 					type UnsupportedStructB struct {
 						IntProperty         int
