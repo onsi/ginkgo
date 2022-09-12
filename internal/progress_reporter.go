@@ -49,7 +49,7 @@ type Goroutine struct {
 	Stack FunctionCalls
 }
 
-func (g Goroutine) Report(color string) string {
+func (g Goroutine) Report(color string, sourceRoots []string) string {
 	if !g.Stack.HasHighlights() {
 		color = "{{gray}}"
 	}
@@ -57,7 +57,7 @@ func (g Goroutine) Report(color string) string {
 	fmt.Fprintf(out, "%sgoroutine %d [%s]{{/}}\n", color, g.ID, g.State)
 
 	for _, functionCall := range g.Stack {
-		fmt.Fprintf(out, "%s\n", functionCall.Report(color))
+		fmt.Fprintf(out, "%s\n", functionCall.Report(color, sourceRoots))
 	}
 
 	return out.String()
@@ -81,10 +81,10 @@ type FunctionCall struct {
 	Highlight bool
 }
 
-func (fc FunctionCall) Report(color string) string {
+func (fc FunctionCall) Report(color string, sourceRoots []string) string {
 	if fc.Highlight {
 		out := fmt.Sprintf("{{bold}}%s> %s\n    %s:%d{{/}}", color, fc.Function, fc.Filename, fc.Line)
-		src := sourceAt(fc.Filename, int(fc.Line), 2, color)
+		src := sourceAt(fc.Filename, int(fc.Line), 2, color, sourceRoots)
 		if src != "" {
 			out += "\n" + src
 		}
@@ -109,6 +109,7 @@ type ProgressReport struct {
 	SpecGoroutine         Goroutine
 	HighlightedGoroutines Goroutines
 	OtherGoroutines       Goroutines
+	SourceRoots           []string
 }
 
 var cycleJoiner = formatter.New(formatter.ColorModePassthrough)
@@ -142,12 +143,12 @@ func (pc ProgressReport) Report(color string, includeAllGoroutines bool) string 
 	}
 
 	out.WriteString("\n{{bold}}{{underline}}Spec Goroutine{{/}}\n")
-	out.WriteString(pc.SpecGoroutine.Report(color))
+	out.WriteString(pc.SpecGoroutine.Report(color, pc.SourceRoots))
 
 	if len(pc.HighlightedGoroutines) > 0 {
 		out.WriteString("\n{{bold}}{{underline}}Goroutines of Interest{{/}}\n")
 		for _, goroutine := range pc.HighlightedGoroutines {
-			out.WriteString(goroutine.Report(color))
+			out.WriteString(goroutine.Report(color, pc.SourceRoots))
 			out.WriteString("\n")
 		}
 	}
@@ -155,7 +156,7 @@ func (pc ProgressReport) Report(color string, includeAllGoroutines bool) string 
 	if includeAllGoroutines && len(pc.OtherGoroutines) > 0 {
 		out.WriteString("\n{{gray}}{{bold}}{{underline}}Other Goroutines{{/}}\n")
 		for _, goroutine := range pc.OtherGoroutines {
-			out.WriteString(goroutine.Report(color))
+			out.WriteString(goroutine.Report(color, pc.SourceRoots))
 			out.WriteString("\n")
 		}
 	}
@@ -163,12 +164,13 @@ func (pc ProgressReport) Report(color string, includeAllGoroutines bool) string 
 	return out.String()
 }
 
-func NewProgressReport(report types.SpecReport, currentNode Node, currentNodeStartTime time.Time, currentStep ProgressStepCursor) (ProgressReport, error) {
+func NewProgressReport(report types.SpecReport, currentNode Node, currentNodeStartTime time.Time, currentStep ProgressStepCursor, sourceRoots []string) (ProgressReport, error) {
 	pc := ProgressReport{
 		CurrentSpecReport:    report,
 		CurrentNode:          currentNode,
 		CurrentNodeStartTime: currentNodeStartTime,
 		CurrentStep:          currentStep,
+		SourceRoots:          sourceRoots,
 	}
 
 	goroutines, err := extractRunningGoroutines()
@@ -328,15 +330,26 @@ func extractRunningGoroutines() (Goroutines, error) {
 
 var _SOURCE_CACHE = map[string][]string{}
 
-func sourceAt(filename string, lineNumber int, span int, color string) string {
+func sourceAt(filename string, lineNumber int, span int, color string, configuredSourceRoots []string) string {
 	if filename == "" {
 		return ""
 	}
 	var lines []string
 	var ok bool
 	if lines, ok = _SOURCE_CACHE[filename]; !ok {
-		data, err := os.ReadFile(filename)
-		if err != nil {
+		sourceRoots := []string{""}
+		sourceRoots = append(sourceRoots, configuredSourceRoots...)
+		var data []byte
+		var err error
+		var found bool
+		for _, root := range sourceRoots {
+			data, err = os.ReadFile(filepath.Join(root, filename))
+			if err == nil {
+				found = true
+				break
+			}
+		}
+		if !found {
 			return ""
 		}
 		lines = strings.Split(string(data), "\n")

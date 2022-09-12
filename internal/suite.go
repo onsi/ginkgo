@@ -272,7 +272,7 @@ func (suite *Suite) generateProgressReport(fullReport bool) string {
 
 	stepCursor := suite.progressStepCursor
 
-	pr, err := NewProgressReport(suite.currentSpecReport, suite.currentNode, suite.currentNodeStartTime, stepCursor)
+	pr, err := NewProgressReport(suite.currentSpecReport, suite.currentNode, suite.currentNodeStartTime, stepCursor, suite.config.SourceRoots)
 	if err != nil {
 		return fmt.Sprintf("{{red}}Failed to generate progress report:{{/}}\n%s", err.Error())
 	} else {

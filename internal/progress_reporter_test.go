@@ -37,7 +37,7 @@ var _ = Describe("ProgressReporter", func() {
 	DescribeTable("the report header", func(report types.SpecReport, currentNode Node, currentStep internal.ProgressStepCursor, headerLines ...string) {
 		report.StartTime = time.Now().Add(-5 * time.Second)
 		currentStep.StartTime = time.Now().Add(-1 * time.Second)
-		pr, err := internal.NewProgressReport(report, currentNode, time.Now().Add(-3*time.Second), currentStep)
+		pr, err := internal.NewProgressReport(report, currentNode, time.Now().Add(-3*time.Second), currentStep, []string{})
 		Ω(err).ShouldNot(HaveOccurred())
 		reportLines := strings.Split(pr.Report("{{orange}}", false), "\n")
 		failureMessageLines := []string{}
@@ -119,7 +119,7 @@ var _ = Describe("ProgressReporter", func() {
 
 		BeforeEach(func() {
 			var err error
-			pr, err = internal.NewProgressReport(SR(""), Node{}, time.Now(), PS(""))
+			pr, err = internal.NewProgressReport(SR(""), Node{}, time.Now(), PS(""), []string{})
 			Ω(err).ShouldNot(HaveOccurred())
 		})
 

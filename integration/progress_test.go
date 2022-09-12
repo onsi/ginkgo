@@ -1,6 +1,9 @@
 package integration_test
 
 import (
+	"fmt"
+	"os"
+	"path/filepath"
 	"regexp"
 	"strconv"
 	"syscall"
@@ -45,6 +48,31 @@ var _ = Describe("Emitting progress", func() {
 			Eventually(session).Should(gbytes.Say(`decorator tracks things that take too long \(Spec Runtime: 5[\.\d]*ms\)`))
 			Eventually(session).Should(gbytes.Say(`>\s*time\.Sleep\(1 \* time\.Second\)`))
 
+			Eventually(session).Should(gexec.Exit(0))
+		})
+
+		It("allows the user to specify a source-root to find source code files", func() {
+			// first we build the test with -gcflags=all=-trimpath=<PATH TO SPEC> to ensure
+			// that stack traces do not contain absolute paths
+			path, err := filepath.Abs(fm.PathTo("progress_reporter"))
+			Ω(err).ShouldNot(HaveOccurred())
+			fmt.Println(path)
+			session := startGinkgo(fm.PathTo("progress_reporter"), "build", `-gcflags=all=-trimpath=`+path+``)
+			Eventually(session).Should(gexec.Exit(0))
+
+			// now we move the compiled test binary to a separate directory
+			fm.MkEmpty("progress_reporter/suite")
+			os.Rename(fm.PathTo("progress_reporter", "progress_reporter.test"), fm.PathTo("progress_reporter", "suite", "progress_reporter.test"))
+
+			//and we run and confirm that we don't see the expected source code
+			session = startGinkgo(fm.PathTo("progress_reporter", "suite"), "--poll-progress-after=1500ms", "--poll-progress-interval=200ms", "--no-color", "-label-filter=one-second", "./progress_reporter.test")
+			Eventually(session).Should(gexec.Exit(0))
+			Ω(session).ShouldNot(gbytes.Say(`>\s*time.Sleep\(1 \* time\.Second\)`))
+
+			// now we run, but configured with source-root and see that we have the file
+			// note that multipel source-roots can be passed in
+			session = startGinkgo(fm.PathTo("progress_reporter", "suite"), "--poll-progress-after=1500ms", "--poll-progress-interval=200ms", "--no-color", "-label-filter=one-second", "--source-root=/tmp", "--source-root="+path, "./progress_reporter.test")
+			Eventually(session).Should(gbytes.Say(`>\s*time\.Sleep\(1 \* time\.Second\)`))
 			Eventually(session).Should(gexec.Exit(0))
 		})
 

@@ -20,7 +20,7 @@ var _ = Describe("ProgressReporter", func() {
 		time.Sleep(2 * time.Second)
 	})
 
-	It("decorator tracks things that take too long", Label("parallel"), func() {
+	It("decorator tracks things that take too long", Label("parallel", "one-second"), func() {
 		time.Sleep(1 * time.Second)
 	}, PollProgressAfter(500*time.Millisecond))
 })
