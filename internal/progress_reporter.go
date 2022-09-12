@@ -123,7 +123,7 @@ func (pc ProgressReport) Report(color string, includeAllGoroutines bool) string 
 			out.WriteString(" ")
 		}
 
-		fmt.Fprintf(out, "{{bold}}%s%s{{/}} (Spec Runtime: %s)\n", color, pc.CurrentSpecReport.LeafNodeText, now.Sub(pc.CurrentSpecReport.StartTime))
+		fmt.Fprintf(out, "{{bold}}%s%s{{/}} (Spec Runtime: %s)\n", color, pc.CurrentSpecReport.LeafNodeText, now.Sub(pc.CurrentSpecReport.StartTime).Round(time.Millisecond))
 		fmt.Fprintf(out, "  {{gray}}%s{{/}}\n", pc.CurrentSpecReport.LeafNodeLocation)
 		indent += "  "
 	}
@@ -132,12 +132,12 @@ func (pc ProgressReport) Report(color string, includeAllGoroutines bool) string 
 		if pc.CurrentNode.Text != "" && !pc.CurrentNode.NodeType.Is(types.NodeTypeIt) {
 			fmt.Fprintf(out, " {{bold}}%s%s{{/}}", color, pc.CurrentNode.Text)
 		}
-		fmt.Fprintf(out, " (Node Runtime: %s)\n", now.Sub(pc.CurrentNodeStartTime))
+		fmt.Fprintf(out, " (Node Runtime: %s)\n", now.Sub(pc.CurrentNodeStartTime).Round(time.Millisecond))
 		fmt.Fprintf(out, "%s  {{gray}}%s{{/}}\n", indent, pc.CurrentNode.CodeLocation)
 		indent += "  "
 	}
 	if pc.CurrentStep.Name != "" {
-		fmt.Fprintf(out, "%sAt {{bold}}%s[By Step] %s{{/}} (Step Runtime: %s)\n", indent, color, pc.CurrentStep.Name, now.Sub(pc.CurrentStep.StartTime))
+		fmt.Fprintf(out, "%sAt {{bold}}%s[By Step] %s{{/}} (Step Runtime: %s)\n", indent, color, pc.CurrentStep.Name, now.Sub(pc.CurrentStep.StartTime).Round(time.Millisecond))
 		fmt.Fprintf(out, "%s  {{gray}}%s{{/}}\n", indent, pc.CurrentStep.CodeLocation)
 	}
 

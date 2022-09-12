@@ -277,7 +277,7 @@ var _ = Describe("Progress Reporting", func() {
 		It("emits progress periodically", func() {
 			progressShouldSay(
 				//first hit - starts after 100ms
-				`{{/}}a container{{/}} {{bold}}{{orange}}A{{/}} \(Spec Runtime: \d+\.\d+ms\)`,
+				`{{/}}a container{{/}} {{bold}}{{orange}}A{{/}} \(Spec Runtime: \d+ms\)`,
 				clLine(-1),
 				`In {{bold}}{{orange}}\[It\]{{/}}`,
 				clLine(-1),
@@ -286,7 +286,7 @@ var _ = Describe("Progress Reporting", func() {
 				`>\s*time.Sleep\(300 \* time\.Millisecond\)`,
 
 				//subsequent hit - should happen again in the 200ms range
-				`{{/}}a container{{/}} {{bold}}{{orange}}A{{/}} \(Spec Runtime: \d+\.\d+ms\)`,
+				`{{/}}a container{{/}} {{bold}}{{orange}}A{{/}} \(Spec Runtime: \d+ms\)`,
 				clLine(-1),
 				`In {{bold}}{{orange}}\[It\]{{/}}`,
 				clLine(-1),
@@ -312,7 +312,7 @@ var _ = Describe("Progress Reporting", func() {
 
 		It("emits progress periodically", func() {
 			progressShouldSay(
-				`{{/}}a container{{/}} {{bold}}{{orange}}A{{/}} \(Spec Runtime: \d+\.\d+ms\)`,
+				`{{/}}a container{{/}} {{bold}}{{orange}}A{{/}} \(Spec Runtime: \d+ms\)`,
 				clLine(-1),
 				`In {{bold}}{{orange}}\[It\]{{/}}`,
 				clLine(-1),
@@ -320,7 +320,7 @@ var _ = Describe("Progress Reporting", func() {
 				clLine(1),
 				`>\s*time.Sleep\(50 \* time\.Millisecond\)`,
 
-				`{{/}}a container{{/}} {{bold}}{{orange}}A{{/}} \(Spec Runtime: \d+\.\d+ms\)`,
+				`{{/}}a container{{/}} {{bold}}{{orange}}A{{/}} \(Spec Runtime: \d+ms\)`,
 				clLine(-1),
 				`In {{bold}}{{orange}}\[It\]{{/}}`,
 				clLine(-1),
@@ -349,13 +349,13 @@ var _ = Describe("Progress Reporting", func() {
 
 		It("emits progress periodically", func() {
 			progressShouldSay(
-				`In {{bold}}{{orange}}\[SynchronizedBeforeSuite\]{{/}} \(Node Runtime: \d+\.\d+ms\)`,
+				`In {{bold}}{{orange}}\[SynchronizedBeforeSuite\]{{/}} \(Node Runtime: \d+ms\)`,
 				clLine(-1),
 				`{{orange}}goroutine \d+ \[sleep\]{{/}}`,
 				clLine(3),
 				`>\s*time.Sleep\(50 \* time\.Millisecond\)`,
 
-				`In {{bold}}{{orange}}\[SynchronizedBeforeSuite\]{{/}} \(Node Runtime: \d+\.\d+ms\)`,
+				`In {{bold}}{{orange}}\[SynchronizedBeforeSuite\]{{/}} \(Node Runtime: \d+ms\)`,
 				clLine(-1),
 				`{{orange}}goroutine \d+ \[sleep\]{{/}}`,
 				clLine(3),
@@ -381,7 +381,7 @@ var _ = Describe("Progress Reporting", func() {
 
 		It("emits progress periodically", func() {
 			progressShouldSay(
-				`{{/}}a container{{/}} {{bold}}{{orange}}A{{/}} \(Spec Runtime: \d+\.\d+ms\)`,
+				`{{/}}a container{{/}} {{bold}}{{orange}}A{{/}} \(Spec Runtime: \d+ms\)`,
 				clLine(-1),
 				`In {{bold}}{{orange}}\[DeferCleanup\]{{/}}`,
 				clLine(1),
@@ -389,7 +389,7 @@ var _ = Describe("Progress Reporting", func() {
 				clLine(2),
 				`>\s*time.Sleep\(50 \* time\.Millisecond\)`,
 
-				`{{/}}a container{{/}} {{bold}}{{orange}}A{{/}} \(Spec Runtime: \d+\.\d+ms\)`,
+				`{{/}}a container{{/}} {{bold}}{{orange}}A{{/}} \(Spec Runtime: \d+ms\)`,
 				clLine(-1),
 				`In {{bold}}{{orange}}\[DeferCleanup\]{{/}}`,
 				clLine(1),

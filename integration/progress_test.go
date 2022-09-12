@@ -42,7 +42,7 @@ var _ = Describe("Emitting progress", func() {
 			Eventually(session).Should(gbytes.Say(`>\s*time.Sleep\(2 \* time\.Second\)`))
 
 			//decorator poll
-			Eventually(session).Should(gbytes.Say(`decorator tracks things that take too long \(Spec Runtime: 5\d\d\.\d*ms\)`))
+			Eventually(session).Should(gbytes.Say(`decorator tracks things that take too long \(Spec Runtime: 5[\.\d]*ms\)`))
 			Eventually(session).Should(gbytes.Say(`>\s*time\.Sleep\(1 \* time\.Second\)`))
 
 			Eventually(session).Should(gexec.Exit(0))
