@@ -183,6 +183,15 @@ func NewProgressReport(report types.SpecReport, currentNode Node, currentNodeSta
 			packagesOfInterest[packageFromFilename(filename)] = true
 		}
 	}
+	isPackageOfInterest := func(filename string) bool {
+		stackPackage := packageFromFilename(filename)
+		for packageOfInterest := range packagesOfInterest {
+			if strings.HasPrefix(stackPackage, packageOfInterest) {
+				return true
+			}
+		}
+		return false
+	}
 	for _, location := range report.ContainerHierarchyLocations {
 		addPackageFor(location.FileName)
 	}
@@ -227,7 +236,7 @@ OUTER:
 				isGinkgoEntryPoint = true
 				break
 			}
-			if packagesOfInterest[packageFromFilename(functionCall.Filename)] {
+			if isPackageOfInterest(functionCall.Filename) {
 				goroutine.Stack[functionCallIdx].Highlight = true
 				hasHighlights = true
 			}
