@@ -1,6 +1,7 @@
 package integration_test
 
 import (
+	"fmt"
 	"os"
 	"path/filepath"
 	"regexp"
@@ -50,12 +51,13 @@ var _ = Describe("Emitting progress", func() {
 			Eventually(session).Should(gexec.Exit(0))
 		})
 
-		It("allows the user to specify a source-root to find source code files", func() {
+		FIt("allows the user to specify a source-root to find source code files", func() {
 			// first we build the test with -gcflags=all=-trimpath=<PATH TO SPEC> to ensure
 			// that stack traces do not contain absolute paths
 			path, err := filepath.Abs(fm.PathTo("progress_reporter"))
 			Ω(err).ShouldNot(HaveOccurred())
-			session := startGinkgo(fm.PathTo("progress_reporter"), "build", `-gcflags=all=-trimpath=`+path+``)
+			fmt.Println(path)
+			session := startGinkgo(fm.PathTo("progress_reporter"), "build", `-gcflags=-trimpath=`+path+``)
 			Eventually(session).Should(gexec.Exit(0))
 
 			// now we move the compiled test binary to a separate directory
