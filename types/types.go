@@ -491,6 +491,8 @@ type ProgressReport struct {
 	CurrentStepLocation  CodeLocation
 	CurrentStepStartTime time.Time
 
+	CapturedGinkgoWriterOutput string
+
 	Goroutines []Goroutine
 }
 

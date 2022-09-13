@@ -214,9 +214,7 @@ func (r *DefaultReporter) DidRun(report types.SpecReport) {
 	//Emit Captured GinkgoWriter Output
 	if emitGinkgoWriterOutput && hasGW {
 		r.emitBlock("\n")
-		r.emitBlock(r.fi(1, "{{gray}}Begin Captured GinkgoWriter Output >>{{/}}"))
-		r.emitBlock(r.fi(2, "%s", report.CapturedGinkgoWriterOutput))
-		r.emitBlock(r.fi(1, "{{gray}}<< End Captured GinkgoWriter Output{{/}}"))
+		r.emitGinkgoWriterOutput(1, report.CapturedGinkgoWriterOutput, 0)
 	}
 
 	if hasEmittableReports {
@@ -253,7 +251,7 @@ func (r *DefaultReporter) DidRun(report types.SpecReport) {
 
 		if !report.Failure.ProgressReport.IsZero() {
 			r.emitBlock("\n")
-			r.emitProgressReport(1, report.Failure.ProgressReport)
+			r.emitProgressReport(1, false, report.Failure.ProgressReport)
 		}
 	}
 
@@ -331,11 +329,11 @@ func (r *DefaultReporter) EmitProgressReport(report types.ProgressReport) {
 	if report.RunningInParallel {
 		r.emit(r.f("{{coral}}Progress Report for Ginkgo Process #{{bold}}%d{{/}}\n", report.ParallelProcess))
 	}
-	r.emitProgressReport(0, report)
+	r.emitProgressReport(0, true, report)
 	r.emitDelimiter()
 }
 
-func (r *DefaultReporter) emitProgressReport(indent uint, report types.ProgressReport) {
+func (r *DefaultReporter) emitProgressReport(indent uint, emitGinkgoWriterOutput bool, report types.ProgressReport) {
 	now := time.Now()
 	if report.LeafNodeText != "" {
 		if len(report.ContainerHierarchyTexts) > 0 {
@@ -366,6 +364,11 @@ func (r *DefaultReporter) emitProgressReport(indent uint, report types.ProgressR
 		indent -= 1
 	}
 
+	if emitGinkgoWriterOutput && report.CapturedGinkgoWriterOutput != "" && (report.RunningInParallel || r.conf.Verbosity().LT(types.VerbosityLevelVerbose)) {
+		r.emit("\n")
+		r.emitGinkgoWriterOutput(indent, report.CapturedGinkgoWriterOutput, 10)
+	}
+
 	if !report.SpecGoroutine().IsZero() {
 		r.emit("\n")
 		r.emit(r.fi(indent, "{{bold}}{{underline}}Spec Goroutine{{/}}\n"))
@@ -385,6 +388,24 @@ func (r *DefaultReporter) emitProgressReport(indent uint, report types.ProgressR
 		r.emit(r.fi(indent, "{{gray}}{{bold}}{{underline}}Other Goroutines{{/}}\n"))
 		r.emitGoroutines(indent, otherGoroutines...)
 	}
+}
+
+func (r *DefaultReporter) emitGinkgoWriterOutput(indent uint, output string, limit int) {
+	r.emitBlock(r.fi(indent, "{{gray}}Begin Captured GinkgoWriter Output >>{{/}}"))
+	if limit == 0 {
+		r.emitBlock(r.fi(indent+1, "%s", output))
+	} else {
+		lines := strings.Split(output, "\n")
+		if len(lines) <= limit {
+			r.emitBlock(r.fi(indent+1, "%s", output))
+		} else {
+			r.emitBlock(r.fi(indent+1, "{{gray}}...{{/}}"))
+			for _, line := range lines[len(lines)-limit-1:] {
+				r.emitBlock(r.fi(indent+1, "%s", line))
+			}
+		}
+	}
+	r.emitBlock(r.fi(indent, "{{gray}}<< End Captured GinkgoWriter Output{{/}}"))
 }
 
 func (r *DefaultReporter) emitGoroutines(indent uint, goroutines ...types.Goroutine) {

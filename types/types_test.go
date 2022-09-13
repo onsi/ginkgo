@@ -59,6 +59,30 @@ var _ = Describe("Types", func() {
 		})
 	})
 
+	Describe("ProgressReport", func() {
+		It("can return the correct subset of Goroutines when asked", func() {
+			specGoroutine := types.Goroutine{ID: 7, IsSpecGoroutine: true, Stack: []types.FunctionCall{{Highlight: true}}}
+			highlightedGoroutineA := types.Goroutine{ID: 8, Stack: []types.FunctionCall{{Highlight: true}}}
+			highlightedGoroutineB := types.Goroutine{ID: 9, Stack: []types.FunctionCall{{Highlight: true}}}
+			otherGoroutineA := types.Goroutine{ID: 10, Stack: []types.FunctionCall{{Highlight: false}}}
+			otherGoroutineB := types.Goroutine{ID: 11, Stack: []types.FunctionCall{{Highlight: false}}}
+
+			pr := types.ProgressReport{
+				Goroutines: []types.Goroutine{
+					otherGoroutineA,
+					highlightedGoroutineA,
+					specGoroutine,
+					highlightedGoroutineB,
+					otherGoroutineB,
+				},
+			}
+
+			Ω(pr.SpecGoroutine()).Should(Equal(specGoroutine))
+			Ω(pr.HighlightedGoroutines()).Should(Equal([]types.Goroutine{highlightedGoroutineA, highlightedGoroutineB}))
+			Ω(pr.OtherGoroutines()).Should(Equal([]types.Goroutine{otherGoroutineA, otherGoroutineB}))
+		})
+	})
+
 	Describe("NodeType", func() {
 		Describe("Is", func() {
 			It("returns true when the NodeType is in the passed-in list", func() {

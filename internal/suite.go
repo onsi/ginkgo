@@ -272,7 +272,7 @@ func (suite *Suite) generateProgressReport(fullReport bool) types.ProgressReport
 
 	stepCursor := suite.progressStepCursor
 
-	pr, err := NewProgressReport(suite.isRunningInParallel(), suite.currentSpecReport, suite.currentNode, suite.currentNodeStartTime, stepCursor, fullReport)
+	pr, err := NewProgressReport(suite.isRunningInParallel(), suite.currentSpecReport, suite.currentNode, suite.currentNodeStartTime, stepCursor, string(suite.writer.Bytes()), fullReport)
 	if err != nil {
 		fmt.Printf("{{red}}Failed to generate progress report:{{/}}\n%s\n", err.Error())
 	}

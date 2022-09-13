@@ -1,4 +1,4 @@
-package progress_reporter_fixture_test
+package progress_report_fixture_test
 
 import (
 	"fmt"
@@ -8,10 +8,13 @@ import (
 	. "github.com/onsi/ginkgo/v2"
 )
 
-var _ = Describe("ProgressReporter", func() {
+var _ = Describe("ProgressReport", func() {
 	It("can track on demand", func() {
 		By("Step A")
 		By("Step B")
+		for i := 1; i <= 12; i++ {
+			GinkgoWriter.Printf("ginkgo-writer-output-%d\n", i)
+		}
 		fmt.Printf("READY %d\n", os.Getpid())
 		time.Sleep(time.Second)
 	})

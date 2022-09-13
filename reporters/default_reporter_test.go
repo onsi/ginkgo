@@ -170,25 +170,27 @@ func PR(options ...interface{}) types.ProgressReport {
 		CurrentStepLocation: cl2,
 	}
 	for _, option := range options {
-		switch reflect.TypeOf(option) {
-		case reflect.TypeOf([]string{}):
-			report.ContainerHierarchyTexts = option.([]string)
-		case reflect.TypeOf(""):
-			report.LeafNodeText = option.(string)
-		case reflect.TypeOf(types.NodeTypeInvalid):
-			report.CurrentNodeType = option.(types.NodeType)
-		case reflect.TypeOf(CurrentNodeText("")):
-			report.CurrentNodeText = string(option.(CurrentNodeText))
-		case reflect.TypeOf(CurrentStepText("")):
-			report.CurrentStepText = string(option.(CurrentStepText))
-		case reflect.TypeOf(types.Goroutine{}):
-			report.Goroutines = append(report.Goroutines, option.(types.Goroutine))
-		case reflect.TypeOf([]types.Goroutine{}):
-			report.Goroutines = append(report.Goroutines, option.([]types.Goroutine)...)
-		case reflect.TypeOf(0):
-			report.ParallelProcess = option.(int)
-		case reflect.TypeOf(true):
-			report.RunningInParallel = option.(bool)
+		switch option := option.(type) {
+		case []string:
+			report.ContainerHierarchyTexts = option
+		case GW:
+			report.CapturedGinkgoWriterOutput = string(option)
+		case string:
+			report.LeafNodeText = option
+		case types.NodeType:
+			report.CurrentNodeType = option
+		case CurrentNodeText:
+			report.CurrentNodeText = string(option)
+		case CurrentStepText:
+			report.CurrentStepText = string(option)
+		case types.Goroutine:
+			report.Goroutines = append(report.Goroutines, option)
+		case []types.Goroutine:
+			report.Goroutines = append(report.Goroutines, option...)
+		case int:
+			report.ParallelProcess = option
+		case bool:
+			report.RunningInParallel = option
 		}
 	}
 	return report
@@ -1099,7 +1101,7 @@ var _ = Describe("DefaultReporter", func() {
 			S(CTS("Describe A", "Context B"), "The Test", CLS(cl0, cl1), cl2,
 				types.SpecStateInterrupted, 2,
 				GW("GW-OUTPUT\nIS EMITTED"), STD("STD-OUTPUT\nIS EMITTED"),
-				F("FAILURE MESSAGE\nWITH DETAILS", types.FailureNodeInContainer, FailureNodeLocation(cl3), types.NodeTypeJustBeforeEach, 1, cl4, PR(types.NodeTypeBeforeSuite)),
+				F("FAILURE MESSAGE\nWITH DETAILS", types.FailureNodeInContainer, FailureNodeLocation(cl3), types.NodeTypeJustBeforeEach, 1, cl4, PR(types.NodeTypeBeforeSuite, GW("GW-OUTPUT\nIS EMITTED"))),
 			),
 			DELIMITER,
 			"{{orange}}"+DENOTER+"! [INTERRUPTED] [1.000 seconds]{{/}}",
@@ -1440,6 +1442,93 @@ var _ = Describe("DefaultReporter", func() {
 			DELIMITER,
 			""),
 
+		//including GinkgoWriter output
+		Entry("when there is GinkgoWriter output and the spec is not running verbosely",
+			C(),
+			PR(
+				types.NodeTypeIt, CurrentNodeText("My Spec"), "My Spec",
+				GW("gw-1\ngw-2\ngw-3\ngw-4\ngw-5\ngw-6\ngw-7\ngw-8\ngw-9\ngw-10\ngw-11\ngw-12\n"),
+			),
+			DELIMITER,
+			REGEX(`{{bold}}{{orange}}My Spec{{/}} \(Spec Runtime: 5[\d\.]*s\)`),
+			"  {{gray}}"+cl0.String()+"{{/}}",
+			REGEX(`  In {{bold}}{{orange}}\[It\]{{/}} \(Node Runtime: 3[\d\.]*s\)`),
+			"    {{gray}}"+cl1.String()+"{{/}}",
+			"",
+			"  {{gray}}Begin Captured GinkgoWriter Output >>{{/}}",
+			"    {{gray}}...{{/}}",
+			"    gw-3",
+			"    gw-4",
+			"    gw-5",
+			"    gw-6",
+			"    gw-7",
+			"    gw-8",
+			"    gw-9",
+			"    gw-10",
+			"    gw-11",
+			"    gw-12",
+			"  {{gray}}<< End Captured GinkgoWriter Output{{/}}",
+			DELIMITER,
+			""),
+
+		Entry("when there is fewer than 10 lines of GinkgoWriter output",
+			C(),
+			PR(
+				types.NodeTypeIt, CurrentNodeText("My Spec"), "My Spec",
+				GW("gw-1\ngw-2\ngw-3\ngw-4\ngw-5\ngw-6\ngw-7\ngw-8\ngw-9\n"),
+			),
+			DELIMITER,
+			REGEX(`{{bold}}{{orange}}My Spec{{/}} \(Spec Runtime: 5[\d\.]*s\)`),
+			"  {{gray}}"+cl0.String()+"{{/}}",
+			REGEX(`  In {{bold}}{{orange}}\[It\]{{/}} \(Node Runtime: 3[\d\.]*s\)`),
+			"    {{gray}}"+cl1.String()+"{{/}}",
+			"",
+			"  {{gray}}Begin Captured GinkgoWriter Output >>{{/}}",
+			"    gw-1",
+			"    gw-2",
+			"    gw-3",
+			"    gw-4",
+			"    gw-5",
+			"    gw-6",
+			"    gw-7",
+			"    gw-8",
+			"    gw-9",
+			"  {{gray}}<< End Captured GinkgoWriter Output{{/}}",
+			DELIMITER,
+			""),
+
+		Entry("when running in verbose mode and not in parallel",
+			C(Verbose),
+			PR(
+				types.NodeTypeIt, CurrentNodeText("My Spec"), "My Spec",
+				GW("gw-1\n"),
+			),
+			DELIMITER,
+			REGEX(`{{bold}}{{orange}}My Spec{{/}} \(Spec Runtime: 5[\d\.]*s\)`),
+			"  {{gray}}"+cl0.String()+"{{/}}",
+			REGEX(`  In {{bold}}{{orange}}\[It\]{{/}} \(Node Runtime: 3[\d\.]*s\)`),
+			"    {{gray}}"+cl1.String()+"{{/}}",
+			DELIMITER,
+			""),
+
+		Entry("when running in verbose mode and in parallel",
+			C(),
+			PR(
+				true, types.NodeTypeIt, CurrentNodeText("My Spec"), "My Spec",
+				GW("gw-1\n"),
+			),
+			DELIMITER,
+			"{{coral}}Progress Report for Ginkgo Process #{{bold}}1{{/}}",
+			REGEX(`{{bold}}{{orange}}My Spec{{/}} \(Spec Runtime: 5[\d\.]*s\)`),
+			"  {{gray}}"+cl0.String()+"{{/}}",
+			REGEX(`  In {{bold}}{{orange}}\[It\]{{/}} \(Node Runtime: 3[\d\.]*s\)`),
+			"    {{gray}}"+cl1.String()+"{{/}}",
+			"",
+			"  {{gray}}Begin Captured GinkgoWriter Output >>{{/}}",
+			"    gw-1",
+			"  {{gray}}<< End Captured GinkgoWriter Output{{/}}",
+			DELIMITER,
+			""),
 		//various goroutines
 		Entry("with a spec goroutine",
 			C(),

@@ -43,6 +43,7 @@ var _ = Describe("Progress Reporting", func() {
 			success, _ := RunFixture("emitting spec progress in a BeforeSuite", func() {
 				BeforeSuite(func() {
 					cl = types.NewCodeLocation(0)
+					writer.Print("ginkgo-writer-content")
 					triggerProgressSignal()
 				})
 				It("runs", func() {})
@@ -56,8 +57,9 @@ var _ = Describe("Progress Reporting", func() {
 			Ω(pr.CurrentNodeType).Should(Equal(types.NodeTypeBeforeSuite))
 			Ω(pr.LeafNodeLocation).Should(Equal(clLine(-1)))
 			Ω(pr.CurrentStepText).Should(Equal(""))
+			Ω(pr.CapturedGinkgoWriterOutput).Should(Equal("ginkgo-writer-content"))
 			Ω(pr.SpecGoroutine().State).Should(Equal("running"))
-			Ω(pr.SpecGoroutine().Stack).Should(HaveHighlightedStackLine(clLine(1)))
+			Ω(pr.SpecGoroutine().Stack).Should(HaveHighlightedStackLine(clLine(2)))
 		})
 	})
 

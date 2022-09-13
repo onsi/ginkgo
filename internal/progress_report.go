@@ -46,7 +46,7 @@ type ProgressStepCursor struct {
 	StartTime    time.Time
 }
 
-func NewProgressReport(isRunningInParallel bool, report types.SpecReport, currentNode Node, currentNodeStartTime time.Time, currentStep ProgressStepCursor, includeAll bool) (types.ProgressReport, error) {
+func NewProgressReport(isRunningInParallel bool, report types.SpecReport, currentNode Node, currentNodeStartTime time.Time, currentStep ProgressStepCursor, gwOutput string, includeAll bool) (types.ProgressReport, error) {
 	pr := types.ProgressReport{
 		ParallelProcess:   report.ParallelProcess,
 		RunningInParallel: isRunningInParallel,
@@ -64,6 +64,8 @@ func NewProgressReport(isRunningInParallel bool, report types.SpecReport, curren
 		CurrentStepText:      currentStep.Text,
 		CurrentStepLocation:  currentStep.CodeLocation,
 		CurrentStepStartTime: currentStep.StartTime,
+
+		CapturedGinkgoWriterOutput: gwOutput,
 	}
 
 	goroutines, err := extractRunningGoroutines()
@@ -115,9 +117,15 @@ OUTER:
 	//Now, we find the first non-Ginkgo function call
 	if specGoRoutineIdx > -1 {
 		for runNodeFunctionCallIdx >= 0 {
-			if strings.Contains(goroutines[specGoRoutineIdx].Stack[runNodeFunctionCallIdx].Function, "ginkgo/v2/internal") {
+			fn := goroutines[specGoRoutineIdx].Stack[runNodeFunctionCallIdx].Function
+			file := goroutines[specGoRoutineIdx].Stack[runNodeFunctionCallIdx].Filename
+			// these are all things that could potentially happen from within ginkgo
+			if strings.Contains(fn, "ginkgo/v2/internal") || strings.Contains(fn, "reflect.Value") || strings.Contains(file, "ginkgo/table_dsl") || strings.Contains(file, "ginkgo/core_dsl") {
 				runNodeFunctionCallIdx--
 				continue
+			}
+			if strings.Contains(goroutines[specGoRoutineIdx].Stack[runNodeFunctionCallIdx].Function, "ginkgo/table_dsl") {
+
 			}
 			//found it!  lets add its package of interest
 			addPackageFor(goroutines[specGoRoutineIdx].Stack[runNodeFunctionCallIdx].Filename)
