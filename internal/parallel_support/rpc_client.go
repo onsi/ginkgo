@@ -72,8 +72,8 @@ func (client *rpcClient) Write(p []byte) (int, error) {
 	return n, err
 }
 
-func (client *rpcClient) EmitImmediately(content string) error {
-	return client.client.Call("Server.EmitImmediately", content, voidReceiver)
+func (client *rpcClient) PostEmitProgressReport(report types.ProgressReport) error {
+	return client.client.Call("Server.EmitProgressReport", report, voidReceiver)
 }
 
 func (client *rpcClient) PostSynchronizedBeforeSuiteCompleted(state types.SpecState, data []byte) error {

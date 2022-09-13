@@ -49,7 +49,7 @@ type Client interface {
 	FetchNextCounter() (int, error)
 	PostAbort() error
 	ShouldAbort() bool
-	EmitImmediately(content string) error
+	PostEmitProgressReport(report types.ProgressReport) error
 	Write(p []byte) (int, error)
 }
 

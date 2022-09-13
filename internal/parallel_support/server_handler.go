@@ -108,10 +108,10 @@ func (handler *ServerHandler) EmitOutput(output []byte, n *int) error {
 	return err
 }
 
-func (handler *ServerHandler) EmitImmediately(content string, _ *Void) error {
+func (handler *ServerHandler) EmitProgressReport(report types.ProgressReport, _ *Void) error {
 	handler.lock.Lock()
 	defer handler.lock.Unlock()
-	handler.reporter.EmitImmediately(content)
+	handler.reporter.EmitProgressReport(report)
 	return nil
 }
 

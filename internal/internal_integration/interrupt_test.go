@@ -33,7 +33,8 @@ var _ = Describe("When a test suite is interrupted", func() {
 		It("reports the correct failure", func() {
 			summary := reporter.Did.FindByLeafNodeType(types.NodeTypeBeforeSuite)
 			Ω(summary.State).Should(Equal(types.SpecStateInterrupted))
-			Ω(summary.Failure.Message).Should(ContainSubstring("Interrupted by Timeout\nIn {{bold}}{{orange}}[BeforeSuite]{{/}"))
+			Ω(summary.Failure.Message).Should(ContainSubstring("Interrupted by Timeout"))
+			Ω(summary.Failure.ProgressReport.CurrentNodeType).Should(Equal(types.NodeTypeBeforeSuite))
 		})
 
 		It("reports the correct statistics", func() {
@@ -94,8 +95,12 @@ var _ = Describe("When a test suite is interrupted", func() {
 		})
 
 		It("reports the interrupted test as interrupted and emits a stack trace", func() {
-			message := reporter.Did.Find("the interrupted test").Failure.Message
-			Ω(message).Should(ContainSubstring("Interrupted by Timeout\n{{/}}container {{gray}}nested-container {{/}}deeply-nested-container{{/}} {{bold}}{{orange}}the interrupted test{{/}}"))
+			failure := reporter.Did.Find("the interrupted test").Failure
+			Ω(failure.Message).Should(ContainSubstring("Interrupted by Timeout"))
+			Ω(failure.ProgressReport.ContainerHierarchyTexts).Should(Equal([]string{"container", "nested-container", "deeply-nested-container"}))
+			Ω(failure.ProgressReport.LeafNodeText).Should(Equal("the interrupted test"))
+			Ω(failure.ProgressReport.CurrentNodeType).Should(Equal(types.NodeTypeBeforeEach))
+
 		})
 
 		It("reports the correct statistics", func() {

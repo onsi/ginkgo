@@ -388,10 +388,13 @@ type Failure struct {
 	FailureNodeType           NodeType
 	FailureNodeLocation       CodeLocation
 	FailureNodeContainerIndex int
+
+	//ProgressReport is populated if the spec was interrupted or timed out
+	ProgressReport ProgressReport
 }
 
 func (f Failure) IsZero() bool {
-	return f == Failure{}
+	return f.Message == "" && (f.Location == CodeLocation{})
 }
 
 // FailureNodeContext captures the location context for the node containing the failing line of code
@@ -467,6 +470,91 @@ var SpecStateFailureStates = SpecStateFailed | SpecStateAborted | SpecStatePanic
 
 func (ss SpecState) Is(states SpecState) bool {
 	return ss&states != 0
+}
+
+// ProgressReport captures the progress of the current spec.  It is, effectively, a structured Ginkgo-aware stack trace
+type ProgressReport struct {
+	ParallelProcess   int
+	RunningInParallel bool
+
+	ContainerHierarchyTexts []string
+	LeafNodeText            string
+	LeafNodeLocation        CodeLocation
+	SpecStartTime           time.Time
+
+	CurrentNodeType      NodeType
+	CurrentNodeText      string
+	CurrentNodeLocation  CodeLocation
+	CurrentNodeStartTime time.Time
+
+	CurrentStepText      string
+	CurrentStepLocation  CodeLocation
+	CurrentStepStartTime time.Time
+
+	Goroutines []Goroutine
+}
+
+func (pr ProgressReport) IsZero() bool {
+	return pr.CurrentNodeType == NodeTypeInvalid
+}
+
+func (pr ProgressReport) SpecGoroutine() Goroutine {
+	for _, goroutine := range pr.Goroutines {
+		if goroutine.IsSpecGoroutine {
+			return goroutine
+		}
+	}
+	return Goroutine{}
+}
+
+func (pr ProgressReport) HighlightedGoroutines() []Goroutine {
+	out := []Goroutine{}
+	for _, goroutine := range pr.Goroutines {
+		if goroutine.IsSpecGoroutine || !goroutine.HasHighlights() {
+			continue
+		}
+		out = append(out, goroutine)
+	}
+	return out
+}
+
+func (pr ProgressReport) OtherGoroutines() []Goroutine {
+	out := []Goroutine{}
+	for _, goroutine := range pr.Goroutines {
+		if goroutine.IsSpecGoroutine || goroutine.HasHighlights() {
+			continue
+		}
+		out = append(out, goroutine)
+	}
+	return out
+}
+
+type Goroutine struct {
+	ID              uint64
+	State           string
+	Stack           []FunctionCall
+	IsSpecGoroutine bool
+}
+
+func (g Goroutine) IsZero() bool {
+	return g.ID == 0
+}
+
+func (g Goroutine) HasHighlights() bool {
+	for _, fc := range g.Stack {
+		if fc.Highlight {
+			return true
+		}
+	}
+
+	return false
+}
+
+type FunctionCall struct {
+	Function  string
+	Filename  string
+	Line      int64
+	Highlight bool
 }
 
 // NodeType captures the type of a given Ginkgo Node

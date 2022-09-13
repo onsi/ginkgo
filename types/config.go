@@ -30,7 +30,6 @@ type SuiteConfig struct {
 	DryRun                bool
 	PollProgressAfter     time.Duration
 	PollProgressInterval  time.Duration
-	SourceRoots           []string
 	Timeout               time.Duration
 	OutputInterceptorMode string
 
@@ -86,6 +85,7 @@ type ReporterConfig struct {
 	VeryVerbose            bool
 	FullTrace              bool
 	AlwaysEmitGinkgoWriter bool
+	SourceRoots            []string
 
 	JSONReport     string
 	JUnitReport    string
@@ -279,7 +279,7 @@ var SuiteConfigFlags = GinkgoFlags{
 		Usage: "Emit node progress reports periodically if node hasn't completed after this duration."},
 	{KeyPath: "S.PollProgressInterval", Name: "poll-progress-interval", SectionKey: "debug", UsageDefaultValue: "10s",
 		Usage: "The rate at which to emit node progress reports after poll-progress-after has elapsed."},
-	{KeyPath: "S.SourceRoots", Name: "source-root", SectionKey: "debug",
+	{KeyPath: "R.SourceRoots", Name: "source-root", SectionKey: "debug",
 		Usage: "The location to look for source code when generating progress reports.  You can pass multiple --source-root flags."},
 	{KeyPath: "S.Timeout", Name: "timeout", SectionKey: "debug", UsageDefaultValue: "1h",
 		Usage: "Test suite fails if it does not complete within the specified timeout."},

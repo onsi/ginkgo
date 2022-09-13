@@ -6,26 +6,27 @@ import (
 	. "github.com/onsi/ginkgo/v2"
 	"github.com/onsi/ginkgo/v2/types"
 	. "github.com/onsi/gomega"
-	"github.com/onsi/gomega/gbytes"
 )
+
+func HaveHighlightedStackLine(cl types.CodeLocation) OmegaMatcher {
+	return ContainElement(WithTransform(func(fc types.FunctionCall) types.CodeLocation {
+		if fc.Highlight {
+			return types.CodeLocation{
+				FileName:   fc.Filename,
+				LineNumber: int(fc.Line),
+			}
+		}
+		return types.CodeLocation{}
+	}, Equal(cl)))
+}
 
 var _ = Describe("Progress Reporting", func() {
 	var cl types.CodeLocation
 
-	clLine := func(offset int) string {
+	clLine := func(offset int) types.CodeLocation {
 		cl := cl
 		cl.LineNumber += offset
-		return cl.String()
-	}
-
-	progressShouldSay := func(sayings ...string) {
-		buf := gbytes.NewBuffer()
-		for _, line := range reporter.EmittedImmediately {
-			buf.Write([]byte(line + "\n"))
-		}
-		for _, saying := range sayings {
-			Expect(buf).WithOffset(1).To(gbytes.Say(saying))
-		}
+		return cl
 	}
 
 	BeforeEach(func() {
@@ -50,18 +51,13 @@ var _ = Describe("Progress Reporting", func() {
 		})
 
 		It("emits progress when asked and includes source code", func() {
-			progressShouldSay(
-				`In {{bold}}{{orange}}\[BeforeSuite\]{{/}`,
-				clLine(-1),
-				`\n{{bold}}{{underline}}Spec Goroutine{{/}}`,
-				`\n{{orange}}goroutine \d+ \[running\]{{/}}`,
-				clLine(1),
-				`\|\s*BeforeSuite\(func\(\) {`,
-				`\|\s*cl = types.NewCodeLocation\(0\)`,
-				`{{bold}}{{orange}}>\s*triggerProgressSignal\(\){{/}}`,
-				`\|\s*}\)`,
-				`\|\s*It\("runs",`,
-			)
+			Ω(reporter.ProgressReports).Should(HaveLen(1))
+			pr := reporter.ProgressReports[0]
+			Ω(pr.CurrentNodeType).Should(Equal(types.NodeTypeBeforeSuite))
+			Ω(pr.LeafNodeLocation).Should(Equal(clLine(-1)))
+			Ω(pr.CurrentStepText).Should(Equal(""))
+			Ω(pr.SpecGoroutine().State).Should(Equal("running"))
+			Ω(pr.SpecGoroutine().Stack).Should(HaveHighlightedStackLine(clLine(1)))
 		})
 	})
 
@@ -79,16 +75,20 @@ var _ = Describe("Progress Reporting", func() {
 		})
 
 		It("emits progress when asked ", func() {
-			progressShouldSay(
-				`{{/}}a container{{/}} {{bold}}{{orange}}A{{/}}`,
-				clLine(-1),
-				`In {{bold}}{{orange}}\[It\]{{/}}`,
-				clLine(-1),
-				`{{bold}}{{underline}}Spec Goroutine{{/}}`,
-				`{{orange}}goroutine \d+ \[running\]{{/}}`,
-				clLine(1),
-				`>\s*triggerProgressSignal\(\)`,
-			)
+			Ω(reporter.ProgressReports).Should(HaveLen(1))
+			pr := reporter.ProgressReports[0]
+
+			Ω(pr.ContainerHierarchyTexts).Should(ConsistOf("a container"))
+			Ω(pr.LeafNodeLocation).Should(Equal(clLine(-1)))
+			Ω(pr.LeafNodeText).Should(Equal("A"))
+
+			Ω(pr.CurrentNodeType).Should(Equal(types.NodeTypeIt))
+			Ω(pr.CurrentNodeLocation).Should(Equal(clLine(-1)))
+
+			Ω(pr.CurrentStepText).Should(Equal(""))
+
+			Ω(pr.SpecGoroutine().State).Should(Equal("running"))
+			Ω(pr.SpecGoroutine().Stack).Should(HaveHighlightedStackLine(clLine(1)))
 		})
 	})
 
@@ -108,16 +108,20 @@ var _ = Describe("Progress Reporting", func() {
 		})
 
 		It("emits progress when asked ", func() {
-			progressShouldSay(
-				`{{/}}a container{{/}} {{bold}}{{orange}}A{{/}}`,
-				clLine(4),
-				`In {{bold}}{{orange}}\[BeforeEach\]{{/}}`,
-				clLine(-1),
-				`{{bold}}{{underline}}Spec Goroutine{{/}}`,
-				`{{orange}}goroutine \d+ \[running\]{{/}}`,
-				clLine(1),
-				`>\s*triggerProgressSignal\(\)`,
-			)
+			Ω(reporter.ProgressReports).Should(HaveLen(1))
+			pr := reporter.ProgressReports[0]
+
+			Ω(pr.ContainerHierarchyTexts).Should(ConsistOf("a container"))
+			Ω(pr.LeafNodeLocation).Should(Equal(clLine(4)))
+			Ω(pr.LeafNodeText).Should(Equal("A"))
+
+			Ω(pr.CurrentNodeType).Should(Equal(types.NodeTypeBeforeEach))
+			Ω(pr.CurrentNodeLocation).Should(Equal(clLine(-1)))
+
+			Ω(pr.CurrentStepText).Should(Equal(""))
+
+			Ω(pr.SpecGoroutine().State).Should(Equal("running"))
+			Ω(pr.SpecGoroutine().Stack).Should(HaveHighlightedStackLine(clLine(1)))
 		})
 	})
 
@@ -139,18 +143,21 @@ var _ = Describe("Progress Reporting", func() {
 		})
 
 		It("emits progress when asked and includes the By step", func() {
-			progressShouldSay(
-				`{{/}}a container{{/}} {{bold}}{{orange}}A{{/}}`,
-				clLine(-1),
-				`In {{bold}}{{orange}}\[It\]{{/}}`,
-				clLine(-1),
-				`At {{bold}}{{orange}}\[By Step\] C{{/}}`,
-				clLine(2),
-				`{{bold}}{{underline}}Spec Goroutine{{/}}`,
-				`{{orange}}goroutine \d+ \[running\]{{/}}`,
-				clLine(3),
-				`>\s*triggerProgressSignal\(\)`,
-			)
+			Ω(reporter.ProgressReports).Should(HaveLen(1))
+			pr := reporter.ProgressReports[0]
+
+			Ω(pr.ContainerHierarchyTexts).Should(ConsistOf("a container"))
+			Ω(pr.LeafNodeLocation).Should(Equal(clLine(-1)))
+			Ω(pr.LeafNodeText).Should(Equal("A"))
+
+			Ω(pr.CurrentNodeType).Should(Equal(types.NodeTypeIt))
+			Ω(pr.CurrentNodeLocation).Should(Equal(clLine(-1)))
+
+			Ω(pr.CurrentStepText).Should(Equal("C"))
+			Ω(pr.CurrentStepLocation).Should(Equal(clLine(2)))
+
+			Ω(pr.SpecGoroutine().State).Should(Equal("running"))
+			Ω(pr.SpecGoroutine().Stack).Should(HaveHighlightedStackLine(clLine(3)))
 		})
 	})
 
@@ -171,18 +178,21 @@ var _ = Describe("Progress Reporting", func() {
 		})
 
 		It("emits progress when asked and includes the last run By step", func() {
-			progressShouldSay(
-				`{{/}}a container{{/}} {{bold}}{{orange}}A{{/}}`,
-				clLine(-1),
-				`In {{bold}}{{orange}}\[It\]{{/}}`,
-				clLine(-1),
-				`At {{bold}}{{orange}}\[By Step\] C{{/}}`,
-				clLine(2),
-				`{{bold}}{{underline}}Spec Goroutine{{/}}`,
-				`{{orange}}goroutine \d+ \[running\]{{/}}`,
-				clLine(3),
-				`>\s*triggerProgressSignal\(\)`,
-			)
+			Ω(reporter.ProgressReports).Should(HaveLen(1))
+			pr := reporter.ProgressReports[0]
+
+			Ω(pr.ContainerHierarchyTexts).Should(ConsistOf("a container"))
+			Ω(pr.LeafNodeLocation).Should(Equal(clLine(-1)))
+			Ω(pr.LeafNodeText).Should(Equal("A"))
+
+			Ω(pr.CurrentNodeType).Should(Equal(types.NodeTypeIt))
+			Ω(pr.CurrentNodeLocation).Should(Equal(clLine(-1)))
+
+			Ω(pr.CurrentStepText).Should(Equal("C"))
+			Ω(pr.CurrentStepLocation).Should(Equal(clLine(2)))
+
+			Ω(pr.SpecGoroutine().State).Should(Equal("running"))
+			Ω(pr.SpecGoroutine().Stack).Should(HaveHighlightedStackLine(clLine(3)))
 		})
 	})
 
@@ -204,20 +214,20 @@ var _ = Describe("Progress Reporting", func() {
 		})
 
 		It("emits progress when asked and does not include the By step", func() {
-			progressShouldSay(
-				`{{/}}a container{{/}} {{bold}}{{orange}}A{{/}}`,
-				clLine(-1),
-				`In {{bold}}{{orange}}\[It\]{{/}}`,
-				clLine(-1),
-				`{{bold}}{{underline}}Spec Goroutine{{/}}`,
-				`{{orange}}goroutine \d+ \[running\]{{/}}`,
-				clLine(1),
-				`>\s*triggerProgressSignal\(\)`,
-			)
+			Ω(reporter.ProgressReports).Should(HaveLen(1))
+			pr := reporter.ProgressReports[0]
 
-			for _, line := range reporter.EmittedImmediately {
-				Ω(line).ShouldNot(ContainSubstring(`By Step`))
-			}
+			Ω(pr.ContainerHierarchyTexts).Should(ConsistOf("a container"))
+			Ω(pr.LeafNodeLocation).Should(Equal(clLine(-1)))
+			Ω(pr.LeafNodeText).Should(Equal("A"))
+
+			Ω(pr.CurrentNodeType).Should(Equal(types.NodeTypeIt))
+			Ω(pr.CurrentNodeLocation).Should(Equal(clLine(-1)))
+
+			Ω(pr.CurrentStepText).Should(Equal(""))
+
+			Ω(pr.SpecGoroutine().State).Should(Equal("running"))
+			Ω(pr.SpecGoroutine().Stack).Should(HaveHighlightedStackLine(clLine(1)))
 		})
 	})
 
@@ -242,22 +252,25 @@ var _ = Describe("Progress Reporting", func() {
 		})
 
 		It("lists the goroutine as a line of interest", func() {
-			progressShouldSay(
-				`{{/}}a container{{/}} {{bold}}{{orange}}A{{/}}`,
-				clLine(-1),
-				`In {{bold}}{{orange}}\[It\]{{/}}`,
-				clLine(-1),
-				`{{bold}}{{underline}}Spec Goroutine{{/}}`,
-				`{{orange}}goroutine \d+ \[running\]{{/}}`,
-				clLine(7),
-				`triggerProgressSignal\(\)`,
-				`{{bold}}{{underline}}Goroutines of Interest{{/}}`,
-				`{{orange}}goroutine \d+ \[chan receive\]{{/}}`,
-				clLine(4),
-				`>\s*<-c`,
-				clLine(2),
-				`>\s*go func\(\) {`,
-			)
+			Ω(reporter.ProgressReports).Should(HaveLen(1))
+			pr := reporter.ProgressReports[0]
+
+			Ω(pr.ContainerHierarchyTexts).Should(ConsistOf("a container"))
+			Ω(pr.LeafNodeLocation).Should(Equal(clLine(-1)))
+			Ω(pr.LeafNodeText).Should(Equal("A"))
+
+			Ω(pr.CurrentNodeType).Should(Equal(types.NodeTypeIt))
+			Ω(pr.CurrentNodeLocation).Should(Equal(clLine(-1)))
+
+			Ω(pr.CurrentStepText).Should(Equal(""))
+
+			Ω(pr.SpecGoroutine().State).Should(Equal("running"))
+			Ω(pr.SpecGoroutine().Stack).Should(HaveHighlightedStackLine(clLine(7)))
+
+			var waitingGoroutine types.Goroutine
+			Ω(pr.HighlightedGoroutines()).Should(ContainElement(HaveField("State", "chan receive"), &waitingGoroutine))
+			Ω(waitingGoroutine.Stack).Should(HaveHighlightedStackLine(clLine(2)), "the goroutine invocation")
+			Ω(waitingGoroutine.Stack).Should(HaveHighlightedStackLine(clLine(4)), "the <-c line in the goroutine")
 		})
 	})
 
@@ -275,25 +288,16 @@ var _ = Describe("Progress Reporting", func() {
 		})
 
 		It("emits progress periodically", func() {
-			progressShouldSay(
-				//first hit - starts after 100ms
-				`{{/}}a container{{/}} {{bold}}{{orange}}A{{/}} \(Spec Runtime: \d+ms\)`,
-				clLine(-1),
-				`In {{bold}}{{orange}}\[It\]{{/}}`,
-				clLine(-1),
-				`{{orange}}goroutine \d+ \[sleep\]{{/}}`,
-				clLine(1),
-				`>\s*time.Sleep\(300 \* time\.Millisecond\)`,
+			Ω(len(reporter.ProgressReports)).Should(BeNumerically(">", 1))
 
-				//subsequent hit - should happen again in the 200ms range
-				`{{/}}a container{{/}} {{bold}}{{orange}}A{{/}} \(Spec Runtime: \d+ms\)`,
-				clLine(-1),
-				`In {{bold}}{{orange}}\[It\]{{/}}`,
-				clLine(-1),
-				`{{orange}}goroutine \d+ \[sleep\]{{/}}`,
-				clLine(1),
-				`>\s*time\.Sleep\(300 \* time\.Millisecond\)`,
-			)
+			for _, pr := range reporter.ProgressReports {
+				Ω(pr.ContainerHierarchyTexts).Should(ConsistOf("a container"))
+				Ω(pr.LeafNodeLocation).Should(Equal(clLine(-1)))
+				Ω(pr.LeafNodeText).Should(Equal("A"))
+
+				Ω(pr.CurrentNodeType).Should(Equal(types.NodeTypeIt))
+				Ω(pr.CurrentNodeLocation).Should(Equal(clLine(-1)))
+			}
 		})
 	})
 
@@ -311,23 +315,16 @@ var _ = Describe("Progress Reporting", func() {
 		})
 
 		It("emits progress periodically", func() {
-			progressShouldSay(
-				`{{/}}a container{{/}} {{bold}}{{orange}}A{{/}} \(Spec Runtime: \d+ms\)`,
-				clLine(-1),
-				`In {{bold}}{{orange}}\[It\]{{/}}`,
-				clLine(-1),
-				`{{orange}}goroutine \d+ \[sleep\]{{/}}`,
-				clLine(1),
-				`>\s*time.Sleep\(50 \* time\.Millisecond\)`,
+			Ω(len(reporter.ProgressReports)).Should(BeNumerically(">", 1))
 
-				`{{/}}a container{{/}} {{bold}}{{orange}}A{{/}} \(Spec Runtime: \d+ms\)`,
-				clLine(-1),
-				`In {{bold}}{{orange}}\[It\]{{/}}`,
-				clLine(-1),
-				`{{orange}}goroutine \d+ \[sleep\]{{/}}`,
-				clLine(1),
-				`>\s*time\.Sleep\(50 \* time\.Millisecond\)`,
-			)
+			for _, pr := range reporter.ProgressReports {
+				Ω(pr.ContainerHierarchyTexts).Should(ConsistOf("a container"))
+				Ω(pr.LeafNodeLocation).Should(Equal(clLine(-1)))
+				Ω(pr.LeafNodeText).Should(Equal("A"))
+
+				Ω(pr.CurrentNodeType).Should(Equal(types.NodeTypeIt))
+				Ω(pr.CurrentNodeLocation).Should(Equal(clLine(-1)))
+			}
 		})
 	})
 
@@ -348,19 +345,12 @@ var _ = Describe("Progress Reporting", func() {
 		})
 
 		It("emits progress periodically", func() {
-			progressShouldSay(
-				`In {{bold}}{{orange}}\[SynchronizedBeforeSuite\]{{/}} \(Node Runtime: \d+ms\)`,
-				clLine(-1),
-				`{{orange}}goroutine \d+ \[sleep\]{{/}}`,
-				clLine(3),
-				`>\s*time.Sleep\(50 \* time\.Millisecond\)`,
+			Ω(len(reporter.ProgressReports)).Should(BeNumerically(">", 1))
 
-				`In {{bold}}{{orange}}\[SynchronizedBeforeSuite\]{{/}} \(Node Runtime: \d+ms\)`,
-				clLine(-1),
-				`{{orange}}goroutine \d+ \[sleep\]{{/}}`,
-				clLine(3),
-				`>\s*time.Sleep\(50 \* time\.Millisecond\)`,
-			)
+			for _, pr := range reporter.ProgressReports {
+				Ω(pr.CurrentNodeType).Should(Equal(types.NodeTypeSynchronizedBeforeSuite))
+				Ω(pr.CurrentNodeLocation).Should(Equal(clLine(-1)))
+			}
 		})
 	})
 
@@ -380,23 +370,12 @@ var _ = Describe("Progress Reporting", func() {
 		})
 
 		It("emits progress periodically", func() {
-			progressShouldSay(
-				`{{/}}a container{{/}} {{bold}}{{orange}}A{{/}} \(Spec Runtime: \d+ms\)`,
-				clLine(-1),
-				`In {{bold}}{{orange}}\[DeferCleanup\]{{/}}`,
-				clLine(1),
-				`{{orange}}goroutine \d+ \[sleep\]{{/}}`,
-				clLine(2),
-				`>\s*time.Sleep\(50 \* time\.Millisecond\)`,
+			Ω(len(reporter.ProgressReports)).Should(BeNumerically(">", 1))
 
-				`{{/}}a container{{/}} {{bold}}{{orange}}A{{/}} \(Spec Runtime: \d+ms\)`,
-				clLine(-1),
-				`In {{bold}}{{orange}}\[DeferCleanup\]{{/}}`,
-				clLine(1),
-				`{{orange}}goroutine \d+ \[sleep\]{{/}}`,
-				clLine(2),
-				`>\s*time\.Sleep\(50 \* time\.Millisecond\)`,
-			)
+			for _, pr := range reporter.ProgressReports {
+				Ω(pr.CurrentNodeType).Should(Equal(types.NodeTypeCleanupAfterEach))
+				Ω(pr.CurrentNodeLocation).Should(Equal(clLine(1)))
+			}
 		})
 	})
 })

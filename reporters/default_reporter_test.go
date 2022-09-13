@@ -55,6 +55,8 @@ func F(options ...interface{}) types.Failure {
 			failure.FailureNodeLocation = types.CodeLocation(option.(FailureNodeLocation))
 		case reflect.TypeOf(types.NodeTypeIt):
 			failure.FailureNodeType = option.(types.NodeType)
+		case reflect.TypeOf(types.ProgressReport{}):
+			failure.ProgressReport = option.(types.ProgressReport)
 		}
 	}
 	return failure
@@ -151,7 +153,86 @@ func C(flags ...ConfigFlags) types.ReporterConfig {
 	}
 }
 
+type CurrentNodeText string
+type CurrentStepText string
+
+func PR(options ...interface{}) types.ProgressReport {
+	report := types.ProgressReport{
+		ParallelProcess:   1,
+		RunningInParallel: false,
+
+		SpecStartTime:        time.Now().Add(-5 * time.Second),
+		CurrentNodeStartTime: time.Now().Add(-3 * time.Second),
+		CurrentStepStartTime: time.Now().Add(-1 * time.Second),
+
+		LeafNodeLocation:    cl0,
+		CurrentNodeLocation: cl1,
+		CurrentStepLocation: cl2,
+	}
+	for _, option := range options {
+		switch reflect.TypeOf(option) {
+		case reflect.TypeOf([]string{}):
+			report.ContainerHierarchyTexts = option.([]string)
+		case reflect.TypeOf(""):
+			report.LeafNodeText = option.(string)
+		case reflect.TypeOf(types.NodeTypeInvalid):
+			report.CurrentNodeType = option.(types.NodeType)
+		case reflect.TypeOf(CurrentNodeText("")):
+			report.CurrentNodeText = string(option.(CurrentNodeText))
+		case reflect.TypeOf(CurrentStepText("")):
+			report.CurrentStepText = string(option.(CurrentStepText))
+		case reflect.TypeOf(types.Goroutine{}):
+			report.Goroutines = append(report.Goroutines, option.(types.Goroutine))
+		case reflect.TypeOf([]types.Goroutine{}):
+			report.Goroutines = append(report.Goroutines, option.([]types.Goroutine)...)
+		case reflect.TypeOf(0):
+			report.ParallelProcess = option.(int)
+		case reflect.TypeOf(true):
+			report.RunningInParallel = option.(bool)
+		}
+	}
+	return report
+}
+
+func Fn(f string, filename string, line int64, highlight ...bool) types.FunctionCall {
+	isHighlight := false
+	if len(highlight) > 0 && highlight[0] {
+		isHighlight = true
+	}
+	return types.FunctionCall{
+		Function:  f,
+		Filename:  filename,
+		Line:      line,
+		Highlight: isHighlight,
+	}
+}
+
+func G(options ...interface{}) types.Goroutine {
+	goroutine := types.Goroutine{
+		ID:              17,
+		State:           "running",
+		IsSpecGoroutine: false,
+	}
+
+	for _, option := range options {
+		switch reflect.TypeOf(option) {
+		case reflect.TypeOf(true):
+			goroutine.IsSpecGoroutine = option.(bool)
+		case reflect.TypeOf(""):
+			goroutine.State = option.(string)
+		case reflect.TypeOf(types.FunctionCall{}):
+			goroutine.Stack = append(goroutine.Stack, option.(types.FunctionCall))
+		case reflect.TypeOf([]types.FunctionCall{}):
+			goroutine.Stack = append(goroutine.Stack, option.([]types.FunctionCall)...)
+		}
+	}
+
+	return goroutine
+}
+
 const SlowSpecThreshold = 3 * time.Second
+
+type REGEX string
 
 var _ = Describe("DefaultReporter", func() {
 	var DENOTER = "•"
@@ -167,6 +248,25 @@ var _ = Describe("DefaultReporter", func() {
 			ExpectWithOffset(1, buf.Contents()).Should(BeEmpty())
 		} else {
 			ExpectWithOffset(1, string(buf.Contents())).Should(Equal(strings.Join(expected, "\n")), test_helpers.MultilineTextHelper(string(buf.Contents())))
+		}
+	}
+
+	verifyRegExOutput := func(expected []interface{}) {
+		if len(expected) == 0 {
+			ExpectWithOffset(1, buf.Contents()).Should(BeEmpty())
+			return
+		}
+
+		summary := test_helpers.MultilineTextHelper(string(buf.Contents()))
+		lines := strings.Split(string(buf.Contents()), "\n")
+		Expect(len(expected)).Should(BeNumerically("<=", len(lines)), summary)
+		for idx, expected := range expected {
+			switch v := expected.(type) {
+			case REGEX:
+				ExpectWithOffset(1, lines[idx]).Should(MatchRegexp(string(v)), summary)
+			default:
+				ExpectWithOffset(1, lines[idx]).Should(Equal(v), summary)
+			}
 		}
 	}
 
@@ -325,10 +425,10 @@ var _ = Describe("DefaultReporter", func() {
 	)
 
 	DescribeTable("DidRun",
-		func(conf types.ReporterConfig, report types.SpecReport, output ...string) {
+		func(conf types.ReporterConfig, report types.SpecReport, output ...interface{}) {
 			reporter := reporters.NewDefaultReporterUnderTest(conf, buf)
 			reporter.DidRun(report)
-			verifyExpectedOutput(output)
+			verifyRegExOutput(output)
 		},
 		// Passing Tests
 		Entry("a passing test",
@@ -999,7 +1099,7 @@ var _ = Describe("DefaultReporter", func() {
 			S(CTS("Describe A", "Context B"), "The Test", CLS(cl0, cl1), cl2,
 				types.SpecStateInterrupted, 2,
 				GW("GW-OUTPUT\nIS EMITTED"), STD("STD-OUTPUT\nIS EMITTED"),
-				F("FAILURE MESSAGE\nWITH DETAILS", types.FailureNodeInContainer, FailureNodeLocation(cl3), types.NodeTypeJustBeforeEach, 1, cl4),
+				F("FAILURE MESSAGE\nWITH DETAILS", types.FailureNodeInContainer, FailureNodeLocation(cl3), types.NodeTypeJustBeforeEach, 1, cl4, PR(types.NodeTypeBeforeSuite)),
 			),
 			DELIMITER,
 			"{{orange}}"+DENOTER+"! [INTERRUPTED] [1.000 seconds]{{/}}",
@@ -1023,6 +1123,9 @@ var _ = Describe("DefaultReporter", func() {
 			"  {{orange}}FAILURE MESSAGE",
 			"  WITH DETAILS{{/}}",
 			"  {{orange}}In {{bold}}[JustBeforeEach]{{/}}{{orange}} at: {{bold}}"+cl4.String()+"{{/}}",
+			"",
+			REGEX(`  In {{bold}}{{orange}}\[BeforeSuite\]{{/}} \(Node Runtime: 3[\.\d]*s\)`),
+			"    {{gray}}cl1.go:37{{/}}",
 			DELIMITER,
 			"",
 		),
@@ -1262,4 +1365,248 @@ var _ = Describe("DefaultReporter", func() {
 			"",
 		),
 	)
+
+	DescribeTable("EmitProgressReport",
+		func(conf types.ReporterConfig, report types.ProgressReport, expected ...interface{}) {
+			reporter := reporters.NewDefaultReporterUnderTest(conf, buf)
+			reporter.EmitProgressReport(report)
+			verifyRegExOutput(expected)
+		},
+		//just headers to start
+		Entry("With a suite node",
+			C(),
+			PR(types.NodeTypeBeforeSuite),
+			DELIMITER,
+			REGEX(`In {{bold}}{{orange}}\[BeforeSuite\]{{/}} \(Node Runtime: 3[\d\.]*s\)`),
+			"  {{gray}}"+cl1.String()+"{{/}}",
+			DELIMITER,
+			""),
+		Entry("With a top-level spec",
+			C(),
+			PR(types.NodeTypeIt, CurrentNodeText("A Top-Level It"), "A Top-Level It"),
+			DELIMITER,
+			REGEX(`{{bold}}{{orange}}A Top-Level It{{/}} \(Spec Runtime: 5[\d\.]*s\)`),
+			"  {{gray}}"+cl0.String()+"{{/}}",
+			REGEX(`  In {{bold}}{{orange}}\[It\]{{/}} \(Node Runtime: 3[\d\.]*s\)`),
+			"    {{gray}}"+cl1.String()+"{{/}}",
+			DELIMITER,
+			""),
+		Entry("With a spec in containers",
+			C(),
+			PR(types.NodeTypeIt, CurrentNodeText("My Spec"), "My Spec", []string{"Container A", "Container B", "Container C"}),
+			DELIMITER,
+			REGEX(`{{/}}Container A {{gray}}Container B {{/}}Container C{{/}} {{bold}}{{orange}}My Spec{{/}} \(Spec Runtime: 5[\d\.]*s\)`),
+			"  {{gray}}"+cl0.String()+"{{/}}",
+			REGEX(`  In {{bold}}{{orange}}\[It\]{{/}} \(Node Runtime: 3[\d\.]*s\)`),
+			"    {{gray}}"+cl1.String()+"{{/}}",
+			DELIMITER,
+			""),
+		Entry("With no current node",
+			C(),
+			PR("My Spec", []string{"Container A", "Container B", "Container C"}),
+			DELIMITER,
+			REGEX(`{{/}}Container A {{gray}}Container B {{/}}Container C{{/}} {{bold}}{{orange}}My Spec{{/}} \(Spec Runtime: 5[\d\.]*s\)`),
+			"  {{gray}}"+cl0.String()+"{{/}}",
+			DELIMITER,
+			""),
+		Entry("With a current node that is not an It",
+			C(),
+			PR("My Spec", []string{"Container A", "Container B", "Container C"}, types.NodeTypeBeforeEach),
+			DELIMITER,
+			REGEX(`{{/}}Container A {{gray}}Container B {{/}}Container C{{/}} {{bold}}{{orange}}My Spec{{/}} \(Spec Runtime: 5[\d\.]*s\)`),
+			"  {{gray}}"+cl0.String()+"{{/}}",
+			REGEX(`  In {{bold}}{{orange}}\[BeforeEach\]{{/}} \(Node Runtime: 3[\d\.]*s\)`),
+			"    {{gray}}"+cl1.String()+"{{/}}",
+			DELIMITER,
+			""),
+		Entry("With a current node that is not an It, but has text",
+			C(),
+			PR(types.NodeTypeReportAfterSuite, CurrentNodeText("My Report")),
+			DELIMITER,
+			REGEX(`In {{bold}}{{orange}}\[ReportAfterSuite\]{{/}} {{bold}}{{orange}}My Report{{/}} \(Node Runtime: 3[\d\.]*s\)`),
+			"  {{gray}}"+cl1.String()+"{{/}}",
+			DELIMITER,
+			""),
+		Entry("With a current step",
+			C(),
+			PR(types.NodeTypeIt, CurrentNodeText("My Spec"), "My Spec", []string{"Container A", "Container B", "Container C"}, CurrentStepText("Reticulating Splines")),
+			DELIMITER,
+			REGEX(`{{/}}Container A {{gray}}Container B {{/}}Container C{{/}} {{bold}}{{orange}}My Spec{{/}} \(Spec Runtime: 5[\d\.]*s\)`),
+			"  {{gray}}"+cl0.String()+"{{/}}",
+			REGEX(`  In {{bold}}{{orange}}\[It\]{{/}} \(Node Runtime: 3[\d\.]*s\)`),
+			"    {{gray}}"+cl1.String()+"{{/}}",
+			REGEX(`    At {{bold}}{{orange}}\[By Step\] Reticulating Splines{{/}} \(Step Runtime: 1[\d\.]*s\)`),
+			"      {{gray}}"+cl2.String()+"{{/}}",
+			DELIMITER,
+			""),
+
+		//various goroutines
+		Entry("with a spec goroutine",
+			C(),
+			PR(
+				types.NodeTypeIt, CurrentNodeText("My Spec"), "My Spec",
+				G(true, "sleeping",
+					Fn("F1()", "fileA", 15),
+					Fn("F2()", "fileB", 11, true),
+					Fn("F3()", "fileC", 9),
+				),
+			),
+
+			DELIMITER,
+			REGEX(`{{bold}}{{orange}}My Spec{{/}} \(Spec Runtime: 5[\d\.]*s\)`),
+			"  {{gray}}"+cl0.String()+"{{/}}",
+			REGEX(`  In {{bold}}{{orange}}\[It\]{{/}} \(Node Runtime: 3[\d\.]*s\)`),
+			"    {{gray}}"+cl1.String()+"{{/}}",
+			"",
+			"  {{bold}}{{underline}}Spec Goroutine{{/}}",
+			"  {{orange}}goroutine 17 [sleeping]{{/}}",
+			"    {{gray}}F1(){{/}}",
+			"      {{gray}}fileA:15{{/}}",
+			"  {{orange}}{{bold}}> F2(){{/}}",
+			"      {{orange}}{{bold}}fileB:11{{/}}",
+			"    {{gray}}F3(){{/}}",
+			"      {{gray}}fileC:9{{/}}",
+			DELIMITER,
+			""),
+
+		Entry("with highlighted goroutines",
+			C(),
+			PR(
+				types.NodeTypeIt, CurrentNodeText("My Spec"), "My Spec",
+				G(false, "sleeping",
+					Fn("F1()", "fileA", 15),
+					Fn("F2()", "fileB", 11, true),
+					Fn("F3()", "fileC", 9),
+				),
+			),
+
+			DELIMITER,
+			REGEX(`{{bold}}{{orange}}My Spec{{/}} \(Spec Runtime: 5[\d\.]*s\)`),
+			"  {{gray}}"+cl0.String()+"{{/}}",
+			REGEX(`  In {{bold}}{{orange}}\[It\]{{/}} \(Node Runtime: 3[\d\.]*s\)`),
+			"    {{gray}}"+cl1.String()+"{{/}}",
+			"",
+			"  {{bold}}{{underline}}Goroutines of Interest{{/}}",
+			"  {{orange}}goroutine 17 [sleeping]{{/}}",
+			"    {{gray}}F1(){{/}}",
+			"      {{gray}}fileA:15{{/}}",
+			"  {{orange}}{{bold}}> F2(){{/}}",
+			"      {{orange}}{{bold}}fileB:11{{/}}",
+			"    {{gray}}F3(){{/}}",
+			"      {{gray}}fileC:9{{/}}",
+			DELIMITER,
+			""),
+
+		Entry("with other goroutines",
+			C(),
+			PR(
+				types.NodeTypeIt, CurrentNodeText("My Spec"), "My Spec",
+				G(false, "sleeping",
+					Fn("F1()", "fileA", 15),
+					Fn("F2()", "fileB", 11),
+					Fn("F3()", "fileC", 9),
+				),
+			),
+
+			DELIMITER,
+			REGEX(`{{bold}}{{orange}}My Spec{{/}} \(Spec Runtime: 5[\d\.]*s\)`),
+			"  {{gray}}"+cl0.String()+"{{/}}",
+			REGEX(`  In {{bold}}{{orange}}\[It\]{{/}} \(Node Runtime: 3[\d\.]*s\)`),
+			"    {{gray}}"+cl1.String()+"{{/}}",
+			"",
+			"  {{gray}}{{bold}}{{underline}}Other Goroutines{{/}}",
+			"  {{gray}}goroutine 17 [sleeping]{{/}}",
+			"    {{gray}}F1(){{/}}",
+			"      {{gray}}fileA:15{{/}}",
+			"    {{gray}}F2(){{/}}",
+			"      {{gray}}fileB:11{{/}}",
+			"    {{gray}}F3(){{/}}",
+			"      {{gray}}fileC:9{{/}}",
+			DELIMITER,
+			""),
+
+		//fetching source code
+		Entry("when source code is found",
+			C(),
+			PR(
+				types.NodeTypeIt, CurrentNodeText("My Spec"), "My Spec",
+				G(true, "sleeping",
+					Fn("F1()", "fileA", 15),
+					Fn("F2()", "reporters_suite_test.go", 21, true),
+					Fn("F3()", "fileC", 9),
+				),
+			),
+
+			DELIMITER,
+			REGEX(`{{bold}}{{orange}}My Spec{{/}} \(Spec Runtime: 5[\d\.]*s\)`),
+			"  {{gray}}"+cl0.String()+"{{/}}",
+			REGEX(`  In {{bold}}{{orange}}\[It\]{{/}} \(Node Runtime: 3[\d\.]*s\)`),
+			"    {{gray}}"+cl1.String()+"{{/}}",
+			"",
+			"  {{bold}}{{underline}}Spec Goroutine{{/}}",
+			"  {{orange}}goroutine 17 [sleeping]{{/}}",
+			"    {{gray}}F1(){{/}}",
+			"      {{gray}}fileA:15{{/}}",
+			"  {{orange}}{{bold}}> F2(){{/}}",
+			"      {{orange}}{{bold}}reporters_suite_test.go:21{{/}}",
+			"        | func FixtureFunction() {",
+			"        | \ta := 0",
+			"        {{bold}}{{orange}}> \tfor a < 100 {{{/}}",
+			"        | \t\tfmt.Println(a)",
+			"        | \t\tfmt.Println(a + 1)",
+			"    {{gray}}F3(){{/}}",
+			"      {{gray}}fileC:9{{/}}",
+			DELIMITER,
+			""),
+
+		Entry("correcting source code indentation",
+			C(),
+			PR(
+				types.NodeTypeIt, CurrentNodeText("My Spec"), "My Spec",
+				G(true, "sleeping",
+					Fn("F1()", "fileA", 15),
+					Fn("F2()", "reporters_suite_test.go", 26, true),
+					Fn("F3()", "fileC", 9),
+				),
+			),
+
+			DELIMITER,
+			REGEX(`{{bold}}{{orange}}My Spec{{/}} \(Spec Runtime: 5[\d\.]*s\)`),
+			"  {{gray}}"+cl0.String()+"{{/}}",
+			REGEX(`  In {{bold}}{{orange}}\[It\]{{/}} \(Node Runtime: 3[\d\.]*s\)`),
+			"    {{gray}}"+cl1.String()+"{{/}}",
+			"",
+			"  {{bold}}{{underline}}Spec Goroutine{{/}}",
+			"  {{orange}}goroutine 17 [sleeping]{{/}}",
+			"    {{gray}}F1(){{/}}",
+			"      {{gray}}fileA:15{{/}}",
+			"  {{orange}}{{bold}}> F2(){{/}}",
+			"      {{orange}}{{bold}}reporters_suite_test.go:26{{/}}",
+			"        | fmt.Println(a + 3)",
+			"        | fmt.Println(a + 4)",
+			"        {{bold}}{{orange}}> fmt.Println(a + 5){{/}}",
+			"        | ",
+			"        | fmt.Println(a + 6)",
+			"    {{gray}}F3(){{/}}",
+			"      {{gray}}fileC:9{{/}}",
+			DELIMITER,
+			""),
+
+		Entry("when running in parallel",
+			C(),
+			PR(
+				true, 3,
+				types.NodeTypeIt, CurrentNodeText("My Spec"), "My Spec",
+			),
+
+			DELIMITER,
+			"{{coral}}Progress Report for Ginkgo Process #{{bold}}3{{/}}",
+			REGEX(`{{bold}}{{orange}}My Spec{{/}} \(Spec Runtime: 5[\d\.]*s\)`),
+			"  {{gray}}"+cl0.String()+"{{/}}",
+			REGEX(`  In {{bold}}{{orange}}\[It\]{{/}} \(Node Runtime: 3[\d\.]*s\)`),
+			"    {{gray}}"+cl1.String()+"{{/}}",
+			DELIMITER,
+			""),
+	)
+
 })

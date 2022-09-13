@@ -8,7 +8,6 @@ import (
 	"syscall"
 	"time"
 
-	"github.com/onsi/ginkgo/v2/formatter"
 	"github.com/onsi/ginkgo/v2/internal/parallel_support"
 )
 
@@ -49,7 +48,7 @@ type InterruptHandlerInterface interface {
 	Status() InterruptStatus
 	SetInterruptPlaceholderMessage(string)
 	ClearInterruptPlaceholderMessage()
-	InterruptMessageWithProgressReport(string) string
+	InterruptMessage() (string, bool)
 }
 
 type InterruptHandler struct {
@@ -189,14 +188,9 @@ func (handler *InterruptHandler) ClearInterruptPlaceholderMessage() {
 	handler.interruptPlaceholderMessage = ""
 }
 
-func (handler *InterruptHandler) InterruptMessageWithProgressReport(report string) string {
+func (handler *InterruptHandler) InterruptMessage() (string, bool) {
 	handler.lock.Lock()
-	out := fmt.Sprintf("%s\n\n", handler.interruptCause.String())
+	out := fmt.Sprintf("%s", handler.interruptCause.String())
 	defer handler.lock.Unlock()
-	if handler.interruptCause == InterruptCauseAbortByOtherProcess {
-		return out
-	}
-	out += formatter.F("{{/}}{{bold}}Here is the current progress of this Ginkgo process, and the stack of running goroutines:\n")
-	out += formatter.F(report)
-	return out
+	return out, handler.interruptCause != InterruptCauseAbortByOtherProcess
 }

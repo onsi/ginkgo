@@ -505,7 +505,7 @@ func By(text string, callback ...func()) {
 	}
 	t := time.Now()
 	global.Suite.SetProgressStepCursor(internal.ProgressStepCursor{
-		Name:         text,
+		Text:         text,
 		CodeLocation: types.NewCodeLocation(1),
 		StartTime:    t,
 	})

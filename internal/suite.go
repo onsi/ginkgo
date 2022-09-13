@@ -266,28 +266,24 @@ func (suite *Suite) AddReportEntry(entry ReportEntry) error {
 	return nil
 }
 
-func (suite *Suite) generateProgressReport(fullReport bool) string {
+func (suite *Suite) generateProgressReport(fullReport bool) types.ProgressReport {
 	suite.selectiveLock.Lock()
 	defer suite.selectiveLock.Unlock()
 
 	stepCursor := suite.progressStepCursor
 
-	pr, err := NewProgressReport(suite.currentSpecReport, suite.currentNode, suite.currentNodeStartTime, stepCursor, suite.config.SourceRoots)
+	pr, err := NewProgressReport(suite.isRunningInParallel(), suite.currentSpecReport, suite.currentNode, suite.currentNodeStartTime, stepCursor, fullReport)
 	if err != nil {
-		return fmt.Sprintf("{{red}}Failed to generate progress report:{{/}}\n%s", err.Error())
-	} else {
-		return pr.Report("{{orange}}", fullReport)
+		fmt.Printf("{{red}}Failed to generate progress report:{{/}}\n%s\n", err.Error())
 	}
+	return pr
 }
 
 func (suite *Suite) handleProgressSignal() {
 	report := suite.generateProgressReport(false)
-	suite.reporter.EmitImmediately(report)
+	suite.reporter.EmitProgressReport(report)
 	if suite.isRunningInParallel() {
-		parallelReport := "\n{{gray}}----------------------------------------{{/}}\n\n"
-		parallelReport += fmt.Sprintf("{{coral}}Progress Report for Ginkgo Process {{bold}}#%d{{/}}\n", suite.config.ParallelProcess)
-		parallelReport += report
-		err := suite.client.EmitImmediately(parallelReport)
+		err := suite.client.PostEmitProgressReport(report)
 		if err != nil {
 			fmt.Println(err.Error())
 		}
@@ -709,7 +705,11 @@ func (suite *Suite) runNode(node Node, interruptChannel chan interface{}, text s
 			failure.Message, failure.Location, failure.ForwardedPanic = failureFromRun.Message, failureFromRun.Location, failureFromRun.ForwardedPanic
 			return outcome, failure
 		case <-interruptChannel:
-			failure.Message, failure.Location = suite.interruptHandler.InterruptMessageWithProgressReport(suite.generateProgressReport(true)), node.CodeLocation
+			reason, includeProgressReport := suite.interruptHandler.InterruptMessage()
+			failure.Message, failure.Location = reason, node.CodeLocation
+			if includeProgressReport {
+				failure.ProgressReport = suite.generateProgressReport(true)
+			}
 			return types.SpecStateInterrupted, failure
 		case <-emitProgressNow:
 			suite.handleProgressSignal()

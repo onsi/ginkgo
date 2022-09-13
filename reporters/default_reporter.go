@@ -11,8 +11,10 @@ import (
 	"fmt"
 	"io"
 	"os"
+	"path/filepath"
 	"runtime"
 	"strings"
+	"time"
 
 	"github.com/onsi/ginkgo/v2/formatter"
 	"github.com/onsi/ginkgo/v2/types"
@@ -30,6 +32,8 @@ type DefaultReporter struct {
 	specDenoter  string
 	retryDenoter string
 	formatter    formatter.Formatter
+
+	sourceCache map[string][]string
 }
 
 func NewDefaultReporterUnderTest(conf types.ReporterConfig, writer io.Writer) *DefaultReporter {
@@ -50,6 +54,7 @@ func NewDefaultReporter(conf types.ReporterConfig, writer io.Writer) *DefaultRep
 		specDenoter:  "•",
 		retryDenoter: "↺",
 		formatter:    formatter.NewWithNoColorBool(conf.NoColor),
+		sourceCache:  map[string][]string{},
 	}
 	if runtime.GOOS == "windows" {
 		reporter.specDenoter = "+"
@@ -245,6 +250,11 @@ func (r *DefaultReporter) DidRun(report types.SpecReport) {
 			r.emitBlock(r.fi(1, highlightColor+"Full Stack Trace{{/}}"))
 			r.emitBlock(r.fi(2, "%s", report.Failure.Location.FullStackTrace))
 		}
+
+		if !report.Failure.ProgressReport.IsZero() {
+			r.emitBlock("\n")
+			r.emitProgressReport(1, report.Failure.ProgressReport)
+		}
 	}
 
 	r.emitDelimiter()
@@ -315,8 +325,148 @@ func (r *DefaultReporter) SuiteDidEnd(report types.Report) {
 	}
 }
 
-func (r *DefaultReporter) EmitImmediately(content string) {
-	fmt.Fprintf(os.Stderr, r.formatter.F(content))
+func (r *DefaultReporter) EmitProgressReport(report types.ProgressReport) {
+	r.emitDelimiter()
+
+	if report.RunningInParallel {
+		r.emit(r.f("{{coral}}Progress Report for Ginkgo Process #{{bold}}%d{{/}}\n", report.ParallelProcess))
+	}
+	r.emitProgressReport(0, report)
+	r.emitDelimiter()
+}
+
+func (r *DefaultReporter) emitProgressReport(indent uint, report types.ProgressReport) {
+	now := time.Now()
+	if report.LeafNodeText != "" {
+		if len(report.ContainerHierarchyTexts) > 0 {
+			r.emit(r.fi(indent, r.cycleJoin(report.ContainerHierarchyTexts, " ")))
+			r.emit(" ")
+		}
+		r.emit(r.f("{{bold}}{{orange}}%s{{/}} (Spec Runtime: %s)\n", report.LeafNodeText, now.Sub(report.SpecStartTime).Round(time.Millisecond)))
+		r.emit(r.fi(indent+1, "{{gray}}%s{{/}}\n", report.LeafNodeLocation))
+		indent += 1
+	}
+	if report.CurrentNodeType != types.NodeTypeInvalid {
+		r.emit(r.fi(indent, "In {{bold}}{{orange}}[%s]{{/}}", report.CurrentNodeType))
+		if report.CurrentNodeText != "" && !report.CurrentNodeType.Is(types.NodeTypeIt) {
+			r.emit(r.f(" {{bold}}{{orange}}%s{{/}}", report.CurrentNodeText))
+		}
+
+		r.emit(r.f(" (Node Runtime: %s)\n", now.Sub(report.CurrentNodeStartTime).Round(time.Millisecond)))
+		r.emit(r.fi(indent+1, "{{gray}}%s{{/}}\n", report.CurrentNodeLocation))
+		indent += 1
+	}
+	if report.CurrentStepText != "" {
+		r.emit(r.fi(indent, "At {{bold}}{{orange}}[By Step] %s{{/}} (Step Runtime: %s)\n", report.CurrentStepText, now.Sub(report.CurrentStepStartTime).Round(time.Millisecond)))
+		r.emit(r.fi(indent+1, "{{gray}}%s{{/}}\n", report.CurrentStepLocation))
+		indent += 1
+	}
+
+	if indent > 0 {
+		indent -= 1
+	}
+
+	if !report.SpecGoroutine().IsZero() {
+		r.emit("\n")
+		r.emit(r.fi(indent, "{{bold}}{{underline}}Spec Goroutine{{/}}\n"))
+		r.emitGoroutines(indent, report.SpecGoroutine())
+	}
+
+	highlightedGoroutines := report.HighlightedGoroutines()
+	if len(highlightedGoroutines) > 0 {
+		r.emit("\n")
+		r.emit(r.fi(indent, "{{bold}}{{underline}}Goroutines of Interest{{/}}\n"))
+		r.emitGoroutines(indent, highlightedGoroutines...)
+	}
+
+	otherGoroutines := report.OtherGoroutines()
+	if len(otherGoroutines) > 0 {
+		r.emit("\n")
+		r.emit(r.fi(indent, "{{gray}}{{bold}}{{underline}}Other Goroutines{{/}}\n"))
+		r.emitGoroutines(indent, otherGoroutines...)
+	}
+}
+
+func (r *DefaultReporter) emitGoroutines(indent uint, goroutines ...types.Goroutine) {
+	for idx, g := range goroutines {
+		color := "{{gray}}"
+		if g.HasHighlights() {
+			color = "{{orange}}"
+		}
+		r.emit(r.fi(indent, color+"goroutine %d [%s]{{/}}\n", g.ID, g.State))
+		for _, fc := range g.Stack {
+			if fc.Highlight {
+				r.emit(r.fi(indent, color+"{{bold}}> %s{{/}}\n", fc.Function))
+				r.emit(r.fi(indent+2, color+"{{bold}}%s:%d{{/}}\n", fc.Filename, fc.Line))
+				r.emitSource(indent+3, fc.Filename, int(fc.Line), 2)
+			} else {
+				r.emit(r.fi(indent+1, "{{gray}}%s{{/}}\n", fc.Function))
+				r.emit(r.fi(indent+2, "{{gray}}%s:%d{{/}}\n", fc.Filename, fc.Line))
+			}
+		}
+
+		if idx+1 < len(goroutines) {
+			r.emit("\n")
+		}
+	}
+}
+
+func (r *DefaultReporter) emitSource(indent uint, filename string, lineNumber int, span int) {
+	if filename == "" {
+		return
+	}
+	var lines []string
+	var ok bool
+	if lines, ok = r.sourceCache[filename]; !ok {
+		sourceRoots := []string{""}
+		sourceRoots = append(sourceRoots, r.conf.SourceRoots...)
+		var data []byte
+		var err error
+		var found bool
+		for _, root := range sourceRoots {
+			data, err = os.ReadFile(filepath.Join(root, filename))
+			if err == nil {
+				found = true
+				break
+			}
+		}
+		if !found {
+			return
+		}
+		lines = strings.Split(string(data), "\n")
+		r.sourceCache[filename] = lines
+	}
+
+	lTrim := 100000
+	idx := lineNumber - span - 1
+	for idx < lineNumber+span {
+		if idx >= 0 && idx <= len(lines)-1 {
+			lTrimLine := len(lines[idx]) - len(strings.TrimLeft(lines[idx], " \t"))
+			if lTrimLine < lTrim && len(lines[idx]) > 0 {
+				lTrim = lTrimLine
+			}
+		}
+		idx++
+	}
+	if lTrim == 100000 {
+		lTrim = 0
+	}
+
+	idx = lineNumber - span - 1
+	for idx < lineNumber+span {
+		if idx >= 0 && idx <= len(lines)-1 {
+			line := lines[idx]
+			if len(line) > lTrim {
+				line = line[lTrim:]
+			}
+			if idx == lineNumber-1 {
+				r.emit(r.fi(indent, "{{bold}}{{orange}}> %s{{/}}\n", line))
+			} else {
+				r.emit(r.fi(indent, "| %s\n", line))
+			}
+		}
+		idx++
+	}
 }
 
 /* Emitting to the writer */

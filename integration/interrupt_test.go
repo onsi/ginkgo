@@ -44,7 +44,6 @@ var _ = Describe("Interrupt and Timeout", func() {
 		It("should report where the suite was interrupted", func() {
 			Ω(session).Should(gbytes.Say(`\[INTERRUPTED\]`))
 			Ω(session).Should(gbytes.Say(`Interrupted by User`))
-			Ω(session).Should(gbytes.Say(`Here is the current progress of this Ginkgo process, and the stack of running goroutines:`))
 			Ω(session).Should(gbytes.Say(`Spec Goroutine`))
 			Ω(session).Should(gbytes.Say(`goroutine \d+ \[sleep\]`))
 			Ω(session).Should(gbytes.Say(`>\s*time\.Sleep\(time\.Hour\)`), "The actual source code gets emitted now")
@@ -75,7 +74,6 @@ var _ = Describe("Interrupt and Timeout", func() {
 		It("should report where and why the suite was interrupted", func() {
 			Ω(session).Should(gbytes.Say(`\[INTERRUPTED\]`))
 			Ω(session).Should(gbytes.Say(`Interrupted by Timeout`))
-			Ω(session).Should(gbytes.Say(`Here is the current progress of this Ginkgo process, and the stack of running goroutines:`))
 			Ω(session).Should(gbytes.Say(`Spec Goroutine`))
 			Ω(session).Should(gbytes.Say(`goroutine \d+ \[sleep\]`))
 			Ω(session).Should(gbytes.Say(`>\s*time\.Sleep\(time\.Hour\)`), "The actual source code gets emitted now")

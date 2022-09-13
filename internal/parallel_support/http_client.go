@@ -94,6 +94,10 @@ func (client *httpClient) PostSuiteDidEnd(report types.Report) error {
 	return client.post("/suite-did-end", report)
 }
 
+func (client *httpClient) PostEmitProgressReport(report types.ProgressReport) error {
+	return client.post("/progress-report", report)
+}
+
 func (client *httpClient) PostSynchronizedBeforeSuiteCompleted(state types.SpecState, data []byte) error {
 	beforeSuiteState := BeforeSuiteState{
 		State: state,
@@ -149,13 +153,4 @@ func (client *httpClient) Write(p []byte) (int, error) {
 		return 0, fmt.Errorf("failed to emit output")
 	}
 	return len(p), err
-}
-
-func (client *httpClient) EmitImmediately(content string) error {
-	resp, err := http.Post(client.serverHost+"/emit-immediately", "text/plain;charset=UTF-8 ", bytes.NewReader([]byte(content)))
-	resp.Body.Close()
-	if resp.StatusCode != http.StatusOK {
-		return fmt.Errorf("failed to emit output")
-	}
-	return err
 }

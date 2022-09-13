@@ -1,7 +1,6 @@
 package integration_test
 
 import (
-	"fmt"
 	"os"
 	"path/filepath"
 	"regexp"
@@ -56,7 +55,6 @@ var _ = Describe("Emitting progress", func() {
 			// that stack traces do not contain absolute paths
 			path, err := filepath.Abs(fm.PathTo("progress_reporter"))
 			Ω(err).ShouldNot(HaveOccurred())
-			fmt.Println(path)
 			session := startGinkgo(fm.PathTo("progress_reporter"), "build", `-gcflags=all=-trimpath=`+path+``)
 			Eventually(session).Should(gexec.Exit(0))
 
@@ -80,8 +78,8 @@ var _ = Describe("Emitting progress", func() {
 			session := startGinkgo(fm.PathTo("progress_reporter"), "--poll-progress-after=1500ms", "--poll-progress-interval=200ms", "--no-color", "-procs=2", "-label-filter=parallel")
 			Eventually(session).Should(gexec.Exit(0))
 
-			Eventually(session.Err.Contents()).Should(ContainSubstring(`Progress Report for Ginkgo Process #1`))
-			Eventually(session.Err.Contents()).Should(ContainSubstring(`Progress Report for Ginkgo Process #2`))
+			Eventually(session.Out.Contents()).Should(ContainSubstring(`Progress Report for Ginkgo Process #1`))
+			Eventually(session.Out.Contents()).Should(ContainSubstring(`Progress Report for Ginkgo Process #2`))
 
 		})
 

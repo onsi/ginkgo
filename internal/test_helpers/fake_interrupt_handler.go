@@ -91,9 +91,9 @@ func (handler *FakeInterruptHandler) EmittedInterruptPlaceholderMessage() string
 	return handler.emittedInterruptPlaceholderMessage
 }
 
-func (handler *FakeInterruptHandler) InterruptMessageWithProgressReport(report string) string {
+func (handler *FakeInterruptHandler) InterruptMessage() (string, bool) {
 	handler.lock.Lock()
 	defer handler.lock.Unlock()
 
-	return handler.cause.String() + "\n" + report
+	return handler.cause.String(), handler.cause != interrupt_handler.InterruptCauseAbortByOtherProcess
 }
