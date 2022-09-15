@@ -196,17 +196,24 @@ func PR(options ...interface{}) types.ProgressReport {
 	return report
 }
 
-func Fn(f string, filename string, line int64, highlight ...bool) types.FunctionCall {
-	isHighlight := false
-	if len(highlight) > 0 && highlight[0] {
-		isHighlight = true
+func Fn(f string, filename string, line int, options ...interface{}) types.FunctionCall {
+	out := types.FunctionCall{
+		Function: f,
+		Filename: filename,
+		Line:     line,
 	}
-	return types.FunctionCall{
-		Function:  f,
-		Filename:  filename,
-		Line:      line,
-		Highlight: isHighlight,
+	for _, option := range options {
+		switch option := option.(type) {
+		case bool:
+			out.Highlight = option
+		case string:
+			out.Source = append(out.Source, option)
+		case int:
+			out.SourceHighlight = option
+		}
 	}
+
+	return out
 }
 
 func G(options ...interface{}) types.Goroutine {
@@ -1621,7 +1628,14 @@ var _ = Describe("DefaultReporter", func() {
 				types.NodeTypeIt, CurrentNodeText("My Spec"), "My Spec",
 				G(true, "sleeping",
 					Fn("F1()", "fileA", 15),
-					Fn("F2()", "reporters_suite_test.go", 21, true),
+					Fn(
+						"F2()", "fileB", 21, true, 2,
+						"source line 1",
+						"source line 2",
+						"source line 3 (highlight!)",
+						"source line 4",
+						"source line 5",
+					),
 					Fn("F3()", "fileC", 9),
 				),
 			),
@@ -1637,12 +1651,12 @@ var _ = Describe("DefaultReporter", func() {
 			"    {{gray}}F1(){{/}}",
 			"      {{gray}}fileA:15{{/}}",
 			"  {{orange}}{{bold}}> F2(){{/}}",
-			"      {{orange}}{{bold}}reporters_suite_test.go:21{{/}}",
-			"        | func FixtureFunction() {",
-			"        | \ta := 0",
-			"        {{bold}}{{orange}}> \tfor a < 100 {{{/}}",
-			"        | \t\tfmt.Println(a)",
-			"        | \t\tfmt.Println(a + 1)",
+			"      {{orange}}{{bold}}fileB:21{{/}}",
+			"        | source line 1",
+			"        | source line 2",
+			"        {{bold}}{{orange}}> source line 3 (highlight!){{/}}",
+			"        | source line 4",
+			"        | source line 5",
 			"    {{gray}}F3(){{/}}",
 			"      {{gray}}fileC:9{{/}}",
 			DELIMITER,
@@ -1654,7 +1668,14 @@ var _ = Describe("DefaultReporter", func() {
 				types.NodeTypeIt, CurrentNodeText("My Spec"), "My Spec",
 				G(true, "sleeping",
 					Fn("F1()", "fileA", 15),
-					Fn("F2()", "reporters_suite_test.go", 26, true),
+					Fn(
+						"F2()", "fileB", 26, true, 1,
+						"\t\t\thello",
+						"\t\t\t\tthere",
+						"",
+						"\t\t\tit",
+						"\t\tworks",
+					),
 					Fn("F3()", "fileC", 9),
 				),
 			),
@@ -1670,12 +1691,12 @@ var _ = Describe("DefaultReporter", func() {
 			"    {{gray}}F1(){{/}}",
 			"      {{gray}}fileA:15{{/}}",
 			"  {{orange}}{{bold}}> F2(){{/}}",
-			"      {{orange}}{{bold}}reporters_suite_test.go:26{{/}}",
-			"        | fmt.Println(a + 3)",
-			"        | fmt.Println(a + 4)",
-			"        {{bold}}{{orange}}> fmt.Println(a + 5){{/}}",
+			"      {{orange}}{{bold}}fileB:26{{/}}",
+			"        | \thello",
+			"        {{bold}}{{orange}}> \t\tthere{{/}}",
 			"        | ",
-			"        | fmt.Println(a + 6)",
+			"        | \tit",
+			"        | works",
 			"    {{gray}}F3(){{/}}",
 			"      {{gray}}fileC:9{{/}}",
 			DELIMITER,

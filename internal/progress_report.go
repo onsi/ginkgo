@@ -17,6 +17,8 @@ import (
 	"github.com/onsi/ginkgo/v2/types"
 )
 
+var _SOURCE_CACHE = map[string][]string{}
+
 type ProgressSignalRegistrar func(func()) context.CancelFunc
 
 func RegisterForProgressSignal(handler func()) context.CancelFunc {
@@ -46,7 +48,7 @@ type ProgressStepCursor struct {
 	StartTime    time.Time
 }
 
-func NewProgressReport(isRunningInParallel bool, report types.SpecReport, currentNode Node, currentNodeStartTime time.Time, currentStep ProgressStepCursor, gwOutput string, includeAll bool) (types.ProgressReport, error) {
+func NewProgressReport(isRunningInParallel bool, report types.SpecReport, currentNode Node, currentNodeStartTime time.Time, currentStep ProgressStepCursor, gwOutput string, sourceRoots []string, includeAll bool) (types.ProgressReport, error) {
 	pr := types.ProgressReport{
 		ParallelProcess:   report.ParallelProcess,
 		RunningInParallel: isRunningInParallel,
@@ -66,6 +68,7 @@ func NewProgressReport(isRunningInParallel bool, report types.SpecReport, curren
 		CurrentStepStartTime: currentStep.StartTime,
 
 		CapturedGinkgoWriterOutput: gwOutput,
+		GinkgoWriterOffset:         len(gwOutput),
 	}
 
 	goroutines, err := extractRunningGoroutines()
@@ -156,6 +159,7 @@ OUTER_GINKGO_ENTRY_POINT:
 		for functionCallIdx, functionCall := range goroutine.Stack {
 			if isPackageOfInterest(functionCall.Filename) {
 				goroutine.Stack[functionCallIdx].Highlight = true
+				goroutine.Stack[functionCallIdx].Source, goroutine.Stack[functionCallIdx].SourceHighlight = fetchSource(functionCall.Filename, functionCall.Line, 2, sourceRoots)
 			}
 		}
 	}
@@ -232,7 +236,8 @@ func extractRunningGoroutines() ([]types.Goroutine, error) {
 		}
 		functionCall.Filename = fields[0]
 		line = strings.Split(fields[1], " ")[0]
-		functionCall.Line, err = strconv.ParseInt(line, 10, 64)
+		lineNumber, err := strconv.ParseInt(line, 10, 64)
+		functionCall.Line = int(lineNumber)
 		if err != nil {
 			return nil, types.GinkgoErrors.FailedToParseStackTrace(fmt.Sprintf("Invalid function call line number: %s\n%s", line, err.Error()))
 		}
@@ -240,4 +245,43 @@ func extractRunningGoroutines() ([]types.Goroutine, error) {
 	}
 
 	return out, nil
+}
+
+func fetchSource(filename string, lineNumber int, span int, configuredSourceRoots []string) ([]string, int) {
+	if filename == "" {
+		return []string{}, 0
+	}
+
+	var lines []string
+	var ok bool
+	if lines, ok = _SOURCE_CACHE[filename]; !ok {
+		sourceRoots := []string{""}
+		sourceRoots = append(sourceRoots, configuredSourceRoots...)
+		var data []byte
+		var err error
+		var found bool
+		for _, root := range sourceRoots {
+			data, err = os.ReadFile(filepath.Join(root, filename))
+			if err == nil {
+				found = true
+				break
+			}
+		}
+		if !found {
+			return []string{}, 0
+		}
+		lines = strings.Split(string(data), "\n")
+		_SOURCE_CACHE[filename] = lines
+	}
+
+	startIndex := lineNumber - span - 1
+	endIndex := startIndex + span + span + 1
+	if startIndex < 0 {
+		startIndex = 0
+	}
+	if endIndex > len(lines) {
+		endIndex = len(lines)
+	}
+	highlightIndex := lineNumber - 1 - startIndex
+	return lines[startIndex:endIndex], highlightIndex
 }

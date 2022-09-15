@@ -1,6 +1,7 @@
 package integration_test
 
 import (
+	"fmt"
 	"os"
 	"strings"
 
@@ -31,6 +32,7 @@ var _ = Describe("Reporting", func() {
 				"is labelled - INVALID SPEC STATE",
 				"fails - INVALID SPEC STATE",
 				"panics - INVALID SPEC STATE",
+				"has a progress report - INVALID SPEC STATE",
 				"is pending - pending",
 				"is skipped - INVALID SPEC STATE",
 				"",
@@ -49,6 +51,7 @@ var _ = Describe("Reporting", func() {
 				"is labelled - passed",
 				"fails - failed",
 				"panics - panicked",
+				"has a progress report - passed",
 				"is pending - pending",
 				"is skipped - skipped",
 				"",
@@ -69,6 +72,7 @@ var _ = Describe("Reporting", func() {
 				"is labelled - passed",
 				"fails - failed",
 				"panics - panicked",
+				"has a progress report - passed",
 				"is pending - pending",
 				"is skipped - skipped",
 				"1: [DeferCleanup (Suite)] - passed",
@@ -93,6 +97,7 @@ var _ = Describe("Reporting", func() {
 					"is labelled - passed",
 					"fails - failed",
 					"panics - panicked",
+					"has a progress report - passed",
 					"is pending - pending",
 					"is skipped - skipped",
 					"1: [DeferCleanup (Suite)] - passed",
@@ -120,10 +125,10 @@ var _ = Describe("Reporting", func() {
 			Ω(report.SuitePath).Should(Equal(fm.AbsPathTo("reporting")))
 			Ω(report.SuiteDescription).Should(Equal("ReportingFixture Suite"))
 			Ω(report.SuiteConfig.ParallelTotal).Should(Equal(2))
-			Ω(report.SpecReports).Should(HaveLen(13)) //6 tests + (1 before-suite + 2 defercleanup after-suite)*2(nodes) + 1 report-after-suite
+			Ω(report.SpecReports).Should(HaveLen(14)) //7 tests + (1 before-suite + 2 defercleanup after-suite)*2(nodes) + 1 report-after-suite
 
 			specReports := Reports(report.SpecReports)
-			Ω(specReports.WithLeafNodeType(types.NodeTypeIt)).Should(HaveLen(6))
+			Ω(specReports.WithLeafNodeType(types.NodeTypeIt)).Should(HaveLen(7))
 			Ω(specReports.Find("passes")).Should(HavePassed())
 			Ω(specReports.Find("is labelled")).Should(HavePassed())
 			Ω(specReports.Find("is labelled").Labels()).Should(Equal([]string{"dog", "cat"}))
@@ -134,6 +139,19 @@ var _ = Describe("Reporting", func() {
 			Ω(specReports.Find("my report")).Should(HaveFailed("fail!", types.FailureNodeIsLeafNode, types.NodeTypeReportAfterSuite))
 			Ω(specReports.FindByLeafNodeType(types.NodeTypeBeforeSuite)).Should(HavePassed())
 			Ω(specReports.FindByLeafNodeType(types.NodeTypeCleanupAfterSuite)).Should(HavePassed())
+
+			//check that progress reporst are correctly embedded
+			Ω(specReports.Find("passes").ProgressReports).Should(BeEmpty())
+			Ω(specReports.Find("has a progress report").ProgressReports).ShouldNot(BeEmpty())
+			var highlightedFunction types.FunctionCall
+			for _, functionCall := range specReports.Find("has a progress report").ProgressReports[0].SpecGoroutine().Stack {
+				if functionCall.Highlight {
+					highlightedFunction = functionCall
+					break
+				}
+			}
+			Ω(highlightedFunction).ShouldNot(BeZero())
+			Ω(highlightedFunction.Source[highlightedFunction.SourceHighlight]).Should(ContainSubstring("time.Sleep("))
 		}
 
 		checkJSONSubpackageReport := func(report types.Report) {
@@ -169,7 +187,7 @@ var _ = Describe("Reporting", func() {
 		checkJUnitReport := func(suite reporters.JUnitTestSuite) {
 			Ω(suite.Name).Should(Equal("ReportingFixture Suite"))
 			Ω(suite.Package).Should(Equal(fm.AbsPathTo("reporting")))
-			Ω(suite.Tests).Should(Equal(13))
+			Ω(suite.Tests).Should(Equal(14))
 			Ω(suite.Disabled).Should(Equal(1))
 			Ω(suite.Skipped).Should(Equal(1))
 			Ω(suite.Errors).Should(Equal(1))
@@ -202,6 +220,16 @@ var _ = Describe("Reporting", func() {
 
 			Ω(getTestCase("[It] reporting test is skipped", suite.TestCases).Status).Should(Equal("skipped"))
 			Ω(getTestCase("[It] reporting test is skipped", suite.TestCases).Skipped.Message).Should(Equal("skipped - skip"))
+
+			buf := gbytes.NewBuffer()
+			fmt.Fprintf(buf, getTestCase("[It] reporting test has a progress report", suite.TestCases).SystemErr)
+			Ω(buf).Should(gbytes.Say(`some ginkgo-writer preamble`))
+			Ω(buf).Should(gbytes.Say(`-----\n`))
+			Ω(buf).Should(gbytes.Say(`reporting test has a progress report \(Spec Runtime:`))
+			Ω(buf).Should(gbytes.Say(`goroutine \d+ \[sleep\]`))
+			Ω(buf).Should(gbytes.Say(`>\s*time\.Sleep\(`))
+			Ω(buf).Should(gbytes.Say(`-----\n`))
+			Ω(buf).Should(gbytes.Say(`some ginkgo-writer postamble`))
 		}
 
 		checkJUnitSubpackageReport := func(suite reporters.JUnitTestSuite) {
@@ -220,7 +248,7 @@ var _ = Describe("Reporting", func() {
 
 		checkUnifiedJUnitReport := func(report reporters.JUnitTestSuites) {
 			Ω(report.TestSuites).Should(HaveLen(3))
-			Ω(report.Tests).Should(Equal(16))
+			Ω(report.Tests).Should(Equal(17))
 			Ω(report.Disabled).Should(Equal(2))
 			Ω(report.Errors).Should(Equal(2))
 			Ω(report.Failures).Should(Equal(3))

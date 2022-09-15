@@ -50,7 +50,6 @@ func (rev ReportEntryValue) MarshalJSON() ([]byte, error) {
 	}{
 		Representation: rev.String(),
 	}
-
 	asJSON, err := json.Marshal(rev.raw)
 	if err != nil {
 		return nil, err
@@ -120,6 +119,8 @@ func (entry ReportEntry) StringRepresentation() string {
 func (entry ReportEntry) GetRawValue() interface{} {
 	return entry.Value.GetRawValue()
 }
+
+
 
 type ReportEntries []ReportEntry
 

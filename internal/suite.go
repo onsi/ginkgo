@@ -272,7 +272,9 @@ func (suite *Suite) generateProgressReport(fullReport bool) types.ProgressReport
 
 	stepCursor := suite.progressStepCursor
 
-	pr, err := NewProgressReport(suite.isRunningInParallel(), suite.currentSpecReport, suite.currentNode, suite.currentNodeStartTime, stepCursor, string(suite.writer.Bytes()), fullReport)
+	gwOutput := suite.currentSpecReport.CapturedGinkgoWriterOutput + string(suite.writer.Bytes())
+	pr, err := NewProgressReport(suite.isRunningInParallel(), suite.currentSpecReport, suite.currentNode, suite.currentNodeStartTime, stepCursor, gwOutput, suite.config.SourceRoots, fullReport)
+
 	if err != nil {
 		fmt.Printf("{{red}}Failed to generate progress report:{{/}}\n%s\n", err.Error())
 	}
@@ -281,6 +283,11 @@ func (suite *Suite) generateProgressReport(fullReport bool) types.ProgressReport
 
 func (suite *Suite) handleProgressSignal() {
 	report := suite.generateProgressReport(false)
+
+	suite.selectiveLock.Lock()
+	suite.currentSpecReport.ProgressReports = append(suite.currentSpecReport.ProgressReports, report.WithoutCapturedGinkgoWriterOutput())
+	suite.selectiveLock.Unlock()
+
 	suite.reporter.EmitProgressReport(report)
 	if suite.isRunningInParallel() {
 		err := suite.client.PostEmitProgressReport(report)
@@ -708,7 +715,7 @@ func (suite *Suite) runNode(node Node, interruptChannel chan interface{}, text s
 			reason, includeProgressReport := suite.interruptHandler.InterruptMessage()
 			failure.Message, failure.Location = reason, node.CodeLocation
 			if includeProgressReport {
-				failure.ProgressReport = suite.generateProgressReport(true)
+				failure.ProgressReport = suite.generateProgressReport(true).WithoutCapturedGinkgoWriterOutput()
 			}
 			return types.SpecStateInterrupted, failure
 		case <-emitProgressNow:

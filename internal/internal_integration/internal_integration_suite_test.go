@@ -1,5 +1,4 @@
 package internal_integration_test
-
 import (
 	"context"
 	"io"

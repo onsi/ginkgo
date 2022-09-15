@@ -81,6 +81,18 @@ var _ = Describe("Types", func() {
 			Ω(pr.HighlightedGoroutines()).Should(Equal([]types.Goroutine{highlightedGoroutineA, highlightedGoroutineB}))
 			Ω(pr.OtherGoroutines()).Should(Equal([]types.Goroutine{otherGoroutineA, otherGoroutineB}))
 		})
+
+		It("can return a copy sans GinkgoWriter output", func() {
+
+			pr := types.ProgressReport{
+				LeafNodeText:               "hi",
+				CapturedGinkgoWriterOutput: "foo",
+				GinkgoWriterOffset:         10,
+			}
+
+			Ω(pr.WithoutCapturedGinkgoWriterOutput()).Should(Equal(types.ProgressReport{LeafNodeText: "hi", GinkgoWriterOffset: 10}))
+
+		})
 	})
 
 	Describe("NodeType", func() {

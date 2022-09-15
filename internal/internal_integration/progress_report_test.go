@@ -60,6 +60,26 @@ var _ = Describe("Progress Reporting", func() {
 			Ω(pr.CapturedGinkgoWriterOutput).Should(Equal("ginkgo-writer-content"))
 			Ω(pr.SpecGoroutine().State).Should(Equal("running"))
 			Ω(pr.SpecGoroutine().Stack).Should(HaveHighlightedStackLine(clLine(2)))
+
+			By("validating that source code is extracted")
+			targetCl := clLine(2)
+			var functionCall types.FunctionCall
+			for _, call := range pr.SpecGoroutine().Stack {
+				if call.Filename == targetCl.FileName && call.Line == targetCl.LineNumber {
+					functionCall = call
+					break
+				}
+			}
+			Ω(functionCall).ShouldNot(BeZero())
+			//note - these are the lines from up above
+			Ω(functionCall.Source).Should(Equal([]string{
+				"\t\t\t\t\tcl = types.NewCodeLocation(0)",
+				"\t\t\t\t\twriter.Print(\"ginkgo-writer-content\")",
+				"\t\t\t\t\ttriggerProgressSignal()",
+				"\t\t\t\t})",
+				"\t\t\t\tIt(\"runs\", func() {})",
+			}))
+			Ω(functionCall.SourceHighlight).Should(Equal(2))
 		})
 	})
 

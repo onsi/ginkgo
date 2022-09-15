@@ -10,8 +10,6 @@ package reporters
 import (
 	"fmt"
 	"io"
-	"os"
-	"path/filepath"
 	"runtime"
 	"strings"
 	"time"
@@ -32,8 +30,6 @@ type DefaultReporter struct {
 	specDenoter  string
 	retryDenoter string
 	formatter    formatter.Formatter
-
-	sourceCache map[string][]string
 }
 
 func NewDefaultReporterUnderTest(conf types.ReporterConfig, writer io.Writer) *DefaultReporter {
@@ -54,7 +50,6 @@ func NewDefaultReporter(conf types.ReporterConfig, writer io.Writer) *DefaultRep
 		specDenoter:  "•",
 		retryDenoter: "↺",
 		formatter:    formatter.NewWithNoColorBool(conf.NoColor),
-		sourceCache:  map[string][]string{},
 	}
 	if runtime.GOOS == "windows" {
 		reporter.specDenoter = "+"
@@ -419,7 +414,7 @@ func (r *DefaultReporter) emitGoroutines(indent uint, goroutines ...types.Gorout
 			if fc.Highlight {
 				r.emit(r.fi(indent, color+"{{bold}}> %s{{/}}\n", fc.Function))
 				r.emit(r.fi(indent+2, color+"{{bold}}%s:%d{{/}}\n", fc.Filename, fc.Line))
-				r.emitSource(indent+3, fc.Filename, int(fc.Line), 2)
+				r.emitSource(indent+3, fc)
 			} else {
 				r.emit(r.fi(indent+1, "{{gray}}%s{{/}}\n", fc.Function))
 				r.emit(r.fi(indent+2, "{{gray}}%s:%d{{/}}\n", fc.Filename, fc.Line))
@@ -432,61 +427,32 @@ func (r *DefaultReporter) emitGoroutines(indent uint, goroutines ...types.Gorout
 	}
 }
 
-func (r *DefaultReporter) emitSource(indent uint, filename string, lineNumber int, span int) {
-	if filename == "" {
+func (r *DefaultReporter) emitSource(indent uint, fc types.FunctionCall) {
+	lines := fc.Source
+	if len(lines) == 0 {
 		return
-	}
-	var lines []string
-	var ok bool
-	if lines, ok = r.sourceCache[filename]; !ok {
-		sourceRoots := []string{""}
-		sourceRoots = append(sourceRoots, r.conf.SourceRoots...)
-		var data []byte
-		var err error
-		var found bool
-		for _, root := range sourceRoots {
-			data, err = os.ReadFile(filepath.Join(root, filename))
-			if err == nil {
-				found = true
-				break
-			}
-		}
-		if !found {
-			return
-		}
-		lines = strings.Split(string(data), "\n")
-		r.sourceCache[filename] = lines
 	}
 
 	lTrim := 100000
-	idx := lineNumber - span - 1
-	for idx < lineNumber+span {
-		if idx >= 0 && idx <= len(lines)-1 {
-			lTrimLine := len(lines[idx]) - len(strings.TrimLeft(lines[idx], " \t"))
-			if lTrimLine < lTrim && len(lines[idx]) > 0 {
-				lTrim = lTrimLine
-			}
+	for _, line := range lines {
+		lTrimLine := len(line) - len(strings.TrimLeft(line, " \t"))
+		if lTrimLine < lTrim && len(line) > 0 {
+			lTrim = lTrimLine
 		}
-		idx++
 	}
 	if lTrim == 100000 {
 		lTrim = 0
 	}
 
-	idx = lineNumber - span - 1
-	for idx < lineNumber+span {
-		if idx >= 0 && idx <= len(lines)-1 {
-			line := lines[idx]
-			if len(line) > lTrim {
-				line = line[lTrim:]
-			}
-			if idx == lineNumber-1 {
-				r.emit(r.fi(indent, "{{bold}}{{orange}}> %s{{/}}\n", line))
-			} else {
-				r.emit(r.fi(indent, "| %s\n", line))
-			}
+	for idx, line := range lines {
+		if len(line) > lTrim {
+			line = line[lTrim:]
 		}
-		idx++
+		if idx == fc.SourceHighlight {
+			r.emit(r.fi(indent, "{{bold}}{{orange}}> %s{{/}}\n", line))
+		} else {
+			r.emit(r.fi(indent, "| %s\n", line))
+		}
 	}
 }
 
