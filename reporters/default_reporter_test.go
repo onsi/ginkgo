@@ -157,13 +157,15 @@ type CurrentNodeText string
 type CurrentStepText string
 
 func PR(options ...interface{}) types.ProgressReport {
+	now := time.Now()
 	report := types.ProgressReport{
 		ParallelProcess:   1,
 		RunningInParallel: false,
+		Time:              now,
 
-		SpecStartTime:        time.Now().Add(-5 * time.Second),
-		CurrentNodeStartTime: time.Now().Add(-3 * time.Second),
-		CurrentStepStartTime: time.Now().Add(-1 * time.Second),
+		SpecStartTime:        now.Add(-5 * time.Second),
+		CurrentNodeStartTime: now.Add(-3 * time.Second),
+		CurrentStepStartTime: now.Add(-1 * time.Second),
 
 		LeafNodeLocation:    cl0,
 		CurrentNodeLocation: cl1,
@@ -241,8 +243,6 @@ func G(options ...interface{}) types.Goroutine {
 
 const SlowSpecThreshold = 3 * time.Second
 
-type REGEX string
-
 var _ = Describe("DefaultReporter", func() {
 	var DENOTER = "•"
 	var RETRY_DENOTER = "↺"
@@ -257,25 +257,6 @@ var _ = Describe("DefaultReporter", func() {
 			ExpectWithOffset(1, buf.Contents()).Should(BeEmpty())
 		} else {
 			ExpectWithOffset(1, string(buf.Contents())).Should(Equal(strings.Join(expected, "\n")), test_helpers.MultilineTextHelper(string(buf.Contents())))
-		}
-	}
-
-	verifyRegExOutput := func(expected []interface{}) {
-		if len(expected) == 0 {
-			ExpectWithOffset(1, buf.Contents()).Should(BeEmpty())
-			return
-		}
-
-		summary := test_helpers.MultilineTextHelper(string(buf.Contents()))
-		lines := strings.Split(string(buf.Contents()), "\n")
-		Expect(len(expected)).Should(BeNumerically("<=", len(lines)), summary)
-		for idx, expected := range expected {
-			switch v := expected.(type) {
-			case REGEX:
-				ExpectWithOffset(1, lines[idx]).Should(MatchRegexp(string(v)), summary)
-			default:
-				ExpectWithOffset(1, lines[idx]).Should(Equal(v), summary)
-			}
 		}
 	}
 
@@ -434,10 +415,10 @@ var _ = Describe("DefaultReporter", func() {
 	)
 
 	DescribeTable("DidRun",
-		func(conf types.ReporterConfig, report types.SpecReport, output ...interface{}) {
+		func(conf types.ReporterConfig, report types.SpecReport, output ...string) {
 			reporter := reporters.NewDefaultReporterUnderTest(conf, buf)
 			reporter.DidRun(report)
-			verifyRegExOutput(output)
+			verifyExpectedOutput(output)
 		},
 		// Passing Tests
 		Entry("a passing test",
@@ -1133,7 +1114,7 @@ var _ = Describe("DefaultReporter", func() {
 			"  WITH DETAILS{{/}}",
 			"  {{orange}}In {{bold}}[JustBeforeEach]{{/}}{{orange}} at: {{bold}}"+cl4.String()+"{{/}}",
 			"",
-			REGEX(`  In {{bold}}{{orange}}\[BeforeSuite\]{{/}} \(Node Runtime: 3[\.\d]*s\)`),
+			"  In {{bold}}{{orange}}[BeforeSuite]{{/}} (Node Runtime: 3s)",
 			"    {{gray}}cl1.go:37{{/}}",
 			DELIMITER,
 			"",
@@ -1376,17 +1357,17 @@ var _ = Describe("DefaultReporter", func() {
 	)
 
 	DescribeTable("EmitProgressReport",
-		func(conf types.ReporterConfig, report types.ProgressReport, expected ...interface{}) {
+		func(conf types.ReporterConfig, report types.ProgressReport, expected ...string) {
 			reporter := reporters.NewDefaultReporterUnderTest(conf, buf)
 			reporter.EmitProgressReport(report)
-			verifyRegExOutput(expected)
+			verifyExpectedOutput(expected)
 		},
 		//just headers to start
 		Entry("With a suite node",
 			C(),
 			PR(types.NodeTypeBeforeSuite),
 			DELIMITER,
-			REGEX(`In {{bold}}{{orange}}\[BeforeSuite\]{{/}} \(Node Runtime: 3[\d\.]*s\)`),
+			"In {{bold}}{{orange}}[BeforeSuite]{{/}} (Node Runtime: 3s)",
 			"  {{gray}}"+cl1.String()+"{{/}}",
 			DELIMITER,
 			""),
@@ -1394,9 +1375,9 @@ var _ = Describe("DefaultReporter", func() {
 			C(),
 			PR(types.NodeTypeIt, CurrentNodeText("A Top-Level It"), "A Top-Level It"),
 			DELIMITER,
-			REGEX(`{{bold}}{{orange}}A Top-Level It{{/}} \(Spec Runtime: 5[\d\.]*s\)`),
+			"{{bold}}{{orange}}A Top-Level It{{/}} (Spec Runtime: 5s)",
 			"  {{gray}}"+cl0.String()+"{{/}}",
-			REGEX(`  In {{bold}}{{orange}}\[It\]{{/}} \(Node Runtime: 3[\d\.]*s\)`),
+			"  In {{bold}}{{orange}}[It]{{/}} (Node Runtime: 3s)",
 			"    {{gray}}"+cl1.String()+"{{/}}",
 			DELIMITER,
 			""),
@@ -1404,9 +1385,9 @@ var _ = Describe("DefaultReporter", func() {
 			C(),
 			PR(types.NodeTypeIt, CurrentNodeText("My Spec"), "My Spec", []string{"Container A", "Container B", "Container C"}),
 			DELIMITER,
-			REGEX(`{{/}}Container A {{gray}}Container B {{/}}Container C{{/}} {{bold}}{{orange}}My Spec{{/}} \(Spec Runtime: 5[\d\.]*s\)`),
+			"{{/}}Container A {{gray}}Container B {{/}}Container C{{/}} {{bold}}{{orange}}My Spec{{/}} (Spec Runtime: 5s)",
 			"  {{gray}}"+cl0.String()+"{{/}}",
-			REGEX(`  In {{bold}}{{orange}}\[It\]{{/}} \(Node Runtime: 3[\d\.]*s\)`),
+			"  In {{bold}}{{orange}}[It]{{/}} (Node Runtime: 3s)",
 			"    {{gray}}"+cl1.String()+"{{/}}",
 			DELIMITER,
 			""),
@@ -1414,7 +1395,7 @@ var _ = Describe("DefaultReporter", func() {
 			C(),
 			PR("My Spec", []string{"Container A", "Container B", "Container C"}),
 			DELIMITER,
-			REGEX(`{{/}}Container A {{gray}}Container B {{/}}Container C{{/}} {{bold}}{{orange}}My Spec{{/}} \(Spec Runtime: 5[\d\.]*s\)`),
+			"{{/}}Container A {{gray}}Container B {{/}}Container C{{/}} {{bold}}{{orange}}My Spec{{/}} (Spec Runtime: 5s)",
 			"  {{gray}}"+cl0.String()+"{{/}}",
 			DELIMITER,
 			""),
@@ -1422,9 +1403,9 @@ var _ = Describe("DefaultReporter", func() {
 			C(),
 			PR("My Spec", []string{"Container A", "Container B", "Container C"}, types.NodeTypeBeforeEach),
 			DELIMITER,
-			REGEX(`{{/}}Container A {{gray}}Container B {{/}}Container C{{/}} {{bold}}{{orange}}My Spec{{/}} \(Spec Runtime: 5[\d\.]*s\)`),
+			"{{/}}Container A {{gray}}Container B {{/}}Container C{{/}} {{bold}}{{orange}}My Spec{{/}} (Spec Runtime: 5s)",
 			"  {{gray}}"+cl0.String()+"{{/}}",
-			REGEX(`  In {{bold}}{{orange}}\[BeforeEach\]{{/}} \(Node Runtime: 3[\d\.]*s\)`),
+			"  In {{bold}}{{orange}}[BeforeEach]{{/}} (Node Runtime: 3s)",
 			"    {{gray}}"+cl1.String()+"{{/}}",
 			DELIMITER,
 			""),
@@ -1432,7 +1413,7 @@ var _ = Describe("DefaultReporter", func() {
 			C(),
 			PR(types.NodeTypeReportAfterSuite, CurrentNodeText("My Report")),
 			DELIMITER,
-			REGEX(`In {{bold}}{{orange}}\[ReportAfterSuite\]{{/}} {{bold}}{{orange}}My Report{{/}} \(Node Runtime: 3[\d\.]*s\)`),
+			"In {{bold}}{{orange}}[ReportAfterSuite]{{/}} {{bold}}{{orange}}My Report{{/}} (Node Runtime: 3s)",
 			"  {{gray}}"+cl1.String()+"{{/}}",
 			DELIMITER,
 			""),
@@ -1440,11 +1421,11 @@ var _ = Describe("DefaultReporter", func() {
 			C(),
 			PR(types.NodeTypeIt, CurrentNodeText("My Spec"), "My Spec", []string{"Container A", "Container B", "Container C"}, CurrentStepText("Reticulating Splines")),
 			DELIMITER,
-			REGEX(`{{/}}Container A {{gray}}Container B {{/}}Container C{{/}} {{bold}}{{orange}}My Spec{{/}} \(Spec Runtime: 5[\d\.]*s\)`),
+			"{{/}}Container A {{gray}}Container B {{/}}Container C{{/}} {{bold}}{{orange}}My Spec{{/}} (Spec Runtime: 5s)",
 			"  {{gray}}"+cl0.String()+"{{/}}",
-			REGEX(`  In {{bold}}{{orange}}\[It\]{{/}} \(Node Runtime: 3[\d\.]*s\)`),
+			"  In {{bold}}{{orange}}[It]{{/}} (Node Runtime: 3s)",
 			"    {{gray}}"+cl1.String()+"{{/}}",
-			REGEX(`    At {{bold}}{{orange}}\[By Step\] Reticulating Splines{{/}} \(Step Runtime: 1[\d\.]*s\)`),
+			"    At {{bold}}{{orange}}[By Step] Reticulating Splines{{/}} (Step Runtime: 1s)",
 			"      {{gray}}"+cl2.String()+"{{/}}",
 			DELIMITER,
 			""),
@@ -1457,9 +1438,9 @@ var _ = Describe("DefaultReporter", func() {
 				GW("gw-1\ngw-2\ngw-3\ngw-4\ngw-5\ngw-6\ngw-7\ngw-8\ngw-9\ngw-10\ngw-11\ngw-12\n"),
 			),
 			DELIMITER,
-			REGEX(`{{bold}}{{orange}}My Spec{{/}} \(Spec Runtime: 5[\d\.]*s\)`),
+			"{{bold}}{{orange}}My Spec{{/}} (Spec Runtime: 5s)",
 			"  {{gray}}"+cl0.String()+"{{/}}",
-			REGEX(`  In {{bold}}{{orange}}\[It\]{{/}} \(Node Runtime: 3[\d\.]*s\)`),
+			"  In {{bold}}{{orange}}[It]{{/}} (Node Runtime: 3s)",
 			"    {{gray}}"+cl1.String()+"{{/}}",
 			"",
 			"  {{gray}}Begin Captured GinkgoWriter Output >>{{/}}",
@@ -1485,9 +1466,9 @@ var _ = Describe("DefaultReporter", func() {
 				GW("gw-1\ngw-2\ngw-3\ngw-4\ngw-5\ngw-6\ngw-7\ngw-8\ngw-9\n"),
 			),
 			DELIMITER,
-			REGEX(`{{bold}}{{orange}}My Spec{{/}} \(Spec Runtime: 5[\d\.]*s\)`),
+			"{{bold}}{{orange}}My Spec{{/}} (Spec Runtime: 5s)",
 			"  {{gray}}"+cl0.String()+"{{/}}",
-			REGEX(`  In {{bold}}{{orange}}\[It\]{{/}} \(Node Runtime: 3[\d\.]*s\)`),
+			"  In {{bold}}{{orange}}[It]{{/}} (Node Runtime: 3s)",
 			"    {{gray}}"+cl1.String()+"{{/}}",
 			"",
 			"  {{gray}}Begin Captured GinkgoWriter Output >>{{/}}",
@@ -1511,9 +1492,9 @@ var _ = Describe("DefaultReporter", func() {
 				GW("gw-1\n"),
 			),
 			DELIMITER,
-			REGEX(`{{bold}}{{orange}}My Spec{{/}} \(Spec Runtime: 5[\d\.]*s\)`),
+			"{{bold}}{{orange}}My Spec{{/}} (Spec Runtime: 5s)",
 			"  {{gray}}"+cl0.String()+"{{/}}",
-			REGEX(`  In {{bold}}{{orange}}\[It\]{{/}} \(Node Runtime: 3[\d\.]*s\)`),
+			"  In {{bold}}{{orange}}[It]{{/}} (Node Runtime: 3s)",
 			"    {{gray}}"+cl1.String()+"{{/}}",
 			DELIMITER,
 			""),
@@ -1526,9 +1507,9 @@ var _ = Describe("DefaultReporter", func() {
 			),
 			DELIMITER,
 			"{{coral}}Progress Report for Ginkgo Process #{{bold}}1{{/}}",
-			REGEX(`{{bold}}{{orange}}My Spec{{/}} \(Spec Runtime: 5[\d\.]*s\)`),
+			"{{bold}}{{orange}}My Spec{{/}} (Spec Runtime: 5s)",
 			"  {{gray}}"+cl0.String()+"{{/}}",
-			REGEX(`  In {{bold}}{{orange}}\[It\]{{/}} \(Node Runtime: 3[\d\.]*s\)`),
+			"  In {{bold}}{{orange}}[It]{{/}} (Node Runtime: 3s)",
 			"    {{gray}}"+cl1.String()+"{{/}}",
 			"",
 			"  {{gray}}Begin Captured GinkgoWriter Output >>{{/}}",
@@ -1549,9 +1530,9 @@ var _ = Describe("DefaultReporter", func() {
 			),
 
 			DELIMITER,
-			REGEX(`{{bold}}{{orange}}My Spec{{/}} \(Spec Runtime: 5[\d\.]*s\)`),
+			"{{bold}}{{orange}}My Spec{{/}} (Spec Runtime: 5s)",
 			"  {{gray}}"+cl0.String()+"{{/}}",
-			REGEX(`  In {{bold}}{{orange}}\[It\]{{/}} \(Node Runtime: 3[\d\.]*s\)`),
+			"  In {{bold}}{{orange}}[It]{{/}} (Node Runtime: 3s)",
 			"    {{gray}}"+cl1.String()+"{{/}}",
 			"",
 			"  {{bold}}{{underline}}Spec Goroutine{{/}}",
@@ -1577,9 +1558,9 @@ var _ = Describe("DefaultReporter", func() {
 			),
 
 			DELIMITER,
-			REGEX(`{{bold}}{{orange}}My Spec{{/}} \(Spec Runtime: 5[\d\.]*s\)`),
+			"{{bold}}{{orange}}My Spec{{/}} (Spec Runtime: 5s)",
 			"  {{gray}}"+cl0.String()+"{{/}}",
-			REGEX(`  In {{bold}}{{orange}}\[It\]{{/}} \(Node Runtime: 3[\d\.]*s\)`),
+			"  In {{bold}}{{orange}}[It]{{/}} (Node Runtime: 3s)",
 			"    {{gray}}"+cl1.String()+"{{/}}",
 			"",
 			"  {{bold}}{{underline}}Goroutines of Interest{{/}}",
@@ -1605,9 +1586,9 @@ var _ = Describe("DefaultReporter", func() {
 			),
 
 			DELIMITER,
-			REGEX(`{{bold}}{{orange}}My Spec{{/}} \(Spec Runtime: 5[\d\.]*s\)`),
+			"{{bold}}{{orange}}My Spec{{/}} (Spec Runtime: 5s)",
 			"  {{gray}}"+cl0.String()+"{{/}}",
-			REGEX(`  In {{bold}}{{orange}}\[It\]{{/}} \(Node Runtime: 3[\d\.]*s\)`),
+			"  In {{bold}}{{orange}}[It]{{/}} (Node Runtime: 3s)",
 			"    {{gray}}"+cl1.String()+"{{/}}",
 			"",
 			"  {{gray}}{{bold}}{{underline}}Other Goroutines{{/}}",
@@ -1641,9 +1622,9 @@ var _ = Describe("DefaultReporter", func() {
 			),
 
 			DELIMITER,
-			REGEX(`{{bold}}{{orange}}My Spec{{/}} \(Spec Runtime: 5[\d\.]*s\)`),
+			"{{bold}}{{orange}}My Spec{{/}} (Spec Runtime: 5s)",
 			"  {{gray}}"+cl0.String()+"{{/}}",
-			REGEX(`  In {{bold}}{{orange}}\[It\]{{/}} \(Node Runtime: 3[\d\.]*s\)`),
+			"  In {{bold}}{{orange}}[It]{{/}} (Node Runtime: 3s)",
 			"    {{gray}}"+cl1.String()+"{{/}}",
 			"",
 			"  {{bold}}{{underline}}Spec Goroutine{{/}}",
@@ -1681,9 +1662,9 @@ var _ = Describe("DefaultReporter", func() {
 			),
 
 			DELIMITER,
-			REGEX(`{{bold}}{{orange}}My Spec{{/}} \(Spec Runtime: 5[\d\.]*s\)`),
+			"{{bold}}{{orange}}My Spec{{/}} (Spec Runtime: 5s)",
 			"  {{gray}}"+cl0.String()+"{{/}}",
-			REGEX(`  In {{bold}}{{orange}}\[It\]{{/}} \(Node Runtime: 3[\d\.]*s\)`),
+			"  In {{bold}}{{orange}}[It]{{/}} (Node Runtime: 3s)",
 			"    {{gray}}"+cl1.String()+"{{/}}",
 			"",
 			"  {{bold}}{{underline}}Spec Goroutine{{/}}",
@@ -1711,9 +1692,9 @@ var _ = Describe("DefaultReporter", func() {
 
 			DELIMITER,
 			"{{coral}}Progress Report for Ginkgo Process #{{bold}}3{{/}}",
-			REGEX(`{{bold}}{{orange}}My Spec{{/}} \(Spec Runtime: 5[\d\.]*s\)`),
+			"{{bold}}{{orange}}My Spec{{/}} (Spec Runtime: 5s)",
 			"  {{gray}}"+cl0.String()+"{{/}}",
-			REGEX(`  In {{bold}}{{orange}}\[It\]{{/}} \(Node Runtime: 3[\d\.]*s\)`),
+			"  In {{bold}}{{orange}}[It]{{/}} (Node Runtime: 3s)",
 			"    {{gray}}"+cl1.String()+"{{/}}",
 			DELIMITER,
 			""),

@@ -53,6 +53,8 @@ func NewProgressReport(isRunningInParallel bool, report types.SpecReport, curren
 		ParallelProcess:   report.ParallelProcess,
 		RunningInParallel: isRunningInParallel,
 
+		Time: time.Now(),
+
 		ContainerHierarchyTexts: report.ContainerHierarchyTexts,
 		LeafNodeText:            report.LeafNodeText,
 		LeafNodeLocation:        report.LeafNodeLocation,

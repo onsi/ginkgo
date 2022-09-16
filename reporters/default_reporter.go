@@ -329,13 +329,12 @@ func (r *DefaultReporter) EmitProgressReport(report types.ProgressReport) {
 }
 
 func (r *DefaultReporter) emitProgressReport(indent uint, emitGinkgoWriterOutput bool, report types.ProgressReport) {
-	now := time.Now()
 	if report.LeafNodeText != "" {
 		if len(report.ContainerHierarchyTexts) > 0 {
 			r.emit(r.fi(indent, r.cycleJoin(report.ContainerHierarchyTexts, " ")))
 			r.emit(" ")
 		}
-		r.emit(r.f("{{bold}}{{orange}}%s{{/}} (Spec Runtime: %s)\n", report.LeafNodeText, now.Sub(report.SpecStartTime).Round(time.Millisecond)))
+		r.emit(r.f("{{bold}}{{orange}}%s{{/}} (Spec Runtime: %s)\n", report.LeafNodeText, report.Time.Sub(report.SpecStartTime).Round(time.Millisecond)))
 		r.emit(r.fi(indent+1, "{{gray}}%s{{/}}\n", report.LeafNodeLocation))
 		indent += 1
 	}
@@ -345,12 +344,12 @@ func (r *DefaultReporter) emitProgressReport(indent uint, emitGinkgoWriterOutput
 			r.emit(r.f(" {{bold}}{{orange}}%s{{/}}", report.CurrentNodeText))
 		}
 
-		r.emit(r.f(" (Node Runtime: %s)\n", now.Sub(report.CurrentNodeStartTime).Round(time.Millisecond)))
+		r.emit(r.f(" (Node Runtime: %s)\n", report.Time.Sub(report.CurrentNodeStartTime).Round(time.Millisecond)))
 		r.emit(r.fi(indent+1, "{{gray}}%s{{/}}\n", report.CurrentNodeLocation))
 		indent += 1
 	}
 	if report.CurrentStepText != "" {
-		r.emit(r.fi(indent, "At {{bold}}{{orange}}[By Step] %s{{/}} (Step Runtime: %s)\n", report.CurrentStepText, now.Sub(report.CurrentStepStartTime).Round(time.Millisecond)))
+		r.emit(r.fi(indent, "At {{bold}}{{orange}}[By Step] %s{{/}} (Step Runtime: %s)\n", report.CurrentStepText, report.Time.Sub(report.CurrentStepStartTime).Round(time.Millisecond)))
 		r.emit(r.fi(indent+1, "{{gray}}%s{{/}}\n", report.CurrentStepLocation))
 		indent += 1
 	}

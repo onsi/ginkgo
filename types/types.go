@@ -484,6 +484,8 @@ type ProgressReport struct {
 	ParallelProcess   int
 	RunningInParallel bool
 
+	Time time.Time
+
 	ContainerHierarchyTexts []string
 	LeafNodeText            string
 	LeafNodeLocation        CodeLocation
