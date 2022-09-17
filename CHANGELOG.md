@@ -1,4 +1,4 @@
-## 2.2.0 - (on Master - pending imminent release)
+## 2.2.0
 
 ### Generate real-time Progress Reports [f91377c]
 
@@ -7,6 +7,8 @@ Ginkgo can now generate Progress Reports to point users at the current running l
 These Progress Reports allow users to debug stuck or slow tests without exiting the Ginkgo process.  A Progress Report can be generated at any time by sending Ginkgo a `SIGINFO` (`^T` on MacOS/BSD) or `SIGUSR1`.
 
 In addition, the user can specify `--poll-progress-after` and `--poll-progress-interval` to have Ginkgo start periodically emitting progress reports if a given node takes too long.  These can be overriden/set on a per-node basis with the `PollProgressAfter` and `PollProgressInterval` decorators.
+
+Progress Reports are emitted to stdout, and also stored in the machine-redable report formats that Ginkgo supports.
 
 Ginkgo also uses this progress reporting infrastructure under the hood when handling timeouts and interrupts.  This yields much more focused, useful, and informative stack traces than previously.
 
