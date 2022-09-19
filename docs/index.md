@@ -1088,7 +1088,7 @@ var _ = AfterEach(func() {
 })
 ```
 
-Ginkgo will run our `BeforeSuite` closure at the beginning of the [run phase](Mental Model: How Ginkgo Traverses the Spec Hierarchy) - i.e. after the spec tree has been constructed but before any specs have run.  This closure will instantiate a new `*db.Runner` - this is hypothetical code that knows how to spin up an instance of a database - and ask the runner to `Start()` a database.
+Ginkgo will run our `BeforeSuite` closure at the beginning of the [run phase](#mental-model-how-ginkgo-traverses-the-spec-hierarchy) - i.e. after the spec tree has been constructed but before any specs have run.  This closure will instantiate a new `*db.Runner` - this is hypothetical code that knows how to spin up an instance of a database - and ask the runner to `Start()` a database.
 
 It will then instantiate a `*db.Client` and connect it to the database.  Since `dbRunner` and `dbClient` are closure variables defined at the top-level all specs in our suite will have access to them and can trust that they have been correctly initialized.
 
