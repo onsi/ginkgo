@@ -1131,7 +1131,7 @@ So far we've focused on how Ginkgo specs are constructed using nested nodes and 
 
 You typically use a matcher library, like [Gomega](https://github.com/onsi/gomega) to make assertions in your spec.  When a Gomega assertion fails, Gomega generates a failure message and passes it to Ginkgo to signal that the spec has failed.  It does this via Ginkgo's global `Fail` function.  Of course, you're allowed to call this function directly yourself:
 
-```
+```go
 It("can read books", func() {
   if book.Title == "Les Miserables" && user.Age <= 3 {
     Fail("User is too young for this book")
@@ -4109,7 +4109,7 @@ Describe("Repaginating Books", func() {
 
 Now when this spec runs Ginkgo will print out a report detailing the experiment:
 
-```
+```bash
 Will run 1 of 1 specs
 ------------------------------
 • [2.029 seconds]
