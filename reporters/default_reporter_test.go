@@ -155,6 +155,7 @@ func C(flags ...ConfigFlags) types.ReporterConfig {
 
 type CurrentNodeText string
 type CurrentStepText string
+type LeafNodeText string
 
 func PR(options ...interface{}) types.ProgressReport {
 	now := time.Now()
@@ -177,8 +178,8 @@ func PR(options ...interface{}) types.ProgressReport {
 			report.ContainerHierarchyTexts = option
 		case GW:
 			report.CapturedGinkgoWriterOutput = string(option)
-		case string:
-			report.LeafNodeText = option
+		case LeafNodeText:
+			report.LeafNodeText = string(option)
 		case types.NodeType:
 			report.CurrentNodeType = option
 		case CurrentNodeText:
@@ -193,6 +194,8 @@ func PR(options ...interface{}) types.ProgressReport {
 			report.ParallelProcess = option
 		case bool:
 			report.RunningInParallel = option
+		case string:
+			report.Message = option
 		}
 	}
 	return report
@@ -1114,12 +1117,49 @@ var _ = Describe("DefaultReporter", func() {
 			"  WITH DETAILS{{/}}",
 			"  {{orange}}In {{bold}}[JustBeforeEach]{{/}}{{orange}} at: {{bold}}"+cl4.String()+"{{/}}",
 			"",
+			"  {{orange}}Progress Report{{/}}",
 			"  In {{bold}}{{orange}}[BeforeSuite]{{/}} (Node Runtime: 3s)",
 			"    {{gray}}cl1.go:37{{/}}",
 			DELIMITER,
 			"",
 		),
 
+		Entry("when a test times out",
+			C(),
+			S(CTS("Describe A", "Context B"), "The Test", CLS(cl0, cl1), cl2,
+				types.SpecStateTimeout, 2,
+				GW("GW-OUTPUT\nIS EMITTED"), STD("STD-OUTPUT\nIS EMITTED"),
+				F("FAILURE MESSAGE\nWITH DETAILS", types.FailureNodeInContainer, FailureNodeLocation(cl3), types.NodeTypeJustBeforeEach, 1, cl4, PR(types.NodeTypeBeforeSuite, GW("GW-OUTPUT\nIS EMITTED"))),
+			),
+			DELIMITER,
+			"{{orange}}"+DENOTER+" [TIMEOUT] [1.000 seconds]{{/}}",
+			"Describe A",
+			"{{gray}}"+cl0.String()+"{{/}}",
+			"  {{orange}}{{bold}}Context B [JustBeforeEach]{{/}}",
+			"  {{gray}}"+cl3.String()+"{{/}}",
+			"    The Test",
+			"    {{gray}}"+cl2.String()+"{{/}}",
+			"",
+			"  {{gray}}Begin Captured StdOut/StdErr Output >>{{/}}",
+			"    STD-OUTPUT",
+			"    IS EMITTED",
+			"  {{gray}}<< End Captured StdOut/StdErr Output{{/}}",
+			"",
+			"  {{gray}}Begin Captured GinkgoWriter Output >>{{/}}",
+			"    GW-OUTPUT",
+			"    IS EMITTED",
+			"  {{gray}}<< End Captured GinkgoWriter Output{{/}}",
+			"",
+			"  {{orange}}FAILURE MESSAGE",
+			"  WITH DETAILS{{/}}",
+			"  {{orange}}In {{bold}}[JustBeforeEach]{{/}}{{orange}} at: {{bold}}"+cl4.String()+"{{/}}",
+			"",
+			"  {{orange}}Progress Report{{/}}",
+			"  In {{bold}}{{orange}}[BeforeSuite]{{/}} (Node Runtime: 3s)",
+			"    {{gray}}cl1.go:37{{/}}",
+			DELIMITER,
+			"",
+		),
 		Entry("when a test is aborted",
 			C(),
 			S(CTS("Describe A", "Context B"), "The Test", CLS(cl0, cl1), cl2,
@@ -1241,7 +1281,7 @@ var _ = Describe("DefaultReporter", func() {
 			C(),
 			types.Report{
 				SuiteSucceeded: false,
-				PreRunStats:    types.PreRunStats{TotalSpecs: 13, SpecsThatWillRun: 9},
+				PreRunStats:    types.PreRunStats{TotalSpecs: 14, SpecsThatWillRun: 10},
 				RunTime:        time.Minute,
 				SpecReports: types.SpecReports{
 					S(types.NodeTypeBeforeSuite),
@@ -1265,12 +1305,16 @@ var _ = Describe("DefaultReporter", func() {
 						types.SpecStateAborted, 2,
 						F("FAILURE MESSAGE\nWITH DETAILS", types.FailureNodeIsLeafNode, FailureNodeLocation(cl0), types.NodeTypeIt, cl1),
 					),
+					S("The Test", cl0,
+						types.SpecStateTimeout, 2,
+						F("FAILURE MESSAGE\nWITH DETAILS", types.FailureNodeIsLeafNode, FailureNodeLocation(cl0), types.NodeTypeIt, cl1),
+					),
 					S(types.NodeTypeAfterSuite),
 				},
 			},
 			"",
 			"",
-			"{{red}}{{bold}}Summarizing 4 Failures:{{/}}",
+			"{{red}}{{bold}}Summarizing 5 Failures:{{/}}",
 			"  {{red}}[FAIL]{{/}} {{/}}Describe A {{gray}}{{red}}{{bold}}Context B [JustBeforeEach]{{/}} {{/}}The Test{{/}} {{coral}}[cat, dog, fish, giraffe]{{/}}",
 			"  {{gray}}"+cl4.String()+"{{/}}",
 			"  {{magenta}}[PANICKED!]{{/}} {{/}}Describe A {{gray}}{{magenta}}{{bold}}[It] The Test{{/}}{{/}}",
@@ -1279,9 +1323,11 @@ var _ = Describe("DefaultReporter", func() {
 			"  {{gray}}"+cl1.String()+"{{/}}",
 			"  {{coral}}[ABORTED]{{/}} {{/}}{{coral}}{{bold}}[It] The Test{{/}}{{/}}",
 			"  {{gray}}"+cl1.String()+"{{/}}",
+			"  {{orange}}[TIMEOUT]{{/}} {{/}}{{orange}}{{bold}}[It] The Test{{/}}{{/}}",
+			"  {{gray}}"+cl1.String()+"{{/}}",
 			"",
-			"{{red}}{{bold}}Ran 9 of 13 Specs in 60.000 seconds{{/}}",
-			"{{red}}{{bold}}FAIL!{{/}} -- {{green}}{{bold}}5 Passed{{/}} | {{red}}{{bold}}4 Failed{{/}} | {{light-yellow}}{{bold}}2 Flaked{{/}} | {{yellow}}{{bold}}2 Pending{{/}} | {{cyan}}{{bold}}3 Skipped{{/}}",
+			"{{red}}{{bold}}Ran 10 of 14 Specs in 60.000 seconds{{/}}",
+			"{{red}}{{bold}}FAIL!{{/}} -- {{green}}{{bold}}5 Passed{{/}} | {{red}}{{bold}}5 Failed{{/}} | {{light-yellow}}{{bold}}2 Flaked{{/}} | {{yellow}}{{bold}}2 Pending{{/}} | {{cyan}}{{bold}}3 Skipped{{/}}",
 			"",
 		),
 		Entry("the suite fails with failed suite setups",
@@ -1365,15 +1411,16 @@ var _ = Describe("DefaultReporter", func() {
 		//just headers to start
 		Entry("With a suite node",
 			C(),
-			PR(types.NodeTypeBeforeSuite),
+			PR("A Message", types.NodeTypeBeforeSuite),
 			DELIMITER,
-			"In {{bold}}{{orange}}[BeforeSuite]{{/}} (Node Runtime: 3s)",
-			"  {{gray}}"+cl1.String()+"{{/}}",
+			"A Message",
+			"  In {{bold}}{{orange}}[BeforeSuite]{{/}} (Node Runtime: 3s)",
+			"    {{gray}}"+cl1.String()+"{{/}}",
 			DELIMITER,
 			""),
 		Entry("With a top-level spec",
 			C(),
-			PR(types.NodeTypeIt, CurrentNodeText("A Top-Level It"), "A Top-Level It"),
+			PR(types.NodeTypeIt, CurrentNodeText("A Top-Level It"), LeafNodeText("A Top-Level It")),
 			DELIMITER,
 			"{{bold}}{{orange}}A Top-Level It{{/}} (Spec Runtime: 5s)",
 			"  {{gray}}"+cl0.String()+"{{/}}",
@@ -1383,7 +1430,7 @@ var _ = Describe("DefaultReporter", func() {
 			""),
 		Entry("With a spec in containers",
 			C(),
-			PR(types.NodeTypeIt, CurrentNodeText("My Spec"), "My Spec", []string{"Container A", "Container B", "Container C"}),
+			PR(types.NodeTypeIt, CurrentNodeText("My Spec"), LeafNodeText("My Spec"), []string{"Container A", "Container B", "Container C"}),
 			DELIMITER,
 			"{{/}}Container A {{gray}}Container B {{/}}Container C{{/}} {{bold}}{{orange}}My Spec{{/}} (Spec Runtime: 5s)",
 			"  {{gray}}"+cl0.String()+"{{/}}",
@@ -1393,7 +1440,7 @@ var _ = Describe("DefaultReporter", func() {
 			""),
 		Entry("With no current node",
 			C(),
-			PR("My Spec", []string{"Container A", "Container B", "Container C"}),
+			PR(LeafNodeText("My Spec"), []string{"Container A", "Container B", "Container C"}),
 			DELIMITER,
 			"{{/}}Container A {{gray}}Container B {{/}}Container C{{/}} {{bold}}{{orange}}My Spec{{/}} (Spec Runtime: 5s)",
 			"  {{gray}}"+cl0.String()+"{{/}}",
@@ -1401,7 +1448,7 @@ var _ = Describe("DefaultReporter", func() {
 			""),
 		Entry("With a current node that is not an It",
 			C(),
-			PR("My Spec", []string{"Container A", "Container B", "Container C"}, types.NodeTypeBeforeEach),
+			PR(LeafNodeText("My Spec"), []string{"Container A", "Container B", "Container C"}, types.NodeTypeBeforeEach),
 			DELIMITER,
 			"{{/}}Container A {{gray}}Container B {{/}}Container C{{/}} {{bold}}{{orange}}My Spec{{/}} (Spec Runtime: 5s)",
 			"  {{gray}}"+cl0.String()+"{{/}}",
@@ -1419,7 +1466,7 @@ var _ = Describe("DefaultReporter", func() {
 			""),
 		Entry("With a current step",
 			C(),
-			PR(types.NodeTypeIt, CurrentNodeText("My Spec"), "My Spec", []string{"Container A", "Container B", "Container C"}, CurrentStepText("Reticulating Splines")),
+			PR(types.NodeTypeIt, CurrentNodeText("My Spec"), LeafNodeText("My Spec"), []string{"Container A", "Container B", "Container C"}, CurrentStepText("Reticulating Splines")),
 			DELIMITER,
 			"{{/}}Container A {{gray}}Container B {{/}}Container C{{/}} {{bold}}{{orange}}My Spec{{/}} (Spec Runtime: 5s)",
 			"  {{gray}}"+cl0.String()+"{{/}}",
@@ -1434,7 +1481,7 @@ var _ = Describe("DefaultReporter", func() {
 		Entry("when there is GinkgoWriter output and the spec is not running verbosely",
 			C(),
 			PR(
-				types.NodeTypeIt, CurrentNodeText("My Spec"), "My Spec",
+				types.NodeTypeIt, CurrentNodeText("My Spec"), LeafNodeText("My Spec"),
 				GW("gw-1\ngw-2\ngw-3\ngw-4\ngw-5\ngw-6\ngw-7\ngw-8\ngw-9\ngw-10\ngw-11\ngw-12\n"),
 			),
 			DELIMITER,
@@ -1462,7 +1509,7 @@ var _ = Describe("DefaultReporter", func() {
 		Entry("when there is fewer than 10 lines of GinkgoWriter output",
 			C(),
 			PR(
-				types.NodeTypeIt, CurrentNodeText("My Spec"), "My Spec",
+				types.NodeTypeIt, CurrentNodeText("My Spec"), LeafNodeText("My Spec"),
 				GW("gw-1\ngw-2\ngw-3\ngw-4\ngw-5\ngw-6\ngw-7\ngw-8\ngw-9\n"),
 			),
 			DELIMITER,
@@ -1488,7 +1535,7 @@ var _ = Describe("DefaultReporter", func() {
 		Entry("when running in verbose mode and not in parallel",
 			C(Verbose),
 			PR(
-				types.NodeTypeIt, CurrentNodeText("My Spec"), "My Spec",
+				types.NodeTypeIt, CurrentNodeText("My Spec"), LeafNodeText("My Spec"),
 				GW("gw-1\n"),
 			),
 			DELIMITER,
@@ -1502,7 +1549,7 @@ var _ = Describe("DefaultReporter", func() {
 		Entry("when running in verbose mode and in parallel",
 			C(),
 			PR(
-				true, types.NodeTypeIt, CurrentNodeText("My Spec"), "My Spec",
+				true, types.NodeTypeIt, CurrentNodeText("My Spec"), LeafNodeText("My Spec"),
 				GW("gw-1\n"),
 			),
 			DELIMITER,
@@ -1521,7 +1568,7 @@ var _ = Describe("DefaultReporter", func() {
 		Entry("with a spec goroutine",
 			C(),
 			PR(
-				types.NodeTypeIt, CurrentNodeText("My Spec"), "My Spec",
+				types.NodeTypeIt, CurrentNodeText("My Spec"), LeafNodeText("My Spec"),
 				G(true, "sleeping",
 					Fn("F1()", "fileA", 15),
 					Fn("F2()", "fileB", 11, true),
@@ -1549,7 +1596,7 @@ var _ = Describe("DefaultReporter", func() {
 		Entry("with highlighted goroutines",
 			C(),
 			PR(
-				types.NodeTypeIt, CurrentNodeText("My Spec"), "My Spec",
+				types.NodeTypeIt, CurrentNodeText("My Spec"), LeafNodeText("My Spec"),
 				G(false, "sleeping",
 					Fn("F1()", "fileA", 15),
 					Fn("F2()", "fileB", 11, true),
@@ -1577,7 +1624,7 @@ var _ = Describe("DefaultReporter", func() {
 		Entry("with other goroutines",
 			C(),
 			PR(
-				types.NodeTypeIt, CurrentNodeText("My Spec"), "My Spec",
+				types.NodeTypeIt, CurrentNodeText("My Spec"), LeafNodeText("My Spec"),
 				G(false, "sleeping",
 					Fn("F1()", "fileA", 15),
 					Fn("F2()", "fileB", 11),
@@ -1606,7 +1653,7 @@ var _ = Describe("DefaultReporter", func() {
 		Entry("when source code is found",
 			C(),
 			PR(
-				types.NodeTypeIt, CurrentNodeText("My Spec"), "My Spec",
+				types.NodeTypeIt, CurrentNodeText("My Spec"), LeafNodeText("My Spec"),
 				G(true, "sleeping",
 					Fn("F1()", "fileA", 15),
 					Fn(
@@ -1646,7 +1693,7 @@ var _ = Describe("DefaultReporter", func() {
 		Entry("correcting source code indentation",
 			C(),
 			PR(
-				types.NodeTypeIt, CurrentNodeText("My Spec"), "My Spec",
+				types.NodeTypeIt, CurrentNodeText("My Spec"), LeafNodeText("My Spec"),
 				G(true, "sleeping",
 					Fn("F1()", "fileA", 15),
 					Fn(
@@ -1686,16 +1733,18 @@ var _ = Describe("DefaultReporter", func() {
 		Entry("when running in parallel",
 			C(),
 			PR(
+				"A Message",
 				true, 3,
-				types.NodeTypeIt, CurrentNodeText("My Spec"), "My Spec",
+				types.NodeTypeIt, CurrentNodeText("My Spec"), LeafNodeText("My Spec"),
 			),
 
 			DELIMITER,
 			"{{coral}}Progress Report for Ginkgo Process #{{bold}}3{{/}}",
+			"A Message",
 			"{{bold}}{{orange}}My Spec{{/}} (Spec Runtime: 5s)",
-			"  {{gray}}"+cl0.String()+"{{/}}",
-			"  In {{bold}}{{orange}}[It]{{/}} (Node Runtime: 3s)",
-			"    {{gray}}"+cl1.String()+"{{/}}",
+			"    {{gray}}cl0.go:12{{/}}",
+			"    In {{bold}}{{orange}}[It]{{/}} (Node Runtime: 3s)",
+			"      {{gray}}cl1.go:37{{/}}",
 			DELIMITER,
 			""),
 	)

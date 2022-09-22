@@ -21,6 +21,7 @@ const GINKGO_VERSION = ginkgo.GINKGO_VERSION
 type GinkgoWriterInterface = ginkgo.GinkgoWriterInterface
 type GinkgoTestingT = ginkgo.GinkgoTestingT
 type GinkgoTInterface = ginkgo.GinkgoTInterface
+type SpecContext = ginkgo.SpecContext
 
 var GinkgoWriter = ginkgo.GinkgoWriter
 var GinkgoConfiguration = ginkgo.GinkgoConfiguration
