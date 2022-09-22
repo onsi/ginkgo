@@ -135,6 +135,10 @@ func generateTable(description string, args ...interface{}) {
 		return "Entry: " + strings.Join(out, ", ")
 	}
 
+	if len(args) == 1 {
+		exitIfErr(types.GinkgoErrors.MissingParametersForTableFunction(cl))
+	}
+
 	for i, arg := range args {
 		switch t := reflect.TypeOf(arg); {
 		case t == nil:
