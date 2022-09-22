@@ -8,27 +8,7 @@ import (
 	. "github.com/onsi/gomega"
 )
 
-func HaveHighlightedStackLine(cl types.CodeLocation) OmegaMatcher {
-	return ContainElement(WithTransform(func(fc types.FunctionCall) types.CodeLocation {
-		if fc.Highlight {
-			return types.CodeLocation{
-				FileName:   fc.Filename,
-				LineNumber: int(fc.Line),
-			}
-		}
-		return types.CodeLocation{}
-	}, Equal(cl)))
-}
-
 var _ = Describe("Progress Reporting", func() {
-	var cl types.CodeLocation
-
-	clLine := func(offset int) types.CodeLocation {
-		cl := cl
-		cl.LineNumber += offset
-		return cl
-	}
-
 	BeforeEach(func() {
 		conf.PollProgressAfter = 100 * time.Millisecond
 		conf.PollProgressInterval = 50 * time.Millisecond

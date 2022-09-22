@@ -33,7 +33,7 @@ var _ = Describe("Suite", func() {
 		writer = internal.NewWriter(io.Discard)
 		outputInterceptor = NewFakeOutputInterceptor()
 		client = nil
-		interruptHandler = interrupt_handler.NewInterruptHandler(0, client)
+		interruptHandler = interrupt_handler.NewInterruptHandler(client)
 		DeferCleanup(interruptHandler.Stop)
 		conf = types.SuiteConfig{
 			ParallelTotal:   1,
@@ -170,7 +170,7 @@ var _ = Describe("Suite", func() {
 						err := suite.PushNode(N(types.NodeTypeAfterSuite))
 						Ω(err).Should(HaveOccurred())
 
-						err = suite.PushNode(N(types.NodeTypeSynchronizedAfterSuite))
+						err = suite.PushNode(N(types.NodeTypeSynchronizedAfterSuite, func() {}, func() {}))
 						Ω(err).Should(HaveOccurred())
 					})
 				})
@@ -356,8 +356,8 @@ var _ = Describe("Suite", func() {
 				It("errors", func() {
 					var errors = make([]error, 3)
 					errors[0] = suite.PushNode(N(ntIt, "It", func() {
-						cleanupNode, _ := internal.NewCleanupNode(nil, types.NewCustomCodeLocation("outerCleanup"), func() {
-							innerCleanupNode, _ := internal.NewCleanupNode(nil, cl, func() {})
+						cleanupNode, _ := internal.NewCleanupNode(&types.DeprecationTracker{}, nil, types.NewCustomCodeLocation("outerCleanup"), func() {
+							innerCleanupNode, _ := internal.NewCleanupNode(&types.DeprecationTracker{}, nil, cl, func() {})
 							errors[2] = suite.PushNode(innerCleanupNode)
 						})
 						errors[1] = suite.PushNode(cleanupNode)

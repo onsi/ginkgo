@@ -1,9 +1,11 @@
 package internal_integration_test
+
 import (
 	"context"
 	"io"
 	"reflect"
 	"testing"
+	"time"
 
 	. "github.com/onsi/ginkgo/v2"
 	"github.com/onsi/ginkgo/v2/internal"
@@ -16,7 +18,9 @@ import (
 
 func TestSuiteTests(t *testing.T) {
 	RegisterFailHandler(Fail)
-	RunSpecs(t, "Suite Integration Tests")
+	suiteConfig, _ := GinkgoConfiguration()
+	suiteConfig.GracePeriod = time.Second
+	RunSpecs(t, "Suite Integration Tests", suiteConfig)
 }
 
 var conf types.SuiteConfig
@@ -52,13 +56,12 @@ var _ = BeforeEach(func() {
 	rt = NewRunTracker()
 	cl = types.NewCodeLocation(0)
 	interruptHandler = NewFakeInterruptHandler()
-	DeferCleanup(interruptHandler.Stop)
-
 	outputInterceptor = NewFakeOutputInterceptor()
 
 	conf.ParallelTotal = 1
 	conf.ParallelProcess = 1
 	conf.RandomSeed = 17
+	conf.GracePeriod = 30 * time.Second
 
 	server, client, exitChannels = nil, nil, nil
 })
@@ -133,4 +136,22 @@ func FixtureSkip(options ...interface{}) {
 
 	failer.Skip(message, location)
 	panic("panic to simulate how ginkgo's Skip works")
+}
+
+func HaveHighlightedStackLine(cl types.CodeLocation) OmegaMatcher {
+	return ContainElement(WithTransform(func(fc types.FunctionCall) types.CodeLocation {
+		if fc.Highlight {
+			return types.CodeLocation{
+				FileName:   fc.Filename,
+				LineNumber: int(fc.Line),
+			}
+		}
+		return types.CodeLocation{}
+	}, Equal(cl)))
+}
+
+func clLine(offset int) types.CodeLocation {
+	cl := cl
+	cl.LineNumber += offset
+	return cl
 }

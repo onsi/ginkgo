@@ -189,11 +189,46 @@ func (g ginkgoErrors) UnknownDecorator(cl CodeLocation, nodeType NodeType, decor
 	}
 }
 
+func (g ginkgoErrors) InvalidBodyTypeForContainer(t reflect.Type, cl CodeLocation, nodeType NodeType) error {
+	return GinkgoError{
+		Heading:      "Invalid Function",
+		Message:      formatter.F(`[%s] node must be passed {{bold}}func(){{/}} - i.e. functions that take nothing and return nothing.  You passed {{bold}}%s{{/}} instead.`, nodeType, t),
+		CodeLocation: cl,
+		DocLink:      "node-decorators-overview",
+	}
+}
+
 func (g ginkgoErrors) InvalidBodyType(t reflect.Type, cl CodeLocation, nodeType NodeType) error {
+	mustGet := "{{bold}}func(){{/}}, {{bold}}func(ctx SpecContext){{/}}, or {{bold}}func(ctx context.Context){{/}}"
+	if nodeType.Is(NodeTypeContainer) {
+		mustGet = "{{bold}}func(){{/}}"
+	}
 	return GinkgoError{
 		Heading: "Invalid Function",
-		Message: formatter.F(`[%s] node must be passed {{bold}}func(){{/}} - i.e. functions that take nothing and return nothing.
+		Message: formatter.F(`[%s] node must be passed `+mustGet+`.
 You passed {{bold}}%s{{/}} instead.`, nodeType, t),
+		CodeLocation: cl,
+		DocLink:      "node-decorators-overview",
+	}
+}
+
+func (g ginkgoErrors) InvalidBodyTypeForSynchronizedBeforeSuiteProc1(t reflect.Type, cl CodeLocation) error {
+	mustGet := "{{bold}}func() []byte{{/}}, {{bold}}func(ctx SpecContext) []byte{{/}}, or {{bold}}func(ctx context.Context) []byte{{/}}, {{bold}}func(){{/}}, {{bold}}func(ctx SpecContext){{/}}, or {{bold}}func(ctx context.Context){{/}}"
+	return GinkgoError{
+		Heading: "Invalid Function",
+		Message: formatter.F(`[SynchronizedBeforeSuite] node must be passed `+mustGet+` for its first function.
+You passed {{bold}}%s{{/}} instead.`, t),
+		CodeLocation: cl,
+		DocLink:      "node-decorators-overview",
+	}
+}
+
+func (g ginkgoErrors) InvalidBodyTypeForSynchronizedBeforeSuiteAllProcs(t reflect.Type, cl CodeLocation) error {
+	mustGet := "{{bold}}func(){{/}}, {{bold}}func(ctx SpecContext){{/}}, or {{bold}}func(ctx context.Context){{/}}, {{bold}}func([]byte){{/}}, {{bold}}func(ctx SpecContext, []byte){{/}}, or {{bold}}func(ctx context.Context, []byte){{/}}"
+	return GinkgoError{
+		Heading: "Invalid Function",
+		Message: formatter.F(`[SynchronizedBeforeSuite] node must be passed `+mustGet+` for its second function.
+You passed {{bold}}%s{{/}} instead.`, t),
 		CodeLocation: cl,
 		DocLink:      "node-decorators-overview",
 	}
@@ -202,7 +237,7 @@ You passed {{bold}}%s{{/}} instead.`, nodeType, t),
 func (g ginkgoErrors) MultipleBodyFunctions(cl CodeLocation, nodeType NodeType) error {
 	return GinkgoError{
 		Heading:      "Multiple Functions",
-		Message:      formatter.F(`[%s] node must be passed a single {{bold}}func(){{/}} - but more than one was passed in.`, nodeType),
+		Message:      formatter.F(`[%s] node must be passed a single function - but more than one was passed in.`, nodeType),
 		CodeLocation: cl,
 		DocLink:      "node-decorators-overview",
 	}
@@ -211,9 +246,27 @@ func (g ginkgoErrors) MultipleBodyFunctions(cl CodeLocation, nodeType NodeType) 
 func (g ginkgoErrors) MissingBodyFunction(cl CodeLocation, nodeType NodeType) error {
 	return GinkgoError{
 		Heading:      "Missing Functions",
-		Message:      formatter.F(`[%s] node must be passed a single {{bold}}func(){{/}} - but none was passed in.`, nodeType),
+		Message:      formatter.F(`[%s] node must be passed a single function - but none was passed in.`, nodeType),
 		CodeLocation: cl,
 		DocLink:      "node-decorators-overview",
+	}
+}
+
+func (g ginkgoErrors) InvalidTimeoutOrGracePeriodForNonContextNode(cl CodeLocation, nodeType NodeType) error {
+	return GinkgoError{
+		Heading:      "Invalid NodeTimeout SpecTimeout, or GracePeriod",
+		Message:      formatter.F(`[%s] was passed NodeTimeout, SpecTimeout, or GracePeriod but does not have a callback that accepts a {{bold}}SpecContext{{/}} or {{bold}}context.Context{{/}}.  You must accept a context to enable timeouts and grace periods`, nodeType),
+		CodeLocation: cl,
+		DocLink:      "spec-timeouts",
+	}
+}
+
+func (g ginkgoErrors) InvalidTimeoutOrGracePeriodForNonContextCleanupNode(cl CodeLocation) error {
+	return GinkgoError{
+		Heading:      "Invalid NodeTimeout SpecTimeout, or GracePeriod",
+		Message:      formatter.F(`[DeferCleanup] was passed NodeTimeout or GracePeriod but does not have a callback that accepts a {{bold}}SpecContext{{/}} or {{bold}}context.Context{{/}}.  You must accept a context to enable timeouts and grace periods`),
+		CodeLocation: cl,
+		DocLink:      "spec-timeouts",
 	}
 }
 
@@ -504,6 +557,13 @@ func (g ginkgoErrors) DryRunInParallelConfiguration() error {
 	return GinkgoError{
 		Heading: "Ginkgo only performs -dryRun in serial mode.",
 		Message: "Please try running ginkgo -dryRun again, but without -p or -procs to ensure the suite is running in series.",
+	}
+}
+
+func (g ginkgoErrors) GracePeriodCannotBeZero() error {
+	return GinkgoError{
+		Heading: "Ginkgo requires a positive --grace-period.",
+		Message: "Please set --grace-period to a positive duration.  The default is 30s.",
 	}
 }
 

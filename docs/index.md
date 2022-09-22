@@ -1229,6 +1229,10 @@ We haven't discussed [Report Entries](#attaching-data-to-reports) yet but we'll 
 
 `By` doesn't affect the structure of your specs - it's simply syntactic sugar to help you document long and complex specs.  Ginkgo has additional mechanisms to break specs up into more granular subunits with guaranteed ordering - we'll discuss [Ordered containers](#ordered-containers) in detail later.
 
+### Spec Timeouts
+
+TODO
+
 ### Table Specs
 
 We'll round out this chapter on [Writing Specs](#writing-specs) with one last topic.  Ginkgo provides an expressive DSL for writing table driven specs.  This DSL is a simple wrapper around concepts you've already met - container nodes like `Describe` and subject nodes like `It`.
@@ -2764,8 +2768,6 @@ ReportAfterEach(func(report SpecReport) {
 
 
 In addition, `ReportAfterEach` closures are called after a spec completes.  i.e. _after_ all `AfterEach` closures have run.  This gives them access to the complete final state of the spec.  Note that if a failure occurs in a `ReportAfterEach` your the spec will be marked as failed.  Subsequent `ReportAfterEach` closures will see the failed state, but not the closure in which the failure occurred.
-
-Also, `ReportAfterEach` closures **cannot** be interrupted.  This is to ensure the integrity of generated reports - so be careful what kind of code you put in there.  If you're making network requests make sure to wrap them in a timeout!
 
 `ReportAfterEach` is useful if you need to stream or emit up-to-date information about the suite as it runs. Ginkgo also provides `ReportBeforeEach` which is called before the test runs and receives a preliminary `types.SpecReport` - the state of this report will indicate whether the test will be skipped or is marked pending.
 

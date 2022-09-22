@@ -174,6 +174,8 @@ func (r *DefaultReporter) DidRun(report types.SpecReport) {
 		}
 	case types.SpecStateFailed:
 		highlightColor, header = "{{red}}", fmt.Sprintf("%s [FAILED]", denoter)
+	case types.SpecStateTimeout:
+		highlightColor, header = "{{orange}}", fmt.Sprintf("%s [TIMEOUT]", denoter)
 	case types.SpecStatePanicked:
 		highlightColor, header = "{{magenta}}", fmt.Sprintf("%s! [PANICKED]", denoter)
 	case types.SpecStateInterrupted:
@@ -246,6 +248,7 @@ func (r *DefaultReporter) DidRun(report types.SpecReport) {
 
 		if !report.Failure.ProgressReport.IsZero() {
 			r.emitBlock("\n")
+			r.emitBlock(r.fi(1, highlightColor+"Progress Report{{/}}"))
 			r.emitProgressReport(1, false, report.Failure.ProgressReport)
 		}
 	}
@@ -269,6 +272,8 @@ func (r *DefaultReporter) SuiteDidEnd(report types.Report) {
 				highlightColor, heading = "{{magenta}}", "[PANICKED!]"
 			case types.SpecStateAborted:
 				highlightColor, heading = "{{coral}}", "[ABORTED]"
+			case types.SpecStateTimeout:
+				highlightColor, heading = "{{orange}}", "[TIMEOUT]"
 			case types.SpecStateInterrupted:
 				highlightColor, heading = "{{orange}}", "[INTERRUPTED]"
 			}
@@ -329,6 +334,10 @@ func (r *DefaultReporter) EmitProgressReport(report types.ProgressReport) {
 }
 
 func (r *DefaultReporter) emitProgressReport(indent uint, emitGinkgoWriterOutput bool, report types.ProgressReport) {
+	if report.Message != "" {
+		r.emitBlock(r.fi(indent, report.Message+"\n"))
+		indent += 1
+	}
 	if report.LeafNodeText != "" {
 		if len(report.ContainerHierarchyTexts) > 0 {
 			r.emit(r.fi(indent, r.cycleJoin(report.ContainerHierarchyTexts, " ")))

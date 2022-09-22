@@ -448,6 +448,7 @@ const (
 	SpecStateAborted
 	SpecStatePanicked
 	SpecStateInterrupted
+	SpecStateTimeout
 )
 
 var ssEnumSupport = NewEnumSupport(map[uint]string{
@@ -459,6 +460,7 @@ var ssEnumSupport = NewEnumSupport(map[uint]string{
 	uint(SpecStateAborted):     "aborted",
 	uint(SpecStatePanicked):    "panicked",
 	uint(SpecStateInterrupted): "interrupted",
+	uint(SpecStateTimeout):     "timeout",
 })
 
 func (ss SpecState) String() string {
@@ -473,7 +475,7 @@ func (ss SpecState) MarshalJSON() ([]byte, error) {
 	return ssEnumSupport.MarshJSON(uint(ss))
 }
 
-var SpecStateFailureStates = SpecStateFailed | SpecStateAborted | SpecStatePanicked | SpecStateInterrupted
+var SpecStateFailureStates = SpecStateFailed | SpecStateTimeout | SpecStateAborted | SpecStatePanicked | SpecStateInterrupted
 
 func (ss SpecState) Is(states SpecState) bool {
 	return ss&states != 0
@@ -481,6 +483,7 @@ func (ss SpecState) Is(states SpecState) bool {
 
 // ProgressReport captures the progress of the current spec.  It is, effectively, a structured Ginkgo-aware stack trace
 type ProgressReport struct {
+	Message           string
 	ParallelProcess   int
 	RunningInParallel bool
 
@@ -611,6 +614,8 @@ const (
 
 var NodeTypesForContainerAndIt = NodeTypeContainer | NodeTypeIt
 var NodeTypesForSuiteLevelNodes = NodeTypeBeforeSuite | NodeTypeSynchronizedBeforeSuite | NodeTypeAfterSuite | NodeTypeSynchronizedAfterSuite | NodeTypeReportAfterSuite | NodeTypeCleanupAfterSuite
+var NodeTypesAllowedDuringCleanupInterrupt = NodeTypeAfterEach | NodeTypeJustAfterEach | NodeTypeAfterAll | NodeTypeAfterSuite | NodeTypeSynchronizedAfterSuite | NodeTypeCleanupAfterEach | NodeTypeCleanupAfterAll | NodeTypeCleanupAfterSuite
+var NodeTypesAllowedDuringReportInterrupt = NodeTypeReportBeforeEach | NodeTypeReportAfterEach | NodeTypeReportAfterSuite
 
 var ntEnumSupport = NewEnumSupport(map[uint]string{
 	uint(NodeTypeInvalid):                 "INVALID NODE TYPE",
@@ -629,8 +634,8 @@ var ntEnumSupport = NewEnumSupport(map[uint]string{
 	uint(NodeTypeReportBeforeEach):        "ReportBeforeEach",
 	uint(NodeTypeReportAfterEach):         "ReportAfterEach",
 	uint(NodeTypeReportAfterSuite):        "ReportAfterSuite",
-	uint(NodeTypeCleanupInvalid):          "INVALID CLEANUP NODE",
-	uint(NodeTypeCleanupAfterEach):        "DeferCleanup",
+	uint(NodeTypeCleanupInvalid):          "DeferCleanup",
+	uint(NodeTypeCleanupAfterEach):        "DeferCleanup (Each)",
 	uint(NodeTypeCleanupAfterAll):         "DeferCleanup (All)",
 	uint(NodeTypeCleanupAfterSuite):       "DeferCleanup (Suite)",
 })

@@ -95,6 +95,11 @@ Once a node has been running for longer than PollProgressAfter Ginkgo will emit 
 */
 type PollProgressInterval = internal.PollProgressInterval
 
+//TODO DOCUMENT
+type NodeTimeout = internal.NodeTimeout
+type SpecTimeout = internal.SpecTimeout
+type GracePeriod = internal.GracePeriod
+
 /*
 SuppressProgressReporting is a decorator that allows you to disable progress reporting of a particular node.  This is useful if `ginkgo -v -progress` is generating too much noise; particularly
 if you have a `ReportAfterEach` node that is running for every skipped spec and is generating lots of progress reports.

@@ -77,7 +77,7 @@ func exitIfErrors(errors []error) {
 	}
 }
 
-//The interface implemented by GinkgoWriter
+// The interface implemented by GinkgoWriter
 type GinkgoWriterInterface interface {
 	io.Writer
 
@@ -88,6 +88,9 @@ type GinkgoWriterInterface interface {
 	TeeTo(writer io.Writer)
 	ClearTeeWriters()
 }
+
+// TODO: DOCUMENT SpecContext
+type SpecContext = internal.SpecContext
 
 /*
 GinkgoWriter implements a GinkgoWriterInterface and io.Writer
@@ -103,7 +106,7 @@ You can learn more at https://onsi.github.io/ginkgo/#logging-output
 */
 var GinkgoWriter GinkgoWriterInterface
 
-//The interface by which Ginkgo receives *testing.T
+// The interface by which Ginkgo receives *testing.T
 type GinkgoTestingT interface {
 	Fail()
 }
@@ -168,7 +171,7 @@ func PauseOutputInterception() {
 	outputInterceptor.PauseIntercepting()
 }
 
-//ResumeOutputInterception() - see docs for PauseOutputInterception()
+// ResumeOutputInterception() - see docs for PauseOutputInterception()
 func ResumeOutputInterception() {
 	if outputInterceptor == nil {
 		return
@@ -277,7 +280,7 @@ func RunSpecs(t GinkgoTestingT, description string, args ...interface{}) bool {
 	suitePath, err = filepath.Abs(suitePath)
 	exitIfErr(err)
 
-	passed, hasFocusedTests := global.Suite.Run(description, suiteLabels, suitePath, global.Failer, reporter, writer, outputInterceptor, interrupt_handler.NewInterruptHandler(suiteConfig.Timeout, client), client, internal.RegisterForProgressSignal, suiteConfig)
+	passed, hasFocusedTests := global.Suite.Run(description, suiteLabels, suitePath, global.Failer, reporter, writer, outputInterceptor, interrupt_handler.NewInterruptHandler(client), client, internal.RegisterForProgressSignal, suiteConfig)
 	outputInterceptor.Shutdown()
 
 	flagSet.ValidateDeprecations(deprecationTracker)
@@ -530,7 +533,7 @@ You may only register *one* BeforeSuite handler per test suite.  You typically d
 You cannot nest any other Ginkgo nodes within a BeforeSuite node's closure.
 You can learn more here: https://onsi.github.io/ginkgo/#suite-setup-and-cleanup-beforesuite-and-aftersuite
 */
-func BeforeSuite(body func(), args ...interface{}) bool {
+func BeforeSuite(body interface{}, args ...interface{}) bool {
 	combinedArgs := []interface{}{body}
 	combinedArgs = append(combinedArgs, args...)
 	return pushNode(internal.NewNode(deprecationTracker, types.NodeTypeBeforeSuite, "", combinedArgs...))
@@ -547,7 +550,7 @@ You may only register *one* AfterSuite handler per test suite.  You typically do
 You cannot nest any other Ginkgo nodes within an AfterSuite node's closure.
 You can learn more here: https://onsi.github.io/ginkgo/#suite-setup-and-cleanup-beforesuite-and-aftersuite
 */
-func AfterSuite(body func(), args ...interface{}) bool {
+func AfterSuite(body interface{}, args ...interface{}) bool {
 	combinedArgs := []interface{}{body}
 	combinedArgs = append(combinedArgs, args...)
 	return pushNode(internal.NewNode(deprecationTracker, types.NodeTypeAfterSuite, "", combinedArgs...))
@@ -572,7 +575,7 @@ The byte array returned by the first function is then passed to the second funct
 You cannot nest any other Ginkgo nodes within an SynchronizedBeforeSuite node's closure.
 You can learn more, and see some examples, here: https://onsi.github.io/ginkgo/#parallel-suite-setup-and-cleanup-synchronizedbeforesuite-and-synchronizedaftersuite
 */
-func SynchronizedBeforeSuite(process1Body func() []byte, allProcessBody func([]byte), args ...interface{}) bool {
+func SynchronizedBeforeSuite(process1Body interface{}, allProcessBody interface{}, args ...interface{}) bool {
 	combinedArgs := []interface{}{process1Body, allProcessBody}
 	combinedArgs = append(combinedArgs, args...)
 
@@ -592,7 +595,7 @@ Note that you can also use DeferCleanup() in SynchronizedBeforeSuite to accompli
 You cannot nest any other Ginkgo nodes within an SynchronizedAfterSuite node's closure.
 You can learn more, and see some examples, here: https://onsi.github.io/ginkgo/#parallel-suite-setup-and-cleanup-synchronizedbeforesuite-and-synchronizedaftersuite
 */
-func SynchronizedAfterSuite(allProcessBody func(), process1Body func(), args ...interface{}) bool {
+func SynchronizedAfterSuite(allProcessBody interface{}, process1Body interface{}, args ...interface{}) bool {
 	combinedArgs := []interface{}{allProcessBody, process1Body}
 	combinedArgs = append(combinedArgs, args...)
 
@@ -680,10 +683,10 @@ DeferCleanup can be passed:
 2. A function that returns an error (in which case it will assert that the returned error was nil, or it will fail the spec).
 3. A function that takes arguments (and optionally returns an error) followed by a list of arguments to passe to the function. For example:
 
-    BeforeEach(func() {
-        DeferCleanup(os.SetEnv, "FOO", os.GetEnv("FOO"))
-        os.SetEnv("FOO", "BAR")
-    })
+	BeforeEach(func() {
+	    DeferCleanup(os.SetEnv, "FOO", os.GetEnv("FOO"))
+	    os.SetEnv("FOO", "BAR")
+	})
 
 will register a cleanup handler that will set the environment variable "FOO" to it's current value (obtained by os.GetEnv("FOO")) after the spec runs and then sets the environment variable "FOO" to "BAR" for the current spec.
 
@@ -698,5 +701,5 @@ func DeferCleanup(args ...interface{}) {
 	fail := func(message string, cl types.CodeLocation) {
 		global.Failer.Fail(message, cl)
 	}
-	pushNode(internal.NewCleanupNode(fail, args...))
+	pushNode(internal.NewCleanupNode(deprecationTracker, fail, args...))
 }
