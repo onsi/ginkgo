@@ -15,8 +15,7 @@ var _ = Describe("SpecContext", func() {
 	It("can be wrapped and still retreived", func(c SpecContext) {
 		Ω(c.Value("GINKGO_SPEC_CONTEXT")).Should(Equal(c))
 
-		wrappedC, _ := context.WithCancel(c)
-		wrappedC = context.WithValue(wrappedC, "foo", "bar")
+		wrappedC := context.WithValue(c, "foo", "bar")
 
 		_, ok := wrappedC.(SpecContext)
 		Ω(ok).Should(BeFalse())
