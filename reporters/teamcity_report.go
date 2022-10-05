@@ -65,6 +65,8 @@ func GenerateTeamcityReport(report types.Report, dst string) error {
 		case types.SpecStatePanicked:
 			details := fmt.Sprintf("%s\n%s", spec.Failure.Location.String(), spec.Failure.Location.FullStackTrace)
 			fmt.Fprintf(f, "##teamcity[testFailed name='%s' message='panicked - %s' details='%s']\n", name, tcEscape(spec.Failure.ForwardedPanic), tcEscape(details))
+		case types.SpecStateTimeout:
+			fmt.Fprintf(f, "##teamcity[testFailed name='%s' message='timeout' details='%s']\n", name, tcEscape(interruptDescriptionForUnstructuredReporters(spec.Failure)))
 		case types.SpecStateInterrupted:
 			fmt.Fprintf(f, "##teamcity[testFailed name='%s' message='interrupted' details='%s']\n", name, tcEscape(interruptDescriptionForUnstructuredReporters(spec.Failure)))
 		case types.SpecStateAborted:

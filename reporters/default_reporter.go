@@ -339,11 +339,13 @@ func (r *DefaultReporter) emitProgressReport(indent uint, emitGinkgoWriterOutput
 		indent += 1
 	}
 	if report.LeafNodeText != "" {
+		subjectIndent := indent
 		if len(report.ContainerHierarchyTexts) > 0 {
 			r.emit(r.fi(indent, r.cycleJoin(report.ContainerHierarchyTexts, " ")))
 			r.emit(" ")
+			subjectIndent = 0
 		}
-		r.emit(r.f("{{bold}}{{orange}}%s{{/}} (Spec Runtime: %s)\n", report.LeafNodeText, report.Time.Sub(report.SpecStartTime).Round(time.Millisecond)))
+		r.emit(r.fi(subjectIndent, "{{bold}}{{orange}}%s{{/}} (Spec Runtime: %s)\n", report.LeafNodeText, report.Time.Sub(report.SpecStartTime).Round(time.Millisecond)))
 		r.emit(r.fi(indent+1, "{{gray}}%s{{/}}\n", report.LeafNodeLocation))
 		indent += 1
 	}

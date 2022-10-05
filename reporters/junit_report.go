@@ -194,6 +194,13 @@ func GenerateJUnitReport(report types.Report, dst string) error {
 				Description: fmt.Sprintf("%s\n%s", spec.Failure.Location.String(), spec.Failure.Location.FullStackTrace),
 			}
 			suite.Failures += 1
+		case types.SpecStateTimeout:
+			test.Failure = &JUnitFailure{
+				Message:     "timeout",
+				Type:        "timeout",
+				Description: interruptDescriptionForUnstructuredReporters(spec.Failure),
+			}
+			suite.Failures += 1
 		case types.SpecStateInterrupted:
 			test.Error = &JUnitError{
 				Message:     "interrupted",
@@ -280,6 +287,7 @@ func MergeAndCleanupJUnitReports(sources []string, dst string) ([]string, error)
 
 func interruptDescriptionForUnstructuredReporters(failure types.Failure) string {
 	out := &strings.Builder{}
+	out.WriteString(failure.Location.String() + "\n")
 	out.WriteString(failure.Message + "\n")
 	NewDefaultReporter(types.ReporterConfig{NoColor: true}, out).EmitProgressReport(failure.ProgressReport)
 	return out.String()

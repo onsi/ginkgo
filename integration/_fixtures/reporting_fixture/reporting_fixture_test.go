@@ -37,4 +37,8 @@ var _ = Describe("reporting test", func() {
 	It("is skipped", func() {
 		Skip("skip")
 	})
+
+	It("times out", func(ctx SpecContext) {
+		<-ctx.Done()
+	}, NodeTimeout(time.Millisecond*100))
 })
