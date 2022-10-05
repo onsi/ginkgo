@@ -257,7 +257,7 @@ func (g ginkgoErrors) InvalidTimeoutOrGracePeriodForNonContextNode(cl CodeLocati
 		Heading:      "Invalid NodeTimeout SpecTimeout, or GracePeriod",
 		Message:      formatter.F(`[%s] was passed NodeTimeout, SpecTimeout, or GracePeriod but does not have a callback that accepts a {{bold}}SpecContext{{/}} or {{bold}}context.Context{{/}}.  You must accept a context to enable timeouts and grace periods`, nodeType),
 		CodeLocation: cl,
-		DocLink:      "spec-timeouts",
+		DocLink:      "spec-timeouts-and-interruptible-nodes",
 	}
 }
 
@@ -266,7 +266,7 @@ func (g ginkgoErrors) InvalidTimeoutOrGracePeriodForNonContextCleanupNode(cl Cod
 		Heading:      "Invalid NodeTimeout SpecTimeout, or GracePeriod",
 		Message:      formatter.F(`[DeferCleanup] was passed NodeTimeout or GracePeriod but does not have a callback that accepts a {{bold}}SpecContext{{/}} or {{bold}}context.Context{{/}}.  You must accept a context to enable timeouts and grace periods`),
 		CodeLocation: cl,
-		DocLink:      "spec-timeouts",
+		DocLink:      "spec-timeouts-and-interruptible-nodes",
 	}
 }
 

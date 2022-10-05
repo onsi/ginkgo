@@ -1,3 +1,23 @@
+## 2.3.0
+
+### Interruptible Nodes and Timeouts
+
+Ginkgo now supports per-node and per-spec timeouts on interruptible nodes.  Check out the [documentation for all the details](https://onsi.github.io/ginkgo/#spec-timeouts-and-interruptible-nodes) but the gist is you can now write specs like this:
+
+```go
+It("is interruptible", func(ctx SpecContext) { // or context.Context instead of SpecContext, both are valid.
+    // do things until `ctx.Done()` is closed, for example:
+    req, err := http.NewRequestWithContext(ctx, "POST", "/build-widgets", nil)
+    Expect(err).NotTo(HaveOccured())
+    _, err := http.DefaultClient.Do(req)
+    Expect(err).NotTo(HaveOccured())
+
+    Expect(client.WidgetCount(ctx)).To(Equal(17))
+}, NodeTimeout(time.Second*20), GracePeriod(5*time.Second))
+```
+
+and have Ginkgo ensure that the node completes before the timeout elapses.  If it does elapse, or if an external interrupt is received (e.g. `^C`) then Ginkgo will cancel the context and wait for the Grace Period for the node to exit.
+
 ## 2.2.0
 
 ### Generate real-time Progress Reports [f91377c]

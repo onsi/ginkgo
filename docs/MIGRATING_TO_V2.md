@@ -427,20 +427,17 @@ It("...", func(done Done) {
 will emit a deprecation warning and will run **synchronously**.  This means the `timeout` will not be enforced and the status of the `Done` channel will be ignored - a test that hangs will hang indefinitely.
 
 #### Migration Strategy:
-We recommend users make targeted use of Gomega's [Asynchronous Assertions](https://onsi.github.io/gomega/#making-asynchronous-assertions) to better test asynchronous behavior.
+We recommend users make targeted use of Gomega's [Asynchronous Assertions](https://onsi.github.io/gomega/#making-asynchronous-assertions) to better test asynchronous behavior.  In addition, as of Ginkgo 2.3.0, users can [make individual nodes interruptible and reintroduce the notion of spec timeouts]((https://onsi.github.io/ginkgo/#spec-timeouts-and-interruptible-nodes)).
 
 As a first migration pass that produces **equivalent behavior** users can replace asynchronous tests with:
 
 ```go
-It("...", func() {
-	done := make(chan interface{})
-	go func() {
-		// user test code to run asynchronously
-		close(done) //signifies the code is done
-	}()
-	Eventually(done, timeout).Should(BeClosed())
-})
+It("...", func(ctx SpecContext) {
+	// user test code to run asynchronously
+}, NodeTimeout(timeout))
 ```
+
+if your code supports it, you can use the `ctx` passed in to the `It` to signal that the spec deadline has elapsed and cause the spec to exit.
 
 ### Removed: Measure
 As described in the [Ginkgo 2.0 Proposal](https://docs.google.com/document/d/1h28ZknXRsTLPNNiOjdHIO-F2toCzq4xoZDXbfYaBdoQ/edit#heading=h.2ezhpn4gmcgs) the Ginkgo 1.x implementation of benchmarking using `Measure` nodes was a source of tightly-coupled complexity.  It is removed in Ginkgo 2.0.

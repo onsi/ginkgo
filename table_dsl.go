@@ -90,6 +90,8 @@ Subsequent arguments accept any Ginkgo decorators.  These are filtered out and t
 
 Each Entry ends up generating an individual Ginkgo It.  The body of the it is the Table Body function with the Entry parameters passed in.
 
+If you want to generate interruptible specs simply write a Table function that accepts a SpecContext as its first argument.  You can then decorate individual Entrys with the NodeTimeout and SpecTimeout decorators.
+
 You can learn more about Entry here: https://onsi.github.io/ginkgo/#table-specs
 */
 func Entry(description interface{}, args ...interface{}) TableEntry {
