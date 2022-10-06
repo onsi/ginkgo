@@ -380,6 +380,18 @@ func (r *DefaultReporter) emitProgressReport(indent uint, emitGinkgoWriterOutput
 		r.emitGoroutines(indent, report.SpecGoroutine())
 	}
 
+	if len(report.AdditionalReports) > 0 {
+		r.emit("\n")
+		r.emitBlock(r.fi(indent, "{{gray}}Begin Additional Progress Reporst >>{{/}}"))
+		for i, additionalReport := range report.AdditionalReports {
+			r.emit(r.fi(indent+1, additionalReport))
+			if i < len(report.AdditionalReports)-1 {
+				r.emitBlock(r.fi(indent+1, "{{gray}}%s{{/}}", strings.Repeat("-", 10)))
+			}
+		}
+		r.emitBlock(r.fi(indent, "{{gray}}<< End Additional Progress Report{{/}}"))
+	}
+
 	highlightedGoroutines := report.HighlightedGoroutines()
 	if len(highlightedGoroutines) > 0 {
 		r.emit("\n")

@@ -156,6 +156,7 @@ func C(flags ...ConfigFlags) types.ReporterConfig {
 type CurrentNodeText string
 type CurrentStepText string
 type LeafNodeText string
+type AdditionalReports []string
 
 func PR(options ...interface{}) types.ProgressReport {
 	now := time.Now()
@@ -196,6 +197,8 @@ func PR(options ...interface{}) types.ProgressReport {
 			report.RunningInParallel = option
 		case string:
 			report.Message = option
+		case AdditionalReports:
+			report.AdditionalReports = option
 		}
 	}
 	return report
@@ -1565,6 +1568,7 @@ var _ = Describe("DefaultReporter", func() {
 			"  {{gray}}<< End Captured GinkgoWriter Output{{/}}",
 			DELIMITER,
 			""),
+
 		//various goroutines
 		Entry("with a spec goroutine",
 			C(),
@@ -1730,6 +1734,105 @@ var _ = Describe("DefaultReporter", func() {
 			"      {{gray}}fileC:9{{/}}",
 			DELIMITER,
 			""),
+
+		// including additional reports
+
+		Entry("with one additional report",
+			C(),
+			PR(
+				types.NodeTypeIt, CurrentNodeText("My Spec"), LeafNodeText("My Spec"),
+				G(true, "sleeping",
+					Fn("F1()", "fileA", 15),
+					Fn("F2()", "fileB", 11, true),
+					Fn("F3()", "fileC", 9),
+				),
+				G(false, "sleeping",
+					Fn("F1()", "fileA", 15),
+					Fn("F2()", "fileB", 11, true),
+					Fn("F3()", "fileC", 9),
+				),
+				AdditionalReports{"{{blue}}Report 1{{/}}"},
+			),
+
+			DELIMITER,
+			"{{bold}}{{orange}}My Spec{{/}} (Spec Runtime: 5s)",
+			"  {{gray}}"+cl0.String()+"{{/}}",
+			"  In {{bold}}{{orange}}[It]{{/}} (Node Runtime: 3s)",
+			"    {{gray}}"+cl1.String()+"{{/}}",
+			"",
+			"  {{bold}}{{underline}}Spec Goroutine{{/}}",
+			"  {{orange}}goroutine 17 [sleeping]{{/}}",
+			"    {{gray}}F1(){{/}}",
+			"      {{gray}}fileA:15{{/}}",
+			"  {{orange}}{{bold}}> F2(){{/}}",
+			"      {{orange}}{{bold}}fileB:11{{/}}",
+			"    {{gray}}F3(){{/}}",
+			"      {{gray}}fileC:9{{/}}",
+			"",
+			"  {{gray}}Begin Additional Progress Reporst >>{{/}}",
+			"    {{blue}}Report 1{{/}}",
+			"  {{gray}}<< End Additional Progress Report{{/}}",
+			"",
+			"  {{bold}}{{underline}}Goroutines of Interest{{/}}",
+			"  {{orange}}goroutine 17 [sleeping]{{/}}",
+			"    {{gray}}F1(){{/}}",
+			"      {{gray}}fileA:15{{/}}",
+			"  {{orange}}{{bold}}> F2(){{/}}",
+			"      {{orange}}{{bold}}fileB:11{{/}}",
+			"    {{gray}}F3(){{/}}",
+			"      {{gray}}fileC:9{{/}}",
+			DELIMITER,
+			""),
+
+		Entry("with multiple additional reports",
+			C(),
+			PR(
+				types.NodeTypeIt, CurrentNodeText("My Spec"), LeafNodeText("My Spec"),
+				G(true, "sleeping",
+					Fn("F1()", "fileA", 15),
+					Fn("F2()", "fileB", 11, true),
+					Fn("F3()", "fileC", 9),
+				),
+				G(false, "sleeping",
+					Fn("F1()", "fileA", 15),
+					Fn("F2()", "fileB", 11, true),
+					Fn("F3()", "fileC", 9),
+				),
+				AdditionalReports{"{{blue}}Report 1{{/}}", "{{green}}Report 2{{/}}"},
+			),
+
+			DELIMITER,
+			"{{bold}}{{orange}}My Spec{{/}} (Spec Runtime: 5s)",
+			"  {{gray}}"+cl0.String()+"{{/}}",
+			"  In {{bold}}{{orange}}[It]{{/}} (Node Runtime: 3s)",
+			"    {{gray}}"+cl1.String()+"{{/}}",
+			"",
+			"  {{bold}}{{underline}}Spec Goroutine{{/}}",
+			"  {{orange}}goroutine 17 [sleeping]{{/}}",
+			"    {{gray}}F1(){{/}}",
+			"      {{gray}}fileA:15{{/}}",
+			"  {{orange}}{{bold}}> F2(){{/}}",
+			"      {{orange}}{{bold}}fileB:11{{/}}",
+			"    {{gray}}F3(){{/}}",
+			"      {{gray}}fileC:9{{/}}",
+			"",
+			"  {{gray}}Begin Additional Progress Reporst >>{{/}}",
+			"    {{blue}}Report 1{{/}}",
+			"    {{gray}}----------{{/}}",
+			"    {{green}}Report 2{{/}}",
+			"  {{gray}}<< End Additional Progress Report{{/}}",
+			"",
+			"  {{bold}}{{underline}}Goroutines of Interest{{/}}",
+			"  {{orange}}goroutine 17 [sleeping]{{/}}",
+			"    {{gray}}F1(){{/}}",
+			"      {{gray}}fileA:15{{/}}",
+			"  {{orange}}{{bold}}> F2(){{/}}",
+			"      {{orange}}{{bold}}fileB:11{{/}}",
+			"    {{gray}}F3(){{/}}",
+			"      {{gray}}fileC:9{{/}}",
+			DELIMITER,
+			""),
+		// when running in parallel
 
 		Entry("when running in parallel",
 			C(),

@@ -503,6 +503,8 @@ type ProgressReport struct {
 	CurrentStepLocation  CodeLocation
 	CurrentStepStartTime time.Time
 
+	AdditionalReports []string
+
 	CapturedGinkgoWriterOutput string `json:",omitempty"`
 	GinkgoWriterOffset         int
 

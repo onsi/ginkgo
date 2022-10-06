@@ -889,9 +889,10 @@ var _ = Describe("Interrupts and Timeouts", func() {
 			Ω(success).Should(Equal(false))
 		}, NodeTimeout(time.Second))
 
-		It("doesn't get stuck because Eventually will exit", func() {
+		It("doesn't get stuck because Eventually will exit and it includes the additional report provided by eventually", func() {
 			Ω(rt).Should(HaveTracked("A"))
 			Ω(reporter.Did.Find("A")).Should(HaveTimedOut())
+			Ω(reporter.Did.Find("A").Failure.ProgressReport.AdditionalReports).Should(ConsistOf("Expected\n    <string>: foo\nto equal\n    <string>: bar"))
 		})
 	})
 

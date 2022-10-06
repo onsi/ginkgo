@@ -42,6 +42,8 @@ type Suite struct {
 	currentNode          Node
 	currentNodeStartTime time.Time
 
+	currentSpecContext *specContext
+
 	progressStepCursor ProgressStepCursor
 
 	/*
@@ -274,10 +276,14 @@ func (suite *Suite) generateProgressReport(fullReport bool) types.ProgressReport
 	suite.selectiveLock.Lock()
 	defer suite.selectiveLock.Unlock()
 
+	var additionalReports []string
+	if suite.currentSpecContext != nil {
+		additionalReports = suite.currentSpecContext.QueryProgressReporters()
+	}
 	stepCursor := suite.progressStepCursor
 
 	gwOutput := suite.currentSpecReport.CapturedGinkgoWriterOutput + string(suite.writer.Bytes())
-	pr, err := NewProgressReport(suite.isRunningInParallel(), suite.currentSpecReport, suite.currentNode, suite.currentNodeStartTime, stepCursor, gwOutput, suite.config.SourceRoots, fullReport)
+	pr, err := NewProgressReport(suite.isRunningInParallel(), suite.currentSpecReport, suite.currentNode, suite.currentNodeStartTime, stepCursor, gwOutput, additionalReports, suite.config.SourceRoots, fullReport)
 
 	if err != nil {
 		fmt.Printf("{{red}}Failed to generate progress report:{{/}}\n%s\n", err.Error())
@@ -715,6 +721,10 @@ func (suite *Suite) runNode(node Node, specDeadline time.Time, text string) (typ
 
 	sc := NewSpecContext(suite)
 	defer sc.cancel()
+
+	suite.selectiveLock.Lock()
+	suite.currentSpecContext = sc
+	suite.selectiveLock.Unlock()
 
 	var deadlineChannel <-chan time.Time
 	if !deadline.IsZero() {
