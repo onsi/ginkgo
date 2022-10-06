@@ -484,6 +484,7 @@ var _ = Describe("Interrupts and Timeouts", func() {
 					ReportAfterEach(func(_ SpecReport) {
 						rt.Run("report-after-each")
 						interruptHandler.Interrupt(interrupt_handler.InterruptCauseSignal)
+						time.Sleep(time.Hour)
 					})
 					ReportAfterEach(func(_ SpecReport) { rt.Run("report-after-each-2") })
 					ReportAfterSuite("Report After Suite", func(_ Report) { rt.Run("report-after-suite") })
