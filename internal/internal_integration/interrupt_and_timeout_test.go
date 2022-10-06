@@ -874,6 +874,27 @@ var _ = Describe("Interrupts and Timeouts", func() {
 		})
 	})
 
+	Describe("using timeouts with Gomega's Eventually", func() {
+		BeforeEach(func(ctx SpecContext) {
+			success, _ := RunFixture(CurrentSpecReport().LeafNodeText, func() {
+				Context("container", func() {
+					It("A", rt.TSC("A", func(c SpecContext) {
+						Eventually(func() string {
+							return "foo"
+						}).WithTimeout(time.Hour).WithContext(c).Should(Equal("bar"))
+						rt.Run("A-dont-see") //never see this because Eventually fails which panics and ends execution
+					}), SpecTimeout(time.Millisecond*200))
+				})
+			})
+			Ω(success).Should(Equal(false))
+		}, NodeTimeout(time.Second))
+
+		It("doesn't get stuck because Eventually will exit", func() {
+			Ω(rt).Should(HaveTracked("A"))
+			Ω(reporter.Did.Find("A")).Should(HaveTimedOut())
+		})
+	})
+
 	Describe("when a suite timeout occurs", func() {
 		BeforeEach(func(_ SpecContext) {
 			conf.Timeout = time.Millisecond * 100
