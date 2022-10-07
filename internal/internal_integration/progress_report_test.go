@@ -34,6 +34,7 @@ var _ = Describe("Progress Reporting", func() {
 		It("emits progress when asked and includes source code", func() {
 			Ω(reporter.ProgressReports).Should(HaveLen(1))
 			pr := reporter.ProgressReports[0]
+			Ω(pr.Message).Should(Equal("{{bold}}You've requested a progress report:{{/}}"))
 			Ω(pr.CurrentNodeType).Should(Equal(types.NodeTypeBeforeSuite))
 			Ω(pr.LeafNodeLocation).Should(Equal(clLine(-1)))
 			Ω(pr.CurrentStepText).Should(Equal(""))
@@ -293,6 +294,7 @@ var _ = Describe("Progress Reporting", func() {
 			Ω(len(reporter.ProgressReports)).Should(BeNumerically(">", 1))
 
 			for _, pr := range reporter.ProgressReports {
+				Ω(pr.Message).Should(Equal("{{bold}}Automatically polling progress:{{/}}"))
 				Ω(pr.ContainerHierarchyTexts).Should(ConsistOf("a container"))
 				Ω(pr.LeafNodeLocation).Should(Equal(clLine(-1)))
 				Ω(pr.LeafNodeText).Should(Equal("A"))

@@ -293,7 +293,7 @@ func (suite *Suite) generateProgressReport(fullReport bool) types.ProgressReport
 
 func (suite *Suite) handleProgressSignal() {
 	report := suite.generateProgressReport(false)
-	report.Message = "You've requested a progress report:"
+	report.Message = "{{bold}}You've requested a progress report:{{/}}"
 	suite.emitProgressReport(report)
 }
 
@@ -772,9 +772,17 @@ func (suite *Suite) runNode(node Node, specDeadline time.Time, text string) (typ
 		select {
 		case outcomeFromRun := <-outcomeC:
 			failureFromRun := <-failureC
-			if outcome != types.SpecStateInvalid {
-				// we've already timed out or been interrupted.  we just managed to actually exit
+			if outcome == types.SpecStateInterrupted {
+				// we've already been interrupted.  we just managed to actually exit
 				// before the grace period elapsed
+				return outcome, failure
+			} else if outcome == types.SpecStateTimeout {
+				// we've already timed out.  we just managed to actually exit
+				// before the grace period elapsed.  if we have a failure message we should include it
+				if outcomeFromRun != types.SpecStatePassed {
+					failure.Location, failure.ForwardedPanic = failureFromRun.Location, failureFromRun.ForwardedPanic
+					failure.Message = "This spec timed out and reported the following failure after the timeout:\n\n" + failureFromRun.Message
+				}
 				return outcome, failure
 			}
 			if outcomeFromRun.Is(types.SpecStatePassed) {
@@ -795,6 +803,7 @@ func (suite *Suite) runNode(node Node, specDeadline time.Time, text string) (typ
 			outcome = types.SpecStateTimeout
 			failure.Message, failure.Location = "Timeout", node.CodeLocation
 			failure.ProgressReport = suite.generateProgressReport(false).WithoutCapturedGinkgoWriterOutput()
+			failure.ProgressReport.Message = "{{bold}}This is the Progress Report generated when the timeout occurred:{{/}}"
 			deadlineChannel = nil
 			// tell the spec to stop.  it's important we generate the progress report first to make sure we capture where
 			// the spec is actually stuck
@@ -810,6 +819,7 @@ func (suite *Suite) runNode(node Node, specDeadline time.Time, text string) (typ
 				failure.Message, failure.Location = interruptStatus.Message(), node.CodeLocation
 				if interruptStatus.ShouldIncludeProgressReport() {
 					failure.ProgressReport = suite.generateProgressReport(true).WithoutCapturedGinkgoWriterOutput()
+					failure.ProgressReport.Message = "{{bold}}This is the Progress Report generated when the interrupt was received:{{/}}"
 				}
 			}
 
@@ -844,7 +854,9 @@ func (suite *Suite) runNode(node Node, specDeadline time.Time, text string) (typ
 				return outcome, failure
 			}
 		case <-emitProgressNow:
-			suite.emitProgressReport(suite.generateProgressReport(false))
+			report := suite.generateProgressReport(false)
+			report.Message = "{{bold}}Automatically polling progress:{{/}}"
+			suite.emitProgressReport(report)
 			if pollProgressInterval > 0 {
 				progressPoller.Reset(pollProgressInterval)
 			}

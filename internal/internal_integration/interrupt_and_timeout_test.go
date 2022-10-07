@@ -60,6 +60,7 @@ var _ = Describe("Interrupts and Timeouts", func() {
 			summary := reporter.Did.FindByLeafNodeType(types.NodeTypeBeforeSuite)
 			Ω(summary.State).Should(Equal(types.SpecStateInterrupted))
 			Ω(summary.Failure.Message).Should(ContainSubstring("Interrupted by User"))
+			Ω(summary.Failure.ProgressReport.Message).Should(Equal("{{bold}}This is the Progress Report generated when the interrupt was received:{{/}}"))
 			Ω(summary.Failure.ProgressReport.CurrentNodeType).Should(Equal(types.NodeTypeBeforeSuite))
 		})
 
@@ -624,6 +625,7 @@ var _ = Describe("Interrupts and Timeouts", func() {
 						It("A", rt.TSC("A", func(c SpecContext) {
 							<-c.Done()
 							rt.Run("A-cancelled")
+							Fail("subsequent failure message")
 						}), NodeTimeout(time.Millisecond*100))
 					})
 
@@ -659,7 +661,7 @@ var _ = Describe("Interrupts and Timeouts", func() {
 				"bef", "E", "aft",
 			))
 
-			Ω(reporter.Did.Find("A")).Should(HaveTimedOut())
+			Ω(reporter.Did.Find("A")).Should(HaveTimedOut("This spec timed out and reported the following failure after the timeout:\n\nsubsequent failure message"))
 			Ω(reporter.Did.Find("B")).Should(HaveTimedOut())
 			Ω(reporter.Did.Find("C")).Should(HaveTimedOut())
 			Ω(reporter.Did.Find("D")).Should(HavePassed())
@@ -677,6 +679,7 @@ var _ = Describe("Interrupts and Timeouts", func() {
 
 		It("attaches progress reports to the timout failures", func() {
 			Ω(reporter.Did.Find("A").Failure.ProgressReport.LeafNodeText).Should(Equal("A"))
+			Ω(reporter.Did.Find("A").Failure.ProgressReport.Message).Should(Equal("{{bold}}This is the Progress Report generated when the timeout occurred:{{/}}"))
 			Ω(reporter.Did.Find("B").Failure.ProgressReport.LeafNodeText).Should(Equal("B"))
 			Ω(reporter.Did.Find("C").Failure.ProgressReport.LeafNodeText).Should(Equal("C"))
 			Ω(reporter.Did.Find("D").Failure.ProgressReport).Should(BeZero())
@@ -879,9 +882,8 @@ var _ = Describe("Interrupts and Timeouts", func() {
 			success, _ := RunFixture(CurrentSpecReport().LeafNodeText, func() {
 				Context("container", func() {
 					It("A", rt.TSC("A", func(c SpecContext) {
-						Eventually(func() string {
-							return "foo"
-						}).WithTimeout(time.Hour).WithContext(c).Should(Equal("bar"))
+						cl = types.NewCodeLocation(0)
+						Eventually(func() string { return "foo" }).WithTimeout(time.Hour).WithContext(c).Should(Equal("bar"))
 						rt.Run("A-dont-see") //never see this because Eventually fails which panics and ends execution
 					}), SpecTimeout(time.Millisecond*200))
 				})
@@ -891,7 +893,9 @@ var _ = Describe("Interrupts and Timeouts", func() {
 
 		It("doesn't get stuck because Eventually will exit and it includes the additional report provided by eventually", func() {
 			Ω(rt).Should(HaveTracked("A"))
-			Ω(reporter.Did.Find("A")).Should(HaveTimedOut())
+			Ω(reporter.Did.Find("A")).Should(HaveTimedOut(clLine(1)))
+			Ω(reporter.Did.Find("A").Failure.Message).Should(MatchRegexp(`This spec timed out and reported the following failure after the timeout:\n\nContext was cancelled after .*\nExpected\n    <string>: foo\nto equal\n    <string>: bar`))
+			Ω(reporter.Did.Find("A").Failure.ProgressReport.Message).Should(Equal("{{bold}}This is the Progress Report generated when the timeout occurred:{{/}}"))
 			Ω(reporter.Did.Find("A").Failure.ProgressReport.AdditionalReports).Should(ConsistOf("Expected\n    <string>: foo\nto equal\n    <string>: bar"))
 		})
 	})

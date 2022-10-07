@@ -248,7 +248,6 @@ func (r *DefaultReporter) DidRun(report types.SpecReport) {
 
 		if !report.Failure.ProgressReport.IsZero() {
 			r.emitBlock("\n")
-			r.emitBlock(r.fi(1, highlightColor+"Progress Report{{/}}"))
 			r.emitProgressReport(1, false, report.Failure.ProgressReport)
 		}
 	}
@@ -382,14 +381,14 @@ func (r *DefaultReporter) emitProgressReport(indent uint, emitGinkgoWriterOutput
 
 	if len(report.AdditionalReports) > 0 {
 		r.emit("\n")
-		r.emitBlock(r.fi(indent, "{{gray}}Begin Additional Progress Reporst >>{{/}}"))
+		r.emitBlock(r.fi(indent, "{{gray}}Begin Additional Progress Reports >>{{/}}"))
 		for i, additionalReport := range report.AdditionalReports {
 			r.emit(r.fi(indent+1, additionalReport))
 			if i < len(report.AdditionalReports)-1 {
 				r.emitBlock(r.fi(indent+1, "{{gray}}%s{{/}}", strings.Repeat("-", 10)))
 			}
 		}
-		r.emitBlock(r.fi(indent, "{{gray}}<< End Additional Progress Report{{/}}"))
+		r.emitBlock(r.fi(indent, "{{gray}}<< End Additional Progress Reports{{/}}"))
 	}
 
 	highlightedGoroutines := report.HighlightedGoroutines()
