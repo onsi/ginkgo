@@ -196,14 +196,14 @@ func GenerateJUnitReport(report types.Report, dst string) error {
 			suite.Failures += 1
 		case types.SpecStateTimeout:
 			test.Failure = &JUnitFailure{
-				Message:     "timeout",
+				Message:     spec.Failure.Message,
 				Type:        "timeout",
 				Description: interruptDescriptionForUnstructuredReporters(spec.Failure),
 			}
 			suite.Failures += 1
 		case types.SpecStateInterrupted:
 			test.Error = &JUnitError{
-				Message:     "interrupted",
+				Message:     spec.Failure.Message,
 				Type:        "interrupted",
 				Description: interruptDescriptionForUnstructuredReporters(spec.Failure),
 			}
