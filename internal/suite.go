@@ -571,7 +571,7 @@ func (suite *Suite) runSuiteNode(node Node) {
 			switch proc1State {
 			case types.SpecStatePassed:
 				runAllProcs = true
-			case types.SpecStateFailed, types.SpecStatePanicked, types.SpecStateTimeout:
+			case types.SpecStateFailed, types.SpecStatePanicked, types.SpecStateTimedout:
 				err = types.GinkgoErrors.SynchronizedBeforeSuiteFailedOnProc1()
 			case types.SpecStateInterrupted, types.SpecStateAborted, types.SpecStateSkipped:
 				suite.currentSpecReport.State = proc1State
@@ -776,7 +776,7 @@ func (suite *Suite) runNode(node Node, specDeadline time.Time, text string) (typ
 				// we've already been interrupted.  we just managed to actually exit
 				// before the grace period elapsed
 				return outcome, failure
-			} else if outcome == types.SpecStateTimeout {
+			} else if outcome == types.SpecStateTimedout {
 				// we've already timed out.  we just managed to actually exit
 				// before the grace period elapsed.  if we have a failure message we should include it
 				if outcomeFromRun != types.SpecStatePassed {
@@ -792,7 +792,7 @@ func (suite *Suite) runNode(node Node, specDeadline time.Time, text string) (typ
 				return outcomeFromRun, failure
 			}
 		case <-gracePeriodChannel:
-			if node.HasContext && outcome.Is(types.SpecStateTimeout) {
+			if node.HasContext && outcome.Is(types.SpecStateTimedout) {
 				report := suite.generateProgressReport(false)
 				report.Message = "{{bold}}{{orange}}A running node failed to exit in time{{/}}\nGinkgo is moving on but a node has timed out and failed to exit before its grace period elapsed.  The node has now leaked and is running in the background.\nHere's a current progress report:"
 				suite.emitProgressReport(report)
@@ -800,7 +800,7 @@ func (suite *Suite) runNode(node Node, specDeadline time.Time, text string) (typ
 			return outcome, failure
 		case <-deadlineChannel:
 			// we're out of time - the outcome is a timeout and we capture the failure and progress report
-			outcome = types.SpecStateTimeout
+			outcome = types.SpecStateTimedout
 			failure.Message, failure.Location = "Timeout", node.CodeLocation
 			failure.ProgressReport = suite.generateProgressReport(false).WithoutCapturedGinkgoWriterOutput()
 			failure.ProgressReport.Message = "{{bold}}This is the Progress Report generated when the timeout occurred:{{/}}"

@@ -35,7 +35,7 @@ var _ = Describe("Reporting", func() {
 				"has a progress report - INVALID SPEC STATE",
 				"is pending - pending",
 				"is skipped - INVALID SPEC STATE",
-				"times out - INVALID SPEC STATE",
+				"times out and fails during cleanup - INVALID SPEC STATE",
 				"",
 			))
 		})
@@ -55,7 +55,7 @@ var _ = Describe("Reporting", func() {
 				"has a progress report - passed",
 				"is pending - pending",
 				"is skipped - skipped",
-				"times out - timeout",
+				"times out and fails during cleanup - timedout",
 				"",
 			))
 		})
@@ -77,7 +77,7 @@ var _ = Describe("Reporting", func() {
 				"has a progress report - passed",
 				"is pending - pending",
 				"is skipped - skipped",
-				"times out - timeout",
+				"times out and fails during cleanup - timedout",
 				"1: [DeferCleanup (Suite)] - passed",
 				"1: [DeferCleanup (Suite)] - passed",
 				"",
@@ -103,7 +103,7 @@ var _ = Describe("Reporting", func() {
 					"has a progress report - passed",
 					"is pending - pending",
 					"is skipped - skipped",
-					"times out - timeout",
+					"times out and fails during cleanup - timedout",
 					"1: [DeferCleanup (Suite)] - passed",
 					"1: [DeferCleanup (Suite)] - passed",
 					"2: [DeferCleanup (Suite)] - passed",
@@ -140,7 +140,10 @@ var _ = Describe("Reporting", func() {
 			Ω(specReports.Find("panics")).Should(HavePanicked("boom"))
 			Ω(specReports.Find("is pending")).Should(BePending())
 			Ω(specReports.Find("is skipped").State).Should(Equal(types.SpecStateSkipped))
-			Ω(specReports.Find("times out")).Should(HaveTimedOut())
+			Ω(specReports.Find("times out and fails during cleanup")).Should(HaveTimedOut("This spec timed out and reported the following failure after the timeout:\n\nfailure-after-timeout"))
+
+			Ω(specReports.Find("times out and fails during cleanup").AdditionalFailures[0].Failure.Message).Should(Equal("double-whammy"))
+			Ω(specReports.Find("times out and fails during cleanup").AdditionalFailures[0].Failure.FailureNodeType).Should(Equal(types.NodeTypeCleanupAfterEach))
 			Ω(specReports.Find("my report")).Should(HaveFailed("fail!", types.FailureNodeIsLeafNode, types.NodeTypeReportAfterSuite))
 			Ω(specReports.FindByLeafNodeType(types.NodeTypeBeforeSuite)).Should(HavePassed())
 			Ω(specReports.FindByLeafNodeType(types.NodeTypeCleanupAfterSuite)).Should(HavePassed())
@@ -226,8 +229,10 @@ var _ = Describe("Reporting", func() {
 			Ω(getTestCase("[It] reporting test is skipped", suite.TestCases).Status).Should(Equal("skipped"))
 			Ω(getTestCase("[It] reporting test is skipped", suite.TestCases).Skipped.Message).Should(Equal("skipped - skip"))
 
-			Ω(getTestCase("[It] reporting test times out", suite.TestCases).Status).Should(Equal("timeout"))
-			Ω(getTestCase("[It] reporting test times out", suite.TestCases).Failure.Description).Should(ContainSubstring("<-ctx.Done()"))
+			Ω(getTestCase("[It] reporting test times out and fails during cleanup", suite.TestCases).Status).Should(Equal("timedout"))
+			Ω(getTestCase("[It] reporting test times out and fails during cleanup", suite.TestCases).Failure.Message).Should(Equal("This spec timed out and reported the following failure after the timeout:\n\nfailure-after-timeout"))
+			Ω(getTestCase("[It] reporting test times out and fails during cleanup", suite.TestCases).Failure.Description).Should(ContainSubstring("<-ctx.Done()"))
+			Ω(getTestCase("[It] reporting test times out and fails during cleanup", suite.TestCases).Failure.Description).Should(ContainSubstring("There were additional failures detected after the initial failure:\n[FAILED]\ndouble-whammy\nIn [DeferCleanup (Each)] at:"))
 
 			buf := gbytes.NewBuffer()
 			fmt.Fprintf(buf, getTestCase("[It] reporting test has a progress report", suite.TestCases).SystemErr)
@@ -291,7 +296,7 @@ var _ = Describe("Reporting", func() {
 
 			Ω(lines).Should(ContainElement("##teamcity[testStarted name='|[It|] reporting test is skipped']"))
 			Ω(lines).Should(ContainElement("##teamcity[testIgnored name='|[It|] reporting test is skipped' message='skipped - skip']"))
-			Ω(lines).Should(ContainElement(HavePrefix("##teamcity[testFailed name='|[It|] reporting test times out' message='timeout")))
+			Ω(lines).Should(ContainElement(HavePrefix("##teamcity[testFailed name='|[It|] reporting test times out and fails during cleanup' message='timedout")))
 
 			Ω(lines).Should(ContainElement(HavePrefix("##teamcity[testFinished name='|[It|] reporting test is skipped'")))
 

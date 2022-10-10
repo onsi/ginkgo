@@ -1,6 +1,8 @@
 package internal_integration_test
 
 import (
+	"time"
+
 	. "github.com/onsi/ginkgo/v2"
 	. "github.com/onsi/gomega"
 
@@ -307,6 +309,11 @@ var _ = Describe("handling test failures", func() {
 				success, _ := RunFixture("failed after each", func() {
 					BeforeEach(rt.T("bef-1", func() {
 						writer.Write([]byte("run A"))
+						DeferCleanup(rt.TSC("dc-1", func(ctx SpecContext) {
+							writer.Write([]byte("run DC"))
+							<-ctx.Done()
+							F("fail-DC")
+						}), NodeTimeout(time.Millisecond*50))
 						F("fail-A", clA)
 					}))
 					It("the test", rt.T("it"))
@@ -318,12 +325,23 @@ var _ = Describe("handling test failures", func() {
 				Ω(success).Should(BeFalse())
 			})
 
-			It("reports a suite failure and a spec failure and only tracks the first failure", func() {
+			It("reports a suite failure and a spec failure and tracks the first failure as its primary failure, but also tracks the additional failures", func() {
 				Ω(reporter.End).Should(BeASuiteSummary(false, NSpecs(1), NPassed(0), NFailed(1)))
 				specReport := reporter.Did.Find("the test")
-				Ω(specReport).Should(HaveFailed("fail-A", clA), CapturedGinkgoWriterOutput("run Arun B"))
+				Ω(specReport).Should(HaveFailed("fail-A", clA), CapturedGinkgoWriterOutput("run Arun BrunDC"))
 				Ω(specReport.Failure.FailureNodeType).Should(Equal(types.NodeTypeBeforeEach))
-				Ω(rt).Should(HaveTracked("bef-1", "aft-1"))
+				Ω(rt).Should(HaveTracked("bef-1", "aft-1", "dc-1"))
+
+				Ω(specReport.AdditionalFailures).Should(HaveLen(2))
+
+				Ω(specReport.AdditionalFailures[0].State).Should(Equal(types.SpecStateFailed))
+				Ω(specReport.AdditionalFailures[0].Failure.Message).Should(Equal("fail-B"))
+				Ω(specReport.AdditionalFailures[0].Failure.Location).Should(Equal(clB))
+				Ω(specReport.AdditionalFailures[0].Failure.FailureNodeType).Should(Equal(types.NodeTypeAfterEach))
+
+				Ω(specReport.AdditionalFailures[1].State).Should(Equal(types.SpecStateTimedout))
+				Ω(specReport.AdditionalFailures[1].Failure.Message).Should(Equal("This spec timed out and reported the following failure after the timeout:\n\nfail-DC"))
+				Ω(specReport.AdditionalFailures[1].Failure.FailureNodeType).Should(Equal(types.NodeTypeCleanupAfterEach))
 			})
 		})
 	})

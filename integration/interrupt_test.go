@@ -79,7 +79,7 @@ var _ = Describe("Interrupt and Timeout", func() {
 			Ω(session).Should(gbytes.Say("Cleaning up twice..."))
 			Ω(session).Should(gbytes.Say("Cleaning up thrice..."), "we manage to get here even though the second after-each gets stuck.  that's thanks to the GracePeriod configuration.")
 
-			Ω(session).Should(gbytes.Say(`\[TIMEOUT\]`))
+			Ω(session).Should(gbytes.Say(`\[TIMEDOUT\]`))
 			Ω(session).Should(gbytes.Say(`Spec Goroutine`))
 			Ω(session).Should(gbytes.Say(`goroutine \d+ \[select\]`))
 			Ω(session).Should(gbytes.Say(`>\s*select {`), "The actual source code gets emitted now")

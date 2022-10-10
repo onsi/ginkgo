@@ -31,7 +31,7 @@ var _ = Describe("Failing Specs", func() {
 			Ω(output).ShouldNot(ContainSubstring("ginkgo_dsl.go"))
 			Ω(output).Should(ContainSubstring("fail_fixture_test.go:38"))
 
-			Ω(output).Should(ContainSubstring("[TIMEOUT]"))
+			Ω(output).Should(ContainSubstring("[TIMEDOUT]"))
 			Ω(output).Should(MatchRegexp(`goroutine \d+ \[chan receive\]`), "from the progress report emitted by the timeout")
 			Ω(output).Should(MatchRegexp(`>\s*\<\-c\.Done\(\)`), "from the progress report emitted by the timeout")
 

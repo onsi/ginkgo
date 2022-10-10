@@ -271,6 +271,8 @@ func (g *group) attemptSpec(isFinalAttempt bool, spec Spec) {
 			if g.suite.currentSpecReport.State == types.SpecStatePassed || state == types.SpecStateAborted {
 				g.suite.currentSpecReport.State = state
 				g.suite.currentSpecReport.Failure = failure
+			} else if state.Is(types.SpecStateFailureStates) {
+				g.suite.currentSpecReport.AdditionalFailures = append(g.suite.currentSpecReport.AdditionalFailures, types.AdditionalFailure{State: state, Failure: failure})
 			}
 		}
 		includeDeferCleanups = true

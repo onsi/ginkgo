@@ -275,7 +275,7 @@ func HaveFailed(options ...interface{}) OmegaMatcher {
 }
 
 func HaveTimedOut(options ...interface{}) OmegaMatcher {
-	return failureMatcherForState(types.SpecStateTimeout, "Failure.Message", options...)
+	return failureMatcherForState(types.SpecStateTimedout, "Failure.Message", options...)
 }
 
 func HaveAborted(options ...interface{}) OmegaMatcher {
