@@ -2628,6 +2628,140 @@ One final, somewhat complex, note on timeouts and the Grace Period.  As mentione
 - If the remaining node is interruptible and **does not** have a `NodeTimeout`, Ginkgo uses the Grace Period to set a deadline for the node.  If the deadline expires then a second Grace Period applies before Ginkgo leaks the node and moves on.
 - If the remaining node is **not** interruptible, Ginkgo will give the node a single Grace Period to complete and exit.  In this case since it cannot be interrupted Ginkgo will simply leak the node after one Grace Period.
 
+#### Using SpecContext with Gomega's Eventually
+
+Gomega provides `Eventually` to allow you to poll an object or function repeatedly until a Gomega matcher is satisfied.  `Eventually` integrates cleanly with interruptible nodes by accepting a `SpecContext`/`context.Context` parameter.  This allows you, for example, to enforce a single timeout across a set of polling assertions:
+
+```go
+Describe("interacting with the library", func() {
+  BeforeEach(func(ctx SpecContext) {
+      libraryClient = library.NewClient()
+      // we use eventually here to keep trying until we succeed (e.g. perhaps the server is still spinning up)
+      Eventually(func() error {
+        return libraryClient.Connect(ctx)
+      }).WithContext(ctx).Should(Succeed())
+  }, NodeTimeout(time.Millisecond * 500))
+
+  It("can save books", func(ctx SpecContext) {
+        numBooks := libraryClient.CountBooks(ctx)
+
+        book := &books.Book{
+          Title:  "Les Miserables",
+          Author: "Victor Hugo",
+          Pages:  2783,
+        }
+
+        Expect(libraryClient.SaveBook(ctx, book)).To(Succeed())
+
+        // perhaps the library is a distributed system that only converges eventually
+        Eventually(func() ([]*books.Book, error) {
+          return libraryClient.ListBooksByAuthor(ctx, "Victor Hugo")
+        }).WithContext(ctx).Should(ContainElement(book))
+        Eventually(func() int {
+          return libraryClient.CountBooks(ctx)
+        }).WithContext(ctx).Should(Equal(numBooks + 1))
+  }, SpecTimeout(time.Second*2))
+
+  AfterEach(func(ctx SpecContext) {
+      Expect(libraryClient.Cleanup(ctx, "books")).To(Succeed())
+
+      // let's make sure we eventually clean up
+      Eventually(func() int {
+        return libraryClient.CountBooks(ctx)
+      }).WithContext(ctx).Should(Equal(0))
+  }, NodeTimeout(time.Second))
+})
+```
+
+now, if any of the node contexts are cancelled (either due to a timeout or an interruption) `Eventually` will exit immediately with an appropriate failure.  We've written out this example in full to show how the context is passed _both_ to `Eventually` via `.WithContext(ctx)` _and_ to the various client methods that take a context.  For example:
+
+```go
+Eventually(func() ([]*books.Book, error) {
+  return libraryClient.ListBooksByAuthor(ctx, "Victor Hugo")
+}).WithContext(ctx).Should(ContainElement(book))
+```  
+
+This is important as the cancellation of the context needs to cause `ListBooksByAuthor` to exit _and_ `Eventually` to stop retrying.  This is a common-enough pattern that Gomega provides some short hand.  If you pass `Eventually` a function that takes a `context.Context` as its first parameter, Gomega will pass in the context attached via `.WithContext()` automatically.  This allows us to turn statements like this:
+
+```go
+Eventually(func() error {
+  return libraryClient.Connect(ctx)
+}).WithContext(ctx).Should(Succeed())
+```
+
+into:
+
+```go
+Eventually(libraryClient.Connect).WithContext(ctx).Should(Succeed())
+```
+
+This also works well with Gomega's `.WithArguments(...)` method which allows us to turn statements like this:
+```go
+Eventually(func() ([]*books.Book, error) {
+  return libraryClient.ListBooksByAuthor(ctx, "Victor Hugo")
+}).WithContext(ctx).Should(ContainElement(book))
+```  
+
+into:
+```go
+Eventually(libraryClient.ListBooksByAuthor).WithContext(ctx).WithArguments("Victor Hugo").Should(ContainElement(book))
+```  
+
+all told this allows us to rewrite our example as:
+
+```go
+Describe("interacting with the library", func() {
+  BeforeEach(func(ctx SpecContext) {
+      libraryClient = library.NewClient()
+      // we use eventually here to keep trying until we succeed (e.g. perhaps the server is still spinning up)
+      Eventually(libraryClient.Connect).WithContext(ctx).Should(Succeed())
+  }, NodeTimeout(time.Millisecond * 500))
+
+  It("can save books", func(ctx SpecContext) {
+        numBooks := libraryClient.CountBooks(ctx)
+
+        book := &books.Book{
+          Title:  "Les Miserables",
+          Author: "Victor Hugo",
+          Pages:  2783,
+        }
+
+        Expect(libraryClient.SaveBook(ctx, book)).To(Succeed())
+
+        // perhaps the library is a distributed system that only converges eventually
+        Eventually(libraryClient.ListBooksByAuthor).WithContext(ctx).WithArguments("Victor Hugo").Should(ContainElement(book))
+        Eventually(libraryClient.CountBooks).WithContext(ctx).Should(Equal(numBooks + 1))
+  }, SpecTimeout(time.Second*2))
+
+  AfterEach(func(ctx SpecContext) {
+      Expect(libraryClient.Cleanup(ctx, "books")).To(Succeed())
+      // let's make sure we eventually clean up
+      Eventually(libraryClient.CountBooks).WithContext(ctx).Should(Equal(0))
+  }, NodeTimeout(time.Second))
+})
+```
+
+which is much cleaner!
+
+Lastly, there's another reason you'll want to pass the `SpecContext` to `Eventually`.  Gomega uses the extension point provided by `SpecContext` to provide additional information whenever a [Progress Report](#getting-visibility-into-long-running-specs) is requested.  This allows you to get deeper visibility into the state of a running `Eventually` simply by requesting a Progress Report (either by sending a `SIGINFO`/`SIGUSR1` or by using the `PollProgressAfter` decorator).  For example, imagine this assertion:
+
+```go
+Eventually(libraryClient.ListBooksByAuthor).WithContext(ctx).WithArguments("Victor Hugo").Should(ContainElement(book))
+```
+
+is stuck waiting.  A generated Progress Report would show the current state of the `Eventually` assertion which would include the failure message associated with the `ContainElement` matcher:
+
+```
+Expected
+    <[]*Book | len:3, cap:3>: [
+        "The Hunchback of Notre Dame",
+        "Notre Dame de Paris",
+        "L'Homme Qui Rit",
+    ]
+to contain element matching
+    <*Book>: Les Miserables
+```
+
 #### Interruptible Node Function Signatures: A Quick Reference
 
 Most Ginkgo nodes can be made interruptible.  **Setup** and **Subject** nodes typically take a simple `func() {}` but can be made interruptible like so:
