@@ -37,4 +37,10 @@ var _ = Describe("reporting test", func() {
 	It("is skipped", func() {
 		Skip("skip")
 	})
+
+	It("times out and fails during cleanup", func(ctx SpecContext) {
+		<-ctx.Done()
+		DeferCleanup(func() { Fail("double-whammy") })
+		Fail("failure-after-timeout")
+	}, NodeTimeout(time.Millisecond*100))
 })

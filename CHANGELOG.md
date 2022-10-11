@@ -1,3 +1,39 @@
+## 2.3.0
+
+### Interruptible Nodes and Timeouts
+
+Ginkgo now supports per-node and per-spec timeouts on interruptible nodes.  Check out the [documentation for all the details](https://onsi.github.io/ginkgo/#spec-timeouts-and-interruptible-nodes) but the gist is you can now write specs like this:
+
+```go
+It("is interruptible", func(ctx SpecContext) { // or context.Context instead of SpecContext, both are valid.
+    // do things until `ctx.Done()` is closed, for example:
+    req, err := http.NewRequestWithContext(ctx, "POST", "/build-widgets", nil)
+    Expect(err).NotTo(HaveOccured())
+    _, err := http.DefaultClient.Do(req)
+    Expect(err).NotTo(HaveOccured())
+
+    Eventually(client.WidgetCount).WithContext(ctx).Should(Equal(17))
+}, NodeTimeout(time.Second*20), GracePeriod(5*time.Second))
+```
+
+and have Ginkgo ensure that the node completes before the timeout elapses.  If it does elapse, or if an external interrupt is received (e.g. `^C`) then Ginkgo will cancel the context and wait for the Grace Period for the node to exit before proceeding with any cleanup nodes associated with the spec.  The `ctx` provided by Ginkgo can also be passed down to Gomega's `Eventually` to have all assertions within the node governed by a single deadline.
+
+### Features
+
+- Ginkgo now records any additional failures that occur during the cleanup of a failed spec.  In prior versions this information was quietly discarded, but the introduction of a more rigorous approach to timeouts and interruptions allows Ginkgo to better track subsequent failures.
+- `SpecContext` also provides a mechanism for third-party libraries to provide additional information when a Progress Report is generated.  Gomega uses this to provide the current state of an `Eventually().WithContext()` assertion when a Progress Report is requested.
+- DescribeTable now exits with an error if it is not passed any Entries [a4c9865]
+
+## Fixes
+- fixes crashes on newer Ruby 3 installations by upgrading github-pages gem dependency [92c88d5]
+- Make the outline command able to use the DSL import [1be2427]
+
+## Maintenance
+- chore(docs): delete no meaning d [57c373c]
+- chore(docs): Fix hyperlinks [30526d5]
+- chore(docs): fix code blocks without language settings [cf611c4]
+- fix intra-doc link [b541bcb]
+
 ## 2.2.0
 
 ### Generate real-time Progress Reports [f91377c]

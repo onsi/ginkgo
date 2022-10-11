@@ -24,7 +24,7 @@ func BuildRunCommand() command.Command {
 		panic(err)
 	}
 
-	interruptHandler := interrupt_handler.NewInterruptHandler(0, nil)
+	interruptHandler := interrupt_handler.NewInterruptHandler(nil)
 	interrupt_handler.SwallowSigQuit()
 
 	return command.Command{
@@ -115,7 +115,7 @@ OUTER_LOOP:
 			}
 			suites[suiteIdx] = suite
 
-			if r.interruptHandler.Status().Interrupted {
+			if r.interruptHandler.Status().Interrupted() {
 				opc.StopAndDrain()
 				break OUTER_LOOP
 			}

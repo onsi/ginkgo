@@ -1182,7 +1182,6 @@ You can also attach additional `io.Writer`s for `GinkgoWriter` to tee to via `Gi
 Finally - when running in verbose mode via `ginkgo -v` anything written to `GinkgoWriter` will be immediately streamed to stdout.  This can help shorten the feedback loop when debugging a complex spec.
 
 ### Documenting Complex Specs: By
-
 As a rule, you should try to keep your subject and setup closures short and to the point.  Sometimes this is not possible, particularly when testing complex workflows in integration-style tests.  In these cases your test blocks begin to hide a narrative that is hard to glean by looking at code alone.  Ginkgo provides `By` to help in these situations.  Here's an example:
 
 ```go
@@ -1230,7 +1229,6 @@ We haven't discussed [Report Entries](#attaching-data-to-reports) yet but we'll 
 `By` doesn't affect the structure of your specs - it's simply syntactic sugar to help you document long and complex specs.  Ginkgo has additional mechanisms to break specs up into more granular subunits with guaranteed ordering - we'll discuss [Ordered containers](#ordered-containers) in detail later.
 
 ### Table Specs
-
 We'll round out this chapter on [Writing Specs](#writing-specs) with one last topic.  Ginkgo provides an expressive DSL for writing table driven specs.  This DSL is a simple wrapper around concepts you've already met - container nodes like `Describe` and subject nodes like `It`.
 
 Let's write a table spec to describe the Author name functions we tested earlier:
@@ -1760,7 +1758,7 @@ Each of these processes then enters the Tree Construction Phase and all processe
 
 With few exceptions, the different test processes do not communicate with one another and for most spec suites you, the developer, do not need to worry about which spec is running on which process.  This makes it easy to parallelize your suites and get some major performance gains.
 
-There are, however, contexts where you _do_ need to be aware of which process a given spec is running on.  In particular, there are several patterns for building effective parallelizable integration suites that need this information. We will explore such patterns in much more detail in the [Patterns chapter](#patterns-for-parallel-integration specs) - feel free to jump straight there if you're interested!  For now we'll simply introduce some of the building blocks that Ginkgo provides for implementing these patterns.
+There are, however, contexts where you _do_ need to be aware of which process a given spec is running on.  In particular, there are several patterns for building effective parallelizable integration suites that need this information. We will explore such patterns in much more detail in the [Patterns chapter](#patterns-for-parallel-integration-specs) - feel free to jump straight there if you're interested!  For now we'll simply introduce some of the building blocks that Ginkgo provides for implementing these patterns.
 
 #### Discovering Which Parallel Process a Spec is Running On
 
@@ -1860,7 +1858,14 @@ func SynchronizedAfterSuite(
 
 Let's dig into `SynchronizedBeforeSuite` (henceforth `SBS`) first.  `SBS` runs at the beginning of the Run Phase - before any specs have run but after the spec tree has been parsed and constructed.
 
-`SBS` allows us to set up state in one process, and pass information to all the other processes.  Concretely, the `process1` function runs **only** on parallel process #1.  All other parallel processes pause and wait for `process1` to complete.  Upon completion `process1` returns arbitrary data as a `[]byte` slice and this data is then passed to all parallel processes which then invoke the `allProcesses` function in parallel, passing in the `[]byte` slice.
+`SBS` allows us to set up state in one process, and pass information to all the other processes.  Concretely, the `process1` function runs **only** on parallel process #1.  All other parallel processes pause and wait for `process1` to complete.  Upon completion `process1` returns arbitrary data as a `[]byte` slice and this data is then passed to all parallel processes which then invoke the `allProcesses` function in parallel, passing in the `[]byte` slice.  Note that the passing of a `[]byte` slice from `process1` to `allProcesses` is optional.  `SynchronizedBeforeSuite` also supports the following signature:
+
+```go
+func SynchronizedBeforeSuite(
+  process1 func(),
+  allProcesses func(),
+)
+```
 
 Similarly, `SynchronizedAfterSuite` is split into two functions.  The first, `allProcesses`, runs on all processes after they finish running specs.  The second, `process1`, only runs on process #1 - and only _after_ all other processes have finished and exited.
 
@@ -2522,13 +2527,459 @@ Ginkgo's retry behavior generally works as you'd expect with most specs, however
 
 Stepping back - it bears repeating: you should use `FlakeAttempts` judiciously.  The best approach to managing flaky spec suites is to debug flakes early and resolve them.  More often than not they are telling you something important about your architecture.  In a world of competing priorities and finite resources, however, `FlakeAttempts` provides a means to explicitly accept the technical debt of flaky specs and move on.
 
+### Getting Visibility Into Long-Running Specs
+Ginkgo is often used to build large, complex, integration suites and it is a common - if painful - experience for these suites to run slowly.  Ginkgo provides numerous mechanisms that enable developers to get visibility into what part of a suite is running and where, precisely, a spec may be lagging or hanging.
+
+Ginkgo can provide a **Progress Report** of what is currently running in response to the `SIGINFO` and `SIGUSR1` signals.  The Progress Report includes information about which node is currently running and the exact line of code that it is currently executing, along with any relevant goroutines that were launched by the spec.  The report also includes the 10 most recent lines written to the `GinkgoWriter`.  A developer waiting for a stuck spec can get this information immediately by sending either the `SIGINFO` or `SIGUSR1` signal (on MacOS/BSD systems, `SIGINFO` can be sent via `^T` - making it especially convenient; if you're on linux you'll need to send `SIGUSR1` to the actual test process spanwed by `ginkgo` - not the `ginkgo` cli process itself).
+
+These Progress Reports can also show you a preview of the running source code, but only if Ginkgo can find your source files.  If need be you can tell Ginkgo where to look for source files by specifying `--source-root`.
+
+Finally - you can instruct Ginkgo to provide these Progress Reports automatically whenever a node takes too long to complete.  You do this by passing the `--poll-progress-after=INTERVAL` flag to specify how long Ginkgo should wait before emitting a progress report.  Once this interval is passed Ginkgo can periodically emit Progress Reports - the interval between these reports is controlled via the `--poll-progress-interval=INTERVAL` flag.  By default `--poll-progress-after` is set to `0` and so Ginkgo does not emit Progress Reports.  
+
+You can ovveride the global setting of `poll-progess-after` and `poll-progress-interval` on a per-node basis by using the `PollProgressAfter(INTERVAL)` and `PollProgressInterval(INTERVAL)` decorators.  A value of `0` will explicitly turn off Progress Reports for a given node regardless of the global setting.
+
+All Progress Reports generated by Ginkgo - whether interactively via `SIGINFO/SIGUSR1` or automatically via the `PollProgressAfter` configuration - also appear in Ginkgo's [machine-readable reports](#generating-machine-readable-reports).
+
+In addition to these formal Progress Reports, you can tell Ginkgo to emit progress of a spec as Ginkgo runs each of its nodes.  You do this with `ginkgo --progress -v`.  `--progress` will emit a message to the `GinkgoWriter` just before a node starts running.  By running with `-v` or `-vv` you can then stream the output to the `GinkgoWriter` immediately - this can help developers debugging a suite understand exactly which node is running in real-time.  If you want to run with `--progress` but want to suppress output of individual nodes (e.g. a top-level `ReportAfterEach` that always runs even if a spec is skipped) you can pass the `SuppressProgressOuput` decorator to the node in question.
+
+
+### Spec Timeouts and Interruptible Nodes
+
+Sometimes specs get stuck.  Perhaps a network call is running slowly; or a newly introduced bug has caused an asynchronous process the test is relying on to hang.  It's important, in such cases, to be able to set a deadline for a given spec or node and require the spec/node to complete before the deadline has elapsed.
+
+Ginkgo supports this through a collection of timeout-related decorators and the notion of **Interruptible Nodes**.
+
+#### Interruptible Nodes and SpecContext
+
+We've seen [how Ginkgo handles failures](#mental-model-how-ginkgo-handles-failure) when an explicit (or implicit, if using a matcher library) call to `Fail` takes place: `Fail` raises a panic to indicate a failure and immediately exit the current node.  Such failures emanate from _within_ a node's running goroutines.
+
+However, in the context of a timeout the cause of failure comes from _outside_ a node's running goroutine.  Once a deadline has passed Ginkgo can mark a spec as failed, but also needs a mechanism to notify the current node's running goroutine that it is timed to stop trying and exit.  Ginkgo supports this through the notion of an Interruptible Node.
+
+A node is considered interruptible if it has a callback that takes either a `SpecContext` or `context.Context` object:
+
+```go
+It("can save books", func(ctx SpecContext) {
+      book := &books.Book{
+        Title:  "Les Miserables",
+        Author: "Victor Hugo",
+        Pages:  2783,
+      }
+
+      Expect(libraryClient.SaveBook(ctx, book)).To(Succeed())
+      Expect(libraryClient.ListBooks(ctx)).To(ContainElement(book))
+})
+```
+
+when such a node is detected Ginkgo will automatically supply a `SpecContext` object.  This `SpecContext` object satisfies the `context.Context` interface and can be used anywhere a `context.Context` object is used.  When a spec times out or is interupted by the user (see below) Ginkgo will cancel the `SpecContext` to signal to the spec that it is time to exit. In the case above, it is assumed that `libraryClient` knows how to return once `ctx` is cancelled.
+
+Only setup and subjects nodes can be interruptible.  Container nodes cannot be interrupted.
+
+As a more explicit example, here's a (contrived) example to illustrate a timeout in action:
+
+```go
+It("likes to sleep in", func(ctx context.Context) {
+  select {
+  case <-ctx.Done():
+    return
+  case <-time.After(time.Hour)
+  }
+}, NodeTimeout(time.Second))
+```
+
+rather than hang for an hour, this spec will exit (and be marked as failed due to a timeout), soon after the one second NodeTimeout deadline elapses.  When the deadline elapses Ginkgo takes a [Progress Report](#getting-visibility-into-long-running-specs) snapshot to document where, exactly, the goroutine was stuck when the timeout occured.  Because it is important to take the snapshot just before the context is cancelled, Ginkgo manages the timing of the cancellation directly and does not rely on a `context.WithDeadline()`-flavored context.  As a result calling `ctx.Deadline()` will not return the deadline of the node in question - however you can trust that `ctx.Done()` will be closed on time.
+
+Note that you are allowed to pass in either `SpecContext` or the more canonical `context.Context` as shown in this example.  The `SpecContext` object has a few additional methods attached to it and serves as an extension point for third-party libraries (including Gomega).  You are free to wrap `SpecContext` however you wish (e.g. via `context.WithValue(ctx, "key", "value")`) - Ginkgo will continue to cancel the resulting context at the correct time and third-party libraries will still have access to the full-blown `SpecContext` object as it is stored as a value wihtin the context with the `"GINKGO_SPEC_CONTEXT"` key.
+
+#### The SpecTimeout and NodeTimeout Decorators
+
+We saw a quick preview of the `NodeTimeout` decorator above.  This applies a timeout deadline to a single node and can be applied to any interruptible node.  Once the `NodeTimeout` elapses, Ginkgo will cancel the interruptible node's context.
+
+`SpecTimeout` is similar to `NodeTimeout` but can only decorate `It` nodes and acts as a deadline for the lifecycle of the spec.  That is, all nodes associated with the spec need to complete before `SpecTimeout` expires.  Note that individual nodes within the spec can also have a `NodeTimeout` - however that timeout can only ever be more stringent than the deadline implied by `SpecTimeout`.  Here's a simple example:
+
+```go
+Describe("interacting with the library", func() {
+  BeforeEach(func(ctx SpecContext) {
+      libraryClient = library.NewClient()
+      Expect(libraryClient.Connect(ctx)).To(Succeed())
+  }, NodeTimeout(time.Millisecond * 500))
+
+  It("can save books", func(ctx SpecContext) {
+        book := &books.Book{
+          Title:  "Les Miserables",
+          Author: "Victor Hugo",
+          Pages:  2783,
+        }
+
+        Expect(libraryClient.SaveBook(ctx, book)).To(Succeed())
+        Expect(libraryClient.ListBooks(ctx)).To(ContainElement(book))
+  }, SpecTimeout(time.Second*2))
+
+  AfterEach(func(ctx SpecContext) {
+      Expect(libraryClient.Cleanup(ctx, "books")).To(Succeed())
+  }, NodeTimeout(time.Second))
+})
+```
+
+here the total runtime of `BeforeEach`, `It`, and `AfterEach` must be less than the `SpecTimeout` of 2 seconds.  In addition, the `BeforeEach` callback must exit within 500ms and the `AfterEach` after 1 second.
+
+When a `SpecTimeout` expires the current node is interrupted (i.e. it's context is cancelled) and Ginkgo proceeds to run any associated clean up nodes (i.e. any `AfterEach`, `AfterAll`, and `DeferCleanup` nodes) subject to their own `NodeTimeout`s.  This is because cleanup is considered an essential part of the spec lifecycle and must not be skipped if possible.  Thus the `SpecTimeout` is not a strict guarantee on the runtime of a spec but rather a threshold at which the spec will be considered failed.
+
+Currently, `SpecTimeout` and `NodeTimeout` cannot be applied to container nodes.
+
+#### Mental Model: The Life-cycle of Interruptions and the GracePeriod Decorator
+
+Interruptible nodes and the `SpecTimeout`/`NodeTimeout` decorators allow you to enforce deadlines at a granular per-spec/per-node level.  But what happens when a node fails to return after its `SpecContext` is cancelled.  What happens if it's _really_ stuck?
+
+When a node times out Ginkgo cancels its `SpecContext` and then waits for it to exit for a period of time called the **Grace Period**.  If the node exits within the Grace Period Ginkgo will continue with the relevant portions of the spec (specifically, Ginkgo will behave as if a failure occurred and skip any subsequent setup or subject nodes and, isntead, simply run through the cleanup nodes).  If, however, the node does not exit within the Grace Period, Ginkgo will allow the node to _leak_ and proceed with the relevant portion of the spec.
+
+A leaked node continues to run in the background - and this can, potentially, be a source of confusion for future specs as a leaked node can interact with Ginkgo's global callbacks (e.g. `Fail`, or `AddReportEntry`) and pollute the currently running spec.  For this reason it's important to write specs that respond to cancelled contexts and exit as soon as possible.  Nonetheless, Ginkgo takes the opinion that it is better to potentially leak a node and continue with the suite than to allow the suite to hang forever.  When a node is leaked due to a timeout and elapsed Grace Period Ginkgo will emit a message stating that the node has leaked along with a [Progress Report](#getting-visibility-into-long-running-specs) that shows the currently running code in the leaked goroutine.
+
+The Grace Period can be configured on a per-node basis using the `GracePeriod` decorator (which can be applied to any interruptible node) and/or globally with the `--grace-period=<DURATION>` cli flag.
+
+One final, somewhat complex, note on timeouts and the Grace Period.  As mentioned above (and as you'll see below) when a `SpecTimeout` or user-initiated interrupt occurs Ginkgo will interrupt the current node by cancelling its context, and then run any relevant cleanup nodes.  These cleanup nodes **must** run to ensure specs clean up after themselves, however they are now running in a setting where the spec is out of time and needs to wind down as soon as possible.  To facilitate this Ginkgo applies a timeout to each of these remaining nodes as follows:
+
+- If the remaining node is interruptible and has a `NodeTimeout`, Ginkgo uses that `NodeTimeout` to set a deadline for the node.  If the deadline expires then a Grace Period applies (either the node's `GracePeriod` or the global `--grace-period`) before Ginkgo leaks the node and moves on.
+- If the remaining node is interruptible and **does not** have a `NodeTimeout`, Ginkgo uses the Grace Period to set a deadline for the node.  If the deadline expires then a second Grace Period applies before Ginkgo leaks the node and moves on.
+- If the remaining node is **not** interruptible, Ginkgo will give the node a single Grace Period to complete and exit.  In this case since it cannot be interrupted Ginkgo will simply leak the node after one Grace Period.
+
+#### Using SpecContext with Gomega's Eventually
+
+Gomega provides `Eventually` to allow you to poll an object or function repeatedly until a Gomega matcher is satisfied.  `Eventually` integrates cleanly with interruptible nodes by accepting a `SpecContext`/`context.Context` parameter.  This allows you, for example, to enforce a single timeout across a set of polling assertions:
+
+```go
+Describe("interacting with the library", func() {
+  BeforeEach(func(ctx SpecContext) {
+      libraryClient = library.NewClient()
+      // we use eventually here to keep trying until we succeed (e.g. perhaps the server is still spinning up)
+      Eventually(func() error {
+        return libraryClient.Connect(ctx)
+      }).WithContext(ctx).Should(Succeed())
+  }, NodeTimeout(time.Millisecond * 500))
+
+  It("can save books", func(ctx SpecContext) {
+        numBooks := libraryClient.CountBooks(ctx)
+
+        book := &books.Book{
+          Title:  "Les Miserables",
+          Author: "Victor Hugo",
+          Pages:  2783,
+        }
+
+        Expect(libraryClient.SaveBook(ctx, book)).To(Succeed())
+
+        // perhaps the library is a distributed system that only converges eventually
+        Eventually(func() ([]*books.Book, error) {
+          return libraryClient.ListBooksByAuthor(ctx, "Victor Hugo")
+        }).WithContext(ctx).Should(ContainElement(book))
+        Eventually(func() int {
+          return libraryClient.CountBooks(ctx)
+        }).WithContext(ctx).Should(Equal(numBooks + 1))
+  }, SpecTimeout(time.Second*2))
+
+  AfterEach(func(ctx SpecContext) {
+      Expect(libraryClient.Cleanup(ctx, "books")).To(Succeed())
+
+      // let's make sure we eventually clean up
+      Eventually(func() int {
+        return libraryClient.CountBooks(ctx)
+      }).WithContext(ctx).Should(Equal(0))
+  }, NodeTimeout(time.Second))
+})
+```
+
+now, if any of the node contexts are cancelled (either due to a timeout or an interruption) `Eventually` will exit immediately with an appropriate failure.  We've written out this example in full to show how the context is passed _both_ to `Eventually` via `.WithContext(ctx)` _and_ to the various client methods that take a context.  For example:
+
+```go
+Eventually(func() ([]*books.Book, error) {
+  return libraryClient.ListBooksByAuthor(ctx, "Victor Hugo")
+}).WithContext(ctx).Should(ContainElement(book))
+```  
+
+This is important as the cancellation of the context needs to cause `ListBooksByAuthor` to exit _and_ `Eventually` to stop retrying.  This is a common-enough pattern that Gomega provides some short hand.  If you pass `Eventually` a function that takes a `context.Context` as its first parameter, Gomega will pass in the context attached via `.WithContext()` automatically.  This allows us to turn statements like this:
+
+```go
+Eventually(func() error {
+  return libraryClient.Connect(ctx)
+}).WithContext(ctx).Should(Succeed())
+```
+
+into:
+
+```go
+Eventually(libraryClient.Connect).WithContext(ctx).Should(Succeed())
+```
+
+This also works well with Gomega's `.WithArguments(...)` method which allows us to turn statements like this:
+```go
+Eventually(func() ([]*books.Book, error) {
+  return libraryClient.ListBooksByAuthor(ctx, "Victor Hugo")
+}).WithContext(ctx).Should(ContainElement(book))
+```  
+
+into:
+```go
+Eventually(libraryClient.ListBooksByAuthor).WithContext(ctx).WithArguments("Victor Hugo").Should(ContainElement(book))
+```  
+
+all told this allows us to rewrite our example as:
+
+```go
+Describe("interacting with the library", func() {
+  BeforeEach(func(ctx SpecContext) {
+      libraryClient = library.NewClient()
+      // we use eventually here to keep trying until we succeed (e.g. perhaps the server is still spinning up)
+      Eventually(libraryClient.Connect).WithContext(ctx).Should(Succeed())
+  }, NodeTimeout(time.Millisecond * 500))
+
+  It("can save books", func(ctx SpecContext) {
+        numBooks := libraryClient.CountBooks(ctx)
+
+        book := &books.Book{
+          Title:  "Les Miserables",
+          Author: "Victor Hugo",
+          Pages:  2783,
+        }
+
+        Expect(libraryClient.SaveBook(ctx, book)).To(Succeed())
+
+        // perhaps the library is a distributed system that only converges eventually
+        Eventually(libraryClient.ListBooksByAuthor).WithContext(ctx).WithArguments("Victor Hugo").Should(ContainElement(book))
+        Eventually(libraryClient.CountBooks).WithContext(ctx).Should(Equal(numBooks + 1))
+  }, SpecTimeout(time.Second*2))
+
+  AfterEach(func(ctx SpecContext) {
+      Expect(libraryClient.Cleanup(ctx, "books")).To(Succeed())
+      // let's make sure we eventually clean up
+      Eventually(libraryClient.CountBooks).WithContext(ctx).Should(Equal(0))
+  }, NodeTimeout(time.Second))
+})
+```
+
+which is much cleaner!
+
+Lastly, there's another reason you'll want to pass the `SpecContext` to `Eventually`.  Gomega uses the extension point provided by `SpecContext` to provide additional information whenever a [Progress Report](#getting-visibility-into-long-running-specs) is requested.  This allows you to get deeper visibility into the state of a running `Eventually` simply by requesting a Progress Report (either by sending a `SIGINFO`/`SIGUSR1` or by using the `PollProgressAfter` decorator).  For example, imagine this assertion:
+
+```go
+Eventually(libraryClient.ListBooksByAuthor).WithContext(ctx).WithArguments("Victor Hugo").Should(ContainElement(book))
+```
+
+is stuck waiting.  A generated Progress Report would show the current state of the `Eventually` assertion which would include the failure message associated with the `ContainElement` matcher:
+
+```
+Expected
+    <[]*Book | len:3, cap:3>: [
+        "The Hunchback of Notre Dame",
+        "Notre Dame de Paris",
+        "L'Homme Qui Rit",
+    ]
+to contain element matching
+    <*Book>: Les Miserables
+```
+
+#### Interruptible Node Function Signatures: A Quick Reference
+
+Most Ginkgo nodes can be made interruptible.  **Setup** and **Subject** nodes typically take a simple `func() {}` but can be made interruptible like so:
+
+```go
+BeforeEach(func(ctx SpecContext) {
+  ...
+})
+
+It("is interruptible", func (ctx context.Context) {
+  ...
+})
+
+AfterEach(func(ctx context.Context) {
+  ...
+})
+```
+
+Note that both `context.Context` and `SpecContext` are valid.
+
+In addition, the **Suite Setup** nodes can be made interruptible.  In the case of `BeforeSuite`, `AfterSuite`, and `SynchronizedAfterSuite` this is similar to the setup and subject nodes above:
+
+```go
+BeforeSuite(func(ctx SpecContext) {
+  ...
+})
+
+AfterSuite(func(ctx SpecContext) {
+  ...
+})
+
+SynchronizedAfterSuite(func(ctx SpecContext) {
+  ...
+}, func(ctx context.Context) {
+  ...
+})
+```
+
+Note that the `SynchronizedAfterSuite` takes two functions - the first runs on all processes, the second only on proccess 1.  Each of these can be optionally passed a context, making them independently interruptible (or not, if no context is passed in).
+
+`SynchronizedBeforeSuite` also support indepdenently interruptible functions.  [Recall](#parallel-suite-setup-and-cleanup-synchronizedbeforesuite-and-synchronizedaftersuite) that the two callbacks associated with `SynchronizedBeforeSuite` can optionally return and receive a `[]byte` array to facilitate communication between the primary process annd the other parallel processes.  This optionality expands the set of possible interruptible signatures.  For example:
+
+```go
+SynchronizedBeforeSuite(func(ctx SpecContext) {
+  ...
+}, func(ctx SpecContext) {
+  ...
+})
+
+SynchronizedBeforeSuite(func(ctx SpecContext) []byte {
+  return []byte{"data"}
+}, func(ctx SpecContext, b []byte) {
+  ...
+})
+```
+are all valid interruptible signatures.  Of course you can specify `context.Context` instead and can mix-and-match interruptibility between the two functions.
+
+Currently the **Reporting** nodes (`ReportAfterEach`, `RepoertAfterSuite`, and `ReportBeforeEach`) cannot be made interruptible and do not accept callbacks that recieve a `SpecContext`.  This may change in a future release of Ginkgo (in a backward compatible way).
+
+As for **Container** nodes, since these run during the Tree Construction Phase they cannot be made interruptible and so do not accept functions that expect a context.  And since the `By` annotation is simply synctactic sugar enabling more detailed spec documentation, any callbacks passed to `By` cannot be independently marked as interruptible (you should, instead, use the `context` passed into the node that you're calling `By` from).
+
+Finally, there *are* two other Ginkgo constructs that can be made interruptible and their flexibility warrants some specific coverage in this section: `DeferCleanup` and `DescribeTable`.
+
+Recall that [`DeferCleanup`](#cleaning-up-our-cleanup-code-defercleanup) effectively generates a dynamic `After*` node for your spec.  It's important to note that the lifecycle of this generated node is different from the lifecycle of the node in which `DeferCleanup` was called.  Consider, our earlier example:
+
+```go
+Describe("interacting with the library", func() {
+  BeforeEach(func(ctx SpecContext) {
+      libraryClient = library.NewClient()
+      Expect(libraryClient.Connect(ctx)).To(Succeed())
+  }, NodeTimeout(time.Millisecond * 500))
+
+  It("can save books", func(ctx SpecContext) {
+    ...
+  }, SpecTimeout(time.Second*2))
+
+  AfterEach(func(ctx SpecContext) {
+      Expect(libraryClient.Cleanup(ctx, "books")).To(Succeed())
+  }, NodeTimeout(time.Second))
+})
+```
+
+We can tidy things up by replacing the `AfterEach` with a `DeferCleanup` in the `BeforeEach`:
+
+```go
+/* === INVALID === */
+Describe("interacting with the library", func() {
+  BeforeEach(func(ctx SpecContext) {
+      libraryClient = library.NewClient()
+      Expect(libraryClient.Connect(ctx)).To(Succeed())
+      DeferCleanup(func() {
+        libraryClient.Cleanup(ctx, "books")
+      })
+  }, NodeTimeout(time.Millisecond * 500))
+
+  It("can save books", func(ctx SpecContext) {
+    ...
+  }, SpecTimeout(time.Second*2))
+})
+```
+
+however we've committed a subtle error.  We've captured the `BeforeEach` `SpecContext` and passed it in to the `DeferCleanup` function.  However the `DeferCleanup` function will only run _after_ the `BeforeEach` completes (and its `SpecContext` has been cancelled) - as a result `libraryClient.Cleanup` will always receive a cancelled context.
+
+Morever, we want to preserve the fact that our `BeforeEach` has a 500ms timeout whereas our clean up code has a separate 1 second timeout.
+
+The correct way to write this is to make the `DeferCleanup` node interruptible and decorate it with its own `NodeTimeout`:
+
+```go
+Describe("interacting with the library", func() {
+  BeforeEach(func(ctx SpecContext) {
+      libraryClient = library.NewClient()
+      Expect(libraryClient.Connect(ctx)).To(Succeed())
+      DeferCleanup(func(ctx SpecContext) {
+        libraryClient.Cleanup(ctx, "books")
+      }, NodeTimeout(time.Second))
+  }, NodeTimeout(time.Millisecond * 500))
+
+  It("can save books", func(ctx SpecContext) {
+    ...
+  }, SpecTimeout(time.Second*2))
+})
+```
+
+(as before, we could have used `context.Context` instead of `SpecContext`).  This is looking better but we can do more.  Recall that `DeferCleanup` can take additional parameters at invocation to pass along to its function.  If the first argument that its function expects is a context, `DeferCleanup` will automatically treat the function as interruptible and provide it with a `SpecContext`.  This allows us to write:
+
+```go
+Describe("interacting with the library", func() {
+  BeforeEach(func(ctx SpecContext) {
+      libraryClient = library.NewClient()
+      Expect(libraryClient.Connect(ctx)).To(Succeed())
+      DeferCleanup(libraryClient.Cleanup, "books", NodeTimeout(time.Second))
+  }, NodeTimeout(time.Millisecond * 500))
+
+  It("can save books", func(ctx SpecContext) {
+    ...
+  }, SpecTimeout(time.Second*2))
+})
+```
+
+As an aside, if you _don't_ want Ginkgo to inject `SpecContext` you can, instead, provide your own context.  Here, for example, we avoid making the `DeferCleanup` interruptible by passing in our own context:
+
+```go
+      DeferCleanup(libraryClient.Cleanup, "books", NodeTimeout(time.Second)) //interruptible
+      DeferCleanup(libraryClient.Cleanup, context.Background(), "books") //*not* interruptible
+```
+
+The heuristic here is simple: if the function passed to `DeferCleanup` takes a `context.Context` as its first argument and a context is passed in as the first parameter to `DeferCleanup` then the function is not interruptible and the passed-in context is used.  Otherwise the function is considered interruptible and a `SpecContext` is passed-in instead.  If, instead, the first argument to the function is specifically a `SpecContext` then the function is always considered interruptible regardless of what the subsequent parameters are.
+
+`DescribeTable` behaves similarly.  You can make the `It`s generated by your table interruptible by passing a `SpecContext` or `context.Context` as the first argument to the table function:
+
+```go
+DescribeTable("shelf counts", 
+  func(ctx SpecContext, shelf string, count int) { // or context.Context instead
+    Expect(libraryClient.Count(ctx, shelf)).To(Equal(count))
+  },
+  Entry("books on shelf A", "A", 17, NodeTimeout(time.Second)),
+  Entry("books on shelf B", "B", 20, NodeTimeout(time.Second)),
+  ...
+)
+```
+
+Note that the `NodeTimeout` decorators go on the individual entries.
+
+If you also want to specify a [custom entry description generator](#generating-entry-descriptions) you can pass in a function that takes the non-`SpecContext` parameters and returns `string`:
+
+
+```go
+DescribeTable("shelf counts", 
+  func(ctx SpecContext, shelf string, count int) { // or context.Context instead
+    Expect(libraryClient.Count(ctx, shelf)).To(Equal(count))
+  },
+  func(shelf string, _ int) string {
+    return fmt.Sprintf("books on shelf %s", shelf)
+  }
+  Entry("books on shelf A", "A", 17, NodeTimeout(time.Second)),
+  Entry("books on shelf B", "B", 20, NodeTimeout(time.Second)),
+  ...
+)
+```
+
+As with `DeferCleanup`, Ginkgo will detect if the entry parameter list provides a context.  Doing so will avoid treating the function as interruptible and use the provided context instead.  For example:
+
+```go
+DescribeTable("contrived context-value example", 
+  func(ctx context.Context, result string) { //but **NOT** SpecContext
+    Expect(libraryClient.Encabulate(ctx)).To(Equal(result))
+  },
+  Entry("with a generic context", context.Background(), "Nothin"),
+  Entry("with a context with a magical value", context.WithValue(context.Background(), "magic", "word"), "Geminio"),
+  ...
+)
+```
+
+#### SpecContext and Progress Reports
+
+`SpecContext` provides an extension point that enables consumers to attach additional information to Progress Reports that Ginkgo generates.  This is accomplished by calling `ctx.AttachProgressReporter(f)` where `f` has the signature `func() string`.  Once attached, the function will be called whenever a Progress Report needs to be generated (e.g. due to a user request via `SIGINFO`/`SIGUSR1` or via an interrupt or timeout).  `ctx.AttachProgressReporter` returns a detach function with signature `func()` that can be called to detach the attached progress reporter.  Becuase these progress reporters are attached to the passed-in `SpecContext` they only remain attached for the lifecycle of the context: i.e. the current node.
+
+While users of Ginkgo can provide their own custom progress reporters the intent behind this extension point is to allow deeper integration between Ginkgo and third-party libraries, specifically Gomega.  Whenever Gomega's `Eventually` is passed a `SpecContext` it automatically registers a progress reporter.  This reporter will provide the latest state of the `Eventually` matcher - enabling users to get insight into where and why an `Eventually` might be stuck simply by asking for a Progress Report.
+
 ### Interrupting, Aborting, and Timing Out Suites
 
-We've talked a lot about running specs.  Let's take moment to talk about stopping them.
+We've seen how nodes can be marked as interruptible and focused on how Ginkgo can apply deadlines to individual nodes and interrupt them when a timeout expires.  Ginkgo also provides a few, related, mechanisms for interrupting a _suite_ before all specs have naturally completed. 
 
-Ginkgo provides a few mechanisms for stopping a suite before all specs have naturally completed.  These mechanisms are especially useful when a spec gets stuck and hangs.
-
-First, you can signal to a suite that it must stop running by sending a `SIGINT` or `SIGTERM` signal to the running spec process (or just hit `^C`).
+First, you can signal to a suite that it must stop running by sending a `SIGINT` or `SIGTERM` signal to the running ginkgo process (or just hit `^C`).
 
 Second, you can also specify a timeout on a suite (or set of suites) via:
 
@@ -2540,21 +2991,29 @@ where `duration` is a parseable go duration string (the default is `1h` -- one h
 
 Finally, you can abort a suite from within the suite by calling `Abort(<reason>)`.  This will immediately end the suite and is the programmatic equivalent of sending an interrupt signal to the test process.
 
-All three mechanisms have same effects.  They:
+All three mechanisms have same effects.  If the currently running node is interruptible, then Ginkgo will:
 
-- Immediately interrupt the current spec.
-- Run any cleanup nodes (`AfterEach`, `JustAfterEach`, `AfterAll`, `DeferCleanup` code, etc.)
-- Emit as much information about the interrupted spec as possible.  This includes:
-  - anything written to the `GinkgoWriter`
-  - the location of the node that was running at the time of interrupt.
-  - (for timeout and signal interrupts) a full dump of all running goroutines.
-- Skip any subsequent specs.
-- Run any `AfterSuite` closures.
-- Exit, marking the suite as failed.
+- Emit a [Progress Report](#getting-visibility-into-long-running-specs) for the current spec as possible.
+- Interrupt the current node by cancelling its SpecContext...
+- ...then wait up to the Grace Period for the node to exit.  If it does not, then Ginkgo will leak the node and proceed.
+- Ginkgo will then run any clean-up and reporting nodes (`AfterEach`, `JustAfterEach`, `AfterAll`, `DeferCleanup`, `ReportAfterEach` code, etc.) for the current spec...
+- ...and skip any subsequent specs.
+- Ginkgo will then run any `AfterSuite` and `ReportAfterSuite` nodes.
+- And finally, it will exit, marking the suite as failed.
 
-In short, Ginkgo does its best to cleanup and emit as much information as possible about the suite before shutting down.  If, during cleanup, any cleanup node closures get stuck Ginkgo allows you to interrupt them via subsequent interrupt signals.  In the case of a timeout, Ginkgo sends these repeat interrupt signals itself to make sure the suite shuts down eventually.
+If the currently running node is **not** interruptible then Ginkgo will simply leak the node and proceed with the cleanup nodes.
 
-If you want to get information about what is currently running in a suite _without_ interrupting it, check out the [Getting Visibility Into Long-Running Specs](#getting-visibility-into-long-running-specs) section below.
+Once a suite is interrupted by one of these mechanisms any subsequent cleanup nodes that run will be subject to the following timeout behavior:
+
+- If the cleanup node is interruptible and has a `NodeTimeout`, Ginkgo uses that `NodeTimeout` to set a deadline for the node.  If the deadline expires then a Grace Period applies (either the node's `GracePeriod` or the global `--grace-period`) before Ginkgo leaks the node and moves on.
+- If the cleanup node is interruptible and **does not** have a `NodeTimeout`, Ginkgo uses the Grace Period to set a deadline for the node.  If the deadline expires then a second Grace Period applies before Ginkgo leaks the node and moves on.
+- If the cleanup node is **not** interruptible, Ginkgo will give the node a single Grace Period to complete and exit.  In this case since it cannot be interrupted Ginkgo will simply leak the node after one Grace Period.
+
+In short, Ginkgo does its best to cleanup and emit as much information as possible about the suite before shutting down... while also ensuring that the suite doesn't hang forever should a cleanup node get stuck.
+
+A single interrupt (e.g. `SIGINT`/`SIGTERM`) interrupts the current running node and proceeds to perform cleanup.  If you want to skip cleanup you can send a second interrupt - this will still run reporting nodes in an effort to ensure the generated reports are not corrupted.  If you want to skip the reporting nodes and bail immediately, send a third interrupt signal.
+
+If you want to get information about what is currently running in a suite _without_ interrupting it, check out the [Getting Visibility Into Long-Running Specs](#getting-visibility-into-long-running-specs) section above.
 
 ### Running Multiple Suites
 
@@ -2637,21 +3096,6 @@ You can disable Ginkgo's color output by running `ginkgo --no-color`.
 By default, Ginkgo calls out specs that are running slowly if they exceed a certain threshold (default: 5 seconds).  This doesn't affect the status of the spec - it is still considered to have passed - but can give you an early warning that a slow spec has been introduced.  You can adjust this threshold with `ginkgo --slow-spec-threshold=<duration>`.
 
 By default, Ginkgo only emits full stack traces when a spec panics.  When a normal assertion failure occurs, Ginkgo simply emits the line at which the failure occurred.  You can, instead, have Ginkgo always emit the full stack trace by running `ginkgo --trace`.
-
-### Getting Visibility Into Long-Running Specs
-Ginkgo is often used to build large, complex, integration suites and it is a common - if painful - experience for these suites to run slowly.  Ginkgo provides numerous mechanisms that enable developers to get visibility into what part of a suite is running and where, precisely, a spec may be lagging or hanging.
-
-First, you can tell Ginkgo to emit progress of a spec as Ginkgo runs each of its nodes.  You do this with `ginkgo --progress -v`.  `--progress` will emit a message to the `GinkgoWriter` just before a node starts running.  By running with `-v` or `-vv` you can then stream the output to the `GinkgoWriter` immediately - this can help developers debugging a suite understand exactly which node is running in real-time.  If you want to run with `--progress` but want to suppress output of individual nodes (e.g. a top-level `ReportAfterEach` that always runs even if a spec is skipped) you can pass the `SuppressProgressOuput` decorator to the node in question.
-
-Second, Ginkgo can provide a **Progress Report** of what is currently running in response to the `SIGINFO` and `SIGUSR1` signals.  This improves on the behavior of `--progress` by telling you not just which node is running but exactly which line of spec code is currently running along with any relevant goroutines that were launched by the spec.  The report also includes the 10 most recent lines written to the `GinkgoWriter`.  A developer waiting for a stuck spec can get this information immediately by sending either the `SIGINFO` or `SIGUSR1` signal (on MacOS/BSD systems, `SIGINFO` can be sent via `^T` - making it especially convenient; if you're on linux you'll need to send `SIGUSR1` to the actual test process spanwed by `ginkgo` - not the `ginkgo` cli process itself).
-
-These Progress Reports can also show you a preview of the running source code, but only if Ginkgo can find your source files.  If need be you can tell Ginkgo where to look for source files by specifying `--source-root`.
-
-Finally - you can instruct Ginkgo to provide these Progress Reports whenever a node takes too long to complete.  You do this by passing the `--poll-progress-after=INTERVAL` flag to specify how long Ginkgo should wait before emitting a progress report.  Once this interval is passed Ginkgo can periodically emit Progress Reports - the interval between these reports is controlled via the `--poll-progress-interval=INTERVAL` flag.  By default `--poll-progress-after` is set to `0` and so Ginkgo does not emit Progress Reports.  
-
-You can ovveride the global setting of `poll-progess-after` and `poll-progress-interval` on a per-node basis by using the `PollProgressAfter(INTERVAL)` and `PollProgressInterval(INTERVAL)` decorators.  A value of `0` will explicitly turn off Progress Reports for a given node regardless of the global setting.
-
-All Progress Reports generated by Ginkgo - whether interactively via `SIGINFO/SIGUSR1` or automatically via the `PollProgressAfter` configuration - also appear in Ginkgo's [machine-readable reports](#generating-machine-readable-reports).
 
 ### Reporting Infrastructure
 Ginkgo's console output is great when running specs on the console or quickly grokking a CI run.  Of course, there are several contexts where generating a machine-readable report is crucial.  Ginkgo provides first-class CLI support for generating and aggregating reports in a number of machine-readable formats _and_ an extensible reporting infrastructure to enable additional formats and custom reporting.  We'll dig into these topics in the next few sections.
@@ -2778,8 +3222,6 @@ ReportAfterEach(func(report SpecReport) {
 
 
 In addition, `ReportAfterEach` closures are called after a spec completes.  i.e. _after_ all `AfterEach` closures have run.  This gives them access to the complete final state of the spec.  Note that if a failure occurs in a `ReportAfterEach` your the spec will be marked as failed.  Subsequent `ReportAfterEach` closures will see the failed state, but not the closure in which the failure occurred.
-
-Also, `ReportAfterEach` closures **cannot** be interrupted.  This is to ensure the integrity of generated reports - so be careful what kind of code you put in there.  If you're making network requests make sure to wrap them in a timeout!
 
 `ReportAfterEach` is useful if you need to stream or emit up-to-date information about the suite as it runs. Ginkgo also provides `ReportBeforeEach` which is called before the test runs and receives a preliminary `types.SpecReport` - the state of this report will indicate whether the test will be skipped or is marked pending.
 
@@ -4444,6 +4886,14 @@ ReportAfterEach(func(report SpecReport) {
 As described in the [Getting Visibility Into Long-Running Specs](#getting-visibility-into-long-running-specs) section, the globally specified values for `--poll-progress-after` and `--poll-progress-interval` can be overridden on a particular node using the `PollProgressAfter(INTERVAL)` and `PollProgressInterval(INTERVAL)` decorators.  Here, `INTERVAL` is a `time.Duration` and when specified Ginkgo will start emitting Progress Reports for the node after a duration of `PollProgressAfter` and will repeatedly emit a Progress Report at an interval of `PollProgressInterval`.  To turn off progress reporting for a given node, set `PollProgressAfter` to `0`.
 
 Both of these decorators can only be used on subject and setup nodes, not container nodes.
+
+#### The SpecTimeout, NodeTimeout, and GracePeriod Decorators
+
+As described in the [Spec Timeouts and Interruptible Nodes](#spec-timeouts-and-interruptible-nodes) section, Ginkgo allows you to decorate interruptible ndoes with individual `NodeTimeout`s and spec-wide `SpecTimeout`s.  `NodeTimeout` takes a `time.Duration` and applies to any interruptible node (i.e. a node with a function that accepts a `SpecContext`).  `SpecTimeout` alos takes a `time.Duration` but applies only to `It` subject nodes.  Whereas `NodeTimeout` specified a deadline for an individual node, `SpecTimeout` specifies a deadline for all nodes associated with an individual spec.
+
+Once interrupted, Ginkgo waits for a Grace Period before abanding a node and moving on.  A global Grace Period can be specified via the `--grace-period=DURATION` cli flag and overrideen by the `GracePeriod` decorator on a per-node basis.  `GracePeriod` takes a `time.Duration` and can only be applied to interruptible nodes.
+
+Currently none of these decorators can be applied to container nodes.
 
 ## Ginkgo CLI Overview
 

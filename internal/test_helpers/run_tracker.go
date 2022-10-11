@@ -6,6 +6,7 @@ import (
 	"sync"
 
 	"github.com/onsi/ginkgo/v2/formatter"
+	"github.com/onsi/ginkgo/v2/internal"
 	. "github.com/onsi/gomega"
 	"github.com/onsi/gomega/types"
 )
@@ -73,6 +74,15 @@ func (rt *RunTracker) T(text string, callback ...func()) func() {
 		rt.Run(text)
 		if len(callback) > 0 {
 			callback[0]()
+		}
+	}
+}
+
+func (rt *RunTracker) TSC(text string, callback ...func(internal.SpecContext)) func(internal.SpecContext) {
+	return func(c internal.SpecContext) {
+		rt.Run(text)
+		if len(callback) > 0 {
+			callback[0](c)
 		}
 	}
 }

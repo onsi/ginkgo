@@ -8,27 +8,7 @@ import (
 	. "github.com/onsi/gomega"
 )
 
-func HaveHighlightedStackLine(cl types.CodeLocation) OmegaMatcher {
-	return ContainElement(WithTransform(func(fc types.FunctionCall) types.CodeLocation {
-		if fc.Highlight {
-			return types.CodeLocation{
-				FileName:   fc.Filename,
-				LineNumber: int(fc.Line),
-			}
-		}
-		return types.CodeLocation{}
-	}, Equal(cl)))
-}
-
 var _ = Describe("Progress Reporting", func() {
-	var cl types.CodeLocation
-
-	clLine := func(offset int) types.CodeLocation {
-		cl := cl
-		cl.LineNumber += offset
-		return cl
-	}
-
 	BeforeEach(func() {
 		conf.PollProgressAfter = 100 * time.Millisecond
 		conf.PollProgressInterval = 50 * time.Millisecond
@@ -54,6 +34,7 @@ var _ = Describe("Progress Reporting", func() {
 		It("emits progress when asked and includes source code", func() {
 			Ω(reporter.ProgressReports).Should(HaveLen(1))
 			pr := reporter.ProgressReports[0]
+			Ω(pr.Message).Should(Equal("{{bold}}You've requested a progress report:{{/}}"))
 			Ω(pr.CurrentNodeType).Should(Equal(types.NodeTypeBeforeSuite))
 			Ω(pr.LeafNodeLocation).Should(Equal(clLine(-1)))
 			Ω(pr.CurrentStepText).Should(Equal(""))
@@ -313,6 +294,7 @@ var _ = Describe("Progress Reporting", func() {
 			Ω(len(reporter.ProgressReports)).Should(BeNumerically(">", 1))
 
 			for _, pr := range reporter.ProgressReports {
+				Ω(pr.Message).Should(Equal("{{bold}}Automatically polling progress:{{/}}"))
 				Ω(pr.ContainerHierarchyTexts).Should(ConsistOf("a container"))
 				Ω(pr.LeafNodeLocation).Should(Equal(clLine(-1)))
 				Ω(pr.LeafNodeText).Should(Equal("A"))
@@ -398,6 +380,63 @@ var _ = Describe("Progress Reporting", func() {
 				Ω(pr.CurrentNodeType).Should(Equal(types.NodeTypeCleanupAfterEach))
 				Ω(pr.CurrentNodeLocation).Should(Equal(clLine(1)))
 			}
+		})
+	})
+
+	Context("when an additional progress report provider has been registered with the current context", func() {
+		BeforeEach(func() {
+			success, _ := RunFixture("emitting spec progress", func() {
+				Describe("a container", func() {
+					It("A", func(ctx SpecContext) {
+						cancel := ctx.AttachProgressReporter(func() string { return "Some Additional Information" })
+						cl = types.NewCodeLocation(0)
+						triggerProgressSignal()
+						cancel()
+						ctx.AttachProgressReporter(func() string { return "Some Different Information (never cancelled)" })
+						triggerProgressSignal()
+						cancel = ctx.AttachProgressReporter(func() string { return "Yet More Information" })
+						triggerProgressSignal()
+						cancel()
+						triggerProgressSignal()
+					})
+
+					AfterEach(func() {
+						triggerProgressSignal()
+					})
+				})
+			})
+			Ω(success).Should(BeTrue())
+		})
+
+		It("includes information from that progress report provider", func() {
+			Ω(reporter.ProgressReports).Should(HaveLen(5))
+			pr := reporter.ProgressReports[0]
+
+			Ω(pr.ContainerHierarchyTexts).Should(ConsistOf("a container"))
+			Ω(pr.LeafNodeLocation).Should(Equal(clLine(-2)))
+			Ω(pr.LeafNodeText).Should(Equal("A"))
+
+			Ω(pr.CurrentNodeType).Should(Equal(types.NodeTypeIt))
+			Ω(pr.CurrentNodeLocation).Should(Equal(clLine(-2)))
+
+			Ω(pr.CurrentStepText).Should(Equal(""))
+
+			Ω(pr.SpecGoroutine().State).Should(Equal("running"))
+			Ω(pr.SpecGoroutine().Stack).Should(HaveHighlightedStackLine(clLine(1)))
+			Ω(pr.AdditionalReports).Should(Equal([]string{"Some Additional Information"}))
+
+			pr = reporter.ProgressReports[1]
+			Ω(pr.AdditionalReports).Should(Equal([]string{"Some Different Information (never cancelled)"}))
+
+			pr = reporter.ProgressReports[2]
+			Ω(pr.AdditionalReports).Should(Equal([]string{"Some Different Information (never cancelled)", "Yet More Information"}))
+
+			pr = reporter.ProgressReports[3]
+			Ω(pr.AdditionalReports).Should(Equal([]string{"Some Different Information (never cancelled)"}))
+
+			pr = reporter.ProgressReports[4]
+			Ω(pr.CurrentNodeType).Should(Equal(types.NodeTypeAfterEach))
+			Ω(pr.AdditionalReports).Should(BeEmpty())
 		})
 	})
 })

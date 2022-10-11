@@ -19,7 +19,7 @@ var _ = Describe("ProgressReport", func() {
 
 	Context("when includeAll is false", func() {
 		It("does not include any other goroutines", func() {
-			pr, err := internal.NewProgressReport(false, types.SpecReport{}, Node{}, time.Now(), internal.ProgressStepCursor{}, "", []string{}, false)
+			pr, err := internal.NewProgressReport(false, types.SpecReport{}, Node{}, time.Now(), internal.ProgressStepCursor{}, "", []string{}, []string{}, false)
 			Ω(err).ShouldNot(HaveOccurred())
 
 			Ω(pr.OtherGoroutines()).Should(HaveLen(0))
@@ -28,7 +28,7 @@ var _ = Describe("ProgressReport", func() {
 
 	Context("when includeAll is true", func() {
 		It("includes all other goroutines", func() {
-			pr, err := internal.NewProgressReport(false, types.SpecReport{}, Node{}, time.Now(), internal.ProgressStepCursor{}, "", []string{}, true)
+			pr, err := internal.NewProgressReport(false, types.SpecReport{}, Node{}, time.Now(), internal.ProgressStepCursor{}, "", []string{}, []string{}, true)
 			Ω(err).ShouldNot(HaveOccurred())
 
 			Ω(pr.OtherGoroutines()).ShouldNot(HaveLen(0))

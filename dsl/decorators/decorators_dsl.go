@@ -22,6 +22,9 @@ type RepeatAttempts = ginkgo.RepeatAttempts
 type Labels = ginkgo.Labels
 type PollProgressAfter = ginkgo.PollProgressAfter
 type PollProgressInterval = ginkgo.PollProgressInterval
+type NodeTimeout = ginkgo.NodeTimeout
+type SpecTimeout = ginkgo.SpecTimeout
+type GracePeriod = ginkgo.GracePeriod
 
 const Focus = ginkgo.Focus
 const Pending = ginkgo.Pending
