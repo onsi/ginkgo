@@ -45,6 +45,7 @@ var _ = Describe("Partitioning Decorations", func() {
 			Label("D"),
 			[]interface{}{},
 			FlakeAttempts(1),
+			RepeatAttempts(1),
 			true,
 		)
 
@@ -60,6 +61,7 @@ var _ = Describe("Partitioning Decorations", func() {
 			Label("A", "B", "C"),
 			Label("D"),
 			FlakeAttempts(1),
+			RepeatAttempts(1),
 		}))
 
 		Ω(remaining).Should(Equal([]interface{}{
@@ -291,11 +293,12 @@ var _ = Describe("Constructing nodes", func() {
 		})
 	})
 
-	Describe("The FlakeAttempts decoration", func() {
-		It("is zero by default", func() {
+	Describe("the FlakeAttempts and RepeatAttempts decorations", func() {
+		It("the node sets FlakeAttempts and RepeatAttempts to zero by default", func() {
 			node, errors := internal.NewNode(dt, ntIt, "text", body)
 			Ω(node).ShouldNot(BeZero())
 			Ω(node.FlakeAttempts).Should(Equal(0))
+			Ω(node.RepeatAttempts).Should(Equal(0))
 			ExpectAllWell(errors)
 		})
 		It("sets the FlakeAttempts field", func() {
@@ -303,15 +306,34 @@ var _ = Describe("Constructing nodes", func() {
 			Ω(node.FlakeAttempts).Should(Equal(2))
 			ExpectAllWell(errors)
 		})
+		It("sets the RepeatAttempts field", func() {
+			node, errors := internal.NewNode(dt, ntIt, "text", body, RepeatAttempts(2))
+			Ω(node.RepeatAttempts).Should(Equal(2))
+			ExpectAllWell(errors)
+		})
+		It("errors when both FlakeAttempts and RepeatAttempts are set", func() {
+			node, errors := internal.NewNode(dt, ntIt, "text", body, cl, FlakeAttempts(2), RepeatAttempts(2))
+			Ω(node).Should(BeZero())
+			Ω(errors).Should(ConsistOf(types.GinkgoErrors.InvalidDeclarationOfFlakeAttemptsAndRepeatAttempts(cl, ntIt)))
+		})
 		It("can be applied to containers", func() {
 			node, errors := internal.NewNode(dt, ntCon, "text", body, FlakeAttempts(2))
 			Ω(node.FlakeAttempts).Should(Equal(2))
+			ExpectAllWell(errors)
+
+			node, errors = internal.NewNode(dt, ntCon, "text", body, RepeatAttempts(2))
+			Ω(node.RepeatAttempts).Should(Equal(2))
 			ExpectAllWell(errors)
 		})
 		It("cannot be applied to non-container/it nodes", func() {
 			node, errors := internal.NewNode(dt, ntBef, "", body, cl, FlakeAttempts(2))
 			Ω(node).Should(BeZero())
 			Ω(errors).Should(ConsistOf(types.GinkgoErrors.InvalidDecoratorForNodeType(cl, ntBef, "FlakeAttempts")))
+
+			node, errors = internal.NewNode(dt, ntBef, "", body, cl, RepeatAttempts(2))
+			Ω(node).Should(BeZero())
+			Ω(errors).Should(ConsistOf(types.GinkgoErrors.InvalidDecoratorForNodeType(cl, ntBef, "RepeatAttempts")))
+
 			Ω(dt.DidTrackDeprecations()).Should(BeFalse())
 		})
 	})

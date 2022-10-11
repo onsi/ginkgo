@@ -2480,7 +2480,21 @@ One quick note on `--repeat`: when you invoke `ginkgo --repeat=N` Ginkgo will ru
 
 Both `--until-it-fails` and `--repeat` help you identify flaky specs early.  Doing so will help you debug flaky specs while the context that introduced them is fresh.
 
-However.  There are times when the cost of preventing and/or debugging flaky specs simply is simply too high and specs simply need to be retried.  While this should never be the primary way of dealing with flaky specs, Ginkgo is pragmatic about this reality and provides a mechanism for retrying specs.
+A more granular approach to repeating tests is by decorating individual subject or container nodes with the RepeatAttempts(N) decorator:
+
+```go
+Describe("Storing books", func() {
+  It("can save books to the central library", RepeatAttempts(3), func() {
+    // this spec has been marked and will be retried up to 3 times
+  })
+
+  It("can save books locally", func() {
+    // this spec has not been marked and will not be retired
+  })
+})
+```
+
+However,  There are times when the cost of preventing and/or debugging flaky specs simply is simply too high and specs simply need to be retried.  While this should never be the primary way of dealing with flaky specs, Ginkgo is pragmatic about this reality and provides a mechanism for retrying specs.
 
 You can retry all specs in a suite via:
 
@@ -2490,7 +2504,7 @@ ginkgo --flake-attempts=N
 
 Now, when a spec fails Ginkgo will not automatically mark the suite as failed.  Instead it will attempt to rerun the spec up to `N` times.  If the spec succeeds during a retry, Ginkgo moves on and marks the suite as successful but reports that the spec needed to be retried.
 
-You can take a more granular approach by decorating individual subject nodes or container nodes as potentially flaky with the `FlakeAttempts(N)` decorator:
+A more granular approach is also provided for this functionality with the use of the `FlakeAttempts(N)` decorator:
 
 ```go
 Describe("Storing books", func() {
@@ -4355,7 +4369,7 @@ In addition to `Offset`, users can decorate nodes with a `types.CodeLocation`.  
 Passing a `types.CodeLocation` decorator in has the same semantics as passing `Offset` in: it only applies to the node in question.
 
 #### The FlakeAttempts Decorator
-The `FlakeAttempts(uint)` decorator applies container and subject nodes.  It is an error to apply `FlakeAttempts` to a setup node.
+The `FlakeAttempts(uint)` decorator applies to container and subject nodes.  It is an error to apply `FlakeAttempts` to a setup node.
 
 `FlakeAttempts` allows the user to flag specific tests or groups of tests as potentially flaky.  Ginkgo will run tests up to the number of times specified in `FlakeAttempts` until they pass.  For example:
 
@@ -4382,6 +4396,35 @@ Describe("flaky tests", FlakeAttempts(3), func() {
 With this setup, `"is flaky"` and `"is also flaky"` will run up to 3 times.  `"is _really_ flaky"` will run up to 5 times.  `"is _not_ flaky"` will run only once.  Note that if multiple `FlakeAttempts` appear in a spec's hierarchy, the most deeply nested `FlakeAttempts` wins.  If multiple `FlakeAttempts` are passed into a given node, the last one wins.
 
 If `ginkgo --flake-attempts=N` is set the value passed in by the CLI will override all the decorated values.  Every test will now run up to `N` times.
+
+#### The RepeatAttempts Decorator
+The `RepeatAttempts(uint)` decorator applies to container and subject nodes.  It is an error to apply `RepeatAttempts` to a setup node.
+
+`RepeatAttempts` allows the user to flag specific tests or groups of tests for debbuging flaky tests.  Ginkgo will run tests up to the number of times specified in `RepeatAttempts` until they fail.  For example:
+
+```go
+Describe("repeated tests", RepeatAttempts(3), func() {
+  It("is retried", func() {
+    ...
+  })
+
+  It("is also retried", func() {
+    ...
+  })
+
+  It("is retried even more", RepeatAttempts(5) func() {
+    ...
+  })
+
+  It("is retried less", RepeatAttempts(1), func() {
+    ...
+  })
+})
+```
+
+With this setup, `"is retried"` and `"is also retried"` will run up to 3 times.  `"is retried even more"` will run up to 5 times.  `"is retried less"` will run only once.  Note that if multiple `RepeatAttempts` appear in a spec's hierarchy, the most deeply nested `RepeatAttempts` wins.  If multiple `RepeatAttempts` are passed into a given node, the last one wins.
+
+The `ginkgo --repeat=N` value passed in by the CLI has no relation with the `RepeatAttempts` decorator. If the `--repeat` CLI flag is used and a container or subject node also contains the `RepeatAttempts` decorator, then the test will run up to `N*R` times, where `N` is the values passed to the `--repeat` CLI flag and `R` is the value passed to the RepeatAttempts decorator.
 
 
 #### The SuppressProgressOutput Decorator

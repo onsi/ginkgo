@@ -48,6 +48,7 @@ type Node struct {
 	MarkedOncePerOrdered            bool
 	MarkedSuppressProgressReporting bool
 	FlakeAttempts                   int
+	RepeatAttempts                  int
 	Labels                          Labels
 	PollProgressAfter               time.Duration
 	PollProgressInterval            time.Duration
@@ -71,6 +72,7 @@ const OncePerOrdered = honorsOrderedType(true)
 const SuppressProgressReporting = suppressProgressReporting(true)
 
 type FlakeAttempts uint
+type RepeatAttempts uint
 type Offset uint
 type Done chan<- interface{} // Deprecated Done Channel for asynchronous testing
 type Labels []string
@@ -126,6 +128,8 @@ func isDecoration(arg interface{}) bool {
 		return true
 	case t == reflect.TypeOf(FlakeAttempts(0)):
 		return true
+	case t == reflect.TypeOf(RepeatAttempts(0)):
+		return true
 	case t == reflect.TypeOf(Labels{}):
 		return true
 	case t == reflect.TypeOf(PollProgressInterval(0)):
@@ -164,7 +168,7 @@ func NewNode(deprecationTracker *types.DeprecationTracker, nodeType types.NodeTy
 		PollProgressAfter:    -1,
 		PollProgressInterval: -1,
 	}
-	
+
 	errors := []error{}
 	appendError := func(err error) {
 		if err != nil {
@@ -230,6 +234,11 @@ func NewNode(deprecationTracker *types.DeprecationTracker, nodeType types.NodeTy
 			node.FlakeAttempts = int(arg.(FlakeAttempts))
 			if !nodeType.Is(types.NodeTypesForContainerAndIt) {
 				appendError(types.GinkgoErrors.InvalidDecoratorForNodeType(node.CodeLocation, nodeType, "FlakeAttempts"))
+			}
+		case t == reflect.TypeOf(RepeatAttempts(0)):
+			node.RepeatAttempts = int(arg.(RepeatAttempts))
+			if !nodeType.Is(types.NodeTypesForContainerAndIt) {
+				appendError(types.GinkgoErrors.InvalidDecoratorForNodeType(node.CodeLocation, nodeType, "RepeatAttempts"))
 			}
 		case t == reflect.TypeOf(PollProgressAfter(0)):
 			node.PollProgressAfter = time.Duration(arg.(PollProgressAfter))
@@ -325,6 +334,10 @@ func NewNode(deprecationTracker *types.DeprecationTracker, nodeType types.NodeTy
 	}
 	for _, arg := range remainingArgs {
 		appendError(types.GinkgoErrors.UnknownDecorator(node.CodeLocation, nodeType, arg))
+	}
+
+	if node.FlakeAttempts > 0 && node.RepeatAttempts > 0 {
+		appendError(types.GinkgoErrors.InvalidDeclarationOfFlakeAttemptsAndRepeatAttempts(node.CodeLocation, nodeType))
 	}
 
 	if len(errors) > 0 {
@@ -665,6 +678,24 @@ func (n Nodes) FirstNodeMarkedOrdered() Node {
 		}
 	}
 	return Node{}
+}
+
+func (n Nodes) HasSetFlakeAttempts() bool {
+	for i := range n {
+		if n[i].FlakeAttempts > 0 {
+			return true
+		}
+	}
+	return false
+}
+
+func (n Nodes) HasSetRepeatAttempts() bool {
+	for i := range n {
+		if n[i].RepeatAttempts > 0 {
+			return true
+		}
+	}
+	return false
 }
 
 func unrollInterfaceSlice(args interface{}) []interface{} {

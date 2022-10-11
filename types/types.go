@@ -151,9 +151,16 @@ type SpecReport struct {
 	//It includes detailed information about the Failure
 	Failure Failure
 
-	// NumAttempts captures the number of times this Spec was run.  Flakey specs can be retried with
-	// ginkgo --flake-attempts=N
+	// NumAttempts captures the number of times this Spec was run.
+	// Flakey specs can be retried with ginkgo --flake-attempts=N or the use of the FlakeAttempts decorator.
+	// Repeated specs can be retried with the use of the RepeatAttempts decorator
 	NumAttempts int
+
+	// IsFlakeAttempts captures whether the spec has been retried with ginkgo --flake-attempts=N or the use of the FlakeAttempts decorator.
+	IsFlakeAttempts bool
+
+	// IsRepeatAttempts captures whether the spec has the RepeatAttempts decorator
+	IsRepeatAttempts bool
 
 	// CapturedGinkgoWriterOutput contains text printed to the GinkgoWriter
 	CapturedGinkgoWriterOutput string
@@ -356,11 +363,22 @@ func (reports SpecReports) CountWithState(states SpecState) int {
 	return n
 }
 
-//CountWithState returns the number of SpecReports that passed after multiple attempts
+// CountOfFlakedSpecs returns the number of SpecReports that failed after multiple attempts
 func (reports SpecReports) CountOfFlakedSpecs() int {
 	n := 0
 	for i := range reports {
-		if reports[i].State.Is(SpecStatePassed) && reports[i].NumAttempts > 1 {
+		if reports[i].IsFlakeAttempts && reports[i].State.Is(SpecStatePassed) && reports[i].NumAttempts > 1 {
+			n += 1
+		}
+	}
+	return n
+}
+
+// CountOfRepeatedSpecs returns the number of SpecReports that passed after multiple attempts
+func (reports SpecReports) CountOfRepeatedSpecs() int {
+	n := 0
+	for i := range reports {
+		if reports[i].IsRepeatAttempts && reports[i].State.Is(SpecStatePassed) && reports[i].NumAttempts > 1 {
 			n += 1
 		}
 	}

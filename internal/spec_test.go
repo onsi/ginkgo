@@ -77,6 +77,35 @@ var _ = Describe("Spec and Specs", func() {
 		})
 	})
 
+	Describe("spec.RepeatAttempts", func() {
+		Context("when none of the nodes have RepeatAttempts", func() {
+			It("returns 0", func() {
+				spec := S(N(ntCon), N(ntCon), N(ntIt))
+				Ω(spec.RepeatAttempts()).Should(Equal(0))
+			})
+		})
+
+		Context("when a node has RepeatAttempts set", func() {
+			It("returns that RepeatAttempts", func() {
+				spec := S(N(ntCon, RepeatAttempts(3)), N(ntCon), N(ntIt))
+				Ω(spec.RepeatAttempts()).Should(Equal(3))
+
+				spec = S(N(ntCon), N(ntCon, RepeatAttempts(2)), N(ntIt))
+				Ω(spec.RepeatAttempts()).Should(Equal(2))
+
+				spec = S(N(ntCon), N(ntCon), N(ntIt, RepeatAttempts(4)))
+				Ω(spec.RepeatAttempts()).Should(Equal(4))
+			})
+		})
+
+		Context("when multiple nodes have RepeatAttempts", func() {
+			It("returns the inner-most nested RepeatAttempts", func() {
+				spec := S(N(ntCon, RepeatAttempts(3)), N(ntCon, RepeatAttempts(4)), N(ntIt, RepeatAttempts(2)))
+				Ω(spec.RepeatAttempts()).Should(Equal(2))
+			})
+		})
+	})
+
 	Describe("specs.HasAnySpecsMarkedPending", func() {
 		Context("when there are no specs with any nodes marked pending", func() {
 			It("returns false", func() {

@@ -180,6 +180,15 @@ func (g ginkgoErrors) InvalidDeclarationOfFocusedAndPending(cl CodeLocation, nod
 	}
 }
 
+func (g ginkgoErrors) InvalidDeclarationOfFlakeAttemptsAndRepeatAttempts(cl CodeLocation, nodeType NodeType) error {
+	return GinkgoError{
+		Heading:      "Invalid Combination of Decorators: FlakeAttempts and RepeatAttempts",
+		Message:      formatter.F(`[%s] node was decorated with both FlakeAttempts and RepeatAttempts. At most one is allowed.`, nodeType),
+		CodeLocation: cl,
+		DocLink:      "node-decorators-overview",
+	}
+}
+
 func (g ginkgoErrors) UnknownDecorator(cl CodeLocation, nodeType NodeType, decorator interface{}) error {
 	return GinkgoError{
 		Heading:      "Unknown Decorator",

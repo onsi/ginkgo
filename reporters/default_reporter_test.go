@@ -100,6 +100,12 @@ func S(options ...interface{}) types.SpecReport {
 			report.Failure = option.(types.Failure)
 		case reflect.TypeOf(0):
 			report.NumAttempts = option.(int)
+		case reflect.TypeOf(true):
+			if option.(bool) {
+				report.IsFlakeAttempts = true
+			} else {
+				report.IsRepeatAttempts = true
+			}
 		case reflect.TypeOf(STD("")):
 			report.CapturedStdOutErr = string(option.(STD))
 		case reflect.TypeOf(GW("")):
@@ -428,7 +434,7 @@ var _ = Describe("DefaultReporter", func() {
 		),
 		Entry("a passing test that was retried",
 			C(),
-			S(CTS("A"), "B", CLS(cl0), cl1, 2),
+			S(CTS("A"), "B", CLS(cl0), cl1, 2, true),
 			DELIMITER,
 			"{{green}}"+RETRY_DENOTER+" [FLAKEY TEST - TOOK 2 ATTEMPTS TO PASS] [1.000 seconds]{{/}}",
 			"{{/}}A {{gray}}B{{/}}",
@@ -1011,6 +1017,18 @@ var _ = Describe("DefaultReporter", func() {
 			DELIMITER,
 			"",
 		),
+		Entry("a failing test that was retried",
+			C(),
+			S(CTS("A"), "B", CLS(cl0), cl1, 2, false, types.SpecStateFailed),
+			DELIMITER,
+			"{{red}}"+RETRY_DENOTER+" [REPEATED TEST - FAILED AFTER 2 ATTEMPTS] [1.000 seconds]{{/}}",
+			"A",
+			"{{gray}}cl0.go:12{{/}}",
+			"  B",
+			"  {{gray}}"+cl1.String()+"{{/}}",
+			DELIMITER,
+			"",
+		),
 
 		Entry("when a test has panicked and there is no forwarded panic",
 			C(),
@@ -1197,27 +1215,29 @@ var _ = Describe("DefaultReporter", func() {
 				SpecReports: types.SpecReports{
 					S(types.NodeTypeBeforeSuite),
 					S(types.SpecStatePassed), S(types.SpecStatePassed), S(types.SpecStatePassed),
-					S(types.SpecStatePassed, 3), S(types.SpecStatePassed, 4), //flakey
+					S(types.SpecStatePassed, 3, true), S(types.SpecStatePassed, 4, true), //flakey
+					S(types.SpecStatePassed, 3, false), S(types.SpecStatePassed, 4, false), //repeated
 					S(types.SpecStatePending), S(types.SpecStatePending),
 					S(types.SpecStateSkipped), S(types.SpecStateSkipped), S(types.SpecStateSkipped),
 					S(types.NodeTypeAfterSuite),
 				},
 			},
 			"",
-			"{{green}}{{bold}}Ran 5 of 10 Specs in 60.000 seconds{{/}}",
-			"{{green}}{{bold}}SUCCESS!{{/}} -- {{green}}{{bold}}5 Passed{{/}} | {{red}}{{bold}}0 Failed{{/}} | {{light-yellow}}{{bold}}2 Flaked{{/}} | {{yellow}}{{bold}}2 Pending{{/}} | {{cyan}}{{bold}}3 Skipped{{/}}",
+			"{{green}}{{bold}}Ran 7 of 10 Specs in 60.000 seconds{{/}}",
+			"{{green}}{{bold}}SUCCESS!{{/}} -- {{green}}{{bold}}7 Passed{{/}} | {{red}}{{bold}}0 Failed{{/}} | {{light-yellow}}{{bold}}2 Flaked{{/}} | {{light-yellow}}{{bold}}2 Repeated{{/}} | {{yellow}}{{bold}}2 Pending{{/}} | {{cyan}}{{bold}}3 Skipped{{/}}",
 			"",
 		),
 		Entry("the suite fails with one failed test",
 			C(),
 			types.Report{
 				SuiteSucceeded: false,
-				PreRunStats:    types.PreRunStats{TotalSpecs: 11, SpecsThatWillRun: 9},
+				PreRunStats:    types.PreRunStats{TotalSpecs: 18, SpecsThatWillRun: 8},
 				RunTime:        time.Minute,
 				SpecReports: types.SpecReports{
 					S(types.NodeTypeBeforeSuite),
 					S(types.SpecStatePassed), S(types.SpecStatePassed), S(types.SpecStatePassed),
-					S(types.SpecStatePassed, 3), S(types.SpecStatePassed, 4), //flakey
+					S(types.SpecStatePassed, 3, true), S(types.SpecStatePassed, 4, true), //flakey
+					S(types.SpecStatePassed, 3, false), S(types.SpecStatePassed, 4, false), //repeated
 					S(types.SpecStatePending), S(types.SpecStatePending),
 					S(types.SpecStateSkipped), S(types.SpecStateSkipped), S(types.SpecStateSkipped),
 					S(CTS("Describe A", "Context B"), "The Test", CLS(cl0, cl1), cl2,
@@ -1233,8 +1253,8 @@ var _ = Describe("DefaultReporter", func() {
 			"  {{red}}[FAIL]{{/}} {{/}}Describe A {{gray}}{{red}}{{bold}}Context B [JustBeforeEach]{{/}} {{/}}The Test{{/}}",
 			"  {{gray}}cl4.go:144{{/}}",
 			"",
-			"{{red}}{{bold}}Ran 6 of 11 Specs in 60.000 seconds{{/}}",
-			"{{red}}{{bold}}FAIL!{{/}} -- {{green}}{{bold}}5 Passed{{/}} | {{red}}{{bold}}1 Failed{{/}} | {{light-yellow}}{{bold}}2 Flaked{{/}} | {{yellow}}{{bold}}2 Pending{{/}} | {{cyan}}{{bold}}3 Skipped{{/}}",
+			"{{red}}{{bold}}Ran 8 of 18 Specs in 60.000 seconds{{/}}",
+			"{{red}}{{bold}}FAIL!{{/}} -- {{green}}{{bold}}7 Passed{{/}} | {{red}}{{bold}}1 Failed{{/}} | {{light-yellow}}{{bold}}2 Flaked{{/}} | {{light-yellow}}{{bold}}2 Repeated{{/}} | {{yellow}}{{bold}}2 Pending{{/}} | {{cyan}}{{bold}}3 Skipped{{/}}",
 			"",
 		),
 		Entry("the suite fails with multiple failed tests",
@@ -1246,7 +1266,8 @@ var _ = Describe("DefaultReporter", func() {
 				SpecReports: types.SpecReports{
 					S(types.NodeTypeBeforeSuite),
 					S(types.SpecStatePassed), S(types.SpecStatePassed), S(types.SpecStatePassed),
-					S(types.SpecStatePassed, 3), S(types.SpecStatePassed, 4), //flakey
+					S(types.SpecStatePassed, 3, true), S(types.SpecStatePassed, 4, true), //flakey
+					S(types.SpecStatePassed, 3, false), S(types.SpecStatePassed, 4, false), //repeated
 					S(types.SpecStatePending), S(types.SpecStatePending),
 					S(types.SpecStateSkipped), S(types.SpecStateSkipped), S(types.SpecStateSkipped),
 					S(CTS("Describe A", "Context B"), "The Test", CLS(cl0, cl1), cl2, CLabels(Label("cat", "dog"), Label("dog", "fish")), Label("fish", "giraffe"),
@@ -1280,8 +1301,8 @@ var _ = Describe("DefaultReporter", func() {
 			"  {{coral}}[ABORTED]{{/}} {{/}}{{coral}}{{bold}}[It] The Test{{/}}{{/}}",
 			"  {{gray}}"+cl1.String()+"{{/}}",
 			"",
-			"{{red}}{{bold}}Ran 9 of 13 Specs in 60.000 seconds{{/}}",
-			"{{red}}{{bold}}FAIL!{{/}} -- {{green}}{{bold}}5 Passed{{/}} | {{red}}{{bold}}4 Failed{{/}} | {{light-yellow}}{{bold}}2 Flaked{{/}} | {{yellow}}{{bold}}2 Pending{{/}} | {{cyan}}{{bold}}3 Skipped{{/}}",
+			"{{red}}{{bold}}Ran 11 of 13 Specs in 60.000 seconds{{/}}",
+			"{{red}}{{bold}}FAIL!{{/}} -- {{green}}{{bold}}7 Passed{{/}} | {{red}}{{bold}}4 Failed{{/}} | {{light-yellow}}{{bold}}2 Flaked{{/}} | {{light-yellow}}{{bold}}2 Repeated{{/}} | {{yellow}}{{bold}}2 Pending{{/}} | {{cyan}}{{bold}}3 Skipped{{/}}",
 			"",
 		),
 		Entry("the suite fails with failed suite setups",

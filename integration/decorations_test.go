@@ -27,9 +27,15 @@ some decorated tests
 		Ω(out).ShouldNot(ContainSubstring("never_see_this_file"))
 	})
 
-	It("exits with a clear error if decorations are misconfigured", func() {
-		session := startGinkgo(fm.PathTo("decorations", "invalid_decorations"), "-v", "--no-color")
+	It("exits with a clear error if decorations are misconfigured - focus and pending error", func() {
+		session := startGinkgo(fm.PathTo("decorations", "invalid_decorations_focused_pending"), "-v", "--no-color")
 		Eventually(session).Should(gexec.Exit(1))
 		Ω(session).Should(gbytes.Say("Invalid Combination of Decorators: Focused and Pending"))
+	})
+
+	It("exits with a clear error if decorations are misconfigured - flakeattempts and repeatattempts error", func() {
+		session := startGinkgo(fm.PathTo("decorations", "invalid_decorations_flakeattempts_repeatattempts"), "-v", "--no-color")
+		Eventually(session).Should(gexec.Exit(1))
+		Ω(session).Should(gbytes.Say("Invalid Combination of Decorators: FlakeAttempts and RepeatAttempts"))
 	})
 })

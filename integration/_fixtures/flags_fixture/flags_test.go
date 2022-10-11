@@ -85,6 +85,7 @@ var _ = Describe("Testing various flags", func() {
 		})
 	})
 
+	// what is this testing? This test and the previous are being skipped
 	Describe("a flaky test", func() {
 		runs := 0
 		It("should only pass the second time it's run", func() {
