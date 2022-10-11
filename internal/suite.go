@@ -801,7 +801,7 @@ func (suite *Suite) runNode(node Node, specDeadline time.Time, text string) (typ
 		case <-deadlineChannel:
 			// we're out of time - the outcome is a timeout and we capture the failure and progress report
 			outcome = types.SpecStateTimedout
-			failure.Message, failure.Location = "Timeout", node.CodeLocation
+			failure.Message, failure.Location = "Timedout", node.CodeLocation
 			failure.ProgressReport = suite.generateProgressReport(false).WithoutCapturedGinkgoWriterOutput()
 			failure.ProgressReport.Message = "{{bold}}This is the Progress Report generated when the timeout occurred:{{/}}"
 			deadlineChannel = nil
