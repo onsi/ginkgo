@@ -2608,7 +2608,7 @@ Describe("interacting with the library", func() {
 
 here the total runtime of `BeforeEach`, `It`, and `AfterEach` must be less than the `SpecTimeout` of 2 seconds.  In addition, the `BeforeEach` callback must exit within 500ms and the `AfterEach` after 1 second.
 
-When a `SpecTimeout` expires the current node is interrupted (i.e. it's context is cancelled) and Ginkgo proceeds to run the clean up nodes subject to their own `NodeTimeout`s.  This is because cleanup is considered an essential part of the spec lifecycle and must not be skipped if possible.  Thus the `SpecTimeout` is not a strict guarantee on the runtime of a spec but rather a threshold at which the spec will be considered failed.
+When a `SpecTimeout` expires the current node is interrupted (i.e. it's context is cancelled) and Ginkgo proceeds to run any associated clean up nodes (i.e. any `AfterEach`, `AfterAll`, and `DeferCleanup` nodes) subject to their own `NodeTimeout`s.  This is because cleanup is considered an essential part of the spec lifecycle and must not be skipped if possible.  Thus the `SpecTimeout` is not a strict guarantee on the runtime of a spec but rather a threshold at which the spec will be considered failed.
 
 Currently, `SpecTimeout` and `NodeTimeout` cannot be applied to container nodes.
 
