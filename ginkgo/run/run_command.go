@@ -69,6 +69,8 @@ func (r *SpecRunner) RunSpecs(args []string, additionalArgs []string) {
 	skippedSuites := suites.WithState(internal.TestSuiteStateSkippedByFilter)
 	suites = suites.WithoutState(internal.TestSuiteStateSkippedByFilter)
 
+	internal.VerifyCLIAndFrameworkVersion(suites)
+
 	if len(skippedSuites) > 0 {
 		fmt.Println("Will skip:")
 		for _, skippedSuite := range skippedSuites {

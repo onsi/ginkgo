@@ -65,6 +65,8 @@ type SpecWatcher struct {
 func (w *SpecWatcher) WatchSpecs(args []string, additionalArgs []string) {
 	suites := internal.FindSuites(args, w.cliConfig, false).WithoutState(internal.TestSuiteStateSkippedByFilter)
 
+	internal.VerifyCLIAndFrameworkVersion(suites)
+
 	if len(suites) == 0 {
 		command.AbortWith("Found no test suites")
 	}
