@@ -46,6 +46,8 @@ This fetches Ginkgo and installs the `ginkgo` executable under `$GOBIN` - you'll
 
 You should now be able to run `ginkgo version` at the command line and see the Ginkgo CLI emit a version number.
 
+**Note** you _must_ make sure the version of the `ginkgo` cli you install is the same as the version of Ginkgo in your `go.mod` file.
+
 ### Your First Ginkgo Suite
 
 Ginkgo hooks into Go's existing `testing` infrastructure.  That means that Ginkgo specs live in `*_test.go` files, just like standard go tests.  However, instead of using `func TestX(t *testing.T) {}` to write your tests you use the Ginkgo and Gomega DSLs.  
@@ -3347,7 +3349,7 @@ In this chapter we'll switch gears and illustrate common patterns for how Ginkgo
 
 ### Recommended Continuous Integration Configuration
 
-When running in CI you'll want to make sure that the version of the `ginkgo` CLI you are using matches the version of Ginkgo in your `go.mod` file.  You can ensure this by invoking the `ginkgo` command via `go run`:
+When running in CI you must make sure that the version of the `ginkgo` CLI you are using matches the version of Ginkgo in your `go.mod` file.  You can ensure this by invoking the `ginkgo` command via `go run`:
 
 `go run github.com/onsi/ginkgo/v2/ginkgo`
 
