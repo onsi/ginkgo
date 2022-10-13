@@ -34,7 +34,7 @@ var _ = Describe("Decorations test", func() {
 				It("flaky-skips", FlakeAttempts(3), rt.T("flaky-skips", func() {
 					Skip("skip")
 				}))
-				It("repeat", RepeatAttempts(4), rt.T("repeat", func() {
+				It("repeat", MustPassRepeatedly(4), rt.T("repeat", func() {
 					countRepeat += 1
 					outputInterceptor.AppendInterceptedOutput("repeats a bit\n")
 					writer.Println("here we go")
@@ -42,10 +42,10 @@ var _ = Describe("Decorations test", func() {
 						F("fail")
 					}
 				}))
-				It("repeat-never-fails", RepeatAttempts(2), rt.T("repeat-never-passes", func() {
+				It("repeat-never-fails", MustPassRepeatedly(2), rt.T("repeat-never-passes", func() {
 					// F("fail")
 				}))
-				It("repeat-skips", RepeatAttempts(3), rt.T("repeat-skips", func() {
+				It("repeat-skips", MustPassRepeatedly(3), rt.T("repeat-skips", func() {
 					Skip("skip")
 				}))
 			})
@@ -80,9 +80,9 @@ var _ = Describe("Decorations test", func() {
 		})
 	})
 
-	Describe("RepeatAttempts", func() {
-		It("reruns tests until they fail or until the number of repeat attempts is exhausted, but does not rerun skipped tests", func() {
-			Ω(reporter.Did.Find("repeat")).Should(HaveFailed(NumAttempts(3), CapturedStdOutput("repeats a bit\nrepeats a bit\nrepeats a bit\n"), CapturedGinkgoWriterOutput("here we go\n\nGinkgo: Attempt #1 Passed.  Retrying...\nhere we go\n\nGinkgo: Attempt #2 Passed.  Retrying...\nhere we go\n")))
+	Describe("MustPassRepeatedly", func() {
+		It("reruns tests until they fail or until the number of MustPassRepeatedly attempts is exhausted, but does not rerun skipped tests", func() {
+			Ω(reporter.Did.Find("repeat")).Should(HaveFailed(NumAttempts(3), CapturedStdOutput("repeats a bit\nrepeats a bit\nrepeats a bit\n"), CapturedGinkgoWriterOutput("here we go\n\nGinkgo: Attempt #1 Passed.  Repeating...\nhere we go\n\nGinkgo: Attempt #2 Passed.  Repeating...\nhere we go\n")))
 			Ω(reporter.Did.Find("repeat-never-fails")).Should(HavePassed("passed", NumAttempts(2)))
 			Ω(reporter.Did.Find("repeat-skips")).Should(HaveBeenSkippedWithMessage("skip", NumAttempts(1)))
 		})

@@ -13,7 +13,7 @@ func TestDecorationsFixture(t *testing.T) {
 }
 
 var countFlake = 0
-// var countRepeat = 0
+var countRepeat = 0
 
 var _ = Describe("some decorated tests", func() {
 	Describe("focused", Focus, func() {
@@ -23,21 +23,6 @@ var _ = Describe("some decorated tests", func() {
 	It("pending it", Pending, func() {
 
 	})
-
-	FIt("passes eventually", func() {
-		countFlake += 1
-		if countFlake < 3 {
-			Fail("fail")
-		}
-	}, FlakeAttempts(3))
-
-	// how to/should we test negative test cases?
-	// FIt("fails eventually", func() {
-	// 	countRepeat += 1
-	// 	if countRepeat >=3 {
-	// 		Fail("fail")
-	// 	}
-	// }, RepeatAttempts(3))
 
 	It("focused it", Focus, func() {
 		Ω(true).Should(BeTrue())

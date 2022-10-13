@@ -119,8 +119,8 @@ func (g *group) initialReportForSpec(spec Spec) types.SpecReport {
 		ParallelProcess:             g.suite.config.ParallelProcess,
 		IsSerial:                    spec.Nodes.HasNodeMarkedSerial(),
 		IsInOrderedContainer:        !spec.Nodes.FirstNodeMarkedOrdered().IsZero(),
-		IsFlakeAttempts:             spec.Nodes.HasSetFlakeAttempts(),
-		IsRepeatAttempts:            spec.Nodes.HasSetRepeatAttempts(),
+		MaxFlakeAttempts:            spec.Nodes.GetMaxFlakeAttempts(),
+		MaxMustPassRepeatedly:       spec.Nodes.GetMaxMustPassRepeatedly(),
 	}
 }
 
@@ -306,21 +306,19 @@ func (g *group) run(specs Specs) {
 			var maxAttempts = 1
 			var multipleExecutionDecorator interface{}
 
-			if g.suite.currentSpecReport.IsFlakeAttempts {
+			if g.suite.currentSpecReport.MaxFlakeAttempts > 0 {
 				multipleExecutionDecorator = reflect.TypeOf(FlakeAttempts(0))
 				maxAttempts = max(1, spec.FlakeAttempts())
 			}
 			if g.suite.config.FlakeAttempts > 0 {
 				multipleExecutionDecorator = reflect.TypeOf(FlakeAttempts(0))
 				maxAttempts = g.suite.config.FlakeAttempts
-				g.suite.currentSpecReport.IsFlakeAttempts = true
+				g.suite.currentSpecReport.MaxFlakeAttempts = maxAttempts
 			}
 
-			if g.suite.currentSpecReport.IsRepeatAttempts {
-				multipleExecutionDecorator = reflect.TypeOf(RepeatAttempts(0))
-				maxAttempts = max(1, spec.RepeatAttempts())
-			} else if g.suite.config.FlakeAttempts > 0 {
-				//What should be the behavior when --flakeattempts is defined in CLI and the RepeatAttemps decorator is used?
+			if g.suite.currentSpecReport.MaxMustPassRepeatedly > 0 {
+				multipleExecutionDecorator = reflect.TypeOf(MustPassRepeatedly(0))
+				maxAttempts = max(1, spec.MustPassRepeatedly())
 			}
 
 		maxAttemptForLoop:
@@ -332,8 +330,8 @@ func (g *group) run(specs Specs) {
 					switch t := multipleExecutionDecorator; {
 					case t == reflect.TypeOf(FlakeAttempts(0)):
 						fmt.Fprintf(g.suite.writer, "\nGinkgo: Attempt #%d Failed.  Retrying...\n", attempt)
-					case t == reflect.TypeOf(RepeatAttempts(0)):
-						fmt.Fprintf(g.suite.writer, "\nGinkgo: Attempt #%d Passed.  Retrying...\n", attempt)
+					case t == reflect.TypeOf(MustPassRepeatedly(0)):
+						fmt.Fprintf(g.suite.writer, "\nGinkgo: Attempt #%d Passed.  Repeating...\n", attempt)
 					}
 				}
 
@@ -349,8 +347,8 @@ func (g *group) run(specs Specs) {
 					if g.suite.currentSpecReport.State.Is(types.SpecStatePassed | types.SpecStateSkipped | types.SpecStateAborted | types.SpecStateInterrupted) {
 						break maxAttemptForLoop
 					}
-				case t == reflect.TypeOf(RepeatAttempts(0)):
-					if g.suite.currentSpecReport.State.Is(types.SpecStateFailed | types.SpecStateSkipped | types.SpecStateAborted | types.SpecStateInterrupted) {
+				case t == reflect.TypeOf(MustPassRepeatedly(0)):
+					if g.suite.currentSpecReport.State.Is(types.SpecStateFailureStates | types.SpecStateSkipped) {
 						break maxAttemptForLoop
 					}
 				}

@@ -41,15 +41,15 @@ func (s Spec) FlakeAttempts() int {
 	return flakeAttempts
 }
 
-func (s Spec) RepeatAttempts() int {
-	repeatAttempts := 0
+func (s Spec) MustPassRepeatedly() int {
+	mustPassRepeatedly := 0
 	for i := range s.Nodes {
-		if s.Nodes[i].RepeatAttempts > 0 {
-			repeatAttempts = s.Nodes[i].RepeatAttempts
+		if s.Nodes[i].MustPassRepeatedly > 0 {
+			mustPassRepeatedly = s.Nodes[i].MustPassRepeatedly
 		}
 	}
 
-	return repeatAttempts
+	return mustPassRepeatedly
 }
 
 func (s Spec) SpecTimeout() time.Duration {

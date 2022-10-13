@@ -2485,11 +2485,11 @@ One quick note on `--repeat`: when you invoke `ginkgo --repeat=N` Ginkgo will ru
 
 Both `--until-it-fails` and `--repeat` help you identify flaky specs early.  Doing so will help you debug flaky specs while the context that introduced them is fresh.
 
-A more granular approach to repeating tests is by decorating individual subject or container nodes with the RepeatAttempts(N) decorator:
+A more granular approach to repeating tests is by decorating individual subject or container nodes with the MustPassRepeatedly(N) decorator:
 
 ```go
 Describe("Storing books", func() {
-  It("can save books to the central library", RepeatAttempts(3), func() {
+  It("can save books to the central library", MustPassRepeatedly(3), func() {
     // this spec has been marked and will be retried up to 3 times
   })
 
@@ -4839,13 +4839,13 @@ With this setup, `"is flaky"` and `"is also flaky"` will run up to 3 times.  `"i
 
 If `ginkgo --flake-attempts=N` is set the value passed in by the CLI will override all the decorated values.  Every test will now run up to `N` times.
 
-#### The RepeatAttempts Decorator
-The `RepeatAttempts(uint)` decorator applies to container and subject nodes.  It is an error to apply `RepeatAttempts` to a setup node.
+#### The MustPassRepeatedly Decorator
+The `MustPassRepeatedly(uint)` decorator applies to container and subject nodes.  It is an error to apply `MustPassRepeatedly` to a setup node.
 
-`RepeatAttempts` allows the user to flag specific tests or groups of tests for debbuging flaky tests.  Ginkgo will run tests up to the number of times specified in `RepeatAttempts` until they fail.  For example:
+`MustPassRepeatedly` allows the user to flag specific tests or groups of tests for debbuging flaky tests.  Ginkgo will run tests up to the number of times specified in `MustPassRepeatedly` until they fail.  For example:
 
 ```go
-Describe("repeated tests", RepeatAttempts(3), func() {
+Describe("repeated tests", MustPassRepeatedly(3), func() {
   It("is retried", func() {
     ...
   })
@@ -4854,20 +4854,21 @@ Describe("repeated tests", RepeatAttempts(3), func() {
     ...
   })
 
-  It("is retried even more", RepeatAttempts(5) func() {
+  It("is retried even more", MustPassRepeatedly(5) func() {
     ...
   })
 
-  It("is retried less", RepeatAttempts(1), func() {
+  It("is retried less", MustPassRepeatedly(1), func() {
     ...
   })
 })
 ```
 
-With this setup, `"is retried"` and `"is also retried"` will run up to 3 times.  `"is retried even more"` will run up to 5 times.  `"is retried less"` will run only once.  Note that if multiple `RepeatAttempts` appear in a spec's hierarchy, the most deeply nested `RepeatAttempts` wins.  If multiple `RepeatAttempts` are passed into a given node, the last one wins.
+With this setup, `"is retried"` and `"is also retried"` will run up to 3 times.  `"is retried even more"` will run up to 5 times.  `"is retried less"` will run only once.  Note that if multiple `MustPassRepeatedly` appear in a spec's hierarchy, the most deeply nested `MustPassRepeatedly` wins.  If multiple `MustPassRepeatedly` are passed into a given node, the last one wins.
 
-The `ginkgo --repeat=N` value passed in by the CLI has no relation with the `RepeatAttempts` decorator. If the `--repeat` CLI flag is used and a container or subject node also contains the `RepeatAttempts` decorator, then the test will run up to `N*R` times, where `N` is the values passed to the `--repeat` CLI flag and `R` is the value passed to the RepeatAttempts decorator.
+The `ginkgo --repeat=N` value passed in by the CLI has no relation with the `MustPassRepeatedly` decorator. If the `--repeat` CLI flag is used and a container or subject node also contains the `MustPassRepeatedly` decorator, then the test will run up to `N*R` times, where `N` is the values passed to the `--repeat` CLI flag and `R` is the value passed to the MustPassRepeatedly decorator.
 
+If the `MustPassRepeatedly` decorator is set, it will override the `ginkgo --flake-attempts=N` CLI config. The tests that do not contain the `MustPassRepeatedly(R)` decorator will still run up to `N` times, in accordance to the `ginkgo --flake-attempts=N` CLI config.
 
 #### The SuppressProgressOutput Decorator
 

@@ -21,12 +21,12 @@ You can learn more about decorators here: https://onsi.github.io/ginkgo/#decorat
 type FlakeAttempts = internal.FlakeAttempts
 
 /*
-RepeatAttempts(uint N) is a decorator that allows you to repeat the execution of individual specs or spec containers. Ginkgo will run them up to `N` times until they fail.
+MustPassRepeatedly(uint N) is a decorator that allows you to repeat the execution of individual specs or spec containers. Ginkgo will run them up to `N` times until they fail.
 
-You can learn more here: https://onsi.github.io/ginkgo/#the-repeatattempts-decorator
+You can learn more here: https://onsi.github.io/ginkgo/#the-mustpassrepeatedly-decorator
 You can learn more about decorators here: https://onsi.github.io/ginkgo/#decorator-reference
 */
-type RepeatAttempts = internal.RepeatAttempts
+type MustPassRepeatedly = internal.MustPassRepeatedly
 
 /*
 Focus is a decorator that allows you to mark a spec or container as focused.  Identical to FIt and FDescribe.

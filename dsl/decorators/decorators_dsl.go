@@ -18,7 +18,7 @@ import (
 
 type Offset = ginkgo.Offset
 type FlakeAttempts = ginkgo.FlakeAttempts
-type RepeatAttempts = ginkgo.RepeatAttempts
+type MustPassRepeatedly = ginkgo.MustPassRepeatedly
 type Labels = ginkgo.Labels
 type PollProgressAfter = ginkgo.PollProgressAfter
 type PollProgressInterval = ginkgo.PollProgressInterval

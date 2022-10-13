@@ -149,10 +149,8 @@ func (r *DefaultReporter) DidRun(report types.SpecReport) {
 			}
 		} else {
 			header, stream = denoter, true
-			if report.NumAttempts > 1 {
-				if report.IsFlakeAttempts {
-					header, stream = fmt.Sprintf("%s [FLAKEY TEST - TOOK %d ATTEMPTS TO PASS]", r.retryDenoter, report.NumAttempts), false
-				}
+			if report.MaxFlakeAttempts > 1 {
+				header, stream = fmt.Sprintf("%s [FLAKEY TEST - TOOK %d ATTEMPTS TO PASS]", r.retryDenoter, report.NumAttempts), false
 			}
 			if report.RunTime > r.conf.SlowSpecThreshold {
 				header, stream = fmt.Sprintf("%s [SLOW TEST]", header), false
@@ -176,11 +174,7 @@ func (r *DefaultReporter) DidRun(report types.SpecReport) {
 		}
 	case types.SpecStateFailed:
 		highlightColor, header = "{{red}}", fmt.Sprintf("%s [FAILED]", denoter)
-		if report.NumAttempts > 1 && report.IsRepeatAttempts {
-			header, stream = fmt.Sprintf("%s [REPEATED TEST - FAILED AFTER %d ATTEMPTS]", r.retryDenoter, report.NumAttempts), false
-		} else {
-			header = fmt.Sprintf("%s [FAILED]", denoter)
-		}
+		header = fmt.Sprintf("%s [FAILED]", denoter)
 	case types.SpecStateTimedout:
 		header = fmt.Sprintf("%s [TIMEDOUT]", denoter)
 	case types.SpecStatePanicked:
@@ -191,6 +185,9 @@ func (r *DefaultReporter) DidRun(report types.SpecReport) {
 		header = fmt.Sprintf("%s! [ABORTED]", denoter)
 	}
 
+	if report.State.Is(types.SpecStateFailureStates) && report.MaxMustPassRepeatedly > 1 {
+		header, stream = fmt.Sprintf("%s DURING REPETITION #%d", header, report.NumAttempts), false
+	}
 	// Emit stream and return
 	if stream {
 		r.emit(r.f(highlightColor + header + "{{/}}"))
