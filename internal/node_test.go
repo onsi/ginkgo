@@ -1566,7 +1566,7 @@ var _ = Describe("Nodes", func() {
 		})
 	})
 
-	FDescribe("GetMaxMustPassRepeatedly", func() {
+	Describe("GetMaxMustPassRepeatedly", func() {
 		Context("when there is no node marked with MustPassRepeatedly decorator", func() {
 			It("returns 0", func() {
 				nodes := Nodes{N(), N(), N()}
