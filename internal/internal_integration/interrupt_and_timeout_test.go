@@ -426,8 +426,9 @@ var _ = Describe("Interrupts and Timeouts", func() {
 					BeforeEach(rt.T("bef-outer"))
 					Context("nested", func() {
 						BeforeEach(rt.T("bef-inner"))
-						It("A", rt.T("A", func() {
+						It("A", rt.TSC("A", func(c SpecContext) {
 							interruptHandler.Interrupt(interrupt_handler.InterruptCauseSignal)
+							<-c.Done()
 						}))
 						It("B", rt.T("B"))
 						AfterEach(rt.TSC("aft-inner", func(c SpecContext) {
@@ -472,8 +473,9 @@ var _ = Describe("Interrupts and Timeouts", func() {
 					BeforeEach(rt.T("bef-outer"))
 					Context("nested", func() {
 						BeforeEach(rt.T("bef-inner"))
-						It("A", rt.T("A", func() {
+						It("A", rt.TSC("A", func(c SpecContext) {
 							interruptHandler.Interrupt(interrupt_handler.InterruptCauseSignal)
+							<-c.Done()
 						}))
 						It("B", rt.T("B"))
 						AfterEach(rt.TSC("aft-inner", func(c SpecContext) {
