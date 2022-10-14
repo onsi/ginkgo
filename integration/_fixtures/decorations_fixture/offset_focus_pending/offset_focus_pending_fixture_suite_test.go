@@ -15,7 +15,7 @@ func TestDecorationsFixture(t *testing.T) {
 var countFlake = 0
 var countRepeat = 0
 
-var _ = Describe("some decorated tests", func() {
+var _ = Describe("some decorated specs", func() {
 	Describe("focused", Focus, func() {
 		OffsetIt()
 	})

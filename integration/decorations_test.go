@@ -20,8 +20,8 @@ var _ = Describe("Decorations", func() {
 		out := string(session.Out.Contents())
 		Ω(out).Should(MatchRegexp(
 			`P \[PENDING\]
-some decorated tests
-.*decorations_fixture_suite_test.go:\d+
+some decorated specs
+.*offset_focus_pending_fixture_suite_test.go:\d+
   pending it`,
 		))
 

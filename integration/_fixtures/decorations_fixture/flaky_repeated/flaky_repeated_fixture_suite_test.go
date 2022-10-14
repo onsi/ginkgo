@@ -16,7 +16,7 @@ func TestDecorationsFixture(t *testing.T) {
 var countFlake = 0
 var countRepeat = 0
 
-var _ = Describe("some decorated tests", func() {
+var _ = Describe("some decorated specs", func() {
 	It("passes eventually", func() {
 		countFlake += 1
 		if countFlake < 3 {
@@ -24,7 +24,6 @@ var _ = Describe("some decorated tests", func() {
 		}
 	}, FlakeAttempts(3))
 
-	// how to/should we test negative test cases?
 	It("fails eventually", func() {
 		countRepeat += 1
 		if countRepeat >= 3 {
