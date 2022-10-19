@@ -2,7 +2,6 @@ package internal
 
 import (
 	"fmt"
-	"reflect"
 	"time"
 
 	"github.com/onsi/ginkgo/v2/types"
@@ -304,34 +303,28 @@ func (g *group) run(specs Specs) {
 		if !skip {
 
 			var maxAttempts = 1
-			var multipleExecutionDecorator interface{}
 
 			if g.suite.currentSpecReport.MaxFlakeAttempts > 0 {
-				multipleExecutionDecorator = reflect.TypeOf(FlakeAttempts(0))
 				maxAttempts = max(1, spec.FlakeAttempts())
 			}
 			if g.suite.config.FlakeAttempts > 0 {
-				multipleExecutionDecorator = reflect.TypeOf(FlakeAttempts(0))
 				maxAttempts = g.suite.config.FlakeAttempts
 				g.suite.currentSpecReport.MaxFlakeAttempts = maxAttempts
 			}
 
 			if g.suite.currentSpecReport.MaxMustPassRepeatedly > 0 {
-				multipleExecutionDecorator = reflect.TypeOf(MustPassRepeatedly(0))
 				maxAttempts = max(1, spec.MustPassRepeatedly())
 			}
 
-		maxAttemptForLoop:
 			for attempt := 0; attempt < maxAttempts; attempt++ {
 				g.suite.currentSpecReport.NumAttempts = attempt + 1
 				g.suite.writer.Truncate()
 				g.suite.outputInterceptor.StartInterceptingOutput()
 				if attempt > 0 {
-					switch t := multipleExecutionDecorator; {
-					case t == reflect.TypeOf(FlakeAttempts(0)):
-						fmt.Fprintf(g.suite.writer, "\nGinkgo: Attempt #%d Failed.  Retrying...\n", attempt)
-					case t == reflect.TypeOf(MustPassRepeatedly(0)):
+					if g.suite.currentSpecReport.MaxMustPassRepeatedly > 0 {
 						fmt.Fprintf(g.suite.writer, "\nGinkgo: Attempt #%d Passed.  Repeating...\n", attempt)
+					} else if g.suite.currentSpecReport.MaxFlakeAttempts > 0 {
+						fmt.Fprintf(g.suite.writer, "\nGinkgo: Attempt #%d Failed.  Retrying...\n", attempt)
 					}
 				}
 
@@ -342,14 +335,14 @@ func (g *group) run(specs Specs) {
 				g.suite.currentSpecReport.CapturedGinkgoWriterOutput += string(g.suite.writer.Bytes())
 				g.suite.currentSpecReport.CapturedStdOutErr += g.suite.outputInterceptor.StopInterceptingAndReturnOutput()
 
-				switch t := multipleExecutionDecorator; {
-				case t == reflect.TypeOf(FlakeAttempts(0)):
-					if g.suite.currentSpecReport.State.Is(types.SpecStatePassed | types.SpecStateSkipped | types.SpecStateAborted | types.SpecStateInterrupted) {
-						break maxAttemptForLoop
-					}
-				case t == reflect.TypeOf(MustPassRepeatedly(0)):
+				if g.suite.currentSpecReport.MaxMustPassRepeatedly > 0 {
 					if g.suite.currentSpecReport.State.Is(types.SpecStateFailureStates | types.SpecStateSkipped) {
-						break maxAttemptForLoop
+						break
+					}
+
+				} else if g.suite.currentSpecReport.MaxFlakeAttempts > 0 {
+					if g.suite.currentSpecReport.State.Is(types.SpecStatePassed | types.SpecStateSkipped | types.SpecStateAborted | types.SpecStateInterrupted) {
+						break
 					}
 				}
 
