@@ -1,3 +1,16 @@
+## 2.3.1
+
+## Fixes
+Several users were invoking `ginkgo` by installing the latest version of the cli via `go install github.com/onsi/ginkgo/v2/ginkgo@latest`.  When 2.3.0 was released this resulted in an influx of issues as CI systems failed due to a change in the internal contract between the Ginkgo CLI and the Ginkgo library.  Ginkgo only supports running the same version of the library as the cli (which is why both are packaged in the same repository).
+
+With this patch release, the ginkgo CLI can now identify a version mismatch and emit a helpful error message.
+
+- Ginkgo cli can identify version mismatches and emit a helpful error message [bc4ae2f]
+- further emphasize that a version match is required when running Ginkgo on CI and/or locally [2691dd8]
+
+## Maintenance
+- bump gomega to v1.22.0 [822a937]
+
 ## 2.3.0
 
 ### Interruptible Nodes and Timeouts

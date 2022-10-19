@@ -443,4 +443,18 @@ var _ = Describe("Running Specs", func() {
 			Ω(names).Should(Equal(expectedNames))
 		})
 	})
+
+	Context("when there is a version mismatch between the cli and the test package", func() {
+		It("emits a useful error and tries running", func() {
+			fm.MountFixture(("version_mismatch"))
+			session := startGinkgo(fm.PathTo("version_mismatch"), "--no-color")
+			Eventually(session).Should(gbytes.Say("Ginkgo detected a version mismatch between the Ginkgo CLI and the version of Ginkgo imported by your packages"))
+			Eventually(session).Should(gbytes.Say("Mismatched package versions found"))
+			Eventually(session).Should(gbytes.Say("2.2.0"))
+			Eventually(session).Should(gbytes.Say("used by version_mismatch"))
+
+			session.Kill()
+			Eventually(session).Should(gexec.Exit())
+		})
+	})
 })
