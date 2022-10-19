@@ -304,16 +304,13 @@ func (g *group) run(specs Specs) {
 
 			var maxAttempts = 1
 
-			if g.suite.currentSpecReport.MaxFlakeAttempts > 0 {
-				maxAttempts = max(1, spec.FlakeAttempts())
-			}
-			if g.suite.config.FlakeAttempts > 0 {
-				maxAttempts = g.suite.config.FlakeAttempts
-				g.suite.currentSpecReport.MaxFlakeAttempts = maxAttempts
-			}
-
 			if g.suite.currentSpecReport.MaxMustPassRepeatedly > 0 {
 				maxAttempts = max(1, spec.MustPassRepeatedly())
+			} else if g.suite.config.FlakeAttempts > 0 {
+				maxAttempts = g.suite.config.FlakeAttempts
+				g.suite.currentSpecReport.MaxFlakeAttempts = maxAttempts
+			} else if g.suite.currentSpecReport.MaxFlakeAttempts > 0 {
+				maxAttempts = max(1, spec.FlakeAttempts())
 			}
 
 			for attempt := 0; attempt < maxAttempts; attempt++ {
@@ -323,7 +320,8 @@ func (g *group) run(specs Specs) {
 				if attempt > 0 {
 					if g.suite.currentSpecReport.MaxMustPassRepeatedly > 0 {
 						fmt.Fprintf(g.suite.writer, "\nGinkgo: Attempt #%d Passed.  Repeating...\n", attempt)
-					} else if g.suite.currentSpecReport.MaxFlakeAttempts > 0 {
+					}
+					if g.suite.currentSpecReport.MaxFlakeAttempts > 0 {
 						fmt.Fprintf(g.suite.writer, "\nGinkgo: Attempt #%d Failed.  Retrying...\n", attempt)
 					}
 				}
@@ -339,13 +337,12 @@ func (g *group) run(specs Specs) {
 					if g.suite.currentSpecReport.State.Is(types.SpecStateFailureStates | types.SpecStateSkipped) {
 						break
 					}
-
-				} else if g.suite.currentSpecReport.MaxFlakeAttempts > 0 {
+				}
+				if g.suite.currentSpecReport.MaxFlakeAttempts > 0 {
 					if g.suite.currentSpecReport.State.Is(types.SpecStatePassed | types.SpecStateSkipped | types.SpecStateAborted | types.SpecStateInterrupted) {
 						break
 					}
 				}
-
 			}
 		}
 
