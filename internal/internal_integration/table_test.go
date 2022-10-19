@@ -400,7 +400,7 @@ var _ = Describe("Table driven tests", func() {
 		})
 	})
 
-	Describe("support for decorators", func() {
+	Describe("support for FlakyAttempts decorators", func() {
 		BeforeEach(func() {
 			success, _ := RunFixture("flaky table", func() {
 				var counter int
@@ -439,6 +439,48 @@ var _ = Describe("Table driven tests", func() {
 			Ω(reporter.Did.Find("B")).Should(HavePassed(NumAttempts(2)))
 			Ω(reporter.Did.Find("C")).Should(HaveFailed(NumAttempts(2)))
 			Ω(reporter.Did.Find("D")).Should(HavePassed(NumAttempts(3)))
+		})
+	})
+
+	Describe("support for MustPassRepeatedly decorators", func() {
+		BeforeEach(func() {
+			success, _ := RunFixture("Repeated Passes table", func() {
+				var counter int
+				var currentSpec string
+
+				BeforeEach(func() {
+					if currentSpec != CurrentSpecReport().LeafNodeText {
+						counter = 0
+						currentSpec = CurrentSpecReport().LeafNodeText
+					}
+				})
+
+				DescribeTable("contrived Repeated Passes table", MustPassRepeatedly(2),
+					func(passUntil int) {
+						rt.Run(CurrentSpecReport().LeafNodeText)
+						counter += 1
+						if counter >= passUntil {
+							F("fail")
+						}
+					},
+					Entry("A", 1),
+					Entry("B", 2),
+					Entry("C", 3),
+					Entry("D", []interface{}{MustPassRepeatedly(3), Offset(2)}, 3),
+				)
+			})
+			Ω(success).Should(BeFalse())
+		})
+
+		It("honors the Repeated attempts decorator", func() {
+			Ω(rt).Should(HaveTracked("A", "B", "B", "C", "C", "D", "D", "D"))
+		})
+
+		It("reports on the specs appropriately", func() {
+			Ω(reporter.Did.Find("A")).Should(HaveFailed(NumAttempts(1)))
+			Ω(reporter.Did.Find("B")).Should(HaveFailed(NumAttempts(2)))
+			Ω(reporter.Did.Find("C")).Should(HavePassed(NumAttempts(2)))
+			Ω(reporter.Did.Find("D")).Should(HaveFailed(NumAttempts(3)))
 		})
 	})
 })

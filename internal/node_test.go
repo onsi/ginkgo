@@ -51,6 +51,7 @@ var _ = Describe("Partitioning Decorations", func() {
 			Label("D"),
 			[]interface{}{},
 			FlakeAttempts(1),
+			MustPassRepeatedly(1),
 			true,
 			OncePerOrdered,
 		)
@@ -72,6 +73,7 @@ var _ = Describe("Partitioning Decorations", func() {
 			Label("A", "B", "C"),
 			Label("D"),
 			FlakeAttempts(1),
+			MustPassRepeatedly(1),
 			OncePerOrdered,
 		}))
 
@@ -337,11 +339,12 @@ var _ = Describe("Constructing nodes", func() {
 		})
 	})
 
-	Describe("The FlakeAttempts decoration", func() {
-		It("is zero by default", func() {
+	Describe("the FlakeAttempts and MustPassRepeatedly decorations", func() {
+		It("the node sets FlakeAttempts and MustPassRepeatedly to zero by default", func() {
 			node, errors := internal.NewNode(dt, ntIt, "text", body)
 			Ω(node).ShouldNot(BeZero())
 			Ω(node.FlakeAttempts).Should(Equal(0))
+			Ω(node.MustPassRepeatedly).Should(Equal(0))
 			ExpectAllWell(errors)
 		})
 		It("sets the FlakeAttempts field", func() {
@@ -349,15 +352,34 @@ var _ = Describe("Constructing nodes", func() {
 			Ω(node.FlakeAttempts).Should(Equal(2))
 			ExpectAllWell(errors)
 		})
+		It("sets the MustPassRepeatedly field", func() {
+			node, errors := internal.NewNode(dt, ntIt, "text", body, MustPassRepeatedly(2))
+			Ω(node.MustPassRepeatedly).Should(Equal(2))
+			ExpectAllWell(errors)
+		})
+		It("errors when both FlakeAttempts and MustPassRepeatedly are set", func() {
+			node, errors := internal.NewNode(dt, ntIt, "text", body, cl, FlakeAttempts(2), MustPassRepeatedly(2))
+			Ω(node).Should(BeZero())
+			Ω(errors).Should(ConsistOf(types.GinkgoErrors.InvalidDeclarationOfFlakeAttemptsAndMustPassRepeatedly(cl, ntIt)))
+		})
 		It("can be applied to containers", func() {
 			node, errors := internal.NewNode(dt, ntCon, "text", body, FlakeAttempts(2))
 			Ω(node.FlakeAttempts).Should(Equal(2))
+			ExpectAllWell(errors)
+
+			node, errors = internal.NewNode(dt, ntCon, "text", body, MustPassRepeatedly(2))
+			Ω(node.MustPassRepeatedly).Should(Equal(2))
 			ExpectAllWell(errors)
 		})
 		It("cannot be applied to non-container/it nodes", func() {
 			node, errors := internal.NewNode(dt, ntBef, "", body, cl, FlakeAttempts(2))
 			Ω(node).Should(BeZero())
 			Ω(errors).Should(ConsistOf(types.GinkgoErrors.InvalidDecoratorForNodeType(cl, ntBef, "FlakeAttempts")))
+
+			node, errors = internal.NewNode(dt, ntBef, "", body, cl, MustPassRepeatedly(2))
+			Ω(node).Should(BeZero())
+			Ω(errors).Should(ConsistOf(types.GinkgoErrors.InvalidDecoratorForNodeType(cl, ntBef, "MustPassRepeatedly")))
+
 			Ω(dt.DidTrackDeprecations()).Should(BeFalse())
 		})
 	})
@@ -1521,6 +1543,49 @@ var _ = Describe("Nodes", func() {
 				Ω(nodes.FirstNodeMarkedOrdered()).Should(BeZero())
 			})
 		})
+	})
+
+	Describe("GetMaxFlakeAttempts", func() {
+		Context("when there is no node marked with FlakeAttempts decorator", func() {
+			It("returns 0", func() {
+				nodes := Nodes{N(), N(), N()}
+				Ω(nodes.GetMaxFlakeAttempts()).Should(Equal(0))
+			})
+		})
+		Context("when there is a node marked with FlakeAttempt decorator", func() {
+			It("returns the FlakeAttempt value", func() {
+				nodes := Nodes{N(), N(FlakeAttempts(2)), N(), N()}
+				Ω(nodes.GetMaxFlakeAttempts()).Should(Equal(2))
+			})
+		})
+		Context("when FlakeAttempt decorations are nested", func() {
+			It("returns the last FlakeAttempt value", func() {
+				nodes := Nodes{N(), N(FlakeAttempts(4)), N(), N(FlakeAttempts(2))}
+				Ω(nodes.GetMaxFlakeAttempts()).Should(Equal(2))
+			})
+		})
+	})
+
+	Describe("GetMaxMustPassRepeatedly", func() {
+		Context("when there is no node marked with MustPassRepeatedly decorator", func() {
+			It("returns 0", func() {
+				nodes := Nodes{N(), N(), N()}
+				Ω(nodes.GetMaxMustPassRepeatedly()).Should(Equal(0))
+			})
+		})
+		Context("when there is a node marked with MustPassRepeatedly decorator", func() {
+			It("returns the MustPassRepeatedly value", func() {
+				nodes := Nodes{N(), N(MustPassRepeatedly(2)), N(), N()}
+				Ω(nodes.GetMaxMustPassRepeatedly()).Should(Equal(2))
+			})
+		})
+		Context("when MustPassRepeatedly decorations are nested", func() {
+			It("returns the last MustPassRepeatedly value", func() {
+				nodes := Nodes{N(), N(MustPassRepeatedly(4)), N(), N(MustPassRepeatedly(2))}
+				Ω(nodes.GetMaxMustPassRepeatedly()).Should(Equal(2))
+			})
+		})
+
 	})
 })
 

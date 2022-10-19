@@ -14,23 +14,38 @@ var _ = Describe("Decorations test", func() {
 		customIt := func() {
 			It("is-offset", rt.T("is-offset"), Offset(1))
 		}
-		var count = 0
+		var countFlaky = 0
+		var countRepeat = 0
 		success, _ := RunFixture("happy-path decoration test", func() {
 			Describe("top-level-container", func() {
 				clForOffset = types.NewCodeLocation(0)
 				customIt()
 				It("flaky", FlakeAttempts(4), rt.T("flaky", func() {
-					count += 1
+					countFlaky += 1
 					outputInterceptor.AppendInterceptedOutput("so flaky\n")
 					writer.Println("so tasty")
-					if count < 3 {
+					if countFlaky < 3 {
 						F("fail")
 					}
 				}))
-				It("never-passes", FlakeAttempts(2), rt.T("never-passes", func() {
+				It("flaky-never-passes", FlakeAttempts(2), rt.T("flaky-never-passes", func() {
 					F("fail")
 				}))
-				It("skips", FlakeAttempts(3), rt.T("skips", func() {
+				It("flaky-skips", FlakeAttempts(3), rt.T("flaky-skips", func() {
+					Skip("skip")
+				}))
+				It("repeat", MustPassRepeatedly(4), rt.T("repeat", func() {
+					countRepeat += 1
+					outputInterceptor.AppendInterceptedOutput("repeats a bit\n")
+					writer.Println("here we go")
+					if countRepeat >= 3 {
+						F("fail")
+					}
+				}))
+				It("repeat-never-fails", MustPassRepeatedly(2), rt.T("repeat-never-passes", func() {
+					// F("fail")
+				}))
+				It("repeat-skips", MustPassRepeatedly(3), rt.T("repeat-skips", func() {
 					Skip("skip")
 				}))
 			})
@@ -42,8 +57,11 @@ var _ = Describe("Decorations test", func() {
 		Ω(rt).Should(HaveTracked(
 			"is-offset",
 			"flaky", "flaky", "flaky",
-			"never-passes", "never-passes",
-			"skips",
+			"flaky-never-passes", "flaky-never-passes",
+			"flaky-skips",
+			"repeat", "repeat", "repeat",
+			"repeat-never-passes", "repeat-never-passes",
+			"repeat-skips",
 		))
 	})
 
@@ -55,10 +73,18 @@ var _ = Describe("Decorations test", func() {
 	})
 
 	Describe("FlakeAttempts", func() {
-		It("reruns tests until they pass or until the number of flake attempts is exhausted, but does not rerun skipped tests", func() {
+		It("reruns specs until they pass or until the number of flake attempts is exhausted, but does not rerun skipped specs", func() {
 			Ω(reporter.Did.Find("flaky")).Should(HavePassed(NumAttempts(3), CapturedStdOutput("so flaky\nso flaky\nso flaky\n"), CapturedGinkgoWriterOutput("so tasty\n\nGinkgo: Attempt #1 Failed.  Retrying...\nso tasty\n\nGinkgo: Attempt #2 Failed.  Retrying...\nso tasty\n")))
-			Ω(reporter.Did.Find("never-passes")).Should(HaveFailed("fail", NumAttempts(2)))
-			Ω(reporter.Did.Find("skips")).Should(HaveBeenSkippedWithMessage("skip", NumAttempts(1)))
+			Ω(reporter.Did.Find("flaky-never-passes")).Should(HaveFailed("fail", NumAttempts(2)))
+			Ω(reporter.Did.Find("flaky-skips")).Should(HaveBeenSkippedWithMessage("skip", NumAttempts(1)))
+		})
+	})
+
+	Describe("MustPassRepeatedly", func() {
+		It("reruns specs until they fail or until the number of MustPassRepeatedly attempts is exhausted, but does not rerun skipped specs", func() {
+			Ω(reporter.Did.Find("repeat")).Should(HaveFailed(NumAttempts(3), CapturedStdOutput("repeats a bit\nrepeats a bit\nrepeats a bit\n"), CapturedGinkgoWriterOutput("here we go\n\nGinkgo: Attempt #1 Passed.  Repeating...\nhere we go\n\nGinkgo: Attempt #2 Passed.  Repeating...\nhere we go\n")))
+			Ω(reporter.Did.Find("repeat-never-fails")).Should(HavePassed("passed", NumAttempts(2)))
+			Ω(reporter.Did.Find("repeat-skips")).Should(HaveBeenSkippedWithMessage("skip", NumAttempts(1)))
 		})
 	})
 })

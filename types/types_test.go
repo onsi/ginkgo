@@ -386,14 +386,28 @@ var _ = Describe("Types", func() {
 		Describe("CountOfFlakedSpecs", func() {
 			It("returns the number of passing specs with NumAttempts > 1", func() {
 				reports := types.SpecReports{
-					{State: types.SpecStatePassed, NumAttempts: 2},
-					{State: types.SpecStatePassed, NumAttempts: 2},
-					{State: types.SpecStatePassed, NumAttempts: 1},
-					{State: types.SpecStatePassed, NumAttempts: 1},
-					{State: types.SpecStateFailed, NumAttempts: 2},
+					{State: types.SpecStatePassed, NumAttempts: 2, MaxFlakeAttempts: 2},
+					{State: types.SpecStatePassed, NumAttempts: 2, MaxFlakeAttempts: 2},
+					{State: types.SpecStatePassed, NumAttempts: 1, MaxFlakeAttempts: 2},
+					{State: types.SpecStatePassed, NumAttempts: 1, MaxFlakeAttempts: 2},
+					{State: types.SpecStateFailed, NumAttempts: 2, MaxFlakeAttempts: 2},
 				}
 
 				Ω(reports.CountOfFlakedSpecs()).Should(Equal(2))
+			})
+		})
+
+		Describe("CountOfRepeatedSpecs", func() {
+			It("returns the number of failed specs with NumAttempts > 1", func() {
+				reports := types.SpecReports{
+					{State: types.SpecStatePassed, NumAttempts: 2, MaxMustPassRepeatedly: 2},
+					{State: types.SpecStatePassed, NumAttempts: 2, MaxMustPassRepeatedly: 2},
+					{State: types.SpecStatePassed, NumAttempts: 1, MaxMustPassRepeatedly: 2},
+					{State: types.SpecStatePassed, NumAttempts: 1, MaxMustPassRepeatedly: 2},
+					{State: types.SpecStateFailed, NumAttempts: 2, MaxMustPassRepeatedly: 2},
+				}
+
+				Ω(reports.CountOfRepeatedSpecs()).Should(Equal(1))
 			})
 		})
 	})

@@ -77,6 +77,35 @@ var _ = Describe("Spec and Specs", func() {
 		})
 	})
 
+	Describe("spec.MustPassRepeatedly", func() {
+		Context("when none of the nodes have MustPassRepeatedly", func() {
+			It("returns 0", func() {
+				spec := S(N(ntCon), N(ntCon), N(ntIt))
+				Ω(spec.MustPassRepeatedly()).Should(Equal(0))
+			})
+		})
+
+		Context("when a node has MustPassRepeatedly set", func() {
+			It("returns that MustPassRepeatedly", func() {
+				spec := S(N(ntCon, MustPassRepeatedly(3)), N(ntCon), N(ntIt))
+				Ω(spec.MustPassRepeatedly()).Should(Equal(3))
+
+				spec = S(N(ntCon), N(ntCon, MustPassRepeatedly(2)), N(ntIt))
+				Ω(spec.MustPassRepeatedly()).Should(Equal(2))
+
+				spec = S(N(ntCon), N(ntCon), N(ntIt, MustPassRepeatedly(4)))
+				Ω(spec.MustPassRepeatedly()).Should(Equal(4))
+			})
+		})
+
+		Context("when multiple nodes have MustPassRepeatedly", func() {
+			It("returns the inner-most nested MustPassRepeatedly", func() {
+				spec := S(N(ntCon, MustPassRepeatedly(3)), N(ntCon, MustPassRepeatedly(4)), N(ntIt, MustPassRepeatedly(2)))
+				Ω(spec.MustPassRepeatedly()).Should(Equal(2))
+			})
+		})
+	})
+
 	Describe("specs.HasAnySpecsMarkedPending", func() {
 		Context("when there are no specs with any nodes marked pending", func() {
 			It("returns false", func() {
