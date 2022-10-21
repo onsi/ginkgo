@@ -1,6 +1,8 @@
 package internal_test
 
 import (
+	"errors"
+
 	. "github.com/onsi/ginkgo/v2"
 	. "github.com/onsi/gomega"
 
@@ -106,6 +108,20 @@ var _ = Describe("Writer", func() {
 		It("can Printf", func() {
 			writer.Printf("%s%d - %s\n", "foo", 17, "bar")
 			Ω(string(out.Contents())).Should(Equal("foo17 - bar\n"))
+		})
+	})
+
+	When("wrapped by logr", func() {
+		It("can print Info logs", func() {
+			log := internal.GinkgoLogrFunc(writer)
+			log.Info("message", "key", 5)
+			Ω(string(out.Contents())).Should(Equal("\"level\"=0 \"msg\"=\"message\" \"key\"=5"))
+		})
+
+		It("can print Error logs", func() {
+			log := internal.GinkgoLogrFunc(writer)
+			log.Error(errors.New("cake"), "planned failure", "key", "banana")
+			Ω(string(out.Contents())).Should(Equal("\"msg\"=\"planned failure\" \"error\"=\"cake\" \"key\"=\"banana\""))
 		})
 	})
 })

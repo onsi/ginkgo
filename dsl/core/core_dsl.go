@@ -1,7 +1,7 @@
 /*
 Ginkgo is usually dot-imported via:
 
-    import . "github.com/onsi/ginkgo/v2"
+	import . "github.com/onsi/ginkgo/v2"
 
 however some parts of the DSL may conflict with existing symbols in the user's code.
 
@@ -24,6 +24,7 @@ type GinkgoTInterface = ginkgo.GinkgoTInterface
 type SpecContext = ginkgo.SpecContext
 
 var GinkgoWriter = ginkgo.GinkgoWriter
+var GinkgoLogr = ginkgo.GinkgoLogr
 var GinkgoConfiguration = ginkgo.GinkgoConfiguration
 var GinkgoRandomSeed = ginkgo.GinkgoRandomSeed
 var GinkgoParallelProcess = ginkgo.GinkgoParallelProcess
