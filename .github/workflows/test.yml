@@ -10,7 +10,7 @@ jobs:
     runs-on: ubuntu-latest
     name: Check modules
     steps:
-    - uses: actions/setup-go@v2
+    - uses: actions/setup-go@v3
       with:
         go-version: '1.18'
     - uses: actions/checkout@v3
@@ -22,7 +22,7 @@ jobs:
         version: [ '1.18', '1.19' ]
     name: Go ${{ matrix.version }}
     steps:
-    - uses: actions/setup-go@v2
+    - uses: actions/setup-go@v3
       with:
         go-version: ${{ matrix.version }}
     - uses: actions/checkout@v3
