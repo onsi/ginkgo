@@ -3,6 +3,7 @@ module github.com/onsi/ginkgo/v2
 go 1.18
 
 require (
+	github.com/go-logr/logr v1.2.3
 	github.com/go-task/slim-sprig v0.0.0-20210107165309-348f09dbbbc0
 	github.com/google/pprof v0.0.0-20210407192527-94a9f03dee38
 	github.com/onsi/gomega v1.22.1

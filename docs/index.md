@@ -1183,6 +1183,8 @@ You can also attach additional `io.Writer`s for `GinkgoWriter` to tee to via `Gi
 
 Finally - when running in verbose mode via `ginkgo -v` anything written to `GinkgoWriter` will be immediately streamed to stdout.  This can help shorten the feedback loop when debugging a complex spec.
 
+If [logr](https://github.com/go-logr/logr) is used for logging in a project the globally available `GinkgoLogr` provides a logger implementation. Any logging on `GinkgoLogr` is forwarded to `GinkgoWriter`.
+
 ### Documenting Complex Specs: By
 As a rule, you should try to keep your subject and setup closures short and to the point.  Sometimes this is not possible, particularly when testing complex workflows in integration-style tests.  In these cases your test blocks begin to hide a narrative that is hard to glean by looking at code alone.  Ginkgo provides `By` to help in these situations.  Here's an example:
 

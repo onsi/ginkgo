@@ -23,6 +23,7 @@ import (
 	"strings"
 	"time"
 
+	"github.com/go-logr/logr"
 	"github.com/onsi/ginkgo/v2/formatter"
 	"github.com/onsi/ginkgo/v2/internal"
 	"github.com/onsi/ginkgo/v2/internal/global"
@@ -46,7 +47,9 @@ func init() {
 	var err error
 	flagSet, err = types.BuildTestSuiteFlagSet(&suiteConfig, &reporterConfig)
 	exitIfErr(err)
-	GinkgoWriter = internal.NewWriter(os.Stdout)
+	writer := internal.NewWriter(os.Stdout)
+	GinkgoWriter = writer
+	GinkgoLogr = internal.GinkgoLogrFunc(writer)
 }
 
 func exitIfErr(err error) {
@@ -90,11 +93,11 @@ type GinkgoWriterInterface interface {
 }
 
 /*
- SpecContext is the context object passed into nodes that are subject to a timeout or need to be notified of an interrupt.  It implements the standard context.Context interface but also contains additional helpers to provide an extensibility point for Ginkgo.  (As an example, Gomega's Eventually can use the methods defined on SpecContext to provide deeper integratoin with Ginkgo).
+SpecContext is the context object passed into nodes that are subject to a timeout or need to be notified of an interrupt.  It implements the standard context.Context interface but also contains additional helpers to provide an extensibility point for Ginkgo.  (As an example, Gomega's Eventually can use the methods defined on SpecContext to provide deeper integratoin with Ginkgo).
 
- You can do anything with SpecContext that you do with a typical context.Context including wrapping it with any of the context.With* methods.
+You can do anything with SpecContext that you do with a typical context.Context including wrapping it with any of the context.With* methods.
 
- Ginkgo will cancel the SpecContext when a node is interrupted (e.g. by the user sending an interupt signal) or when a node has exceeded it's allowed run-time.  Note, however, that even in cases where a node has a deadline, SpecContext will not return a deadline via .Deadline().  This is because Ginkgo does not use a WithDeadline() context to model node deadlines as Ginkgo needs control over the precise timing of the context cancellation to ensure it can provide an accurate progress report at the moment of cancellation.
+Ginkgo will cancel the SpecContext when a node is interrupted (e.g. by the user sending an interupt signal) or when a node has exceeded it's allowed run-time.  Note, however, that even in cases where a node has a deadline, SpecContext will not return a deadline via .Deadline().  This is because Ginkgo does not use a WithDeadline() context to model node deadlines as Ginkgo needs control over the precise timing of the context cancellation to ensure it can provide an accurate progress report at the moment of cancellation.
 */
 type SpecContext = internal.SpecContext
 
@@ -111,6 +114,11 @@ Writes to GinkgoWriter are immediately sent to any registered TeeTo() writers.  
 You can learn more at https://onsi.github.io/ginkgo/#logging-output
 */
 var GinkgoWriter GinkgoWriterInterface
+
+/*
+GinkgoLogr is a logr.Logger that writes to GinkgoWriter
+*/
+var GinkgoLogr logr.Logger
 
 // The interface by which Ginkgo receives *testing.T
 type GinkgoTestingT interface {
@@ -685,7 +693,6 @@ BeforeAll nodes are Setup nodes that can occur inside Ordered containers.  They 
 Multiple BeforeAll nodes can be defined in a given Ordered container however they cannot be nested inside any other container.
 
 BeforeAll can take a func() body, or an interruptible func(SpecContext)/func(context.Context) body.
-
 
 You cannot nest any other Ginkgo nodes within a BeforeAll node's closure.
 You can learn more about Ordered Containers at: https://onsi.github.io/ginkgo/#ordered-containers
