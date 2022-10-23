@@ -724,10 +724,10 @@ DeferCleanup can be called within any Setup or Subject node to register a cleanu
 
 DeferCleanup can be passed:
 1. A function that takes no arguments and returns no values.
-2. A function that returns an error (in which case it will assert that the returned error was nil, or it will fail the spec).
-3. A function that takes a context.Context or SpecContext (and optionally returns an error).  The resulting cleanup node is deemed interruptible and the passed-in context will be cancelled in the event of a timeout or interrupt.
-4. A function that takes arguments (and optionally returns an error) followed by a list of arguments to pass to the function.
-5. A function that takes SpecContext and a list of arguments (and optionally returns an error) followed by a list of arguments to pass to the function.
+2. A function that returns multiple values.  `DeferCleanup` will ignore all these return values except for the last one.  If this last return value is a non-nil error `DeferCleanup` will fail the spec).
+3. A function that takes a context.Context or SpecContext (and optionally returns multiple values).  The resulting cleanup node is deemed interruptible and the passed-in context will be cancelled in the event of a timeout or interrupt.
+4. A function that takes arguments (and optionally returns multiple values) followed by a list of arguments to pass to the function.
+5. A function that takes SpecContext and a list of arguments (and optionally returns multiple values) followed by a list of arguments to pass to the function.
 
 For example:
 

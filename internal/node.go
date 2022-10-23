@@ -508,6 +508,8 @@ func extractSynchronizedBeforeSuiteAllProcsBody(arg interface{}) (func(SpecConte
 	}, hasContext
 }
 
+var errInterface = reflect.TypeOf((*error)(nil)).Elem()
+
 func NewCleanupNode(deprecationTracker *types.DeprecationTracker, fail func(string, types.CodeLocation), args ...interface{}) (Node, []error) {
 	decorations, remainingArgs := PartitionDecorations(args...)
 	baseOffset := 2
@@ -530,7 +532,7 @@ func NewCleanupNode(deprecationTracker *types.DeprecationTracker, fail func(stri
 	}
 
 	callback := reflect.ValueOf(remainingArgs[0])
-	if !(callback.Kind() == reflect.Func && callback.Type().NumOut() <= 1) {
+	if !(callback.Kind() == reflect.Func) {
 		return Node{}, []error{types.GinkgoErrors.DeferCleanupInvalidFunction(cl)}
 	}
 
@@ -550,8 +552,12 @@ func NewCleanupNode(deprecationTracker *types.DeprecationTracker, fail func(stri
 	}
 
 	handleFailure := func(out []reflect.Value) {
-		if len(out) == 1 && !out[0].IsNil() {
-			fail(fmt.Sprintf("DeferCleanup callback returned error: %v", out[0]), cl)
+		if len(out) == 0 {
+			return
+		}
+		last := out[len(out)-1]
+		if last.Type().Implements(errInterface) && !last.IsNil() {
+			fail(fmt.Sprintf("DeferCleanup callback returned error: %v", last), cl)
 		}
 	}
 

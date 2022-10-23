@@ -982,7 +982,7 @@ As you can see, `DeferCleanup()` can be called inside any setup or subject nodes
 
 `DeferCleanup` has a few more tricks up its sleeve.
 
-As shown above `DeferCleanup` can be passed a function that takes no arguments and returns no value.  You can also pass a function that returns a single value.  `DeferCleanup` interprets this value as an error and fails the spec if the error is non-nil - a common go pattern.  This allows us to rewrite our example as:
+As shown above `DeferCleanup` can be passed a function that takes no arguments and returns no value.  You can also pass a function that returns values.  `DeferCleanup` ignores all these return value except for the last.  If the last return value is a non-nil error - a common go pattern - `DeferCleanup` will fail the spec.  This allows us to rewrite our example as:
 
 ```go
 Describe("Reporting book weight", func() {

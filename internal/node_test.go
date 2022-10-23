@@ -894,18 +894,6 @@ var _ = Describe("Node", func() {
 				})
 			})
 
-			Context("when passed a function that returns too many values", func() {
-				It("errors", func() {
-					node, errs := internal.NewCleanupNode(dt, failFunc, cl, func() (int, error) {
-						return 0, nil
-					})
-					Ω(node.IsZero()).Should(BeTrue())
-					Ω(errs).Should(ConsistOf(types.GinkgoErrors.DeferCleanupInvalidFunction(cl)))
-					Ω(capturedFailure).Should(BeZero())
-					Ω(capturedCL).Should(BeZero())
-				})
-			})
-
 			Context("when passed a function that does not return", func() {
 				It("creates a body that runs the function and never calls the fail handler", func() {
 					didRun := false
@@ -922,13 +910,12 @@ var _ = Describe("Node", func() {
 					Ω(capturedCL).Should(BeZero())
 				})
 			})
-
-			Context("when passed a function that returns nil", func() {
-				It("creates a body that runs the function and does not call the fail handler", func() {
+			Context("when passed a function that returns somethign that isn't an error", func() {
+				It("creates a body that runs the function and never calls the fail handler", func() {
 					didRun := false
-					node, errs := internal.NewCleanupNode(dt, failFunc, cl, func() error {
+					node, errs := internal.NewCleanupNode(dt, failFunc, cl, func() (string, int) {
 						didRun = true
-						return nil
+						return "not-an-error", 17
 					})
 					Ω(node.CodeLocation).Should(Equal(cl))
 					Ω(node.NodeType).Should(Equal(types.NodeTypeCleanupInvalid))
@@ -941,12 +928,30 @@ var _ = Describe("Node", func() {
 				})
 			})
 
-			Context("when passed a function that returns an error", func() {
+			Context("when passed a function that returns a nil error", func() {
 				It("creates a body that runs the function and does not call the fail handler", func() {
 					didRun := false
-					node, errs := internal.NewCleanupNode(dt, failFunc, cl, func() error {
+					node, errs := internal.NewCleanupNode(dt, failFunc, cl, func() (string, int, error) {
 						didRun = true
-						return fmt.Errorf("welp")
+						return "not-an-error", 17, nil
+					})
+					Ω(node.CodeLocation).Should(Equal(cl))
+					Ω(node.NodeType).Should(Equal(types.NodeTypeCleanupInvalid))
+					Ω(errs).Should(BeEmpty())
+
+					node.Body(internal.NewSpecContext(nil))
+					Ω(didRun).Should(BeTrue())
+					Ω(capturedFailure).Should(BeZero())
+					Ω(capturedCL).Should(BeZero())
+				})
+			})
+
+			Context("when passed a function that returns an error for its final return value", func() {
+				It("creates a body that runs the function and calls the fail handler", func() {
+					didRun := false
+					node, errs := internal.NewCleanupNode(dt, failFunc, cl, func() (string, int, error) {
+						didRun = true
+						return "not-an-error", 17, fmt.Errorf("welp")
 					})
 					Ω(node.CodeLocation).Should(Equal(cl))
 					Ω(node.NodeType).Should(Equal(types.NodeTypeCleanupInvalid))

@@ -110,6 +110,26 @@ var _ = Describe("Cleanup", func() {
 			})
 		})
 
+		Context("because of a returned error, for a multi-return function", func() {
+			BeforeEach(func() {
+				success, _ := RunFixture("cleanup failure", func() {
+					BeforeEach(rt.T("BE", C("C-BE")))
+					It("A", rt.T("A", func() {
+						DeferCleanup(func() (string, error) {
+							rt.Run("C-A")
+							return "ok", fmt.Errorf("fail")
+						})
+					}))
+				})
+				Ω(success).Should(BeFalse())
+			})
+
+			It("reports a failure", func() {
+				Ω(rt).Should(HaveTracked("BE", "A", "C-A", "C-BE"))
+				Ω(reporter.Did.Find("A")).Should(HaveFailed("DeferCleanup callback returned error: fail", FailureNodeType(types.NodeTypeCleanupAfterEach), types.FailureNodeAtTopLevel))
+			})
+		})
+
 		Context("at the suite level", func() {
 			BeforeEach(func() {
 				success, _ := RunFixture("cleanup failure", func() {
