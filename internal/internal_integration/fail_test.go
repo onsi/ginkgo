@@ -340,7 +340,7 @@ var _ = Describe("handling test failures", func() {
 				Ω(specReport.AdditionalFailures[0].Failure.FailureNodeType).Should(Equal(types.NodeTypeAfterEach))
 
 				Ω(specReport.AdditionalFailures[1].State).Should(Equal(types.SpecStateTimedout))
-				Ω(specReport.AdditionalFailures[1].Failure.Message).Should(Equal("This spec timed out and reported the following failure after the timeout:\n\nfail-DC"))
+				Ω(specReport.AdditionalFailures[1].Failure.Message).Should(Equal("A node timeout occurred and the following failure was recorded after the timeout:\n\nfail-DC"))
 				Ω(specReport.AdditionalFailures[1].Failure.FailureNodeType).Should(Equal(types.NodeTypeCleanupAfterEach))
 			})
 		})

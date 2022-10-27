@@ -663,7 +663,7 @@ var _ = Describe("Interrupts and Timeouts", func() {
 				"bef", "E", "aft",
 			))
 
-			Ω(reporter.Did.Find("A")).Should(HaveTimedOut("This spec timed out and reported the following failure after the timeout:\n\nsubsequent failure message"))
+			Ω(reporter.Did.Find("A")).Should(HaveTimedOut("A node timeout occurred and the following failure was recorded after the timeout:\n\nsubsequent failure message"))
 			Ω(reporter.Did.Find("B")).Should(HaveTimedOut())
 			Ω(reporter.Did.Find("C")).Should(HaveTimedOut())
 			Ω(reporter.Did.Find("D")).Should(HavePassed())
@@ -681,7 +681,7 @@ var _ = Describe("Interrupts and Timeouts", func() {
 
 		It("attaches progress reports to the timout failures", func() {
 			Ω(reporter.Did.Find("A").Failure.ProgressReport.LeafNodeText).Should(Equal("A"))
-			Ω(reporter.Did.Find("A").Failure.ProgressReport.Message).Should(Equal("{{bold}}This is the Progress Report generated when the timeout occurred:{{/}}"))
+			Ω(reporter.Did.Find("A").Failure.ProgressReport.Message).Should(Equal("{{bold}}This is the Progress Report generated when the node timeout occurred:{{/}}"))
 			Ω(reporter.Did.Find("B").Failure.ProgressReport.LeafNodeText).Should(Equal("B"))
 			Ω(reporter.Did.Find("C").Failure.ProgressReport.LeafNodeText).Should(Equal("C"))
 			Ω(reporter.Did.Find("D").Failure.ProgressReport).Should(BeZero())
@@ -807,7 +807,7 @@ var _ = Describe("Interrupts and Timeouts", func() {
 			Ω(times.Get("aft-3-out")).Should(BeNumerically("~", times.Get("aft-3-cancel")+50*time.Millisecond, dt))
 			Ω(times.Get("aft-4-out")).Should(BeNumerically("~", times.Get("aft-3-out")+gracePeriod, dt))
 
-			Ω(reporter.Did.Find("A")).Should(HaveTimedOut())
+			Ω(reporter.Did.Find("A")).Should(HaveTimedOut("A suite timeout occurred"))
 			Ω(reporter.Did.Find("A").Failure.ProgressReport.LeafNodeText).Should(Equal("A"))
 
 			Ω(reporter.ProgressReports).Should(HaveLen(3))
@@ -867,9 +867,9 @@ var _ = Describe("Interrupts and Timeouts", func() {
 
 		It("should always favor the shorter timeout", func() {
 			Ω(rt).Should(HaveTracked("bef-A", "bef-B", "bef-C"))
-			Ω(reporter.Did.Find("A")).Should(HaveTimedOut())
-			Ω(reporter.Did.Find("B")).Should(HaveTimedOut())
-			Ω(reporter.Did.Find("C")).Should(HaveTimedOut())
+			Ω(reporter.Did.Find("A")).Should(HaveTimedOut("A node timeout occurred"))
+			Ω(reporter.Did.Find("B")).Should(HaveTimedOut("A spec timeout occurred"))
+			Ω(reporter.Did.Find("C")).Should(HaveTimedOut("A suite timeout occurred"))
 
 			Ω(times.Get("bef-A")).Should(BeNumerically("~", time.Millisecond*100, 50*time.Millisecond))
 			Ω(times.Get("bef-B")).Should(BeNumerically("~", time.Millisecond*150, 50*time.Millisecond))
@@ -896,8 +896,8 @@ var _ = Describe("Interrupts and Timeouts", func() {
 		It("doesn't get stuck because Eventually will exit and it includes the additional report provided by eventually", func() {
 			Ω(rt).Should(HaveTracked("A"))
 			Ω(reporter.Did.Find("A")).Should(HaveTimedOut(clLine(1)))
-			Ω(reporter.Did.Find("A").Failure.Message).Should(MatchRegexp(`This spec timed out and reported the following failure after the timeout:\n\nContext was cancelled after .*\nExpected\n    <string>: foo\nto equal\n    <string>: bar`))
-			Ω(reporter.Did.Find("A").Failure.ProgressReport.Message).Should(Equal("{{bold}}This is the Progress Report generated when the timeout occurred:{{/}}"))
+			Ω(reporter.Did.Find("A").Failure.Message).Should(MatchRegexp(`A spec timeout occurred and the following failure was recorded after the timeout:\n\nContext was cancelled after .*\nExpected\n    <string>: foo\nto equal\n    <string>: bar`))
+			Ω(reporter.Did.Find("A").Failure.ProgressReport.Message).Should(Equal("{{bold}}This is the Progress Report generated when the spec timeout occurred:{{/}}"))
 			Ω(reporter.Did.Find("A").Failure.ProgressReport.AdditionalReports).Should(ConsistOf("Expected\n    <string>: foo\nto equal\n    <string>: bar"))
 		})
 	})

@@ -140,7 +140,7 @@ var _ = Describe("Reporting", func() {
 			Ω(specReports.Find("panics")).Should(HavePanicked("boom"))
 			Ω(specReports.Find("is pending")).Should(BePending())
 			Ω(specReports.Find("is skipped").State).Should(Equal(types.SpecStateSkipped))
-			Ω(specReports.Find("times out and fails during cleanup")).Should(HaveTimedOut("This spec timed out and reported the following failure after the timeout:\n\nfailure-after-timeout"))
+			Ω(specReports.Find("times out and fails during cleanup")).Should(HaveTimedOut("A node timeout occurred and the following failure was recorded after the timeout:\n\nfailure-after-timeout"))
 
 			Ω(specReports.Find("times out and fails during cleanup").AdditionalFailures[0].Failure.Message).Should(Equal("double-whammy"))
 			Ω(specReports.Find("times out and fails during cleanup").AdditionalFailures[0].Failure.FailureNodeType).Should(Equal(types.NodeTypeCleanupAfterEach))
@@ -230,7 +230,7 @@ var _ = Describe("Reporting", func() {
 			Ω(getTestCase("[It] reporting test is skipped", suite.TestCases).Skipped.Message).Should(Equal("skipped - skip"))
 
 			Ω(getTestCase("[It] reporting test times out and fails during cleanup", suite.TestCases).Status).Should(Equal("timedout"))
-			Ω(getTestCase("[It] reporting test times out and fails during cleanup", suite.TestCases).Failure.Message).Should(Equal("This spec timed out and reported the following failure after the timeout:\n\nfailure-after-timeout"))
+			Ω(getTestCase("[It] reporting test times out and fails during cleanup", suite.TestCases).Failure.Message).Should(Equal("A node timeout occurred and the following failure was recorded after the timeout:\n\nfailure-after-timeout"))
 			Ω(getTestCase("[It] reporting test times out and fails during cleanup", suite.TestCases).Failure.Description).Should(ContainSubstring("<-ctx.Done()"))
 			Ω(getTestCase("[It] reporting test times out and fails during cleanup", suite.TestCases).Failure.Description).Should(ContainSubstring("There were additional failures detected after the initial failure:\n[FAILED]\ndouble-whammy\nIn [DeferCleanup (Each)] at:"))
 

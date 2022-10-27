@@ -14,9 +14,11 @@ import (
 	. "github.com/onsi/ginkgo/v2/internal/test_helpers"
 	"github.com/onsi/ginkgo/v2/types"
 	. "github.com/onsi/gomega"
+	"github.com/onsi/gomega/format"
 )
 
 func TestSuiteTests(t *testing.T) {
+	format.TruncatedDiff = false
 	RegisterFailHandler(Fail)
 	suiteConfig, _ := GinkgoConfiguration()
 	suiteConfig.GracePeriod = time.Second

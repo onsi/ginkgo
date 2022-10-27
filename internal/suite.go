@@ -248,7 +248,7 @@ func (suite *Suite) SetProgressStepCursor(cursor ProgressStepCursor) {
 }
 
 /*
-  Spec Running methods - used during PhaseRun
+Spec Running methods - used during PhaseRun
 */
 func (suite *Suite) CurrentSpecReport() types.SpecReport {
 	suite.selectiveLock.Lock()
@@ -697,18 +697,23 @@ func (suite *Suite) runNode(node Node, specDeadline time.Time, text string) (typ
 
 	now := time.Now()
 	deadline := suite.deadline
+	timeoutInPlay := "suite"
 	if deadline.IsZero() || (!specDeadline.IsZero() && specDeadline.Before(deadline)) {
 		deadline = specDeadline
+		timeoutInPlay = "spec"
 	}
 	if node.NodeTimeout > 0 && (deadline.IsZero() || deadline.Sub(now) > node.NodeTimeout) {
 		deadline = now.Add(node.NodeTimeout)
+		timeoutInPlay = "node"
 	}
 	if (!deadline.IsZero() && deadline.Before(now)) || interruptStatus.Interrupted() {
 		//we're out of time already.  let's wait for a NodeTimeout if we have it, or GracePeriod if we don't
 		if node.NodeTimeout > 0 {
 			deadline = now.Add(node.NodeTimeout)
+			timeoutInPlay = "node"
 		} else {
 			deadline = now.Add(gracePeriod)
+			timeoutInPlay = "grace period"
 		}
 	}
 
@@ -781,7 +786,7 @@ func (suite *Suite) runNode(node Node, specDeadline time.Time, text string) (typ
 				// before the grace period elapsed.  if we have a failure message we should include it
 				if outcomeFromRun != types.SpecStatePassed {
 					failure.Location, failure.ForwardedPanic = failureFromRun.Location, failureFromRun.ForwardedPanic
-					failure.Message = "This spec timed out and reported the following failure after the timeout:\n\n" + failureFromRun.Message
+					failure.Message = fmt.Sprintf("A %s timeout occurred and the following failure was recorded after the timeout:\n\n%s", timeoutInPlay, failureFromRun.Message)
 				}
 				return outcome, failure
 			}
@@ -801,9 +806,9 @@ func (suite *Suite) runNode(node Node, specDeadline time.Time, text string) (typ
 		case <-deadlineChannel:
 			// we're out of time - the outcome is a timeout and we capture the failure and progress report
 			outcome = types.SpecStateTimedout
-			failure.Message, failure.Location = "Timedout", node.CodeLocation
+			failure.Message, failure.Location = fmt.Sprintf("A %s timeout occurred", timeoutInPlay), node.CodeLocation
 			failure.ProgressReport = suite.generateProgressReport(false).WithoutCapturedGinkgoWriterOutput()
-			failure.ProgressReport.Message = "{{bold}}This is the Progress Report generated when the timeout occurred:{{/}}"
+			failure.ProgressReport.Message = fmt.Sprintf("{{bold}}This is the Progress Report generated when the %s timeout occurred:{{/}}", timeoutInPlay)
 			deadlineChannel = nil
 			// tell the spec to stop.  it's important we generate the progress report first to make sure we capture where
 			// the spec is actually stuck
