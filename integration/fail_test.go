@@ -35,9 +35,7 @@ var _ = Describe("Failing Specs", func() {
 			Ω(output).Should(MatchRegexp(`goroutine \d+ \[chan receive\]`), "from the progress report emitted by the timeout")
 			Ω(output).Should(MatchRegexp(`>\s*\<\-c\.Done\(\)`), "from the progress report emitted by the timeout")
 
-			Ω(output).Should(MatchRegexp(`a top level DescribeTable\n.*fail_fixture_test\.go:41`),
-				"the output of a failing DescribeTable should include its file path and line number")
-			Ω(output).Should(MatchRegexp(`\[It\] a TableEntry constructed by Entry\n.*fail_fixture_test\.go:45`),
+			Ω(output).Should(MatchRegexp(`a top level DescribeTable \[It\] a TableEntry constructed by Entry\n.*fail_fixture_test\.go:45`),
 				"the output of a failing Entry should include its file path and line number")
 
 			Ω(output).Should(ContainSubstring("0 Passed | 7 Failed"))

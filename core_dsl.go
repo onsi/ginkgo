@@ -21,7 +21,6 @@ import (
 	"os"
 	"path/filepath"
 	"strings"
-	"time"
 
 	"github.com/go-logr/logr"
 	"github.com/onsi/ginkgo/v2/formatter"
@@ -276,7 +275,7 @@ func RunSpecs(t GinkgoTestingT, description string, args ...interface{}) bool {
 	}
 
 	writer := GinkgoWriter.(*internal.Writer)
-	if reporterConfig.Verbose && suiteConfig.ParallelTotal == 1 {
+	if reporterConfig.Verbosity().GTE(types.VerbosityLevelVerbose) && suiteConfig.ParallelTotal == 1 {
 		writer.SetMode(internal.WriterModeStreamAndBuffer)
 	} else {
 		writer.SetMode(internal.WriterModeBufferOnly)
@@ -513,31 +512,7 @@ Note that By does not generate a new Ginkgo node - rather it is simply synctacti
 You can learn more about By here: https://onsi.github.io/ginkgo/#documenting-complex-specs-by
 */
 func By(text string, callback ...func()) {
-	if !global.Suite.InRunPhase() {
-		exitIfErr(types.GinkgoErrors.ByNotDuringRunPhase(types.NewCodeLocation(1)))
-	}
-	value := struct {
-		Text     string
-		Duration time.Duration
-	}{
-		Text: text,
-	}
-	t := time.Now()
-	global.Suite.SetProgressStepCursor(internal.ProgressStepCursor{
-		Text:         text,
-		CodeLocation: types.NewCodeLocation(1),
-		StartTime:    t,
-	})
-	AddReportEntry("By Step", ReportEntryVisibilityNever, Offset(1), &value, t)
-	formatter := formatter.NewWithNoColorBool(reporterConfig.NoColor)
-	GinkgoWriter.Println(formatter.F("{{bold}}STEP:{{/}} %s {{gray}}%s{{/}}", text, t.Format(types.GINKGO_TIME_FORMAT)))
-	if len(callback) == 1 {
-		callback[0]()
-		value.Duration = time.Since(t)
-	}
-	if len(callback) > 1 {
-		panic("just one callback per By, please")
-	}
+	exitIfErr(global.Suite.By(text, callback...))
 }
 
 /*

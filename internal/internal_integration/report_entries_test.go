@@ -36,6 +36,13 @@ var _ = Describe("ReportEntries", func() {
 			Ω(reporter.Did.FindByLeafNodeType(types.NodeTypeBeforeSuite).ReportEntries[0].Name).Should(Equal("bridge"))
 			Ω(reporter.Did.FindByLeafNodeType(types.NodeTypeBeforeSuite).ReportEntries[0].Value.String()).Should(Equal("engaged"))
 		})
+
+		It("also emits report", func() {
+			Ω(reporter.ReportEntries).Should(HaveLen(3))
+			Ω(reporter.ReportEntries[0].Name).Should(Equal("bridge"))
+			Ω(reporter.ReportEntries[1].Name).Should(Equal("medical"))
+			Ω(reporter.ReportEntries[2].Name).Should(Equal("engineering"))
+		})
 	})
 
 	Context("avoiding races", func() {

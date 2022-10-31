@@ -54,7 +54,7 @@ var _ = BeforeEach(func() {
 	failer = internal.NewFailer()
 	writer = internal.NewWriter(io.Discard)
 	writer.SetMode(internal.WriterModeBufferOnly)
-	reporter = &FakeReporter{}
+	reporter = NewFakeReporter()
 	rt = NewRunTracker()
 	cl = types.NewCodeLocation(0)
 	interruptHandler = NewFakeInterruptHandler()

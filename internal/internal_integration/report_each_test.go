@@ -8,6 +8,7 @@ import (
 	. "github.com/onsi/ginkgo/v2/internal/test_helpers"
 	"github.com/onsi/ginkgo/v2/types"
 	. "github.com/onsi/gomega"
+	"github.com/onsi/gomega/format"
 )
 
 var _ = Describe("Sending reports to ReportBeforeEach and ReportAfterEach nodes", func() {
@@ -132,9 +133,19 @@ var _ = Describe("Sending reports to ReportBeforeEach and ReportAfterEach nodes"
 	})
 
 	It("submits the correct reports to the reporters", func() {
+		format.MaxLength = 10000
 		for _, name := range []string{"passes", "fails", "panics", "is Skip()ed", "is flag-skipped", "is also flag-skipped"} {
-			Ω(reports["outer-RAE"].Find(name)).Should(Equal(reporter.Did.Find(name)))
-			Ω(reports["inner-RAE"].Find(name)).Should(Equal(reporter.Did.Find(name)))
+
+			expected := reporter.Did.Find(name)
+			expected.SpecEvents = nil
+
+			actual := reports["outer-RAE"].Find(name)
+			actual.SpecEvents = nil
+			Ω(actual).Should(Equal(expected))
+
+			actual = reports["inner-RAE"].Find(name)
+			actual.SpecEvents = nil
+			Ω(actual).Should(Equal(expected))
 		}
 
 		Ω(reports["outer-RBE"].Find("passes")).ShouldNot(BeZero())

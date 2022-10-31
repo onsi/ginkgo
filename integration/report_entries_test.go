@@ -5,6 +5,7 @@ import (
 
 	. "github.com/onsi/ginkgo/v2"
 	. "github.com/onsi/ginkgo/v2/internal/test_helpers"
+	"github.com/onsi/ginkgo/v2/types"
 	. "github.com/onsi/gomega"
 	"github.com/onsi/gomega/gbytes"
 	"github.com/onsi/gomega/gexec"
@@ -100,16 +101,14 @@ var _ = Describe("ReportEntries", func() {
 			Ω(fails.ReportEntries[5].StringRepresentation()).Should(Equal("6"))
 
 			by := reports.Find("has By entries")
-			Ω(by.ReportEntries[0].Name).Should(Equal("By Step"))
-			Ω(by.ReportEntries[0].Visibility).Should(Equal(ReportEntryVisibilityNever))
-			value := by.ReportEntries[0].GetRawValue().(map[string]interface{})
-			Ω(value["Text"]).Should(Equal("registers a hidden AddReportEntry"))
-			Ω(value["Duration"]).Should(BeZero())
-			Ω(by.ReportEntries[1].Name).Should(Equal("By Step"))
-			Ω(by.ReportEntries[1].Visibility).Should(Equal(ReportEntryVisibilityNever))
-			value = by.ReportEntries[1].GetRawValue().(map[string]interface{})
-			Ω(value["Text"]).Should(Equal("includes durations"))
-			Ω(time.Duration(value["Duration"].(float64))).Should(BeNumerically("~", time.Millisecond*100, time.Millisecond*100))
+			byEvents := by.SpecEvents.WithType(types.SpecEventByStart | types.SpecEventByEnd)
+			Ω(byEvents[0].SpecEventType).Should(Equal(types.SpecEventByStart))
+			Ω(byEvents[0].Message).Should(Equal("registers a By event"))
+			Ω(byEvents[1].SpecEventType).Should(Equal(types.SpecEventByStart))
+			Ω(byEvents[1].Message).Should(Equal("includes durations"))
+			Ω(byEvents[2].SpecEventType).Should(Equal(types.SpecEventByEnd))
+			Ω(byEvents[2].Message).Should(Equal("includes durations"))
+			Ω(byEvents[2].Duration).Should(BeNumerically("~", time.Millisecond*100, time.Millisecond*100))
 		})
 
 		It("captures all report entries in the JUnit report", func() {
@@ -117,31 +116,24 @@ var _ = Describe("ReportEntries", func() {
 			var content string
 			for _, testCase := range junit.TestCases {
 				if testCase.Name == "[It] top-level container passes" {
-					content = testCase.SystemOut
+					content = testCase.SystemErr
 				}
 			}
 
 			buf := gbytes.BufferWithBytes([]byte(content))
 
-			Ω(buf).Should(gbytes.Say("Report Entries:"))
 			Ω(buf).Should(gbytes.Say("passes-first-report"))
 			Ω(buf).Should(gbytes.Say(`report_entries/report_entries_fixture_suite_test\.go:\d+`))
-			Ω(buf).Should(gbytes.Say("{{red}}pass-bob {{green}}1{{/}}"))
-			Ω(buf).Should(gbytes.Say("--"))
+			Ω(buf).Should(gbytes.Say("pass-bob 1"))
 			Ω(buf).Should(gbytes.Say("passes-second-report"))
-			Ω(buf).Should(gbytes.Say("--"))
 			Ω(buf).Should(gbytes.Say("passes-third-report"))
 			Ω(buf).Should(gbytes.Say("3"))
-			Ω(buf).Should(gbytes.Say("--"))
 			Ω(buf).Should(gbytes.Say("passes-pointer-report"))
-			Ω(buf).Should(gbytes.Say("{{red}}passed {{green}}4{{/}}"))
-			Ω(buf).Should(gbytes.Say("--"))
+			Ω(buf).Should(gbytes.Say("passed 4"))
 			Ω(buf).Should(gbytes.Say("passes-failure-report"))
 			Ω(buf).Should(gbytes.Say("5"))
-			Ω(buf).Should(gbytes.Say("--"))
 			Ω(buf).Should(gbytes.Say("passes-never-see-report"))
 			Ω(buf).Should(gbytes.Say("6"))
-			Ω(buf).ShouldNot(gbytes.Say("--"))
 		})
 	})
 

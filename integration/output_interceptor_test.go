@@ -38,8 +38,8 @@ var _ = Describe("OutputInterceptor", func() {
 			Eventually(sess).Should(gexec.Exit(0))
 
 			output := string(sess.Out.Contents())
-			Ω(output).Should(ContainSubstring("    CAPTURED OUTPUT A\n"))
-			Ω(output).Should(ContainSubstring("    CAPTURED OUTPUT B\n"))
+			Ω(output).Should(ContainSubstring("CAPTURED OUTPUT A\n"))
+			Ω(output).Should(ContainSubstring("CAPTURED OUTPUT B\n"))
 
 			Ω(output).ShouldNot(ContainSubstring("OUTPUT TO CONSOLE"))
 

@@ -32,11 +32,11 @@ some decorated specs
 		session := startGinkgo(fm.PathTo("decorations", "flaky_repeated"), "-vv", "--no-color")
 		Eventually(session).Should(gexec.Exit(1))
 
-		Ω(session).Should(gbytes.Say("Ginkgo: Attempt #1 Failed.  Retrying..."))
-		Ω(session).Should(gbytes.Say("Ginkgo: Attempt #2 Failed.  Retrying..."))
+		Ω(session).Should(gbytes.Say("Attempt #1 Failed.  Retrying"))
+		Ω(session).Should(gbytes.Say("Attempt #2 Failed.  Retrying"))
 
-		Ω(session).Should(gbytes.Say("Ginkgo: Attempt #1 Passed.  Repeating..."))
-		Ω(session).Should(gbytes.Say("Ginkgo: Attempt #2 Passed.  Repeating..."))
+		Ω(session).Should(gbytes.Say("Attempt #1 Passed.  Repeating"))
+		Ω(session).Should(gbytes.Say("Attempt #2 Passed.  Repeating"))
 		Ω(session).Should(gbytes.Say("failed on attempt #3"))
 	})
 

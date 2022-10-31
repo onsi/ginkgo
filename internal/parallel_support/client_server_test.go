@@ -43,7 +43,7 @@ var _ = Describe("The Parallel Support Client & Server", func() {
 				GinkgoT().Setenv("GINKGO_PARALLEL_PROTOCOL", protocol)
 
 				var err error
-				reporter = &FakeReporter{}
+				reporter = NewFakeReporter()
 				server, err = parallel_support.NewServer(3, reporter)
 				Ω(err).ShouldNot(HaveOccurred())
 				server.Start()

@@ -5,7 +5,6 @@ import (
 	"fmt"
 	remapped "math"
 	_ "math/cmplx"
-	"time"
 
 	. "github.com/onsi/ginkgo/v2"
 	. "github.com/onsi/ginkgo/v2/integration/_fixtures/flags_fixture"
@@ -62,10 +61,6 @@ var _ = Describe("Testing various flags", func() {
 
 		It("should randomize C", func() {
 			println("RANDOM_C")
-		})
-
-		It("should honor -slow-spec-threshold", func() {
-			time.Sleep(100 * time.Millisecond)
 		})
 
 		It("should pass in additional arguments after '--' directly to the test process", func() {

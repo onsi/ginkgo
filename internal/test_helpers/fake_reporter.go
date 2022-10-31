@@ -1,14 +1,28 @@
 package test_helpers
 
 import (
+	"fmt"
 	"reflect"
+	"strings"
+	"sync"
+	"time"
 
 	. "github.com/onsi/gomega"
+	"github.com/onsi/gomega/gcustom"
 	. "github.com/onsi/gomega/gstruct"
 
 	"github.com/onsi/ginkgo/v2/internal/interrupt_handler"
 	"github.com/onsi/ginkgo/v2/types"
 )
+
+type OmegaMatcherWithDescription struct {
+	OmegaMatcher
+	Description string
+}
+
+func (o OmegaMatcherWithDescription) GomegaString() string {
+	return o.Description
+}
 
 /*
 
@@ -84,6 +98,16 @@ type FakeReporter struct {
 	Did             Reports
 	End             types.Report
 	ProgressReports []types.ProgressReport
+	ReportEntries   []types.ReportEntry
+	SpecEvents      []types.SpecEvent
+	Failures        []types.AdditionalFailure
+	lock            *sync.Mutex
+}
+
+func NewFakeReporter() *FakeReporter {
+	return &FakeReporter{
+		lock: &sync.Mutex{},
+	}
 }
 
 func (r *FakeReporter) SuiteWillBegin(report types.Report) {
@@ -102,7 +126,24 @@ func (r *FakeReporter) SuiteDidEnd(report types.Report) {
 	r.End = report
 }
 func (r *FakeReporter) EmitProgressReport(progressReport types.ProgressReport) {
+	r.lock.Lock()
+	defer r.lock.Unlock()
 	r.ProgressReports = append(r.ProgressReports, progressReport)
+}
+func (r *FakeReporter) EmitFailure(state types.SpecState, failure types.Failure) {
+	r.lock.Lock()
+	defer r.lock.Unlock()
+	r.Failures = append(r.Failures, types.AdditionalFailure{Failure: failure, State: state})
+}
+func (r *FakeReporter) EmitReportEntry(reportEntry types.ReportEntry) {
+	r.lock.Lock()
+	defer r.lock.Unlock()
+	r.ReportEntries = append(r.ReportEntries, reportEntry)
+}
+func (r *FakeReporter) EmitSpecEvent(specEvent types.SpecEvent) {
+	r.lock.Lock()
+	defer r.lock.Unlock()
+	r.SpecEvents = append(r.SpecEvents, specEvent)
 }
 
 type NSpecs int
@@ -255,12 +296,16 @@ func failureMatcherForState(state types.SpecState, messageField string, options 
 			matcher = HaveField("Failure.FailureNodeContext", v)
 		case string:
 			matcher = HaveField(messageField, ContainSubstring(v))
+		case OmegaMatcher:
+			matcher = HaveField(messageField, v)
 		case types.CodeLocation:
 			matcher = HaveField("Failure.Location", v)
 		case FailureNodeType:
 			matcher = HaveField("Failure.FailureNodeType", types.NodeType(v))
 		case NumAttempts:
 			matcher = HaveField("NumAttempts", int(v))
+		case types.TimelineLocation:
+			matcher = HaveField("Failure.TimelineLocation.Offset", v.Offset)
 		}
 		if matcher != nil {
 			matchers = append(matchers, matcher)
@@ -284,4 +329,156 @@ func HaveAborted(options ...interface{}) OmegaMatcher {
 
 func HavePanicked(options ...interface{}) OmegaMatcher {
 	return failureMatcherForState(types.SpecStatePanicked, "Failure.ForwardedPanic", options...)
+}
+
+func TLWithOffset[O int | string](o O) types.TimelineLocation {
+	t := types.TimelineLocation{}
+	switch x := any(o).(type) {
+	case int:
+		t.Offset = x
+	case string:
+		t.Offset = len(x)
+	}
+	return t
+}
+
+func BeSpecEvent(options ...interface{}) OmegaMatcher {
+	description := []string{"BeSpecEvent"}
+	matchers := []OmegaMatcher{}
+	for _, option := range options {
+		var matcher OmegaMatcher
+		switch x := option.(type) {
+		case types.SpecEventType:
+			matcher = HaveField("SpecEventType", x)
+			description = append(description, "["+x.String()+" SpecEvent]")
+		case types.CodeLocation:
+			matcher = HaveField("CodeLocation", x)
+			description = append(description, "CL="+x.String())
+		case types.TimelineLocation:
+			matcher = HaveField("TimelineLocation.Offset", x.Offset)
+			description = append(description, fmt.Sprintf("TL.Offset=%d", x.Offset))
+		case string:
+			matcher = HaveField("Message", ContainSubstring(x))
+			description = append(description, `Message="`+x+`"`)
+		case int:
+			matcher = HaveField("Attempt", x)
+			description = append(description, fmt.Sprintf("Attempt=%d", x))
+		case time.Duration:
+			matcher = HaveField("Duration", BeNumerically("~", x, time.Duration(float64(x)*0.2)))
+			description = append(description, "Duration="+x.String())
+		case types.NodeType:
+			matcher = HaveField("NodeType", x)
+			description = append(description, "NodeType="+x.String())
+		}
+		if matcher != nil {
+			matchers = append(matchers, matcher)
+		}
+	}
+	return OmegaMatcherWithDescription{OmegaMatcher: And(matchers...), Description: strings.Join(description, " ")}
+}
+
+func BeProgressReport(options ...interface{}) OmegaMatcher {
+	description := []string{"BeProgressReport"}
+	matchers := []OmegaMatcher{}
+	for _, option := range options {
+		var matcher OmegaMatcher
+		switch x := option.(type) {
+		case string:
+			matcher = HaveField("Message", ContainSubstring(x))
+			description = append(description, `Message="`+x+`"`)
+		case types.TimelineLocation:
+			matcher = HaveField("TimelineLocation.Offset", x.Offset)
+			description = append(description, fmt.Sprintf("TL.Offset=%d", x.Offset))
+		case types.CodeLocation:
+			matcher = HaveField("CurrentNodeLocation", x)
+			description = append(description, "CurrentNodeLocation="+x.String())
+		case types.NodeType:
+			matcher = HaveField("CurrentNodeType", x)
+			description = append(description, "CurrentNodeType="+x.String())
+		}
+		if matcher != nil {
+			matchers = append(matchers, matcher)
+		}
+	}
+	return OmegaMatcherWithDescription{OmegaMatcher: And(matchers...), Description: strings.Join(description, " ")}
+}
+
+func BeReportEntry(options ...interface{}) OmegaMatcher {
+	description := []string{"BeReportEntry"}
+	matchers := []OmegaMatcher{}
+	for _, option := range options {
+		var matcher OmegaMatcher
+		switch x := option.(type) {
+		case string:
+			matcher = HaveField("Name", ContainSubstring(x))
+			description = append(description, `Name="`+x+`"`)
+		case types.TimelineLocation:
+			matcher = HaveField("TimelineLocation.Offset", x.Offset)
+			description = append(description, fmt.Sprintf("TL.Offset=%d", x.Offset))
+		case types.ReportEntryVisibility:
+			matcher = HaveField("Visibility", x)
+			description = append(description, "Visibility="+x.String())
+		}
+		if matcher != nil {
+			matchers = append(matchers, matcher)
+		}
+	}
+	return OmegaMatcherWithDescription{OmegaMatcher: And(matchers...), Description: strings.Join(description, " ")}
+}
+
+func BeTimelineContaining(matchers ...OmegaMatcher) OmegaMatcher {
+	return gcustom.MakeMatcher(func(timeline types.Timeline) (bool, error) {
+		timelineIdx := 0
+		for _, matcher := range matchers {
+			for {
+				if timelineIdx >= len(timeline) {
+					return false, nil
+				}
+				event := timeline[timelineIdx]
+				timelineIdx += 1
+				success, err := matcher.Match(event)
+				if success && err == nil {
+					break
+				}
+			}
+		}
+		return true, nil
+	}).WithTemplate("Expected:\n{{.FormattedActual}}\n{{.To}} contain events matching (in order):\n{{format .Data 1}}", matchers)
+}
+
+func BeTimelineExactlyMatching(matchers ...OmegaMatcher) OmegaMatcher {
+	data := map[string]any{}
+	data["Matchers"] = matchers
+	return gcustom.MakeMatcher(func(timeline types.Timeline) (bool, error) {
+		for idx, matcher := range matchers {
+			if idx == len(timeline) {
+				data["LengthMismatch"] = "Not enough timeline entries"
+				return false, nil
+			}
+			event := timeline[idx]
+			success, err := matcher.Match(event)
+			if !(success && err == nil) {
+				data["Failure"] = matcher.FailureMessage(event)
+				data["FailedIndex"] = idx
+				return false, nil
+			}
+		}
+
+		if len(matchers) < len(timeline) {
+			data["LengthMismatch"] = "Not enough matcher entries"
+			return false, nil
+		}
+
+		return true, nil
+	}).WithTemplate(`Timeline failed to match:
+{{if .Data.LengthMismatch}}
+  {{.Data.LengthMismatch}}
+  Timeline has {{len .Actual}} events:
+{{ range .Actual }}{{ printf "    %T\n" . }}{{ end }}
+  Matchers has {{len .Data.Matchers}} entries.
+{{else}}
+  Failed at index {{.Data.FailedIndex}}:
+{{format (index .Actual .Data.FailedIndex) 2}}
+{{.Data.Failure}}
+{{end}}`, data)
 }

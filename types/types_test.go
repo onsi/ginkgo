@@ -2,6 +2,7 @@ package types_test
 
 import (
 	"encoding/json"
+	"sort"
 	"time"
 
 	. "github.com/onsi/ginkgo/v2"
@@ -87,10 +88,10 @@ var _ = Describe("Types", func() {
 			pr := types.ProgressReport{
 				LeafNodeText:               "hi",
 				CapturedGinkgoWriterOutput: "foo",
-				GinkgoWriterOffset:         10,
+				TimelineLocation:           types.TimelineLocation{Offset: 10},
 			}
 
-			Ω(pr.WithoutCapturedGinkgoWriterOutput()).Should(Equal(types.ProgressReport{LeafNodeText: "hi", GinkgoWriterOffset: 10}))
+			Ω(pr.WithoutCapturedGinkgoWriterOutput()).Should(Equal(types.ProgressReport{LeafNodeText: "hi", TimelineLocation: types.TimelineLocation{Offset: 10}}))
 
 		})
 	})
@@ -410,5 +411,164 @@ var _ = Describe("Types", func() {
 				Ω(reports.CountOfRepeatedSpecs()).Should(Equal(1))
 			})
 		})
+	})
+
+	Describe("Timelines", func() {
+		var report types.SpecReport
+		var primaryFailure types.Failure
+		var timeoutFailure, panicFailure, embeddedFailure types.AdditionalFailure
+		var reportEntryAlways, reportEntryNever types.ReportEntry
+		var progressReport1, progressReport2 types.ProgressReport
+		var byStartSpecEvent, nodeStartSpecEvent types.SpecEvent
+
+		BeforeEach(func() {
+			embeddedFailure = types.AdditionalFailure{
+				Failure: types.Failure{
+					Message:          "embedded-failure",
+					TimelineLocation: types.TimelineLocation{Order: 100},
+				},
+				State: types.SpecStateFailed,
+			}
+			primaryFailure = types.Failure{
+				Message:           "primary-failure",
+				TimelineLocation:  types.TimelineLocation{Order: 80},
+				AdditionalFailure: &embeddedFailure,
+			}
+			timeoutFailure = types.AdditionalFailure{
+				Failure: types.Failure{
+					Message:          "timeout-failure",
+					TimelineLocation: types.TimelineLocation{Order: 120},
+					AdditionalFailure: &types.AdditionalFailure{
+						Failure: types.Failure{
+							Message:          "additional-embeded-failure",
+							TimelineLocation: types.TimelineLocation{Order: 125},
+						},
+						State: types.SpecStateFailed,
+					},
+				},
+				State: types.SpecStateTimedout,
+			}
+			panicFailure = types.AdditionalFailure{
+				Failure: types.Failure{Message: "panic-failure",
+					TimelineLocation: types.TimelineLocation{Order: 140},
+				},
+				State: types.SpecStatePanicked,
+			}
+			reportEntryAlways = types.ReportEntry{
+				Name:             "report-entry-always",
+				Visibility:       types.ReportEntryVisibilityAlways,
+				TimelineLocation: types.TimelineLocation{Order: 130},
+			}
+			reportEntryNever = types.ReportEntry{
+				Name:             "report-entry-never",
+				Visibility:       types.ReportEntryVisibilityNever,
+				TimelineLocation: types.TimelineLocation{Order: 50},
+			}
+			progressReport1 = types.ProgressReport{
+				Message:          "progress-report-1",
+				TimelineLocation: types.TimelineLocation{Order: 60},
+			}
+			progressReport2 = types.ProgressReport{
+				Message:          "progress-report-2",
+				TimelineLocation: types.TimelineLocation{Order: 90},
+			}
+			byStartSpecEvent = types.SpecEvent{
+				SpecEventType:    types.SpecEventByStart,
+				Message:          "by-start-spec-event",
+				TimelineLocation: types.TimelineLocation{Order: 95},
+			}
+			nodeStartSpecEvent = types.SpecEvent{
+				SpecEventType:    types.SpecEventNodeStart,
+				Message:          "node-start-spec-event",
+				NodeType:         types.NodeTypeBeforeEach,
+				TimelineLocation: types.TimelineLocation{Order: 30},
+			}
+
+			report = types.SpecReport{
+				Failure:            primaryFailure,
+				AdditionalFailures: []types.AdditionalFailure{timeoutFailure, panicFailure},
+				ReportEntries:      []types.ReportEntry{reportEntryAlways, reportEntryNever},
+				ProgressReports:    []types.ProgressReport{progressReport1, progressReport2},
+				SpecEvents:         []types.SpecEvent{byStartSpecEvent, nodeStartSpecEvent},
+			}
+		})
+
+		It("can return a timeline comprised of the various TimelineEvents in the spec, that can be sorted by timelinelocation", func() {
+			timeline := report.Timeline()
+			sort.Sort(timeline)
+			Ω(timeline).Should(Equal(types.Timeline{
+				nodeStartSpecEvent,
+				reportEntryNever,
+				progressReport1,
+				primaryFailure,
+				progressReport2,
+				byStartSpecEvent,
+				embeddedFailure,
+				timeoutFailure,
+				reportEntryAlways,
+				panicFailure,
+			}))
+		})
+
+		It("can filter the timeline to remove entries that will not be displayed", func() {
+			timeline := report.Timeline()
+			sort.Sort(timeline)
+
+			timeline = timeline.WithoutHiddenReportEntries()
+			Ω(timeline).Should(Equal(types.Timeline{
+				nodeStartSpecEvent,
+				progressReport1,
+				primaryFailure,
+				progressReport2,
+				byStartSpecEvent,
+				embeddedFailure,
+				timeoutFailure,
+				reportEntryAlways,
+				panicFailure,
+			}))
+
+			timeline = timeline.WithoutVeryVerboseSpecEvents()
+			Ω(timeline).Should(Equal(types.Timeline{
+				progressReport1,
+				primaryFailure,
+				progressReport2,
+				byStartSpecEvent,
+				embeddedFailure,
+				timeoutFailure,
+				reportEntryAlways,
+				panicFailure,
+			}))
+		})
+	})
+
+	Describe("SpecEvent", func() {
+		DescribeTable("IsOnlyVisibleAtVeryVerbose", func(specEventType types.SpecEventType, isOnlyVisibleAtVeryVerbose bool) {
+			Ω(types.SpecEvent{SpecEventType: specEventType}.IsOnlyVisibleAtVeryVerbose()).Should(Equal(isOnlyVisibleAtVeryVerbose))
+		},
+			Entry(nil, types.SpecEventByStart, false),
+			Entry(nil, types.SpecEventByEnd, true),
+			Entry(nil, types.SpecEventNodeStart, true),
+			Entry(nil, types.SpecEventNodeEnd, true),
+			Entry(nil, types.SpecEventSpecRepeat, false),
+			Entry(nil, types.SpecEventSpecRetry, false),
+		)
+
+		DescribeTable("SpecEventType: Representation and Encoding", func(specEventType types.SpecEventType, expectedString string) {
+			Ω(specEventType.String()).Should(Equal(expectedString))
+
+			marshalled, err := json.Marshal(specEventType)
+			Ω(err).ShouldNot(HaveOccurred())
+			var unmarshalled types.SpecEventType
+			json.Unmarshal(marshalled, &unmarshalled)
+			Ω(unmarshalled).Should(Equal(specEventType))
+		},
+			Entry(nil, types.SpecEventInvalid, "INVALID SPEC EVENT"),
+			Entry(nil, types.SpecEventByStart, "By"),
+			Entry(nil, types.SpecEventByEnd, "By (End)"),
+			Entry(nil, types.SpecEventNodeStart, "Node"),
+			Entry(nil, types.SpecEventNodeEnd, "Node (End)"),
+			Entry(nil, types.SpecEventSpecRepeat, "Repeat"),
+			Entry(nil, types.SpecEventSpecRetry, "Retry"),
+		)
 	})
 })

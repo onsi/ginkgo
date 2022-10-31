@@ -2,6 +2,7 @@ package performance_test
 
 import (
 	"fmt"
+	"os"
 
 	. "github.com/onsi/ginkgo/v2"
 	. "github.com/onsi/gomega"
@@ -12,6 +13,10 @@ var _ = Describe("Fetching Dependencies", func() {
 	var cache gmeasure.ExperimentCache
 
 	BeforeEach(func() {
+		if os.Getenv("PERF") == "" {
+			Skip("PERF environment not set, skipping")
+		}
+
 		var err error
 		cache, err = gmeasure.NewExperimentCache("./fetching-dependencies-cache")
 		Ω(err).ShouldNot(HaveOccurred())

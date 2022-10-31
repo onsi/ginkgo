@@ -195,6 +195,7 @@ var _ = Describe("Interrupts and Timeouts", func() {
 								interruptHandler.Interrupt(interrupt_handler.InterruptCauseSignal)
 								select {
 								case <-c.Done():
+									F("bam")
 								case <-time.After(time.Hour):
 								}
 							}))
@@ -207,9 +208,11 @@ var _ = Describe("Interrupts and Timeouts", func() {
 					Ω(success).Should(Equal(false))
 				}, NodeTimeout(time.Second))
 
-				It("cancels the context, proceeds to clean up and runs no other specs; and it doesn't emit a grace-period related Progress REport", func() {
+				It("cancels the context, captures any subsequent failures, proceeds to clean up and runs no other specs; and it doesn't emit a grace-period related Progress Report", func() {
 					Ω(rt).Should(HaveTracked("bef-outer", "bef-inner", "A", "aft-inner", "aft-outer"))
 					Ω(reporter.Did.Find("A")).Should(HaveBeenInterrupted(interrupt_handler.InterruptCauseSignal))
+					Ω(reporter.Did.Find("A").Failure.AdditionalFailure).Should(HaveFailed("bam"))
+
 					Ω(reporter.Did.Find("B")).Should(HaveBeenSkipped())
 
 					Ω(reporter.Did.Find("A").Failure.ProgressReport.OtherGoroutines()).ShouldNot(BeEmpty())
@@ -663,7 +666,8 @@ var _ = Describe("Interrupts and Timeouts", func() {
 				"bef", "E", "aft",
 			))
 
-			Ω(reporter.Did.Find("A")).Should(HaveTimedOut("A node timeout occurred and the following failure was recorded after the timeout:\n\nsubsequent failure message"))
+			Ω(reporter.Did.Find("A")).Should(HaveTimedOut("A node timeout occurred"))
+			Ω(reporter.Did.Find("A").Failure.AdditionalFailure).Should(HaveFailed("A node timeout occurred and then the following failure was recorded in the timedout node before it exited:\nsubsequent failure message"))
 			Ω(reporter.Did.Find("B")).Should(HaveTimedOut())
 			Ω(reporter.Did.Find("C")).Should(HaveTimedOut())
 			Ω(reporter.Did.Find("D")).Should(HavePassed())
@@ -895,8 +899,9 @@ var _ = Describe("Interrupts and Timeouts", func() {
 
 		It("doesn't get stuck because Eventually will exit and it includes the additional report provided by eventually", func() {
 			Ω(rt).Should(HaveTracked("A"))
-			Ω(reporter.Did.Find("A")).Should(HaveTimedOut(clLine(1)))
-			Ω(reporter.Did.Find("A").Failure.Message).Should(MatchRegexp(`A spec timeout occurred and the following failure was recorded after the timeout:\n\nContext was cancelled after .*\nExpected\n    <string>: foo\nto equal\n    <string>: bar`))
+			Ω(reporter.Did.Find("A")).Should(HaveTimedOut(clLine(-1)))
+			Ω(reporter.Did.Find("A")).Should(HaveTimedOut(`A spec timeout occurred`))
+			Ω(reporter.Did.Find("A").Failure.AdditionalFailure).Should(HaveFailed(MatchRegexp("A spec timeout occurred and then the following failure was recorded in the timedout node before it exited:\nContext was cancelled after .*\nExpected\n    <string>: foo\nto equal\n    <string>: bar"), clLine(1)))
 			Ω(reporter.Did.Find("A").Failure.ProgressReport.Message).Should(Equal("{{bold}}This is the Progress Report generated when the spec timeout occurred:{{/}}"))
 			Ω(reporter.Did.Find("A").Failure.ProgressReport.AdditionalReports).Should(ConsistOf("Expected\n    <string>: foo\nto equal\n    <string>: bar"))
 		})

@@ -261,6 +261,36 @@ var _ = Describe("Books", func() {
 
 As you can see, the description documents the intent of the spec while the closure includes assertions about our code's behavior.
 
+We can add multiple specs to a `Describe` container:
+
+```go
+var _ = Describe("Books", func() {
+  It("can extract the author's last name", func() {
+    book = &books.Book{
+      Title: "Les Miserables",
+      Author: "Victor Hugo",
+      Pages: 2783,
+    }
+
+    Expect(book.AuthorLastName()).To(Equal("Hugo"))
+  })
+
+  It("can fetch a summary of the book from the library service", func(ctx SpecContext) {
+    book = &books.Book{
+      Title: "Les Miserables",
+      Author: "Victor Hugo",
+      Pages: 2783,
+    }
+
+    summary, err := library.FetchSummary(ctx, book)
+    Expect(err).NotTo(HaveOccurred())
+    Expect(summary).To(ContainSubstring("Jean Valjean"))
+  }, SpecTimeout(time.Second))
+})
+```
+
+Our new spec connects with a library service to fetch a summary of the book and asserts that the request succeeds with a meaningful response.  This example previews a few advanced concepts that you'll learn about later in these docs: Ginkgo supports [decorators](#mental-model-spec-decorators) like [SpecTimeout](#the-spectimeout-and-nodetimeout-decorators) to annotate and modify the behavior of specs; and Ginkgo allows you to test potentially long-running code by writing (interruptible)[#spec-timeouts-and-interruptible-nodes] specs that accept a `SpecContext` or `context.Context`.  Now, if more than a second elapses, _or_ an interrupt signal is received, Ginkgo will signal `library.FetchSummary` to clean up by cancelling `ctx`.
+
 Ginkgo provides an alias for `It` called `Specify`.  `Specify` is functionally identical to `It` but can help your specs read more naturally.
 
 ### Extracting Common Setup: BeforeEach
@@ -1177,7 +1207,7 @@ As outlined above, when a spec fails - say via a failed Gomega assertion - Ginkg
 
 But there are several contexts, particularly when running large complex integration suites, where additional debugging information is necessary to understand the root cause of a failed spec.  You'll typically only want to see this information if a spec has failed - and hide it if the spec succeeds.
 
-Ginkgo provides a globally available `io.Writer` called `GinkgoWriter` that solves for this usecase.  `GinkgoWriter` aggregates everything written to it while a spec is running and only emits to stdout if the test fails or is interrupted (via `^C`).
+Ginkgo provides a globally available `io.Writer` called `GinkgoWriter` that solves for this usecase.  `GinkgoWriter` aggregates everything written to it while a spec is running and only emits to stdout if the test fails.
 
 `GinkgoWriter` includes three convenience methods:
 
@@ -1230,13 +1260,18 @@ var _ = Describe("Browsing the library", func() {
 })
 ```
 
-The string passed to `By` is emitted via the [`GinkgoWriter`](#logging-output).  If a test succeeds you won't see any output beyond Ginkgo's green dot.  If a test fails, however, you will see each step printed out up to the step immediately preceding the failure.  Running with `ginkgo -v` always emits all steps.
+The string passed to `By` is attached to the spec and can be displayed by Ginkgo when needed.  If a test succeeds you won't see any output beyond Ginkgo's green dot.  If a test fails, however, you will see each step printed out up to the step immediately preceding the failure.  Running with `ginkgo -v` always emits all steps.
 
-`By` takes an optional function of type `func()`.  When passed such a function `By` will immediately call the function.  This allows you to organize your `It`s into groups of steps but is purely optional.  
+`By` takes an optional function of type `func()`.  When passed such a function `By` will immediately call the function.  This allows you to organize your `It`s into groups of steps.  
 
-We haven't discussed [Report Entries](#attaching-data-to-reports) yet but we'll also mention that `By` also adds a `ReportEntry` to the running spec.  This ensures that the steps outlined in `By` appear in the structure JSON and JUnit reports that Ginkgo can generate.  If passed a function `By` will measure the runtime of the function and attach the resulting duration to the report as well.
+`By` doesn't affect the structure of your specs - it's primarily syntactic sugar to help you document long and complex specs.  Ginkgo has additional mechanisms to break specs up into more granular subunits with guaranteed ordering - we'll discuss [Ordered containers](#ordered-containers) in detail later.
 
-`By` doesn't affect the structure of your specs - it's simply syntactic sugar to help you document long and complex specs.  Ginkgo has additional mechanisms to break specs up into more granular subunits with guaranteed ordering - we'll discuss [Ordered containers](#ordered-containers) in detail later.
+### Mental Model: Spec Timelines
+Several events can occur during the lifecycle of a Ginkgo spec.  You've seen a few of these already: various setup and subject nodes start and end; data is written to the `GinkgoWriter`; `By` annotations are generated; failures occur.  And there are several more that you'll see introduced later in these docs (e.g. [`ReportEntries`](#attaching-data-to-reports) and [Progess Reports](#getting-visibility-into-long-running-specs) are attached to specs; [flaky specs](#repeating-spec-runs-and-managing-flaky-specs) might be retried).
+
+By default, when a spec passes Ginkgo does not emit any of this information.  When a failure occurs, however, Ginkgo emits a **timeline** view of the spec.  This includes all the events and `GinkgoWriter` output associated with a spec in ther order they were generated and provides the context needed to debug the spec and understand the nature and context of the failure.
+
+You can view the timeline for all specs (whether passed or failed) by running `ginkgo -v` or `ginkgo -vv`.
 
 ### Table Specs
 We'll round out this chapter on [Writing Specs](#writing-specs) with one last topic.  Ginkgo provides an expressive DSL for writing table driven specs.  This DSL is a simple wrapper around concepts you've already met - container nodes like `Describe` and subject nodes like `It`.
@@ -2550,8 +2585,7 @@ You can override the global setting of `poll-progess-after` and `poll-progress-i
 
 All Progress Reports generated by Ginkgo - whether interactively via `SIGINFO/SIGUSR1` or automatically via the `PollProgressAfter` configuration - also appear in Ginkgo's [machine-readable reports](#generating-machine-readable-reports).
 
-In addition to these formal Progress Reports, you can tell Ginkgo to emit progress of a spec as Ginkgo runs each of its nodes.  You do this with `ginkgo --progress -v`.  `--progress` will emit a message to the `GinkgoWriter` just before a node starts running.  By running with `-v` or `-vv` you can then stream the output to the `GinkgoWriter` immediately - this can help developers debugging a suite understand exactly which node is running in real-time.  If you want to run with `--progress` but want to suppress output of individual nodes (e.g. a top-level `ReportAfterEach` that always runs even if a spec is skipped) you can pass the `SuppressProgressOuput` decorator to the node in question.
-
+In addition to these formal Progress Reports, Ginkgo tracks whenever a node begins and ends.  These node `> Enter` and `< Exit` events are usually only logged in the spec's timeline when running with `-vv`, however you can turn them on for other verbosity modes using the `--show-node-events` flag.
 
 ### Spec Timeouts and Interruptible Nodes
 
@@ -3081,7 +3115,7 @@ As you can see, Ginkgo provides several CLI flags for controlling how specs are 
 The previous two chapters covered how Ginkgo specs are written and how Ginkgo specs run.  This chapter is all about output.  We'll cover how Ginkgo reports on spec suites and how Ginkgo can help you profile your spec suites.
 
 ### Controlling Ginkgo's Output
-Ginkgo emits a real-time report of the progress of your spec suite to the console while running your specs.  A green dot is emitted for each successful spec and a red `F`, along with failure information, is emitted for each unsuccessful spec.
+Ginkgo emits a real-time report of the progress of your spec suite to the console while running your specs.  A green dot is emitted for each successful spec and a red `F`, along with failure information and the spec's [timeline](#mental-model-spec-timelines), is emitted for each unsuccessful spec.
 
 There are several CLI flags that allow you to tweak this output:
 
@@ -3090,20 +3124,18 @@ Ginkgo has four verbosity settings: succinct (the default when running multiple 
 
 You can opt into succinct mode with `ginkgo --succinct`, verbose mode with `ginkgo -v` and very-verbose mode with `ginkgo -vv`.
 
-These settings control the amount of information emitted with each spec.  By default (i.e. succinct and normal) Ginkgo only emits detailed information about specs that fail.  That includes the location of the spec/failure and any captured `GinkgoWriter` content.
+These settings control the amount of information emitted with each spec.  By default (i.e. succinct and normal) Ginkgo only emits detailed information about specs that fail.  That includes the location of the spec/failure and a timeline that includes any captured `GinkgoWriter` content alongside a series of relevant spec events.
 
-The two verbose settings are most helpful when debugging spec suites.  They make Ginkgo emit detailed information for _every_ spec regardless of failure or success.  This includes anything written to the `GinkgoWriter` and the source code location of each spec.  When running in series in verbose or very-verbose mode Ginkgo will always immediately stream out this information in real-time while specs are running. A real-time stream isn't possible when running in parallel (the [streams would be interleaved](https://www.youtube.com/watch?v=jyaLZHiJJnE)); instead Ginkgo emits all this information about each spec right after it completes.
+The two verbose settings are most helpful when debugging spec suites.  They make Ginkgo emit the detailed timeline information for _every_ spec regardless of failure or success.  When running in series with `-v` or `-vv` mode Ginkgo will stream out the timeline in real-time while specs are running. A real-time stream isn't possible when running in parallel (the [streams would be interleaved](https://www.youtube.com/watch?v=jyaLZHiJJnE)); instead Ginkgo emits all this information about each spec right after it completes.
 
-When you [filter specs](#filtering-specs) using Ginkgo's various filtering mechanism Ginkgo usually emits a single cyan `S` for each skipped spec (the only exception is specs skipped with `Skip(<message>)` - Ginkgo emits the message for those specs.  You can circumvent this with `Skip("")`).  If you run with the very-verbose setting, however, Ginkgo will emit the description and location information of every skipped spec.  This can be useful if you need to debug your filter queries and can be paired with `--dry-run`.
+Very-verbose mode contains additional information over verbose mode.  In particular, `-vv` timelines indicate when individual nodes start and end and also include the full failure descriptions for _every_ failure encountered by the spec.  Verbose mode does not include the node start/end events (though this can be turned on with `--show-node-events`) and does not include detailed failure information for anything other than the first (primary) failure.  (Additional/subseuqent failures typically occur in clean-up nodes and are not as relevant as the primary failure that occurs in a subject or setup node).
 
-Finally, you can tell Ginkgo to always emit the `GinkgoWriter` output of every spec with `--always-emit-ginkgo-writer`.  This will emit `GinkgoWriter` output for both failed _and_ passing specs, regardless of verbosity setting.
+When you [filter specs](#filtering-specs) using Ginkgo's various filtering mechanism Ginkgo usually emits a single cyan `S` for each skipped spec.  If you run with the very-verbose setting, however, Ginkgo will emit the description and location information of every skipped spec.  This can be useful if you need to debug your filter queries and can be paired with `--dry-run`.
 
 #### Other Settings
 Here are a grab bag of other settings:
 
 You can disable Ginkgo's color output by running `ginkgo --no-color`.
-
-By default, Ginkgo calls out specs that are running slowly if they exceed a certain threshold (default: 5 seconds).  This doesn't affect the status of the spec - it is still considered to have passed - but can give you an early warning that a slow spec has been introduced.  You can adjust this threshold with `ginkgo --slow-spec-threshold=<duration>`.
 
 By default, Ginkgo only emits full stack traces when a spec panics.  When a normal assertion failure occurs, Ginkgo simply emits the line at which the failure occurred.  You can, instead, have Ginkgo always emit the full stack trace by running `ginkgo --trace`.
 
@@ -3133,6 +3165,8 @@ The JUnit report is compatible with the JUnit specification, however Ginkgo spec
 
 Ginkgo also supports Teamcity reports with `ginkgo --teamcity-report=report.teamcity` though, again, the Teamcity spec makes it difficult to capture all the spec metadata.
 
+All the machine-readable reports include the full `-vv` version of the timeline for all specs.  This allows you to run Ginkgo in CI with the normal verbosity setting but still get all the detailed information in the machine-readable format.
+
 Of course, you can generate multiple formats simultaneously by passing in multiple flags:
 
 ```bash
@@ -3148,6 +3182,7 @@ If you'd like to have all reports end up in a single directory.  Set `--output-d
 When generating combined reports with: `ginkgo -r --json-report=report.json --output-dir=<dir>` Ginkgo will create the `<dir>` directory (if necessary), and place `report.json` there.
 
 When generating separate reports with: `ginkgo -r --json-report=report.json --output-dir=<dir> --keep-separate-reports` Ginkgo will create the `<dir>` directory (if necessary), and place a report file per package in the directory.  These reports will be namespaced with the name of the package: `PACKAGE_NAME_report.json`.
+
 
 ### Generating reports programmatically
 
@@ -3407,7 +3442,7 @@ Here's why:
 - `--cover` and `--coverprofile=cover.profile` will compute coverage scores and generate a single coverage file for all your specs.
 - `--race` will run the race detector.
 - `--trace` will instruct Ginkgo to generate a stack trace for all failures (instead of simply including the location where the failure occurred).  This isn't usually necessary but can be helpful in CI environments where you may not have access to a fast feedback loop to iterate on and debug code.
-- `--json-report=report.json` will generate a JSON formatted report file.  You can store these off and use them later to get structured access to the suite and spec results.
+- `--json-report=report.json` will generate a JSON formatted report file.  You can store these off and use them later to get structured access to the suite and spec results.  Alternatively (or in addition) you can use `--junit-report=report.xml` to generate JUnit-formatted reports; these are compatible with several existing CI systems.
 - `--timeout` allows you to specify a timeout for the `ginkgo` run.  The default duration is one hour, which may or may not be enough!
 - `--poll-progress-after` and `--poll-progress-interval` will allow you to learn where long-running specs are getting stuck.  Choose a values for `X` and `Y` that are appropriate to your suite.  A long-running integration suite, for example, might set `X` to `120s` and `Y` to `30s` - whereas a quicker set of unit tests might not need this setting.  Note that if you precompile suites and run them from a different directory relative to your source code, you may also need to set `--source-root` to enable Ginkgo to emit source code lines when generating progress reports.
 
@@ -3951,7 +3986,7 @@ DescribeTable("Reading invalid books always errors", func(book *books.Book) {
 
 It is common, especially in integration suites, to be testing behaviors that occur asynchronously (either within the same process or, in the case of distributed systems, outside the current test process in some combination of external systems).  Ginkgo and Gomega provide the building blocks you need to write effective asynchronous specs efficiently.
 
-Rather than an exhaustive/detailed review we'll simply walk through some common patterns.  Throughout you'll see that you should generally try to use Gomega's `Eventually` and `Consistently` to make [asynchronous assertions](https://onsi.github.io/gomega/#making-asynchronous-assertions).
+Rather than an exhaustive/detailed review we'll simply walk through some common patterns.  Throughout you'll see that you should generally use Ginkgo's interruptible nodes with timeouts alongside use Gomega's `Eventually` and `Consistently` to make [asynchronous assertions](https://onsi.github.io/gomega/#making-asynchronous-assertions).
 
 Both `Eventually` and `Consistently` perform asynchronous assertions by polling the provided input.  In the case of `Eventually`, Gomega polls the input repeatedly until the matcher is satisfied - once that happens the assertion exits successfully and execution continues.  If the matcher is never satisfied `Eventually` will time out with a useful error message.  Both the timeout and polling interval are [configurable](https://onsi.github.io/gomega/#eventually).
 
@@ -3971,31 +4006,36 @@ Describe("Publishing books", func() {
     Expect(book).NotTo(BeNil())
   })
 
-  It("can publish a book, emitting information as it goes", func() {
+  It("can publish a book, emitting information as it goes", func(ctx SpecContext) {
     buffer := gbytes.NewBuffer() //gbytes provides a thread-safe buffer that works with the `gbytes.Say` matcher
     
     // we begin publishing the book.  This kicks off a goroutine and returns a channel
-    c := publisher.Publish(book, buffer)
+    // Publish takes a `context.Context` and so we pass in our `ctx` to clean up correctly in case the spec timeout elapses
+    c := publisher.Publish(ctx, book, buffer)
 
-    //gbytes.Say allows us to assert on output to a stream
-    Eventually(buffer).Should(gbytes.Say(`Publishing "Les Miserables...`))
-    Eventually(buffer).Should(gbytes.Say(`Published page 1/2783`))
-    Eventually(buffer).Should(gbytes.Say(`Published page 2782/2783`))
-    Eventually(buffer).Should(gbytes.Say(`Publish complete!`))
+    // gbytes.Say allows us to assert on output to a stream
+    // we pass in the SpecContext to give this block of `Eventually's` a shared time horizon for completing: the 30 second SpecTimeout
+    // we don't _have_ to pass in a SpecContext.  If we don't, then each `Eventually` will have its own, individual, timeout.
+    Eventually(ctx, buffer).Should(gbytes.Say(`Publishing "Les Miserables...`))
+    Eventually(ctx, buffer).Should(gbytes.Say(`Published page 1/2783`))
+    Eventually(ctx, buffer).Should(gbytes.Say(`Published page 2782/2783`))
+    Eventually(ctx, buffer).Should(gbytes.Say(`Publish complete!`))
 
-    //rather than call <-c which could block the spec forever we use Eventually to poll the channel and
-    //store any received values in a pointer
+    // rather than call <-c which could block the spec forever we use Eventually to poll the channel and
+    // store any received values in a pointer
+    // we pass in the SpecContext _and_ specify a timeout of 1 second:
+    // at this point we expect `Publish()` to exit fairly quickly and should not need to wait for longer than 1s!
     var result publisher.PublishResult
-    Eventually(c).Should(Receive(&result))
+    Eventually(ctx, c).WithTimeout(time.Second).Should(Receive(&result))
 
-    //we make some synchronous assertions on the result
+    //we make some *synchronous* assertions on the result
     Expect(result.Title).To(Equal("Les Miserables"))
     Expect(result.EpubSize).To(BeNumerically(">", 10))
     Expect(result.EpubContent).To(ContainSubstring("I've ransomed you from fear and hatred, and now I give you back to God."))
 
     //we expect the publisher to close the channel when it's done
-    Eventually(c).Should(BeClosed())
-  })
+    Eventually(ctx, c).WithTimeout(time.Second.Should(BeClosed())
+  }, SpecTimeout(time.Second*30)) //this spec has 30 seconds to complete
 })
 ```
 
@@ -4016,9 +4056,9 @@ BeforeSuite(func() {
 })
 
 Describe("Publishing books", func() {
-  It("can publish a book, emitting information as it goes", func() {
+  It("can publish a book, emitting information as it goes", func(ctx SpecContext) {
     //First, we create a command to invoke the publisher and pass appropriate args
-    cmd := exec.Command(publisherPath, "-o=les-miserables.epub", "les-miserables.fixture")
+    cmd := exec.CommandContext(ctx, publisherPath, "-o=les-miserables.epub", "les-miserables.fixture")
 
     //Now we launch the command with `gexec`.  This returns a session that wraps the running command.  
     //We also tell `gexec` to tee any stdout/stderr output from the process to `GinkgoWriter` - this will
@@ -4029,13 +4069,13 @@ Describe("Publishing books", func() {
     //At this point the process is running in the background
     //In addition to teeing to GinkgoWriter gexec will capture any stdout/stderr output to
     //gbytes buffers.  This allows us to make assertions against its stdout output using `gbytes.Say`
-    Eventually(session).Should(gbytes.Say(`Publishing "Les Miserables...`))
-    Eventually(session).Should(gbytes.Say(`Published page 1/2783`))
-    Eventually(session).Should(gbytes.Say(`Published page 2782/2783`))
-    Eventually(session).Should(gbytes.Say(`Publish complete!`))
+    Eventually(ctx, session).Should(gbytes.Say(`Publishing "Les Miserables...`))
+    Eventually(ctx, session).Should(gbytes.Say(`Published page 1/2783`))
+    Eventually(ctx, session).Should(gbytes.Say(`Published page 2782/2783`))
+    Eventually(ctx, session).Should(gbytes.Say(`Publish complete!`))
 
     //We can also assert the session has exited 
-    Eventually(session).Should(gexec.Exit(0)) //with exit code 0
+    Eventually(ctx, session).WithTimeout(time.Second).Should(gexec.Exit(0)) //with exit code 0
 
     //At this point we should have the `les-miserables.epub` artifact
     Expect("les-miserables.epub").To(BeAnExistingFile())
@@ -4047,7 +4087,7 @@ Describe("Publishing books", func() {
     Expect(result.Title).To(Equal("Les Miserables"))
     Expect(result.EpubSize).To(BeNumerically(">", 10))
     Expect(result.EpubContent).To(ContainSubstring("I've ransomed you from fear and hatred, and now I give you back to God."))
-  })
+  }, Time.Second * 30)
 })
 ```
 
@@ -4080,12 +4120,38 @@ Describe("Change book font-size", func() {
       close(done)
     }()
 
+    // now we wait for the `done` channel to close.  Note that we neither pass in a context nor set an explicit timeout
+    // in this case `Eventually` `will use Gomega's default global timeout (1 second, unless overriden by the user)
     Eventually(done).Should(BeClosed())
   })  
 })
 ```
 
-This use of a `done` channel is idiomatic and guards the spec against potentially hanging forever.
+This use of a `done` channel is idiomatic and guards the spec against potentially hanging forever.  More typically, blocking functions like `SetFontSize` accept a `context.Context` to manage cancellation.  In that case we can simply write:
+
+
+```go
+Describe("Change book font-size", func() {
+  var book *books.Book
+  BeforeEach(func() {
+    book = loadBookWithContent("les_miserables.fixture")
+    Expect(book).NotTo(BeNil())
+  })
+  
+  It("can repaginate books without losing any content", func(ctx SpecContext) {
+    content := book.RawContent()
+    Expect(book.Pages).To(Equal(2783))
+
+    //this might be quite expensive and will block...
+    err := book.SetFontSize(ctx, 28)
+    Expect(err).NotTo(HaveOccurred())
+
+    Expect(book.Pages).To(BeNumerically(">", 2783))
+    Expect(book.RawContent()).To(Equal(content))
+  }, SpecTimeout(time.Second))  
+})
+```
+
 
 #### Testing External Systems
 When integration testing an external system, particularly a distributed system, you'll often find yourself needing to wait for the external state to converge and become eventually consistent.  Gomega makes it easy to poll and validate that the system under test eventually exhibits the desired behavior.  This is typically done by passing functions in to `Eventually` and `Consistently`.
@@ -4105,39 +4171,42 @@ var _ = BeforeSuite(func() {
 var _ = Describe("Getting notifications about holds", func() {
   var book *books.Book
   var sarah, jane *user.User
-  BeforeEach(func() {
+  BeforeEach(func(ctx SpecContext) {
     book = &books.Book{
       Title: "My test book",
       Author: "Ginkgo",
       Pages: 17,
     }
 
-    Expect(library.Store(book)).To(Succeed())
-    DeferCleanup(library.Delete, book)
+    Expect(library.Store(ctx, book)).To(Succeed())
+    // we'll want to delete the book after the spec ends.  `library` has a `Delete` function with signature `Delete(context.Context, *book.Book)`. 
+    // DeferCleanup will detect this signature and automatically pass a `SpecContext` (configured with a one second timeout thanks to the `NodeTimeout` decorator)
+    // in as the first parameter.  `book` will be passed in as the second parameter.
+    DeferCleanup(library.Delete, book, NodeTimeout(time.Second))
 
-    sarah = user.NewUser("Sarah", "integration-test-account+sarah@gmail.com")
-    jane = user.NewUser("Jane", "integration-test-account+jane@gmail.com")
+    sarah = user.NewUser(ctx, "Sarah", "integration-test-account+sarah@gmail.com")
+    jane = user.NewUser(ctx, "Jane", "integration-test-account+jane@gmail.com")
     
     By("Sarah checks the book out")
-    Expect(sarah.CheckOut(library, book)).To(Succeed())
-  })
+    Expect(sarah.CheckOut(ctx, library, book)).To(Succeed())
+  }, NodeTimeout(time.Second*10))
 
-  It("notifies the user when their hold is ready", func() {
+  It("notifies the user when their hold is ready", func(ctx SpecContext) {
     By("Jane can't check the book out so she places a hold")
-    Expect(jane.CheckOut(library, book)).To(MatchError(books.ErrNoAvailableCopies))
-    Expect(jane.PlaceHold(library, book)).To(Succeed())
+    Expect(jane.CheckOut(ctx, library, book)).To(MatchError(books.ErrNoAvailableCopies))
+    Expect(jane.PlaceHold(ctx, library, book)).To(Succeed())
 
     By("when Sarah returns the book")
-    Expect(sarah.Return(library, book)).To(Succeed())
+    Expect(sarah.Return(ctx, library, book)).To(Succeed())
 
     By("Jane eventually gets notified that her book is available in the library app...")
-    Eventually(func() ([]user.Notification, error) {
-      return jane.FetchNotifications()
-    }).Should(ContainElement(user.Notification{Title: book.Title, State: book.ReadyForPickup}))
+    Eventually(func(ctx SpecContext) ([]user.Notification, error) {
+      return jane.FetchNotifications(ctx, library)
+    }).WithContext(ctx).Should(ContainElement(user.Notification{Title: book.Title, State: book.ReadyForPickup}))
 
     By("...and in her email...")
-    Eventually(func() ([]string, error) {
-      messages, err := gmail.Fetch(jane.EmailAddress)
+    Eventually(func(ctx SpecContext) ([]string, error) {
+      messages, err := gmail.Fetch(ctx, jane.EmailAddress)
       if err != nil {
         return nil, err
       }
@@ -4146,38 +4215,36 @@ var _ = Describe("Getting notifications about holds", func() {
         subjects = append(subjects, message.Subject)
       }
       return subjects, nil
-    }).Should(ContainElement(fmt.Sprintf(`"%s" is available for pickup`, book.Title)))
+    }).WithContext(ctx).Should(ContainElement(fmt.Sprintf(`"%s" is available for pickup`, book.Title)))
 
-    Expect(jane.CheckOut(library, book)).To(Succeed())
-  })
+    Expect(jane.CheckOut(ctx, library, book)).To(Succeed())
+  }, SpecTimeout(time.Second * 30))
 })
 ```
 
 As you can see we are able to clearly test both synchronous concerns (blocking calls to the library service that return immediately) with asynchronous concerns (out-of-band things that happen after a library call has been made).  The DSL allows us to clearly express our intent and capture the flow of this spec with relatively little noise.
 
-One important thing warrants calling out, however.  Notice that we aren't using `Eventually` to assert that individual calls to the `library` or `user` client don't time out.  `Eventually` assumes that the function it is polling will return in a timely manner.  It does not monitor the duration of the function call to apply a timeout.  Rather, it calls the function synchronously and then asserts against the result immediately - it then waits for the polling interval before trying again.  It is expected that the client under test can handle connection timeout issues and return in a timely manner.  One common pattern, shown here, is to place an assertion in a `BeforeSuite` that validates that the external service we need to communicate with is up and ready to receive network traffic.  That's what `Eventually(library.Ping).Should(Succeed())` is doing.  Once we've established the server is up we can proceed to test with confidence.
-
 `Eventually` has a few more tricks that we can leverage to clean this code up a bit.  Since `Eventually` accepts functions we can simply replace this:
 
 ```go
-Eventually(func() ([]user.Notification, error) {
-  return jane.FetchNotifications()
-}).Should(ContainElement(user.Notification{Title: book.Title, State: book.ReadyForPickup}))
+Eventually(func(ctx SpecContext) ([]user.Notification, error) {
+  return jane.FetchNotifications(ctx, library)
+}).WithContext(ctx).Should(ContainElement(user.Notification{Title: book.Title, State: book.ReadyForPickup}))
 ```
 
 with this:
 
 ```go
-Eventually(jane.FetchNotifications).Should(ContainElement(user.Notification{Title: book.Title, State: book.ReadyForPickup}))
+Eventually(jane.FetchNotifications).WithContext(ctx).WithArguments(library).Should(ContainElement(user.Notification{Title: book.Title, State: book.ReadyForPickup}))
 ```
 
 Note that `Eventually` automatically asserts a niladic error as it polls the `FetchNotifications` function.  Also note that we are passing in a reference to the method on the `jane` instance - not invoking it.  `Eventually(jane.FetchNotifications())` would not work - you must pass in `Eventually(jane.FetchNotifications)`!
 
-`Eventually` can _also_ accept functions that take a single `Gomega` parameter.  These functions are then passed a local `Gomega` that can be used to make assertions _inside_ the function as it is polled.  `Eventually` will retry the function if an assertion fails.  This would allow us to replace:
+`Eventually` can _also_ accept functions that take a `Gomega` parameter.  These functions are then passed a local `Gomega` that can be used to make assertions _inside_ the function as it is polled.  `Eventually` will retry the function if an assertion fails.  This would allow us to replace:
 
 ```go
-Eventually(func() ([]string, error) {
-  messages, err := gmail.Fetch(jane.EmailAddress)
+Eventually(func(ctx SpecContext) ([]string, error) {
+  messages, err := gmail.Fetch(ctx, jane.EmailAddress)
   if err != nil {
     return nil, err
   }
@@ -4186,37 +4253,36 @@ Eventually(func() ([]string, error) {
     subjects = append(subjects, message.Subject)
   }
   return subjects, nil
-}).Should(ContainElement(fmt.Sprintf(`"%s" is available for pickup`, book.Title)))
+}).WithContext(ctx).Should(ContainElement(fmt.Sprintf(`"%s" is available for pickup`, book.Title)))
 ```
 
 with
 
 ```go
-Eventually(func(g Gomega) ([]string) {
-  messages, err := gmail.Fetch(jane.EmailAddress)
+Eventually(func(g Gomega, ctx SpecContext) []string { //note: g Gomega must go first
+  messages, err := gmail.Fetch(ctx, jane.EmailAddress)
   g.Expect(err).NotTo(HaveOccurred())
   subjects := []string{}
   for _, message := range messages {
     subjects = append(subjects, message.Subject)
   }
   return subjects, nil
-}).Should(ContainElement(fmt.Sprintf(`"%s" is available for pickup`, book.Title)))
+}).WithContext(ctx).Should(ContainElement(fmt.Sprintf(`"%s" is available for pickup`, book.Title)))
 ```
 
 we can even push the entire assertion into the polled function:
 
 ```go
-Eventually(func(g Gomega) {
-  messages, err := gmail.Fetch(jane.EmailAddress)
+Eventually(func(g Gomega, ctx SpecContext) {
+  messages, err := gmail.Fetch(ctx, jane.EmailAddress)
   g.Expect(err).NotTo(HaveOccurred())
   subjects := []string{}
   for _, message := range messages {
     subjects = append(subjects, message.Subject)
   }
-  expectedSubject := fmt.Sprintf(`"%s" is available for pickup`, book.Title)
-  g.Expect(subjects).To(ContainElement(expectedSubject))
+  g.Expect(subjects).To(ContainElement(fmt.Sprintf(`"%s" is available for pickup`, book.Title)))
   return subjects, nil
-}).Should(Succeed())
+}).WithContext(ctx).Should(Succeed())
 ```
 
 this approach highlights a special-case use of the `Succeed()` matcher with `Eventually(func(g Gomega) {})` - `Eventually` will keep retrying the function until no failures are detected.
@@ -4226,14 +4292,14 @@ this approach highlights a special-case use of the `Succeed()` matcher with `Eve
 Finally, since we're on the topic of simplifying things, we can make use of the fact that `ContainElement` can take a matcher to compose it with the `WithTransform` matcher and get rid of the `subjects` loop:
 
 ```go
-Eventually(func(g Gomega) {
+Eventually(func(g Gomega, ctx SpecContext) {
   messages, err := gmail.Fetch(jane.EmailAddress)
   g.Expect(err).NotTo(HaveOccurred())
   expectedSubject := fmt.Sprintf(`"%s" is available for pickup`, book.Title)
   subjectGetter := func(m gmail.Message) string { return m.Subject }
   g.Expect(messages).To(ContainElement(WithTransform(subjectGetter, Equal(expectedSubject))))
   return messages, nil
-}).Should(Succeed())
+}).WithContext(ctx).Should(Succeed())
 ```
 
 ### Patterns for Parallel Integration Specs
@@ -4282,22 +4348,22 @@ The filesystem is a shared singleton resource.  Each parallel process in a paral
 
 ```go
 Describe("Publishing books", func() {
-  It("can publish a complete epub", func() {
-    cmd := exec.Command(publisherPath, "-o=out.epub", "les-miserables.fixture")
+  It("can publish a complete epub", func(ctx SpecContext) {
+    cmd := exec.CommandContext(ctx, publisherPath, "-o=out.epub", "les-miserables.fixture")
     session, err := gexec.Start(cmd, GinkgoWriter, GinkgoWriter)
     Expect(err).NotTo(HaveOccurred())
-    Eventually(session).Should(gexec.Exit(0)) //with exit code 0
+    Eventually(ctx, session).Should(gexec.Exit(0)) //with exit code 0
 
     result, err := epub.Load("out.epub")
     Expect(err).NotTo(HaveOccurred())
     Expect(result.EpubPages).To(Equal(2783))
-  })
+  }, SpecTimeout(time.Second*30))
 
-  It("can publish a preview that contains just the first chapter", func() {    
-    cmd := exec.Command(publisherPath, "-o=out.epub", "--preview", "les-miserables.fixture")
+  It("can publish a preview that contains just the first chapter", func(ctx SpecContext) {    
+    cmd := exec.CommandContext(ctx, publisherPath, "-o=out.epub", "--preview", "les-miserables.fixture")
     session, err := gexec.Start(cmd, GinkgoWriter, GinkgoWriter)
     Expect(err).NotTo(HaveOccurred())
-    Eventually(session).Should(gexec.Exit(0)) //with exit code 0
+    Eventually(ctx, session).Should(gexec.Exit(0)) //with exit code 0
 
     result, err := epub.Load("out.epub")
     Expect(err).NotTo(HaveOccurred())
@@ -4314,13 +4380,13 @@ There are multiple ways to approach this.  Perhaps the obvious way would be to m
 
 ```go
 Describe("Publishing books", func() {
-  It("can publish a complete epub", func() {
-    cmd := exec.Command(publisherPath, "-o=complete.epub", "les-miserables.fixture")
+  It("can publish a complete epub", func(ctx SpecContext) {
+    cmd := exec.CommandContext(ctx, publisherPath, "-o=complete.epub", "les-miserables.fixture")
     ...
   })
 
-  It("can publish a preview that contains just the first chapter", func() {    
-    cmd := exec.Command(publisherPath, "-o=preview.epub", "--preview", "les-miserables.fixture")
+  It("can publish a preview that contains just the first chapter", func(ctx SpecContext) {    
+    cmd := exec.CommandContext(ctx, publisherPath, "-o=preview.epub", "--preview", "les-miserables.fixture")
     ...
   })
 })
@@ -4337,15 +4403,15 @@ BeforeEach(func() {
 })
 
 Describe("Publishing books", func() {
-  It("can publish a complete epub", func() {
+  It("can publish a complete epub", func(ctx SpecContext) {
     path := filepath.Join(tmpDir, "out.epub")
-    cmd := exec.Command(publisherPath, "-o="+path, "les-miserables.fixture")
+    cmd := exec.CommandContext(ctx, publisherPath, "-o="+path, "les-miserables.fixture")
     ...
   })
 
-  It("can publish a preview that contains just the first chapter", func() {    
+  It("can publish a preview that contains just the first chapter", func(ctx SpecContext) {
     path := filepath.Join(tmpDir, "out.epub")
-    cmd := exec.Command(publisherPath, "-o="+path, "--preview", "les-miserables.fixture")
+    cmd := exec.CommandContext(ctx, publisherPath, "-o="+path, "--preview", "les-miserables.fixture")
     ...
   })
 })
@@ -4370,15 +4436,15 @@ BeforeEach(func() {
 })
 
 Describe("Publishing books", func() {
-  It("can publish a complete epub", func() {
+  It("can publish a complete epub", func(ctx SpecContext) {
     path := pathTo("out.epub")
-    cmd := exec.Command(publisherPath, "-o="+path, "les-miserables.fixture")
+    cmd := exec.CommandContext(ctx, publisherPath, "-o="+path, "les-miserables.fixture")
     ...
   })
 
-  It("can publish a preview that contains just the first chapter", func() {    
+  It("can publish a preview that contains just the first chapter", func(ctx SpecContext) {
     path := pathTo("out.epub")
-    cmd := exec.Command(publisherPath, "-o="+path, "--preview", "les-miserables.fixture")
+    cmd := exec.CommandContext(ctx, publisherPath, "-o="+path, "--preview", "les-miserables.fixture")
     ...
   })
 })
@@ -4386,7 +4452,7 @@ Describe("Publishing books", func() {
 
 this will create a namespaced local temp directory and provides a convenience function for specs to access paths to the directory.  The directory is cleaned up after each spec.
 
-One nice thing about this approach is our ability to preserve the artifacts in the temporary directory in case of failure.  A common pattern when debugging is to use `--fail-fast` to indicate that the suite should stop running as soon as the first failure occurs.  We can key off of that config to change the behavior of our cleanup code:
+One nice thing about this approach is our ability to preserve the artifacts in the temporary directory in case of failure.  A common pattern when debugging is to use `--fail-fast` to indicate that the suite should stop running as soon as the first failure occurs.  We can key off of that config to change  the behavior of our cleanup code:
 
 ```go
 var pathTo func(path string) string
@@ -4706,6 +4772,8 @@ Expect(book).To(BeAValidBook(Title("Les Miserables")))
 Expect(book).To(BeAValidBook(Author("Victor Hugo")))
 Expect(book).To(BeAValidBook(Title("Les Miserables"), Pages(2783)))
 ```
+
+The failure messages generated by composed matchers are generally good enough to capture the reason for the failure.  However if you want more fine-control over the message, or if you want more complex logic in your matcher you can use [`gcustom`](https://onsi.github.io/gomega/#gcustom-a-convenient-mechanism-for-buildling-custom-matchers) to build custom matchers using a simple function and templates - to learn more check out the [`gucstom` docs](https://onsi.github.io/gomega/#gcustom-a-convenient-mechanism-for-buildling-custom-matchers) and [godoc](https://pkg.go.dev/github.com/onsi/gomega/gcustom). 
 
 ## Decorator Reference
 We've seen a number of Decorators detailed throughout this documentation.  This reference collects them all in one place.

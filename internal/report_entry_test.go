@@ -221,6 +221,7 @@ var _ = Describe("ReportEntry and ReportEntries", func() {
 			Ω(reportEntry.Visibility).Should(Equal(types.ReportEntryVisibilityFailureOrVerbose))
 		})
 	})
+
 	Context("with a time", func() {
 		It("uses the passed in time", func() {
 			t := time.Date(1984, 3, 7, 0, 0, 0, 0, time.Local)

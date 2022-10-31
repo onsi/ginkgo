@@ -29,7 +29,7 @@ var _ = Describe("Suite", func() {
 
 	BeforeEach(func() {
 		failer = internal.NewFailer()
-		reporter = &FakeReporter{}
+		reporter = NewFakeReporter()
 		writer = internal.NewWriter(io.Discard)
 		outputInterceptor = NewFakeOutputInterceptor()
 		client = nil

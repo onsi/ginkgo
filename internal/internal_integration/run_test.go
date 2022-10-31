@@ -139,6 +139,7 @@ var _ = Describe("Running Tests in Series - the happy path", func() {
 				HaveField("CapturedGinkgoWriterOutput", "before-each\nC\n"),
 				HaveField("CapturedStdOutErr", "output-intercepted-in-C"),
 				HaveField("ParallelProcess", 1),
+				HaveField("RunningInParallel", false),
 			))
 
 		})

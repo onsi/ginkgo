@@ -140,8 +140,7 @@ var _ = Describe("Reporting", func() {
 			Ω(specReports.Find("panics")).Should(HavePanicked("boom"))
 			Ω(specReports.Find("is pending")).Should(BePending())
 			Ω(specReports.Find("is skipped").State).Should(Equal(types.SpecStateSkipped))
-			Ω(specReports.Find("times out and fails during cleanup")).Should(HaveTimedOut("A node timeout occurred and the following failure was recorded after the timeout:\n\nfailure-after-timeout"))
-
+			Ω(specReports.Find("times out and fails during cleanup")).Should(HaveTimedOut("A node timeout occurred"))
 			Ω(specReports.Find("times out and fails during cleanup").AdditionalFailures[0].Failure.Message).Should(Equal("double-whammy"))
 			Ω(specReports.Find("times out and fails during cleanup").AdditionalFailures[0].Failure.FailureNodeType).Should(Equal(types.NodeTypeCleanupAfterEach))
 			Ω(specReports.Find("my report")).Should(HaveFailed("fail!", types.FailureNodeIsLeafNode, types.NodeTypeReportAfterSuite))
@@ -218,7 +217,7 @@ var _ = Describe("Reporting", func() {
 
 			Ω(getTestCase("[It] reporting test fails", suite.TestCases).Failure.Message).Should(Equal("fail!"))
 			Ω(getTestCase("[It] reporting test fails", suite.TestCases).Status).Should(Equal("failed"))
-			Ω(getTestCase("[It] reporting test fails", suite.TestCases).SystemErr).Should(Equal("some ginkgo-writer output"))
+			Ω(getTestCase("[It] reporting test fails", suite.TestCases).SystemErr).Should(ContainSubstring("some ginkgo-writer output"))
 
 			Ω(getTestCase("[It] reporting test is pending", suite.TestCases).Status).Should(Equal("pending"))
 			Ω(getTestCase("[It] reporting test is pending", suite.TestCases).Skipped.Message).Should(Equal("pending"))
@@ -230,18 +229,17 @@ var _ = Describe("Reporting", func() {
 			Ω(getTestCase("[It] reporting test is skipped", suite.TestCases).Skipped.Message).Should(Equal("skipped - skip"))
 
 			Ω(getTestCase("[It] reporting test times out and fails during cleanup", suite.TestCases).Status).Should(Equal("timedout"))
-			Ω(getTestCase("[It] reporting test times out and fails during cleanup", suite.TestCases).Failure.Message).Should(Equal("A node timeout occurred and the following failure was recorded after the timeout:\n\nfailure-after-timeout"))
+			Ω(getTestCase("[It] reporting test times out and fails during cleanup", suite.TestCases).Failure.Message).Should(Equal("A node timeout occurred"))
 			Ω(getTestCase("[It] reporting test times out and fails during cleanup", suite.TestCases).Failure.Description).Should(ContainSubstring("<-ctx.Done()"))
-			Ω(getTestCase("[It] reporting test times out and fails during cleanup", suite.TestCases).Failure.Description).Should(ContainSubstring("There were additional failures detected after the initial failure:\n[FAILED]\ndouble-whammy\nIn [DeferCleanup (Each)] at:"))
+			Ω(getTestCase("[It] reporting test times out and fails during cleanup", suite.TestCases).Failure.Description).Should(ContainSubstring("[FAILED] A node timeout occurred and then the following failure was recorded in the timedout node before it exited:\nfailure-after-timeout"))
+			Ω(getTestCase("[It] reporting test times out and fails during cleanup", suite.TestCases).SystemErr).Should(ContainSubstring("[FAILED] double-whammy"))
 
 			buf := gbytes.NewBuffer()
 			fmt.Fprintf(buf, getTestCase("[It] reporting test has a progress report", suite.TestCases).SystemErr)
 			Ω(buf).Should(gbytes.Say(`some ginkgo-writer preamble`))
-			Ω(buf).Should(gbytes.Say(`-----\n`))
 			Ω(buf).Should(gbytes.Say(`reporting test has a progress report \(Spec Runtime:`))
 			Ω(buf).Should(gbytes.Say(`goroutine \d+ \[sleep\]`))
 			Ω(buf).Should(gbytes.Say(`>\s*time\.Sleep\(`))
-			Ω(buf).Should(gbytes.Say(`-----\n`))
 			Ω(buf).Should(gbytes.Say(`some ginkgo-writer postamble`))
 		}
 
@@ -287,7 +285,7 @@ var _ = Describe("Reporting", func() {
 
 			Ω(lines).Should(ContainElement("##teamcity[testStarted name='|[It|] reporting test fails']"))
 			Ω(lines).Should(ContainElement(HavePrefix("##teamcity[testFailed name='|[It|] reporting test fails' message='failed - fail!'")))
-			Ω(lines).Should(ContainElement(HavePrefix("##teamcity[testStdErr name='|[It|] reporting test fails' out='some ginkgo-writer output")))
+			Ω(lines).Should(ContainElement(HavePrefix("##teamcity[testStdErr name='|[It|] reporting test fails' out='> Enter")))
 			Ω(lines).Should(ContainElement(HavePrefix("##teamcity[testFinished name='|[It|] reporting test fails'")))
 
 			Ω(lines).Should(ContainElement("##teamcity[testStarted name='|[It|] reporting test is pending']"))

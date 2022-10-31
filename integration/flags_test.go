@@ -23,7 +23,7 @@ var _ = Describe("Flags Specs", func() {
 		Eventually(session).Should(gexec.Exit(types.GINKGO_FOCUS_EXIT_CODE))
 		output := string(session.Out.Contents())
 
-		Ω(output).Should(ContainSubstring("10 Passed"))
+		Ω(output).Should(ContainSubstring("9 Passed"))
 		Ω(output).Should(ContainSubstring("0 Failed"))
 		Ω(output).Should(ContainSubstring("1 Pending"))
 		Ω(output).Should(ContainSubstring("3 Skipped"))
@@ -60,21 +60,12 @@ var _ = Describe("Flags Specs", func() {
 	})
 
 	It("should randomize tests when told to", func() {
-		session := startGinkgo(fm.PathTo("flags"), "--no-color", "--randomize-all", "--seed=1")
+		session := startGinkgo(fm.PathTo("flags"), "--no-color", "--randomize-all", "--seed=40")
 		Eventually(session).Should(gexec.Exit(types.GINKGO_FOCUS_EXIT_CODE))
 		output := string(session.Out.Contents())
 
 		orders := getRandomOrders(output)
 		Ω(orders[0]).ShouldNot(BeNumerically("<", orders[1]))
-	})
-
-	It("should watch for slow specs", func() {
-		session := startGinkgo(fm.PathTo("flags"), "--slow-spec-threshold=50ms")
-		Eventually(session).Should(gexec.Exit(types.GINKGO_FOCUS_EXIT_CODE))
-		output := string(session.Out.Contents())
-
-		Ω(output).Should(ContainSubstring("SLOW TEST"))
-		Ω(output).Should(ContainSubstring("should honor -slow-spec-threshold"))
 	})
 
 	It("should pass additional arguments in", func() {
@@ -153,5 +144,27 @@ var _ = Describe("Flags Specs", func() {
 		Ω(output).Should(ContainSubstring("2 Specs"))
 		Ω(output).Should(ContainSubstring("1 Skipped"))
 		Ω(output).Should(ContainSubstring("1 Passed"))
+	})
+
+	It("should emit node start/end events when running with --show-node-events", func() {
+		session := startGinkgo(fm.PathTo("flags"), "--no-color", "-v", "--show-node-events")
+		Eventually(session).Should(gexec.Exit(types.GINKGO_FOCUS_EXIT_CODE))
+		output := string(session.Out.Contents())
+
+		Eventually(output).Should(ContainSubstring("> Enter [It] should honor -cover"))
+		Eventually(output).Should(ContainSubstring("< Exit [It] should honor -cover"))
+
+		fm.MountFixture("fail")
+		session = startGinkgo(fm.PathTo("fail"), "--no-color", "--show-node-events")
+		Eventually(session).Should(gexec.Exit(1))
+		output = string(session.Out.Contents())
+		Ω(output).Should(ContainSubstring("> Enter [It] a top level specify"))
+		Ω(output).Should(ContainSubstring("< Exit [It] a top level specify"))
+
+		session = startGinkgo(fm.PathTo("fail"), "--no-color")
+		Eventually(session).Should(gexec.Exit(1))
+		output = string(session.Out.Contents())
+		Ω(output).ShouldNot(ContainSubstring("> Enter [It] a top level specify"))
+		Ω(output).ShouldNot(ContainSubstring("< Exit [It] a top level specify"))
 	})
 })
