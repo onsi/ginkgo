@@ -48,6 +48,12 @@ You should now be able to run `ginkgo version` at the command line and see the G
 
 **Note** you _must_ make sure the version of the `ginkgo` cli you install is the same as the version of Ginkgo in your `go.mod` file.
 
+### Support Policy
+
+Ginkgo adheres to semantic versioning - the intent is for there to be no breaking changes along the `2.m.p` line with new functionality landing as minor releases and bug-fixes landing as patch releases (fixes are never back-ported).  We work hard to maintain this policy however exceptions (while rare and typically minor) are possible, especially for brand new/emerging features.
+
+The current version of Ginkgo is guaranteed to be compatible with the currently supported versions of Go that are noted by the Go release policy i.e. N and N-1 major versions.
+
 ### Your First Ginkgo Suite
 
 Ginkgo hooks into Go's existing `testing` infrastructure.  That means that Ginkgo specs live in `*_test.go` files, just like standard go tests.  However, instead of using `func TestX(t *testing.T) {}` to write your tests you use the Ginkgo and Gomega DSLs.  
@@ -3144,6 +3150,7 @@ When generating combined reports with: `ginkgo -r --json-report=report.json --ou
 When generating separate reports with: `ginkgo -r --json-report=report.json --output-dir=<dir> --keep-separate-reports` Ginkgo will create the `<dir>` directory (if necessary), and place a report file per package in the directory.  These reports will be namespaced with the name of the package: `PACKAGE_NAME_report.json`.
 
 ### Generating reports programmatically
+
 The JSON and JUnit reports described above can be easily generated from the command line - there's no need to make any changes to your suite.
 
 Ginkgo's reporting infrastructure does, however, provide several mechanisms for writing custom reporting code in your spec suites (or, in a supporting package).  We'll explore these mechanisms next.
