@@ -1,3 +1,35 @@
+## 2.5.0
+
+### Ginkgo output now includes a timeline-view of the spec
+
+This commit changes Ginkgo's default output.  Spec details are now
+presented as a **timeline** that includes events that occur during the spec
+lifecycle interleaved with any GinkgoWriter content.  This makes is much easier
+to understand the flow of a spec and where a given failure occurs.
+
+The --progress, --slow-spec-threshold, --always-emit-ginkgo-writer flags
+and the SuppressProgressReporting decorator have all been deprecated.  Instead
+the existing -v and -vv flags better capture the level of verbosity to display.  However,
+a new --show-node-events flag is added to include node `> Enter` and `< Exit` events
+in the spec timeline.
+
+In addition, JUnit reports now include the timeline (rendered with -vv) and custom JUnit
+reports can be configured and generated using
+`GenerateJUnitReportWithConfig(report types.Report, dst string, config JunitReportConfig)`
+
+Code should continue to work unchanged with this version of Ginkgo - however if you have tooling that
+was relying on the specific output format of Ginkgo you _may_ run into issues.  Ginkgo's console output is not guaranteed to be stable for tooling and automation purposes.  You should, instead, use Ginkgo's JSON format
+to build tooling on top of as it has stronger guarantees to be stable from version to version.
+
+### Features
+- Provide details about which timeout expired [0f2fa27]
+
+### Fixes
+- Add Support Policy to docs [c70867a]
+
+### Maintenance
+- Bump github.com/onsi/gomega from 1.22.1 to 1.23.0 (#1070) [bb3b4e2]
+
 ## 2.4.0
 
 ### Features
