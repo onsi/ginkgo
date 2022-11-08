@@ -38,13 +38,21 @@ In this section we cover installing Ginkgo, Gomega, and the `ginkgo` CLI.  We bo
 Ginkgo uses [go modules](https://go.dev/blog/using-go-modules).  To add Ginkgo to your project, assuming you have a `go.mod` file setup, just `go install` it:
 
 ```bash
-go install -mod=mod github.com/onsi/ginkgo/v2/ginkgo
+go install github.com/onsi/ginkgo/v2/ginkgo
 go get github.com/onsi/gomega/...
 ```
 
 This fetches Ginkgo and installs the `ginkgo` executable under `$GOBIN` - you'll want that on your `$PATH`.  It also fetches the core Gomega matcher library and its set of supporting libraries.  Note that the current supported major version of Ginkgo is `v2`.
 
 You should now be able to run `ginkgo version` at the command line and see the Ginkgo CLI emit a version number.
+
+**Note** you _must_ make sure the version of the `ginkgo` cli you install is the same as the version of Ginkgo in your `go.mod` file.
+
+### Support Policy
+
+Ginkgo adheres to semantic versioning - the intent is for there to be no breaking changes along the `2.m.p` line with new functionality landing as minor releases and bug-fixes landing as patch releases (fixes are never back-ported).  We work hard to maintain this policy however exceptions (while rare and typically minor) are possible, especially for brand new/emerging features.
+
+The current version of Ginkgo is guaranteed to be compatible with the currently supported versions of Go that are noted by the Go release policy i.e. N and N-1 major versions.
 
 ### Your First Ginkgo Suite
 
@@ -252,6 +260,36 @@ var _ = Describe("Books", func() {
 ```
 
 As you can see, the description documents the intent of the spec while the closure includes assertions about our code's behavior.
+
+We can add multiple specs to a `Describe` container:
+
+```go
+var _ = Describe("Books", func() {
+  It("can extract the author's last name", func() {
+    book = &books.Book{
+      Title: "Les Miserables",
+      Author: "Victor Hugo",
+      Pages: 2783,
+    }
+
+    Expect(book.AuthorLastName()).To(Equal("Hugo"))
+  })
+
+  It("can fetch a summary of the book from the library service", func(ctx SpecContext) {
+    book = &books.Book{
+      Title: "Les Miserables",
+      Author: "Victor Hugo",
+      Pages: 2783,
+    }
+
+    summary, err := library.FetchSummary(ctx, book)
+    Expect(err).NotTo(HaveOccurred())
+    Expect(summary).To(ContainSubstring("Jean Valjean"))
+  }, SpecTimeout(time.Second))
+})
+```
+
+Our new spec connects with a library service to fetch a summary of the book and asserts that the request succeeds with a meaningful response.  This example previews a few advanced concepts that you'll learn about later in these docs: Ginkgo supports [decorators](#mental-model-spec-decorators) like [SpecTimeout](#the-spectimeout-and-nodetimeout-decorators) to annotate and modify the behavior of specs; and Ginkgo allows you to test potentially long-running code by writing (interruptible)[#spec-timeouts-and-interruptible-nodes] specs that accept a `SpecContext` or `context.Context`.  Now, if more than a second elapses, _or_ an interrupt signal is received, Ginkgo will signal `library.FetchSummary` to clean up by cancelling `ctx`.
 
 Ginkgo provides an alias for `It` called `Specify`.  `Specify` is functionally identical to `It` but can help your specs read more naturally.
 
@@ -798,7 +836,7 @@ When Ginkgo runs these specs it will _first_ run the `BeforeEach` setup closures
 
 Abstractly, `JustBeforeEach` allows you to decouple **creation** from **configuration**.  Creation occurs in the `JustBeforeEach` using configuration specified and modified by a chain of `BeforeEach`s.
 
-As with `BeforeEach` you can have multiple `JustBeforeEach` nodes at different levels of container nesting.  Ginkgo will first run all the `BeforeEach` closures from the outside in, then all the `JustBeforeEach` closures from the outside in.  While powerful and flexible overuse of `JustBeforeEach` (and nest `JustBeforeEach`es in particular!) can lead to confusing suites to be sure to use `JustBeforeEach` judiciously!d
+As with `BeforeEach` you can have multiple `JustBeforeEach` nodes at different levels of container nesting.  Ginkgo will first run all the `BeforeEach` closures from the outside in, then all the `JustBeforeEach` closures from the outside in.  While powerful and flexible overuse of `JustBeforeEach` (and nest `JustBeforeEach`es in particular!) can lead to confusing suites to be sure to use `JustBeforeEach` judiciously!
 
 ### Spec Cleanup: AfterEach and DeferCleanup
 
@@ -980,7 +1018,7 @@ As you can see, `DeferCleanup()` can be called inside any setup or subject nodes
 
 `DeferCleanup` has a few more tricks up its sleeve.
 
-As shown above `DeferCleanup` can be passed a function that takes no arguments and returns no value.  You can also pass a function that returns a single value.  `DeferCleanup` interprets this value as an error and fails the spec if the error is non-nil - a common go pattern.  This allows us to rewrite our example as:
+As shown above `DeferCleanup` can be passed a function that takes no arguments and returns no value.  You can also pass a function that returns values.  `DeferCleanup` ignores all these return value except for the last.  If the last return value is a non-nil error - a common go pattern - `DeferCleanup` will fail the spec.  This allows us to rewrite our example as:
 
 ```go
 Describe("Reporting book weight", func() {
@@ -1088,7 +1126,7 @@ var _ = AfterEach(func() {
 })
 ```
 
-Ginkgo will run our `BeforeSuite` closure at the beginning of the [run phase](Mental Model: How Ginkgo Traverses the Spec Hierarchy) - i.e. after the spec tree has been constructed but before any specs have run.  This closure will instantiate a new `*db.Runner` - this is hypothetical code that knows how to spin up an instance of a database - and ask the runner to `Start()` a database.
+Ginkgo will run our `BeforeSuite` closure at the beginning of the [run phase](#mental-model-how-ginkgo-traverses-the-spec-hierarchy) - i.e. after the spec tree has been constructed but before any specs have run.  This closure will instantiate a new `*db.Runner` - this is hypothetical code that knows how to spin up an instance of a database - and ask the runner to `Start()` a database.
 
 It will then instantiate a `*db.Client` and connect it to the database.  Since `dbRunner` and `dbClient` are closure variables defined at the top-level all specs in our suite will have access to them and can trust that they have been correctly initialized.
 
@@ -1131,7 +1169,7 @@ So far we've focused on how Ginkgo specs are constructed using nested nodes and 
 
 You typically use a matcher library, like [Gomega](https://github.com/onsi/gomega) to make assertions in your spec.  When a Gomega assertion fails, Gomega generates a failure message and passes it to Ginkgo to signal that the spec has failed.  It does this via Ginkgo's global `Fail` function.  Of course, you're allowed to call this function directly yourself:
 
-```
+```go
 It("can read books", func() {
   if book.Title == "Les Miserables" && user.Age <= 3 {
     Fail("User is too young for this book")
@@ -1169,7 +1207,7 @@ As outlined above, when a spec fails - say via a failed Gomega assertion - Ginkg
 
 But there are several contexts, particularly when running large complex integration suites, where additional debugging information is necessary to understand the root cause of a failed spec.  You'll typically only want to see this information if a spec has failed - and hide it if the spec succeeds.
 
-Ginkgo provides a globally available `io.Writer` called `GinkgoWriter` that solves for this usecase.  `GinkgoWriter` aggregates everything written to it while a spec is running and only emits to stdout if the test fails or is interrupted (via `^C`).
+Ginkgo provides a globally available `io.Writer` called `GinkgoWriter` that solves for this usecase.  `GinkgoWriter` aggregates everything written to it while a spec is running and only emits to stdout if the test fails.
 
 `GinkgoWriter` includes three convenience methods:
 
@@ -1181,8 +1219,9 @@ You can also attach additional `io.Writer`s for `GinkgoWriter` to tee to via `Gi
 
 Finally - when running in verbose mode via `ginkgo -v` anything written to `GinkgoWriter` will be immediately streamed to stdout.  This can help shorten the feedback loop when debugging a complex spec.
 
-### Documenting Complex Specs: By
+If [logr](https://github.com/go-logr/logr) is used for logging in a project the globally available `GinkgoLogr` provides a logger implementation. Any logging on `GinkgoLogr` is forwarded to `GinkgoWriter`.
 
+### Documenting Complex Specs: By
 As a rule, you should try to keep your subject and setup closures short and to the point.  Sometimes this is not possible, particularly when testing complex workflows in integration-style tests.  In these cases your test blocks begin to hide a narrative that is hard to glean by looking at code alone.  Ginkgo provides `By` to help in these situations.  Here's an example:
 
 ```go
@@ -1221,16 +1260,20 @@ var _ = Describe("Browsing the library", func() {
 })
 ```
 
-The string passed to `By` is emitted via the [`GinkgoWriter`](#logging-output).  If a test succeeds you won't see any output beyond Ginkgo's green dot.  If a test fails, however, you will see each step printed out up to the step immediately preceding the failure.  Running with `ginkgo -v` always emits all steps.
+The string passed to `By` is attached to the spec and can be displayed by Ginkgo when needed.  If a test succeeds you won't see any output beyond Ginkgo's green dot.  If a test fails, however, you will see each step printed out up to the step immediately preceding the failure.  Running with `ginkgo -v` always emits all steps.
 
-`By` takes an optional function of type `func()`.  When passed such a function `By` will immediately call the function.  This allows you to organize your `It`s into groups of steps but is purely optional.  
+`By` takes an optional function of type `func()`.  When passed such a function `By` will immediately call the function.  This allows you to organize your `It`s into groups of steps.  
 
-We haven't discussed [Report Entries](#attaching-data-to-reports) yet but we'll also mention that `By` also adds a `ReportEntry` to the running spec.  This ensures that the steps outlined in `By` appear in the structure JSON and JUnit reports that Ginkgo can generate.  If passed a function `By` will measure the runtime of the function and attach the resulting duration to the report as well.
+`By` doesn't affect the structure of your specs - it's primarily syntactic sugar to help you document long and complex specs.  Ginkgo has additional mechanisms to break specs up into more granular subunits with guaranteed ordering - we'll discuss [Ordered containers](#ordered-containers) in detail later.
 
-`By` doesn't affect the structure of your specs - it's simply syntactic sugar to help you document long and complex specs.  Ginkgo has additional mechanisms to break specs up into more granular subunits with guaranteed ordering - we'll discuss [Ordered containers](#ordered-containers) in detail later.
+### Mental Model: Spec Timelines
+Several events can occur during the lifecycle of a Ginkgo spec.  You've seen a few of these already: various setup and subject nodes start and end; data is written to the `GinkgoWriter`; `By` annotations are generated; failures occur.  And there are several more that you'll see introduced later in these docs (e.g. [`ReportEntries`](#attaching-data-to-reports) and [Progess Reports](#getting-visibility-into-long-running-specs) are attached to specs; [flaky specs](#repeating-spec-runs-and-managing-flaky-specs) might be retried).
+
+By default, when a spec passes Ginkgo does not emit any of this information.  When a failure occurs, however, Ginkgo emits a **timeline** view of the spec.  This includes all the events and `GinkgoWriter` output associated with a spec in ther order they were generated and provides the context needed to debug the spec and understand the nature and context of the failure.
+
+You can view the timeline for all specs (whether passed or failed) by running `ginkgo -v` or `ginkgo -vv`.
 
 ### Table Specs
-
 We'll round out this chapter on [Writing Specs](#writing-specs) with one last topic.  Ginkgo provides an expressive DSL for writing table driven specs.  This DSL is a simple wrapper around concepts you've already met - container nodes like `Describe` and subject nodes like `It`.
 
 Let's write a table spec to describe the Author name functions we tested earlier:
@@ -1239,7 +1282,7 @@ Let's write a table spec to describe the Author name functions we tested earlier
 DescribeTable("Extracting the author's first and last name",
   func(author string, isValid bool, firstName string, lastName string) {
     book := &books.Book{
-      Title: "My Book"
+      Title: "My Book",
       Author: author,
       Pages: 10,
     }
@@ -1254,7 +1297,7 @@ DescribeTable("Extracting the author's first and last name",
 )
 ```
 
-`DescribeTable` takes a string description, a **spec closure** to run for each table entry, and a set of entries.  Each `Entry` takes a string description, followed by a list of parameters.  `DescribeTable` will generate a spec for each `Entry` and when the specs run, the `Entry` parameters will be passed to the spec closure and must match the types expected by the the spec closure.
+`DescribeTable` takes a string description, a **spec closure** to run for each table entry, and a set of entries.  Each `Entry` takes a string description, followed by a list of parameters.  `DescribeTable` will generate a spec for each `Entry` and when the specs run, the `Entry` parameters will be passed to the spec closure and must match the types expected by the spec closure.
 
 You'll be notified with a clear message at runtime if the parameter types don't match the spec closure signature.
 
@@ -1267,7 +1310,7 @@ To put it another way, the table test above is equivalent to:
 Describe("Extracting the author's first and last name", func() {
   It("When author has both names", func() {
     book := &books.Book{
-      Title: "My Book"
+      Title: "My Book",
       Author: "Victor Hugo",
       Pages: 10,
     }
@@ -1278,7 +1321,7 @@ Describe("Extracting the author's first and last name", func() {
 
   It("When author has one name", func() {
     book := &books.Book{
-      Title: "My Book"
+      Title: "My Book",
       Author: "Hugo",
       Pages: 10,
     }
@@ -1289,7 +1332,7 @@ Describe("Extracting the author's first and last name", func() {
 
   It("When author has a middle name", func() {
     book := &books.Book{
-      Title: "My Book"
+      Title: "My Book",
       Author: "Victor Marie Hugo",
       Pages: 10,
     }
@@ -1300,7 +1343,7 @@ Describe("Extracting the author's first and last name", func() {
 
   It("When author has no name", func() {
     book := &books.Book{
-      Title: "My Book"
+      Title: "My Book",
       Author: "",
       Pages: 10,
     }
@@ -1760,7 +1803,7 @@ Each of these processes then enters the Tree Construction Phase and all processe
 
 With few exceptions, the different test processes do not communicate with one another and for most spec suites you, the developer, do not need to worry about which spec is running on which process.  This makes it easy to parallelize your suites and get some major performance gains.
 
-There are, however, contexts where you _do_ need to be aware of which process a given spec is running on.  In particular, there are several patterns for building effective parallelizable integration suites that need this information. We will explore such patterns in much more detail in the [Patterns chapter](#patterns-for-parallel-integration specs) - feel free to jump straight there if you're interested!  For now we'll simply introduce some of the building blocks that Ginkgo provides for implementing these patterns.
+There are, however, contexts where you _do_ need to be aware of which process a given spec is running on.  In particular, there are several patterns for building effective parallelizable integration suites that need this information. We will explore such patterns in much more detail in the [Patterns chapter](#patterns-for-parallel-integration-specs) - feel free to jump straight there if you're interested!  For now we'll simply introduce some of the building blocks that Ginkgo provides for implementing these patterns.
 
 #### Discovering Which Parallel Process a Spec is Running On
 
@@ -1860,7 +1903,14 @@ func SynchronizedAfterSuite(
 
 Let's dig into `SynchronizedBeforeSuite` (henceforth `SBS`) first.  `SBS` runs at the beginning of the Run Phase - before any specs have run but after the spec tree has been parsed and constructed.
 
-`SBS` allows us to set up state in one process, and pass information to all the other processes.  Concretely, the `process1` function runs **only** on parallel process #1.  All other parallel processes pause and wait for `process1` to complete.  Upon completion `process1` returns arbitrary data as a `[]byte` slice and this data is then passed to all parallel processes which then invoke the `allProcesses` function in parallel, passing in the `[]byte` slice.
+`SBS` allows us to set up state in one process, and pass information to all the other processes.  Concretely, the `process1` function runs **only** on parallel process #1.  All other parallel processes pause and wait for `process1` to complete.  Upon completion `process1` returns arbitrary data as a `[]byte` slice and this data is then passed to all parallel processes which then invoke the `allProcesses` function in parallel, passing in the `[]byte` slice.  Note that the passing of a `[]byte` slice from `process1` to `allProcesses` is optional.  `SynchronizedBeforeSuite` also supports the following signature:
+
+```go
+func SynchronizedBeforeSuite(
+  process1 func(),
+  allProcesses func(),
+)
+```
 
 Similarly, `SynchronizedAfterSuite` is split into two functions.  The first, `allProcesses`, runs on all processes after they finish running specs.  The second, `process1`, only runs on process #1 - and only _after_ all other processes have finished and exited.
 
@@ -2129,7 +2179,7 @@ here we only set up the `libraryCLient` once before all the specs run, and then 
 
 `BeforeAll` and `AfterAll` nodes can only be introduced within an `Ordered` container.  `BeforeAll` and `AfterAll` can also be nested within containers that appear in `Ordered` containers - in such cases they will run before/after the specs in that nested container.
 
-As always, you can also use `DeferCleanup`.  Since `DeferCleanupe` is context aware, it will detect when it is called in a `BeforeAll` and behave like an `AfterAll` at the same nesting level.  The following is equivalent to the example above:
+As always, you can also use `DeferCleanup`.  Since `DeferCleanup` is context aware, it will detect when it is called in a `BeforeAll` and behave like an `AfterAll` at the same nesting level.  The following is equivalent to the example above:
 
 ```go
 BeforeAll(func() {
@@ -2322,7 +2372,7 @@ You can unfocus _all_ specs in a suite by running `ginkgo unfocus`.  This simply
 #### Spec Labels
 `Pending`, `Skip`, and `Focus` provide ad-hoc mechanisms for filtering suites.  For particularly large and complex suites, however, you may need a more structured mechanism for organizing and filtering specs.  For such usecases, Ginkgo provides labels.
 
-Labels are simply textual tags that can be attached to Ginkgo container and setup nodes via the `Label` decorator.  Here are the ways you can attach labels to a node:
+Labels are simply textual tags that can be attached to Ginkgo container and subject nodes via the `Label` decorator.  Here are the ways you can attach labels to a node:
 
 ```go
 It("is labelled", Label("first label", "second label"), func() { ... })
@@ -2480,7 +2530,21 @@ One quick note on `--repeat`: when you invoke `ginkgo --repeat=N` Ginkgo will ru
 
 Both `--until-it-fails` and `--repeat` help you identify flaky specs early.  Doing so will help you debug flaky specs while the context that introduced them is fresh.
 
-However.  There are times when the cost of preventing and/or debugging flaky specs simply is simply too high and specs simply need to be retried.  While this should never be the primary way of dealing with flaky specs, Ginkgo is pragmatic about this reality and provides a mechanism for retrying specs.
+A more granular approach to repeating specs is by decorating individual subject or container nodes with the MustPassRepeatedly(N) decorator:
+
+```go
+Describe("Storing books", func() {
+  It("can save books to the central library", MustPassRepeatedly(3), func() {
+    // this spec has been marked and will be retried up to 3 times
+  })
+
+  It("can save books locally", func() {
+    // this spec has not been marked and will not be retired
+  })
+})
+```
+
+However,  There are times when the cost of preventing and/or debugging flaky specs simply is simply too high and specs simply need to be retried.  While this should never be the primary way of dealing with flaky specs, Ginkgo is pragmatic about this reality and provides a mechanism for retrying specs.
 
 You can retry all specs in a suite via:
 
@@ -2490,7 +2554,7 @@ ginkgo --flake-attempts=N
 
 Now, when a spec fails Ginkgo will not automatically mark the suite as failed.  Instead it will attempt to rerun the spec up to `N` times.  If the spec succeeds during a retry, Ginkgo moves on and marks the suite as successful but reports that the spec needed to be retried.
 
-You can take a more granular approach by decorating individual subject nodes or container nodes as potentially flaky with the `FlakeAttempts(N)` decorator:
+A more granular approach is also provided for this functionality with the use of the `FlakeAttempts(N)` decorator:
 
 ```go
 Describe("Storing books", func() {
@@ -2508,13 +2572,458 @@ Ginkgo's retry behavior generally works as you'd expect with most specs, however
 
 Stepping back - it bears repeating: you should use `FlakeAttempts` judiciously.  The best approach to managing flaky spec suites is to debug flakes early and resolve them.  More often than not they are telling you something important about your architecture.  In a world of competing priorities and finite resources, however, `FlakeAttempts` provides a means to explicitly accept the technical debt of flaky specs and move on.
 
+### Getting Visibility Into Long-Running Specs
+Ginkgo is often used to build large, complex, integration suites and it is a common - if painful - experience for these suites to run slowly.  Ginkgo provides numerous mechanisms that enable developers to get visibility into what part of a suite is running and where, precisely, a spec may be lagging or hanging.
+
+Ginkgo can provide a **Progress Report** of what is currently running in response to the `SIGINFO` and `SIGUSR1` signals.  The Progress Report includes information about which node is currently running and the exact line of code that it is currently executing, along with any relevant goroutines that were launched by the spec.  The report also includes the 10 most recent lines written to the `GinkgoWriter`.  A developer waiting for a stuck spec can get this information immediately by sending either the `SIGINFO` or `SIGUSR1` signal (on MacOS/BSD systems, `SIGINFO` can be sent via `^T` - making it especially convenient; if you're on linux you'll need to send `SIGUSR1` to the actual test process spanwed by `ginkgo` - not the `ginkgo` cli process itself).
+
+These Progress Reports can also show you a preview of the running source code, but only if Ginkgo can find your source files.  If need be you can tell Ginkgo where to look for source files by specifying `--source-root`.
+
+Finally - you can instruct Ginkgo to provide these Progress Reports automatically whenever a node takes too long to complete.  You do this by passing the `--poll-progress-after=INTERVAL` flag to specify how long Ginkgo should wait before emitting a progress report.  Once this interval is passed Ginkgo can periodically emit Progress Reports - the interval between these reports is controlled via the `--poll-progress-interval=INTERVAL` flag.  By default `--poll-progress-after` is set to `0` and so Ginkgo does not emit Progress Reports.  
+
+You can override the global setting of `poll-progess-after` and `poll-progress-interval` on a per-node basis by using the `PollProgressAfter(INTERVAL)` and `PollProgressInterval(INTERVAL)` decorators.  A value of `0` will explicitly turn off Progress Reports for a given node regardless of the global setting.
+
+All Progress Reports generated by Ginkgo - whether interactively via `SIGINFO/SIGUSR1` or automatically via the `PollProgressAfter` configuration - also appear in Ginkgo's [machine-readable reports](#generating-machine-readable-reports).
+
+In addition to these formal Progress Reports, Ginkgo tracks whenever a node begins and ends.  These node `> Enter` and `< Exit` events are usually only logged in the spec's timeline when running with `-vv`, however you can turn them on for other verbosity modes using the `--show-node-events` flag.
+
+### Spec Timeouts and Interruptible Nodes
+
+Sometimes specs get stuck.  Perhaps a network call is running slowly; or a newly introduced bug has caused an asynchronous process the test is relying on to hang.  It's important, in such cases, to be able to set a deadline for a given spec or node and require the spec/node to complete before the deadline has elapsed.
+
+Ginkgo supports this through a collection of timeout-related decorators and the notion of **Interruptible Nodes**.
+
+#### Interruptible Nodes and SpecContext
+
+We've seen [how Ginkgo handles failures](#mental-model-how-ginkgo-handles-failure) when an explicit (or implicit, if using a matcher library) call to `Fail` takes place: `Fail` raises a panic to indicate a failure and immediately exit the current node.  Such failures emanate from _within_ a node's running goroutines.
+
+However, in the context of a timeout the cause of failure comes from _outside_ a node's running goroutine.  Once a deadline has passed Ginkgo can mark a spec as failed, but also needs a mechanism to notify the current node's running goroutine that it is timed to stop trying and exit.  Ginkgo supports this through the notion of an Interruptible Node.
+
+A node is considered interruptible if it has a callback that takes either a `SpecContext` or `context.Context` object:
+
+```go
+It("can save books", func(ctx SpecContext) {
+      book := &books.Book{
+        Title:  "Les Miserables",
+        Author: "Victor Hugo",
+        Pages:  2783,
+      }
+
+      Expect(libraryClient.SaveBook(ctx, book)).To(Succeed())
+      Expect(libraryClient.ListBooks(ctx)).To(ContainElement(book))
+})
+```
+
+when such a node is detected Ginkgo will automatically supply a `SpecContext` object.  This `SpecContext` object satisfies the `context.Context` interface and can be used anywhere a `context.Context` object is used.  When a spec times out or is interupted by the user (see below) Ginkgo will cancel the `SpecContext` to signal to the spec that it is time to exit. In the case above, it is assumed that `libraryClient` knows how to return once `ctx` is cancelled.
+
+Only setup and subjects nodes can be interruptible.  Container nodes cannot be interrupted.
+
+As a more explicit example, here's a (contrived) example to illustrate a timeout in action:
+
+```go
+It("likes to sleep in", func(ctx context.Context) {
+  select {
+  case <-ctx.Done():
+    return
+  case <-time.After(time.Hour)
+  }
+}, NodeTimeout(time.Second))
+```
+
+rather than hang for an hour, this spec will exit (and be marked as failed due to a timeout), soon after the one second NodeTimeout deadline elapses.  When the deadline elapses Ginkgo takes a [Progress Report](#getting-visibility-into-long-running-specs) snapshot to document where, exactly, the goroutine was stuck when the timeout occurred.  Because it is important to take the snapshot just before the context is cancelled, Ginkgo manages the timing of the cancellation directly and does not rely on a `context.WithDeadline()`-flavored context.  As a result calling `ctx.Deadline()` will not return the deadline of the node in question - however you can trust that `ctx.Done()` will be closed on time.
+
+Note that you are allowed to pass in either `SpecContext` or the more canonical `context.Context` as shown in this example.  The `SpecContext` object has a few additional methods attached to it and serves as an extension point for third-party libraries (including Gomega).  You are free to wrap `SpecContext` however you wish (e.g. via `context.WithValue(ctx, "key", "value")`) - Ginkgo will continue to cancel the resulting context at the correct time and third-party libraries will still have access to the full-blown `SpecContext` object as it is stored as a value within the context with the `"GINKGO_SPEC_CONTEXT"` key.
+
+#### The SpecTimeout and NodeTimeout Decorators
+
+We saw a quick preview of the `NodeTimeout` decorator above.  This applies a timeout deadline to a single node and can be applied to any interruptible node.  Once the `NodeTimeout` elapses, Ginkgo will cancel the interruptible node's context.
+
+`SpecTimeout` is similar to `NodeTimeout` but can only decorate `It` nodes and acts as a deadline for the lifecycle of the spec.  That is, all nodes associated with the spec need to complete before `SpecTimeout` expires.  Note that individual nodes within the spec can also have a `NodeTimeout` - however that timeout can only ever be more stringent than the deadline implied by `SpecTimeout`.  Here's a simple example:
+
+```go
+Describe("interacting with the library", func() {
+  BeforeEach(func(ctx SpecContext) {
+      libraryClient = library.NewClient()
+      Expect(libraryClient.Connect(ctx)).To(Succeed())
+  }, NodeTimeout(time.Millisecond * 500))
+
+  It("can save books", func(ctx SpecContext) {
+        book := &books.Book{
+          Title:  "Les Miserables",
+          Author: "Victor Hugo",
+          Pages:  2783,
+        }
+
+        Expect(libraryClient.SaveBook(ctx, book)).To(Succeed())
+        Expect(libraryClient.ListBooks(ctx)).To(ContainElement(book))
+  }, SpecTimeout(time.Second*2))
+
+  AfterEach(func(ctx SpecContext) {
+      Expect(libraryClient.Cleanup(ctx, "books")).To(Succeed())
+  }, NodeTimeout(time.Second))
+})
+```
+
+here the total runtime of `BeforeEach`, `It`, and `AfterEach` must be less than the `SpecTimeout` of 2 seconds.  In addition, the `BeforeEach` callback must exit within 500ms and the `AfterEach` after 1 second.
+
+When a `SpecTimeout` expires the current node is interrupted (i.e. it's context is cancelled) and Ginkgo proceeds to run any associated clean up nodes (i.e. any `AfterEach`, `AfterAll`, and `DeferCleanup` nodes) subject to their own `NodeTimeout`s.  This is because cleanup is considered an essential part of the spec lifecycle and must not be skipped if possible.  Thus the `SpecTimeout` is not a strict guarantee on the runtime of a spec but rather a threshold at which the spec will be considered failed.
+
+Currently, `SpecTimeout` and `NodeTimeout` cannot be applied to container nodes.
+
+#### Mental Model: The Life-cycle of Interruptions and the GracePeriod Decorator
+
+Interruptible nodes and the `SpecTimeout`/`NodeTimeout` decorators allow you to enforce deadlines at a granular per-spec/per-node level.  But what happens when a node fails to return after its `SpecContext` is cancelled.  What happens if it's _really_ stuck?
+
+When a node times out Ginkgo cancels its `SpecContext` and then waits for it to exit for a period of time called the **Grace Period**.  If the node exits within the Grace Period Ginkgo will continue with the relevant portions of the spec (specifically, Ginkgo will behave as if a failure occurred and skip any subsequent setup or subject nodes and, instead, simply run through the cleanup nodes).  If, however, the node does not exit within the Grace Period, Ginkgo will allow the node to _leak_ and proceed with the relevant portion of the spec.
+
+A leaked node continues to run in the background - and this can, potentially, be a source of confusion for future specs as a leaked node can interact with Ginkgo's global callbacks (e.g. `Fail`, or `AddReportEntry`) and pollute the currently running spec.  For this reason it's important to write specs that respond to cancelled contexts and exit as soon as possible.  Nonetheless, Ginkgo takes the opinion that it is better to potentially leak a node and continue with the suite than to allow the suite to hang forever.  When a node is leaked due to a timeout and elapsed Grace Period Ginkgo will emit a message stating that the node has leaked along with a [Progress Report](#getting-visibility-into-long-running-specs) that shows the currently running code in the leaked goroutine.
+
+The Grace Period can be configured on a per-node basis using the `GracePeriod` decorator (which can be applied to any interruptible node) and/or globally with the `--grace-period=<DURATION>` cli flag.
+
+One final, somewhat complex, note on timeouts and the Grace Period.  As mentioned above (and as you'll see below) when a `SpecTimeout` or user-initiated interrupt occurs Ginkgo will interrupt the current node by cancelling its context, and then run any relevant cleanup nodes.  These cleanup nodes **must** run to ensure specs clean up after themselves, however they are now running in a setting where the spec is out of time and needs to wind down as soon as possible.  To facilitate this Ginkgo applies a timeout to each of these remaining nodes as follows:
+
+- If the remaining node is interruptible and has a `NodeTimeout`, Ginkgo uses that `NodeTimeout` to set a deadline for the node.  If the deadline expires then a Grace Period applies (either the node's `GracePeriod` or the global `--grace-period`) before Ginkgo leaks the node and moves on.
+- If the remaining node is interruptible and **does not** have a `NodeTimeout`, Ginkgo uses the Grace Period to set a deadline for the node.  If the deadline expires then a second Grace Period applies before Ginkgo leaks the node and moves on.
+- If the remaining node is **not** interruptible, Ginkgo will give the node a single Grace Period to complete and exit.  In this case since it cannot be interrupted Ginkgo will simply leak the node after one Grace Period.
+
+#### Using SpecContext with Gomega's Eventually
+
+Gomega provides `Eventually` to allow you to poll an object or function repeatedly until a Gomega matcher is satisfied.  `Eventually` integrates cleanly with interruptible nodes by accepting a `SpecContext`/`context.Context` parameter.  This allows you, for example, to enforce a single timeout across a set of polling assertions:
+
+```go
+Describe("interacting with the library", func() {
+  BeforeEach(func(ctx SpecContext) {
+      libraryClient = library.NewClient()
+      // we use eventually here to keep trying until we succeed (e.g. perhaps the server is still spinning up)
+      Eventually(func() error {
+        return libraryClient.Connect(ctx)
+      }).WithContext(ctx).Should(Succeed())
+  }, NodeTimeout(time.Millisecond * 500))
+
+  It("can save books", func(ctx SpecContext) {
+        numBooks := libraryClient.CountBooks(ctx)
+
+        book := &books.Book{
+          Title:  "Les Miserables",
+          Author: "Victor Hugo",
+          Pages:  2783,
+        }
+
+        Expect(libraryClient.SaveBook(ctx, book)).To(Succeed())
+
+        // perhaps the library is a distributed system that only converges eventually
+        Eventually(func() ([]*books.Book, error) {
+          return libraryClient.ListBooksByAuthor(ctx, "Victor Hugo")
+        }).WithContext(ctx).Should(ContainElement(book))
+        Eventually(func() int {
+          return libraryClient.CountBooks(ctx)
+        }).WithContext(ctx).Should(Equal(numBooks + 1))
+  }, SpecTimeout(time.Second*2))
+
+  AfterEach(func(ctx SpecContext) {
+      Expect(libraryClient.Cleanup(ctx, "books")).To(Succeed())
+
+      // let's make sure we eventually clean up
+      Eventually(func() int {
+        return libraryClient.CountBooks(ctx)
+      }).WithContext(ctx).Should(Equal(0))
+  }, NodeTimeout(time.Second))
+})
+```
+
+now, if any of the node contexts are cancelled (either due to a timeout or an interruption) `Eventually` will exit immediately with an appropriate failure.  We've written out this example in full to show how the context is passed _both_ to `Eventually` via `.WithContext(ctx)` _and_ to the various client methods that take a context.  For example:
+
+```go
+Eventually(func() ([]*books.Book, error) {
+  return libraryClient.ListBooksByAuthor(ctx, "Victor Hugo")
+}).WithContext(ctx).Should(ContainElement(book))
+```  
+
+This is important as the cancellation of the context needs to cause `ListBooksByAuthor` to exit _and_ `Eventually` to stop retrying.  This is a common-enough pattern that Gomega provides some short hand.  If you pass `Eventually` a function that takes a `context.Context` as its first parameter, Gomega will pass in the context attached via `.WithContext()` automatically.  This allows us to turn statements like this:
+
+```go
+Eventually(func() error {
+  return libraryClient.Connect(ctx)
+}).WithContext(ctx).Should(Succeed())
+```
+
+into:
+
+```go
+Eventually(libraryClient.Connect).WithContext(ctx).Should(Succeed())
+```
+
+This also works well with Gomega's `.WithArguments(...)` method which allows us to turn statements like this:
+```go
+Eventually(func() ([]*books.Book, error) {
+  return libraryClient.ListBooksByAuthor(ctx, "Victor Hugo")
+}).WithContext(ctx).Should(ContainElement(book))
+```  
+
+into:
+```go
+Eventually(libraryClient.ListBooksByAuthor).WithContext(ctx).WithArguments("Victor Hugo").Should(ContainElement(book))
+```  
+
+all told this allows us to rewrite our example as:
+
+```go
+Describe("interacting with the library", func() {
+  BeforeEach(func(ctx SpecContext) {
+      libraryClient = library.NewClient()
+      // we use eventually here to keep trying until we succeed (e.g. perhaps the server is still spinning up)
+      Eventually(libraryClient.Connect).WithContext(ctx).Should(Succeed())
+  }, NodeTimeout(time.Millisecond * 500))
+
+  It("can save books", func(ctx SpecContext) {
+        numBooks := libraryClient.CountBooks(ctx)
+
+        book := &books.Book{
+          Title:  "Les Miserables",
+          Author: "Victor Hugo",
+          Pages:  2783,
+        }
+
+        Expect(libraryClient.SaveBook(ctx, book)).To(Succeed())
+
+        // perhaps the library is a distributed system that only converges eventually
+        Eventually(libraryClient.ListBooksByAuthor).WithContext(ctx).WithArguments("Victor Hugo").Should(ContainElement(book))
+        Eventually(libraryClient.CountBooks).WithContext(ctx).Should(Equal(numBooks + 1))
+  }, SpecTimeout(time.Second*2))
+
+  AfterEach(func(ctx SpecContext) {
+      Expect(libraryClient.Cleanup(ctx, "books")).To(Succeed())
+      // let's make sure we eventually clean up
+      Eventually(libraryClient.CountBooks).WithContext(ctx).Should(Equal(0))
+  }, NodeTimeout(time.Second))
+})
+```
+
+which is much cleaner!
+
+Lastly, there's another reason you'll want to pass the `SpecContext` to `Eventually`.  Gomega uses the extension point provided by `SpecContext` to provide additional information whenever a [Progress Report](#getting-visibility-into-long-running-specs) is requested.  This allows you to get deeper visibility into the state of a running `Eventually` simply by requesting a Progress Report (either by sending a `SIGINFO`/`SIGUSR1` or by using the `PollProgressAfter` decorator).  For example, imagine this assertion:
+
+```go
+Eventually(libraryClient.ListBooksByAuthor).WithContext(ctx).WithArguments("Victor Hugo").Should(ContainElement(book))
+```
+
+is stuck waiting.  A generated Progress Report would show the current state of the `Eventually` assertion which would include the failure message associated with the `ContainElement` matcher:
+
+```
+Expected
+    <[]*Book | len:3, cap:3>: [
+        "The Hunchback of Notre Dame",
+        "Notre Dame de Paris",
+        "L'Homme Qui Rit",
+    ]
+to contain element matching
+    <*Book>: Les Miserables
+```
+
+#### Interruptible Node Function Signatures: A Quick Reference
+
+Most Ginkgo nodes can be made interruptible.  **Setup** and **Subject** nodes typically take a simple `func() {}` but can be made interruptible like so:
+
+```go
+BeforeEach(func(ctx SpecContext) {
+  ...
+})
+
+It("is interruptible", func (ctx context.Context) {
+  ...
+})
+
+AfterEach(func(ctx context.Context) {
+  ...
+})
+```
+
+Note that both `context.Context` and `SpecContext` are valid.
+
+In addition, the **Suite Setup** nodes can be made interruptible.  In the case of `BeforeSuite`, `AfterSuite`, and `SynchronizedAfterSuite` this is similar to the setup and subject nodes above:
+
+```go
+BeforeSuite(func(ctx SpecContext) {
+  ...
+})
+
+AfterSuite(func(ctx SpecContext) {
+  ...
+})
+
+SynchronizedAfterSuite(func(ctx SpecContext) {
+  ...
+}, func(ctx context.Context) {
+  ...
+})
+```
+
+Note that the `SynchronizedAfterSuite` takes two functions - the first runs on all processes, the second only on process 1.  Each of these can be optionally passed a context, making them independently interruptible (or not, if no context is passed in).
+
+`SynchronizedBeforeSuite` also support independently interruptible functions.  [Recall](#parallel-suite-setup-and-cleanup-synchronizedbeforesuite-and-synchronizedaftersuite) that the two callbacks associated with `SynchronizedBeforeSuite` can optionally return and receive a `[]byte` array to facilitate communication between the primary process and the other parallel processes.  This optionality expands the set of possible interruptible signatures.  For example:
+
+```go
+SynchronizedBeforeSuite(func(ctx SpecContext) {
+  ...
+}, func(ctx SpecContext) {
+  ...
+})
+
+SynchronizedBeforeSuite(func(ctx SpecContext) []byte {
+  return []byte{"data"}
+}, func(ctx SpecContext, b []byte) {
+  ...
+})
+```
+are all valid interruptible signatures.  Of course you can specify `context.Context` instead and can mix-and-match interruptibility between the two functions.
+
+Currently the **Reporting** nodes (`ReportAfterEach`, `RepoertAfterSuite`, and `ReportBeforeEach`) cannot be made interruptible and do not accept callbacks that receive a `SpecContext`.  This may change in a future release of Ginkgo (in a backward compatible way).
+
+As for **Container** nodes, since these run during the Tree Construction Phase they cannot be made interruptible and so do not accept functions that expect a context.  And since the `By` annotation is simply syntactic sugar enabling more detailed spec documentation, any callbacks passed to `By` cannot be independently marked as interruptible (you should, instead, use the `context` passed into the node that you're calling `By` from).
+
+Finally, there *are* two other Ginkgo constructs that can be made interruptible and their flexibility warrants some specific coverage in this section: `DeferCleanup` and `DescribeTable`.
+
+Recall that [`DeferCleanup`](#cleaning-up-our-cleanup-code-defercleanup) effectively generates a dynamic `After*` node for your spec.  It's important to note that the lifecycle of this generated node is different from the lifecycle of the node in which `DeferCleanup` was called.  Consider, our earlier example:
+
+```go
+Describe("interacting with the library", func() {
+  BeforeEach(func(ctx SpecContext) {
+      libraryClient = library.NewClient()
+      Expect(libraryClient.Connect(ctx)).To(Succeed())
+  }, NodeTimeout(time.Millisecond * 500))
+
+  It("can save books", func(ctx SpecContext) {
+    ...
+  }, SpecTimeout(time.Second*2))
+
+  AfterEach(func(ctx SpecContext) {
+      Expect(libraryClient.Cleanup(ctx, "books")).To(Succeed())
+  }, NodeTimeout(time.Second))
+})
+```
+
+We can tidy things up by replacing the `AfterEach` with a `DeferCleanup` in the `BeforeEach`:
+
+```go
+/* === INVALID === */
+Describe("interacting with the library", func() {
+  BeforeEach(func(ctx SpecContext) {
+      libraryClient = library.NewClient()
+      Expect(libraryClient.Connect(ctx)).To(Succeed())
+      DeferCleanup(func() {
+        libraryClient.Cleanup(ctx, "books")
+      })
+  }, NodeTimeout(time.Millisecond * 500))
+
+  It("can save books", func(ctx SpecContext) {
+    ...
+  }, SpecTimeout(time.Second*2))
+})
+```
+
+however we've committed a subtle error.  We've captured the `BeforeEach` `SpecContext` and passed it in to the `DeferCleanup` function.  However the `DeferCleanup` function will only run _after_ the `BeforeEach` completes (and its `SpecContext` has been cancelled) - as a result `libraryClient.Cleanup` will always receive a cancelled context.
+
+Moreover, we want to preserve the fact that our `BeforeEach` has a 500ms timeout whereas our clean up code has a separate 1 second timeout.
+
+The correct way to write this is to make the `DeferCleanup` node interruptible and decorate it with its own `NodeTimeout`:
+
+```go
+Describe("interacting with the library", func() {
+  BeforeEach(func(ctx SpecContext) {
+      libraryClient = library.NewClient()
+      Expect(libraryClient.Connect(ctx)).To(Succeed())
+      DeferCleanup(func(ctx SpecContext) {
+        libraryClient.Cleanup(ctx, "books")
+      }, NodeTimeout(time.Second))
+  }, NodeTimeout(time.Millisecond * 500))
+
+  It("can save books", func(ctx SpecContext) {
+    ...
+  }, SpecTimeout(time.Second*2))
+})
+```
+
+(as before, we could have used `context.Context` instead of `SpecContext`).  This is looking better but we can do more.  Recall that `DeferCleanup` can take additional parameters at invocation to pass along to its function.  If the first argument that its function expects is a context, `DeferCleanup` will automatically treat the function as interruptible and provide it with a `SpecContext`.  This allows us to write:
+
+```go
+Describe("interacting with the library", func() {
+  BeforeEach(func(ctx SpecContext) {
+      libraryClient = library.NewClient()
+      Expect(libraryClient.Connect(ctx)).To(Succeed())
+      DeferCleanup(libraryClient.Cleanup, "books", NodeTimeout(time.Second))
+  }, NodeTimeout(time.Millisecond * 500))
+
+  It("can save books", func(ctx SpecContext) {
+    ...
+  }, SpecTimeout(time.Second*2))
+})
+```
+
+As an aside, if you _don't_ want Ginkgo to inject `SpecContext` you can, instead, provide your own context.  Here, for example, we avoid making the `DeferCleanup` interruptible by passing in our own context:
+
+```go
+      DeferCleanup(libraryClient.Cleanup, "books", NodeTimeout(time.Second)) //interruptible
+      DeferCleanup(libraryClient.Cleanup, context.Background(), "books") //*not* interruptible
+```
+
+The heuristic here is simple: if the function passed to `DeferCleanup` takes a `context.Context` as its first argument and a context is passed in as the first parameter to `DeferCleanup` then the function is not interruptible and the passed-in context is used.  Otherwise the function is considered interruptible and a `SpecContext` is passed-in instead.  If, instead, the first argument to the function is specifically a `SpecContext` then the function is always considered interruptible regardless of what the subsequent parameters are.
+
+`DescribeTable` behaves similarly.  You can make the `It`s generated by your table interruptible by passing a `SpecContext` or `context.Context` as the first argument to the table function:
+
+```go
+DescribeTable("shelf counts", 
+  func(ctx SpecContext, shelf string, count int) { // or context.Context instead
+    Expect(libraryClient.Count(ctx, shelf)).To(Equal(count))
+  },
+  Entry("books on shelf A", "A", 17, NodeTimeout(time.Second)),
+  Entry("books on shelf B", "B", 20, NodeTimeout(time.Second)),
+  ...
+)
+```
+
+Note that the `NodeTimeout` decorators go on the individual entries.
+
+If you also want to specify a [custom entry description generator](#generating-entry-descriptions) you can pass in a function that takes the non-`SpecContext` parameters and returns `string`:
+
+
+```go
+DescribeTable("shelf counts", 
+  func(ctx SpecContext, shelf string, count int) { // or context.Context instead
+    Expect(libraryClient.Count(ctx, shelf)).To(Equal(count))
+  },
+  func(shelf string, _ int) string {
+    return fmt.Sprintf("books on shelf %s", shelf)
+  }
+  Entry("books on shelf A", "A", 17, NodeTimeout(time.Second)),
+  Entry("books on shelf B", "B", 20, NodeTimeout(time.Second)),
+  ...
+)
+```
+
+As with `DeferCleanup`, Ginkgo will detect if the entry parameter list provides a context.  Doing so will avoid treating the function as interruptible and use the provided context instead.  For example:
+
+```go
+DescribeTable("contrived context-value example", 
+  func(ctx context.Context, result string) { //but **NOT** SpecContext
+    Expect(libraryClient.Encabulate(ctx)).To(Equal(result))
+  },
+  Entry("with a generic context", context.Background(), "Nothin"),
+  Entry("with a context with a magical value", context.WithValue(context.Background(), "magic", "word"), "Geminio"),
+  ...
+)
+```
+
+#### SpecContext and Progress Reports
+
+`SpecContext` provides an extension point that enables consumers to attach additional information to Progress Reports that Ginkgo generates.  This is accomplished by calling `ctx.AttachProgressReporter(f)` where `f` has the signature `func() string`.  Once attached, the function will be called whenever a Progress Report needs to be generated (e.g. due to a user request via `SIGINFO`/`SIGUSR1` or via an interrupt or timeout).  `ctx.AttachProgressReporter` returns a detach function with signature `func()` that can be called to detach the attached progress reporter.  Because these progress reporters are attached to the passed-in `SpecContext` they only remain attached for the lifecycle of the context: i.e. the current node.
+
+While users of Ginkgo can provide their own custom progress reporters the intent behind this extension point is to allow deeper integration between Ginkgo and third-party libraries, specifically Gomega.  Whenever Gomega's `Eventually` is passed a `SpecContext` it automatically registers a progress reporter.  This reporter will provide the latest state of the `Eventually` matcher - enabling users to get insight into where and why an `Eventually` might be stuck simply by asking for a Progress Report.
+
 ### Interrupting, Aborting, and Timing Out Suites
 
-We've talked a lot about running specs.  Let's take moment to talk about stopping them.
+We've seen how nodes can be marked as interruptible and focused on how Ginkgo can apply deadlines to individual nodes and interrupt them when a timeout expires.  Ginkgo also provides a few, related, mechanisms for interrupting a _suite_ before all specs have naturally completed. 
 
-Ginkgo provides a few mechanisms for stopping a suite before all specs have naturally completed.  These mechanisms are especially useful when a spec gets stuck and hangs.
-
-First, you can signal to a suite that it must stop running by sending a `SIGINT` or `SIGTERM` signal to the running spec process (or just hit `^C`).
+First, you can signal to a suite that it must stop running by sending a `SIGINT` or `SIGTERM` signal to the running ginkgo process (or just hit `^C`).
 
 Second, you can also specify a timeout on a suite (or set of suites) via:
 
@@ -2526,19 +3035,29 @@ where `duration` is a parseable go duration string (the default is `1h` -- one h
 
 Finally, you can abort a suite from within the suite by calling `Abort(<reason>)`.  This will immediately end the suite and is the programmatic equivalent of sending an interrupt signal to the test process.
 
-All three mechanisms have same effects.  They:
+All three mechanisms have same effects.  If the currently running node is interruptible, then Ginkgo will:
 
-- Immediately interrupt the current spec.
-- Run any cleanup nodes (`AfterEach`, `JustAfterEach`, `AfterAll`, `DeferCleanup` code, etc.)
-- Emit as much information about the interrupted spec as possible.  This includes:
-  - anything written to the `GinkgoWriter`
-  - the location of the node that was running at the time of interrupt.
-  - (for timeout and signal interrupts) a full dump of all running goroutines.
-- Skip any subsequent specs.
-- Run any `AfterSuite` closures.
-- Exit, marking the suite as failed.
+- Emit a [Progress Report](#getting-visibility-into-long-running-specs) for the current spec as possible.
+- Interrupt the current node by cancelling its SpecContext...
+- ...then wait up to the Grace Period for the node to exit.  If it does not, then Ginkgo will leak the node and proceed.
+- Ginkgo will then run any clean-up and reporting nodes (`AfterEach`, `JustAfterEach`, `AfterAll`, `DeferCleanup`, `ReportAfterEach` code, etc.) for the current spec...
+- ...and skip any subsequent specs.
+- Ginkgo will then run any `AfterSuite` and `ReportAfterSuite` nodes.
+- And finally, it will exit, marking the suite as failed.
 
-In short, Ginkgo does its best to cleanup and emit as much information as possible about the suite before shutting down.  If, during cleanup, any cleanup node closures get stuck Ginkgo allows you to interrupt them via subsequent interrupt signals.  In the case of a timeout, Ginkgo sends these repeat interrupt signals itself to make sure the suite shuts down eventually.
+If the currently running node is **not** interruptible then Ginkgo will simply leak the node and proceed with the cleanup nodes.
+
+Once a suite is interrupted by one of these mechanisms any subsequent cleanup nodes that run will be subject to the following timeout behavior:
+
+- If the cleanup node is interruptible and has a `NodeTimeout`, Ginkgo uses that `NodeTimeout` to set a deadline for the node.  If the deadline expires then a Grace Period applies (either the node's `GracePeriod` or the global `--grace-period`) before Ginkgo leaks the node and moves on.
+- If the cleanup node is interruptible and **does not** have a `NodeTimeout`, Ginkgo uses the Grace Period to set a deadline for the node.  If the deadline expires then a second Grace Period applies before Ginkgo leaks the node and moves on.
+- If the cleanup node is **not** interruptible, Ginkgo will give the node a single Grace Period to complete and exit.  In this case since it cannot be interrupted Ginkgo will simply leak the node after one Grace Period.
+
+In short, Ginkgo does its best to cleanup and emit as much information as possible about the suite before shutting down... while also ensuring that the suite doesn't hang forever should a cleanup node get stuck.
+
+A single interrupt (e.g. `SIGINT`/`SIGTERM`) interrupts the current running node and proceeds to perform cleanup.  If you want to skip cleanup you can send a second interrupt - this will still run reporting nodes in an effort to ensure the generated reports are not corrupted.  If you want to skip the reporting nodes and bail immediately, send a third interrupt signal.
+
+If you want to get information about what is currently running in a suite _without_ interrupting it, check out the [Getting Visibility Into Long-Running Specs](#getting-visibility-into-long-running-specs) section above.
 
 ### Running Multiple Suites
 
@@ -2596,7 +3115,7 @@ As you can see, Ginkgo provides several CLI flags for controlling how specs are 
 The previous two chapters covered how Ginkgo specs are written and how Ginkgo specs run.  This chapter is all about output.  We'll cover how Ginkgo reports on spec suites and how Ginkgo can help you profile your spec suites.
 
 ### Controlling Ginkgo's Output
-Ginkgo emits a real-time report of the progress of your spec suite to the console while running your specs.  A green dot is emitted for each successful spec and a red `F`, along with failure information, is emitted for each unsuccessful spec.
+Ginkgo emits a real-time report of the progress of your spec suite to the console while running your specs.  A green dot is emitted for each successful spec and a red `F`, along with failure information and the spec's [timeline](#mental-model-spec-timelines), is emitted for each unsuccessful spec.
 
 There are several CLI flags that allow you to tweak this output:
 
@@ -2605,24 +3124,18 @@ Ginkgo has four verbosity settings: succinct (the default when running multiple 
 
 You can opt into succinct mode with `ginkgo --succinct`, verbose mode with `ginkgo -v` and very-verbose mode with `ginkgo -vv`.
 
-These settings control the amount of information emitted with each spec.  By default (i.e. succinct and normal) Ginkgo only emits detailed information about specs that fail.  That includes the location of the spec/failure and any captured `GinkgoWriter` content.
+These settings control the amount of information emitted with each spec.  By default (i.e. succinct and normal) Ginkgo only emits detailed information about specs that fail.  That includes the location of the spec/failure and a timeline that includes any captured `GinkgoWriter` content alongside a series of relevant spec events.
 
-The two verbose settings are most helpful when debugging spec suites.  They make Ginkgo emit detailed information for _every_ spec regardless of failure or success.  This includes anything written to the `GinkgoWriter` and the source code location of each spec.  When running in series in verbose or very-verbose mode Ginkgo will always immediately stream out this information in real-time while specs are running. A real-time stream isn't possible when running in parallel (the [streams would be interleaved](https://www.youtube.com/watch?v=jyaLZHiJJnE)); instead Ginkgo emits all this information about each spec right after it completes.
+The two verbose settings are most helpful when debugging spec suites.  They make Ginkgo emit the detailed timeline information for _every_ spec regardless of failure or success.  When running in series with `-v` or `-vv` mode Ginkgo will stream out the timeline in real-time while specs are running. A real-time stream isn't possible when running in parallel (the [streams would be interleaved](https://www.youtube.com/watch?v=jyaLZHiJJnE)); instead Ginkgo emits all this information about each spec right after it completes.
 
-When you [filter specs](#filtering-specs) using Ginkgo's various filtering mechanism Ginkgo usually emits a single cyan `S` for each skipped spec (the only exception is specs skipped with `Skip(<message>)` - Ginkgo emits the message for those specs.  You can circumvent this with `Skip("")`).  If you run with the very-verbose setting, however, Ginkgo will emit the description and location information of every skipped spec.  This can be useful if you need to debug your filter queries and can be paired with `--dry-run`.
+Very-verbose mode contains additional information over verbose mode.  In particular, `-vv` timelines indicate when individual nodes start and end and also include the full failure descriptions for _every_ failure encountered by the spec.  Verbose mode does not include the node start/end events (though this can be turned on with `--show-node-events`) and does not include detailed failure information for anything other than the first (primary) failure.  (Additional/subseuqent failures typically occur in clean-up nodes and are not as relevant as the primary failure that occurs in a subject or setup node).
 
-There are a couple more flags that are verbosity-related but can be controlled independently from the verbosity mode:
-
-First, you can tell Ginkgo to always emit the `GinkgoWriter` output of every spec with `--always-emit-ginkgo-writer`.  This will emit `GinkgoWriter` output for both failed _and_ passing specs, regardless of verbosity setting.
-
-Second, you can tell Ginkgo to emit progress of a spec as Ginkgo runs each of its node closures.  You do this with `ginkgo --progress -v` (or `-vv`).  `--progress` will emit a message to the `GinkgoWriter` just before a node starts running.  By running with `-v` or `-vv` you can then stream the output to the `GinkgoWriter` immediately.  `--progress` was initially introduced to help debug specs that are stuck/hanging.  It is not longer necessary as Ginkgo's behavior during an interrupt has matured and now generally has enough information to help you identify where a spec is stuck.
+When you [filter specs](#filtering-specs) using Ginkgo's various filtering mechanism Ginkgo usually emits a single cyan `S` for each skipped spec.  If you run with the very-verbose setting, however, Ginkgo will emit the description and location information of every skipped spec.  This can be useful if you need to debug your filter queries and can be paired with `--dry-run`.
 
 #### Other Settings
 Here are a grab bag of other settings:
 
 You can disable Ginkgo's color output by running `ginkgo --no-color`.
-
-By default, Ginkgo calls out specs that are running slowly if they exceed a certain threshold (default: 5 seconds).  This doesn't affect the status of the spec - it is still considered to have passed - but can give you an early warning that a slow spec has been introduced.  You can adjust this threshold with `ginkgo --slow-spec-threshold=<duration>`.
 
 By default, Ginkgo only emits full stack traces when a spec panics.  When a normal assertion failure occurs, Ginkgo simply emits the line at which the failure occurred.  You can, instead, have Ginkgo always emit the full stack trace by running `ginkgo --trace`.
 
@@ -2652,6 +3165,8 @@ The JUnit report is compatible with the JUnit specification, however Ginkgo spec
 
 Ginkgo also supports Teamcity reports with `ginkgo --teamcity-report=report.teamcity` though, again, the Teamcity spec makes it difficult to capture all the spec metadata.
 
+All the machine-readable reports include the full `-vv` version of the timeline for all specs.  This allows you to run Ginkgo in CI with the normal verbosity setting but still get all the detailed information in the machine-readable format.
+
 Of course, you can generate multiple formats simultaneously by passing in multiple flags:
 
 ```bash
@@ -2668,7 +3183,9 @@ When generating combined reports with: `ginkgo -r --json-report=report.json --ou
 
 When generating separate reports with: `ginkgo -r --json-report=report.json --output-dir=<dir> --keep-separate-reports` Ginkgo will create the `<dir>` directory (if necessary), and place a report file per package in the directory.  These reports will be namespaced with the name of the package: `PACKAGE_NAME_report.json`.
 
+
 ### Generating reports programmatically
+
 The JSON and JUnit reports described above can be easily generated from the command line - there's no need to make any changes to your suite.
 
 Ginkgo's reporting infrastructure does, however, provide several mechanisms for writing custom reporting code in your spec suites (or, in a supporting package).  We'll explore these mechanisms next.
@@ -2752,8 +3269,6 @@ ReportAfterEach(func(report SpecReport) {
 
 In addition, `ReportAfterEach` closures are called after a spec completes.  i.e. _after_ all `AfterEach` closures have run.  This gives them access to the complete final state of the spec.  Note that if a failure occurs in a `ReportAfterEach` your the spec will be marked as failed.  Subsequent `ReportAfterEach` closures will see the failed state, but not the closure in which the failure occurred.
 
-Also, `ReportAfterEach` closures **cannot** be interrupted.  This is to ensure the integrity of generated reports - so be careful what kind of code you put in there.  If you're making network requests make sure to wrap them in a timeout!
-
 `ReportAfterEach` is useful if you need to stream or emit up-to-date information about the suite as it runs. Ginkgo also provides `ReportBeforeEach` which is called before the test runs and receives a preliminary `types.SpecReport` - the state of this report will indicate whether the test will be skipped or is marked pending.
 
 You should be aware that when running in parallel, each parallel process will be running specs and their `ReportAfterEach`es.  This means that multiple `ReportAfterEach` blocks can be running concurrently on independent processes.  Given that, code like this won't work:
@@ -2762,7 +3277,7 @@ You should be aware that when running in parallel, each parallel process will be
 /* === INVALID === */
 var reportFile *os.File
 BeforeSuite(func() {
-  reportFile = os.Open("report.custom")
+  reportFile = os.Create("report.custom")
 })
 
 ReportAfterEach(func(report SpecReport) {
@@ -2776,7 +3291,7 @@ you'll end up with multiple processes writing to the same file and the output wi
 `ReportAfterSuite` nodes behave similarly to `AfterSuite` and can be placed at the top-level of your suite (typically in the suite bootstrap file).  `ReportAfterSuite` nodes take a closure that accepts a single [`Report`]((https://pkg.go.dev/github.com/onsi/ginkgo/v2/types#Report)) argument:
 
 ```go
-var _ = ReportAfterSuite(func(report Report) {
+var _ = ReportAfterSuite("custom report", func(report Report) {
   // process report
 })
 ```
@@ -2790,10 +3305,10 @@ Finally, and most importantly, when running in parallel `ReportAfterSuite` **onl
 So, we can rewrite our invalid `ReportAfterEach` example from above into a valid `ReportAfterSuite` example:
 
 ```go
-ReportAfterSuite(func(report Report) {
-  f := os.Open("report.custom")
+ReportAfterSuite("custom report", func(report Report) {
+  f := os.Create("report.custom")
   for _, specReport := range report.SpecReports {
-    fmt.Fprintf(f, "%s | %s\n", report.FullText(), report.State)
+    fmt.Fprintf(f, "%s | %s\n", report.FullText(), specReport.State)
   }
   f.Close()
 })
@@ -2892,11 +3407,11 @@ In this chapter we'll switch gears and illustrate common patterns for how Ginkgo
 
 ### Recommended Continuous Integration Configuration
 
-When running in CI you'll want to make sure that the version of the `ginkgo` CLI you are using matches the version of Ginkgo in your `go.mod` file.  You can ensure this by invoking the `ginkgo` command via `go run`:
+When running in CI you must make sure that the version of the `ginkgo` CLI you are using matches the version of Ginkgo in your `go.mod` file.  You can ensure this by invoking the `ginkgo` command via `go run`:
 
 `go run github.com/onsi/ginkgo/v2/ginkgo`
 
-This alone, however, is often not enough.  The Ginkgo CLi includes additional dependencies that aren't part of the Ginkgo library - since your code doesn't import the cli these dependencies probably aren't in your `go.sum` file.  To get around this it is idiomatic Go to introduce a `tools.go` file.  This can go anywhere in your module - for example, Gomega places its `tools.go` at the top-level.  Your `tools.go` file should look like:
+This alone, however, is often not enough.  The Ginkgo CLI includes additional dependencies that aren't part of the Ginkgo library - since your code doesn't import the cli these dependencies probably aren't in your `go.sum` file.  To get around this it is idiomatic Go to introduce a `tools.go` file.  This can go anywhere in your module - for example, Gomega places its `tools.go` at the top-level.  Your `tools.go` file should look like:
 
 ```go
 //go:build tools
@@ -2914,7 +3429,7 @@ The `//go:build tools` constraint ensures this code is never actually built, how
 Once you have `ginkgo` running on CI, you'll want to pick and choose the optimal set of flags for your test runs.  We recommend the following set of flags when running in a continuous integration environment:
 
 ```bash
-go run github.com/onsi/ginkgo/v2/ginkgo -r --procs=N --compilers=N --randomize-all --randomize-suites --fail-on-pending --keep-going --cover --coverprofile=cover.profile --race --trace --json-report=report.json --timeout=TIMEOUT
+go run github.com/onsi/ginkgo/v2/ginkgo -r --procs=N --compilers=N --randomize-all --randomize-suites --fail-on-pending --keep-going --cover --coverprofile=cover.profile --race --trace --json-report=report.json --timeout=TIMEOUT --poll-progress-after=Xs --poll-progress-interval=Ys
 ```
 
 Here's why:
@@ -2927,8 +3442,9 @@ Here's why:
 - `--cover` and `--coverprofile=cover.profile` will compute coverage scores and generate a single coverage file for all your specs.
 - `--race` will run the race detector.
 - `--trace` will instruct Ginkgo to generate a stack trace for all failures (instead of simply including the location where the failure occurred).  This isn't usually necessary but can be helpful in CI environments where you may not have access to a fast feedback loop to iterate on and debug code.
-- `--json-report=report.json` will generate a JSON formatted report file.  You can store these off and use them later to get structured access to the suite and spec results.
+- `--json-report=report.json` will generate a JSON formatted report file.  You can store these off and use them later to get structured access to the suite and spec results.  Alternatively (or in addition) you can use `--junit-report=report.xml` to generate JUnit-formatted reports; these are compatible with several existing CI systems.
 - `--timeout` allows you to specify a timeout for the `ginkgo` run.  The default duration is one hour, which may or may not be enough!
+- `--poll-progress-after` and `--poll-progress-interval` will allow you to learn where long-running specs are getting stuck.  Choose a values for `X` and `Y` that are appropriate to your suite.  A long-running integration suite, for example, might set `X` to `120s` and `Y` to `30s` - whereas a quicker set of unit tests might not need this setting.  Note that if you precompile suites and run them from a different directory relative to your source code, you may also need to set `--source-root` to enable Ginkgo to emit source code lines when generating progress reports.
 
 ### Supporting Custom Suite Configuration
 
@@ -3091,7 +3607,7 @@ var _ = Describe(describeName, func() {
 ...
 ```
 
-Counterintuitively, this will always yield `"Smoketests - "`.  The reason is that `fmt.Sprintf` is being called as go is traversing the top-level identifiers in the suite.  At this point, `init` functions are being _defined_ but have not yet been invoked.  So (a) we haven't actually registered our flags yet and, more importantly, (b) `go test` hasn't _parsed_ the flags yet.  Our `smokeEnv` variable is therefore empty.  There's no way around this - in general you should avoid trying to access configuration information at the top-level.  However, if you must then you will need to use use environment variables instead of flags.
+Counter-intuitively, this will always yield `"Smoketests - "`.  The reason is that `fmt.Sprintf` is being called as go is traversing the top-level identifiers in the suite.  At this point, `init` functions are being _defined_ but have not yet been invoked.  So (a) we haven't actually registered our flags yet and, more importantly, (b) `go test` hasn't _parsed_ the flags yet.  Our `smokeEnv` variable is therefore empty.  There's no way around this - in general you should avoid trying to access configuration information at the top-level.  However, if you must then you will need to use use environment variables instead of flags.
 
 #### Overriding Ginkgo's command-line configuration in the suite
 
@@ -3470,11 +3986,11 @@ DescribeTable("Reading invalid books always errors", func(book *books.Book) {
 
 It is common, especially in integration suites, to be testing behaviors that occur asynchronously (either within the same process or, in the case of distributed systems, outside the current test process in some combination of external systems).  Ginkgo and Gomega provide the building blocks you need to write effective asynchronous specs efficiently.
 
-Rather than an exhaustive/detailed review we'll simply walk through some common patterns.  Throughout you'll see that you should generally try to use Gomega's `Eventually` and `Consistently` to make [asynchronous assertions](https://onsi.github.io/gomega/#making-asynchronous-assertions).
+Rather than an exhaustive/detailed review we'll simply walk through some common patterns.  Throughout you'll see that you should generally use Ginkgo's interruptible nodes with timeouts alongside use Gomega's `Eventually` and `Consistently` to make [asynchronous assertions](https://onsi.github.io/gomega/#making-asynchronous-assertions).
 
 Both `Eventually` and `Consistently` perform asynchronous assertions by polling the provided input.  In the case of `Eventually`, Gomega polls the input repeatedly until the matcher is satisfied - once that happens the assertion exits successfully and execution continues.  If the matcher is never satisfied `Eventually` will time out with a useful error message.  Both the timeout and polling interval are [configurable](https://onsi.github.io/gomega/#eventually).
 
-In the case of `Consistently`, Gomega polls the the input repeatedly and asserts the matcher is satisfied every time.  `Consistently` only exits early if a failure occurs - otherwise it continues polling until the specified interval elapses.  This is often the only way to assert that something "does not happen" in an asynchronous system.
+In the case of `Consistently`, Gomega polls the input repeatedly and asserts the matcher is satisfied every time.  `Consistently` only exits early if a failure occurs - otherwise it continues polling until the specified interval elapses.  This is often the only way to assert that something "does not happen" in an asynchronous system.
 
 `Eventually` and `Consistently` can accept three types of input.  You can pass in bare values and assert that some aspect of the value changes eventually.  This is most commonly done with Go channels or Gomega's 
 [`gbytes`](https://onsi.github.io/gomega/#gbytes-testing-streaming-buffers) and [`gexec`](https://onsi.github.io/gomega/#gexec-testing-external-processes) packages.  You can also pass in functions and assert that their return values `Eventually` or `Consistently` satisfy a matcher - we'll cover those later.  Lastly, you can pass in functions that take a `Gomega` argument - these allow you to make assertions within the function and are a way to assert that a series of assertions _eventually_ succeeds.  We'll cover _that_ later as well.  Let's look at these various input types through the lens of some concrete use-cases.
@@ -3490,38 +4006,43 @@ Describe("Publishing books", func() {
     Expect(book).NotTo(BeNil())
   })
 
-  It("can publish a book, emitting information as it goes", func() {
+  It("can publish a book, emitting information as it goes", func(ctx SpecContext) {
     buffer := gbytes.NewBuffer() //gbytes provides a thread-safe buffer that works with the `gbytes.Say` matcher
     
     // we begin publishing the book.  This kicks off a goroutine and returns a channel
-    c := publisher.Publish(book, buffer)
+    // Publish takes a `context.Context` and so we pass in our `ctx` to clean up correctly in case the spec timeout elapses
+    c := publisher.Publish(ctx, book, buffer)
 
-    //gbytes.Say allows us to assert on output to a stream
-    Eventually(buffer).Should(gbytes.Say(`Publishing "Les Miserables...`))
-    Eventually(buffer).Should(gbytes.Say(`Published page 1/2783`))
-    Eventually(buffer).Should(gbytes.Say(`Published page 2782/2783`))
-    Eventually(buffer).Should(gbytes.Say(`Publish complete!`))
+    // gbytes.Say allows us to assert on output to a stream
+    // we pass in the SpecContext to give this block of `Eventually's` a shared time horizon for completing: the 30 second SpecTimeout
+    // we don't _have_ to pass in a SpecContext.  If we don't, then each `Eventually` will have its own, individual, timeout.
+    Eventually(ctx, buffer).Should(gbytes.Say(`Publishing "Les Miserables...`))
+    Eventually(ctx, buffer).Should(gbytes.Say(`Published page 1/2783`))
+    Eventually(ctx, buffer).Should(gbytes.Say(`Published page 2782/2783`))
+    Eventually(ctx, buffer).Should(gbytes.Say(`Publish complete!`))
 
-    //rather than call <-c which could block the spec forever we use Eventually to poll the channel and
-    //store any received values in a pointer
+    // rather than call <-c which could block the spec forever we use Eventually to poll the channel and
+    // store any received values in a pointer
+    // we pass in the SpecContext _and_ specify a timeout of 1 second:
+    // at this point we expect `Publish()` to exit fairly quickly and should not need to wait for longer than 1s!
     var result publisher.PublishResult
-    Eventually(c).Should(Receive(&result))
+    Eventually(ctx, c).WithTimeout(time.Second).Should(Receive(&result))
 
-    //we make some synchronous assertions on the result
+    //we make some *synchronous* assertions on the result
     Expect(result.Title).To(Equal("Les Miserables"))
     Expect(result.EpubSize).To(BeNumerically(">", 10))
     Expect(result.EpubContent).To(ContainSubstring("I've ransomed you from fear and hatred, and now I give you back to God."))
 
     //we expect the publisher to close the channel when it's done
-    Eventually(c).Should(BeClosed())
-  })
+    Eventually(ctx, c).WithTimeout(time.Second.Should(BeClosed())
+  }, SpecTimeout(time.Second*30)) //this spec has 30 seconds to complete
 })
 ```
 
 As you can see Gomega allows us to make some pretty complex asynchronous assertions pretty easily!
 
 #### Testing Local Processes
-Launching and testing an external process is actually quite similar to testing an in-process asynchronous service (the example above).  You typically leverage Goemga's [`gexec`](https://onsi.github.io/gomega/#gexec-testing-external-processes) and [`gbytes`](https://onsi.github.io/gomega/#gbytes-testing-streaming-buffers) packages.  Let's imagine our book-publishing service was a actually a command-line tool we wanted to test:
+Launching and testing an external process is actually quite similar to testing an in-process asynchronous service (the example above).  You typically leverage Gomega's [`gexec`](https://onsi.github.io/gomega/#gexec-testing-external-processes) and [`gbytes`](https://onsi.github.io/gomega/#gbytes-testing-streaming-buffers) packages.  Let's imagine our book-publishing service was a actually a command-line tool we wanted to test:
 
 ```go
 //We compile the publisher in a BeforeSuite so its available to our specs
@@ -3535,9 +4056,9 @@ BeforeSuite(func() {
 })
 
 Describe("Publishing books", func() {
-  It("can publish a book, emitting information as it goes", func() {
+  It("can publish a book, emitting information as it goes", func(ctx SpecContext) {
     //First, we create a command to invoke the publisher and pass appropriate args
-    cmd := exec.Command(publisherPath, "-o=les-miserables.epub", "les-miserables.fixture")
+    cmd := exec.CommandContext(ctx, publisherPath, "-o=les-miserables.epub", "les-miserables.fixture")
 
     //Now we launch the command with `gexec`.  This returns a session that wraps the running command.  
     //We also tell `gexec` to tee any stdout/stderr output from the process to `GinkgoWriter` - this will
@@ -3548,13 +4069,13 @@ Describe("Publishing books", func() {
     //At this point the process is running in the background
     //In addition to teeing to GinkgoWriter gexec will capture any stdout/stderr output to
     //gbytes buffers.  This allows us to make assertions against its stdout output using `gbytes.Say`
-    Eventually(session).Should(gbytes.Say(`Publishing "Les Miserables...`))
-    Eventually(session).Should(gbytes.Say(`Published page 1/2783`))
-    Eventually(session).Should(gbytes.Say(`Published page 2782/2783`))
-    Eventually(session).Should(gbytes.Say(`Publish complete!`))
+    Eventually(ctx, session).Should(gbytes.Say(`Publishing "Les Miserables...`))
+    Eventually(ctx, session).Should(gbytes.Say(`Published page 1/2783`))
+    Eventually(ctx, session).Should(gbytes.Say(`Published page 2782/2783`))
+    Eventually(ctx, session).Should(gbytes.Say(`Publish complete!`))
 
     //We can also assert the session has exited 
-    Eventually(session).Should(gexec.Exit(0)) //with exit code 0
+    Eventually(ctx, session).WithTimeout(time.Second).Should(gexec.Exit(0)) //with exit code 0
 
     //At this point we should have the `les-miserables.epub` artifact
     Expect("les-miserables.epub").To(BeAnExistingFile())
@@ -3566,7 +4087,7 @@ Describe("Publishing books", func() {
     Expect(result.Title).To(Equal("Les Miserables"))
     Expect(result.EpubSize).To(BeNumerically(">", 10))
     Expect(result.EpubContent).To(ContainSubstring("I've ransomed you from fear and hatred, and now I give you back to God."))
-  })
+  }, Time.Second * 30)
 })
 ```
 
@@ -3599,12 +4120,38 @@ Describe("Change book font-size", func() {
       close(done)
     }()
 
+    // now we wait for the `done` channel to close.  Note that we neither pass in a context nor set an explicit timeout
+    // in this case `Eventually` `will use Gomega's default global timeout (1 second, unless overriden by the user)
     Eventually(done).Should(BeClosed())
   })  
 })
 ```
 
-This use of a `done` channel is idiomatic and guards the spec against potentially hanging forever.
+This use of a `done` channel is idiomatic and guards the spec against potentially hanging forever.  More typically, blocking functions like `SetFontSize` accept a `context.Context` to manage cancellation.  In that case we can simply write:
+
+
+```go
+Describe("Change book font-size", func() {
+  var book *books.Book
+  BeforeEach(func() {
+    book = loadBookWithContent("les_miserables.fixture")
+    Expect(book).NotTo(BeNil())
+  })
+  
+  It("can repaginate books without losing any content", func(ctx SpecContext) {
+    content := book.RawContent()
+    Expect(book.Pages).To(Equal(2783))
+
+    //this might be quite expensive and will block...
+    err := book.SetFontSize(ctx, 28)
+    Expect(err).NotTo(HaveOccurred())
+
+    Expect(book.Pages).To(BeNumerically(">", 2783))
+    Expect(book.RawContent()).To(Equal(content))
+  }, SpecTimeout(time.Second))  
+})
+```
+
 
 #### Testing External Systems
 When integration testing an external system, particularly a distributed system, you'll often find yourself needing to wait for the external state to converge and become eventually consistent.  Gomega makes it easy to poll and validate that the system under test eventually exhibits the desired behavior.  This is typically done by passing functions in to `Eventually` and `Consistently`.
@@ -3624,39 +4171,42 @@ var _ = BeforeSuite(func() {
 var _ = Describe("Getting notifications about holds", func() {
   var book *books.Book
   var sarah, jane *user.User
-  BeforeEach(func() {
+  BeforeEach(func(ctx SpecContext) {
     book = &books.Book{
       Title: "My test book",
       Author: "Ginkgo",
       Pages: 17,
     }
 
-    Expect(library.Store(book)).To(Succeed())
-    DeferCleanup(library.Delete, book)
+    Expect(library.Store(ctx, book)).To(Succeed())
+    // we'll want to delete the book after the spec ends.  `library` has a `Delete` function with signature `Delete(context.Context, *book.Book)`. 
+    // DeferCleanup will detect this signature and automatically pass a `SpecContext` (configured with a one second timeout thanks to the `NodeTimeout` decorator)
+    // in as the first parameter.  `book` will be passed in as the second parameter.
+    DeferCleanup(library.Delete, book, NodeTimeout(time.Second))
 
-    sarah = user.NewUser("Sarah", "integration-test-account+sarah@gmail.com")
-    jane = user.NewUser("Jane", "integration-test-account+jane@gmail.com")
+    sarah = user.NewUser(ctx, "Sarah", "integration-test-account+sarah@gmail.com")
+    jane = user.NewUser(ctx, "Jane", "integration-test-account+jane@gmail.com")
     
     By("Sarah checks the book out")
-    Expect(sarah.CheckOut(library, book)).To(Succeed())
-  })
+    Expect(sarah.CheckOut(ctx, library, book)).To(Succeed())
+  }, NodeTimeout(time.Second*10))
 
-  It("notifies the user when their hold is ready", func() {
+  It("notifies the user when their hold is ready", func(ctx SpecContext) {
     By("Jane can't check the book out so she places a hold")
-    Expect(jane.CheckOut(library, book)).To(MatchError(books.ErrNoAvailableCopies))
-    Expect(jane.PlaceHold(library, book)).To(Succeed())
+    Expect(jane.CheckOut(ctx, library, book)).To(MatchError(books.ErrNoAvailableCopies))
+    Expect(jane.PlaceHold(ctx, library, book)).To(Succeed())
 
     By("when Sarah returns the book")
-    Expect(sarah.Return(library, book)).To(Succeed())
+    Expect(sarah.Return(ctx, library, book)).To(Succeed())
 
     By("Jane eventually gets notified that her book is available in the library app...")
-    Eventually(func() ([]user.Notification, error) {
-      return jane.FetchNotifications()
-    }).Should(ContainElement(user.Notification{Title: book.Title, State: book.ReadyForPickup}))
+    Eventually(func(ctx SpecContext) ([]user.Notification, error) {
+      return jane.FetchNotifications(ctx, library)
+    }).WithContext(ctx).Should(ContainElement(user.Notification{Title: book.Title, State: book.ReadyForPickup}))
 
     By("...and in her email...")
-    Eventually(func() ([]string, error) {
-      messages, err := gmail.Fetch(jane.EmailAddress)
+    Eventually(func(ctx SpecContext) ([]string, error) {
+      messages, err := gmail.Fetch(ctx, jane.EmailAddress)
       if err != nil {
         return nil, err
       }
@@ -3665,38 +4215,36 @@ var _ = Describe("Getting notifications about holds", func() {
         subjects = append(subjects, message.Subject)
       }
       return subjects, nil
-    }).Should(ContainElement(fmt.Sprintf(`"%s" is available for pickup`, book.Title)))
+    }).WithContext(ctx).Should(ContainElement(fmt.Sprintf(`"%s" is available for pickup`, book.Title)))
 
-    Expect(jane.CheckOut(library, book)).To(Succeed())
-  })
+    Expect(jane.CheckOut(ctx, library, book)).To(Succeed())
+  }, SpecTimeout(time.Second * 30))
 })
 ```
 
 As you can see we are able to clearly test both synchronous concerns (blocking calls to the library service that return immediately) with asynchronous concerns (out-of-band things that happen after a library call has been made).  The DSL allows us to clearly express our intent and capture the flow of this spec with relatively little noise.
 
-One important thing warrants calling out, however.  Notice that we aren't using `Eventually` to assert that individual calls to the `library` or `user` client don't time out.  `Eventually` assumes that the function it is polling will return in a timely manner.  It does not monitor the duration of the function call to apply a timeout.  Rather, it calls the function synchronously and then asserts against the result immediately - it then waits for the polling interval before trying again.  It is expected that the client under test can handle connection timeout issues and return in a timely manner.  One common pattern, shown here, is to place an assertion in a `BeforeSuite` that validates that the external service we need to communicate with is up and ready to receive network traffic.  That's what `Eventually(library.Ping).Should(Succeed())` is doing.  Once we've established the server is up we can proceed to test with confidence.
-
 `Eventually` has a few more tricks that we can leverage to clean this code up a bit.  Since `Eventually` accepts functions we can simply replace this:
 
 ```go
-Eventually(func() ([]user.Notification, error) {
-  return jane.FetchNotifications()
-}).Should(ContainElement(user.Notification{Title: book.Title, State: book.ReadyForPickup}))
+Eventually(func(ctx SpecContext) ([]user.Notification, error) {
+  return jane.FetchNotifications(ctx, library)
+}).WithContext(ctx).Should(ContainElement(user.Notification{Title: book.Title, State: book.ReadyForPickup}))
 ```
 
 with this:
 
 ```go
-Eventually(jane.FetchNotifications).Should(ContainElement(user.Notification{Title: book.Title, State: book.ReadyForPickup}))
+Eventually(jane.FetchNotifications).WithContext(ctx).WithArguments(library).Should(ContainElement(user.Notification{Title: book.Title, State: book.ReadyForPickup}))
 ```
 
 Note that `Eventually` automatically asserts a niladic error as it polls the `FetchNotifications` function.  Also note that we are passing in a reference to the method on the `jane` instance - not invoking it.  `Eventually(jane.FetchNotifications())` would not work - you must pass in `Eventually(jane.FetchNotifications)`!
 
-`Eventually` can _also_ accept functions that take a single `Gomega` parameter.  These functions are then passed a local `Gomega` that can be used to make assertions _inside_ the function as it is polled.  `Eventually` will retry the function if an assertion fails.  This would allow us to replace:
+`Eventually` can _also_ accept functions that take a `Gomega` parameter.  These functions are then passed a local `Gomega` that can be used to make assertions _inside_ the function as it is polled.  `Eventually` will retry the function if an assertion fails.  This would allow us to replace:
 
 ```go
-Eventually(func() ([]string, error) {
-  messages, err := gmail.Fetch(jane.EmailAddress)
+Eventually(func(ctx SpecContext) ([]string, error) {
+  messages, err := gmail.Fetch(ctx, jane.EmailAddress)
   if err != nil {
     return nil, err
   }
@@ -3705,37 +4253,36 @@ Eventually(func() ([]string, error) {
     subjects = append(subjects, message.Subject)
   }
   return subjects, nil
-}).Should(ContainElement(fmt.Sprintf(`"%s" is available for pickup`, book.Title)))
+}).WithContext(ctx).Should(ContainElement(fmt.Sprintf(`"%s" is available for pickup`, book.Title)))
 ```
 
 with
 
 ```go
-Eventually(func(g Gomega) ([]string) {
-  messages, err := gmail.Fetch(jane.EmailAddress)
+Eventually(func(g Gomega, ctx SpecContext) []string { //note: g Gomega must go first
+  messages, err := gmail.Fetch(ctx, jane.EmailAddress)
   g.Expect(err).NotTo(HaveOccurred())
   subjects := []string{}
   for _, message := range messages {
     subjects = append(subjects, message.Subject)
   }
   return subjects, nil
-}).Should(ContainElement(fmt.Sprintf(`"%s" is available for pickup`, book.Title)))
+}).WithContext(ctx).Should(ContainElement(fmt.Sprintf(`"%s" is available for pickup`, book.Title)))
 ```
 
 we can even push the entire assertion into the polled function:
 
 ```go
-Eventually(func(g Gomega) {
-  messages, err := gmail.Fetch(jane.EmailAddress)
+Eventually(func(g Gomega, ctx SpecContext) {
+  messages, err := gmail.Fetch(ctx, jane.EmailAddress)
   g.Expect(err).NotTo(HaveOccurred())
   subjects := []string{}
   for _, message := range messages {
     subjects = append(subjects, message.Subject)
   }
-  expectedSubject := fmt.Sprintf(`"%s" is available for pickup`, book.Title)
-  g.Expect(subjects).To(ContainElement(expectedSubject))
+  g.Expect(subjects).To(ContainElement(fmt.Sprintf(`"%s" is available for pickup`, book.Title)))
   return subjects, nil
-}).Should(Succeed())
+}).WithContext(ctx).Should(Succeed())
 ```
 
 this approach highlights a special-case use of the `Succeed()` matcher with `Eventually(func(g Gomega) {})` - `Eventually` will keep retrying the function until no failures are detected.
@@ -3745,14 +4292,14 @@ this approach highlights a special-case use of the `Succeed()` matcher with `Eve
 Finally, since we're on the topic of simplifying things, we can make use of the fact that `ContainElement` can take a matcher to compose it with the `WithTransform` matcher and get rid of the `subjects` loop:
 
 ```go
-Eventually(func(g Gomega) {
+Eventually(func(g Gomega, ctx SpecContext) {
   messages, err := gmail.Fetch(jane.EmailAddress)
   g.Expect(err).NotTo(HaveOccurred())
   expectedSubject := fmt.Sprintf(`"%s" is available for pickup`, book.Title)
   subjectGetter := func(m gmail.Message) string { return m.Subject }
   g.Expect(messages).To(ContainElement(WithTransform(subjectGetter, Equal(expectedSubject))))
   return messages, nil
-}).Should(Succeed())
+}).WithContext(ctx).Should(Succeed())
 ```
 
 ### Patterns for Parallel Integration Specs
@@ -3801,22 +4348,22 @@ The filesystem is a shared singleton resource.  Each parallel process in a paral
 
 ```go
 Describe("Publishing books", func() {
-  It("can publish a complete epub", func() {
-    cmd := exec.Command(publisherPath, "-o=out.epub", "les-miserables.fixture")
+  It("can publish a complete epub", func(ctx SpecContext) {
+    cmd := exec.CommandContext(ctx, publisherPath, "-o=out.epub", "les-miserables.fixture")
     session, err := gexec.Start(cmd, GinkgoWriter, GinkgoWriter)
     Expect(err).NotTo(HaveOccurred())
-    Eventually(session).Should(gexec.Exit(0)) //with exit code 0
+    Eventually(ctx, session).Should(gexec.Exit(0)) //with exit code 0
 
     result, err := epub.Load("out.epub")
     Expect(err).NotTo(HaveOccurred())
     Expect(result.EpubPages).To(Equal(2783))
-  })
+  }, SpecTimeout(time.Second*30))
 
-  It("can publish a preview that contains just the first chapter", func() {    
-    cmd := exec.Command(publisherPath, "-o=out.epub", "--preview", "les-miserables.fixture")
+  It("can publish a preview that contains just the first chapter", func(ctx SpecContext) {    
+    cmd := exec.CommandContext(ctx, publisherPath, "-o=out.epub", "--preview", "les-miserables.fixture")
     session, err := gexec.Start(cmd, GinkgoWriter, GinkgoWriter)
     Expect(err).NotTo(HaveOccurred())
-    Eventually(session).Should(gexec.Exit(0)) //with exit code 0
+    Eventually(ctx, session).Should(gexec.Exit(0)) //with exit code 0
 
     result, err := epub.Load("out.epub")
     Expect(err).NotTo(HaveOccurred())
@@ -3833,13 +4380,13 @@ There are multiple ways to approach this.  Perhaps the obvious way would be to m
 
 ```go
 Describe("Publishing books", func() {
-  It("can publish a complete epub", func() {
-    cmd := exec.Command(publisherPath, "-o=complete.epub", "les-miserables.fixture")
+  It("can publish a complete epub", func(ctx SpecContext) {
+    cmd := exec.CommandContext(ctx, publisherPath, "-o=complete.epub", "les-miserables.fixture")
     ...
   })
 
-  It("can publish a preview that contains just the first chapter", func() {    
-    cmd := exec.Command(publisherPath, "-o=preview.epub", "--preview", "les-miserables.fixture")
+  It("can publish a preview that contains just the first chapter", func(ctx SpecContext) {    
+    cmd := exec.CommandContext(ctx, publisherPath, "-o=preview.epub", "--preview", "les-miserables.fixture")
     ...
   })
 })
@@ -3856,15 +4403,15 @@ BeforeEach(func() {
 })
 
 Describe("Publishing books", func() {
-  It("can publish a complete epub", func() {
+  It("can publish a complete epub", func(ctx SpecContext) {
     path := filepath.Join(tmpDir, "out.epub")
-    cmd := exec.Command(publisherPath, "-o="+path, "les-miserables.fixture")
+    cmd := exec.CommandContext(ctx, publisherPath, "-o="+path, "les-miserables.fixture")
     ...
   })
 
-  It("can publish a preview that contains just the first chapter", func() {    
+  It("can publish a preview that contains just the first chapter", func(ctx SpecContext) {
     path := filepath.Join(tmpDir, "out.epub")
-    cmd := exec.Command(publisherPath, "-o="+path, "--preview", "les-miserables.fixture")
+    cmd := exec.CommandContext(ctx, publisherPath, "-o="+path, "--preview", "les-miserables.fixture")
     ...
   })
 })
@@ -3889,15 +4436,15 @@ BeforeEach(func() {
 })
 
 Describe("Publishing books", func() {
-  It("can publish a complete epub", func() {
+  It("can publish a complete epub", func(ctx SpecContext) {
     path := pathTo("out.epub")
-    cmd := exec.Command(publisherPath, "-o="+path, "les-miserables.fixture")
+    cmd := exec.CommandContext(ctx, publisherPath, "-o="+path, "les-miserables.fixture")
     ...
   })
 
-  It("can publish a preview that contains just the first chapter", func() {    
+  It("can publish a preview that contains just the first chapter", func(ctx SpecContext) {
     path := pathTo("out.epub")
-    cmd := exec.Command(publisherPath, "-o="+path, "--preview", "les-miserables.fixture")
+    cmd := exec.CommandContext(ctx, publisherPath, "-o="+path, "--preview", "les-miserables.fixture")
     ...
   })
 })
@@ -3905,7 +4452,7 @@ Describe("Publishing books", func() {
 
 this will create a namespaced local temp directory and provides a convenience function for specs to access paths to the directory.  The directory is cleaned up after each spec.
 
-One nice thing about this approach is our ability to preserve the artifacts in the temporary directory in case of failure.  A common pattern when debugging is to use `--fail-fast` to indicate that the suite should stop running as soon as the first failure occurs.  We can key off of that config to change the behavior of our cleanup code:
+One nice thing about this approach is our ability to preserve the artifacts in the temporary directory in case of failure.  A common pattern when debugging is to use `--fail-fast` to indicate that the suite should stop running as soon as the first failure occurs.  We can key off of that config to change  the behavior of our cleanup code:
 
 ```go
 var pathTo func(path string) string
@@ -4095,7 +4642,7 @@ Describe("Repaginating Books", func() {
 
 Now when this spec runs Ginkgo will print out a report detailing the experiment:
 
-```
+```bash
 Will run 1 of 1 specs
 ------------------------------
 • [2.029 seconds]
@@ -4226,6 +4773,8 @@ Expect(book).To(BeAValidBook(Author("Victor Hugo")))
 Expect(book).To(BeAValidBook(Title("Les Miserables"), Pages(2783)))
 ```
 
+The failure messages generated by composed matchers are generally good enough to capture the reason for the failure.  However if you want more fine-control over the message, or if you want more complex logic in your matcher you can use [`gcustom`](https://onsi.github.io/gomega/#gcustom-a-convenient-mechanism-for-buildling-custom-matchers) to build custom matchers using a simple function and templates - to learn more check out the [`gucstom` docs](https://onsi.github.io/gomega/#gcustom-a-convenient-mechanism-for-buildling-custom-matchers) and [godoc](https://pkg.go.dev/github.com/onsi/gomega/gcustom). 
+
 ## Decorator Reference
 We've seen a number of Decorators detailed throughout this documentation.  This reference collects them all in one place.
 
@@ -4279,7 +4828,7 @@ The `Label` decorator applies to container nodes and subject nodes only.  It is 
 
 Labels can be used to control which subset of tests to run.  This is done by providing the `--label-filter` flag to the `ginkgo` CLI.  More details can be found at [Spec Labels](#spec-labels).
 
-#### The Focus and Pending Decorator
+#### The Focus and Pending Decorators
 The `Focus` and `Pending` decorators apply to container nodes and subject nodes only.  It is an error to try to `Focus` or `Pending` a setup node.
 
 Using these decorators is identical to using the `FX` or `PX` form of the node constructor.  For example:
@@ -4341,9 +4890,9 @@ In addition to `Offset`, users can decorate nodes with a `types.CodeLocation`.  
 Passing a `types.CodeLocation` decorator in has the same semantics as passing `Offset` in: it only applies to the node in question.
 
 #### The FlakeAttempts Decorator
-The `FlakeAttempts(uint)` decorator applies container and subject nodes.  It is an error to apply `FlakeAttempts` to a setup node.
+The `FlakeAttempts(uint)` decorator applies to container and subject nodes.  It is an error to apply `FlakeAttempts` to a setup node.
 
-`FlakeAttempts` allows the user to flag specific tests or groups of tests as potentially flaky.  Ginkgo will run tests up to the number of times specified in `FlakeAttempts` until they pass.  For example:
+`FlakeAttempts` allows the user to flag specs trees as potentially flaky.  Ginkgo will retry the spec up to the number of times specified in `FlakeAttempts` until they pass.  For example:
 
 ```go
 Describe("flaky tests", FlakeAttempts(3), func() {
@@ -4367,7 +4916,64 @@ Describe("flaky tests", FlakeAttempts(3), func() {
 
 With this setup, `"is flaky"` and `"is also flaky"` will run up to 3 times.  `"is _really_ flaky"` will run up to 5 times.  `"is _not_ flaky"` will run only once.  Note that if multiple `FlakeAttempts` appear in a spec's hierarchy, the most deeply nested `FlakeAttempts` wins.  If multiple `FlakeAttempts` are passed into a given node, the last one wins.
 
-If `ginkgo --flake-attempts=N` is set the value passed in by the CLI will override all the decorated values.  Every test will now run up to `N` times.
+If `ginkgo --flake-attempts=N` is set the value passed in by the CLI will override all the decorated values.  Every spec in the test suite will now run up to `N` times.
+
+#### The MustPassRepeatedly Decorator
+The `MustPassRepeatedly(uint)` decorator applies to container and subject nodes.  It is an error to apply `MustPassRepeatedly` to a setup node.
+
+the `MustPassRepeatedly` flag allows the user to repeatedly run specs in a controlled manner.  Ginkgo will repeatedly run specs up to the number of times specified in `MustPassRepeatedly` or until they fail.  For example:
+
+```go
+Describe("repeated specs", MustPassRepeatedly(3), func() {
+  It("is repeated", func() {
+    ...
+  })
+
+  It("is also repeated", func() {
+    ...
+  })
+
+  It("is repeated even more", MustPassRepeatedly(5) func() {
+    ...
+  })
+
+  It("is repeated less", MustPassRepeatedly(1), func() {
+    ...
+  })
+})
+```
+
+With this setup, `"is repeated"` and `"is also repeated"` will run up to 3 times.  `"is repeated even more"` will run up to 5 times.  `"is repeated less"` will run only once.  Note that if multiple `MustPassRepeatedly` appear in a spec's hierarchy, the most deeply nested `MustPassRepeatedly` wins.  If multiple `MustPassRepeatedly` are passed into a given node, the last one wins.
+
+The `ginkgo --repeat=N` value passed in by the CLI has no relation with the `MustPassRepeatedly` decorator. If the `--repeat` CLI flag is used and a container or subject node also contains the `MustPassRepeatedly` decorator, then the spec will run up to `N*R` times, where `N` is the values passed to the `--repeat` CLI flag and `R` is the value passed to the MustPassRepeatedly decorator.
+
+If the `MustPassRepeatedly` decorator is set, it will override the `ginkgo --flake-attempts=N` CLI config. The specs that do not contain the `MustPassRepeatedly(R)` decorator will still run up to `N` times, in accordance to the `ginkgo --flake-attempts=N` CLI config.
+
+#### The SuppressProgressOutput Decorator
+
+When running with `ginkgo -v -progress` Ginkgo will emit information about each node just before it runs.   This information goes to the `GinkgoWriter` and straight to the console if using `-v`.  There are contexts when this can be overly noisy.  In particular, `ReportBeforeEach` and `ReportAfterEach` nodes always run, even when a spec is skipped.  This can make Ginkgo's output noise when running with `-v -progress` as each `Report*Each` node will be announced, even for skipped specs.
+
+The `SuppressProgressOutput` decorator allows you to disable progress reporting for a given node:
+
+```go
+ReportAfterEach(func(report SpecReport) {
+   //...
+}, SuppressProgressReporting)
+```
+
+#### The PollProgressAfter and PollProgressInterval Decorators
+
+As described in the [Getting Visibility Into Long-Running Specs](#getting-visibility-into-long-running-specs) section, the globally specified values for `--poll-progress-after` and `--poll-progress-interval` can be overridden on a particular node using the `PollProgressAfter(INTERVAL)` and `PollProgressInterval(INTERVAL)` decorators.  Here, `INTERVAL` is a `time.Duration` and when specified Ginkgo will start emitting Progress Reports for the node after a duration of `PollProgressAfter` and will repeatedly emit a Progress Report at an interval of `PollProgressInterval`.  To turn off progress reporting for a given node, set `PollProgressAfter` to `0`.
+
+Both of these decorators can only be used on subject and setup nodes, not container nodes.
+
+#### The SpecTimeout, NodeTimeout, and GracePeriod Decorators
+
+As described in the [Spec Timeouts and Interruptible Nodes](#spec-timeouts-and-interruptible-nodes) section, Ginkgo allows you to decorate interruptible nodes with individual `NodeTimeout`s and spec-wide `SpecTimeout`s.  `NodeTimeout` takes a `time.Duration` and applies to any interruptible node (i.e. a node with a function that accepts a `SpecContext`).  `SpecTimeout` also takes a `time.Duration` but applies only to `It` subject nodes.  Whereas `NodeTimeout` specified a deadline for an individual node, `SpecTimeout` specifies a deadline for all nodes associated with an individual spec.
+
+Once interrupted, Ginkgo waits for a Grace Period before abandoning a node and moving on.  A global Grace Period can be specified via the `--grace-period=DURATION` cli flag and overridden by the `GracePeriod` decorator on a per-node basis.  `GracePeriod` takes a `time.Duration` and can only be applied to interruptible nodes.
+
+Currently none of these decorators can be applied to container nodes.
 
 ## Ginkgo CLI Overview
 

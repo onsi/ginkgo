@@ -1,7 +1,7 @@
 /*
-Ginkgo isusually dot-imported via:
+Ginkgo is usually dot-imported via:
 
-    import . "github.com/onsi/ginkgo/v2"
+	import . "github.com/onsi/ginkgo/v2"
 
 however some parts of the DSL may conflict with existing symbols in the user's code.
 
@@ -18,12 +18,19 @@ import (
 
 type Offset = ginkgo.Offset
 type FlakeAttempts = ginkgo.FlakeAttempts
+type MustPassRepeatedly = ginkgo.MustPassRepeatedly
 type Labels = ginkgo.Labels
+type PollProgressAfter = ginkgo.PollProgressAfter
+type PollProgressInterval = ginkgo.PollProgressInterval
+type NodeTimeout = ginkgo.NodeTimeout
+type SpecTimeout = ginkgo.SpecTimeout
+type GracePeriod = ginkgo.GracePeriod
 
 const Focus = ginkgo.Focus
 const Pending = ginkgo.Pending
 const Serial = ginkgo.Serial
 const Ordered = ginkgo.Ordered
 const OncePerOrdered = ginkgo.OncePerOrdered
+const SuppressProgressReporting = ginkgo.SuppressProgressReporting
 
 var Label = ginkgo.Label

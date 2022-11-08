@@ -59,6 +59,7 @@ var _ = DescribeTable("Validate outline from file with",
 	Entry("mixed focused containers and specs", "mixed_test.go", "mixed_test.go.json", "mixed_test.go.csv"),
 	Entry("specs used to verify position", "position_test.go", "position_test.go.json", "position_test.go.csv"),
 	Entry("suite setup", "suite_test.go", "suite_test.go.json", "suite_test.go.csv"),
+	Entry("core dsl import", "dsl_core_test.go", "dsl_core_test.go.json", "dsl_core_test.go.csv"),
 )
 
 var _ = Describe("Validate position", func() {

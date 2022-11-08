@@ -8,6 +8,7 @@ import (
 	. "github.com/onsi/ginkgo/v2/internal/test_helpers"
 	"github.com/onsi/ginkgo/v2/types"
 	. "github.com/onsi/gomega"
+	"github.com/onsi/gomega/format"
 )
 
 var _ = Describe("Sending reports to ReportBeforeEach and ReportAfterEach nodes", func() {
@@ -89,9 +90,11 @@ var _ = Describe("Sending reports to ReportBeforeEach and ReportAfterEach nodes"
 					It("passes yet again", rt.T("passes-yet-again"))
 					It("skipped by interrupt", rt.T("skipped-by-interrupt"))
 					ReportAfterEach(func(report types.SpecReport) {
-						interruptHandler.Interrupt(interrupt_handler.InterruptCauseTimeout)
-						time.Sleep(100 * time.Millisecond)
-						rt.RunWithData("interrupt-reporter", "interrupt-message", interruptHandler.EmittedInterruptPlaceholderMessage())
+						if interruptHandler.Status().Level == interrupt_handler.InterruptLevelUninterrupted {
+							interruptHandler.Interrupt(interrupt_handler.InterruptCauseSignal)
+							time.Sleep(time.Hour)
+						}
+						rt.Run("interrupt-reporter")
 						reports["interrupt"] = append(reports["interrupt"], report)
 					})
 				})
@@ -118,7 +121,7 @@ var _ = Describe("Sending reports to ReportBeforeEach and ReportAfterEach nodes"
 			"outer-RBE", "inner-RBE", "failing-in-skip-RAE", "inner-RAE", "outer-RAE", //is also flag-skipped
 			"outer-RBE", "inner-RBE", "writer", "writing-reporter", "inner-RAE", "outer-RAE",
 			"outer-RBE", "inner-RBE", "failing-RBE", "not-failing-RBE", "inner-RAE", "outer-RAE",
-			"outer-RBE", "inner-RBE", "passes-yet-again", "interrupt-reporter", "inner-RAE", "outer-RAE",
+			"outer-RBE", "inner-RBE", "passes-yet-again", "inner-RAE", "outer-RAE",
 			"outer-RBE", "inner-RBE", "interrupt-reporter", "inner-RAE", "outer-RAE", //skipped by interrupt
 			"after-suite",
 		))
@@ -130,9 +133,19 @@ var _ = Describe("Sending reports to ReportBeforeEach and ReportAfterEach nodes"
 	})
 
 	It("submits the correct reports to the reporters", func() {
+		format.MaxLength = 10000
 		for _, name := range []string{"passes", "fails", "panics", "is Skip()ed", "is flag-skipped", "is also flag-skipped"} {
-			Ω(reports["outer-RAE"].Find(name)).Should(Equal(reporter.Did.Find(name)))
-			Ω(reports["inner-RAE"].Find(name)).Should(Equal(reporter.Did.Find(name)))
+
+			expected := reporter.Did.Find(name)
+			expected.SpecEvents = nil
+
+			actual := reports["outer-RAE"].Find(name)
+			actual.SpecEvents = nil
+			Ω(actual).Should(Equal(expected))
+
+			actual = reports["inner-RAE"].Find(name)
+			actual.SpecEvents = nil
+			Ω(actual).Should(Equal(expected))
 		}
 
 		Ω(reports["outer-RBE"].Find("passes")).ShouldNot(BeZero())
@@ -181,20 +194,5 @@ var _ = Describe("Sending reports to ReportBeforeEach and ReportAfterEach nodes"
 		//but a report containing the additional output will be send to Ginkgo's reporter...
 		Ω(reporter.Did.Find("writes stuff").CapturedGinkgoWriterOutput).Should((Equal("GinkgoWriter from It\nGinkgoWriter from ReportAfterEach\n")))
 		Ω(reporter.Did.Find("writes stuff").CapturedStdOutErr).Should((Equal("Output from It\nOutput from ReportAfterEach\n")))
-	})
-
-	It("ignores interrupts and soldiers on", func() {
-		//The "interrupt" reporter is interrupted by the user - but keeps running (instead, the user sees a message emitted that they are attempting to interrupt a reporter and will just need to wait)
-		//The interrupt is, however, honored and subsequent tests are skipped.  These skipped tests, however, are still reported to the reporter node
-		Ω(reports["interrupt"].Find("passes yet again")).ShouldNot(BeZero())
-		Ω(reports["interrupt"].Find("passes yet again")).Should(HavePassed())
-		Ω(reports["interrupt"].Find("skipped by interrupt")).Should(HaveBeenSkipped())
-		Ω(reports["interrupt"].Find("passes yet again")).Should(Equal(reports["inner-RAE"].Find("passes yet again")))
-		Ω(reports["interrupt"].Find("passes yet again")).Should(Equal(reports["outer-RAE"].Find("passes yet again")))
-		Ω(reports["interrupt"].Find("skipped by interrupt")).Should(Equal(reports["inner-RAE"].Find("skipped by interrupt")))
-		Ω(reports["interrupt"].Find("skipped by interrupt")).Should(Equal(reports["outer-RAE"].Find("skipped by interrupt")))
-
-		cl := types.NewCodeLocation(0)
-		Ω(rt.DataFor("interrupt-reporter")["interrupt-message"]).Should(ContainSubstring("The running ReportAfterEach node is at:\n%s", cl.FileName))
 	})
 })

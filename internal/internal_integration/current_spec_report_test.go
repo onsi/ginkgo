@@ -56,7 +56,7 @@ var _ = Describe("CurrentSpecReport", func() {
 		})
 	})
 
-	It("returns an a valid GinkgoTestDescription in the before suite and after suite", func() {
+	It("returns an a valid CurrentSpecReport in the before suite and after suite", func() {
 		Ω(specs["before-suite"].LeafNodeType).Should(Equal(types.NodeTypeBeforeSuite))
 		Ω(specs["after-suite"].LeafNodeType).Should(Equal(types.NodeTypeAfterSuite))
 	})

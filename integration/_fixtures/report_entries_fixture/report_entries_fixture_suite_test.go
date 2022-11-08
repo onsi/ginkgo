@@ -52,7 +52,7 @@ var _ = Describe("top-level container", func() {
 	})
 
 	It("has By entries", func() {
-		By("registers a hidden AddReportEntry")
+		By("registers a By event")
 		By("includes durations", func() {
 			time.Sleep(time.Millisecond * 100)
 		})

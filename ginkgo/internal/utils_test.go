@@ -90,7 +90,7 @@ var _ = Describe("Utils", func() {
 			f = formatter.New(formatter.ColorModePassthrough)
 		})
 
-		It("generates a nicely frormatter report", func() {
+		It("generates a nicely formatter report", func() {
 			suites := []internal.TestSuite{
 				TS("path-A", "package-A", true, internal.TestSuiteStateFailed),
 				TS("path-B", "B", true, internal.TestSuiteStateFailedToCompile),

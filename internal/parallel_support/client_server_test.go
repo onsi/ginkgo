@@ -43,7 +43,7 @@ var _ = Describe("The Parallel Support Client & Server", func() {
 				GinkgoT().Setenv("GINKGO_PARALLEL_PROTOCOL", protocol)
 
 				var err error
-				reporter = &FakeReporter{}
+				reporter = NewFakeReporter()
 				server, err = parallel_support.NewServer(3, reporter)
 				Ω(err).ShouldNot(HaveOccurred())
 				server.Start()
@@ -204,6 +204,14 @@ var _ = Describe("The Parallel Support Client & Server", func() {
 					Ω(n).Should(Equal(5))
 					Ω(err).ShouldNot(HaveOccurred())
 					Ω(buffer).Should(gbytes.Say("hello"))
+				})
+			})
+
+			Describe("progress reports", func() {
+				It("can emit progress reports", func() {
+					pr := types.ProgressReport{LeafNodeText: "hola"}
+					Ω(client.PostEmitProgressReport(pr)).Should(Succeed())
+					Ω(reporter.ProgressReports).Should(ConsistOf(pr))
 				})
 			})
 

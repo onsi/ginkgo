@@ -1,9 +1,11 @@
 package internal_integration_test
 
 import (
+	"context"
 	"io"
 	"reflect"
 	"testing"
+	"time"
 
 	. "github.com/onsi/ginkgo/v2"
 	"github.com/onsi/ginkgo/v2/internal"
@@ -12,11 +14,15 @@ import (
 	. "github.com/onsi/ginkgo/v2/internal/test_helpers"
 	"github.com/onsi/ginkgo/v2/types"
 	. "github.com/onsi/gomega"
+	"github.com/onsi/gomega/format"
 )
 
 func TestSuiteTests(t *testing.T) {
+	format.TruncatedDiff = false
 	RegisterFailHandler(Fail)
-	RunSpecs(t, "Suite Integration Tests")
+	suiteConfig, _ := GinkgoConfiguration()
+	suiteConfig.GracePeriod = time.Second
+	RunSpecs(t, "Suite Integration Tests", suiteConfig)
 }
 
 var conf types.SuiteConfig
@@ -32,22 +38,32 @@ var server parallel_support.Server
 var client parallel_support.Client
 var exitChannels map[int]chan interface{}
 
+var triggerProgressSignal func()
+
+func progressSignalRegistrar(handler func()) context.CancelFunc {
+	triggerProgressSignal = handler
+	return func() { triggerProgressSignal = nil }
+}
+
+func noopProgressSignalRegistrar(_ func()) context.CancelFunc {
+	return func() {}
+}
+
 var _ = BeforeEach(func() {
 	conf = types.SuiteConfig{}
 	failer = internal.NewFailer()
 	writer = internal.NewWriter(io.Discard)
 	writer.SetMode(internal.WriterModeBufferOnly)
-	reporter = &FakeReporter{}
+	reporter = NewFakeReporter()
 	rt = NewRunTracker()
 	cl = types.NewCodeLocation(0)
 	interruptHandler = NewFakeInterruptHandler()
-	DeferCleanup(interruptHandler.Stop)
-
 	outputInterceptor = NewFakeOutputInterceptor()
 
 	conf.ParallelTotal = 1
 	conf.ParallelProcess = 1
 	conf.RandomSeed = 17
+	conf.GracePeriod = 30 * time.Second
 
 	server, client, exitChannels = nil, nil, nil
 })
@@ -74,7 +90,7 @@ func RunFixture(description string, callback func()) (bool, bool) {
 	WithSuite(suite, func() {
 		callback()
 		Ω(suite.BuildTree()).Should(Succeed())
-		success, hasProgrammaticFocus = suite.Run(description, Label("TopLevelLabel"), "/path/to/suite", failer, reporter, writer, outputInterceptor, interruptHandler, client, conf)
+		success, hasProgrammaticFocus = suite.Run(description, Label("TopLevelLabel"), "/path/to/suite", failer, reporter, writer, outputInterceptor, interruptHandler, client, progressSignalRegistrar, conf)
 	})
 	return success, hasProgrammaticFocus
 }
@@ -122,4 +138,22 @@ func FixtureSkip(options ...interface{}) {
 
 	failer.Skip(message, location)
 	panic("panic to simulate how ginkgo's Skip works")
+}
+
+func HaveHighlightedStackLine(cl types.CodeLocation) OmegaMatcher {
+	return ContainElement(WithTransform(func(fc types.FunctionCall) types.CodeLocation {
+		if fc.Highlight {
+			return types.CodeLocation{
+				FileName:   fc.Filename,
+				LineNumber: int(fc.Line),
+			}
+		}
+		return types.CodeLocation{}
+	}, Equal(cl)))
+}
+
+func clLine(offset int) types.CodeLocation {
+	cl := cl
+	cl.LineNumber += offset
+	return cl
 }

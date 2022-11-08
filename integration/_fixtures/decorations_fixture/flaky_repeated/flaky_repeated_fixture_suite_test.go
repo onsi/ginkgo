@@ -1,6 +1,7 @@
 package decorations_fixture_test
 
 import (
+	"fmt"
 	"testing"
 
 	. "github.com/onsi/ginkgo/v2"
@@ -12,25 +13,21 @@ func TestDecorationsFixture(t *testing.T) {
 	RunSpecs(t, "DecorationsFixture Suite")
 }
 
-var count = 0
+var countFlake = 0
+var countRepeat = 0
 
-var _ = Describe("some decorated tests", func() {
-	Describe("focused", Focus, func() {
-		OffsetIt()
-	})
-
-	It("pending it", Pending, func() {
-
-	})
-
+var _ = Describe("some decorated specs", func() {
 	It("passes eventually", func() {
-		count += 1
-		if count < 3 {
+		countFlake += 1
+		if countFlake < 3 {
 			Fail("fail")
 		}
 	}, FlakeAttempts(3))
 
-	It("focused it", Focus, func() {
-		Ω(true).Should(BeTrue())
-	})
+	It("fails eventually", func() {
+		countRepeat += 1
+		if countRepeat >= 3 {
+			Fail(fmt.Sprintf("failed on attempt #%d", countRepeat))
+		}
+	}, MustPassRepeatedly(3))
 })

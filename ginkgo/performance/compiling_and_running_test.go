@@ -2,6 +2,7 @@ package performance_test
 
 import (
 	"fmt"
+	"os"
 
 	. "github.com/onsi/ginkgo/v2"
 	. "github.com/onsi/gomega"
@@ -12,6 +13,10 @@ var _ = Describe("Compiling and Running a single test package", func() {
 	var cache gmeasure.ExperimentCache
 
 	BeforeEach(func() {
+		if os.Getenv("PERF") == "" {
+			Skip("PERF environment not set, skipping")
+		}
+
 		var err error
 		cache, err = gmeasure.NewExperimentCache("./compiling-and-running-single-cache")
 		Ω(err).ShouldNot(HaveOccurred())
@@ -50,6 +55,10 @@ var _ = Describe("Compiling and Running multiple tests", func() {
 	var cache gmeasure.ExperimentCache
 
 	BeforeEach(func() {
+		if os.Getenv("PERF") == "" {
+			Skip("PERF environment not set, skipping")
+		}
+
 		var err error
 		cache, err = gmeasure.NewExperimentCache("./compiling-and-running-multiple-cache")
 		Ω(err).ShouldNot(HaveOccurred())

@@ -23,7 +23,7 @@ To upgrade to Ginkgo 2.0, assuming you are using `go mod`, you'll need to do the
 
 2. Install the V2 CLI.  Running this may require you to run a few additional `go get`s - just follow the go toolchain's instructions until you successfully get ginkgo v2 compiled:
 	```bash
-	go install github.com/onsi/ginkgo/v2/ginkgo@latest
+	go install -mod=mod github.com/onsi/ginkgo/v2/ginkgo@latest
 	ginkgo version //should print out "Ginkgo Version 2.0.0"
 	```
 
@@ -33,7 +33,7 @@ Updating to V2 will require you to make some changes to your test suites however
 
 With the release of Ginkgo 2.0 the 1.x version is formally deprecated and no longer supported.  All future development will occur on version 2.
 
-The next sections describe the [new features in Ginkgo 2.0](#major-additions-and-improvements) and the [major changes](#major-changes) alogn with details on how to migrate your test code to adapt to the changes.  At the end of this doc is an [FAQ](#faq) with common gotchas that will be tracked as they emerge.
+The next sections describe the [new features in Ginkgo 2.0](#major-additions-and-improvements) and the [major changes](#major-changes) along with details on how to migrate your test code to adapt to the changes.  At the end of this doc is an [FAQ](#faq) with common gotchas that will be tracked as they emerge.
 
 ## Major Additions and Improvements
 
@@ -258,7 +258,7 @@ Ginkgo follows the following rules when generating reports using these new `--FO
 Ginkgo now provides a new node, `ReportAfterSuite`, with the following properties and constraints:
 - `ReportAfterSuite` nodes are passed a function that takes a `types.Report`:
   ```go
-  var _ = ReportAfterSuite(func(report types.Report) {
+  var _ = ReportAfterSuite("custom reporter", func(report types.Report) {
   	// do stuff with report
   })
   ```
@@ -405,7 +405,7 @@ In V1 Ginkgo would run windows tests in parallel with the `--stream` option.  Th
 - Tables can now accept slices of []TableEntry in addition to individual entries.  This allows for entries to be reused across different tables.
 - Error output is clearer and consistently links to relevant sections in the documentation.
 - `By` now emits a timestamp.  It also registers a `ReportEntry` that appears in the suite report as structured data.  If passed a callback, `By` will now time the callback and include the duration in the suite report.
-- Test randomization is now more stable as tests are now sorted deterministcally on file_name:line_number first (previously they were sorted on test text which could not guarantee a stable sort).
+- Test randomization is now more stable as tests are now sorted deterministically on file_name:line_number first (previously they were sorted on test text which could not guarantee a stable sort).
 - A new "very verbose" setting is now available.  Setting `-vv` implies `-v` but also causes skipped tests to be emitted.
 - Ginkgo's OutputInterceptor (the component that intercepts stdout/stderr when running in parallel) should now be more performant and better handle edge cases.  It can be paused and resumed with PauseOutputInterception() and ResumeOutputInterception() and disabled entirely with --output-interceptor-mode=none.
 
@@ -427,20 +427,17 @@ It("...", func(done Done) {
 will emit a deprecation warning and will run **synchronously**.  This means the `timeout` will not be enforced and the status of the `Done` channel will be ignored - a test that hangs will hang indefinitely.
 
 #### Migration Strategy:
-We recommend users make targeted use of Gomega's [Asynchronous Assertions](https://onsi.github.io/gomega/#making-asynchronous-assertions) to better test asynchronous behavior.
+We recommend users make targeted use of Gomega's [Asynchronous Assertions](https://onsi.github.io/gomega/#making-asynchronous-assertions) to better test asynchronous behavior.  In addition, as of Ginkgo 2.3.0, users can [make individual nodes interruptible and reintroduce the notion of spec timeouts]((https://onsi.github.io/ginkgo/#spec-timeouts-and-interruptible-nodes)).
 
 As a first migration pass that produces **equivalent behavior** users can replace asynchronous tests with:
 
 ```go
-It("...", func() {
-	done := make(chan interface{})
-	go func() {
-		// user test code to run asynchronously
-		close(done) //signifies the code is done
-	}()
-	Eventually(done, timeout).Should(BeClosed())
-})
+It("...", func(ctx SpecContext) {
+	// user test code to run asynchronously
+}, NodeTimeout(timeout))
 ```
+
+if your code supports it, you can use the `ctx` passed in to the `It` to signal that the spec deadline has elapsed and cause the spec to exit.
 
 ### Removed: Measure
 As described in the [Ginkgo 2.0 Proposal](https://docs.google.com/document/d/1h28ZknXRsTLPNNiOjdHIO-F2toCzq4xoZDXbfYaBdoQ/edit#heading=h.2ezhpn4gmcgs) the Ginkgo 1.x implementation of benchmarking using `Measure` nodes was a source of tightly-coupled complexity.  It is removed in Ginkgo 2.0.
@@ -500,7 +497,7 @@ It is generally recommended that users use the CLI to configure Ginkgo as some a
 
 ```go
 func TestMySuite(t *testing.T)  {
-	RegisterFailHanlder(gomega.Fail)
+	RegisterFailHandler(gomega.Fail)
 	// fetch the current config
 	suiteConfig, reporterConfig := GinkgoConfiguration()
 	// adjust it
@@ -548,7 +545,7 @@ The `-debug` flag has been removed.  It functioned primarily as a band-aid to Gi
 Users should remove -stream from any scripts they have that invoke the `ginkgo` cli.
 
 ### Removed: ginkgo nodot
-The `ginkgo nodot` subcommand in V1, along with the `--nodot` flags for `ginkgo bootstrap` and `ginkgo generate` were provided to allow users to avoid a `.` import of Ginkgo and Gomega but still have access to the exported variables and types at the top-level.  This was implemented by defining top-level aliases that pointed to the objects and types in the imported Ginkgo and Gomega libraries in the user's bootstrap file.  In practice most users either dot-import Ginkgo and Gomega, or they don't and use the imported package name to refer to objects and types instead.  V2 removes the support generating and maintaining these alias lists.  `--nodot` remainds for `ginkgo bootstrap` and `ginkgo generate` and it simply avoids dot-importing Ginkgo and Gomega.
+The `ginkgo nodot` subcommand in V1, along with the `--nodot` flags for `ginkgo bootstrap` and `ginkgo generate` were provided to allow users to avoid a `.` import of Ginkgo and Gomega but still have access to the exported variables and types at the top-level.  This was implemented by defining top-level aliases that pointed to the objects and types in the imported Ginkgo and Gomega libraries in the user's bootstrap file.  In practice most users either dot-import Ginkgo and Gomega, or they don't and use the imported package name to refer to objects and types instead.  V2 removes the support generating and maintaining these alias lists.  `--nodot` remains for `ginkgo bootstrap` and `ginkgo generate` and it simply avoids dot-importing Ginkgo and Gomega.
 
 As a result of this change custom bootstrap and generate templates may need to be updated:
 
@@ -664,7 +661,7 @@ This means that your dependencies can use a different major version of Ginkgo fo
 This _also_ means that you can, in principle, upgrade different test suites in your module at different times.  For example, in a fictitious `factory` module the `sprockets` package can be upgraded to Ginkgo V2 first, and the `convery_belt` package can stay at Ginkgo V1 until later.  In _practice_ however, you'll run into difficulties as the `ginkgo` cli used to invoke the tests will be at a different major version than some subset of packages under test - this basically won't work because of changes in the client/server contract between the CLI and the test library across the two major versions.  So you'll need to take care to use the correct version of the cli with the correct test package.  In general the migration to V2 is intended to be simple enough that you should rarely need to resort to having mixed-version numbers like this.
 
 ### A symbol in V2 now clashes with a symbol in my codebase.  What do I do?
-If Ginkgo 2.0 introduces a new exported symbl that now clashes with your codebase (because you are dot-importing Ginkgo). Check out the [Alternatives to Dot-Importing Ginkgo](https://onsi.github.io/ginkgo/#alternatives-to-dot-importing-ginkgo) section of the documentation for some options.  You may be able to, instead, dot-import just a subset of the Ginkgo DSL using the new `github.com/onsi/ginkgo/v2/dsl` set of packages.
+If Ginkgo 2.0 introduces a new exported symbol that now clashes with your codebase (because you are dot-importing Ginkgo). Check out the [Alternatives to Dot-Importing Ginkgo](https://onsi.github.io/ginkgo/#alternatives-to-dot-importing-ginkgo) section of the documentation for some options.  You may be able to, instead, dot-import just a subset of the Ginkgo DSL using the new `github.com/onsi/ginkgo/v2/dsl` set of packages.
 
 Specifically when upgrading from v1 to v2 if you see a dot-import clash due to a newly introduced symbol (e.g. the new `Label` decorator) you can instead choose to dot-import the core DSL and import the `decorator` dsl separately:
 

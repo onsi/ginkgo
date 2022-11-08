@@ -12,7 +12,7 @@ var _ = Describe("Skipping Specs", func() {
 	})
 
 	It("should skip in all the possible ways", func() {
-		session := startGinkgo(fm.PathTo("skip"), "--no-color")
+		session := startGinkgo(fm.PathTo("skip"), "--no-color", "-v")
 		Eventually(session).Should(gexec.Exit(0))
 		output := string(session.Out.Contents())
 

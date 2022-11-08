@@ -11,6 +11,10 @@ var _ = AfterSuite(func() {
 	fmt.Println("Heading Out After Suite")
 })
 
+var _ = ReportAfterSuite("", func(r Report) {
+	fmt.Println("Reporting at the end")
+})
+
 var _ = Describe("HangingSuite", func() {
 	BeforeEach(func() {
 		fmt.Fprintln(GinkgoWriter, "Just beginning")
@@ -21,24 +25,29 @@ var _ = Describe("HangingSuite", func() {
 			fmt.Fprintln(GinkgoWriter, "Almost there...")
 		})
 
-		It("should hang out for a while", func() {
+		It("should hang out for a while", func(ctx SpecContext) {
 			fmt.Fprintln(GinkgoWriter, "Hanging Out")
 			fmt.Println("Sleeping...")
-			time.Sleep(time.Hour)
+			select {
+			case <-ctx.Done():
+				fmt.Println("Got your signal, but still taking a nap")
+				time.Sleep(time.Hour)
+			case <-time.After(time.Hour):
+			}
 		})
 
 		AfterEach(func() {
-			fmt.Fprintln(GinkgoWriter, "Cleaning up once...")
+			fmt.Println("Cleaning up once...")
 		})
 	})
 
 	AfterEach(func() {
-		fmt.Fprintln(GinkgoWriter, "Cleaning up twice...")
+		fmt.Println("Cleaning up twice...")
 		fmt.Println("Sleeping again...")
 		time.Sleep(time.Hour)
 	})
 
 	AfterEach(func() {
-		fmt.Fprintln(GinkgoWriter, "Cleaning up thrice...")
+		fmt.Println("Cleaning up thrice...")
 	})
 })

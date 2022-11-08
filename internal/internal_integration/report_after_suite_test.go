@@ -40,10 +40,10 @@ var _ = Describe("Sending reports to ReportAfterSuite procs", func() {
 			})
 			ReportAfterSuite("Report B", func(report Report) {
 				if interruptSuiteB {
-					interruptHandler.Interrupt(interrupt_handler.InterruptCauseTimeout)
-					time.Sleep(100 * time.Millisecond)
+					interruptHandler.Interrupt(interrupt_handler.InterruptCauseSignal)
+					time.Sleep(time.Hour)
 				}
-				rt.RunWithData("report-B", "report", report, "emitted-interrupt", interruptHandler.EmittedInterruptPlaceholderMessage())
+				rt.RunWithData("report-B", "report", report)
 				writer.Print("gw-report-B")
 				outputInterceptor.AppendInterceptedOutput("out-report-B")
 			})
@@ -107,7 +107,7 @@ var _ = Describe("Sending reports to ReportAfterSuite procs", func() {
 					Ω(reports.FindByLeafNodeType(types.NodeTypeAfterSuite)).Should(HaveFailed("fail in after-suite", CapturedGinkgoWriterOutput("gw-after-suite")))
 				}
 
-				Ω(len(reportB.SpecReports)-len(reportA.SpecReports)).Should(Equal(1), "Report B includes the invocation of ReporteAfterSuite A")
+				Ω(len(reportB.SpecReports)-len(reportA.SpecReports)).Should(Equal(1), "Report B includes the invocation of ReportAfterSuite A")
 				Ω(Reports(reportB.SpecReports).Find("Report A")).Should(Equal(reporter.Did.Find("Report A")))
 			})
 		})
@@ -148,16 +148,13 @@ var _ = Describe("Sending reports to ReportAfterSuite procs", func() {
 				Ω(success).Should(BeFalse())
 			})
 
-			It("ignores the interrupt and soldiers on", func() {
+			It("interrupts and bails", func() {
 				Ω(rt).Should(HaveTracked(
 					"before-suite",
 					"A", "B", "C",
 					"after-suite",
-					"report-A", "report-B",
+					"report-A",
 				))
-
-				Ω(rt.DataFor("report-B")["report"]).ShouldNot(BeZero())
-				Ω(rt.DataFor("report-B")["emitted-interrupt"]).Should(ContainSubstring("The running ReportAfterSuite node is at:\n%s", reporter.Did.Find("Report B").LeafNodeLocation.FileName))
 			})
 		})
 	})
@@ -217,7 +214,7 @@ var _ = Describe("Sending reports to ReportAfterSuite procs", func() {
 						Ω(reports.FindByLeafNodeType(types.NodeTypeAfterSuite)).Should(HaveFailed("fail in after-suite", CapturedGinkgoWriterOutput("gw-after-suite")))
 					}
 
-					Ω(len(reportB.SpecReports)-len(reportA.SpecReports)).Should(Equal(1), "Report B includes the invocation of ReporteAfterSuite A")
+					Ω(len(reportB.SpecReports)-len(reportA.SpecReports)).Should(Equal(1), "Report B includes the invocation of ReportAfterSuite A")
 					Ω(Reports(reportB.SpecReports).Find("Report A")).Should(Equal(reporter.Did.Find("Report A")))
 				})
 			})

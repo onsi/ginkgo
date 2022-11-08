@@ -1,6 +1,8 @@
 package internal_test
 
 import (
+	"errors"
+
 	. "github.com/onsi/ginkgo/v2"
 	. "github.com/onsi/gomega"
 
@@ -18,15 +20,29 @@ var _ = Describe("Writer", func() {
 	})
 
 	Context("when configured to WriterModeStreamAndBuffer (the default setting)", func() {
-		It("should stream directly to the passed in writer", func() {
+		It("streams directly to the passed in writer, indenting content as it writes it", func() {
 			writer.Write([]byte("foo"))
-			Ω(out).Should(gbytes.Say("foo"))
+			Ω(out).Should(gbytes.Say("  foo"))
 		})
 
 		It("does also stores the bytes", func() {
 			writer.Write([]byte("foo"))
 			Ω(out).Should(gbytes.Say("foo"))
 			Ω(string(writer.Bytes())).Should(Equal("foo"))
+		})
+	})
+
+	Describe("indenting output", func() {
+		It("handles all the vagaries of indenting a stream", func() {
+			writer.Write([]byte("foo"))
+			writer.Write([]byte(" bar\nbaz"))
+			writer.Write([]byte("zle\n"))
+			writer.Write([]byte("\nbloop"))
+			writer.Write([]byte("floop\n"))
+			writer.Write([]byte("flarp\r\n"))
+			writer.Write([]byte("flan"))
+
+			Ω(string(out.Contents())).Should(Equal("  foo bar\n  bazzle\n\n  bloopfloop\n  flarp\r\n  flan"))
 		})
 	})
 
@@ -95,17 +111,31 @@ var _ = Describe("Writer", func() {
 	Describe("Convenience print methods", func() {
 		It("can Print", func() {
 			writer.Print("foo", "baz", " ", "bizzle")
-			Ω(string(out.Contents())).Should(Equal("foobaz bizzle"))
+			Ω(string(out.Contents())).Should(Equal("  foobaz bizzle"))
 		})
 
 		It("can Println", func() {
 			writer.Println("foo", "baz", " ", "bizzle")
-			Ω(string(out.Contents())).Should(Equal("foo baz   bizzle\n"))
+			Ω(string(out.Contents())).Should(Equal("  foo baz   bizzle\n"))
 		})
 
 		It("can Printf", func() {
 			writer.Printf("%s%d - %s\n", "foo", 17, "bar")
-			Ω(string(out.Contents())).Should(Equal("foo17 - bar\n"))
+			Ω(string(out.Contents())).Should(Equal("  foo17 - bar\n"))
+		})
+	})
+
+	When("wrapped by logr", func() {
+		It("can print Info logs", func() {
+			log := internal.GinkgoLogrFunc(writer)
+			log.Info("message", "key", 5)
+			Ω(string(out.Contents())).Should(Equal("  \"level\"=0 \"msg\"=\"message\" \"key\"=5"))
+		})
+
+		It("can print Error logs", func() {
+			log := internal.GinkgoLogrFunc(writer)
+			log.Error(errors.New("cake"), "planned failure", "key", "banana")
+			Ω(string(out.Contents())).Should(Equal("  \"msg\"=\"planned failure\" \"error\"=\"cake\" \"key\"=\"banana\""))
 		})
 	})
 })

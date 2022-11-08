@@ -1,6 +1,8 @@
 package internal_integration_test
 
 import (
+	"time"
+
 	. "github.com/onsi/ginkgo/v2"
 	. "github.com/onsi/gomega"
 
@@ -40,6 +42,10 @@ var _ = Describe("handling test failures", func() {
 		It("does run the AfterSuite", func() {
 			Ω(rt).Should(HaveTracked("before-suite", "after-suite"))
 		})
+
+		It("emits the failures", func() {
+			Ω(reporter.Failures[0]).Should(HaveFailed("fail", cl, FailureNodeType(types.NodeTypeBeforeSuite)))
+		})
 	})
 
 	Describe("when BeforeSuite panics", func() {
@@ -72,6 +78,10 @@ var _ = Describe("handling test failures", func() {
 		It("does run the AfterSuite", func() {
 			Ω(rt).Should(HaveTracked("before-suite", "after-suite"))
 		})
+
+		It("emits the failures", func() {
+			Ω(reporter.Failures[0]).Should(HavePanicked("boom", FailureNodeType(types.NodeTypeBeforeSuite)))
+		})
 	})
 
 	Describe("when AfterSuite fails/panics", func() {
@@ -100,6 +110,10 @@ var _ = Describe("handling test failures", func() {
 			Ω(reporter.Did.Find("A")).Should(HavePassed())
 			Ω(reporter.Did.Find("B")).Should(HavePassed())
 			Ω(reporter.Did.FindByLeafNodeType(types.NodeTypeAfterSuite)).Should(HaveFailed("fail", cl, CapturedGinkgoWriterOutput("after-suite")))
+		})
+
+		It("emits the failures", func() {
+			Ω(reporter.Failures[0]).Should(HaveFailed("fail", FailureNodeType(types.NodeTypeAfterSuite), TLWithOffset("after-suite")))
 		})
 	})
 
@@ -134,7 +148,7 @@ var _ = Describe("handling test failures", func() {
 
 			It("reports the It's failure", func() {
 				Ω(reporter.Did.Find("A")).Should(HavePassed(CapturedGinkgoWriterOutput("running A")))
-				Ω(reporter.Did.Find("B")).Should(HaveFailed("fail", cl, CapturedGinkgoWriterOutput("running B")))
+				Ω(reporter.Did.Find("B")).Should(HaveFailed("fail", cl, CapturedGinkgoWriterOutput("running B"), TLWithOffset("running B")))
 				Ω(reporter.Did.Find("C")).Should(HavePassed())
 			})
 
@@ -143,6 +157,10 @@ var _ = Describe("handling test failures", func() {
 				Ω(report.Failure.FailureNodeContext).Should(Equal(types.FailureNodeIsLeafNode))
 				Ω(report.Failure.FailureNodeType).Should(Equal(types.NodeTypeIt))
 				Ω(report.Failure.FailureNodeLocation).Should(Equal(report.LeafNodeLocation))
+			})
+
+			It("emits the failures", func() {
+				Ω(reporter.Failures[0]).Should(HaveFailed("fail", cl, TLWithOffset("running B")))
 			})
 		})
 
@@ -175,7 +193,7 @@ var _ = Describe("handling test failures", func() {
 
 			It("reports the It's failure", func() {
 				Ω(reporter.Did.Find("A")).Should(HavePassed(CapturedGinkgoWriterOutput("running A")))
-				Ω(reporter.Did.Find("B")).Should(HavePanicked("boom", CapturedGinkgoWriterOutput("running B")))
+				Ω(reporter.Did.Find("B")).Should(HavePanicked("boom", CapturedGinkgoWriterOutput("running B"), TLWithOffset("running B")))
 				Ω(reporter.Did.Find("C")).Should(HavePassed())
 			})
 
@@ -185,6 +203,11 @@ var _ = Describe("handling test failures", func() {
 				Ω(report.Failure.FailureNodeType).Should(Equal(types.NodeTypeIt))
 				Ω(report.Failure.FailureNodeLocation).Should(Equal(report.LeafNodeLocation))
 			})
+
+			It("emits the failures", func() {
+				Ω(reporter.Failures[0]).Should(HavePanicked("boom", TLWithOffset("running B")))
+			})
+
 		})
 
 		Describe("when a BeforeEach fails/panics", func() {
@@ -219,7 +242,7 @@ var _ = Describe("handling test failures", func() {
 			It("reports a suite failure and a spec failure", func() {
 				Ω(reporter.End).Should(BeASuiteSummary(false, NSpecs(1), NPassed(0), NFailed(1)))
 				specReport := reporter.Did.Find("the test")
-				Ω(specReport).Should(HaveFailed("fail", cl), CapturedGinkgoWriterOutput("bef-2 is runningaft-2 is running"))
+				Ω(specReport).Should(HaveFailed("fail", cl, CapturedGinkgoWriterOutput("bef-2 is runningaft-2 is running")))
 			})
 
 			It("sets up the failure node location correctly", func() {
@@ -227,6 +250,10 @@ var _ = Describe("handling test failures", func() {
 				Ω(report.Failure.FailureNodeContext).Should(Equal(types.FailureNodeInContainer))
 				Ω(report.Failure.FailureNodeType).Should(Equal(types.NodeTypeBeforeEach))
 				Ω(report.Failure.FailureNodeContainerIndex).Should(Equal(0))
+			})
+
+			It("emits the failures", func() {
+				Ω(reporter.Failures[0]).Should(HaveFailed("fail", cl))
 			})
 
 			It("runs the JustAfterEaches and AfterEaches at the same or lesser nesting level", func() {
@@ -249,6 +276,8 @@ var _ = Describe("handling test failures", func() {
 				report := reporter.Did.Find("the test")
 				Ω(report.Failure.FailureNodeContext).Should(Equal(types.FailureNodeAtTopLevel))
 				Ω(report.Failure.FailureNodeType).Should(Equal(types.NodeTypeBeforeEach))
+
+				Ω(reporter.Failures[0]).Should(HaveFailed("fail", cl))
 			})
 		})
 
@@ -281,7 +310,9 @@ var _ = Describe("handling test failures", func() {
 			It("reports a suite failure and a spec failure", func() {
 				Ω(reporter.End).Should(BeASuiteSummary(false, NSpecs(1), NPassed(0), NFailed(1)))
 				specReport := reporter.Did.Find("the test")
-				Ω(specReport).Should(HaveFailed("fail"), CapturedGinkgoWriterOutput("aft-2 is running"))
+				Ω(specReport).Should(HaveFailed("fail", CapturedGinkgoWriterOutput("aft-2 is running")))
+
+				Ω(reporter.Failures[0]).Should(HaveFailed("fail"))
 			})
 
 			It("sets up the failure node location correctly", func() {
@@ -307,6 +338,11 @@ var _ = Describe("handling test failures", func() {
 				success, _ := RunFixture("failed after each", func() {
 					BeforeEach(rt.T("bef-1", func() {
 						writer.Write([]byte("run A"))
+						DeferCleanup(rt.TSC("dc-1", func(ctx SpecContext) {
+							writer.Write([]byte("run DC"))
+							<-ctx.Done()
+							F("fail-DC")
+						}), NodeTimeout(time.Millisecond*50))
 						F("fail-A", clA)
 					}))
 					It("the test", rt.T("it"))
@@ -318,12 +354,34 @@ var _ = Describe("handling test failures", func() {
 				Ω(success).Should(BeFalse())
 			})
 
-			It("reports a suite failure and a spec failure and only tracks the first failure", func() {
+			It("reports a suite failure and a spec failure and tracks the first failure as its primary failure, but also tracks the additional failures", func() {
 				Ω(reporter.End).Should(BeASuiteSummary(false, NSpecs(1), NPassed(0), NFailed(1)))
 				specReport := reporter.Did.Find("the test")
-				Ω(specReport).Should(HaveFailed("fail-A", clA), CapturedGinkgoWriterOutput("run Arun B"))
+				Ω(specReport).Should(HaveFailed("fail-A", clA, CapturedGinkgoWriterOutput("run Arun Brun DC")))
 				Ω(specReport.Failure.FailureNodeType).Should(Equal(types.NodeTypeBeforeEach))
-				Ω(rt).Should(HaveTracked("bef-1", "aft-1"))
+				Ω(rt).Should(HaveTracked("bef-1", "aft-1", "dc-1"))
+
+				Ω(specReport.AdditionalFailures).Should(HaveLen(2))
+
+				Ω(specReport.AdditionalFailures[0].State).Should(Equal(types.SpecStateFailed))
+				Ω(specReport.AdditionalFailures[0].Failure.Message).Should(Equal("fail-B"))
+				Ω(specReport.AdditionalFailures[0].Failure.Location).Should(Equal(clB))
+				Ω(specReport.AdditionalFailures[0].Failure.FailureNodeType).Should(Equal(types.NodeTypeAfterEach))
+
+				Ω(specReport.AdditionalFailures[1].State).Should(Equal(types.SpecStateTimedout))
+				Ω(specReport.AdditionalFailures[1]).Should(HaveTimedOut("A node timeout occurred"))
+
+				Ω(specReport.AdditionalFailures[1].Failure.AdditionalFailure).Should(HaveFailed("A node timeout occurred and then the following failure was recorded in the timedout node before it exited:\nfail-DC"))
+				Ω(specReport.AdditionalFailures[1].Failure.FailureNodeType).Should(Equal(types.NodeTypeCleanupAfterEach))
+			})
+
+			It("also emits all the failures", func() {
+				Ω(reporter.Failures).Should(HaveLen(4))
+				Ω(reporter.Failures[0]).Should(HaveFailed("fail-A", clA))
+				Ω(reporter.Failures[1]).Should(HaveFailed("fail-B", clB))
+				Ω(reporter.Failures[2]).Should(HaveTimedOut("A node timeout occurred"))
+				Ω(reporter.Failures[3]).Should(HaveFailed("A node timeout occurred and then the following failure was recorded in the timedout node before it exited:\nfail-DC"))
+
 			})
 		})
 	})
@@ -346,6 +404,10 @@ var _ = Describe("handling test failures", func() {
 			Ω(reporter.Did.WithState(types.SpecStatePassed).Names()).Should(ConsistOf("C", "E"))
 			Ω(reporter.Did.WithState(types.SpecStateFailed).Names()).Should(ConsistOf("A", "B", "D"))
 			Ω(reporter.Did.WithState(types.SpecStatePanicked).Names()).Should(ConsistOf("F"))
+		})
+
+		It("emits all the failures", func() {
+			Ω(reporter.Failures).Should(HaveLen(4))
 		})
 	})
 })

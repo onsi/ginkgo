@@ -1,12 +1,15 @@
 package fail_fixture_test
 
 import (
+	"context"
+	"time"
+
 	. "github.com/onsi/ginkgo/v2"
 	. "github.com/onsi/gomega"
 )
 
 var _ = It("handles top level failures", func() {
-	Ω("a top level failure on line 9").Should(Equal("nope"))
+	Ω("a top level failure on line 12").Should(Equal("nope"))
 	println("NEVER SEE THIS")
 })
 
@@ -25,6 +28,10 @@ var _ = Describe("Exercising different failure modes", func() {
 		Fail("a sync FAIL failure")
 		println("NEVER SEE THIS")
 	})
+
+	It("times out", func(c context.Context) {
+		<-c.Done()
+	}, NodeTimeout(time.Millisecond*50))
 })
 
 var _ = Specify("a top level specify", func() {
