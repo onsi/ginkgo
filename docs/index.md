@@ -289,7 +289,7 @@ var _ = Describe("Books", func() {
 })
 ```
 
-Our new spec connects with a library service to fetch a summary of the book and asserts that the request succeeds with a meaningful response.  This example previews a few advanced concepts that you'll learn about later in these docs: Ginkgo supports [decorators](#mental-model-spec-decorators) like [SpecTimeout](#the-spectimeout-and-nodetimeout-decorators) to annotate and modify the behavior of specs; and Ginkgo allows you to test potentially long-running code by writing (interruptible)[#spec-timeouts-and-interruptible-nodes] specs that accept a `SpecContext` or `context.Context`.  Now, if more than a second elapses, _or_ an interrupt signal is received, Ginkgo will signal `library.FetchSummary` to clean up by cancelling `ctx`.
+Our new spec connects with a library service to fetch a summary of the book and asserts that the request succeeds with a meaningful response.  This example previews a few advanced concepts that you'll learn about later in these docs: Ginkgo supports [decorators](#mental-model-spec-decorators) like [SpecTimeout](#the-spectimeout-and-nodetimeout-decorators) to annotate and modify the behavior of specs; and Ginkgo allows you to test potentially long-running code by writing [interruptible](#spec-timeouts-and-interruptible-nodes) specs that accept a `SpecContext` or `context.Context`.  Now, if more than a second elapses, _or_ an interrupt signal is received, Ginkgo will signal `library.FetchSummary` to clean up by cancelling `ctx`.
 
 Ginkgo provides an alias for `It` called `Specify`.  `Specify` is functionally identical to `It` but can help your specs read more naturally.
 
