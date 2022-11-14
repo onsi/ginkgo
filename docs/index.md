@@ -2196,7 +2196,7 @@ It's a common pattern to have setup and cleanup code at the outer-most level of 
 ```go
 BeforeEach(func() {
     libraryClient = library.NewClient()
-    Expect(libraryClient.Connect()).To(Succeed()
+    Expect(libraryClient.Connect()).To(Succeed())
 
     snapshot := libraryClient.TakeSnapshot()
     DeferCleanup(libraryClient.RestoreSnapshot, snapshot)
