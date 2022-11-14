@@ -2175,7 +2175,7 @@ Describe("checking out a book", Ordered, func() {
 })
 ```
 
-here we only set up the `libraryCLient` once before all the specs run, and then tear it down once all the specs complete.
+here we only set up the `libraryClient` once before all the specs run, and then tear it down once all the specs complete.
 
 `BeforeAll` and `AfterAll` nodes can only be introduced within an `Ordered` container.  `BeforeAll` and `AfterAll` can also be nested within containers that appear in `Ordered` containers - in such cases they will run before/after the specs in that nested container.
 
