@@ -2175,7 +2175,7 @@ Describe("checking out a book", Ordered, func() {
 })
 ```
 
-here we only set up the `libraryCLient` once before all the specs run, and then tear it down once all the specs complete.
+here we only set up the `libraryClient` once before all the specs run, and then tear it down once all the specs complete.
 
 `BeforeAll` and `AfterAll` nodes can only be introduced within an `Ordered` container.  `BeforeAll` and `AfterAll` can also be nested within containers that appear in `Ordered` containers - in such cases they will run before/after the specs in that nested container.
 
@@ -2196,7 +2196,7 @@ It's a common pattern to have setup and cleanup code at the outer-most level of 
 ```go
 BeforeEach(func() {
     libraryClient = library.NewClient()
-    Expect(libraryClient.Connect()).To(Succeed()
+    Expect(libraryClient.Connect()).To(Succeed())
 
     snapshot := libraryClient.TakeSnapshot()
     DeferCleanup(libraryClient.RestoreSnapshot, snapshot)
