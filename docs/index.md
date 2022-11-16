@@ -4034,7 +4034,7 @@ Describe("Publishing books", func() {
     Expect(result.EpubContent).To(ContainSubstring("I've ransomed you from fear and hatred, and now I give you back to God."))
 
     //we expect the publisher to close the channel when it's done
-    Eventually(ctx, c).WithTimeout(time.Second.Should(BeClosed())
+    Eventually(ctx, c).WithTimeout(time.Second).Should(BeClosed())
   }, SpecTimeout(time.Second*30)) //this spec has 30 seconds to complete
 })
 ```
