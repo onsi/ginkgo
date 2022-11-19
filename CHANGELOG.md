@@ -1,3 +1,16 @@
+## 2.5.1
+
+### Fixes
+- skipped tests only show as 'S' when running with -v [3ab38ae]
+- Fix typo in docs/index.md (#1082) [55fc58d]
+- Fix typo in docs/index.md (#1081) [8a14f1f]
+- Fix link notation in docs/index.md (#1080) [2669612]
+- Fix typo in `--progress` deprecation message (#1076) [b4b7edc]
+
+### Maintenance
+- chore: Included githubactions in the dependabot config (#976) [baea341]
+- Bump golang.org/x/sys from 0.1.0 to 0.2.0 (#1075) [9646297]
+
 ## 2.5.0
 
 ### Ginkgo output now includes a timeline-view of the spec
