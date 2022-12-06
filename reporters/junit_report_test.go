@@ -219,6 +219,7 @@ var _ = Describe("JunitReport", func() {
 				OmitTimelinesForSpecState: types.SpecStatePassed,
 				OmitFailureMessageAttr:    true,
 				OmitCapturedStdOutErr:     true,
+				OmitSpecLabels:            true,
 			})).Should(Succeed())
 			DeferCleanup(os.Remove, fname)
 
@@ -251,7 +252,7 @@ var _ = Describe("JunitReport", func() {
 			Ω(suite.TestCases).Should(HaveLen(4))
 
 			failingSpec := suite.TestCases[0]
-			Ω(failingSpec.Name).Should(Equal("[It] A B C [dolphin, gorilla, cow, cat, dog]"))
+			Ω(failingSpec.Name).Should(Equal("[It] A B C"))
 			Ω(failingSpec.Classname).Should(Equal("My Suite"))
 			Ω(failingSpec.Status).Should(Equal("timedout"))
 			Ω(failingSpec.Skipped).Should(BeNil())
