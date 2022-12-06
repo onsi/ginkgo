@@ -1943,7 +1943,7 @@ var _ = SynchronizedAfterSuite(func() {
 
 This code will spin up a single database and ensure that every parallel Ginkgo process connects to the database and sets up an appropriately sharded namespace.  Ginkgo does all the work of coordinating across these various closures and passing information back and forth - and all the complexity of the parallel setup in the test suite is now contained in the `Synchronized*` setup nodes.
 
-Bu the way, we can clean all this up further using `DeferCleanup`.  `DeferCleanup` is context aware and so knows that any cleanup code registered in a `BeforeSuite`/`SynchronizedBeforeSuite` should run at the end of the suite:
+By the way, we can clean all this up further using `DeferCleanup`.  `DeferCleanup` is context aware and so knows that any cleanup code registered in a `BeforeSuite`/`SynchronizedBeforeSuite` should run at the end of the suite:
 
 ```go
 var dbClient *db.Client
