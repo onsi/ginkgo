@@ -220,6 +220,7 @@ var _ = Describe("JunitReport", func() {
 				OmitFailureMessageAttr:    true,
 				OmitCapturedStdOutErr:     true,
 				OmitSpecLabels:            true,
+				OmitLeafNodeType:          true,
 			})).Should(Succeed())
 			DeferCleanup(os.Remove, fname)
 
@@ -252,7 +253,7 @@ var _ = Describe("JunitReport", func() {
 			Ω(suite.TestCases).Should(HaveLen(4))
 
 			failingSpec := suite.TestCases[0]
-			Ω(failingSpec.Name).Should(Equal("[It] A B C"))
+			Ω(failingSpec.Name).Should(Equal("A B C"))
 			Ω(failingSpec.Classname).Should(Equal("My Suite"))
 			Ω(failingSpec.Status).Should(Equal("timedout"))
 			Ω(failingSpec.Skipped).Should(BeNil())
@@ -303,7 +304,7 @@ var _ = Describe("JunitReport", func() {
 			))
 
 			passingSpec := suite.TestCases[1]
-			Ω(passingSpec.Name).Should(Equal("[It] A"))
+			Ω(passingSpec.Name).Should(Equal("A"))
 			Ω(passingSpec.Classname).Should(Equal("My Suite"))
 			Ω(passingSpec.Status).Should(Equal("passed"))
 			Ω(passingSpec.Skipped).Should(BeNil())
@@ -313,7 +314,7 @@ var _ = Describe("JunitReport", func() {
 			Ω(passingSpec.SystemErr).Should(BeEmpty())
 
 			pendingSpec := suite.TestCases[2]
-			Ω(pendingSpec.Name).Should(Equal("[It] A"))
+			Ω(pendingSpec.Name).Should(Equal("A"))
 			Ω(pendingSpec.Classname).Should(Equal("My Suite"))
 			Ω(pendingSpec.Status).Should(Equal("pending"))
 			Ω(pendingSpec.Skipped.Message).Should(Equal("pending"))
@@ -323,7 +324,7 @@ var _ = Describe("JunitReport", func() {
 			Ω(pendingSpec.SystemErr).Should(BeEmpty())
 
 			panickedSpec := suite.TestCases[3]
-			Ω(panickedSpec.Name).Should(Equal("[It] A"))
+			Ω(panickedSpec.Name).Should(Equal("A"))
 			Ω(panickedSpec.Classname).Should(Equal("My Suite"))
 			Ω(panickedSpec.Status).Should(Equal("panicked"))
 			Ω(panickedSpec.Skipped).Should(BeNil())
