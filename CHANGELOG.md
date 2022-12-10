@@ -1,3 +1,13 @@
+## 2.6.0
+
+### Features
+- `ReportBeforeSuite` provides access to the suite report before the suite begins.
+- Add junit config option for omitting leafnodetype (#1088) [956e6d2]
+- Add support to customize junit report config to omit spec labels (#1087) [de44005]
+
+### Fixes
+- Fix stack trace pruning so that it has a chance of working on windows [2165648]
+
 ## 2.5.1
 
 ### Fixes
