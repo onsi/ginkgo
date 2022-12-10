@@ -409,23 +409,7 @@ func (suite *Suite) runSpecs(description string, suiteLabels Labels, suitePath s
 
 	suite.report.SuiteSucceeded = true
 
-	if len(suite.suiteNodes.WithType(types.NodeTypeReportBeforeSuite)) > 0 {
-		if suite.config.ParallelProcess == 1 {
-			suite.runReportBeforeSuite()
-			if suite.isRunningInParallel() {
-				if suite.report.SuiteSucceeded {
-					suite.client.PostReportBeforeSuiteCompleted(types.SpecStatePassed)
-				} else {
-					suite.client.PostReportBeforeSuiteCompleted(types.SpecStateFailed)
-				}
-			}
-		} else {
-			state, err := suite.client.BlockUntilReportBeforeSuiteCompleted()
-			if err != nil || state.Is(types.SpecStateFailed) {
-				suite.report.SuiteSucceeded = false
-			}
-		}
-	}
+	suite.runReportSuiteNodesIfNeedBe(types.NodeTypeReportBeforeSuite)
 
 	ranBeforeSuite := suite.report.SuiteSucceeded
 	if suite.report.SuiteSucceeded {
@@ -485,9 +469,7 @@ func (suite *Suite) runSpecs(description string, suiteLabels Labels, suitePath s
 		suite.report.SuiteSucceeded = false
 	}
 
-	if suite.config.ParallelProcess == 1 {
-		suite.runReportAfterSuite()
-	}
+	suite.runReportSuiteNodesIfNeedBe(types.NodeTypeReportAfterSuite)
 	suite.reporter.SuiteDidEnd(suite.report)
 	if suite.isRunningInParallel() {
 		suite.client.PostSuiteDidEnd(suite.report)
@@ -678,46 +660,24 @@ func (suite *Suite) runSuiteNode(node Node) {
 	suite.currentSpecReport.RunTime = suite.currentSpecReport.EndTime.Sub(suite.currentSpecReport.StartTime)
 	suite.currentSpecReport.CapturedGinkgoWriterOutput = string(suite.writer.Bytes())
 	suite.currentSpecReport.CapturedStdOutErr += suite.outputInterceptor.StopInterceptingAndReturnOutput()
-
-	return
 }
 
-// TODO - clean up and merge these four once the dust settles
-func (suite *Suite) runReportBeforeSuite() {
-	for _, node := range suite.suiteNodes.WithType(types.NodeTypeReportBeforeSuite) {
-		suite.selectiveLock.Lock()
-		suite.currentSpecReport = types.SpecReport{
-			LeafNodeType:      node.NodeType,
-			LeafNodeLocation:  node.CodeLocation,
-			ParallelProcess:   suite.config.ParallelProcess,
-			RunningInParallel: suite.isRunningInParallel(),
-		}
-		suite.selectiveLock.Unlock()
-
-		suite.reporter.WillRun(suite.currentSpecReport)
-		suite.runReportBeforeSuiteNode(node, suite.report)
-		suite.processCurrentSpecReport()
+func (suite *Suite) runReportSuiteNodesIfNeedBe(nodeType types.NodeType) {
+	nodes := suite.suiteNodes.WithType(nodeType)
+	// only run ReportAfterSuite on proc 1
+	if nodeType.Is(types.NodeTypeReportAfterSuite) && suite.config.ParallelProcess != 1 {
+		return
 	}
-}
+	// if we're running ReportBeforeSuite on proc > 1 - we should wait until proc 1 has completed
+	if nodeType.Is(types.NodeTypeReportBeforeSuite) && suite.config.ParallelProcess != 1 && len(nodes) > 0 {
+		state, err := suite.client.BlockUntilReportBeforeSuiteCompleted()
+		if err != nil || state.Is(types.SpecStateFailed) {
+			suite.report.SuiteSucceeded = false
+		}
+		return
+	}
 
-func (suite *Suite) runReportBeforeSuiteNode(node Node, report types.Report) {
-	suite.writer.Truncate()
-	suite.outputInterceptor.StartInterceptingOutput()
-	suite.currentSpecReport.StartTime = time.Now()
-
-	node.Body = func(SpecContext) { node.ReportSuiteBody(report) }
-	suite.currentSpecReport.State, suite.currentSpecReport.Failure = suite.runNode(node, time.Time{}, "")
-
-	suite.currentSpecReport.EndTime = time.Now()
-	suite.currentSpecReport.RunTime = suite.currentSpecReport.EndTime.Sub(suite.currentSpecReport.StartTime)
-	suite.currentSpecReport.CapturedGinkgoWriterOutput = string(suite.writer.Bytes())
-	suite.currentSpecReport.CapturedStdOutErr = suite.outputInterceptor.StopInterceptingAndReturnOutput()
-
-	return
-}
-
-func (suite *Suite) runReportAfterSuite() {
-	for _, node := range suite.suiteNodes.WithType(types.NodeTypeReportAfterSuite) {
+	for _, node := range nodes {
 		suite.selectiveLock.Lock()
 		suite.currentSpecReport = types.SpecReport{
 			LeafNodeType:      node.NodeType,
@@ -729,17 +689,28 @@ func (suite *Suite) runReportAfterSuite() {
 		suite.selectiveLock.Unlock()
 
 		suite.reporter.WillRun(suite.currentSpecReport)
-		suite.runReportAfterSuiteNode(node, suite.report)
+		suite.runReportSuiteNode(node, suite.report)
 		suite.processCurrentSpecReport()
+	}
+
+	// if we're running ReportBeforeSuite and we're running in parallel - we shuld tell the other procs that we're done
+	if nodeType.Is(types.NodeTypeReportBeforeSuite) && suite.isRunningInParallel() && len(nodes) > 0 {
+		if suite.report.SuiteSucceeded {
+			suite.client.PostReportBeforeSuiteCompleted(types.SpecStatePassed)
+		} else {
+			suite.client.PostReportBeforeSuiteCompleted(types.SpecStateFailed)
+		}
 	}
 }
 
-func (suite *Suite) runReportAfterSuiteNode(node Node, report types.Report) {
+func (suite *Suite) runReportSuiteNode(node Node, report types.Report) {
 	suite.writer.Truncate()
 	suite.outputInterceptor.StartInterceptingOutput()
 	suite.currentSpecReport.StartTime = time.Now()
 
-	if suite.config.ParallelTotal > 1 {
+	// if we're running a ReportAfterSuite in parallel (on proc 1) we (a) wait until other procs have exited and
+	// (b) always fetch the latest report as prior ReportAfterSuites will contribute to it
+	if node.NodeType.Is(types.NodeTypeReportAfterSuite) && suite.isRunningInParallel() {
 		aggregatedReport, err := suite.client.BlockUntilAggregatedNonprimaryProcsReport()
 		if err != nil {
 			suite.currentSpecReport.State, suite.currentSpecReport.Failure = types.SpecStateFailed, suite.failureForLeafNodeWithMessage(node, err.Error())
@@ -756,8 +727,6 @@ func (suite *Suite) runReportAfterSuiteNode(node Node, report types.Report) {
 	suite.currentSpecReport.RunTime = suite.currentSpecReport.EndTime.Sub(suite.currentSpecReport.StartTime)
 	suite.currentSpecReport.CapturedGinkgoWriterOutput = string(suite.writer.Bytes())
 	suite.currentSpecReport.CapturedStdOutErr = suite.outputInterceptor.StopInterceptingAndReturnOutput()
-
-	return
 }
 
 func (suite *Suite) runNode(node Node, specDeadline time.Time, text string) (types.SpecState, types.Failure) {
