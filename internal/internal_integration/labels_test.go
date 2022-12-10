@@ -88,6 +88,9 @@ var _ = Describe("Labels", func() {
 		BeforeEach(func() {
 			conf.LabelFilter = "!TopLevelLabel"
 			success, hPF := RunFixture("labelled tests", func() {
+				ReportBeforeSuite(func(r Report) {
+					rt.RunWithData("RBS", "report", r)
+				})
 				BeforeSuite(rt.T("before-suite"))
 				Describe("outer container", func() {
 					It("A", rt.T("A"))
@@ -106,12 +109,18 @@ var _ = Describe("Labels", func() {
 		})
 
 		It("doesn't run anything except for reporters", func() {
-			Ω(rt).Should(HaveTracked("RAE-A", "RAE-B", "RAS"))
+			Ω(rt).Should(HaveTracked("RBS", "RAE-A", "RAE-B", "RAS"))
 		})
 
 		It("skip everything", func() {
 			Ω(reporter.Did.Find("A")).Should(HaveBeenSkipped())
 			Ω(reporter.Did.Find("B")).Should(HaveBeenSkipped())
+		})
+
+		It("reports the correct number of specs to ReportBeforeSuite", func() {
+			report := rt.DataFor("RBS")["report"].(Report)
+			Ω(report.PreRunStats.SpecsThatWillRun).Should(Equal(0))
+			Ω(report.PreRunStats.TotalSpecs).Should(Equal(2))
 		})
 	})
 })

@@ -17,6 +17,16 @@ func TestReportingFixture(t *testing.T) {
 
 var beforeEachReport, afterEachReport *os.File
 
+var _ = ReportBeforeSuite(func(report Report) {
+	f, err := os.Create(fmt.Sprintf("report-before-suite-%d.out", GinkgoParallelProcess()))
+	Ω(err).ShouldNot(HaveOccurred())
+
+	fmt.Fprintf(f, "%s - %d\n", report.SuiteDescription, report.SuiteConfig.RandomSeed)
+	fmt.Fprintf(f, "%d of %d", report.PreRunStats.SpecsThatWillRun, report.PreRunStats.TotalSpecs)
+
+	f.Close()
+})
+
 var _ = BeforeSuite(func() {
 	var err error
 	beforeEachReport, err = os.Create("report-before-each.out")

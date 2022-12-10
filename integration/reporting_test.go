@@ -19,7 +19,20 @@ var _ = Describe("Reporting", func() {
 		fm.MountFixture("reporting")
 	})
 
-	Describe("in-suite reporting with ReportBeforeEach, ReportAfterEach and ReportAfterSuite", func() {
+	Describe("in-suite reporting with ReportBeforeEach, ReportAfterEach, ReportBeforeSuite and ReportAfterSuite", func() {
+		It("preview thes uite via ReportBeforeSuite", func() {
+			session := startGinkgo(fm.PathTo("reporting"), "--no-color", "--seed=17", "--procs=2")
+			Eventually(session).Should(gexec.Exit(1))
+
+			report, err := os.ReadFile(fm.PathTo("reporting", "report-before-suite-1.out"))
+			Ω(err).ShouldNot(HaveOccurred())
+			lines := strings.Split(string(report), "\n")
+			Ω(lines).Should(ConsistOf(
+				"ReportingFixture Suite - 17",
+				"7 of 8",
+			))
+		})
+
 		It("reports on each test via ReportBeforeEach", func() {
 			session := startGinkgo(fm.PathTo("reporting"), "--no-color")
 			Eventually(session).Should(gexec.Exit(1))
@@ -69,6 +82,7 @@ var _ = Describe("Reporting", func() {
 			lines := strings.Split(string(report), "\n")
 			Ω(lines).Should(ConsistOf(
 				"ReportingFixture Suite - 17",
+				"1: [ReportBeforeSuite] - passed",
 				"1: [BeforeSuite] - passed",
 				"passes - passed",
 				"is labelled - passed",
@@ -85,15 +99,29 @@ var _ = Describe("Reporting", func() {
 		})
 
 		Context("when running in parallel", func() {
-			It("reports on all the tests via ReportAfterSuite", func() {
+			It("reports only runs ReportBeforeSuite on proc 1 and reports on all the tests via ReportAfterSuite", func() {
 				session := startGinkgo(fm.PathTo("reporting"), "--no-color", "--seed=17", "--procs=2")
 				Eventually(session).Should(gexec.Exit(1))
 
-				report, err := os.ReadFile(fm.PathTo("reporting", "report-after-suite.out"))
+				By("validating the ReportBeforeSuite report")
+				report, err := os.ReadFile(fm.PathTo("reporting", "report-before-suite-1.out"))
 				Ω(err).ShouldNot(HaveOccurred())
 				lines := strings.Split(string(report), "\n")
 				Ω(lines).Should(ConsistOf(
 					"ReportingFixture Suite - 17",
+					"7 of 8",
+				))
+
+				By("ensuring there is only one ReportBeforeSuite report")
+				Ω(fm.PathTo("reporting", "report-before-suite-2.out")).ShouldNot(BeARegularFile())
+
+				By("validating the ReportAfterSuite report")
+				report, err = os.ReadFile(fm.PathTo("reporting", "report-after-suite.out"))
+				Ω(err).ShouldNot(HaveOccurred())
+				lines = strings.Split(string(report), "\n")
+				Ω(lines).Should(ConsistOf(
+					"ReportingFixture Suite - 17",
+					"1: [ReportBeforeSuite] - passed",
 					"1: [BeforeSuite] - passed",
 					"2: [BeforeSuite] - passed",
 					"passes - passed",
@@ -129,7 +157,7 @@ var _ = Describe("Reporting", func() {
 			Ω(report.SuitePath).Should(Equal(fm.AbsPathTo("reporting")))
 			Ω(report.SuiteDescription).Should(Equal("ReportingFixture Suite"))
 			Ω(report.SuiteConfig.ParallelTotal).Should(Equal(2))
-			Ω(report.SpecReports).Should(HaveLen(15)) //8 tests + (1 before-suite + 2 defercleanup after-suite)*2(nodes) + 1 report-after-suite
+			Ω(report.SpecReports).Should(HaveLen(16)) //8 tests + (1 before-suite + 2 defercleanup after-suite)*2(nodes) + 1 report-before-suite + 1 report-after-suite
 
 			specReports := Reports(report.SpecReports)
 			Ω(specReports.WithLeafNodeType(types.NodeTypeIt)).Should(HaveLen(8))
@@ -143,6 +171,7 @@ var _ = Describe("Reporting", func() {
 			Ω(specReports.Find("times out and fails during cleanup")).Should(HaveTimedOut("A node timeout occurred"))
 			Ω(specReports.Find("times out and fails during cleanup").AdditionalFailures[0].Failure.Message).Should(Equal("double-whammy"))
 			Ω(specReports.Find("times out and fails during cleanup").AdditionalFailures[0].Failure.FailureNodeType).Should(Equal(types.NodeTypeCleanupAfterEach))
+			Ω(specReports.FindByLeafNodeType(types.NodeTypeReportBeforeSuite)).Should(HavePassed())
 			Ω(specReports.Find("my report")).Should(HaveFailed("fail!", types.FailureNodeIsLeafNode, types.NodeTypeReportAfterSuite))
 			Ω(specReports.FindByLeafNodeType(types.NodeTypeBeforeSuite)).Should(HavePassed())
 			Ω(specReports.FindByLeafNodeType(types.NodeTypeCleanupAfterSuite)).Should(HavePassed())
@@ -194,7 +223,7 @@ var _ = Describe("Reporting", func() {
 		checkJUnitReport := func(suite reporters.JUnitTestSuite) {
 			Ω(suite.Name).Should(Equal("ReportingFixture Suite"))
 			Ω(suite.Package).Should(Equal(fm.AbsPathTo("reporting")))
-			Ω(suite.Tests).Should(Equal(15))
+			Ω(suite.Tests).Should(Equal(16))
 			Ω(suite.Disabled).Should(Equal(1))
 			Ω(suite.Skipped).Should(Equal(1))
 			Ω(suite.Errors).Should(Equal(1))
@@ -202,6 +231,7 @@ var _ = Describe("Reporting", func() {
 			Ω(suite.Properties.WithName("SuiteSucceeded")).Should(Equal("false"))
 			Ω(suite.Properties.WithName("RandomSeed")).Should(Equal("17"))
 			Ω(suite.Properties.WithName("ParallelTotal")).Should(Equal("2"))
+			Ω(getTestCase("[ReportBeforeSuite]", suite.TestCases).Status).Should(Equal("passed"))
 			Ω(getTestCase("[BeforeSuite]", suite.TestCases).Status).Should(Equal("passed"))
 			Ω(getTestCase("[It] reporting test passes", suite.TestCases).Classname).Should(Equal("ReportingFixture Suite"))
 			Ω(getTestCase("[It] reporting test passes", suite.TestCases).Status).Should(Equal("passed"))
@@ -259,7 +289,7 @@ var _ = Describe("Reporting", func() {
 
 		checkUnifiedJUnitReport := func(report reporters.JUnitTestSuites) {
 			Ω(report.TestSuites).Should(HaveLen(3))
-			Ω(report.Tests).Should(Equal(18))
+			Ω(report.Tests).Should(Equal(19))
 			Ω(report.Disabled).Should(Equal(2))
 			Ω(report.Errors).Should(Equal(2))
 			Ω(report.Failures).Should(Equal(4))

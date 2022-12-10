@@ -3266,7 +3266,6 @@ ReportAfterEach(func(report SpecReport) {
 
 `ReportAfterEach` has several unique properties that distinguish it from `AfterEach`.  Most importantly, `ReportAfterEach` closures are **always** called - even if the spec has failed, is marked pending, or is skipped.  This ensures reports that rely on `ReportAfterEach` are complete.
 
-
 In addition, `ReportAfterEach` closures are called after a spec completes.  i.e. _after_ all `AfterEach` closures have run.  This gives them access to the complete final state of the spec.  Note that if a failure occurs in a `ReportAfterEach` your the spec will be marked as failed.  Subsequent `ReportAfterEach` closures will see the failed state, but not the closure in which the failure occurred.
 
 `ReportAfterEach` is useful if you need to stream or emit up-to-date information about the suite as it runs. Ginkgo also provides `ReportBeforeEach` which is called before the test runs and receives a preliminary `types.SpecReport` - the state of this report will indicate whether the test will be skipped or is marked pending.
@@ -3287,22 +3286,26 @@ ReportAfterEach(func(report SpecReport) {
 
 you'll end up with multiple processes writing to the same file and the output will be a mess.  There is a better approach for this usecase...
 
-#### Reporting Nodes - ReportAfterSuite
-`ReportAfterSuite` nodes behave similarly to `AfterSuite` and can be placed at the top-level of your suite (typically in the suite bootstrap file).  `ReportAfterSuite` nodes take a closure that accepts a single [`Report`]((https://pkg.go.dev/github.com/onsi/ginkgo/v2/types#Report)) argument:
+#### Reporting Nodes - ReportBeforeSuite and ReportAfterSuite
+`ReportBeforeSuite` and `ReportAfterSuite` nodes behave similarly to `BeforeSuite` and `AfterSuite` and can be placed at the top-level of your suite (typically in the suite bootstrap file).  `ReportBeforeSuite` and `ReportAfterSuite` nodes take a closure that accepts a single [`Report`]((https://pkg.go.dev/github.com/onsi/ginkgo/v2/types#Report)) argument:
 
 ```go
+var _ = ReportBeforeSuite(func(report Report) {
+  // process report
+})
+
 var _ = ReportAfterSuite("custom report", func(report Report) {
   // process report
 })
 ```
 
-`Report` contains all available information about the suite, including individual `SpecReport` entries for each spec that ran in the suite, and the overall status of the suite (whether it passed or failed).
+`Report` contains all available information about the suite.  For `ReportAfterSuite` this will include individual `SpecReport` entries for each spec that ran in the suite, and the overall status of the suite (whether it passed or failed).  Since `ReportBeforeSuite` runs before the suite starts - it does not contain any spec reports, however the count of the number of specs that _will_ be run can be extracted from `report.PreRunStats.SpecsThatWillBeRun`.
 
-The closure passed to `ReportAfterSuite` is called exactly once at the end of the suite after any `AfterSuite` nodes have run.  Just like `ReportAfterEach`, `ReportAfterSuite` nodes can't be interrupted by the user to ensure the integrity of the generated report - so you'll want to make sure the code you put in there doesn't have a chance of hanging/getting stuck.
+The closure passed to `ReportBeforeSuite` is called exactly once at the beginning of the suite before any `BeforeSuite` nodes or specs run have run.  The closure passed to `ReportAfterSuite` is called exactly once at the end of the suite after any `AfterSuite` nodes have run.
 
-Finally, and most importantly, when running in parallel `ReportAfterSuite` **only runs on process #1** and receives a `Report` that aggregates the `SpecReports` from all processes.  This allows you to perform any custom suite reporting in one place after all specs have run and not have to worry about aggregating information across multiple parallel processes.
+Finally, and most importantly, when running in parallel both `ReportBeforeSuite` and `ReportAfterSuite` **only run on process #1**.  Gingko guarantess that no other processes will start running their specs until after `ReportBeforeSuite` on process #1 has completed.  Similarly, Ginkgo will only run `ReportAfterSuite` on process #1 after all other processes have finished and exited.  Ginkgo provides a sinle `Report` that aggregates the `SpecReports` from all processes.  This allows you to perform any custom suite reporting in one place after all specs have run and not have to worry about aggregating information across multiple parallel processes.
 
-So, we can rewrite our invalid `ReportAfterEach` example from above into a valid `ReportAfterSuite` example:
+Givne all this, we can rewrite our invalid `ReportAfterEach` example from above into a valid `ReportAfterSuite` example:
 
 ```go
 ReportAfterSuite("custom report", func(report Report) {

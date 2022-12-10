@@ -133,6 +133,7 @@ var _ = Describe("Types", func() {
 			Entry(nil, types.NodeTypeSynchronizedAfterSuite, "SynchronizedAfterSuite"),
 			Entry(nil, types.NodeTypeReportBeforeEach, "ReportBeforeEach"),
 			Entry(nil, types.NodeTypeReportAfterEach, "ReportAfterEach"),
+			Entry(nil, types.NodeTypeReportBeforeSuite, "ReportBeforeSuite"),
 			Entry(nil, types.NodeTypeReportAfterSuite, "ReportAfterSuite"),
 			Entry(nil, types.NodeTypeCleanupInvalid, "DeferCleanup"),
 			Entry(nil, types.NodeTypeCleanupAfterEach, "DeferCleanup (Each)"),

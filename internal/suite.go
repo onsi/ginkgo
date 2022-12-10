@@ -129,7 +129,7 @@ func (suite *Suite) PushNode(node Node) error {
 		return suite.pushCleanupNode(node)
 	}
 
-	if node.NodeType.Is(types.NodeTypeBeforeSuite | types.NodeTypeAfterSuite | types.NodeTypeSynchronizedBeforeSuite | types.NodeTypeSynchronizedAfterSuite | types.NodeTypeReportAfterSuite) {
+	if node.NodeType.Is(types.NodeTypeBeforeSuite | types.NodeTypeAfterSuite | types.NodeTypeSynchronizedBeforeSuite | types.NodeTypeSynchronizedAfterSuite | types.NodeTypeBeforeSuite | types.NodeTypeReportBeforeSuite | types.NodeTypeReportAfterSuite) {
 		return suite.pushSuiteNode(node)
 	}
 
@@ -222,7 +222,7 @@ func (suite *Suite) pushCleanupNode(node Node) error {
 		node.NodeType = types.NodeTypeCleanupAfterSuite
 	case types.NodeTypeBeforeAll, types.NodeTypeAfterAll:
 		node.NodeType = types.NodeTypeCleanupAfterAll
-	case types.NodeTypeReportBeforeEach, types.NodeTypeReportAfterEach, types.NodeTypeReportAfterSuite:
+	case types.NodeTypeReportBeforeEach, types.NodeTypeReportAfterEach, types.NodeTypeReportBeforeSuite, types.NodeTypeReportAfterSuite:
 		return types.GinkgoErrors.PushingCleanupInReportingNode(node.CodeLocation, suite.currentNode.NodeType)
 	case types.NodeTypeCleanupInvalid, types.NodeTypeCleanupAfterEach, types.NodeTypeCleanupAfterAll, types.NodeTypeCleanupAfterSuite:
 		return types.GinkgoErrors.PushingCleanupInCleanupNode(node.CodeLocation)
@@ -408,7 +408,29 @@ func (suite *Suite) runSpecs(description string, suiteLabels Labels, suitePath s
 	}
 
 	suite.report.SuiteSucceeded = true
-	suite.runBeforeSuite(numSpecsThatWillBeRun)
+
+	if len(suite.suiteNodes.WithType(types.NodeTypeReportBeforeSuite)) > 0 {
+		if suite.config.ParallelProcess == 1 {
+			suite.runReportBeforeSuite()
+			if suite.isRunningInParallel() {
+				if suite.report.SuiteSucceeded {
+					suite.client.PostReportBeforeSuiteCompleted(types.SpecStatePassed)
+				} else {
+					suite.client.PostReportBeforeSuiteCompleted(types.SpecStateFailed)
+				}
+			}
+		} else {
+			state, err := suite.client.BlockUntilReportBeforeSuiteCompleted()
+			if err != nil || state.Is(types.SpecStateFailed) {
+				suite.report.SuiteSucceeded = false
+			}
+		}
+	}
+
+	ranBeforeSuite := suite.report.SuiteSucceeded
+	if suite.report.SuiteSucceeded {
+		suite.runBeforeSuite(numSpecsThatWillBeRun)
+	}
 
 	if suite.report.SuiteSucceeded {
 		groupedSpecIndices, serialGroupedSpecIndices := OrderSpecs(specs, suite.config)
@@ -447,7 +469,9 @@ func (suite *Suite) runSpecs(description string, suiteLabels Labels, suitePath s
 		}
 	}
 
-	suite.runAfterSuiteCleanup(numSpecsThatWillBeRun)
+	if ranBeforeSuite {
+		suite.runAfterSuiteCleanup(numSpecsThatWillBeRun)
+	}
 
 	interruptStatus := suite.interruptHandler.Status()
 	if interruptStatus.Interrupted() {
@@ -527,24 +551,6 @@ func (suite *Suite) runAfterSuiteCleanup(numSpecsThatWillBeRun int) {
 			suite.runSuiteNode(cleanupNode)
 			suite.processCurrentSpecReport()
 		}
-	}
-}
-
-func (suite *Suite) runReportAfterSuite() {
-	for _, node := range suite.suiteNodes.WithType(types.NodeTypeReportAfterSuite) {
-		suite.selectiveLock.Lock()
-		suite.currentSpecReport = types.SpecReport{
-			LeafNodeType:      node.NodeType,
-			LeafNodeLocation:  node.CodeLocation,
-			LeafNodeText:      node.Text,
-			ParallelProcess:   suite.config.ParallelProcess,
-			RunningInParallel: suite.isRunningInParallel(),
-		}
-		suite.selectiveLock.Unlock()
-
-		suite.reporter.WillRun(suite.currentSpecReport)
-		suite.runReportAfterSuiteNode(node, suite.report)
-		suite.processCurrentSpecReport()
 	}
 }
 
@@ -676,6 +682,58 @@ func (suite *Suite) runSuiteNode(node Node) {
 	return
 }
 
+// TODO - clean up and merge these four once the dust settles
+func (suite *Suite) runReportBeforeSuite() {
+	for _, node := range suite.suiteNodes.WithType(types.NodeTypeReportBeforeSuite) {
+		suite.selectiveLock.Lock()
+		suite.currentSpecReport = types.SpecReport{
+			LeafNodeType:      node.NodeType,
+			LeafNodeLocation:  node.CodeLocation,
+			ParallelProcess:   suite.config.ParallelProcess,
+			RunningInParallel: suite.isRunningInParallel(),
+		}
+		suite.selectiveLock.Unlock()
+
+		suite.reporter.WillRun(suite.currentSpecReport)
+		suite.runReportBeforeSuiteNode(node, suite.report)
+		suite.processCurrentSpecReport()
+	}
+}
+
+func (suite *Suite) runReportBeforeSuiteNode(node Node, report types.Report) {
+	suite.writer.Truncate()
+	suite.outputInterceptor.StartInterceptingOutput()
+	suite.currentSpecReport.StartTime = time.Now()
+
+	node.Body = func(SpecContext) { node.ReportSuiteBody(report) }
+	suite.currentSpecReport.State, suite.currentSpecReport.Failure = suite.runNode(node, time.Time{}, "")
+
+	suite.currentSpecReport.EndTime = time.Now()
+	suite.currentSpecReport.RunTime = suite.currentSpecReport.EndTime.Sub(suite.currentSpecReport.StartTime)
+	suite.currentSpecReport.CapturedGinkgoWriterOutput = string(suite.writer.Bytes())
+	suite.currentSpecReport.CapturedStdOutErr = suite.outputInterceptor.StopInterceptingAndReturnOutput()
+
+	return
+}
+
+func (suite *Suite) runReportAfterSuite() {
+	for _, node := range suite.suiteNodes.WithType(types.NodeTypeReportAfterSuite) {
+		suite.selectiveLock.Lock()
+		suite.currentSpecReport = types.SpecReport{
+			LeafNodeType:      node.NodeType,
+			LeafNodeLocation:  node.CodeLocation,
+			LeafNodeText:      node.Text,
+			ParallelProcess:   suite.config.ParallelProcess,
+			RunningInParallel: suite.isRunningInParallel(),
+		}
+		suite.selectiveLock.Unlock()
+
+		suite.reporter.WillRun(suite.currentSpecReport)
+		suite.runReportAfterSuiteNode(node, suite.report)
+		suite.processCurrentSpecReport()
+	}
+}
+
 func (suite *Suite) runReportAfterSuiteNode(node Node, report types.Report) {
 	suite.writer.Truncate()
 	suite.outputInterceptor.StartInterceptingOutput()
@@ -691,7 +749,7 @@ func (suite *Suite) runReportAfterSuiteNode(node Node, report types.Report) {
 		report = report.Add(aggregatedReport)
 	}
 
-	node.Body = func(SpecContext) { node.ReportAfterSuiteBody(report) }
+	node.Body = func(SpecContext) { node.ReportSuiteBody(report) }
 	suite.currentSpecReport.State, suite.currentSpecReport.Failure = suite.runNode(node, time.Time{}, "")
 
 	suite.currentSpecReport.EndTime = time.Now()

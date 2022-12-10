@@ -834,7 +834,7 @@ var _ = Describe("Node", func() {
 				Ω(node.ID).Should(BeNumerically(">", 0))
 				Ω(node.NodeType).Should(Equal(types.NodeTypeReportAfterSuite))
 
-				node.ReportAfterSuiteBody(types.Report{})
+				node.ReportSuiteBody(types.Report{})
 				Ω(didRun).Should(BeTrue())
 
 				Ω(node.CodeLocation).Should(Equal(cl))
@@ -845,6 +845,30 @@ var _ = Describe("Node", func() {
 				node, errors := internal.NewNode(dt, types.NodeTypeReportAfterSuite, "my custom report", func(types.Report) {}, func() {}, cl)
 				Ω(node).Should(BeZero())
 				Ω(errors).Should(ConsistOf(types.GinkgoErrors.MultipleBodyFunctions(cl, types.NodeTypeReportAfterSuite)))
+			})
+		})
+
+		Describe("ReportBeforeSuiteNode", func() {
+			It("returns a correctly configured node", func() {
+				var didRun bool
+				body := func(types.Report) { didRun = true }
+				node, errors := internal.NewNode(dt, types.NodeTypeReportBeforeSuite, "", body, cl)
+				Ω(errors).Should(BeEmpty())
+				Ω(node.Text).Should(BeEmpty())
+				Ω(node.ID).Should(BeNumerically(">", 0))
+				Ω(node.NodeType).Should(Equal(types.NodeTypeReportBeforeSuite))
+
+				node.ReportSuiteBody(types.Report{})
+				Ω(didRun).Should(BeTrue())
+
+				Ω(node.CodeLocation).Should(Equal(cl))
+				Ω(node.NestingLevel).Should(Equal(-1))
+			})
+
+			It("errors if passed too many functions", func() {
+				node, errors := internal.NewNode(dt, types.NodeTypeReportBeforeSuite, "", func(types.Report) {}, func() {}, cl)
+				Ω(node).Should(BeZero())
+				Ω(errors).Should(ConsistOf(types.GinkgoErrors.MultipleBodyFunctions(cl, types.NodeTypeReportBeforeSuite)))
 			})
 		})
 

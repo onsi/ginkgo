@@ -330,6 +330,28 @@ var _ = Describe("Suite", func() {
 				})
 			})
 
+			Context("when pushing a cleanup node in a ReportBeforeSuite node", func() {
+				It("errors", func() {
+					var errors = make([]error, 4)
+					reportBeforeSuiteNode := N(types.NodeTypeReportBeforeSuite, "", func(_ types.Report) {
+						errors[3] = suite.PushNode(N(types.NodeTypeCleanupInvalid, cl))
+					}, types.NewCodeLocation(0))
+
+					errors[0] = suite.PushNode(N(ntCon, "container", func() {
+						errors[2] = suite.PushNode(N(ntIt, "test"))
+					}))
+					errors[1] = suite.PushNode(reportBeforeSuiteNode)
+					Ω(errors[0]).ShouldNot(HaveOccurred())
+					Ω(errors[1]).ShouldNot(HaveOccurred())
+
+					Ω(suite.BuildTree()).Should(Succeed())
+					Ω(errors[2]).ShouldNot(HaveOccurred())
+
+					suite.Run("suite", Labels{}, "/path/to/suite", failer, reporter, writer, outputInterceptor, interruptHandler, client, internal.RegisterForProgressSignal, conf)
+					Ω(errors[3]).Should(MatchError(types.GinkgoErrors.PushingCleanupInReportingNode(cl, types.NodeTypeReportBeforeSuite)))
+				})
+			})
+
 			Context("when pushing a cleanup node in a ReportAfterSuite node", func() {
 				It("errors", func() {
 					var errors = make([]error, 4)
