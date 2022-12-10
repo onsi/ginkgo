@@ -369,7 +369,7 @@ var _ = Describe("Sending reports to ReportBeforeSuite and ReportAfterSuite node
 
 			Context("the happy path", func() {
 				BeforeEach(func() {
-					By("proc1 signals that its ReportBeforeSuites succeeded")
+					// proc1 signals that its ReportBeforeSuites succeeded
 					client.PostReportBeforeSuiteCompleted(types.SpecStatePassed)
 					Eventually(done).Should(BeClosed())
 				})
@@ -385,7 +385,7 @@ var _ = Describe("Sending reports to ReportBeforeSuite and ReportAfterSuite node
 
 			Context("when the ReportBeforeSuite node fails", func() {
 				BeforeEach(func() {
-					By("proc1 signals that its ReportBeforeSuites failed")
+					// proc1 signals that its ReportBeforeSuites failed
 					client.PostReportBeforeSuiteCompleted(types.SpecStateFailed)
 					Eventually(done).Should(BeClosed())
 				})
@@ -397,7 +397,7 @@ var _ = Describe("Sending reports to ReportBeforeSuite and ReportAfterSuite node
 
 			Context("when proc1 exits before reporting", func() {
 				BeforeEach(func() {
-					By("proc1 signals that its ReportBeforeSuites failed")
+					// proc1 signals that its ReportBeforeSuites failed
 					close(exitChannels[1])
 					Eventually(done).Should(BeClosed())
 				})
