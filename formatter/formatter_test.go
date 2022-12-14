@@ -1,6 +1,7 @@
 package formatter_test
 
 import (
+	"os"
 	"strings"
 
 	. "github.com/onsi/ginkgo/v2"
@@ -14,6 +15,17 @@ var _ = Describe("Formatter", func() {
 
 	BeforeEach(func() {
 		colorMode = formatter.ColorModeTerminal
+		os.Unsetenv("GINKGO_CLI_COLOR_RED")
+		os.Unsetenv("GINKGO_CLI_COLOR_ORANGE")
+		os.Unsetenv("GINKGO_CLI_COLOR_CORAL")
+		os.Unsetenv("GINKGO_CLI_COLOR_MAGENTA")
+		os.Unsetenv("GINKGO_CLI_COLOR_GREEN")
+		os.Unsetenv("GINKGO_CLI_COLOR_DARK_GREEN")
+		os.Unsetenv("GINKGO_CLI_COLOR_YELLOW")
+		os.Unsetenv("GINKGO_CLI_COLOR_LIGHT_YELLOW")
+		os.Unsetenv("GINKGO_CLI_COLOR_CYAN")
+		os.Unsetenv("GINKGO_CLI_COLOR_LIGHT_GRAY")
+		os.Unsetenv("GINKGO_CLI_COLOR_BLUE")
 	})
 
 	JustBeforeEach(func() {
@@ -47,6 +59,20 @@ var _ = Describe("Formatter", func() {
 
 		It("leaves the color information as is, allowing us to test statements more easily", func() {
 			Ω(f.F("{{green}}{{bold}}hi there{{/}}")).Should(Equal("{{green}}{{bold}}hi there{{/}}"))
+		})
+	})
+
+	Context("with environment overrides", func() {
+		BeforeEach(func() {
+			os.Setenv("GINKGO_CLI_COLOR_RED", "\x1b[31m")
+		})
+
+		AfterEach(func() {
+			os.Unsetenv("GINKGO_CLI_COLOR_RED")
+		})
+
+		It("uses the escape codes from the environment variables", func() {
+			Ω(f.F("{{red}}hi there{{/}}")).Should(Equal("\x1b[31mhi there\x1b[0m"))
 		})
 	})
 
