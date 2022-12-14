@@ -1,6 +1,7 @@
 package formatter_test
 
 import (
+	"os"
 	"strings"
 
 	. "github.com/onsi/ginkgo/v2"
@@ -47,6 +48,20 @@ var _ = Describe("Formatter", func() {
 
 		It("leaves the color information as is, allowing us to test statements more easily", func() {
 			Ω(f.F("{{green}}{{bold}}hi there{{/}}")).Should(Equal("{{green}}{{bold}}hi there{{/}}"))
+		})
+	})
+
+	Context("with environment overrides", func() {
+		BeforeEach(func() {
+			os.Setenv("GINKGO_CLI_COLOR_RED", "\x1b[31m")
+		})
+
+		It("uses the escape codes from the environment variables", func() {
+			Ω(f.F("{{red}}hi there{{/}}")).Should(Equal("\x1b[31mhi there\x1b[0m"))
+		})
+
+		AfterEach(func() {
+			os.Unsetenv("GINKGO_CLI_COLOR_RED")
 		})
 	})
 
