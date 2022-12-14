@@ -71,7 +71,7 @@ func New(colorMode ColorMode) Formatter {
 			"coral":        getColor("coral", "\x1b[38;5;204m"),
 			"magenta":      getColor("magenta", "\x1b[38;5;13m"),
 			"green":        getColor("green", "\x1b[38;5;10m"),
-			"dark-green":   getColor("darkgreen", "\x1b[38;5;28m"),
+			"dark-green":   getColor("dark-green", "\x1b[38;5;28m"),
 			"yellow":       getColor("yellow", "\x1b[38;5;11m"),
 			"light-yellow": getColor("light-yellow", "\x1b[38;5;228m"),
 			"cyan":         getColor("cyan", "\x1b[38;5;14m"),

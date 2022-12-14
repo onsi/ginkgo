@@ -15,6 +15,17 @@ var _ = Describe("Formatter", func() {
 
 	BeforeEach(func() {
 		colorMode = formatter.ColorModeTerminal
+		os.Unsetenv("GINKGO_CLI_COLOR_RED")
+		os.Unsetenv("GINKGO_CLI_COLOR_ORANGE")
+		os.Unsetenv("GINKGO_CLI_COLOR_CORAL")
+		os.Unsetenv("GINKGO_CLI_COLOR_MAGENTA")
+		os.Unsetenv("GINKGO_CLI_COLOR_GREEN")
+		os.Unsetenv("GINKGO_CLI_COLOR_DARK_GREEN")
+		os.Unsetenv("GINKGO_CLI_COLOR_YELLOW")
+		os.Unsetenv("GINKGO_CLI_COLOR_LIGHT_YELLOW")
+		os.Unsetenv("GINKGO_CLI_COLOR_CYAN")
+		os.Unsetenv("GINKGO_CLI_COLOR_LIGHT_GRAY")
+		os.Unsetenv("GINKGO_CLI_COLOR_BLUE")
 	})
 
 	JustBeforeEach(func() {
@@ -56,12 +67,12 @@ var _ = Describe("Formatter", func() {
 			os.Setenv("GINKGO_CLI_COLOR_RED", "\x1b[31m")
 		})
 
-		It("uses the escape codes from the environment variables", func() {
-			Ω(f.F("{{red}}hi there{{/}}")).Should(Equal("\x1b[31mhi there\x1b[0m"))
-		})
-
 		AfterEach(func() {
 			os.Unsetenv("GINKGO_CLI_COLOR_RED")
+		})
+
+		It("uses the escape codes from the environment variables", func() {
+			Ω(f.F("{{red}}hi there{{/}}")).Should(Equal("\x1b[31mhi there\x1b[0m"))
 		})
 	})
 
