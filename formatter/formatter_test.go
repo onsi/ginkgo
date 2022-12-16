@@ -62,19 +62,46 @@ var _ = Describe("Formatter", func() {
 		})
 	})
 
-	Context("with environment overrides", func() {
-		BeforeEach(func() {
-			os.Setenv("GINKGO_CLI_COLOR_RED", "\x1b[31m")
-		})
+	DescribeTable("with environment overrides",
+		func(envVars map[string]string, input, expected string) {
+			for envVar, value := range envVars {
+				os.Setenv(envVar, value)
+			}
+			f := formatter.New(colorMode)
+			Ω(f.F(input)).Should(Equal(expected))
+			for envVar := range envVars {
+				os.Unsetenv(envVar)
+			}
+		},
 
-		AfterEach(func() {
-			os.Unsetenv("GINKGO_CLI_COLOR_RED")
-		})
+		Entry("uses default for too low codes", map[string]string{
+			"GINKGO_CLI_COLOR_RED": "-1",
+		}, "{{red}}hi there{{/}}", "\x1b[38;5;9mhi there\x1b[0m"),
 
-		It("uses the escape codes from the environment variables", func() {
-			Ω(f.F("{{red}}hi there{{/}}")).Should(Equal("\x1b[31mhi there\x1b[0m"))
-		})
-	})
+		Entry("uses default for too high codes", map[string]string{
+			"GINKGO_CLI_COLOR_RED": "256",
+		}, "{{red}}hi there{{/}}", "\x1b[38;5;9mhi there\x1b[0m"),
+
+		Entry("supports literal alias for 8bit color", map[string]string{
+			"GINKGO_CLI_COLOR_RED": "red",
+		}, "{{red}}hi there{{/}}", "\x1b[38;5;1mhi there\x1b[0m"),
+
+		Entry("supports number alias for 8bit color", map[string]string{
+			"GINKGO_CLI_COLOR_RED": "1",
+		}, "{{red}}hi there{{/}}", "\x1b[38;5;1mhi there\x1b[0m"),
+
+		Entry("supports 16bit colors (bright)", map[string]string{
+			"GINKGO_CLI_COLOR_RED": "9",
+		}, "{{red}}hi there{{/}}", "\x1b[38;5;9mhi there\x1b[0m"),
+
+		Entry("supports 16bit color literal aliases (bright)", map[string]string{
+			"GINKGO_CLI_COLOR_RED": "bright-red",
+		}, "{{red}}hi there{{/}}", "\x1b[38;5;9mhi there\x1b[0m"),
+
+		Entry("supports extended 256 colors", map[string]string{
+			"GINKGO_CLI_COLOR_RED": "16",
+		}, "{{red}}hi there{{/}}", "\x1b[38;5;16mhi there\x1b[0m"),
+	)
 
 	Describe("NewWithNoColorBool", func() {
 		Context("when the noColor bool is true", func() {
