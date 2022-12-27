@@ -133,6 +133,85 @@ var _ = Describe("Subcommand", func() {
 			Ω(content).Should(ContainSubstring(`"binary"`))
 			Ω(content).Should(ContainSubstring("// This is a foo_testfoo_testfoo_test test"))
 		})
+
+		It("should generate a bootstrap file using a template and custom template data when told to", func() {
+			fm.WriteFile(pkg, ".bootstrap", `package {{.Package}}
+
+			import (
+				{{.GinkgoImport}}
+				{{.GomegaImport}}
+
+				"testing"
+				"binary"
+			)
+
+			func Test{{.FormattedName}}(t *testing.T) {
+				// This is a {{.Package | repeat 3}} test
+				// This is a custom data {{.CustomData.suitename}} test
+			}`)
+			fm.WriteFile(pkg, "custom.json", `{"suitename": "integration"}`)
+			session := startGinkgo(fm.PathTo(pkg), "bootstrap", "--template", ".bootstrap", "--template-data", "custom.json")
+			Eventually(session).Should(gexec.Exit(0))
+			output := session.Out.Contents()
+
+			Ω(output).Should(ContainSubstring("foo_suite_test.go"))
+
+			content := fm.ContentOf(pkg, "foo_suite_test.go")
+			Ω(content).Should(ContainSubstring("package foo_test"))
+			Ω(content).Should(ContainSubstring(`. "github.com/onsi/ginkgo/v2"`))
+			Ω(content).Should(ContainSubstring(`. "github.com/onsi/gomega"`))
+			Ω(content).Should(ContainSubstring(`"binary"`))
+			Ω(content).Should(ContainSubstring("// This is a foo_testfoo_testfoo_test test"))
+			Ω(content).Should(ContainSubstring("// This is a custom data integration test"))
+		})
+
+		It("should fail to render a bootstrap file using a template and custom template data when accessing a missing key", func() {
+			fm.WriteFile(pkg, ".bootstrap", `package {{.Package}}
+
+			import (
+				{{.GinkgoImport}}
+				{{.GomegaImport}}
+
+				"testing"
+				"binary"
+			)
+
+			func Test{{.FormattedName}}(t *testing.T) {
+				// This is a {{.Package | repeat 3}} test
+				// This is a custom data {{.CustomData.component}} test
+			}`)
+			fm.WriteFile(pkg, "custom.json", `{"suitename": "integration"}`)
+			session := startGinkgo(fm.PathTo(pkg), "bootstrap", "--template", ".bootstrap", "--template-data", "custom.json")
+			Eventually(session).Should(gexec.Exit(1))
+			output := string(session.Err.Contents())
+
+			Ω(output).Should(ContainSubstring(`executing "bootstrap" at <.CustomData.component>: map has no entry for key "component"`))
+
+		})
+
+		It("should fail to render a bootstrap file using a template and custom template data when data is invalid JSON", func() {
+			fm.WriteFile(pkg, ".bootstrap", `package {{.Package}}
+
+			import (
+				{{.GinkgoImport}}
+				{{.GomegaImport}}
+
+				"testing"
+				"binary"
+			)
+
+			func Test{{.FormattedName}}(t *testing.T) {
+				// This is a {{.Package | repeat 3}} test
+				// This is a custom data {{.CustomData.component}} test
+			}`)
+			fm.WriteFile(pkg, "custom.json", `{'suitename': 'integration']`)
+			session := startGinkgo(fm.PathTo(pkg), "bootstrap", "--template", ".bootstrap", "--template-data", "custom.json")
+			Eventually(session).Should(gexec.Exit(1))
+			output := string(session.Err.Contents())
+
+			Ω(output).Should(ContainSubstring(`Invalid JSON object in custom data file.`))
+
+		})
 	})
 
 	Describe("ginkgo generate", func() {
@@ -230,6 +309,77 @@ var _ = Describe("Subcommand", func() {
 				Ω(content).Should(ContainSubstring(`/foo_bar"`))
 				Ω(content).Should(ContainSubstring("// This is a foo_bar_testfoo_bar_testfoo_bar_test test"))
 			})
+
+			It("should generate a test file using a template and custom data when told to", func() {
+				fm.WriteFile(pkg, ".generate", `package {{.Package}}
+				import (
+					{{.GinkgoImport}}
+					{{.GomegaImport}}
+
+					{{if .ImportPackage}}"{{.PackageImportPath}}"{{end}}
+				)
+
+				var _ = Describe("{{.Subject}}", Label("{{.CustomData.label}}"), func() {
+					// This is a {{.Package | repeat 3 }} test
+				})`)
+				fm.WriteFile(pkg, "custom_spec.json", `{"label": "integration"}`)
+				session := startGinkgo(fm.PathTo(pkg), "generate", "--template", ".generate", "--template-data", "custom_spec.json")
+				Eventually(session).Should(gexec.Exit(0))
+				output := session.Out.Contents()
+
+				Ω(output).Should(ContainSubstring("foo_bar_test.go"))
+
+				content := fm.ContentOf(pkg, "foo_bar_test.go")
+				Ω(content).Should(ContainSubstring("package foo_bar_test"))
+				Ω(content).Should(ContainSubstring(`. "github.com/onsi/ginkgo/v2"`))
+				Ω(content).Should(ContainSubstring(`. "github.com/onsi/gomega"`))
+				Ω(content).Should(ContainSubstring(`/foo_bar"`))
+				Ω(content).Should(ContainSubstring("// This is a foo_bar_testfoo_bar_testfoo_bar_test test"))
+				Ω(content).Should(ContainSubstring(`Label("integration")`))
+			})
+
+			It("should fail to render a test file using a template and custom template data when accessing a missing key", func() {
+				fm.WriteFile(pkg, ".generate", `package {{.Package}}
+				import (
+					{{.GinkgoImport}}
+					{{.GomegaImport}}
+
+					{{if .ImportPackage}}"{{.PackageImportPath}}"{{end}}
+				)
+
+				var _ = Describe("{{.Subject}}", Label("{{.CustomData.component}}"), func() {
+					// This is a {{.Package | repeat 3 }} test
+				})`)
+				fm.WriteFile(pkg, "custom.json", `{"label": "integration"}`)
+				session := startGinkgo(fm.PathTo(pkg), "generate", "--template", ".generate", "--template-data", "custom.json")
+				Eventually(session).Should(gexec.Exit(1))
+				output := string(session.Err.Contents())
+
+				Ω(output).Should(ContainSubstring(`executing "spec" at <.CustomData.component>: map has no entry for key "component"`))
+
+			})
+
+			It("should fail to render a test file using a template and custom template data when data is invalid JSON", func() {
+				fm.WriteFile(pkg, ".generate", `package {{.Package}}
+				import (
+					{{.GinkgoImport}}
+					{{.GomegaImport}}
+
+					{{if .ImportPackage}}"{{.PackageImportPath}}"{{end}}
+				)
+
+				var _ = Describe("{{.Subject}}", Label("{{.CustomData.label}}"), func() {
+					// This is a {{.Package | repeat 3 }} test
+				})`)
+				fm.WriteFile(pkg, "custom.json", `{'label': 'integration']`)
+				session := startGinkgo(fm.PathTo(pkg), "generate", "--template", ".generate", "--template-data", "custom.json")
+				Eventually(session).Should(gexec.Exit(1))
+				output := string(session.Err.Contents())
+
+				Ω(output).Should(ContainSubstring(`Invalid JSON object in custom data file.`))
+
+			})
+
 		})
 
 		Context("with an argument of the form: foo", func() {
