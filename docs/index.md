@@ -5093,14 +5093,14 @@ ginkgo outline book_test.go
 
 This generates an outline in a comma-separated-values (CSV) format. Column headers are on the first line, followed by Ginkgo containers, specs, and other identifiers, in the order they appear in the file:
 
-  Name,Text,Start,End,Spec,Focused,Pending
-  Describe,Book,124,973,false,false,false
-  BeforeEach,,217,507,false,false,false
-  Describe,Categorizing book length,513,970,false,false,false
-  Context,With more than 300 pages,567,753,false,false,false
-  It,should be a novel,624,742,true,false,false
-  Context,With fewer than 300 pages,763,963,false,false,false
-  It,should be a short story,821,952,true,false,false
+  Name,Text,Start,End,Spec,Focused,Pending,Labels
+  Describe,Book,124,973,false,false,false,""
+  BeforeEach,,217,507,false,false,false,""
+  Describe,Categorizing book length,513,970,false,false,false,""
+  Context,With more than 300 pages,567,753,false,false,false,""
+  It,should be a novel,624,742,true,false,false,""
+  Context,With fewer than 300 pages,763,963,false,false,false,""
+  It,should be a short story,821,952,true,false,false,""
 
 The columns are:
 
@@ -5111,6 +5111,7 @@ The columns are:
 - Spec (bool): True, if the identifier is a spec.
 - Focused (bool): True, if focused. (Conforms to the rules in [Focused Specs](#focused-specs).)
 - Pending (bool): True, if pending. (Conforms to the rules in [Pending Specs](#pending-specs).)
+- Labels (string): If labels are assigned to nodes then will be shown as double quoted comma separated values. (Conforms to the rules in [Spec Labels](#spec-labels).)
 
 You can set a different output format with the `-format` flag. Accepted formats are `csv`, `indent`, and `json`. The `ident` format is like `csv`, but uses indentation to show the nesting of containers and specs. Both the `csv` and `json` formats can be read by another program, e.g., an editor plugin that displays a tree view of Ginkgo tests in a file, or presents a menu for the user to quickly navigate to a container or spec.
 
