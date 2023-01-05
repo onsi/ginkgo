@@ -85,7 +85,7 @@ func S(nodes ...Node) Spec {
 
 // convenience helper to quickly make code locations
 func CL(options ...interface{}) types.CodeLocation {
-	cl = types.NewCodeLocation(0)
+	cl = types.NewCodeLocation(1)
 	for _, option := range options {
 		if reflect.TypeOf(option).Kind() == reflect.String {
 			cl.FileName = option.(string)

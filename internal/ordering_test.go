@@ -187,18 +187,18 @@ var _ = Describe("OrderSpecs", func() {
 
 	Context("when there are ordered specs and randomize-all is false and everything is in an enclosing container", func() {
 		BeforeEach(func() {
-			con0 := N(ntCon)
-			con1 := N(ntCon, Ordered)
-			con2 := N(ntCon)
+			con0 := N(ntCon, CL(1))
+			con1 := N(ntCon, Ordered, CL(4))
+			con2 := N(ntCon, CL(10))
 			specs = Specs{
-				S(con0, N("A", ntIt)),
-				S(con0, N("B", ntIt)),
-				S(con0, con1, N("C", ntIt)),
-				S(con0, con1, N("D", ntIt)),
-				S(con0, con1, N(ntCon), N("E", ntIt)),
-				S(con0, N("F", ntIt)),
-				S(con0, con2, N("G", ntIt)),
-				S(con0, con2, N("H", ntIt)),
+				S(con0, N("A", ntIt, CL(2))),
+				S(con0, N("B", ntIt, CL(3))),
+				S(con0, con1, N("C", ntIt, CL(5))),
+				S(con0, con1, N("D", ntIt, CL(6))),
+				S(con0, con1, N(ntCon, CL(7)), N("E", ntIt, CL(8))),
+				S(con0, N("F", ntIt, CL(9))),
+				S(con0, con2, N("G", ntIt, CL(11))),
+				S(con0, con2, N("H", ntIt, CL(12))),
 			}
 
 			conf.RandomizeAllSpecs = false
@@ -275,5 +275,46 @@ var _ = Describe("OrderSpecs", func() {
 				Ω(getTexts(specs, serialSpecIndices1)).ShouldNot(Equal(getTexts(specs, serialSpecIndices2)))
 			})
 		})
+
+		Describe("presorting-specs", func() {
+			BeforeEach(func() {
+				conA0 := N(ntCon, CL("file-A", 1))
+				conA1 := N(ntCon, CL("file-A", 4))
+				conA2 := N(ntCon, CL("file-A", 10))
+				conB0 := N(ntCon, CL("file-B", 1))
+				conC0 := N(ntCon, CL("file-C", 1))
+				specs = Specs{
+					S(conA0, N("A", ntIt, CL("file-A", 2))),
+					S(conA0, N("B", ntIt, CL("file-A", 3))),
+					S(conA0, conA1, N("C", ntIt, CL("file-A", 5))),
+					S(conA0, conA1, N("D", ntIt, CL("file-A", 6))),
+					S(conA0, conA1, N(ntCon, CL("file-A", 7)), N("E", ntIt, CL("file-A", 8))),
+					S(conA0, N("F", ntIt, CL("file-A", 9))),
+					S(conA0, conA2, N("G", ntIt, CL("file-A", 11))),
+					S(conA0, conA2, N("H", ntIt, CL("file-A", 12))),
+					S(conB0, N("B-Z", ntIt, CL("file-B", 2))),
+					S(conB0, N("B-Y", ntIt, CL("file-B", 3))),
+					S(conB0, N("B-D", ntIt, CL("file-B", 4))),
+					S(conB0, N("B-C", ntIt, CL("file-B", 4))),
+					S(conB0, N("B-B", ntIt, CL("file-B", 4))),
+					S(conB0, N("B-A", ntIt, CL("file-B", 5))),
+				}
+
+				for key := range map[string]bool{"C-A": true, "C-B": true, "C-C": true, "C-D": true, "C-E": true, "C-F": true} {
+					specs = append(specs, S(conC0, N(key, ntIt, CL("file-C", 2)))) // normally this would be totally non-deterministic
+				}
+				conf.RandomizeAllSpecs = false
+			})
+
+			It("ensures a deterministic order for specs that are defined at the same line without messing with the natural order of specs and containers", func() {
+				conf.RandomSeed = 1 // this happens to sort conA0 ahead of conB0 - other than that, though, we are actually testing SortableSpecs
+				groupedSpecIndices, serialSpecIndices := internal.OrderSpecs(specs, conf)
+				Ω(serialSpecIndices).Should(BeEmpty())
+
+				Ω(getTexts(specs, groupedSpecIndices).Join()).Should(Equal("ABCDEFGHB-ZB-YB-BB-CB-DB-AC-AC-BC-CC-DC-EC-F"))
+
+			})
+		})
+
 	})
 })

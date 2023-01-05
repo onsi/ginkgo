@@ -21,11 +21,14 @@ var _ = Describe("Table driven tests", func() {
 
 	Describe("constructing tables", func() {
 		BeforeEach(func() {
-			entrySlice := []TableEntry{
-				Entry("C", 1, 2), Entry("D", 1, 1),
-			}
 			success, _ := RunFixture("table happy-path", func() {
-				DescribeTable("hello", bodyFunc, Entry("A", 1, 1), Entry("B", 1, 1), entrySlice)
+				DescribeTable("hello", bodyFunc,
+					Entry("A", 1, 1),
+					Entry("B", 1, 1),
+					[]TableEntry{
+						Entry("C", 1, 2),
+						Entry("D", 1, 1),
+					})
 			})
 			Ω(success).Should(BeFalse())
 		})

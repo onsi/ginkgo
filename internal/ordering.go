@@ -7,6 +7,50 @@ import (
 	"github.com/onsi/ginkgo/v2/types"
 )
 
+type SortableSpecs struct {
+	Specs   Specs
+	Indexes []int
+}
+
+func NewSortableSpecs(specs Specs) *SortableSpecs {
+	indexes := make([]int, len(specs))
+	for i := range specs {
+		indexes[i] = i
+	}
+	return &SortableSpecs{
+		Specs:   specs,
+		Indexes: indexes,
+	}
+}
+func (s *SortableSpecs) Len() int      { return len(s.Indexes) }
+func (s *SortableSpecs) Swap(i, j int) { s.Indexes[i], s.Indexes[j] = s.Indexes[j], s.Indexes[i] }
+func (s *SortableSpecs) Less(i, j int) bool {
+	a, b := s.Specs[s.Indexes[i]], s.Specs[s.Indexes[j]]
+	aCLs := a.Nodes.WithType(types.NodeTypesForContainerAndIt).CodeLocations()
+	bCLs := b.Nodes.WithType(types.NodeTypesForContainerAndIt).CodeLocations()
+	for i := 0; i < len(aCLs) && i < len(bCLs); i++ {
+		aCL, bCL := aCLs[i], bCLs[i]
+		if aCL.FileName < bCL.FileName {
+			return true
+		} else if aCL.FileName > bCL.FileName {
+			return false
+		}
+		if aCL.LineNumber < bCL.LineNumber {
+			return true
+		} else if aCL.LineNumber > bCL.LineNumber {
+			return false
+		}
+	}
+	// either everything is equal or we have different lengths of CLs
+	if len(aCLs) < len(bCLs) {
+		return true
+	} else if len(aCLs) > len(bCLs) {
+		return false
+	}
+	// ok, now we are sure everything was equal. so we use the spec text to break ties
+	return a.Text() < b.Text()
+}
+
 type GroupedSpecIndices []SpecIndices
 type SpecIndices []int
 
@@ -28,12 +72,17 @@ func OrderSpecs(specs Specs, suiteConfig types.SuiteConfig) (GroupedSpecIndices,
 	// Seed a new random source based on thee configured random seed.
 	r := rand.New(rand.NewSource(suiteConfig.RandomSeed))
 
-	// first break things into execution groups
+	// first, we sort the entire suite to ensure a deterministic order.  the sort is performed by filename, then line number, and then spec text.  this ensures every parallel process has the exact same spec order and is only necessary to cover the edge case where the user iterates over a map to generate specs.
+	sortableSpecs := NewSortableSpecs(specs)
+	sort.Sort(sortableSpecs)
+
+	// then we break things into execution groups
 	// a group represents a single unit of execution and is a collection of SpecIndices
 	// usually a group is just a single spec, however ordered containers must be preserved as a single group
 	executionGroupIDs := []uint{}
 	executionGroups := map[uint]SpecIndices{}
-	for idx, spec := range specs {
+	for _, idx := range sortableSpecs.Indexes {
+		spec := specs[idx]
 		groupNode := spec.Nodes.FirstNodeMarkedOrdered()
 		if groupNode.IsZero() {
 			groupNode = spec.Nodes.FirstNodeWithType(types.NodeTypeIt)
