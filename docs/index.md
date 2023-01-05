@@ -5081,7 +5081,17 @@ will generate a file named `PACKAGE_suite_test.go` and
 ginkgo generate <SUBJECT>
 ```
 
-will generate a file named `SUBJECT_test.go` (or `PACKAGE_test.go` if `<SUBJECT>` is not provided).  Both generators support custom templates using `--template`.  Take a look at the [Ginkgo's CLI code](https://github.com/onsi/ginkgo/tree/master/ginkgo/ginkgo/generators) to see what's available in the template.
+will generate a file named `SUBJECT_test.go` (or `PACKAGE_test.go` if `<SUBJECT>` is not provided).  Both generators support custom templates using `--template` 
+and the option to provide extra custom data to be rendered into the template, besides the default values, using `--template-data`. The custom data should be a well structured JSON file. When loaded into the template the custom data will be available to access from the global key `.CustomData`. For example,
+with a JSON file
+```json
+{ "suitename": "E2E",
+  "labels": ["fast", "parallel", "component"]}
+```
+The custom data can be accessed like so:
+`{{ .CustomData.suitename }}` or `{{ range .CustomData.labels }} {{.}} {{ end }}`
+
+Take a look at the [Ginkgo's CLI code](https://github.com/onsi/ginkgo/tree/master/ginkgo/ginkgo/generators) to see what's available in the template.
 
 ### Creating an Outline of Specs
 
