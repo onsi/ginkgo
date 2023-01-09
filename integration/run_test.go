@@ -444,6 +444,20 @@ var _ = Describe("Running Specs", func() {
 		})
 	})
 
+	Context("when running a suite in parallel that may have specs that are not deterministically ordered", func() {
+		BeforeEach(func() {
+			fm.MountFixture("nondeterministic")
+		})
+		It("successfully generates a stable sort across all parallel processes and ensures exactly the correct specs are run", func() {
+			By("Note: the assertions live in the ReportAfterSuite of the fixture.  So we simply assert that we succeeded")
+			session := startGinkgo(fm.PathTo("nondeterministic"), "--no-color", "--procs=3")
+			Eventually(session).Should(gexec.Exit(0))
+
+			session = startGinkgo(fm.PathTo("nondeterministic"), "--no-color", "--procs=3", "--randomize-all")
+			Eventually(session).Should(gexec.Exit(0))
+		})
+	})
+
 	Context("when there is a version mismatch between the cli and the test package", func() {
 		It("emits a useful error and tries running", func() {
 			fm.MountFixture(("version_mismatch"))

@@ -26,6 +26,14 @@ func (s *SortableSpecs) Len() int      { return len(s.Indexes) }
 func (s *SortableSpecs) Swap(i, j int) { s.Indexes[i], s.Indexes[j] = s.Indexes[j], s.Indexes[i] }
 func (s *SortableSpecs) Less(i, j int) bool {
 	a, b := s.Specs[s.Indexes[i]], s.Specs[s.Indexes[j]]
+
+	firstOrderedA := a.Nodes.FirstNodeMarkedOrdered()
+	firstOrderedB := b.Nodes.FirstNodeMarkedOrdered()
+	if firstOrderedA.ID == firstOrderedB.ID && !firstOrderedA.IsZero() {
+		// strictly preserve order in ordered containers.  ID will track this as IDs are generated monotonically
+		return a.FirstNodeWithType(types.NodeTypeIt).ID < b.FirstNodeWithType(types.NodeTypeIt).ID
+	}
+
 	aCLs := a.Nodes.WithType(types.NodeTypesForContainerAndIt).CodeLocations()
 	bCLs := b.Nodes.WithType(types.NodeTypesForContainerAndIt).CodeLocations()
 	for i := 0; i < len(aCLs) && i < len(bCLs); i++ {
@@ -97,7 +105,6 @@ func OrderSpecs(specs Specs, suiteConfig types.SuiteConfig) (GroupedSpecIndices,
 	// we shuffle outermost containers.  so we need to form shufflable groupings of GroupIDs
 	shufflableGroupingIDs := []uint{}
 	shufflableGroupingIDToGroupIDs := map[uint][]uint{}
-	shufflableGroupingsIDToSortKeys := map[uint]string{}
 
 	// for each execution group we're going to have to pick a node to represent how the
 	// execution group is grouped for shuffling:
@@ -106,7 +113,7 @@ func OrderSpecs(specs Specs, suiteConfig types.SuiteConfig) (GroupedSpecIndices,
 		nodeTypesToShuffle = types.NodeTypeIt
 	}
 
-	//so, fo reach execution group:
+	//so, for each execution group:
 	for _, groupID := range executionGroupIDs {
 		// pick out a representative spec
 		representativeSpec := specs[executionGroups[groupID][0]]
@@ -121,21 +128,8 @@ func OrderSpecs(specs Specs, suiteConfig types.SuiteConfig) (GroupedSpecIndices,
 		if len(shufflableGroupingIDToGroupIDs[shufflableGroupingNode.ID]) == 1 {
 			// record the shuffleable group ID
 			shufflableGroupingIDs = append(shufflableGroupingIDs, shufflableGroupingNode.ID)
-			// and record the sort key to use
-			shufflableGroupingsIDToSortKeys[shufflableGroupingNode.ID] = shufflableGroupingNode.CodeLocation.String()
 		}
 	}
-
-	// now we sort the shufflable groups by the sort key.  We use the shufflable group nodes code location and break ties using its node id
-	sort.SliceStable(shufflableGroupingIDs, func(i, j int) bool {
-		keyA := shufflableGroupingsIDToSortKeys[shufflableGroupingIDs[i]]
-		keyB := shufflableGroupingsIDToSortKeys[shufflableGroupingIDs[j]]
-		if keyA == keyB {
-			return shufflableGroupingIDs[i] < shufflableGroupingIDs[j]
-		} else {
-			return keyA < keyB
-		}
-	})
 
 	// now we permute the sorted shufflable grouping IDs and build the ordered Groups
 	orderedGroups := GroupedSpecIndices{}
