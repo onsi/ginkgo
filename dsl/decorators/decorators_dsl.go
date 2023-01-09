@@ -30,6 +30,7 @@ const Focus = ginkgo.Focus
 const Pending = ginkgo.Pending
 const Serial = ginkgo.Serial
 const Ordered = ginkgo.Ordered
+const ContinueOnFailure = ginkgo.ContinueOnFailure
 const OncePerOrdered = ginkgo.OncePerOrdered
 const SuppressProgressReporting = ginkgo.SuppressProgressReporting
 

@@ -2264,7 +2264,11 @@ Lastly, the `OncePerOrdered` container cannot be applied to the `ReportBeforeEac
 
 Normally, when a spec fails Ginkgo moves on to the next spec.  This is possible because Ginkgo assumes, by default, that all specs are independent.  However `Ordered` containers explicitly opt in to a different behavior.  Spec independence cannot be guaranteed in `Ordered` containers, so Ginkgo treats failures differently.
 
-When a spec in an `Ordered` container fails all subsequent specs are skipped. Ginkgo will then run any `AfterAll` node closures to clean up after the specs.  This failure behavior cannot be overridden.
+When a spec in an `Ordered` container fails all subsequent specs are skipped. Ginkgo will then run any `AfterAll` node closures to clean up after the specs.
+
+You can override this behavior by decorating an `Ordered` container with `ContinueOnFailure`.  This is useful in cases where `Ordered` is being used to provide shared expensive set up for a collection of specs.  When `ContinueOnFailure` is set, Ginkgo will continue running specs even if an earlier spec in the `Ordered` container has failed.  If, however a `BeforeAll` or `OncePerOrdered` `BeforeEach` node has failed then Ginkgo will skip all subsequent specs as the setup for the collection specs is presumed to have failed.
+
+`ContinueOnFailure` can only be applied to the outermost `Ordered` container.  It is an error to apply it to a nested container.
 
 #### Combining Serial and Ordered
 
@@ -4818,6 +4822,11 @@ The `Ordered` decorator applies to container nodes only.  It is an error to try 
 `Ordered` allows the user to [mark containers of specs as ordered](#ordered-containers).  Ginkgo will guarantee that the container's specs will run in the order they appear in and will never run in parallel with one another (though they may run in parallel with other specs unless the `Serial` decorator is also applied to the `Ordered` container).
 
 When a spec in an `Ordered` container fails, all subsequent specs in the ordered container are skipped.  Only `Ordered` containers can contain `BeforeAll` and `AfterAll` setup nodes.
+
+#### The ContinueOnFailure Decorator
+The `ContinueOnFailure` decorator applies to outermost `Ordered` container nodes only.  It is an error to try to apply the `ContinueOnFailure` decorator to anything other than an `Ordered` container - and that `Ordered` container must not have any parent `Ordered` containers.
+
+When an `Ordered` container is decorated with `ContinueOnFailure` then the failure of one spec in the container will not prevent other specs from running.  This is useful in cases where `Ordered` containers are being used to have share common (expensive) setup for a collection of specs but the specs, themselves, don't rely on one another.
 
 #### The OncePerOrdered Decorator
 The `OncePerOrdered` decorator applies to setup nodes only.  It is an error to try to apply the `OncePerOrdered` decorator to a container or subject node.

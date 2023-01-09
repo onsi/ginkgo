@@ -36,6 +36,7 @@ var _ = Describe("Partitioning Decorations", func() {
 			Pending,
 			Serial,
 			Ordered,
+			ContinueOnFailure,
 			SuppressProgressReporting,
 			NodeTimeout(time.Second),
 			GracePeriod(time.Second),
@@ -63,6 +64,7 @@ var _ = Describe("Partitioning Decorations", func() {
 			Pending,
 			Serial,
 			Ordered,
+			ContinueOnFailure,
 			SuppressProgressReporting,
 			NodeTimeout(time.Second),
 			GracePeriod(time.Second),
@@ -302,6 +304,31 @@ var _ = Describe("Constructing nodes", func() {
 			node, errors = internal.NewNode(dt, ntIt, "not even Its", body, cl, Ordered)
 			Ω(node).Should(BeZero())
 			Ω(errors).Should(ConsistOf(types.GinkgoErrors.InvalidDecoratorForNodeType(cl, ntIt, "Ordered")))
+			Ω(dt.DidTrackDeprecations()).Should(BeFalse())
+		})
+	})
+
+	Describe("the ContinueOnFailure decoration", func() {
+		It("the node is not MarkedContinueOnFailure by default", func() {
+			node, errors := internal.NewNode(dt, ntCon, "", body)
+			Ω(node.MarkedContinueOnFailure).Should(BeFalse())
+			ExpectAllWell(errors)
+		})
+		It("marks the node as ContinueOnFailure", func() {
+			node, errors := internal.NewNode(dt, ntCon, "", body, Ordered, ContinueOnFailure)
+			Ω(node.MarkedContinueOnFailure).Should(BeTrue())
+			ExpectAllWell(errors)
+		})
+		It("does not allow non-container nodes to be marked", func() {
+			node, errors := internal.NewNode(dt, ntBef, "", body, cl, ContinueOnFailure)
+			Ω(node).Should(BeZero())
+			Ω(errors).Should(ContainElement(types.GinkgoErrors.InvalidDecoratorForNodeType(cl, ntBef, "ContinueOnFailure")))
+			Ω(dt.DidTrackDeprecations()).Should(BeFalse())
+		})
+		It("does not allow non-Ordered container nodes to be marked", func() {
+			node, errors := internal.NewNode(dt, ntCon, "", body, cl, ContinueOnFailure)
+			Ω(node).Should(BeZero())
+			Ω(errors).Should(ConsistOf(types.GinkgoErrors.InvalidContinueOnFailureDecoration(cl)))
 			Ω(dt.DidTrackDeprecations()).Should(BeFalse())
 		})
 	})

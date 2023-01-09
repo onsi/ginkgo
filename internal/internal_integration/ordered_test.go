@@ -12,6 +12,7 @@ import (
 )
 
 const SKIP_DUE_TO_EARLIER_FAILURE = "Spec skipped because an earlier spec in an ordered container failed"
+const SKIP_DUE_TO_FAILURE_IN_BEFORE_ALL = "Spec skipped because a BeforeAll node failed"
 const SKIP_DUE_TO_BEFORE_ALL_SKIP = "Spec skipped because Skip() was called in BeforeAll"
 const SKIP_DUE_TO_BEFORE_EACH_SKIP = "Spec skipped because Skip() was called in BeforeEach"
 
@@ -316,6 +317,38 @@ var _ = DescribeTable("Ordered Containers",
 		"BE-outer", "BE", "B", "AE", "AA", "AE-outer",
 	}, "A", HavePassed(),
 		"B", HavePanicked(types.FailureNodeInContainer, FailureNodeType(types.NodeTypeAfterAll), "boom"),
+	),
+	Entry("when a timeout occurs in a BeforeAll", false, func() {
+		BeforeEach(rt.T("BE-outer"))
+		Context("container", Ordered, func() {
+			BeforeEach(rt.T("BE"))
+			BeforeAll(rt.TSC("BA", func(ctx SpecContext) { <-ctx.Done() }), NodeTimeout(time.Millisecond*10))
+			It("A", rt.T("A"))
+			It("B", rt.T("B"))
+			AfterAll(rt.T("AA"))
+			AfterEach(rt.T("AE"))
+		})
+		AfterEach(rt.T("AE-outer"))
+	}, []string{"BE-outer", "BA", "AE", "AA", "AE-outer"},
+		"A", HaveTimedOut(types.FailureNodeInContainer, FailureNodeType(types.NodeTypeBeforeAll)),
+		"B", HaveBeenSkippedWithMessage(SKIP_DUE_TO_EARLIER_FAILURE),
+	),
+	Entry("when a timeout occurs in an AfterAll", false, func() {
+		BeforeEach(rt.T("BE-outer"))
+		Context("container", Ordered, func() {
+			BeforeEach(rt.T("BE"))
+			BeforeAll(rt.T("BA"))
+			It("A", rt.T("A"))
+			It("B", rt.T("B"))
+			AfterAll(rt.TSC("AA", func(ctx SpecContext) { <-ctx.Done() }), NodeTimeout(time.Millisecond*10))
+			AfterEach(rt.T("AE"))
+		})
+		AfterEach(rt.T("AE-outer"))
+	}, []string{
+		"BE-outer", "BA", "BE", "A", "AE", "AE-outer",
+		"BE-outer", "BE", "B", "AE", "AA", "AE-outer",
+	}, "A", HavePassed(),
+		"B", HaveTimedOut(types.FailureNodeInContainer, FailureNodeType(types.NodeTypeAfterAll)),
 	),
 	Entry("when a failure occurs in an AfterEach, it runs the AfterAll", false, func() {
 		BeforeEach(rt.T("BE-outer"))
@@ -938,7 +971,7 @@ var _ = DescribeTable("Ordered Containers",
 
 			It("A", rt.T("A"))
 			It("B", rt.T("B"))
-			Context("nested", func() {
+			Context("nested", Ordered, func() {
 				BeforeEach(rt.T("BE-I"))
 				AfterEach(rt.T("AE-I"))
 				It("C", rt.T("C"))
@@ -980,6 +1013,204 @@ var _ = DescribeTable("Ordered Containers",
 			"D", "AE-O-HO", "AE-post", "AE-pre", "BE-post", "BE-pre",
 		},
 		"A", "B", "D", HavePassed(NumAttempts(3)), "C", HavePassed(NumAttempts(1)),
+	),
+	//Oh look, we made some new dragons
+	Entry("ContinueOnFailure - happy path when nothing fails", true, func() {
+		BeforeEach(rt.T("BE", DC("DC-BE")), OncePerOrdered)
+		AfterEach(rt.T("AE", DC("DC-AE")), OncePerOrdered)
+		Context("container", Ordered, ContinueOnFailure, func() {
+			BeforeAll(rt.T("BA", DC("DC-BA")))
+			AfterAll(rt.T("AA", DC("DC-AA")))
+			It("A", rt.T("A"))
+			It("B", rt.T("B"))
+			It("C", rt.T("C"))
+		})
+	}, []string{
+		"BE", "BA", "A", "B", "C", "AA", "AE", "DC-AE", "DC-BE", "DC-AA", "DC-BA",
+	},
+		"A", "B", "C", HavePassed(),
+	),
+	Entry("ContinueOnFailure - when the first It fails", false, func() {
+		BeforeEach(rt.T("BE", DC("DC-BE")), OncePerOrdered)
+		AfterEach(rt.T("AE", DC("DC-AE")), OncePerOrdered)
+		Context("container", Ordered, ContinueOnFailure, func() {
+			BeforeAll(rt.T("BA", DC("DC-BA")))
+			AfterAll(rt.T("AA", DC("DC-AA")))
+			It("A", rt.T("A", func() { F("fail") }))
+			It("B", rt.T("B"))
+			It("C", rt.T("C"))
+		})
+	}, []string{
+		"BE", "BA", "A", "B", "C", "AA", "AE", "DC-AE", "DC-BE", "DC-AA", "DC-BA",
+	},
+		"A", HaveFailed(types.FailureNodeIsLeafNode, FailureNodeType(types.NodeTypeIt), "fail"), "B", "C", HavePassed(),
+	),
+	Entry("ContinueOnFailure - when a middle It fails", false, func() {
+		BeforeEach(rt.T("BE", DC("DC-BE")), OncePerOrdered)
+		AfterEach(rt.T("AE", DC("DC-AE")), OncePerOrdered)
+		Context("container", Ordered, ContinueOnFailure, func() {
+			BeforeAll(rt.T("BA", DC("DC-BA")))
+			AfterAll(rt.T("AA", DC("DC-AA")))
+			It("A", rt.T("A"))
+			It("B", rt.T("B", func() { F("fail") }))
+			It("C", rt.T("C"))
+		})
+	}, []string{
+		"BE", "BA", "A", "B", "C", "AA", "AE", "DC-AE", "DC-BE", "DC-AA", "DC-BA",
+	},
+		"A", HavePassed(), "B", HaveFailed(types.FailureNodeIsLeafNode, FailureNodeType(types.NodeTypeIt), "fail"), "C", HavePassed(),
+	),
+	Entry("ContinueOnFailure - when the last It fails", false, func() {
+		BeforeEach(rt.T("BE", DC("DC-BE")), OncePerOrdered)
+		AfterEach(rt.T("AE", DC("DC-AE")), OncePerOrdered)
+		Context("container", Ordered, ContinueOnFailure, func() {
+			BeforeAll(rt.T("BA", DC("DC-BA")))
+			AfterAll(rt.T("AA", DC("DC-AA")))
+			It("A", rt.T("A"))
+			It("B", rt.T("B"))
+			It("C", rt.T("C", func() { F("fail") }))
+		})
+	}, []string{
+		"BE", "BA", "A", "B", "C", "AA", "AE", "DC-AE", "DC-BE", "DC-AA", "DC-BA",
+	},
+		"A", "B", HavePassed(), "C", HaveFailed(types.FailureNodeIsLeafNode, FailureNodeType(types.NodeTypeIt), "fail"),
+	),
+	Entry("ContinueOnFailure - when the first It fails and we have flake attempts", false, func() {
+		BeforeEach(rt.T("BE", DC("DC-BE")), OncePerOrdered)
+		AfterEach(rt.T("AE", DC("DC-AE")), OncePerOrdered)
+		Context("container", Ordered, ContinueOnFailure, FlakeAttempts(2), func() {
+			BeforeAll(rt.T("BA", DC("DC-BA")))
+			AfterAll(rt.T("AA", DC("DC-AA")))
+			It("A", rt.T("A", func() { F("fail") }))
+			It("B", rt.T("B"))
+			It("C", rt.T("C"))
+		})
+	}, []string{
+		"BE", "BA", "A", "A", "B", "C", "AA", "AE", "DC-AE", "DC-BE", "DC-AA", "DC-BA",
+	},
+		"A", HaveFailed(types.FailureNodeIsLeafNode, FailureNodeType(types.NodeTypeIt), "fail", NumAttempts(2)), "B", "C", HavePassed(),
+	),
+	Entry("ContinueOnFailure - when a middle It fails and we have flake attempts", false, func() {
+		BeforeEach(rt.T("BE", DC("DC-BE")), OncePerOrdered)
+		AfterEach(rt.T("AE", DC("DC-AE")), OncePerOrdered)
+		Context("container", Ordered, ContinueOnFailure, FlakeAttempts(2), func() {
+			BeforeAll(rt.T("BA", DC("DC-BA")))
+			AfterAll(rt.T("AA", DC("DC-AA")))
+			It("A", rt.T("A"))
+			It("B", rt.T("B", func() { F("fail") }))
+			It("C", rt.T("C"))
+		})
+	}, []string{
+		"BE", "BA", "A", "B", "B", "C", "AA", "AE", "DC-AE", "DC-BE", "DC-AA", "DC-BA",
+	},
+		"A", HavePassed(), "B", HaveFailed(types.FailureNodeIsLeafNode, FailureNodeType(types.NodeTypeIt), "fail", NumAttempts(2)), "C", HavePassed(),
+	),
+	Entry("ContinueOnFailure - when the last It fails and we have flake attempts", false, func() {
+		BeforeEach(rt.T("BE", DC("DC-BE")), OncePerOrdered)
+		AfterEach(rt.T("AE", DC("DC-AE")), OncePerOrdered)
+		Context("container", Ordered, ContinueOnFailure, FlakeAttempts(2), func() {
+			BeforeAll(rt.T("BA", DC("DC-BA")))
+			AfterAll(rt.T("AA", DC("DC-AA")))
+			It("A", rt.T("A"))
+			It("B", rt.T("B"))
+			It("C", rt.T("C", func() { F("fail") }))
+		})
+	}, []string{
+		"BE", "BA", "A", "B", "C", "C", "AA", "AE", "DC-AE", "DC-BE", "DC-AA", "DC-BA",
+	},
+		"A", "B", HavePassed(), "C", HaveFailed(types.FailureNodeIsLeafNode, FailureNodeType(types.NodeTypeIt), "fail", NumAttempts(2)),
+	),
+	Entry("ContinueOnFailure - when a repeating setup node fails", false, func() {
+		BeforeEach(rt.T("BE", DC("DC-BE")), OncePerOrdered)
+		AfterEach(rt.T("AE", DC("DC-AE")), OncePerOrdered)
+		Context("container", Ordered, ContinueOnFailure, func() {
+			BeforeAll(rt.T("BA", DC("DC-BA")))
+			AfterAll(rt.T("AA", DC("DC-AA")))
+			BeforeEach(rt.T("BE-inner", func() { F("fail") }))
+			It("A", rt.T("A"))
+			It("B", rt.T("B"))
+			It("C", rt.T("C"))
+		})
+	}, []string{
+		"BE", "BA", "BE-inner", "BE-inner", "BE-inner", "AA", "AE", "DC-AE", "DC-BE", "DC-AA", "DC-BA",
+	},
+		"A", "B", "C", HaveFailed(types.FailureNodeInContainer, FailureNodeType(types.NodeTypeBeforeEach), "fail"),
+	),
+
+	Entry("ContinueOnFailure - when a BeforeAllFails", false, func() {
+		BeforeEach(rt.T("BE", DC("DC-BE")), OncePerOrdered)
+		AfterEach(rt.T("AE", DC("DC-AE")), OncePerOrdered)
+		Context("container", Ordered, ContinueOnFailure, func() {
+			BeforeAll(rt.T("BA", func() {
+				DeferCleanup(rt.T("DC-BA"))
+				F("fail")
+			}))
+			AfterAll(rt.T("AA", DC("DC-AA")))
+			It("A", rt.T("A"))
+			It("B", rt.T("B"))
+			It("C", rt.T("C"))
+		})
+	}, []string{
+		"BE", "BA", "AA", "AE", "DC-AE", "DC-BE", "DC-AA", "DC-BA",
+	},
+		"A", HaveFailed(types.FailureNodeInContainer, FailureNodeType(types.NodeTypeBeforeAll), "fail"),
+		"B", "C", HaveBeenSkippedWithMessage(SKIP_DUE_TO_FAILURE_IN_BEFORE_ALL),
+	),
+
+	Entry("ContinueOnFailure - when a BeforeAllFails and flakey attempts are allowed", false, func() {
+		BeforeEach(rt.T("BE", DC("DC-BE")), OncePerOrdered)
+		AfterEach(rt.T("AE", DC("DC-AE")), OncePerOrdered)
+		Context("container", Ordered, FlakeAttempts(2), ContinueOnFailure, func() {
+			BeforeAll(rt.T("BA", func() {
+				DeferCleanup(rt.T("DC-BA"))
+				F("fail")
+			}))
+			AfterAll(rt.T("AA", DC("DC-AA")))
+			It("A", rt.T("A"))
+			It("B", rt.T("B"))
+			It("C", rt.T("C"))
+		})
+	}, []string{
+		"BE", "BA", "AA", "DC-AA", "DC-BA", "BA", "AA", "AE", "DC-AE", "DC-BE", "DC-AA", "DC-BA",
+	},
+		"A", HaveFailed(types.FailureNodeInContainer, FailureNodeType(types.NodeTypeBeforeAll), "fail"),
+		"B", "C", HaveBeenSkippedWithMessage(SKIP_DUE_TO_FAILURE_IN_BEFORE_ALL),
+	),
+
+	Entry("ContinueOnFailure - when a BeforeAll fails at first, but then succeeds and flakes are allowed", true, func() {
+		BeforeEach(rt.T("BE", DC("DC-BE")), OncePerOrdered)
+		AfterEach(rt.T("AE", DC("DC-AE")), OncePerOrdered)
+		Context("container", Ordered, ContinueOnFailure, FlakeAttempts(3), func() {
+			BeforeAll(rt.T("BA", FlakeyFailer(2)))
+			AfterAll(rt.T("AA", DC("DC-AA")))
+			It("A", rt.T("A"))
+			It("B", rt.T("B"))
+			It("C", rt.T("C"))
+		})
+	}, []string{
+		"BE", "BA", "AA", "DC-AA", "BA", "AA", "DC-AA", "BA", "A", "B", "C", "AA", "AE", "DC-AE", "DC-BE", "DC-AA",
+	},
+		"A", "B", "C", HavePassed(),
+	),
+
+	Entry("ContinueOnFailure - when a BeforeAllFails and flakey attempts are allowed", false, func() {
+		BeforeEach(rt.T("BE", func() {
+			DeferCleanup(rt.T("DC-BE"))
+			F("fail")
+		}), OncePerOrdered)
+		AfterEach(rt.T("AE", DC("DC-AE")), OncePerOrdered)
+		Context("container", Ordered, FlakeAttempts(2), ContinueOnFailure, func() {
+			BeforeAll(rt.T("BA", DC("DC-BA")))
+			AfterAll(rt.T("AA", DC("DC-AA")))
+			It("A", rt.T("A"))
+			It("B", rt.T("B"))
+			It("C", rt.T("C"))
+		})
+	}, []string{
+		"BE", "AE", "DC-AE", "DC-BE", "BE", "AE", "DC-AE", "DC-BE",
+	},
+		"A", HaveFailed(types.FailureNodeAtTopLevel, FailureNodeType(types.NodeTypeBeforeEach), "fail"),
+		"B", "C", HaveBeenSkippedWithMessage(SKIP_DUE_TO_FAILURE_IN_BEFORE_ALL),
 	),
 
 	//All together now!

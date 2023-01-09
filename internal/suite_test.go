@@ -238,6 +238,39 @@ var _ = Describe("Suite", func() {
 				})
 			})
 
+			Context("when pushing a ContinueOnFailure Ordered container", func() {
+				Context("that is the top-level Ordered container", func() {
+					It("succeeds", func() {
+						var errors = make([]error, 3)
+						errors[0] = suite.PushNode(N(ntCon, "top-level-container", func() {
+							errors[1] = suite.PushNode(N(ntCon, "ordered-container", Ordered, ContinueOnFailure, func() {
+								errors[2] = suite.PushNode(N(types.NodeTypeIt, "spec", func() {}))
+							}))
+						}))
+						Ω(errors[0]).ShouldNot(HaveOccurred())
+						Ω(suite.BuildTree()).Should(Succeed())
+						Ω(errors[1]).ShouldNot(HaveOccurred())
+						Ω(errors[2]).ShouldNot(HaveOccurred())
+					})
+				})
+
+				Context("that is nested in another Ordered container", func() {
+					It("errors", func() {
+						var errors = make([]error, 3)
+
+						errors[0] = suite.PushNode(N(ntCon, "top-level-container", Ordered, func() {
+							errors[1] = suite.PushNode(N(ntCon, "ordered-container", cl, Ordered, ContinueOnFailure, func() {
+								errors[2] = suite.PushNode(N(types.NodeTypeIt, "spec", func() {}))
+							}))
+						}))
+						Ω(errors[0]).ShouldNot(HaveOccurred())
+						Ω(suite.BuildTree()).Should(Succeed())
+						Ω(errors[1]).Should(MatchError(types.GinkgoErrors.InvalidContinueOnFailureDecoration(cl)))
+						Ω(errors[2]).ShouldNot(HaveOccurred())
+					})
+				})
+			})
+
 			Context("when pushing a suite node during PhaseBuildTree", func() {
 				It("errors", func() {
 					var pushSuiteNodeErr error
