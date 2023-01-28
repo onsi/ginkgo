@@ -1,3 +1,14 @@
+## 2.7.1
+
+### Fixes
+- Bring back SuiteConfig.EmitSpecProgress to avoid compilation issue for consumers that set it manually [d2a1cb0]
+
+### Maintenance
+- Bump github.com/onsi/gomega from 1.24.2 to 1.25.0 (#1118) [cafece6]
+- Bump golang.org/x/tools from 0.4.0 to 0.5.0 (#1111) [eda66c2]
+- Bump golang.org/x/sys from 0.3.0 to 0.4.0 (#1112) [ac5ccaa]
+- Bump github.com/onsi/gomega from 1.24.1 to 1.24.2 (#1097) [eee6480]
+
 ## 2.7.0
 
 ### Features
