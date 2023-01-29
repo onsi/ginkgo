@@ -44,3 +44,12 @@ var _ = DescribeTable("a top level DescribeTable",
 	},
 	Entry("a TableEntry constructed by Entry", 2, 3),
 )
+
+var helper = func() {
+	GinkgoHelper()
+	Ω("a helper failed").Should(Equal("nope"))
+}
+
+var _ = It("tracks line numbers correctly when GinkgoHelper() is called", func() {
+	helper()
+})

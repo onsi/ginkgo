@@ -38,7 +38,10 @@ var _ = Describe("Failing Specs", func() {
 			Ω(output).Should(MatchRegexp(`a top level DescribeTable \[It\] a TableEntry constructed by Entry\n.*fail_fixture_test\.go:45`),
 				"the output of a failing Entry should include its file path and line number")
 
-			Ω(output).Should(ContainSubstring("0 Passed | 7 Failed"))
+			Ω(output).Should(ContainSubstring(`a helper failed`))
+			Ω(output).Should(ContainSubstring(`fail_fixture_test.go:54`), "the code location reported for the helper failure - we're testing the call to GinkgoHelper() works as expected")
+
+			Ω(output).Should(ContainSubstring("0 Passed | 8 Failed"))
 		})
 	})
 

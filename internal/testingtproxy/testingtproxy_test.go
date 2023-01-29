@@ -2,6 +2,7 @@ package testingtproxy_test
 
 import (
 	"os"
+	"runtime"
 
 	. "github.com/onsi/ginkgo/v2"
 	. "github.com/onsi/gomega"
@@ -165,7 +166,15 @@ var _ = Describe("Testingtproxy", func() {
 	})
 
 	It("ignores Helper", func() {
-		GinkgoT().Helper() //is a no-op
+		cl := func() types.CodeLocation {
+			GinkgoT().Helper()
+			return types.NewCodeLocation(0)
+		}() // this is the expected line
+		_, fname, lnumber, _ := runtime.Caller(0)
+		Ω(cl).Should(Equal(types.CodeLocation{
+			FileName:   fname,
+			LineNumber: lnumber - 1,
+		}))
 	})
 
 	It("supports Log", func() {

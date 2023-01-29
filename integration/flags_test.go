@@ -131,8 +131,8 @@ var _ = Describe("Flags Specs", func() {
 		output := string(session.Out.Contents())
 
 		Ω(output).Should(ContainSubstring("synchronous failures"))
-		Ω(output).Should(ContainSubstring("7 Specs"))
-		Ω(output).Should(ContainSubstring("7 Passed"))
+		Ω(output).Should(ContainSubstring("8 Specs"))
+		Ω(output).Should(ContainSubstring("8 Passed"))
 		Ω(output).Should(ContainSubstring("0 Failed"))
 	})
 

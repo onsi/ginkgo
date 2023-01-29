@@ -28,6 +28,7 @@ var GinkgoLogr = ginkgo.GinkgoLogr
 var GinkgoConfiguration = ginkgo.GinkgoConfiguration
 var GinkgoRandomSeed = ginkgo.GinkgoRandomSeed
 var GinkgoParallelProcess = ginkgo.GinkgoParallelProcess
+var GinkgoHelper = ginkgo.GinkgoHelper
 var PauseOutputInterception = ginkgo.PauseOutputInterception
 var ResumeOutputInterception = ginkgo.ResumeOutputInterception
 var RunSpecs = ginkgo.RunSpecs

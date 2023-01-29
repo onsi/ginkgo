@@ -164,6 +164,15 @@ func GinkgoParallelProcess() int {
 }
 
 /*
+GinkgoHelper marks the function it's called in as a test helper.  When a failure occurs inside a helper function, Ginkgo will skip the helper when analyzing the stack trace to identify where the failure occurred.
+
+This is an alternative, simpler, mechanism to passing in a skip offset when calling Fail or using Gomega.
+*/
+func GinkgoHelper() {
+	types.MarkAsHelper(1)
+}
+
+/*
 PauseOutputInterception() pauses Ginkgo's output interception.  This is only relevant
 when running in parallel and output to stdout/stderr is being intercepted.  You generally
 don't need to call this function - however there are cases when Ginkgo's output interception

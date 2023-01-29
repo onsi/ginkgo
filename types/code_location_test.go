@@ -1,6 +1,7 @@
 package types_test
 
 import (
+	"fmt"
 	"runtime"
 
 	. "github.com/onsi/ginkgo/v2"
@@ -9,63 +10,104 @@ import (
 )
 
 var _ = Describe("CodeLocation", func() {
-	var codeLocation types.CodeLocation
-	var expectedFileName string
-	var expectedLineNumber int
-
-	caller0 := func() {
-		codeLocation = types.NewCodeLocation(1)
+	clWithSkip := func(skip int) types.CodeLocation {
+		return types.NewCodeLocation(skip)
 	}
 
-	caller1 := func() {
-		_, expectedFileName, expectedLineNumber, _ = runtime.Caller(0)
-		expectedLineNumber += 2
-		caller0()
+	helperFunction := func() types.CodeLocation {
+		GinkgoHelper()
+		return types.NewCodeLocation(0)
 	}
 
-	BeforeEach(func() {
-		caller1()
-	})
+	Describe("Creating CodeLocations", func() {
+		Context("when skip is 0", func() {
+			It("returns the location at which types.NewCodeLocation was called", func() {
+				_, fname, lnumber, _ := runtime.Caller(0)
+				cl := types.NewCodeLocation(0)
+				Ω(cl).Should(Equal(types.CodeLocation{
+					FileName:   fname,
+					LineNumber: lnumber + 1,
+				}))
+			})
+		})
 
-	It("should use the passed in skip parameter to pick out the correct file & line number", func() {
-		Ω(codeLocation.FileName).Should(Equal(expectedFileName))
-		Ω(codeLocation.LineNumber).Should(Equal(expectedLineNumber))
-		Ω(codeLocation.FullStackTrace).Should(BeZero())
+		Context("when skip is > 0", func() {
+			It("returns the appropriate location from the stack", func() {
+				_, fname, lnumber, _ := runtime.Caller(0)
+				cl := clWithSkip(1)
+				Ω(cl).Should(Equal(types.CodeLocation{
+					FileName:   fname,
+					LineNumber: lnumber + 1,
+				}))
+
+				_, fname, lnumber, _ = runtime.Caller(0)
+				cl = func() types.CodeLocation {
+					return clWithSkip(2)
+				}() // this is the line that's expected
+				Ω(cl).Should(Equal(types.CodeLocation{
+					FileName:   fname,
+					LineNumber: lnumber + 3,
+				}))
+			})
+		})
+
+		Describe("when a function has been marked as a helper", func() {
+			It("does not include that function when generating a code location", func() {
+				_, fname, lnumber, _ := runtime.Caller(0)
+				cl := helperFunction()
+				Ω(cl).Should(Equal(types.CodeLocation{
+					FileName:   fname,
+					LineNumber: lnumber + 1,
+				}))
+
+				_, fname, lnumber, _ = runtime.Caller(0)
+				cl = func() types.CodeLocation {
+					GinkgoHelper()
+					return func() types.CodeLocation {
+						types.MarkAsHelper()
+						return helperFunction()
+					}()
+				}() // this is the line that's expected
+				Ω(cl).Should(Equal(types.CodeLocation{
+					FileName:   fname,
+					LineNumber: lnumber + 7,
+				}))
+			})
+		})
 	})
 
 	Describe("stringer behavior", func() {
 		It("should stringify nicely", func() {
-			Ω(codeLocation.String()).Should(ContainSubstring("code_location_test.go:%d", expectedLineNumber))
+			_, fname, lnumber, _ := runtime.Caller(0)
+			cl := types.NewCodeLocation(0)
+			Ω(cl.String()).Should(Equal(fmt.Sprintf("%s:%d", fname, lnumber+1)))
 		})
 	})
 
 	Describe("with a custom message", func() {
-		BeforeEach(func() {
-			codeLocation = types.NewCustomCodeLocation("I'm right here.")
-		})
-
 		It("emits the custom message", func() {
-			Ω(codeLocation.String()).Should(Equal("I'm right here."))
+			cl := types.NewCustomCodeLocation("I'm right here.")
+			Ω(cl.String()).Should(Equal("I'm right here."))
 		})
 	})
 
 	Describe("Fetching the line from the file in question", func() {
 		It("works", func() {
-			codeLocation = types.NewCodeLocation(0)
-			codeLocation.LineNumber = codeLocation.LineNumber - 2
-			Ω(codeLocation.ContentsOfLine()).Should(Equal("\tDescribe(\"Fetching the line from the file in question\", func() {"))
+			cl := types.NewCodeLocation(0)
+			cl.LineNumber = cl.LineNumber - 2
+			Ω(cl.ContentsOfLine()).Should(Equal("\tDescribe(\"Fetching the line from the file in question\", func() {"))
 		})
 
 		It("returns empty string if the line is not found or is out of bounds", func() {
-			codeLocation = types.CodeLocation{
+			cl := types.CodeLocation{
 				FileName:   "foo.go",
 				LineNumber: 0,
 			}
-			Ω(codeLocation.ContentsOfLine()).Should(BeZero())
+			Ω(cl.ContentsOfLine()).Should(BeZero())
 
-			codeLocation = types.NewCodeLocation(0)
-			codeLocation.LineNumber = codeLocation.LineNumber + 1000000
-			Ω(codeLocation.ContentsOfLine()).Should(BeZero())
+			cl = types.NewCodeLocation(0)
+			cl.LineNumber = cl.LineNumber + 1000000
+			Ω(cl.ContentsOfLine()).Should(BeZero())
 		})
 	})
 
