@@ -173,6 +173,20 @@ func GinkgoHelper() {
 }
 
 /*
+GinkgoLabelFilter() returns the label filter configured for this suite via `--label-filter`.
+
+You can use this to manually check if a set of labels would satisfy the filter via:
+
+	if (Label("cat", "dog").MatchesLabelFilter(GinkgoLabelFilter())) {
+		//...
+	}
+*/
+func GinkgoLabelFilter() string {
+	suiteConfig, _ := GinkgoConfiguration()
+	return suiteConfig.LabelFilter
+}
+
+/*
 PauseOutputInterception() pauses Ginkgo's output interception.  This is only relevant
 when running in parallel and output to stdout/stderr is being intercepted.  You generally
 don't need to call this function - however there are cases when Ginkgo's output interception

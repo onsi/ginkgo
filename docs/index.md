@@ -1362,7 +1362,7 @@ DescribeTable("Extracting the author's first and last name",
 You'll be notified with a clear message at runtime if the parameter types don't match the spec closure signature.
 
 #### Mental Model: Table Specs are just Syntactic Sugar
-`DescribeTable` is simply providing syntactic sugar to convert its inputs into a set of standard Ginkgo nodes.  During the [Tree Construction Phase](#mental-model-how-ginkgo-traverses-the-spec-hierarchy) `DescribeTable` is generating a single container node that contains one subject node per table entry.  The description for the container node will be the description passed to `DescribeTable` and the descriptions for the subject nodes will be the descriptions passed to the `Entry`s.  During the Run Phase, when specs run, each subject node will simply invoke the spec closure passed to `DescribeTable`, passing in the parameters associated with the `Entry`.
+`DescribeTable` is simply providing syntactic sugar to convert its Ls into a set of standard Ginkgo nodes.  During the [Tree Construction Phase](#mental-model-how-ginkgo-traverses-the-spec-hierarchy) `DescribeTable` is generating a single container node that contains one subject node per table entry.  The description for the container node will be the description passed to `DescribeTable` and the descriptions for the subject nodes will be the descriptions passed to the `Entry`s.  During the Run Phase, when specs run, each subject node will simply invoke the spec closure passed to `DescribeTable`, passing in the parameters associated with the `Entry`.
 
 To put it another way, the table test above is equivalent to:
 
@@ -2492,6 +2492,20 @@ To build on our example above, here are some label filter queries and their beha
 You can list the labels used in a given package using the `ginkgo labels` subcommand.  This does a simple/naive scan of your test files for calls to `Label` and returns any labels it finds.
 
 You can iterate on different filters quickly with `ginkgo --dry-run -v --label-filter=FILTER`.  This will cause Ginkgo to tell you which specs it will run for a given filter without actually running anything.
+
+If you want to have finer-grained control within a test about what code to run/not-run depending on what labels match/don't match the filter you can perform a manual check against the label-filter passed into Ginkgo like so:
+
+```go
+It("can save books remotely", Label("network", "slow", "library query") {
+  if Label("performance").MatchesLabelFilter(GinkgoLabelFilter()) {
+    exp := gmeasure.NewExperiment()
+    // perform some benchmarking with exp...
+  }
+  // rest of the saving books test
+})
+```
+
+here `GinkgoLabelFilter()` returns the configured label filter passed in via `--label-filter`.  With a setup like this you could run `ginkgo --label-filter="network && !performance"` - this would select the `"can save books remotely"` spec but not run the benchmarking code in the spec.  Of course, this could also have been modeled as a separate spec with the `performance` label.
 
 Finally, in addition to specifying Labels on subject and container nodes you can also specify suite-wide labels by decorating the `RunSpecs` command with `Label`:
 

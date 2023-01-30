@@ -68,6 +68,10 @@ var _ = Describe("LabelFilter", func() {
 				}
 			}
 		},
+		Entry("An empty label", "",
+			M("cat"), M("cat", "dog"), M("dog", "cat"),
+			M(), M("cow"),
+		),
 		Entry("A single label", "cat",
 			M("cat"), M("cat", "dog"), M("dog", "cat"),
 			NM(), NM("cow"),
@@ -187,4 +191,14 @@ var _ = Describe("LabelFilter", func() {
 		Entry(nil, "cow)", "", types.GinkgoErrors.InvalidLabel("cow)", cl)),
 		Entry(nil, "cow/", "", types.GinkgoErrors.InvalidLabel("cow/", cl)),
 	)
+
+	Describe("MustParseLabelFilter", func() {
+		It("panics if passed an invalid filter", func() {
+			Ω(types.MustParseLabelFilter("dog")([]string{"dog"})).Should(BeTrue())
+			Ω(types.MustParseLabelFilter("dog")([]string{"cat"})).Should(BeFalse())
+			Ω(func() {
+				types.MustParseLabelFilter("!")
+			}).Should(Panic())
+		})
+	})
 })

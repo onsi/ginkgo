@@ -1621,6 +1621,22 @@ var _ = Describe("Nodes", func() {
 		})
 
 	})
+
+	Describe("Labels", func() {
+		It("can match against a filter", func() {
+			Ω(Label().MatchesLabelFilter("")).Should(BeTrue())
+			Ω(Label("dog", "cat").MatchesLabelFilter("dog")).Should(BeTrue())
+			Ω(Label("dog", "cat").MatchesLabelFilter("cat")).Should(BeTrue())
+			Ω(Label("dog", "cat").MatchesLabelFilter("dog && cat")).Should(BeTrue())
+			Ω(Label("dog", "cat").MatchesLabelFilter("dog || cat")).Should(BeTrue())
+			Ω(Label("dog", "cat").MatchesLabelFilter("!fish")).Should(BeTrue())
+			Ω(Label("dog", "cat").MatchesLabelFilter("fish")).Should(BeFalse())
+			Ω(Label("dog", "cat").MatchesLabelFilter("!dog")).Should(BeFalse())
+			Ω(func() {
+				Label("dog", "cat").MatchesLabelFilter("!")
+			}).Should(Panic())
+		})
+	})
 })
 
 var _ = Describe("Iteration Performance", Serial, Label("performance"), func() {
