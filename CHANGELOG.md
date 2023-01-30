@@ -1,3 +1,52 @@
+## 2.8.0
+
+### Features
+
+- Introduce GinkgoHelper() to track and exclude helper functions from potential CodeLocations [e19f556]
+
+Modeled after `testing.T.Helper()`.  Now, rather than write code like:
+
+```go
+func helper(model Model) {
+    Expect(model).WithOffset(1).To(BeValid())
+    Expect(model.SerialNumber).WithOffset(1).To(MatchRegexp(/[a-f0-9]*/))
+}
+```
+
+you can stop tracking offsets (which makes nesting composing helpers nearly impossible) and simply write:
+
+```go
+func helper(model Model) {
+    GinkgoHelper()
+    Expect(model).To(BeValid())
+    Expect(model.SerialNumber).To(MatchRegexp(/[a-f0-9]*/))
+}
+```
+
+- Introduce GinkgoLabelFilter() and Label().MatchesLabelFilter() to make it possible to programmatically match filters (fixes #1119) [2f6597c]
+
+You can now write code like this:
+
+```go
+BeforeSuite(func() {
+	if Label("slow").MatchesLabelFilter(GinkgoLabelFilter()) {
+		// do slow setup
+	}
+
+	if Label("fast").MatchesLabelFilter(GinkgoLabelFilter()) {
+		// do fast setup
+	}
+})
+```
+
+to programmatically check whether a given set of labels will match the configured `--label-filter`.
+
+### Maintenance
+
+- Bump webrick from 1.7.0 to 1.8.1 in /docs (#1125) [ea4966e]
+- cdeql: add ruby language (#1124) [9dd275b]
+- dependabot: add bundler package-ecosystem for docs (#1123) [14e7bdd]
+
 ## 2.7.1
 
 ### Fixes
