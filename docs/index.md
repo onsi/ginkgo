@@ -46,7 +46,25 @@ This fetches Ginkgo and installs the `ginkgo` executable under `$GOBIN` - you'll
 
 You should now be able to run `ginkgo version` at the command line and see the Ginkgo CLI emit a version number.
 
-**Note** you _must_ make sure the version of the `ginkgo` cli you install is the same as the version of Ginkgo in your `go.mod` file.
+**Note** you _must_ make sure the version of the `ginkgo` cli you install is the same as the version of Ginkgo in your `go.mod` file.  You can do this by running `go install github.com/onsi/ginkgo/v2/ginkgo` from your package.
+
+#### Upgrading Ginkgo
+
+To upgrade Ginkgo run:
+
+```bash
+go get github.com/onsi/ginkgo/v2/ginkgo
+go install github.com/onsi/ginkgo/v2/ginkgo
+```
+
+To pick a particular version: 
+
+```bash
+go get github.com/onsi/ginkgo/v2/ginkgo@v2.m.p
+go install github.com/onsi/ginkgo/v2/ginkgo
+```
+
+Note that in both cases we `go get` the `/v2/ginkgo` subpackage.  This pulls in the CLI and its dependencies.  If you only `go get github.com/onsi/ginkgo/v2` you may experience issues installing the cli - if you do simply run `go get github.com/onsi/ginkgo/v2/ginkgo` to fetch the missing dependencies.
 
 ### Support Policy
 
