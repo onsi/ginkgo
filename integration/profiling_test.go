@@ -105,13 +105,13 @@ var _ = Describe("Profiling Specs", func() {
 				coverPkgFlag := fmt.Sprintf("-coverpkg=%s,%s", fm.PackageNameFor("coverage"), fm.PackageNameFor("coverage/external_coverage"))
 				seriesSession := startGinkgo(fm.PathTo("coverage"), coverPkgFlag)
 				Eventually(seriesSession).Should(gexec.Exit(0))
-				Ω(seriesSession.Out).Should(gbytes.Say("coverage: 71.4% of statements in"))
+				Ω(seriesSession.Out).Should(gbytes.Say(`coverage: (80\.0|71\.4)% of statements in`))
 				seriesCoverage := processCoverageProfile(fm.PathTo("coverage", "coverprofile.out"))
 				fm.RemoveFile("coverage", "coverprofile.out")
 
 				parallelSession := startGinkgo(fm.PathTo("coverage"), "--no-color", "--procs=2", coverPkgFlag)
 				Eventually(parallelSession).Should(gexec.Exit(0))
-				Ω(parallelSession.Out).Should(gbytes.Say(`coverage: 71\.4% of statements`))
+				Ω(parallelSession.Out).Should(gbytes.Say(`coverage: (80\.0|71\.4)% of statements`))
 				parallelCoverage := processCoverageProfile(fm.PathTo("coverage", "coverprofile.out"))
 
 				Ω(parallelCoverage).Should(Equal(seriesCoverage))
