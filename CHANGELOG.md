@@ -1,3 +1,18 @@
+## 2.8.1
+
+### Fixes
+- lock around default report output to avoid triggering the race detector when calling By from goroutines [2d5075a]
+- don't run ReportEntries through sprintf [febbe38]
+
+### Maintenance
+- Bump golang.org/x/tools from 0.5.0 to 0.6.0 (#1135) [11a4860]
+- test: update matrix for Go 1.20 (#1130) [4890a62]
+- Bump golang.org/x/sys from 0.4.0 to 0.5.0 (#1133) [a774638]
+- Bump github.com/onsi/gomega from 1.25.0 to 1.26.0 (#1120) [3f233bd]
+- Bump github-pages from 227 to 228 in /docs (#1131) [f9b8649]
+- Bump activesupport from 6.0.6 to 6.0.6.1 in /docs (#1127) [6f8c042]
+- Update index.md with instructions on how to upgrade Ginkgo [833a75e]
+
 ## 2.8.0
 
 ### Features
