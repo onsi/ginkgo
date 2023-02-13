@@ -123,6 +123,10 @@ var _ = Describe("Formatter", func() {
 		It("transforms the color information and sprintfs", func() {
 			Ω(f.F("{{green}}hi there {{cyan}}%d {{yellow}}%s{{/}}", 3, "wise men")).Should(Equal("\x1b[38;5;10mhi there \x1b[38;5;14m3 \x1b[38;5;11mwise men\x1b[0m"))
 		})
+
+		It("avoids sprintf if there are no additional arguments", func() {
+			Ω(f.F("{{green}}hi there {{cyan}}%d {{yellow}}%s{{/}}")).Should(Equal("\x1b[38;5;10mhi there \x1b[38;5;14m%d \x1b[38;5;11m%s\x1b[0m"))
+		})
 	})
 
 	Describe("Fi", func() {

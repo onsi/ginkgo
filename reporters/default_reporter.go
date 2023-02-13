@@ -528,7 +528,7 @@ func (r *DefaultReporter) EmitReportEntry(entry types.ReportEntry) {
 }
 
 func (r *DefaultReporter) emitReportEntry(indent uint, entry types.ReportEntry) {
-	r.emitBlock(r.fi(indent, "{{bold}}"+entry.Name+"{{gray}} - %s @ %s{{/}}", entry.Location, entry.Time.Format(types.GINKGO_TIME_FORMAT)))
+	r.emitBlock(r.fi(indent, "{{bold}}"+entry.Name+"{{gray}} "+fmt.Sprintf("- %s @ %s{{/}}", entry.Location, entry.Time.Format(types.GINKGO_TIME_FORMAT))))
 	if representation := entry.StringRepresentation(); representation != "" {
 		r.emitBlock(r.fi(indent+1, representation))
 	}

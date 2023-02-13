@@ -2642,6 +2642,14 @@ var _ = Describe("DefaultReporter", func() {
 			"    {{coral}}Is beautiful{{/}}",
 			"",
 		),
+		//correctly handling reports that have format string components
+		Entry("emits the report without running it through sprintf",
+			C(Verbose),
+			RE("my %f report", cl0, "{{green}}my report http://example.com/?q=%d%3%%{{/}}", cl0),
+			spr("  {{bold}}my %%f report{{gray}} - cl0.go:12 @ %s{{/}}", FORMATTED_TIME),
+			"    {{green}}my report http://example.com/?q=%d%3%%{{/}}",
+			"",
+		),
 	)
 
 	DescribeTable("EmitSpecEvent",
