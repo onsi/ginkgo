@@ -42,7 +42,7 @@ var _ = Describe("Verbose And Succinct Mode", func() {
 				Eventually(session).Should(gexec.Exit(0))
 				output := session.Out.Contents()
 
-				Ω(output).Should(MatchRegexp(`\] Passing_ginkgo_tests Suite - 4/4 specs [%s]{4} SUCCESS!`, regexp.QuoteMeta(denoter)))
+				Ω(output).Should(MatchRegexp(`\] Passing_ginkgo_tests Suite - 5/5 specs [%s]{5} SUCCESS!`, regexp.QuoteMeta(denoter)))
 				Ω(output).Should(MatchRegexp(`\] More_ginkgo_tests Suite - 2/2 specs [%s]{2} SUCCESS!`, regexp.QuoteMeta(denoter)))
 			})
 		})
@@ -77,6 +77,14 @@ var _ = Describe("Verbose And Succinct Mode", func() {
 
 				Ω(output).Should(ContainSubstring("emitting one By"))
 				Ω(output).Should(ContainSubstring("emitting another By"))
+			})
+
+			It("doesn't trigger the race detector", func() {
+				session := startGinkgo(fm.PathTo("passing_ginkgo_tests"), "--no-color", "-v", "-race")
+				Eventually(session).Should(gexec.Exit(0))
+				output := session.Out.Contents()
+
+				Ω(output).Should(ContainSubstring("avoiding the race detector"))
 			})
 		})
 
