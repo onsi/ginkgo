@@ -2710,7 +2710,7 @@ It("can save books", func(ctx SpecContext) {
 })
 ```
 
-when such a node is detected Ginkgo will automatically supply a `SpecContext` object.  This `SpecContext` object satisfies the `context.Context` interface and can be used anywhere a `context.Context` object is used.  When a spec times out or is interupted by the user (see below) Ginkgo will cancel the `SpecContext` to signal to the spec that it is time to exit. In the case above, it is assumed that `libraryClient` knows how to return once `ctx` is cancelled.
+when such a node is detected Ginkgo will automatically supply a `SpecContext` object.  This `SpecContext` object satisfies the `context.Context` interface and can be used anywhere a `context.Context` object is used.  When a spec times out or is interrupted by the user (see below) Ginkgo will cancel the `SpecContext` to signal to the spec that it is time to exit. In the case above, it is assumed that `libraryClient` knows how to return once `ctx` is cancelled.
 
 Only setup and subjects nodes can be interruptible.  Container nodes cannot be interrupted.
 

@@ -164,7 +164,7 @@ to build tooling on top of as it has stronger guarantees to be stable from versi
 
 ### Fixes
 - correcting some typos (#1064) [1403d3c]
-- fix flaky internal_integration interupt specs [2105ba3]
+- fix flaky internal_integration interrupt specs [2105ba3]
 - Correct busted link in README [be6b5b9]
 
 ### Maintenance
