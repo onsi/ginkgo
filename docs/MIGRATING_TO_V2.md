@@ -427,7 +427,7 @@ It("...", func(done Done) {
 will emit a deprecation warning and will run **synchronously**.  This means the `timeout` will not be enforced and the status of the `Done` channel will be ignored - a test that hangs will hang indefinitely.
 
 #### Migration Strategy:
-We recommend users make targeted use of Gomega's [Asynchronous Assertions](https://onsi.github.io/gomega/#making-asynchronous-assertions) to better test asynchronous behavior.  In addition, as of Ginkgo 2.3.0, users can [make individual nodes interruptible and reintroduce the notion of spec timeouts]((https://onsi.github.io/ginkgo/#spec-timeouts-and-interruptible-nodes)).
+We recommend users make targeted use of Gomega's [Asynchronous Assertions](https://onsi.github.io/gomega/#making-asynchronous-assertions) to better test asynchronous behavior.  In addition, as of Ginkgo 2.3.0, users can [make individual nodes interruptible and reintroduce the notion of spec timeouts](https://onsi.github.io/ginkgo/#spec-timeouts-and-interruptible-nodes).
 
 As a first migration pass that produces **equivalent behavior** users can replace asynchronous tests with:
 
