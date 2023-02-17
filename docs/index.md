@@ -53,18 +53,16 @@ You should now be able to run `ginkgo version` at the command line and see the G
 To upgrade Ginkgo run:
 
 ```bash
-go get github.com/onsi/ginkgo/v2/ginkgo
+go get github.com/onsi/ginkgo/v2
 go install github.com/onsi/ginkgo/v2/ginkgo
 ```
 
 To pick a particular version: 
 
 ```bash
-go get github.com/onsi/ginkgo/v2/ginkgo@v2.m.p
+go get github.com/onsi/ginkgo/v2@v2.m.p
 go install github.com/onsi/ginkgo/v2/ginkgo
 ```
-
-Note that in both cases we `go get` the `/v2/ginkgo` subpackage.  This pulls in the CLI and its dependencies.  If you only `go get github.com/onsi/ginkgo/v2` you may experience issues installing the cli - if you do simply run `go get github.com/onsi/ginkgo/v2/ginkgo` to fetch the missing dependencies.
 
 ### Support Policy
 
@@ -3509,21 +3507,6 @@ In this chapter we'll switch gears and illustrate common patterns for how Ginkgo
 When running in CI you must make sure that the version of the `ginkgo` CLI you are using matches the version of Ginkgo in your `go.mod` file.  You can ensure this by invoking the `ginkgo` command via `go run`:
 
 `go run github.com/onsi/ginkgo/v2/ginkgo`
-
-This alone, however, is often not enough.  The Ginkgo CLI includes additional dependencies that aren't part of the Ginkgo library - since your code doesn't import the cli these dependencies probably aren't in your `go.sum` file.  To get around this it is idiomatic Go to introduce a `tools.go` file.  This can go anywhere in your module - for example, Gomega places its `tools.go` at the top-level.  Your `tools.go` file should look like:
-
-```go
-//go:build tools
-// +build tools
-
-package main
-
-import (
-  _ "github.com/onsi/ginkgo/v2/ginkgo"
-)
-```
-
-The `//go:build tools` constraint ensures this code is never actually built, however the `_ "github.com/onsi/ginkgo/v2/ginkgo` import statement is enough to convince `go mod` to include the Ginkgo CLI dependencies in your `go.sum` file.
 
 Once you have `ginkgo` running on CI, you'll want to pick and choose the optimal set of flags for your test runs.  We recommend the following set of flags when running in a continuous integration environment:
 
