@@ -1,3 +1,13 @@
+## 2.8.2
+
+Ginkgo now includes a `tools.go` file in the root directory of the `ginkgo` package.  This should allow modules that simply `go get github.com/onsi/ginkgo/v2` to also pull in the CLI dependencies.  This obviates the need for consumers of Ginkgo to have their own `tools.go` file and makes it simpler to ensure that the version of the `ginkgo` CLI being used matches the version of the library.  You can simply run `go run github.com/onsi/ginkgo/v2/ginkgo` to run the version of the cli associated with your package go.mod.
+
+### Maintenance
+
+- Bump github.com/onsi/gomega from 1.26.0 to 1.27.0 (#1139) [5767b0a]
+- Fix minor typos (#1138) [e1e9723]
+- Fix link in V2 Migration Guide (#1137) [a588f60]
+
 ## 2.8.1
 
 ### Fixes
