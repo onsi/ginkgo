@@ -92,11 +92,11 @@ type GinkgoWriterInterface interface {
 }
 
 /*
-SpecContext is the context object passed into nodes that are subject to a timeout or need to be notified of an interrupt.  It implements the standard context.Context interface but also contains additional helpers to provide an extensibility point for Ginkgo.  (As an example, Gomega's Eventually can use the methods defined on SpecContext to provide deeper integratoin with Ginkgo).
+SpecContext is the context object passed into nodes that are subject to a timeout or need to be notified of an interrupt.  It implements the standard context.Context interface but also contains additional helpers to provide an extensibility point for Ginkgo.  (As an example, Gomega's Eventually can use the methods defined on SpecContext to provide deeper integration with Ginkgo).
 
 You can do anything with SpecContext that you do with a typical context.Context including wrapping it with any of the context.With* methods.
 
-Ginkgo will cancel the SpecContext when a node is interrupted (e.g. by the user sending an interupt signal) or when a node has exceeded it's allowed run-time.  Note, however, that even in cases where a node has a deadline, SpecContext will not return a deadline via .Deadline().  This is because Ginkgo does not use a WithDeadline() context to model node deadlines as Ginkgo needs control over the precise timing of the context cancellation to ensure it can provide an accurate progress report at the moment of cancellation.
+Ginkgo will cancel the SpecContext when a node is interrupted (e.g. by the user sending an interrupt signal) or when a node has exceeded its allowed run-time.  Note, however, that even in cases where a node has a deadline, SpecContext will not return a deadline via .Deadline().  This is because Ginkgo does not use a WithDeadline() context to model node deadlines as Ginkgo needs control over the precise timing of the context cancellation to ensure it can provide an accurate progress report at the moment of cancellation.
 */
 type SpecContext = internal.SpecContext
 
@@ -743,7 +743,7 @@ For example:
 	    os.SetEnv("FOO", "BAR")
 	})
 
-will register a cleanup handler that will set the environment variable "FOO" to it's current value (obtained by os.GetEnv("FOO")) after the spec runs and then sets the environment variable "FOO" to "BAR" for the current spec.
+will register a cleanup handler that will set the environment variable "FOO" to its current value (obtained by os.GetEnv("FOO")) after the spec runs and then sets the environment variable "FOO" to "BAR" for the current spec.
 
 Similarly:
 
