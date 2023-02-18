@@ -1,3 +1,12 @@
+## 2.8.3
+
+Released to fix security issue in golang.org/x/net dependency
+
+### Maintenance
+
+- Bump golang.org/x/net from 0.6.0 to 0.7.0 (#1141) [fc1a02e]
+- remove tools.go hack from documentation [0718693]
+
 ## 2.8.2
 
 Ginkgo now includes a `tools.go` file in the root directory of the `ginkgo` package.  This should allow modules that simply `go get github.com/onsi/ginkgo/v2` to also pull in the CLI dependencies.  This obviates the need for consumers of Ginkgo to have their own `tools.go` file and makes it simpler to ensure that the version of the `ginkgo` CLI being used matches the version of the library.  You can simply run `go run github.com/onsi/ginkgo/v2/ginkgo` to run the version of the cli associated with your package go.mod.
