@@ -47,6 +47,7 @@ var _ = Describe("JunitReport", func() {
 					F("failure\nmessage", cl1, types.FailureNodeIsLeafNode, FailureNodeLocation(cl0), types.NodeTypeIt, ForwardedPanic("the panic")),
 					SE(types.SpecEventNodeEnd, types.NodeTypeIt, "A", cl0, time.Millisecond*300, TL("some GinkgoWriter\noutput is interspersed\nhere and there\n")),
 				),
+				S(types.NodeTypeBeforeSuite, "A", cl0, types.SpecStatePassed),
 			},
 		}
 	})
@@ -66,7 +67,7 @@ var _ = Describe("JunitReport", func() {
 		})
 
 		It("generates a Junit report and writes it to disk", func() {
-			Ω(generated.Tests).Should(Equal(4))
+			Ω(generated.Tests).Should(Equal(5))
 			Ω(generated.Disabled).Should(Equal(1))
 			Ω(generated.Errors).Should(Equal(1))
 			Ω(generated.Failures).Should(Equal(1))
@@ -79,13 +80,13 @@ var _ = Describe("JunitReport", func() {
 			Ω(suite.Properties.WithName("SuiteSucceeded")).Should(Equal("false"))
 			Ω(suite.Properties.WithName("RandomSeed")).Should(Equal("17"))
 
-			Ω(suite.Tests).Should(Equal(4))
+			Ω(suite.Tests).Should(Equal(5))
 			Ω(suite.Disabled).Should(Equal(1))
 			Ω(suite.Errors).Should(Equal(1))
 			Ω(suite.Failures).Should(Equal(1))
 			Ω(suite.Time).Should(Equal(60.0))
 
-			Ω(suite.TestCases).Should(HaveLen(4))
+			Ω(suite.TestCases).Should(HaveLen(5))
 
 			failingSpec := suite.TestCases[0]
 			Ω(failingSpec.Name).Should(Equal("[It] A B C [dolphin, gorilla, cow, cat, dog]"))
@@ -207,6 +208,16 @@ var _ = Describe("JunitReport", func() {
 				spr("< Exit [It] A - cl0.go:12 @ %s (300ms)", FORMATTED_TIME),
 				"",
 			))
+
+			beforeSuiteSpec := suite.TestCases[4]
+			Ω(beforeSuiteSpec.Name).Should(Equal("[BeforeSuite] A"))
+			Ω(beforeSuiteSpec.Classname).Should(Equal("My Suite"))
+			Ω(beforeSuiteSpec.Status).Should(Equal("passed"))
+			Ω(beforeSuiteSpec.Skipped).Should(BeNil())
+			Ω(beforeSuiteSpec.Error).Should(BeNil())
+			Ω(beforeSuiteSpec.Failure).Should(BeNil())
+			Ω(beforeSuiteSpec.SystemOut).Should(BeEmpty())
+			Ω(beforeSuiteSpec.SystemErr).Should(BeEmpty())
 		})
 	})
 
@@ -221,6 +232,7 @@ var _ = Describe("JunitReport", func() {
 				OmitCapturedStdOutErr:     true,
 				OmitSpecLabels:            true,
 				OmitLeafNodeType:          true,
+				OmitSuiteSetupNodes:       true,
 			})).Should(Succeed())
 			DeferCleanup(os.Remove, fname)
 
