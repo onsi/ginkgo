@@ -1,3 +1,16 @@
+## 2.8.4
+
+### Features
+- Add OmitSuiteSetupNodes to JunitReportConfig (#1147) [979fbc2]
+- Add a reference to ginkgolinter in docs.index.md (#1143) [8432589]
+
+### Fixes
+- rename tools hack to see if it fixes things for downstream users [a8bb39a]
+
+### Maintenance
+- Bump golang.org/x/text (#1144) [41b2a8a]
+- Bump github.com/onsi/gomega from 1.27.0 to 1.27.1 (#1142) [7c4f583]
+
 ## 2.8.3
 
 Released to fix security issue in golang.org/x/net dependency
