@@ -540,7 +540,7 @@ and will simply log the passed in text to the GinkgoWriter.  If By is handed a f
 
 By will also generate and attach a ReportEntry to the spec.  This will ensure that By annotations appear in Ginkgo's machine-readable reports.
 
-Note that By does not generate a new Ginkgo node - rather it is simply synctactic sugar around GinkgoWriter and AddReportEntry
+Note that By does not generate a new Ginkgo node - rather it is simply syntactic sugar around GinkgoWriter and AddReportEntry
 You can learn more about By here: https://onsi.github.io/ginkgo/#documenting-complex-specs-by
 */
 func By(text string, callback ...func()) {

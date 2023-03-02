@@ -5340,6 +5340,8 @@ Since `GinkgoT()` implements `Cleanup()` (using `DeferCleanup()` under the hood)
 
 When using Gomock you may want to run `ginkgo` with the `-trace` flag to print out stack traces for failures which will help you trace down where, in your code, invalid calls occurred.
 
+`GinkgoT()` also provides additional methods that are Ginkgo-specific.  This allows rich third-party integrations to be built on top of Ginkgo - with GinkgoT() serving as a single connection point.
+
 ### IDE Support
 Ginkgo works best from the command-line, and [`ginkgo watch`](#watching-for-changes) makes it easy to rerun tests on the command line whenever changes are detected.
 
