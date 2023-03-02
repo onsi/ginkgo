@@ -61,3 +61,4 @@ var BeforeAll = ginkgo.BeforeAll
 var AfterAll = ginkgo.AfterAll
 var DeferCleanup = ginkgo.DeferCleanup
 var GinkgoT = ginkgo.GinkgoT
+var AttachProgressReporter = ginkgo.AttachProgressReporter

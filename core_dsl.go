@@ -771,3 +771,22 @@ func DeferCleanup(args ...interface{}) {
 	}
 	pushNode(internal.NewCleanupNode(deprecationTracker, fail, args...))
 }
+
+/*
+AttachProgressReporter allows you to register a function that will be called whenever Ginkgo generates a Progress Report.  The contents returned by the function will be included in the report.
+
+Progress Reports are generated:
+- whenever the user explicitly requests one (via `SIGINFO` or `SIGUSR1`)
+- on nodes decorated  with PollProgressAfter
+- on suites run with --poll-progress-after
+- whenever a test times out
+
+Ginkgo uses Progress Reports to convey the current state of the test suite, including any running goroutines.  By attaching a progress reporter you are able to supplement these reports with additional information.
+
+# AttachProgressReporter returns a function that can be called to detach the progress reporter
+
+You can learn more about AttachProgressReporter here: https://onsi.github.io/ginkgo/#attaching-additional-information-to-progress-reports
+*/
+func AttachProgressReporter(reporter func() string) func() {
+	return global.Suite.AttachProgressReporter(reporter)
+}

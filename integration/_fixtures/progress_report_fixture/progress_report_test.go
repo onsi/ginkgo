@@ -9,6 +9,11 @@ import (
 )
 
 var _ = Describe("ProgressReport", func() {
+	BeforeEach(func() {
+		DeferCleanup(AttachProgressReporter(func() string {
+			return fmt.Sprintf("Some global information: %d", GinkgoParallelProcess())
+		}))
+	})
 	It("can track on demand", func() {
 		By("Step A")
 		By("Step B")

@@ -46,6 +46,9 @@ var _ = Describe("Emitting progress", func() {
 			//first poll
 			Eventually(session).Should(gbytes.Say(`--poll-progress-after tracks things that take too long \(Spec Runtime: 1\.5\d*s\)`))
 			Eventually(session).Should(gbytes.Say(`>\s*time.Sleep\(2 \* time\.Second\)`))
+			Eventually(session).Should(gbytes.Say(`Begin Additional Progress Reports >>`))
+			Eventually(session).Should(gbytes.Say(`Some global information: 1`))
+			Eventually(session).Should(gbytes.Say(`<< End Additional Progress Reports`))
 
 			//second poll
 			Eventually(session).Should(gbytes.Say(`--poll-progress-after tracks things that take too long \(Spec Runtime: 1\.7\d*s\)`))
@@ -88,6 +91,8 @@ var _ = Describe("Emitting progress", func() {
 
 			Eventually(session.Out.Contents()).Should(ContainSubstring(`Progress Report for Ginkgo Process #1`))
 			Eventually(session.Out.Contents()).Should(ContainSubstring(`Progress Report for Ginkgo Process #2`))
+			Eventually(session.Out.Contents()).Should(ContainSubstring(`Some global information: 1`))
+			Eventually(session.Out.Contents()).Should(ContainSubstring(`Some global information: 2`))
 
 		})
 

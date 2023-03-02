@@ -305,7 +305,7 @@ var _ = Describe("Progress Reporting", func() {
 		})
 	})
 
-	Context("when a test takes longer then the overriden PollProgressAfter", func() {
+	Context("when a test takes longer then the overridden PollProgressAfter", func() {
 		BeforeEach(func() {
 			success, _ := RunFixture("emitting spec progress", func() {
 				Describe("a container", func() {
@@ -437,6 +437,45 @@ var _ = Describe("Progress Reporting", func() {
 			pr = reporter.ProgressReports[4]
 			Ω(pr.CurrentNodeType).Should(Equal(types.NodeTypeAfterEach))
 			Ω(pr.AdditionalReports).Should(BeEmpty())
+		})
+	})
+
+	Context("when a global progress report provider has been registered", func() {
+		BeforeEach(func() {
+			success, _ := RunFixture("emitting spec progress", func() {
+				Describe("a container", func() {
+					It("A", func(ctx SpecContext) {
+						cancelGlobal := AttachProgressReporter(func() string { return "Some Global Information" })
+						AttachProgressReporter(func() string { return "Some More (Never Cancelled) Global Information" })
+						ctx.AttachProgressReporter(func() string { return "Some Additional Information" })
+						cl = types.NewCodeLocation(0)
+						triggerProgressSignal()
+						cancelGlobal()
+						triggerProgressSignal()
+					})
+
+					It("B", func() {
+						triggerProgressSignal()
+					})
+				})
+			})
+			Ω(success).Should(BeTrue())
+		})
+
+		It("includes information from that progress report provider", func() {
+			Ω(reporter.ProgressReports).Should(HaveLen(3))
+			pr := reporter.ProgressReports[0]
+
+			Ω(pr.LeafNodeText).Should(Equal("A"))
+			Ω(pr.AdditionalReports).Should(Equal([]string{"Some Additional Information", "Some Global Information", "Some More (Never Cancelled) Global Information"}))
+
+			pr = reporter.ProgressReports[1]
+			Ω(pr.LeafNodeText).Should(Equal("A"))
+			Ω(pr.AdditionalReports).Should(Equal([]string{"Some Additional Information", "Some More (Never Cancelled) Global Information"}))
+
+			pr = reporter.ProgressReports[2]
+			Ω(pr.LeafNodeText).Should(Equal("B"))
+			Ω(pr.AdditionalReports).Should(Equal([]string{"Some More (Never Cancelled) Global Information"}))
 		})
 	})
 })
