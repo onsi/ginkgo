@@ -2683,6 +2683,8 @@ In addition to these formal Progress Reports, Ginkgo tracks whenever a node begi
 
 #### Attaching Additional Information to Progress Reports
 
+**This section describes an experimental feature and the public-facing interface may change in a future minor version of Ginkgo**
+
 Ginkgo also allows you to attach Progress Report providers to provide additional information when a progress report is generated.  For example, these could query the system under test for diagnostic information about its internal state and report back.  You attach these providers via `AttachProgressReporter`.  For example:
 
 ```go

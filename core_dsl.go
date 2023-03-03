@@ -775,6 +775,8 @@ func DeferCleanup(args ...interface{}) {
 /*
 AttachProgressReporter allows you to register a function that will be called whenever Ginkgo generates a Progress Report.  The contents returned by the function will be included in the report.
 
+**This is an experimental feature and the public-facing interface may change in a future minor version of Ginkgo**
+
 Progress Reports are generated:
 - whenever the user explicitly requests one (via `SIGINFO` or `SIGUSR1`)
 - on nodes decorated  with PollProgressAfter

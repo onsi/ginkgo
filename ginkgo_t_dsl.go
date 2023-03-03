@@ -36,7 +36,7 @@ func GinkgoT(optionalOffset ...int) FullGinkgoTInterface {
 }
 
 /*
-The interface returned by GinkgoT().  This covers most of the methods in the testing package's T.
+The portion of the interface returned by GinkgoT() that maps onto methods in the testing package's T.
 */
 type GinkgoTInterface interface {
 	Cleanup(func())
@@ -60,6 +60,9 @@ type GinkgoTInterface interface {
 	TempDir() string
 }
 
+/*
+Additional methods returned by GinkgoT() that provide deeper integration points into Ginkgo
+*/
 type FullGinkgoTInterface interface {
 	GinkgoTInterface
 
