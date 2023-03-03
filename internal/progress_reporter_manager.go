@@ -3,6 +3,7 @@ package internal
 import (
 	"context"
 	"sort"
+	"strings"
 	"sync"
 
 	"github.com/onsi/ginkgo/v2/types"
@@ -70,7 +71,9 @@ func (prm *ProgressReporterManager) QueryProgressReporters(ctx context.Context, 
 		case <-ctx.Done():
 			return out
 		}
-		out = append(out, report)
+		if strings.TrimSpace(report) != "" {
+			out = append(out, report)
+		}
 	}
 	return out
 }

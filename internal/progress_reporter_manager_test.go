@@ -54,6 +54,15 @@ var _ = Describe("ProgressReporterManager", func() {
 		Eventually(gleak.Goroutines).ShouldNot(gleak.HaveLeaked(startingGoroutines))
 	})
 
+	It("ignores empty progress reports", func() {
+		manager.AttachProgressReporter(func() string { return "A" })
+		manager.AttachProgressReporter(func() string { return "" })
+		manager.AttachProgressReporter(func() string { return "  " })
+		manager.AttachProgressReporter(func() string { return "C" })
+		result := manager.QueryProgressReporters(context.Background(), nil)
+		Ω(result).Should(Equal([]string{"A", "C"}))
+	})
+
 	It("catches panics and reports them as failures", func() {
 		manager.AttachProgressReporter(func() string {
 			panic("bam")
