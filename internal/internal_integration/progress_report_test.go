@@ -4,6 +4,7 @@ import (
 	"time"
 
 	. "github.com/onsi/ginkgo/v2"
+	. "github.com/onsi/ginkgo/v2/internal/test_helpers"
 	"github.com/onsi/ginkgo/v2/types"
 	. "github.com/onsi/gomega"
 )
@@ -478,4 +479,26 @@ var _ = Describe("Progress Reporting", func() {
 			Ω(pr.AdditionalReports).Should(Equal([]string{"Some More (Never Cancelled) Global Information"}))
 		})
 	})
+
+	Context("when a global progress reporter fails", func() {
+		BeforeEach(func() {
+			success, _ := RunFixture("emitting spec progress", func() {
+				Describe("a container", func() {
+					It("A", func(ctx SpecContext) {
+						AttachProgressReporter(func() string {
+							F("bam")
+							return "Some Global Information"
+						})
+						triggerProgressSignal()
+					})
+				})
+			})
+			Ω(success).Should(BeFalse())
+		})
+
+		It("marks the spec as failed", func() {
+			Ω(reporter.Did.Find("A")).Should(HaveFailed("bam"))
+		})
+	})
+
 })

@@ -348,9 +348,9 @@ func (suite *Suite) generateProgressReport(fullReport bool) types.ProgressReport
 	defer cancel()
 	var additionalReports []string
 	if suite.currentSpecContext != nil {
-		additionalReports = append(additionalReports, suite.currentSpecContext.QueryProgressReporters(deadline)...)
+		additionalReports = append(additionalReports, suite.currentSpecContext.QueryProgressReporters(deadline, suite.failer)...)
 	}
-	additionalReports = append(additionalReports, suite.QueryProgressReporters(deadline)...)
+	additionalReports = append(additionalReports, suite.QueryProgressReporters(deadline, suite.failer)...)
 	gwOutput := suite.currentSpecReport.CapturedGinkgoWriterOutput + string(suite.writer.Bytes())
 	pr, err := NewProgressReport(suite.isRunningInParallel(), suite.currentSpecReport, suite.currentNode, suite.currentNodeStartTime, suite.currentByStep, gwOutput, timelineLocation, additionalReports, suite.config.SourceRoots, fullReport)
 

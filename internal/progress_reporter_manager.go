@@ -4,6 +4,8 @@ import (
 	"context"
 	"sort"
 	"sync"
+
+	"github.com/onsi/ginkgo/v2/types"
 )
 
 type ProgressReporterManager struct {
@@ -33,7 +35,7 @@ func (prm *ProgressReporterManager) AttachProgressReporter(reporter func() strin
 	}
 }
 
-func (prm *ProgressReporterManager) QueryProgressReporters(ctx context.Context) []string {
+func (prm *ProgressReporterManager) QueryProgressReporters(ctx context.Context, failer *Failer) []string {
 	prm.lock.Lock()
 	keys := []int{}
 	for key := range prm.progressReporters {
@@ -53,6 +55,13 @@ func (prm *ProgressReporterManager) QueryProgressReporters(ctx context.Context) 
 	for _, reporter := range reporters {
 		reportC := make(chan string, 1)
 		go func() {
+			defer func() {
+				e := recover()
+				if e != nil {
+					failer.Panic(types.NewCodeLocationWithStackTrace(1), e)
+					reportC <- "failed to query attached progress reporter"
+				}
+			}()
 			reportC <- reporter()
 		}()
 		var report string
