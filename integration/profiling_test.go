@@ -362,7 +362,12 @@ var _ = Describe("Profiling Specs", func() {
 					"coverage.test", "coverage_block.out", "coverage_coverprofile.out", "coverage_cpu.out", "coverage_mem.out", "coverage_mutex.out",
 					"focused.test", "focused_cpu.out", //this is an inconsistency in go test where the cpu.out file is generated but empty
 					"focused_internal.test", "focused_internal_cpu.out", //this is an inconsistency in go test where the cpu.out file is generated but empty
-				))
+					"coverage_additional_spec.test",
+					"coverage_additional_spec_block.out",
+					"coverage_additional_spec_coverprofile.out",
+					"coverage_additional_spec_cpu.out",
+					"coverage_additional_spec_mem.out",
+					"coverage_additional_spec_mutex.out"))
 			})
 		})
 
@@ -423,7 +428,12 @@ var _ = Describe("Profiling Specs", func() {
 						"coverprofile.out",
 						"coverage.test", "coverage_block.out", "coverage_cpu.out", "coverage_mem.out", "coverage_mutex.out",
 						"focused.test", "focused_cpu.out", //this is an inconsistency in go test where the cpu.out file is generated but empty
-						"focused_internal.test", "focused_internal_cpu.out", //this is an inconsistency in go test where the cpu.out file is generated but empty
+						"focused_internal.test", "focused_internal_cpu.out", //this is an inconsistency in go test where the cpu.out file is generated but empty,
+						"coverage_additional_spec.test",
+						"coverage_additional_spec_block.out",
+						"coverage_additional_spec_cpu.out",
+						"coverage_additional_spec_mem.out",
+						"coverage_additional_spec_mutex.out",
 					))
 				})
 			})
