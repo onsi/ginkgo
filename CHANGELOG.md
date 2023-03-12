@@ -1,3 +1,14 @@
+## 2.9.1
+
+### Fixes
+This release fixes a longstanding issue where `ginkgo -coverpkg=./...` would not work.  This is now resolved and fixes [#1161](https://github.com/onsi/ginkgo/issues/1161) and [#995](https://github.com/onsi/ginkgo/issues/995)
+- Support -coverpkg=./... [26ca1b5]
+- document coverpkg a bit more clearly [fc44c3b]
+
+### Maintenance
+- bump various dependencies
+- Improve Documentation and fix typo (#1158) [93de676]
+
 ## 2.9.0
 
 ### Features
