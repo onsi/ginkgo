@@ -21,5 +21,5 @@ func D() string {
 }
 
 func E() string {
-	return "untested"
+	return "tested by additional"
 }

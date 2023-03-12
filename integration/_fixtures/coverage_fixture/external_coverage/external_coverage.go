@@ -4,6 +4,6 @@ func Tested() string {
 	return "tested"
 }
 
-func Untested() string {
-	return "untested"
+func TestedByAdditional() string {
+	return "tested by additional"
 }

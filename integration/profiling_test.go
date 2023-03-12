@@ -116,6 +116,21 @@ var _ = Describe("Profiling Specs", func() {
 
 				Ω(parallelCoverage).Should(Equal(seriesCoverage))
 			})
+
+			It("supports ./...", func() {
+				seriesSession := startGinkgo(fm.PathTo("coverage"), "-coverpkg=./...", "-r")
+				Eventually(seriesSession).Should(gexec.Exit(0))
+				Ω(seriesSession.Out).Should(gbytes.Say(`composite coverage: 100\.0% of statements`))
+				seriesCoverage := processCoverageProfile(fm.PathTo("coverage", "coverprofile.out"))
+				fm.RemoveFile("coverage", "coverprofile.out")
+
+				parallelSession := startGinkgo(fm.PathTo("coverage"), "--no-color", "--procs=2", "-coverpkg=./...", "-r")
+				Eventually(parallelSession).Should(gexec.Exit(0))
+				Ω(parallelSession.Out).Should(gbytes.Say(`composite coverage: 100\.0% of statements`))
+				parallelCoverage := processCoverageProfile(fm.PathTo("coverage", "coverprofile.out"))
+
+				Ω(parallelCoverage).Should(Equal(seriesCoverage))
+			})
 		})
 
 		Context("with a custom profile name", func() {
