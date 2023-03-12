@@ -3512,7 +3512,16 @@ Ginkgo supports `--race` to analyze race conditions, `--cover` to compute code c
 `ginkgo -vet` allows you to configure the set of checks that are applied when your code is compiled.  `ginkgo` defaults to the set of default checks that `go test` uses and you can specify additional checks by passing a comma-separated list to `--vet`.  The set of available checks can be found by running `go doc cmd/vet`.
 
 #### Computing Coverage
-`ginkgo -cover` will compute and emit code coverage.  When running multiple suites Ginkgo will emit coverage for each suite and then emit a composite coverage across all running suites.  As with `go test` the default behavior for a given suite is to measure the coverage it provides for the code in the suite's package - however you can extend coverage to additional packages using `--coverpkg`.  You can also specify the `--covermode` to be one of `set` ("was this code called at all?"), `count` (how many times was it called?) and `atomic` (same as count, but threadsafe and expensive).  If you run `ginkgo --race --cover` the `--covermode` is automatically set to `atomic`.
+`ginkgo -cover` will compute and emit code coverage.  When running multiple suites Ginkgo will emit coverage for each suite and then emit a composite coverage across all running suites.  As with `go test` the default behavior for a given suite is to measure the coverage it provides for the code in the suite's package - however you can extend coverage to additional packages using `--coverpkg`.  You can provide a comma-separated list of package names (as they appear in `import` statements) or a relative path.  You can also use `...` for recursion.  For example, say we have a package called "github.com/foo/bar".  The following are equivalent:
+
+```bash
+ginkgo -coverpkg=./... -r
+ginkgo -coverpkg=github.com/foo/bar/... -r
+```
+
+and will have the effect of calculating coverage for **all** code in the package by **all** specs in the package.
+
+You can also specify the `--covermode` to be one of `set` ("was this code called at all?"), `count` (how many times was it called?) and `atomic` (same as count, but threadsafe and expensive).  If you run `ginkgo --race --cover` the `--covermode` is automatically set to `atomic`.
 
 When run with `--cover`, Ginkgo will generate a single `coverprofile.out` file that captures the coverage statistics of all the suites that ran.  You can change the name of this file by specifying `-coverprofile=filename`.  If you would like to keep separate coverprofiles for each suite use the `--keep-separate-coverprofiles` option.
 
