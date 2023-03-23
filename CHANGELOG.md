@@ -1,3 +1,9 @@
+## 2.9.2
+
+### Maintenance
+- Bump github.com/go-task/slim-sprig (#1167) [3fcc5bf]
+- Bump github.com/onsi/gomega from 1.27.3 to 1.27.4 (#1163) [6143ffe]
+
 ## 2.9.1
 
 ### Fixes
