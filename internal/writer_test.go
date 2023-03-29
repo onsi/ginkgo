@@ -129,13 +129,20 @@ var _ = Describe("Writer", func() {
 		It("can print Info logs", func() {
 			log := internal.GinkgoLogrFunc(writer)
 			log.Info("message", "key", 5)
-			Ω(string(out.Contents())).Should(Equal("  \"level\"=0 \"msg\"=\"message\" \"key\"=5"))
+			Ω(string(out.Contents())).Should(Equal("  \"level\"=0 \"msg\"=\"message\" \"key\"=5\n"))
 		})
 
 		It("can print Error logs", func() {
 			log := internal.GinkgoLogrFunc(writer)
 			log.Error(errors.New("cake"), "planned failure", "key", "banana")
-			Ω(string(out.Contents())).Should(Equal("  \"msg\"=\"planned failure\" \"error\"=\"cake\" \"key\"=\"banana\""))
+			Ω(string(out.Contents())).Should(Equal("  \"msg\"=\"planned failure\" \"error\"=\"cake\" \"key\"=\"banana\"\n"))
+		})
+
+		It("can print multiple logs", func() {
+			log := internal.GinkgoLogrFunc(writer)
+			log.Info("message", "key", 5)
+			log.Error(errors.New("cake"), "planned failure", "key", "banana")
+			Ω(string(out.Contents())).Should(Equal("  \"level\"=0 \"msg\"=\"message\" \"key\"=5\n  \"msg\"=\"planned failure\" \"error\"=\"cake\" \"key\"=\"banana\"\n"))
 		})
 	})
 })
