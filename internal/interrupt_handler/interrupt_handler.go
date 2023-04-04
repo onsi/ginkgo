@@ -45,6 +45,10 @@ type InterruptStatus struct {
 	Cause   InterruptCause
 }
 
+func (s InterruptStatus) BlockForUpdate() {
+	<-time.After(ABORT_POLLING_INTERVAL)
+}
+
 func (s InterruptStatus) Interrupted() bool {
 	return s.Level != InterruptLevelUninterrupted
 }
