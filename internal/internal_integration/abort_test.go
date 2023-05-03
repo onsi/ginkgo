@@ -1,9 +1,12 @@
 package internal_integration_test
 
 import (
+	"time"
+
 	. "github.com/onsi/ginkgo/v2"
 	. "github.com/onsi/gomega"
 
+	"github.com/onsi/ginkgo/v2/internal/interrupt_handler"
 	. "github.com/onsi/ginkgo/v2/internal/test_helpers"
 	"github.com/onsi/ginkgo/v2/types"
 )
@@ -158,19 +161,92 @@ var _ = Describe("handling test aborts", func() {
 	})
 
 	Describe("when running in parallel and a test aborts", func() {
+		var c chan interface{}
 		BeforeEach(func() {
 			SetUpForParallel(2)
+			c = make(chan interface{})
 		})
 
 		It("notifies the server of the abort", func() {
 			Ω(client.ShouldAbort()).Should(BeFalse())
-			success, _ := RunFixture("aborting in parallel", func() {
+			success := RunFixtureInParallel("aborting in parallel", func(_ int) {
 				It("A", func() {
+					<-c
 					Abort("abort")
+				})
+
+				It("B", func(ctx SpecContext) {
+					close(c)
+					select {
+					case <-ctx.Done():
+						rt.Run("dc-done")
+					case <-time.After(interrupt_handler.ABORT_POLLING_INTERVAL * 2):
+						rt.Run("dc-after")
+					}
 				})
 			})
 			Ω(success).Should(BeFalse())
 			Ω(client.ShouldAbort()).Should(BeTrue())
+
+			Ω(rt).Should(HaveTracked("dc-done")) //not dc-after
+			Ω(reporter.Did.Find("A")).Should(HaveAborted("abort"))
+			Ω(reporter.Did.Find("B")).Should(HaveBeenInterrupted(interrupt_handler.InterruptCauseAbortByOtherProcess))
 		})
+
+		It("does not interrupt cleanup nodes", func() {
+			success := RunFixtureInParallel("aborting in parallel", func(_ int) {
+				It("A", func() {
+					<-c
+					Abort("abort")
+				})
+
+				Context("B", func() {
+					It("B", func() {
+					})
+
+					AfterEach(func(ctx SpecContext) {
+						close(c)
+						select {
+						case <-ctx.Done():
+							rt.Run("dc-done")
+						case <-time.After(interrupt_handler.ABORT_POLLING_INTERVAL * 2):
+							rt.Run("dc-after")
+						}
+					})
+				})
+			})
+			Ω(success).Should(BeFalse())
+
+			Ω(rt).Should(HaveTracked("dc-after")) //not dc-done
+			Ω(reporter.Did.Find("A")).Should(HaveAborted("abort"))
+			Ω(reporter.Did.Find("B")).Should(HavePassed())
+		})
+
+		It("does not start serial nodes if an abort occurs", func() {
+			success := RunFixtureInParallel("aborting in parallel", func(proc int) {
+				It("A", func() {
+					time.Sleep(time.Millisecond * 50)
+					if proc == 2 {
+						rt.Run("aborting")
+						Abort("abort")
+					}
+				})
+
+				It("B", func() {
+					time.Sleep(time.Millisecond * 50)
+					if proc == 2 {
+						rt.Run("aborting")
+						Abort("abort")
+					}
+				})
+
+				It("C", Serial, func() {
+					rt.Run("C")
+				})
+			})
+			Ω(success).Should(BeFalse())
+			Ω(rt).Should(HaveTracked("aborting")) //just one aborting and we don't see C
+		}, MustPassRepeatedly(10))
+
 	})
 })
