@@ -111,18 +111,26 @@ func NewFakeReporter() *FakeReporter {
 }
 
 func (r *FakeReporter) SuiteWillBegin(report types.Report) {
+	r.lock.Lock()
+	defer r.lock.Unlock()
 	r.Begin = report
 }
 
 func (r *FakeReporter) WillRun(report types.SpecReport) {
+	r.lock.Lock()
+	defer r.lock.Unlock()
 	r.Will = append(r.Will, report)
 }
 
 func (r *FakeReporter) DidRun(report types.SpecReport) {
+	r.lock.Lock()
+	defer r.lock.Unlock()
 	r.Did = append(r.Did, report)
 }
 
 func (r *FakeReporter) SuiteDidEnd(report types.Report) {
+	r.lock.Lock()
+	defer r.lock.Unlock()
 	r.End = report
 }
 func (r *FakeReporter) EmitProgressReport(progressReport types.ProgressReport) {
