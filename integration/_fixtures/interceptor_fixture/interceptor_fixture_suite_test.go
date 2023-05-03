@@ -28,8 +28,9 @@ var _ = Describe("Ensuring the OutputInterceptor handles the edge case where an 
 
 	sharedBehavior := func() {
 		It("can avoid getting stuck, but also doesn't block the external process", func() {
+			file := fmt.Sprintf("file-output-%d", GinkgoParallelProcess())
 			interceptor.StartInterceptingOutput()
-			cmd := exec.Command("./interceptor")
+			cmd := exec.Command("./interceptor", file)
 			cmd.Stdout = os.Stdout
 			cmd.Stderr = os.Stderr
 			Ω(cmd.Start()).Should(Succeed())
@@ -55,19 +56,20 @@ var _ = Describe("Ensuring the OutputInterceptor handles the edge case where an 
 				expected += fmt.Sprintf("FILE %d\n", i)
 			}
 			Eventually(func(g Gomega) string {
-				out, err := os.ReadFile("file-output")
+				out, err := os.ReadFile(file)
 				g.Ω(err).ShouldNot(HaveOccurred())
 				return string(out)
 			}, 5*time.Second).Should(Equal(expected))
 
-			os.Remove("file-output")
+			os.Remove(file)
 		})
 
 		It("works successfully if the user pauses then resumes around starting an external process", func() {
 			interceptor.StartInterceptingOutput()
 			interceptor.PauseIntercepting()
 
-			cmd := exec.Command("./interceptor")
+			file := fmt.Sprintf("file-output-%d", GinkgoParallelProcess())
+			cmd := exec.Command("./interceptor", file)
 			cmd.Stdout = os.Stdout
 			cmd.Stderr = os.Stderr
 			Ω(cmd.Start()).Should(Succeed())
@@ -85,12 +87,12 @@ var _ = Describe("Ensuring the OutputInterceptor handles the edge case where an 
 				expected += fmt.Sprintf("FILE %d\n", i)
 			}
 			Eventually(func(g Gomega) string {
-				out, err := os.ReadFile("file-output")
+				out, err := os.ReadFile(file)
 				g.Ω(err).ShouldNot(HaveOccurred())
 				return string(out)
 			}, 5*time.Second).Should(Equal(expected))
 
-			os.Remove("file-output")
+			os.Remove(file)
 		})
 	}
 
