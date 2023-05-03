@@ -7,7 +7,7 @@ import (
 )
 
 func main() {
-	f, _ := os.Create(os.Args[1])
+	f, _ := os.Create("file-output")
 	for i := 0; i < 300; i++ {
 		fmt.Fprintf(os.Stdout, "STDOUT %d\n", i)
 		fmt.Fprintf(os.Stderr, "STDERR %d\n", i)

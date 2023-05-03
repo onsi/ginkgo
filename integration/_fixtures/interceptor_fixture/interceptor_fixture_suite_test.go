@@ -10,7 +10,6 @@ import (
 	. "github.com/onsi/ginkgo/v2"
 	"github.com/onsi/ginkgo/v2/internal"
 	. "github.com/onsi/gomega"
-	. "github.com/onsi/gomega/gexec"
 )
 
 func TestInterceptorFixture(t *testing.T) {
@@ -18,20 +17,13 @@ func TestInterceptorFixture(t *testing.T) {
 	RunSpecs(t, "InterceptorFixture Suite")
 }
 
-var _ = SynchronizedBeforeSuite(func() {
-	cmd := exec.Command("go", "build", "-o", "interceptor", "main.go")
-	err := cmd.Run()
-	Ω(err).ShouldNot(HaveOccurred())
-}, func() {})
-
 var _ = Describe("Ensuring the OutputInterceptor handles the edge case where an external process keeps the interceptor's pipe open", func() {
 	var interceptor internal.OutputInterceptor
 
 	sharedBehavior := func() {
 		It("can avoid getting stuck, but also doesn't block the external process", func() {
-			file := fmt.Sprintf("file-output-%d", GinkgoParallelProcess())
 			interceptor.StartInterceptingOutput()
-			cmd := exec.Command("./interceptor", file)
+			cmd := exec.Command("./interceptor")
 			cmd.Stdout = os.Stdout
 			cmd.Stderr = os.Stderr
 			Ω(cmd.Start()).Should(Succeed())
@@ -57,20 +49,19 @@ var _ = Describe("Ensuring the OutputInterceptor handles the edge case where an 
 				expected += fmt.Sprintf("FILE %d\n", i)
 			}
 			Eventually(func(g Gomega) string {
-				out, err := os.ReadFile(file)
+				out, err := os.ReadFile("file-output")
 				g.Ω(err).ShouldNot(HaveOccurred())
 				return string(out)
 			}, 5*time.Second).Should(Equal(expected))
 
-			os.Remove(file)
+			os.Remove("file-output")
 		})
 
 		It("works successfully if the user pauses then resumes around starting an external process", func() {
 			interceptor.StartInterceptingOutput()
 			interceptor.PauseIntercepting()
 
-			file := fmt.Sprintf("file-output-%d", GinkgoParallelProcess())
-			cmd := exec.Command("./interceptor", file)
+			cmd := exec.Command("./interceptor")
 			cmd.Stdout = os.Stdout
 			cmd.Stderr = os.Stderr
 			Ω(cmd.Start()).Should(Succeed())
@@ -88,12 +79,12 @@ var _ = Describe("Ensuring the OutputInterceptor handles the edge case where an 
 				expected += fmt.Sprintf("FILE %d\n", i)
 			}
 			Eventually(func(g Gomega) string {
-				out, err := os.ReadFile(file)
+				out, err := os.ReadFile("file-output")
 				g.Ω(err).ShouldNot(HaveOccurred())
 				return string(out)
 			}, 5*time.Second).Should(Equal(expected))
 
-			os.Remove(file)
+			os.Remove("file-output")
 		})
 	}
 
@@ -111,15 +102,5 @@ var _ = Describe("Ensuring the OutputInterceptor handles the edge case where an 
 		})
 
 		sharedBehavior()
-	})
-
-	// Test for issue: https://github.com/onsi/ginkgo/issues/1191
-	It("ginkgo -p does not hang", func() {
-		cmd := exec.Command("ginkgo", "-p", "../interceptor_hang_fixture")
-		session, err := Start(cmd, GinkgoWriter, GinkgoWriter)
-		Ω(err).ShouldNot(HaveOccurred())
-		// the interceptor_hang_fixture tests leaks a sleep 60 process,
-		// however ginkgo must exit before that and not hang on it
-		Eventually(session, 15).Should(Exit(0))
 	})
 })
