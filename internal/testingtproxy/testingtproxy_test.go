@@ -3,6 +3,7 @@ package testingtproxy_test
 import (
 	"os"
 	"runtime"
+	"time"
 
 	. "github.com/onsi/ginkgo/v2"
 	. "github.com/onsi/gomega"
@@ -301,16 +302,45 @@ var _ = Describe("Testingtproxy", func() {
 		Ω(string(buf.Contents())).Should(Equal("  hi 3\n"))
 	})
 
-	It("can provides a correctly configured Ginkgo Formatter", func() {
+	It("can provide a correctly configured Ginkgo Formatter", func() {
 		Ω(t.F("{{blue}}%d{{/}}", 3)).Should(Equal("3"))
 	})
 
-	It("can printf to the GinkgoWriter", func() {
+	It("can provide a correctly configured Ginkgo Formatter, with indentation", func() {
 		Ω(t.Fi(1, "{{blue}}%d{{/}}", 3)).Should(Equal("  3"))
 	})
 
-	It("can println to the GinkgoWriter", func() {
+	It("can provide a correctly configured Ginkgo Formatter, with indentation and width constraints", func() {
 		Ω(t.Fiw(1, 5, "{{blue}}%d{{/}} a number", 3)).Should(Equal("  3 a\n  number"))
+	})
+
+	It("can render the timeline of the current spec", func() {
+		cl := types.NewCustomCodeLocation("cl")
+		reportToReturn.CapturedGinkgoWriterOutput = "ABCDEFGHIJKLMNOP"
+		reportToReturn.SpecEvents = append(reportToReturn.SpecEvents, types.SpecEvent{
+			TimelineLocation: types.TimelineLocation{Offset: 5, Order: 1},
+			SpecEventType:    types.SpecEventNodeStart,
+			Message:          "The Test",
+			CodeLocation:     cl,
+			NodeType:         types.NodeTypeIt,
+		})
+		reportToReturn.SpecEvents = append(reportToReturn.SpecEvents, types.SpecEvent{
+			TimelineLocation: types.TimelineLocation{Offset: 10, Order: 3},
+			SpecEventType:    types.SpecEventNodeEnd,
+			Message:          "The Test",
+			CodeLocation:     cl,
+			NodeType:         types.NodeTypeIt,
+			Duration:         time.Second,
+		})
+		reportToReturn.State = types.SpecStateFailed
+		reportToReturn.Failure = types.Failure{
+			Message:          "The Failure",
+			FailureNodeType:  types.NodeTypeIt,
+			Location:         cl,
+			TimelineLocation: types.TimelineLocation{Offset: 10, Order: 2},
+		}
+
+		Ω(t.RenderTimeline()).Should(Equal("ABCDE\n> Enter \x1b[1m[It]\x1b[0m The Test \x1b[38;5;243m- cl @ 01/01/01 00:00:00\x1b[0m\nFGHIJ\n\x1b[38;5;9m[FAILED] The Failure\x1b[0m\n\x1b[38;5;9mIn \x1b[1m[It]\x1b[0m\x1b[38;5;9m at: \x1b[1mcl\x1b[0m \x1b[38;5;243m@ 01/01/01 00:00:00\x1b[0m\n< Exit \x1b[1m[It]\x1b[0m The Test \x1b[38;5;243m- cl @ 01/01/01 00:00:00 (1s)\x1b[0m\nKLMNOP"))
 	})
 
 	It("can provide GinkgoRecover", func() {
