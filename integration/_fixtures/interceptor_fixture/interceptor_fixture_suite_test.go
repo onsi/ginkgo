@@ -17,6 +17,12 @@ func TestInterceptorFixture(t *testing.T) {
 	RunSpecs(t, "InterceptorFixture Suite")
 }
 
+var _ = SynchronizedBeforeSuite(func() {
+	cmd := exec.Command("go", "build", "-o", "interceptor", "main.go")
+	err := cmd.Run()
+	Ω(err).ShouldNot(HaveOccurred())
+}, func() {})
+
 var _ = Describe("Ensuring the OutputInterceptor handles the edge case where an external process keeps the interceptor's pipe open", func() {
 	var interceptor internal.OutputInterceptor
 
