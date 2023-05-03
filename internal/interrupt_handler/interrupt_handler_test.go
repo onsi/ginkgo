@@ -18,7 +18,6 @@ var _ = Describe("InterruptHandler", func() {
 	var trigger func()
 	var interruptHandler *interrupt_handler.InterruptHandler
 	BeforeEach(func() {
-		interrupt_handler.ABORT_POLLING_INTERVAL = 50 * time.Millisecond
 		trigger = func() {
 			syscall.Kill(syscall.Getpid(), syscall.SIGUSR2)
 		}
