@@ -10,6 +10,7 @@ import (
 	. "github.com/onsi/ginkgo/v2"
 	"github.com/onsi/ginkgo/v2/internal"
 	. "github.com/onsi/gomega"
+	. "github.com/onsi/gomega/gexec"
 )
 
 func TestInterceptorFixture(t *testing.T) {
@@ -110,5 +111,15 @@ var _ = Describe("Ensuring the OutputInterceptor handles the edge case where an 
 		})
 
 		sharedBehavior()
+	})
+
+	// Test for issue: https://github.com/onsi/ginkgo/issues/1191
+	It("ginkgo -p does not hang", func() {
+		cmd := exec.Command("ginkgo", "-p", "../interceptor_hang_fixture")
+		session, err := Start(cmd, GinkgoWriter, GinkgoWriter)
+		Ω(err).ShouldNot(HaveOccurred())
+		// the interceptor_hang_fixture tests leaks a sleep 60 process,
+		// however ginkgo must exit before that and not hang on it
+		Eventually(session, 15).Should(Exit(0))
 	})
 })
