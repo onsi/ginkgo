@@ -18,6 +18,7 @@ var _ = Describe("InterruptHandler", func() {
 	var trigger func()
 	var interruptHandler *interrupt_handler.InterruptHandler
 	BeforeEach(func() {
+		interrupt_handler.ABORT_POLLING_INTERVAL = 50 * time.Millisecond
 		trigger = func() {
 			syscall.Kill(syscall.Getpid(), syscall.SIGUSR2)
 		}
@@ -96,8 +97,6 @@ var _ = Describe("InterruptHandler", func() {
 		})
 	})
 
-	// here - test that abort only triggers once
-	// here - test interplay with signal
 	Describe("Interrupting when another Ginkgo process has aborted", func() {
 		var client parallel_support.Client
 		BeforeEach(func() {
@@ -165,5 +164,10 @@ var _ = Describe("InterruptHandler", func() {
 			Ω(status.Cause).Should(Equal(interrupt_handler.InterruptCauseSignal))
 			Ω(status.Level).Should(Equal(interrupt_handler.InterruptLevelCleanupAndReport))
 		})
+
+		It("doesn't just rely on the ABORT_POLLING_INTERVAL timer to report that the interrupt has happened", func() {
+			client.PostAbort()
+			Ω(interruptHandler.Status().Cause).Should(Equal(interrupt_handler.InterruptCauseAbortByOtherProcess))
+		}, MustPassRepeatedly(10))
 	})
 })
