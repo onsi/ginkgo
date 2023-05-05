@@ -8,7 +8,7 @@ require (
 	github.com/google/pprof v0.0.0-20210407192527-94a9f03dee38
 	github.com/onsi/gomega v1.27.6
 	golang.org/x/net v0.9.0
-	golang.org/x/sys v0.7.0
+	golang.org/x/sys v0.8.0
 	golang.org/x/tools v0.8.0
 )
 
