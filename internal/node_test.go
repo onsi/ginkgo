@@ -1579,6 +1579,22 @@ var _ = Describe("Nodes", func() {
 		})
 	})
 
+	Describe("IndexOfFirstNodeMarkedOrdered", func() {
+		Context("when there are nodes marked ordered", func() {
+			It("returns the index of the first one", func() {
+				nodes := Nodes{N(), N("A", ntCon, Ordered), N("B", ntCon, Ordered), N()}
+				Ω(nodes.IndexOfFirstNodeMarkedOrdered()).Should(Equal(1))
+			})
+		})
+
+		Context("when there is no node marked ordered", func() {
+			It("returns -1", func() {
+				nodes := Nodes{N(), N(), N()}
+				Ω(nodes.IndexOfFirstNodeMarkedOrdered()).Should(Equal(-1))
+			})
+		})
+	})
+
 	Describe("GetMaxFlakeAttempts", func() {
 		Context("when there is no node marked with FlakeAttempts decorator", func() {
 			It("returns 0", func() {

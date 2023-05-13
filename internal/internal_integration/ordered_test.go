@@ -1281,4 +1281,55 @@ var _ = DescribeTable("Ordered Containers",
 	},
 		"A", "B", "C", "D", "E", "F", "G", "H", "I", "J", "K", HavePassed(),
 	),
+
+	// Bug reported in #1198
+	Entry("bug reported in #1198 - probably due to attempts to ensure deterministic order", true, func() {
+		Describe("outer", func() { // the only non-Ordered Describe
+			OrderedRun("a")
+			OrderedRun("b")
+			OrderedRun("c")
+		})
+	}, []string{"a1", "a2", "a3", "a4", "a5", "b1", "b2", "b3", "b4", "b5", "c1", "c2", "c3", "c4", "c5"}),
 )
+
+// OrderedRun creates a sequence of tests, all are intended to be Ordered - this is the reproducer provided in #1198
+func OrderedRun(description string) {
+	Describe(description, Ordered, func() {
+		It(fmt.Sprint(description, "1"), func() {
+			rt.Run(description + "1")
+		})
+
+		Sub2(description)
+		Sub3(description)
+
+		Describe("inner", func() {
+			Sub4(description)
+		})
+	})
+}
+
+func Sub2(description string) {
+	It(fmt.Sprint(description, "2"), func() {
+		rt.Run(description + "2")
+	})
+}
+
+func Sub3(description string) {
+	It(fmt.Sprint(description, "3"), func() {
+		rt.Run(description + "3")
+	})
+}
+
+func Sub4(description string) {
+	Describe("deeply nested 1", func() {
+		It(fmt.Sprint(description, "4"), func() {
+			rt.Run(description + "4")
+		})
+	})
+
+	Describe("deeply nested 2", func() {
+		It(fmt.Sprint(description, "5"), func() {
+			rt.Run(description + "5")
+		})
+	})
+}
