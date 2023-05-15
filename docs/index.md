@@ -3001,7 +3001,7 @@ SynchronizedBeforeSuite(func(ctx SpecContext) []byte {
 ```
 are all valid interruptible signatures.  Of course you can specify `context.Context` instead and can mix-and-match interruptibility between the two functions.
 
-Currently the **Reporting** nodes (`ReportAfterEach`, `RepoertAfterSuite`, and `ReportBeforeEach`) cannot be made interruptible and do not accept callbacks that receive a `SpecContext`.  This may change in a future release of Ginkgo (in a backward compatible way).
+Currently the **Reporting** nodes (`ReportAfterEach`, `ReportAfterSuite`, and `ReportBeforeEach`) cannot be made interruptible and do not accept callbacks that receive a `SpecContext`.  This may change in a future release of Ginkgo (in a backward compatible way).
 
 As for **Container** nodes, since these run during the Tree Construction Phase they cannot be made interruptible and so do not accept functions that expect a context.  And since the `By` annotation is simply syntactic sugar enabling more detailed spec documentation, any callbacks passed to `By` cannot be independently marked as interruptible (you should, instead, use the `context` passed into the node that you're calling `By` from).
 
