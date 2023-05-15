@@ -5233,7 +5233,7 @@ with a JSON file
 The custom data can be accessed like so:
 `{{ .CustomData.suitename }}` or `{{ range .CustomData.labels }} {{.}} {{ end }}`
 
-Take a look at the [Ginkgo's CLI code](https://github.com/onsi/ginkgo/tree/master/ginkgo/ginkgo/generators) to see what's available in the template.
+Take a look at the [Ginkgo's CLI code](https://github.com/onsi/ginkgo/tree/master/ginkgo/generators) to see what's available in the template.
 
 ### Creating an Outline of Specs
 
