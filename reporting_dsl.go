@@ -60,7 +60,7 @@ AddReportEntry() must be called within a Subject or Setup node - not in a Contai
 
 You can learn more about Report Entries here: https://onsi.github.io/ginkgo/#attaching-data-to-reports
 */
-func AddReportEntry(name string, args ...interface{}) {
+func AddReportEntry(name string, args ...any) {
 	cl := types.NewCodeLocation(1)
 	reportEntry, err := internal.NewReportEntry(name, cl, args...)
 	if err != nil {
@@ -79,8 +79,8 @@ receives a SpecReport.  They are called before the spec starts.
 You cannot nest any other Ginkgo nodes within a ReportBeforeEach node's closure.
 You can learn more about ReportBeforeEach here: https://onsi.github.io/ginkgo/#generating-reports-programmatically
 */
-func ReportBeforeEach(body func(SpecReport), args ...interface{}) bool {
-	combinedArgs := []interface{}{body}
+func ReportBeforeEach(body func(SpecReport), args ...any) bool {
+	combinedArgs := []any{body}
 	combinedArgs = append(combinedArgs, args...)
 
 	return pushNode(internal.NewNode(deprecationTracker, types.NodeTypeReportBeforeEach, "", combinedArgs...))
@@ -93,8 +93,8 @@ receives a SpecReport.  They are called after the spec has completed and receive
 You cannot nest any other Ginkgo nodes within a ReportAfterEach node's closure.
 You can learn more about ReportAfterEach here: https://onsi.github.io/ginkgo/#generating-reports-programmatically
 */
-func ReportAfterEach(body func(SpecReport), args ...interface{}) bool {
-	combinedArgs := []interface{}{body}
+func ReportAfterEach(body func(SpecReport), args ...any) bool {
+	combinedArgs := []any{body}
 	combinedArgs = append(combinedArgs, args...)
 
 	return pushNode(internal.NewNode(deprecationTracker, types.NodeTypeReportAfterEach, "", combinedArgs...))
@@ -113,8 +113,8 @@ You can learn more about ReportAfterSuite here: https://onsi.github.io/ginkgo/#g
 
 You can learn more about Ginkgo's reporting infrastructure, including generating reports with the CLI here: https://onsi.github.io/ginkgo/#generating-machine-readable-reports
 */
-func ReportBeforeSuite(body func(Report), args ...interface{}) bool {
-	combinedArgs := []interface{}{body}
+func ReportBeforeSuite(body func(Report), args ...any) bool {
+	combinedArgs := []any{body}
 	combinedArgs = append(combinedArgs, args...)
 	return pushNode(internal.NewNode(deprecationTracker, types.NodeTypeReportBeforeSuite, "", combinedArgs...))
 }
@@ -135,8 +135,8 @@ You can learn more about ReportAfterSuite here: https://onsi.github.io/ginkgo/#g
 
 You can learn more about Ginkgo's reporting infrastructure, including generating reports with the CLI here: https://onsi.github.io/ginkgo/#generating-machine-readable-reports
 */
-func ReportAfterSuite(text string, body func(Report), args ...interface{}) bool {
-	combinedArgs := []interface{}{body}
+func ReportAfterSuite(text string, body func(Report), args ...any) bool {
+	combinedArgs := []any{body}
 	combinedArgs = append(combinedArgs, args...)
 	return pushNode(internal.NewNode(deprecationTracker, types.NodeTypeReportAfterSuite, text, combinedArgs...))
 }

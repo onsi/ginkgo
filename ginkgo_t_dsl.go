@@ -41,21 +41,21 @@ The portion of the interface returned by GinkgoT() that maps onto methods in the
 type GinkgoTInterface interface {
 	Cleanup(func())
 	Setenv(kev, value string)
-	Error(args ...interface{})
-	Errorf(format string, args ...interface{})
+	Error(args ...any)
+	Errorf(format string, args ...any)
 	Fail()
 	FailNow()
 	Failed() bool
-	Fatal(args ...interface{})
-	Fatalf(format string, args ...interface{})
+	Fatal(args ...any)
+	Fatalf(format string, args ...any)
 	Helper()
-	Log(args ...interface{})
-	Logf(format string, args ...interface{})
+	Log(args ...any)
+	Logf(format string, args ...any)
 	Name() string
 	Parallel()
-	Skip(args ...interface{})
+	Skip(args ...any)
 	SkipNow()
-	Skipf(format string, args ...interface{})
+	Skipf(format string, args ...any)
 	Skipped() bool
 	TempDir() string
 }
@@ -71,9 +71,9 @@ type FullGinkgoTInterface interface {
 	AddReportEntryVisibilityNever(name string, args ...any)
 
 	//Prints to the GinkgoWriter
-	Print(a ...interface{})
-	Printf(format string, a ...interface{})
-	Println(a ...interface{})
+	Print(a ...any)
+	Printf(format string, a ...any)
+	Println(a ...any)
 
 	//Provides access to Ginkgo's color formatting, correctly configured to match the color settings specified in the invocation of ginkgo
 	F(format string, args ...any) string

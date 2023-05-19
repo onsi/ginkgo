@@ -50,7 +50,7 @@ var _ = Describe("ReportEntries", func() {
 			passes := reports.Find("passes")
 			Ω(passes.ReportEntries).Should(HaveLen(6))
 			Ω(passes.ReportEntries[0].Name).Should(Equal("passes-first-report"))
-			Ω(passes.ReportEntries[0].GetRawValue()).Should(Equal(map[string]interface{}{"Label": "pass-bob", "Count": float64(1)}))
+			Ω(passes.ReportEntries[0].GetRawValue()).Should(Equal(map[string]any{"Label": "pass-bob", "Count": float64(1)}))
 			Ω(passes.ReportEntries[0].StringRepresentation()).Should(Equal("{{red}}pass-bob {{green}}1{{/}}"))
 			Ω(passes.ReportEntries[0].Time).Should(BeTemporally("~", time.Now(), time.Minute))
 
@@ -63,7 +63,7 @@ var _ = Describe("ReportEntries", func() {
 			Ω(passes.ReportEntries[2].StringRepresentation()).Should(Equal("3"))
 
 			Ω(passes.ReportEntries[3].Name).Should(Equal("passes-pointer-report"))
-			Ω(passes.ReportEntries[3].GetRawValue()).Should(Equal(map[string]interface{}{"Label": "passed", "Count": float64(4)}))
+			Ω(passes.ReportEntries[3].GetRawValue()).Should(Equal(map[string]any{"Label": "passed", "Count": float64(4)}))
 			Ω(passes.ReportEntries[3].StringRepresentation()).Should(Equal("{{red}}passed {{green}}4{{/}}"))
 
 			Ω(passes.ReportEntries[4].Name).Should(Equal("passes-failure-report"))
@@ -76,7 +76,7 @@ var _ = Describe("ReportEntries", func() {
 
 			fails := reports.Find("fails")
 			Ω(fails.ReportEntries[0].Name).Should(Equal("fails-first-report"))
-			Ω(fails.ReportEntries[0].GetRawValue()).Should(Equal(map[string]interface{}{"Label": "fail-bob", "Count": float64(1)}))
+			Ω(fails.ReportEntries[0].GetRawValue()).Should(Equal(map[string]any{"Label": "fail-bob", "Count": float64(1)}))
 			Ω(fails.ReportEntries[0].StringRepresentation()).Should(Equal("{{red}}fail-bob {{green}}1{{/}}"))
 			Ω(fails.ReportEntries[0].Time).Should(BeTemporally("~", time.Now(), time.Minute))
 
@@ -89,7 +89,7 @@ var _ = Describe("ReportEntries", func() {
 			Ω(fails.ReportEntries[2].StringRepresentation()).Should(Equal("3"))
 
 			Ω(fails.ReportEntries[3].Name).Should(Equal("fails-pointer-report"))
-			Ω(fails.ReportEntries[3].GetRawValue()).Should(Equal(map[string]interface{}{"Label": "failed", "Count": float64(4)}))
+			Ω(fails.ReportEntries[3].GetRawValue()).Should(Equal(map[string]any{"Label": "failed", "Count": float64(4)}))
 			Ω(fails.ReportEntries[3].StringRepresentation()).Should(Equal("{{red}}failed {{green}}4{{/}}"))
 
 			Ω(fails.ReportEntries[4].Name).Should(Equal("fails-failure-report"))

@@ -45,7 +45,7 @@ var FORMATTED_TIME = PLACEHOLDER_TIME.Format(types.GINKGO_TIME_FORMAT)
 
 var tlOrder = 1
 
-func TL(options ...interface{}) types.TimelineLocation {
+func TL(options ...any) types.TimelineLocation {
 	out := types.TimelineLocation{
 		Order: tlOrder,
 		Time:  now,
@@ -65,7 +65,7 @@ func TL(options ...interface{}) types.TimelineLocation {
 }
 
 // convenience helper to quickly make Failures
-func F(options ...interface{}) types.Failure {
+func F(options ...any) types.Failure {
 	failure := types.Failure{TimelineLocation: TL()}
 	for _, option := range options {
 		switch x := option.(type) {
@@ -94,7 +94,7 @@ func F(options ...interface{}) types.Failure {
 	return failure
 }
 
-func AF(state types.SpecState, options ...interface{}) types.AdditionalFailure {
+func AF(state types.SpecState, options ...any) types.AdditionalFailure {
 	return types.AdditionalFailure{
 		State:   state,
 		Failure: F(options...),
@@ -105,7 +105,7 @@ type STD string
 type GW string
 
 // convenience helper to quickly make SpecReports
-func S(options ...interface{}) types.SpecReport {
+func S(options ...any) types.SpecReport {
 	report := types.SpecReport{
 		LeafNodeType:          types.NodeTypeIt,
 		State:                 types.SpecStatePassed,
@@ -252,7 +252,7 @@ type CurrentStepText string
 type LeafNodeText string
 type AdditionalReports []string
 
-func PR(options ...interface{}) types.ProgressReport {
+func PR(options ...any) types.ProgressReport {
 	report := types.ProgressReport{
 		ParallelProcess:   1,
 		RunningInParallel: false,
@@ -299,7 +299,7 @@ func PR(options ...interface{}) types.ProgressReport {
 	return report
 }
 
-func Fn(f string, filename string, line int, options ...interface{}) types.FunctionCall {
+func Fn(f string, filename string, line int, options ...any) types.FunctionCall {
 	out := types.FunctionCall{
 		Function: f,
 		Filename: filename,
@@ -319,7 +319,7 @@ func Fn(f string, filename string, line int, options ...interface{}) types.Funct
 	return out
 }
 
-func G(options ...interface{}) types.Goroutine {
+func G(options ...any) types.Goroutine {
 	goroutine := types.Goroutine{
 		ID:              17,
 		State:           "running",
@@ -342,7 +342,7 @@ func G(options ...interface{}) types.Goroutine {
 	return goroutine
 }
 
-func RE(name string, cl types.CodeLocation, args ...interface{}) types.ReportEntry {
+func RE(name string, cl types.CodeLocation, args ...any) types.ReportEntry {
 	var tl = TL()
 	finalArgs := []any{}
 	for _, arg := range args {
@@ -358,7 +358,7 @@ func RE(name string, cl types.CodeLocation, args ...interface{}) types.ReportEnt
 	return entry
 }
 
-func SE(options ...interface{}) types.SpecEvent {
+func SE(options ...any) types.SpecEvent {
 	se := types.SpecEvent{TimelineLocation: TL()}
 	for _, option := range options {
 		switch x := option.(type) {

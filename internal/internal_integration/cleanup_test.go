@@ -234,7 +234,7 @@ var _ = Describe("Cleanup", func() {
 
 				Context("as process #1", func() {
 					It("runs the cleanup only _after_ the other processes have finished", func() {
-						done := make(chan interface{})
+						done := make(chan any)
 						go func() {
 							defer GinkgoRecover()
 							success, _ := RunFixture("DeferCleanup on SBS in parallel on process 1", fixture)
