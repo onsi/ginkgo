@@ -43,21 +43,21 @@ var _ = Describe("Partitioning Decorations", func() {
 			SpecTimeout(time.Second),
 			nil,
 			1,
-			[]interface{}{Focus, Pending, []interface{}{Offset(2), Serial, FlakeAttempts(2)}, Ordered, Label("a", "b", "c"), NodeTimeout(time.Second)},
-			[]interface{}{1, 2, 3.1, nil},
+			[]any{Focus, Pending, []any{Offset(2), Serial, FlakeAttempts(2)}, Ordered, Label("a", "b", "c"), NodeTimeout(time.Second)},
+			[]any{1, 2, 3.1, nil},
 			PollProgressInterval(time.Second),
 			PollProgressAfter(time.Second),
 			[]string{"a", "b", "c"},
 			Label("A", "B", "C"),
 			Label("D"),
-			[]interface{}{},
+			[]any{},
 			FlakeAttempts(1),
 			MustPassRepeatedly(1),
 			true,
 			OncePerOrdered,
 		)
 
-		Ω(decorations).Should(Equal([]interface{}{
+		Ω(decorations).Should(Equal([]any{
 			Offset(3),
 			types.NewCustomCodeLocation("hey there"),
 			Focus,
@@ -69,7 +69,7 @@ var _ = Describe("Partitioning Decorations", func() {
 			NodeTimeout(time.Second),
 			GracePeriod(time.Second),
 			SpecTimeout(time.Second),
-			[]interface{}{Focus, Pending, []interface{}{Offset(2), Serial, FlakeAttempts(2)}, Ordered, Label("a", "b", "c"), NodeTimeout(time.Second)},
+			[]any{Focus, Pending, []any{Offset(2), Serial, FlakeAttempts(2)}, Ordered, Label("a", "b", "c"), NodeTimeout(time.Second)},
 			PollProgressInterval(time.Second),
 			PollProgressAfter(time.Second),
 			Label("A", "B", "C"),
@@ -79,15 +79,15 @@ var _ = Describe("Partitioning Decorations", func() {
 			OncePerOrdered,
 		}))
 
-		Ω(remaining).Should(Equal([]interface{}{
+		Ω(remaining).Should(Equal([]any{
 			Foo{3},
 			"hey there",
 			2.0,
 			nil,
 			1,
-			[]interface{}{1, 2, 3.1, nil},
+			[]any{1, 2, 3.1, nil},
 			[]string{"a", "b", "c"},
-			[]interface{}{},
+			[]any{},
 			true,
 		}))
 	})
@@ -426,7 +426,7 @@ var _ = Describe("Constructing nodes", func() {
 		})
 
 		It("appends and dedupes all labels together, even if nested", func() {
-			node, errors := internal.NewNode(dt, ntIt, "text", body, Label("A", "B", "C"), Label("D", "E", "C"), []interface{}{Label("F"), []interface{}{Label("G", "H", "A", "F")}})
+			node, errors := internal.NewNode(dt, ntIt, "text", body, Label("A", "B", "C"), Label("D", "E", "C"), []any{Label("F"), []any{Label("G", "H", "A", "F")}})
 			Ω(node.Labels).Should(Equal(Labels{"A", "B", "C", "D", "E", "F", "G", "H"}))
 			ExpectAllWell(errors)
 		})
@@ -482,7 +482,7 @@ var _ = Describe("Constructing nodes", func() {
 		})
 
 		It("fails if a timeout is applied to a function that does not take a context", func() {
-			for _, decorator := range []interface{}{NodeTimeout(time.Second), SpecTimeout(time.Second), GracePeriod(time.Second)} {
+			for _, decorator := range []any{NodeTimeout(time.Second), SpecTimeout(time.Second), GracePeriod(time.Second)} {
 				dt = types.NewDeprecationTracker()
 				_, errors := internal.NewNode(dt, ntIt, "spec", func(_ SpecContext) {}, cl, decorator)
 				Ω(errors).Should(BeEmpty())
@@ -593,7 +593,7 @@ var _ = Describe("Constructing nodes", func() {
 		})
 
 		It("errors if the function takes one argument and that argument is not the deprecated Done channel, or a context", func() {
-			f := func(chan interface{}) {}
+			f := func(chan any) {}
 			node, errors := internal.NewNode(dt, ntIt, "text", f, cl)
 			Ω(node).Should(BeZero())
 			Ω(errors).Should(ConsistOf(types.GinkgoErrors.InvalidBodyType(reflect.TypeOf(f), cl, ntIt)))
@@ -644,7 +644,7 @@ var _ = Describe("Constructing nodes", func() {
 
 	Describe("when decorations are nested in slices", func() {
 		It("unrolls them first", func() {
-			node, errors := internal.NewNode(dt, ntIt, "text", []interface{}{body, []interface{}{Focus, FlakeAttempts(3), Label("A")}, FlakeAttempts(2), Label("B"), Label("C", "D")})
+			node, errors := internal.NewNode(dt, ntIt, "text", []any{body, []any{Focus, FlakeAttempts(3), Label("A")}, FlakeAttempts(2), Label("B"), Label("C", "D")})
 			Ω(node.FlakeAttempts).Should(Equal(2))
 			Ω(node.MarkedFocus).Should(BeTrue())
 			Ω(node.Labels).Should(Equal(Labels{"A", "B", "C", "D"}))

@@ -66,7 +66,7 @@ var _ = Describe("LabelFilter", func() {
 	}
 
 	DescribeTable("Generating correct LabelFilter",
-		func(filter string, samples ...interface{}) {
+		func(filter string, samples ...any) {
 			lf, err := types.ParseLabelFilter(filter)
 			Ω(err).ShouldNot(HaveOccurred())
 			for _, sample := range samples {

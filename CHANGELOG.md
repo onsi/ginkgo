@@ -630,7 +630,7 @@ Ginkgo also uses this progress reporting infrastructure under the hood when hand
 ### Features
 - `BeforeSuite`, `AfterSuite`, `SynchronizedBeforeSuite`, `SynchronizedAfterSuite`, and `ReportAfterSuite` now support (the relevant subset of) decorators.  These can be passed in _after_ the callback functions that are usually passed into these nodes.
 
-  As a result the **signature of these methods has changed** and now includes a trailing `args ...interface{}`.  For most users simply using the DSL, this change is transparent.  However if you were assigning one of these functions to a custom variable (or passing it around) then your code may need to change to reflect the new signature.
+  As a result the **signature of these methods has changed** and now includes a trailing `args ...any`.  For most users simply using the DSL, this change is transparent.  However if you were assigning one of these functions to a custom variable (or passing it around) then your code may need to change to reflect the new signature.
 
 ### Maintenance
 - Modernize the invocation of Ginkgo in github actions [0ffde58]

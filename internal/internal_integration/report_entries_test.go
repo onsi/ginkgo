@@ -49,8 +49,8 @@ var _ = Describe("ReportEntries", func() {
 		BeforeEach(func() {
 			success, _ := RunFixture("Report Entries - but no races", func() {
 				BeforeEach(func() {
-					stop := make(chan interface{})
-					done := make(chan interface{})
+					stop := make(chan any)
+					done := make(chan any)
 					ticker := time.NewTicker(10 * time.Millisecond)
 					i := 0
 					go func() {

@@ -162,7 +162,7 @@ type NFailed int
 type NPending int
 type NFlaked int
 
-func BeASuiteSummary(options ...interface{}) OmegaMatcher {
+func BeASuiteSummary(options ...any) OmegaMatcher {
 	type ReportStats struct {
 		Succeeded    bool
 		TotalSpecs   int
@@ -224,7 +224,7 @@ type CapturedGinkgoWriterOutput string
 type CapturedStdOutput string
 type NumAttempts int
 
-func HavePassed(options ...interface{}) OmegaMatcher {
+func HavePassed(options ...any) OmegaMatcher {
 	matchers := []OmegaMatcher{
 		HaveField("State", types.SpecStatePassed),
 		HaveField("Failure", BeZero()),
@@ -263,7 +263,7 @@ func HaveBeenSkipped() OmegaMatcher {
 	)
 }
 
-func HaveBeenSkippedWithMessage(message string, options ...interface{}) OmegaMatcher {
+func HaveBeenSkippedWithMessage(message string, options ...any) OmegaMatcher {
 	matchers := []OmegaMatcher{
 		HaveField("State", types.SpecStateSkipped),
 		HaveField("Failure.Message", Equal(message)),
@@ -287,7 +287,7 @@ func HaveBeenInterrupted(cause interrupt_handler.InterruptCause) OmegaMatcher {
 
 type FailureNodeType types.NodeType
 
-func failureMatcherForState(state types.SpecState, messageField string, options ...interface{}) OmegaMatcher {
+func failureMatcherForState(state types.SpecState, messageField string, options ...any) OmegaMatcher {
 	matchers := []OmegaMatcher{
 		HaveField("State", state),
 	}
@@ -323,19 +323,19 @@ func failureMatcherForState(state types.SpecState, messageField string, options 
 	return And(matchers...)
 }
 
-func HaveFailed(options ...interface{}) OmegaMatcher {
+func HaveFailed(options ...any) OmegaMatcher {
 	return failureMatcherForState(types.SpecStateFailed, "Failure.Message", options...)
 }
 
-func HaveTimedOut(options ...interface{}) OmegaMatcher {
+func HaveTimedOut(options ...any) OmegaMatcher {
 	return failureMatcherForState(types.SpecStateTimedout, "Failure.Message", options...)
 }
 
-func HaveAborted(options ...interface{}) OmegaMatcher {
+func HaveAborted(options ...any) OmegaMatcher {
 	return failureMatcherForState(types.SpecStateAborted, "Failure.Message", options...)
 }
 
-func HavePanicked(options ...interface{}) OmegaMatcher {
+func HavePanicked(options ...any) OmegaMatcher {
 	return failureMatcherForState(types.SpecStatePanicked, "Failure.ForwardedPanic", options...)
 }
 
@@ -350,7 +350,7 @@ func TLWithOffset[O int | string](o O) types.TimelineLocation {
 	return t
 }
 
-func BeSpecEvent(options ...interface{}) OmegaMatcher {
+func BeSpecEvent(options ...any) OmegaMatcher {
 	description := []string{"BeSpecEvent"}
 	matchers := []OmegaMatcher{}
 	for _, option := range options {
@@ -385,7 +385,7 @@ func BeSpecEvent(options ...interface{}) OmegaMatcher {
 	return OmegaMatcherWithDescription{OmegaMatcher: And(matchers...), Description: strings.Join(description, " ")}
 }
 
-func BeProgressReport(options ...interface{}) OmegaMatcher {
+func BeProgressReport(options ...any) OmegaMatcher {
 	description := []string{"BeProgressReport"}
 	matchers := []OmegaMatcher{}
 	for _, option := range options {
@@ -411,7 +411,7 @@ func BeProgressReport(options ...interface{}) OmegaMatcher {
 	return OmegaMatcherWithDescription{OmegaMatcher: And(matchers...), Description: strings.Join(description, " ")}
 }
 
-func BeReportEntry(options ...interface{}) OmegaMatcher {
+func BeReportEntry(options ...any) OmegaMatcher {
 	description := []string{"BeReportEntry"}
 	matchers := []OmegaMatcher{}
 	for _, option := range options {

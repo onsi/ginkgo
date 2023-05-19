@@ -14,7 +14,7 @@ var _ = Describe("Running tests in parallel", func() {
 	var conf2 types.SuiteConfig
 	var reporter2 *FakeReporter
 	var rt2 *RunTracker
-	var serialValidator chan interface{}
+	var serialValidator chan any
 
 	var fixture = func(rt *RunTracker, proc int) {
 		SynchronizedBeforeSuite(func() []byte {
@@ -84,7 +84,7 @@ var _ = Describe("Running tests in parallel", func() {
 	}
 
 	BeforeEach(func() {
-		serialValidator = make(chan interface{})
+		serialValidator = make(chan any)
 		//set up configuration for proc 1 and proc 2
 
 		//SetUpForParallel starts up a server, sets up a client, and sets up the exitChannels map - they're all cleaned up automatically after the test
