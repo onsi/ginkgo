@@ -4387,7 +4387,7 @@ Eventually(func(g Gomega, ctx SpecContext) []string { //note: g Gomega must go f
   for _, message := range messages {
     subjects = append(subjects, message.Subject)
   }
-  return subjects, nil
+  return subjects
 }).WithContext(ctx).Should(ContainElement(fmt.Sprintf(`"%s" is available for pickup`, book.Title)))
 ```
 
@@ -4402,7 +4402,6 @@ Eventually(func(g Gomega, ctx SpecContext) {
     subjects = append(subjects, message.Subject)
   }
   g.Expect(subjects).To(ContainElement(fmt.Sprintf(`"%s" is available for pickup`, book.Title)))
-  return subjects, nil
 }).WithContext(ctx).Should(Succeed())
 ```
 
@@ -4419,7 +4418,6 @@ Eventually(func(g Gomega, ctx SpecContext) {
   expectedSubject := fmt.Sprintf(`"%s" is available for pickup`, book.Title)
   subjectGetter := func(m gmail.Message) string { return m.Subject }
   g.Expect(messages).To(ContainElement(WithTransform(subjectGetter, Equal(expectedSubject))))
-  return messages, nil
 }).WithContext(ctx).Should(Succeed())
 ```
 
