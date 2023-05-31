@@ -2,6 +2,7 @@ package internal_integration_test
 
 import (
 	"fmt"
+	"sync"
 	"time"
 
 	. "github.com/onsi/ginkgo/v2"
@@ -283,6 +284,31 @@ var _ = Describe("Cleanup", func() {
 
 			It("notes that a cleanup was registered in the AfterAll and runs it", func() {
 				Ω(rt).Should(HaveTracked("A", "AE", "AA", "C-AE", "C-A", "C-AA"))
+			})
+		})
+
+		Context("when cleanup is added in parallel in some goroutines", func() {
+			BeforeEach(func() {
+				success, _ := RunFixture("concurrent cleanup", func() {
+					Context("ordered", Ordered, func() {
+						It("A", func() {
+							wg := &sync.WaitGroup{}
+							wg.Add(5)
+							for i := 0; i < 5; i++ {
+								i := i
+								go func() {
+									DeferCleanup(rt.Run, fmt.Sprintf("dc-%d", i))
+									wg.Done()
+								}()
+							}
+							wg.Wait()
+						})
+					})
+				})
+				Ω(success).Should(BeTrue())
+			})
+			It("doesn't race", func() {
+				Ω(rt.TrackedRuns()).Should(ConsistOf("dc-0", "dc-1", "dc-2", "dc-3", "dc-4"))
 			})
 		})
 	})
