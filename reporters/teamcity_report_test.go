@@ -57,7 +57,7 @@ var _ = Describe("TeamCityReport", func() {
 		var filePath string
 
 		BeforeEach(func() {
-			folderPath = filepath.Join("test_outputs")
+			folderPath = filepath.Join(fmt.Sprintf("test_outputs_%d", GinkgoParallelProcess()))
 			fileName := fmt.Sprintf("report-%d", GinkgoParallelProcess())
 			filePath = filepath.Join(folderPath, fileName)
 
