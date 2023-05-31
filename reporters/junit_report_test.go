@@ -4,6 +4,7 @@ import (
 	"encoding/xml"
 	"fmt"
 	"os"
+	"path/filepath"
 	"time"
 
 	. "github.com/onsi/ginkgo/v2"
@@ -370,6 +371,27 @@ var _ = Describe("JunitReport", func() {
 				spr("< Exit [It] A - cl0.go:12 @ %s (300ms)", FORMATTED_TIME),
 				"",
 			))
+		})
+	})
+
+	Describe("when configured to write the report inside a folder", func() {
+		var folderPath string
+		var filePath string
+
+		BeforeEach(func() {
+			folderPath = filepath.Join("test_outputs")
+			fileName := fmt.Sprintf("report-%d", GinkgoParallelProcess())
+			filePath = filepath.Join(folderPath, fileName)
+
+			Ω(reporters.GenerateJUnitReport(report, filePath)).Should(Succeed())
+			DeferCleanup(os.RemoveAll, folderPath)
+		})
+
+		It("creates the folder and the report file", func() {
+			_, err := os.Stat(folderPath)
+			Ω(err).Should(Succeed(), "Parent folder should be created")
+			_, err = os.Stat(filePath)
+			Ω(err).Should(Succeed(), "Report file should be created")
 		})
 	})
 })
