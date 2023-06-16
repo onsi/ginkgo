@@ -14,12 +14,12 @@ func init() {
 	noOrdered = flag.CommandLine.Bool("no-ordered", false, "set to turn off ordered decoration")
 }
 
-var OrderedDecoration = []interface{}{Ordered}
+var OrderedDecoration = []any{Ordered}
 
 func TestOrderedFixture(t *testing.T) {
 	RegisterFailHandler(Fail)
 	if *noOrdered {
-		OrderedDecoration = []interface{}{}
+		OrderedDecoration = []any{}
 	}
 
 	RunSpecs(t, "OrderedFixture Suite")

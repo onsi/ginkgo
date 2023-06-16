@@ -50,7 +50,7 @@ var _ = Describe("Serial", func() {
 			})
 
 			It("participates in running parallel tests, then runs the serial tests after all other procs have finished", func() {
-				done := make(chan interface{})
+				done := make(chan any)
 				go func() {
 					defer GinkgoRecover()
 					success, _ := RunFixture("happy-path", fixture)

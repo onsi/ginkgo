@@ -234,7 +234,7 @@ var _ = Describe("Synchronized Suite Nodes", func() {
 
 			Describe("waiting for all procs to finish before running the AfterSuite proc 1 function", func() {
 				It("waits for the server to give it the all clear", func() {
-					done := make(chan interface{})
+					done := make(chan any)
 					go func() {
 						defer GinkgoRecover()
 						success, _ := RunFixture("happy-path", fixture)
@@ -280,7 +280,7 @@ var _ = Describe("Synchronized Suite Nodes", func() {
 
 			Describe("waiting for the data from proc 1", func() {
 				It("waits for the server to give it the data", func() {
-					done := make(chan interface{})
+					done := make(chan any)
 					go func() {
 						defer GinkgoRecover()
 						success, _ := RunFixture("happy-path", fixture)
@@ -296,7 +296,7 @@ var _ = Describe("Synchronized Suite Nodes", func() {
 
 			Describe("when proc 1 fails the SynchronizedBeforeSuite proc1 function", func() {
 				It("fails and only runs the after suite", func() {
-					done := make(chan interface{})
+					done := make(chan any)
 					go func() {
 						defer GinkgoRecover()
 						success, _ := RunFixture("happy-path", fixture)
@@ -315,7 +315,7 @@ var _ = Describe("Synchronized Suite Nodes", func() {
 
 			Describe("when the proc1 SynchronizedBeforeSuite function Skips()", func() {
 				It("fails and only runs the after suite", func() {
-					done := make(chan interface{})
+					done := make(chan any)
 					go func() {
 						defer GinkgoRecover()
 						success, _ := RunFixture("happy-path", fixture)
@@ -334,7 +334,7 @@ var _ = Describe("Synchronized Suite Nodes", func() {
 
 			Describe("when proc 1 disappears before the proc 1 function returns", func() {
 				It("fails and only runs the after suite", func() {
-					done := make(chan interface{})
+					done := make(chan any)
 					go func() {
 						defer GinkgoRecover()
 						success, _ := RunFixture("happy-path", fixture)

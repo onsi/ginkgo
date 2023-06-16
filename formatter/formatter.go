@@ -24,15 +24,15 @@ const (
 
 var SingletonFormatter = New(ColorModeTerminal)
 
-func F(format string, args ...interface{}) string {
+func F(format string, args ...any) string {
 	return SingletonFormatter.F(format, args...)
 }
 
-func Fi(indentation uint, format string, args ...interface{}) string {
+func Fi(indentation uint, format string, args ...any) string {
 	return SingletonFormatter.Fi(indentation, format, args...)
 }
 
-func Fiw(indentation uint, maxWidth uint, format string, args ...interface{}) string {
+func Fiw(indentation uint, maxWidth uint, format string, args ...any) string {
 	return SingletonFormatter.Fiw(indentation, maxWidth, format, args...)
 }
 
@@ -111,15 +111,15 @@ func New(colorMode ColorMode) Formatter {
 	return f
 }
 
-func (f Formatter) F(format string, args ...interface{}) string {
+func (f Formatter) F(format string, args ...any) string {
 	return f.Fi(0, format, args...)
 }
 
-func (f Formatter) Fi(indentation uint, format string, args ...interface{}) string {
+func (f Formatter) Fi(indentation uint, format string, args ...any) string {
 	return f.Fiw(indentation, 0, format, args...)
 }
 
-func (f Formatter) Fiw(indentation uint, maxWidth uint, format string, args ...interface{}) string {
+func (f Formatter) Fiw(indentation uint, maxWidth uint, format string, args ...any) string {
 	out := f.style(format)
 	if len(args) > 0 {
 		out = fmt.Sprintf(out, args...)

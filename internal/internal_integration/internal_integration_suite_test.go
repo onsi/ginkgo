@@ -39,7 +39,7 @@ var outputInterceptor *FakeOutputInterceptor
 
 var server parallel_support.Server
 var client parallel_support.Client
-var exitChannels map[int]chan interface{}
+var exitChannels map[int]chan any
 
 var triggerProgressSignal func()
 
@@ -141,7 +141,7 @@ func RunFixtureInParallel(description string, callback func(proc int)) bool {
 	return success
 }
 
-func F(options ...interface{}) {
+func F(options ...any) {
 	location := cl
 	message := "fail"
 	for _, option := range options {
@@ -156,7 +156,7 @@ func F(options ...interface{}) {
 	panic("panic to simulate how ginkgo's Fail works")
 }
 
-func Abort(options ...interface{}) {
+func Abort(options ...any) {
 	location := cl
 	message := "abort"
 	for _, option := range options {
@@ -171,7 +171,7 @@ func Abort(options ...interface{}) {
 	panic("panic to simulate how ginkgo's AbortSuite works")
 }
 
-func FixtureSkip(options ...interface{}) {
+func FixtureSkip(options ...any) {
 	location := cl
 	message := "skip"
 	for _, option := range options {

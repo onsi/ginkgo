@@ -7,7 +7,7 @@ import (
 )
 
 type FakeInterruptHandler struct {
-	c                                  chan interface{}
+	c                                  chan any
 	lock                               *sync.Mutex
 	level                              interrupt_handler.InterruptLevel
 	cause                              interrupt_handler.InterruptCause
@@ -17,7 +17,7 @@ type FakeInterruptHandler struct {
 
 func NewFakeInterruptHandler() *FakeInterruptHandler {
 	handler := &FakeInterruptHandler{
-		c:     make(chan interface{}),
+		c:     make(chan any),
 		lock:  &sync.Mutex{},
 		level: interrupt_handler.InterruptLevelUninterrupted,
 	}
@@ -32,7 +32,7 @@ func (handler *FakeInterruptHandler) Interrupt(cause interrupt_handler.Interrupt
 		handler.level = interrupt_handler.InterruptLevelBailOut
 	} else {
 		close(handler.c)
-		handler.c = make(chan interface{})
+		handler.c = make(chan any)
 	}
 	handler.lock.Unlock()
 }

@@ -161,10 +161,10 @@ var _ = Describe("handling test aborts", func() {
 	})
 
 	Describe("when running in parallel and a test aborts", func() {
-		var c chan interface{}
+		var c chan any
 		BeforeEach(func() {
 			SetUpForParallel(2)
-			c = make(chan interface{})
+			c = make(chan any)
 		})
 
 		It("notifies the server of the abort", func() {

@@ -20,13 +20,13 @@ RunTracker tracks invocations of functions - useful to assert orders in which no
 type RunTracker struct {
 	lock        *sync.Mutex
 	trackedRuns []string
-	trackedData map[string]map[string]interface{}
+	trackedData map[string]map[string]any
 }
 
 func NewRunTracker() *RunTracker {
 	return &RunTracker{
 		lock:        &sync.Mutex{},
-		trackedData: map[string]map[string]interface{}{},
+		trackedData: map[string]map[string]any{},
 	}
 }
 
@@ -42,11 +42,11 @@ func (rt *RunTracker) Run(text string) {
 	rt.trackedRuns = append(rt.trackedRuns, text)
 }
 
-func (rt *RunTracker) RunWithData(text string, kv ...interface{}) {
+func (rt *RunTracker) RunWithData(text string, kv ...any) {
 	rt.lock.Lock()
 	defer rt.lock.Unlock()
 	rt.trackedRuns = append(rt.trackedRuns, text)
-	data := map[string]interface{}{}
+	data := map[string]any{}
 	for i := 0; i < len(kv); i += 2 {
 		key := kv[i].(string)
 		value := kv[i+1]
@@ -63,7 +63,7 @@ func (rt *RunTracker) TrackedRuns() []string {
 	return trackedRuns
 }
 
-func (rt *RunTracker) DataFor(text string) map[string]interface{} {
+func (rt *RunTracker) DataFor(text string) map[string]any {
 	rt.lock.Lock()
 	defer rt.lock.Unlock()
 	return rt.trackedData[text]
@@ -102,14 +102,14 @@ func HaveRun(run string) OmegaMatcher {
 	}, ContainElement(run))
 }
 
-func HaveRunWithData(run string, kv ...interface{}) OmegaMatcher {
+func HaveRunWithData(run string, kv ...any) OmegaMatcher {
 	matchers := []types.GomegaMatcher{}
 	for i := 0; i < len(kv); i += 2 {
 		matchers = append(matchers, HaveKeyWithValue(kv[i], kv[i+1]))
 	}
 	return And(
 		HaveRun(run),
-		WithTransform(func(rt *RunTracker) map[string]interface{} {
+		WithTransform(func(rt *RunTracker) map[string]any {
 			return rt.DataFor(run)
 		}, And(matchers...)),
 	)
@@ -126,7 +126,7 @@ type HaveTrackedMatcher struct {
 	message      string
 }
 
-func (m *HaveTrackedMatcher) Match(actual interface{}) (bool, error) {
+func (m *HaveTrackedMatcher) Match(actual any) (bool, error) {
 	rt, ok := actual.(*RunTracker)
 	if !ok {
 		return false, fmt.Errorf("HaveTracked() must be passed a RunTracker - got %T instead", actual)
@@ -159,11 +159,11 @@ func (m *HaveTrackedMatcher) Match(actual interface{}) (bool, error) {
 	return success, nil
 
 }
-func (m *HaveTrackedMatcher) FailureMessage(actual interface{}) string {
+func (m *HaveTrackedMatcher) FailureMessage(actual any) string {
 	return "Expected runs did not match tracked runs:\n" + formatter.F(m.message)
 
 }
-func (m *HaveTrackedMatcher) NegatedFailureMessage(actual interface{}) string {
+func (m *HaveTrackedMatcher) NegatedFailureMessage(actual any) string {
 	return "Expected runs matched tracked runs:\n" + formatter.F(m.message)
 }
 

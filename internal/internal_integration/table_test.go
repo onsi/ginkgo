@@ -291,12 +291,12 @@ var _ = Describe("Table driven tests", func() {
 			})
 		})
 
-		DescribeTable("it works when nils are passed in", func(a interface{}, b error) {
+		DescribeTable("it works when nils are passed in", func(a any, b error) {
 			Ω(a).Should(BeNil())
 			Ω(b).Should(BeNil())
 		}, Entry("nils", nil, nil))
 
-		DescribeTable("it supports variadic parameters", func(a int, b string, c ...interface{}) {
+		DescribeTable("it supports variadic parameters", func(a int, b string, c ...any) {
 			Ω(a).Should(Equal(c[0]))
 			Ω(b).Should(Equal(c[1]))
 			Ω(c[2]).Should(BeNil())
@@ -427,7 +427,7 @@ var _ = Describe("Table driven tests", func() {
 					Entry("A", 1),
 					Entry("B", 2),
 					Entry("C", 3),
-					Entry("D", []interface{}{FlakeAttempts(3), Offset(2)}, 3),
+					Entry("D", []any{FlakeAttempts(3), Offset(2)}, 3),
 				)
 			})
 			Ω(success).Should(BeFalse())
@@ -469,7 +469,7 @@ var _ = Describe("Table driven tests", func() {
 					Entry("A", 1),
 					Entry("B", 2),
 					Entry("C", 3),
-					Entry("D", []interface{}{MustPassRepeatedly(3), Offset(2)}, 3),
+					Entry("D", []any{MustPassRepeatedly(3), Offset(2)}, 3),
 				)
 			})
 			Ω(success).Should(BeFalse())

@@ -137,7 +137,7 @@ var _ = Describe("ReportEntry and ReportEntries", func() {
 
 		It("round-trips through JSON correctly", func() {
 			rtEntry := reportEntryJSONRoundTrip(reportEntry)
-			Ω(rtEntry.GetRawValue()).Should(Equal(map[string]interface{}{"Label": "bob", "Count": float64(17)}))
+			Ω(rtEntry.GetRawValue()).Should(Equal(map[string]any{"Label": "bob", "Count": float64(17)}))
 			Ω(rtEntry.StringRepresentation()).Should(Equal("{Label:bob Count:17}"))
 		})
 
@@ -165,7 +165,7 @@ var _ = Describe("ReportEntry and ReportEntries", func() {
 
 		It("round-trips through JSON correctly", func() {
 			rtEntry := reportEntryJSONRoundTrip(reportEntry)
-			Ω(rtEntry.GetRawValue()).Should(Equal(map[string]interface{}{"Label": "bob", "Count": float64(17)}))
+			Ω(rtEntry.GetRawValue()).Should(Equal(map[string]any{"Label": "bob", "Count": float64(17)}))
 			Ω(rtEntry.StringRepresentation()).Should(Equal("bob 17"))
 		})
 	})
@@ -186,7 +186,7 @@ var _ = Describe("ReportEntry and ReportEntries", func() {
 
 		It("round-trips through JSON correctly", func() {
 			rtEntry := reportEntryJSONRoundTrip(reportEntry)
-			Ω(rtEntry.GetRawValue()).Should(Equal(map[string]interface{}{"Label": "bob", "Count": float64(17)}))
+			Ω(rtEntry.GetRawValue()).Should(Equal(map[string]any{"Label": "bob", "Count": float64(17)}))
 			Ω(rtEntry.StringRepresentation()).Should(Equal("{{red}}bob {{green}}17{{/}}"))
 		})
 	})

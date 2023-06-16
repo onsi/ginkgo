@@ -115,7 +115,7 @@ var _ = Describe("Flags", func() {
 		var A StructA
 		var B StructB
 		var flags types.GinkgoFlags
-		var bindings map[string]interface{}
+		var bindings map[string]any
 		var sections types.GinkgoFlagSections
 		var flagSet types.GinkgoFlagSet
 
@@ -131,7 +131,7 @@ var _ = Describe("Flags", func() {
 				StringSliceProperty: []string{"once", "upon", "a time"},
 				DeprecatedProperty:  "n/a",
 			}
-			bindings = map[string]interface{}{
+			bindings = map[string]any{
 				"A": &A,
 				"B": &B,
 			}
@@ -160,7 +160,7 @@ var _ = Describe("Flags", func() {
 						DeprecatedProperty  int32 //not supported
 					}
 
-					bindings = map[string]interface{}{
+					bindings = map[string]any{
 						"A": &A,
 						"B": &UnsupportedStructB{},
 					}
@@ -407,7 +407,7 @@ var _ = Describe("Flags", func() {
 		var A StructA
 		var B StructB
 		var flags types.GinkgoFlags
-		var bindings map[string]interface{}
+		var bindings map[string]any
 
 		BeforeEach(func() {
 			A = StructA{
@@ -421,7 +421,7 @@ var _ = Describe("Flags", func() {
 				StringSliceProperty: []string{"once", "upon", "a time"},
 				DeprecatedProperty:  "n/a",
 			}
-			bindings = map[string]interface{}{
+			bindings = map[string]any{
 				"A": &A,
 				"B": &B,
 			}

@@ -26,7 +26,7 @@ var _ = Describe("FileFilters", func() {
 		)
 
 		DescribeTable("Successful cases",
-			func(matches bool, filters []string, clsArgs ...interface{}) {
+			func(matches bool, filters []string, clsArgs ...any) {
 				ffs, err := types.ParseFileFilters(filters)
 				Ω(err).ShouldNot(HaveOccurred())
 
@@ -45,7 +45,7 @@ var _ = Describe("FileFilters", func() {
 					Ω(ffs.Matches(cls)).Should(BeFalse())
 				}
 			},
-			func(matches bool, filters []string, clsArgs ...interface{}) string {
+			func(matches bool, filters []string, clsArgs ...any) string {
 				return "When the filters are " + strings.Join(filters, " | ")
 			},
 			//without line numbers
