@@ -1,15 +1,12 @@
 package integration_test
 
 import (
-	"strings"
-
 	. "github.com/onsi/ginkgo/v2"
 	. "github.com/onsi/gomega"
 	"github.com/onsi/gomega/gbytes"
 	"github.com/onsi/gomega/gexec"
 
 	. "github.com/onsi/ginkgo/v2/internal/test_helpers"
-	"github.com/onsi/ginkgo/v2/types"
 )
 
 var _ = Describe("Filter", func() {
@@ -76,14 +73,10 @@ var _ = Describe("Filter", func() {
 			"--focus=", "--skip=",
 			"--json-report=report.json",
 		)
-		Eventually(session).Should(gexec.Exit(types.GINKGO_FOCUS_EXIT_CODE))
+		Eventually(session).Should(gexec.Exit(0))
 		specs := Reports(fm.LoadJSONReports("filter", "report.json")[0].SpecReports)
 		for _, spec := range specs {
-			if strings.HasPrefix(spec.FullText(), "SprocketC") {
-				Ω(spec).Should(HavePassed())
-			} else {
-				Ω(spec).Should(Or(HaveBeenSkipped(), BePending()))
-			}
+			Ω(spec).Should(SatisfyAny(HavePassed(), BePending()))
 		}
 	})
 

@@ -12,7 +12,7 @@ var _ = Describe("Labels", func() {
 	Describe("when a suite has labelled tests", func() {
 		fixture := func() {
 			Describe("outer container", func() {
-				It("A", rt.T("A"), Focus, Label("cat"))
+				It("A", rt.T("A"), Label("cat"))
 				It("B", rt.T("B"), Label("dog"))
 				Describe("container", Label("cow", "cat"), func() {
 					It("C", rt.T("C"))

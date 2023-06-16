@@ -2597,8 +2597,8 @@ These mechanisms can all be used in concert.  They combine with the following ru
 
 - `Pending` specs are always pending and can never be coerced to run by another filtering mechanism.
 - Specs that invoke `Skip()` will always be skipped regardless of other filtering mechanisms.
-- The CLI based filters (`--label-filter`, `--focus-file/--skip-file`, `--focus/--skip`) **always** override any programmatic focus.
-- When multiple CLI filters are provided they are all ANDed together.  The spec must satisfy the label filter query **and** any location-based filters **and** any description based filters.
+- Programmatic filters always apply and result in a non-zero exit code.  Any additional CLI filters only apply to the subset of specs selected by the programmatic filters.
+- When multiple CLI filters (`--label-filter`, `--focus-file/--skip-file`, `--focus/--skip`) are provided they are all ANDed together.  The spec must satisfy the label filter query **and** any location-based filters **and** any description based filters.
 
 ### Repeating Spec Runs and Managing Flaky Specs
 

@@ -4,7 +4,7 @@ import (
 	. "github.com/onsi/ginkgo/v2"
 )
 
-var _ = FDescribe("SprocketC", func() {
+var _ = Describe("SprocketC", func() {
 	It("cat", func() {
 
 	})

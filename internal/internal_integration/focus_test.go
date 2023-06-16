@@ -122,7 +122,7 @@ var _ = Describe("Focus", func() {
 		BeforeEach(func() {
 			conf.FocusStrings = []string{"blue", "green"}
 			conf.SkipStrings = []string{"red"}
-			success, _ := RunFixture("cli focus tests", func() {
+			success, hasProgrammaticFocus := RunFixture("cli focus tests", func() {
 				It("blue.1", rt.T("blue.1"))
 				It("blue.2", rt.T("blue.2"))
 				Describe("blue.container", func() {
@@ -137,9 +137,10 @@ var _ = Describe("Focus", func() {
 				Describe("red.2", func() {
 					It("green.2", rt.T("green.2"))
 				})
-				FIt("red.3", rt.T("red.3"))
+				It("red.3", rt.T("red.3"))
 			})
 			Ω(success).Should(BeTrue())
+			Ω(hasProgrammaticFocus).Should(BeFalse())
 		})
 
 		It("should run tests that match", func() {
@@ -154,6 +155,46 @@ var _ = Describe("Focus", func() {
 
 		It("report on the suite with accurate numbers", func() {
 			Ω(reporter.End).Should(BeASuiteSummary(true, NPassed(5), NSkipped(3), NPending(1), NSpecs(9), NWillRun(5)))
+		})
+	})
+
+	Describe("with a combination of programmatic focus and config.FocusStrings and config.SkipStrings", func() {
+		BeforeEach(func() {
+			conf.FocusStrings = []string{"blue", "green"}
+			conf.SkipStrings = []string{"red"}
+			success, hasProgrammaticFocus := RunFixture("cli focus tests", func() {
+				It("blue.1", rt.T("blue.1"))
+				FIt("blue.2", rt.T("blue.2"))
+				FDescribe("blue.container", func() {
+					It("yellow.1", rt.T("yellow.1"))
+					It("red.1", rt.T("red.1"))
+					PIt("blue.3", rt.T("blue.3"))
+				})
+				Describe("green.container", func() {
+					It("yellow.2", rt.T("yellow.2"))
+					It("green.1", rt.T("green.1"))
+				})
+				FDescribe("red.2", func() {
+					It("green.2", rt.T("green.2"))
+				})
+				FIt("red.3", rt.T("red.3"))
+			})
+			Ω(success).Should(BeTrue())
+			Ω(hasProgrammaticFocus).Should(BeTrue())
+		})
+
+		It("should run tests that match all the filters", func() {
+			Ω(rt.TrackedRuns()).Should(ConsistOf("blue.2", "yellow.1"))
+		})
+
+		It("should report on the tests correctly", func() {
+			Ω(reporter.Did.WithState(types.SpecStateSkipped).Names()).Should(ConsistOf("blue.1", "red.1", "yellow.2", "green.1", "green.2", "red.3"))
+			Ω(reporter.Did.WithState(types.SpecStatePending).Names()).Should(ConsistOf("blue.3"))
+			Ω(reporter.Did.WithState(types.SpecStatePassed).Names()).Should(ConsistOf("blue.2", "yellow.1"))
+		})
+
+		It("report on the suite with accurate numbers", func() {
+			Ω(reporter.End).Should(BeASuiteSummary(true, NPassed(2), NSkipped(6), NPending(1), NSpecs(9), NWillRun(2)))
 		})
 	})
 

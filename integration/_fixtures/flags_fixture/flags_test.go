@@ -18,66 +18,56 @@ func init() {
 }
 
 var _ = Describe("Testing various flags", func() {
-	FDescribe("the focused set", func() {
-		It("should honor -cover", func() {
-			Ω(Tested()).Should(Equal("tested"))
+	It("should honor -cover", func() {
+		Ω(Tested()).Should(Equal("tested"))
+	})
+
+	It("should allow gcflags", func() {
+		fmt.Printf("NaN returns %T\n", remapped.NaN())
+	})
+
+	PIt("should honor -failOnPending and -noisyPendings")
+
+	Describe("smores", func() {
+		It("should honor -skip: marshmallow", func() {
+			println("marshmallow")
 		})
 
-		It("should allow gcflags", func() {
-			fmt.Printf("NaN returns %T\n", remapped.NaN())
-		})
-
-		PIt("should honor -failOnPending and -noisyPendings")
-
-		Describe("smores", func() {
-			It("should honor -skip: marshmallow", func() {
-				println("marshmallow")
-			})
-
-			It("should honor -focus: chocolate", func() {
-				println("chocolate")
-			})
-		})
-
-		It("should detect races", func() {
-			var a string
-			c := make(chan interface{}, 0)
-			go func() {
-				a = "now you don't"
-				close(c)
-			}()
-			a = "now you see me"
-			println(a)
-			Eventually(c).Should(BeClosed())
-		})
-
-		It("should randomize A", func() {
-			println("RANDOM_A")
-		})
-
-		It("should randomize B", func() {
-			println("RANDOM_B")
-		})
-
-		It("should randomize C", func() {
-			println("RANDOM_C")
-		})
-
-		It("should pass in additional arguments after '--' directly to the test process", func() {
-			fmt.Printf("CUSTOM_FLAG: %s", customFlag)
+		It("should honor -focus: chocolate", func() {
+			println("chocolate")
 		})
 	})
 
-	Describe("more smores", func() {
-		It("should not run these unless -focus is set", func() {
-			println("smores")
-		})
+	It("should detect races", func() {
+		var a string
+		c := make(chan interface{}, 0)
+		go func() {
+			a = "now you don't"
+			close(c)
+		}()
+		a = "now you see me"
+		println(a)
+		Eventually(c).Should(BeClosed())
 	})
 
-	Describe("a failing test", func() {
-		It("should fail", func() {
-			Ω(true).Should(Equal(false))
-		})
+	It("should randomize A", func() {
+		println("RANDOM_A")
+	})
+
+	It("should randomize B", func() {
+		println("RANDOM_B")
+	})
+
+	It("should randomize C", func() {
+		println("RANDOM_C")
+	})
+
+	It("should pass in additional arguments after '--' directly to the test process", func() {
+		fmt.Printf("CUSTOM_FLAG: %s", customFlag)
+	})
+
+	It("should fail", func() {
+		Ω(true).Should(Equal(false))
 	})
 
 	Describe("a flaky test", func() {

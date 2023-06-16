@@ -4,7 +4,6 @@ import (
 	"strings"
 
 	. "github.com/onsi/ginkgo/v2"
-	"github.com/onsi/ginkgo/v2/types"
 	. "github.com/onsi/gomega"
 	"github.com/onsi/gomega/gexec"
 )
@@ -20,21 +19,20 @@ var _ = Describe("Flags Specs", func() {
 
 	It("normally passes, prints out noisy pendings, does not randomize tests, and honors the programmatic focus", func() {
 		session := startGinkgo(fm.PathTo("flags"), "--no-color")
-		Eventually(session).Should(gexec.Exit(types.GINKGO_FOCUS_EXIT_CODE))
+		Eventually(session).Should(gexec.Exit(1))
 		output := string(session.Out.Contents())
 
 		Ω(output).Should(ContainSubstring("9 Passed"))
-		Ω(output).Should(ContainSubstring("0 Failed"))
+		Ω(output).Should(ContainSubstring("2 Failed"))
 		Ω(output).Should(ContainSubstring("1 Pending"))
-		Ω(output).Should(ContainSubstring("3 Skipped"))
+		Ω(output).Should(ContainSubstring("0 Skipped"))
 		Ω(output).Should(ContainSubstring("[PENDING]"))
 		Ω(output).Should(ContainSubstring("marshmallow"))
 		Ω(output).Should(ContainSubstring("chocolate"))
 		Ω(output).Should(ContainSubstring("CUSTOM_FLAG: default"))
-		Ω(output).Should(ContainSubstring("Detected Programmatic Focus - setting exit status to %d", types.GINKGO_FOCUS_EXIT_CODE))
-		Ω(output).ShouldNot(ContainSubstring("smores"))
 		Ω(output).ShouldNot(ContainSubstring("SLOW TEST"))
 		Ω(output).ShouldNot(ContainSubstring("should honor -slow-spec-threshold"))
+		Ω(output).ShouldNot(ContainSubstring("Full Stack Trace"))
 
 		orders := getRandomOrders(output)
 		Ω(orders[0]).Should(BeNumerically("<", orders[1]))
@@ -53,15 +51,15 @@ var _ = Describe("Flags Specs", func() {
 			Skip("race detection is not supported")
 		}
 		session := startGinkgo(fm.PathTo("flags"), "--no-color", "--race")
-		Eventually(session).Should(gexec.Exit(types.GINKGO_FOCUS_EXIT_CODE))
+		Eventually(session).Should(gexec.Exit(1))
 		output := string(session.Out.Contents())
 
 		Ω(output).Should(ContainSubstring("WARNING: DATA RACE"))
 	})
 
 	It("should randomize tests when told to", func() {
-		session := startGinkgo(fm.PathTo("flags"), "--no-color", "--randomize-all", "--seed=40")
-		Eventually(session).Should(gexec.Exit(types.GINKGO_FOCUS_EXIT_CODE))
+		session := startGinkgo(fm.PathTo("flags"), "--no-color", "--randomize-all", "--seed=120")
+		Eventually(session).Should(gexec.Exit(1))
 		output := string(session.Out.Contents())
 
 		orders := getRandomOrders(output)
@@ -70,14 +68,14 @@ var _ = Describe("Flags Specs", func() {
 
 	It("should pass additional arguments in", func() {
 		session := startGinkgo(fm.PathTo("flags"), "--", "--customFlag=madagascar")
-		Eventually(session).Should(gexec.Exit(types.GINKGO_FOCUS_EXIT_CODE))
+		Eventually(session).Should(gexec.Exit(1))
 		output := string(session.Out.Contents())
 
 		Ω(output).Should(ContainSubstring("CUSTOM_FLAG: madagascar"))
 	})
 
 	It("should print out full stack traces for failures when told to", func() {
-		session := startGinkgo(fm.PathTo("flags"), "--focus=a failing test", "--trace")
+		session := startGinkgo(fm.PathTo("flags"), "--trace")
 		Eventually(session).Should(gexec.Exit(1))
 		output := string(session.Out.Contents())
 
@@ -148,7 +146,7 @@ var _ = Describe("Flags Specs", func() {
 
 	It("should emit node start/end events when running with --show-node-events", func() {
 		session := startGinkgo(fm.PathTo("flags"), "--no-color", "-v", "--show-node-events")
-		Eventually(session).Should(gexec.Exit(types.GINKGO_FOCUS_EXIT_CODE))
+		Eventually(session).Should(gexec.Exit(1))
 		output := string(session.Out.Contents())
 
 		Eventually(output).Should(ContainSubstring("> Enter [It] should honor -cover"))
