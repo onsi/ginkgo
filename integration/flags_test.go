@@ -135,8 +135,8 @@ var _ = Describe("Flags Specs", func() {
 	})
 
 	It("should allow configuration overrides", func() {
-		fm.MountFixture("config_override")
-		session := startGinkgo(fm.PathTo("config_override"), "--label-filter=NORUN", "--no-color")
+		fm.MountFixture("config_override_label_filter")
+		session := startGinkgo(fm.PathTo("config_override_label_filter"), "--label-filter=NORUN", "--no-color")
 		Eventually(session).Should(gexec.Exit(0), "Succeeds because --label-filter is overridden by the test suite itself.")
 		output := string(session.Out.Contents())
 		Ω(output).Should(ContainSubstring("2 Specs"))

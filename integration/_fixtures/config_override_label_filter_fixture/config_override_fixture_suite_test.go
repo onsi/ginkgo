@@ -1,4 +1,4 @@
-package config_override_fixture_test
+package config_override_label_filter_fixture_test
 
 import (
 	"testing"
