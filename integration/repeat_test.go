@@ -98,4 +98,15 @@ var _ = Describe("Repeat", func() {
 			Ω(session.Err).Should(gbytes.Say("--repeat and --until-it-fails are both set"))
 		})
 	})
+
+	Context("if MustPassRepeatedly is set at suite config level", func() {
+		BeforeEach(func() {
+			fm.MountFixture("config_override_must_pass_repeatedly")
+		})
+
+		It("it should override node decorator", func() {
+			session := startGinkgo(fm.PathTo("config_override_must_pass_repeatedly"))
+			Eventually(session).Should(gexec.Exit(0))
+		})
+	})
 })
