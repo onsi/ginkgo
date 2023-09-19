@@ -144,5 +144,11 @@ var _ = Describe("Writer", func() {
 			log.Error(errors.New("cake"), "planned failure", "key", "banana")
 			Ω(string(out.Contents())).Should(Equal("  \"level\"=0 \"msg\"=\"message\" \"key\"=5\n  \"msg\"=\"planned failure\" \"error\"=\"cake\" \"key\"=\"banana\"\n"))
 		})
+
+		It("can print the logr prefix", func() {
+			log := internal.GinkgoLogrFunc(writer)
+			log.WithName("berry").Info("message", "key", 5)
+			Ω(string(out.Contents())).Should(Equal("  berry \"level\"=0 \"msg\"=\"message\" \"key\"=5\n"))
+		})
 	})
 })
