@@ -1,7 +1,6 @@
 package internal_test
 
 import (
-	"fmt"
 	"io"
 
 	. "github.com/onsi/ginkgo/v2"
@@ -57,7 +56,6 @@ var _ = Describe("Suite", func() {
 			})
 
 			It("only traverses top-level containers when told to BuildTree", func() {
-				fmt.Fprintln(GinkgoWriter, "HELLO!")
 				Ω(rt).Should(HaveTrackedNothing())
 				Ω(suite.BuildTree()).Should(Succeed())
 				Ω(rt).Should(HaveTracked("traversing outer", "traversing nested"))
@@ -70,6 +68,57 @@ var _ = Describe("Suite", func() {
 				Ω(err2).ShouldNot(HaveOccurred())
 				Ω(err3).ShouldNot(HaveOccurred())
 			})
+		})
+
+		Describe("cloning a suite", func() {
+			var err1, err2, err3 error
+			BeforeEach(func() {
+				suite.PushNode(N(types.NodeTypeBeforeSuite, "before suite", func() {
+					rt.Run("before-suite")
+				}))
+				err1 = suite.PushNode(N(ntCon, "a top-level container", func() {
+					rt.Run("traversing outer")
+					err2 = suite.PushNode(N(ntCon, "a nested container", func() {
+						rt.Run("traversing nested")
+						err3 = suite.PushNode(N(ntIt, "an it", rt.T("running it")))
+					}))
+				}))
+			})
+
+			It("fails if the tree has already been built", func() {
+				Ω(suite.BuildTree()).Should(Succeed())
+				_, err := suite.Clone()
+				Ω(err).Should(MatchError("cnanot clone suite after tree has been built"))
+			})
+
+			It("generates the same tree as the original", func() {
+				clone, err := suite.Clone()
+				Ω(err).ShouldNot(HaveOccurred())
+
+				Ω(suite.BuildTree()).Should(Succeed())
+				Ω(rt).Should(HaveTracked("traversing outer", "traversing nested"))
+				rt.Reset()
+				suite.Run("suite", Labels{}, "/path/to/suite", failer, reporter, writer, outputInterceptor, interruptHandler, client, internal.RegisterForProgressSignal, conf)
+				Ω(rt).Should(HaveTracked("before-suite", "running it"))
+
+				Ω(err1).ShouldNot(HaveOccurred())
+				Ω(err2).ShouldNot(HaveOccurred())
+				Ω(err3).ShouldNot(HaveOccurred())
+
+				suite = clone // this is what the swapping of globals looks in reality
+
+				rt.Reset()
+				Ω(clone.BuildTree()).Should(Succeed())
+				Ω(rt).Should(HaveTracked("traversing outer", "traversing nested"))
+				rt.Reset()
+				clone.Run("suite", Labels{}, "/path/to/suite", failer, reporter, writer, outputInterceptor, interruptHandler, client, internal.RegisterForProgressSignal, conf)
+				Ω(rt).Should(HaveTracked("before-suite", "running it"))
+
+				Ω(err1).ShouldNot(HaveOccurred())
+				Ω(err2).ShouldNot(HaveOccurred())
+				Ω(err3).ShouldNot(HaveOccurred())
+			})
+
 		})
 
 		Describe("InRunPhase", func() {

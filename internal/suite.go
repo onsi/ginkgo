@@ -77,6 +77,20 @@ func NewSuite() *Suite {
 	}
 }
 
+func (suite *Suite) Clone() (*Suite, error) {
+	if suite.phase != PhaseBuildTopLevel {
+		return nil, fmt.Errorf("cnanot clone suite after tree has been built")
+	}
+	return &Suite{
+		tree:                    &TreeNode{},
+		phase:                   PhaseBuildTopLevel,
+		ProgressReporterManager: NewProgressReporterManager(),
+		topLevelContainers:      suite.topLevelContainers.Clone(),
+		suiteNodes:              suite.suiteNodes.Clone(),
+		selectiveLock:           &sync.Mutex{},
+	}, nil
+}
+
 func (suite *Suite) BuildTree() error {
 	// During PhaseBuildTopLevel, the top level containers are stored in suite.topLevelCotainers and entered
 	// We now enter PhaseBuildTree where these top level containers are entered and added to the spec tree

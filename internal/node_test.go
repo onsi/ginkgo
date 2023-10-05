@@ -1181,6 +1181,22 @@ var _ = Describe("Node", func() {
 })
 
 var _ = Describe("Nodes", func() {
+	Describe("Clone", func() {
+		var n1, n2, n3, n4 Node
+
+		BeforeEach(func() {
+			n1, n2, n3, n4 = N(), N(), N(), N()
+		})
+
+		It("clones the slice", func() {
+			original := Nodes{n1, n2, n3}
+			clone := original.Clone()
+			Ω(original).Should(Equal(clone))
+			clone[2] = n4
+			Ω(original).Should(Equal(Nodes{n1, n2, n3}))
+		})
+	})
+
 	Describe("CopyAppend", func() {
 		var n1, n2, n3, n4 Node
 

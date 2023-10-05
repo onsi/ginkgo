@@ -3191,7 +3191,7 @@ For a more complete preview you can run `ginkgo --dry-run -v`.  This compiles th
 
 If, you need finer-grained control over previews you can use `PreviewSpecs` in your suite in lieu of `RunSpecs`.  `PreviewSpecs` behaves like `--dry-run` in that it will compile the suite, build the spec tree, and then walk the tree while honoring any filter and randomization flags.  However `PreviewSpecs` generates and returns a full [`Report` object](#reporting-nodes---reportbeforesuite-and-reportaftersuite) that can be manipulated and inspected as needed.  Specs that will be run will have `State = SpecStatePassed` and specs that will be skipped will have `SpecStateSkipped`.
 
-Currently you must run in series to invoke `PreviewSpecs` and you cannot run both `PreviewSpecs` and `RunSpecs` in the same suite.  If you are opting into `PreviewSpecs` in lieu of `--dry-run` one suggested pattern is to key off of the `--dry-run` configuration to run `PreviewSpecs` instead of `RunSpecs`:
+If you are opting into `PreviewSpecs` in lieu of `--dry-run` one suggested pattern is to key off of the `--dry-run` configuration to run `PreviewSpecs` instead of `RunSpecs`:
 
 ```go
 func TestMySuite(t *testing.T) {

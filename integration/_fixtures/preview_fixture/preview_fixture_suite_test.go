@@ -11,14 +11,14 @@ import (
 
 func TestPreviewFixture(t *testing.T) {
 	RegisterFailHandler(Fail)
-	if os.Getenv("RUN") == "true" {
-		RunSpecs(t, "PreviewFixture Suite", Label("suite-label"))
-	}
 	if os.Getenv("PREVIEW") == "true" {
 		report := PreviewSpecs("PreviewFixture Suite", Label("suite-label"))
 		for _, spec := range report.SpecReports {
 			fmt.Println(spec.State, spec.FullText())
 		}
+	}
+	if os.Getenv("RUN") == "true" {
+		RunSpecs(t, "PreviewFixture Suite", Label("suite-label"))
 	}
 }
 
