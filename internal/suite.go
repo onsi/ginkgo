@@ -328,6 +328,16 @@ func (suite *Suite) CurrentSpecReport() types.SpecReport {
 	return report
 }
 
+// Only valid in the preview context.  In general suite.report only includes
+// the specs run by _this_ node - it is only at the end of the suite that
+// the parallel reports are aggregated.  However in the preview context we run
+// in series and
+func (suite *Suite) GetPreviewReport() types.Report {
+	suite.selectiveLock.Lock()
+	defer suite.selectiveLock.Unlock()
+	return suite.report
+}
+
 func (suite *Suite) AddReportEntry(entry ReportEntry) error {
 	if suite.phase != PhaseRun {
 		return types.GinkgoErrors.AddReportEntryNotDuringRunPhase(entry.Location)

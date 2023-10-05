@@ -38,7 +38,7 @@ var flagSet types.GinkgoFlagSet
 var deprecationTracker = types.NewDeprecationTracker()
 var suiteConfig = types.NewDefaultSuiteConfig()
 var reporterConfig = types.NewDefaultReporterConfig()
-var suiteDidRun = false
+var suiteDidRun, suiteDidPreview = false, false
 var outputInterceptor internal.OutputInterceptor
 var client parallel_support.Client
 
@@ -247,32 +247,12 @@ func RunSpecs(t GinkgoTestingT, description string, args ...interface{}) bool {
 	if suiteDidRun {
 		exitIfErr(types.GinkgoErrors.RerunningSuite())
 	}
+	if suiteDidPreview {
+		exitIfErr(types.GinkgoErrors.RunAndPreviewSuite())
+	}
 	suiteDidRun = true
 
-	suiteLabels := Labels{}
-	configErrors := []error{}
-	for _, arg := range args {
-		switch arg := arg.(type) {
-		case types.SuiteConfig:
-			suiteConfig = arg
-		case types.ReporterConfig:
-			reporterConfig = arg
-		case Labels:
-			suiteLabels = append(suiteLabels, arg...)
-		default:
-			configErrors = append(configErrors, types.GinkgoErrors.UnknownTypePassedToRunSpecs(arg))
-		}
-	}
-	exitIfErrors(configErrors)
-
-	configErrors = types.VetConfig(flagSet, suiteConfig, reporterConfig)
-	if len(configErrors) > 0 {
-		fmt.Fprintf(formatter.ColorableStdErr, formatter.F("{{red}}Ginkgo detected configuration issues:{{/}}\n"))
-		for _, err := range configErrors {
-			fmt.Fprintf(formatter.ColorableStdErr, err.Error())
-		}
-		os.Exit(1)
-	}
+	suiteLabels := extractSuiteConfiguration(args)
 
 	var reporter reporters.Reporter
 	if suiteConfig.ParallelTotal == 1 {
@@ -310,7 +290,6 @@ func RunSpecs(t GinkgoTestingT, description string, args ...interface{}) bool {
 
 	err := global.Suite.BuildTree()
 	exitIfErr(err)
-
 	suitePath, err := os.Getwd()
 	exitIfErr(err)
 	suitePath, err = filepath.Abs(suitePath)
@@ -333,6 +312,66 @@ func RunSpecs(t GinkgoTestingT, description string, args ...interface{}) bool {
 		os.Exit(types.GINKGO_FOCUS_EXIT_CODE)
 	}
 	return passed
+}
+
+func extractSuiteConfiguration(args []interface{}) Labels {
+	suiteLabels := Labels{}
+	configErrors := []error{}
+	for _, arg := range args {
+		switch arg := arg.(type) {
+		case types.SuiteConfig:
+			suiteConfig = arg
+		case types.ReporterConfig:
+			reporterConfig = arg
+		case Labels:
+			suiteLabels = append(suiteLabels, arg...)
+		default:
+			configErrors = append(configErrors, types.GinkgoErrors.UnknownTypePassedToRunSpecs(arg))
+		}
+	}
+	exitIfErrors(configErrors)
+
+	configErrors = types.VetConfig(flagSet, suiteConfig, reporterConfig)
+	if len(configErrors) > 0 {
+		fmt.Fprintf(formatter.ColorableStdErr, formatter.F("{{red}}Ginkgo detected configuration issues:{{/}}\n"))
+		for _, err := range configErrors {
+			fmt.Fprintf(formatter.ColorableStdErr, err.Error())
+		}
+		os.Exit(1)
+	}
+
+	return suiteLabels
+}
+
+/*
+PreviewSpecs walks the testing tree and produces a report without actually invoking the specs.
+See http://onsi.github.io/ginkgo/#previewing-specs for more information.
+*/
+func PreviewSpecs(description string, args ...any) Report {
+	if suiteDidRun {
+		exitIfErr(types.GinkgoErrors.RunAndPreviewSuite())
+	}
+
+	suiteLabels := extractSuiteConfiguration(args)
+	if suiteConfig.ParallelTotal != 1 {
+		exitIfErr(types.GinkgoErrors.PreviewInParallelConfiguration())
+	}
+	suiteConfig.DryRun = true
+	reporter := reporters.NoopReporter{}
+	outputInterceptor = internal.NoopOutputInterceptor{}
+	client = nil
+	writer := GinkgoWriter.(*internal.Writer)
+
+	err := global.Suite.BuildTree()
+	exitIfErr(err)
+	suitePath, err := os.Getwd()
+	exitIfErr(err)
+	suitePath, err = filepath.Abs(suitePath)
+	exitIfErr(err)
+
+	global.Suite.Run(description, suiteLabels, suitePath, global.Failer, reporter, writer, outputInterceptor, interrupt_handler.NewInterruptHandler(client), client, internal.RegisterForProgressSignal, suiteConfig)
+
+	return global.Suite.GetPreviewReport()
 }
 
 /*

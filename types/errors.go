@@ -70,6 +70,14 @@ func (g ginkgoErrors) RerunningSuite() error {
 	}
 }
 
+func (g ginkgoErrors) RunAndPreviewSuite() error {
+	return GinkgoError{
+		Heading: "Running and Previewing Suite",
+		Message: formatter.F(`It looks like you are calling RunSpecs and PreviewSpecs in the same invocation of Ginkgo. Ginkgo does not currently support that.  Please change your code to only call one or the other.`),
+		DocLink: "previewing-specs",
+	}
+}
+
 /* Tree construction errors */
 
 func (g ginkgoErrors) PushingNodeInRunPhase(nodeType NodeType, cl CodeLocation) error {
@@ -575,6 +583,13 @@ func (g ginkgoErrors) DryRunInParallelConfiguration() error {
 	return GinkgoError{
 		Heading: "Ginkgo only performs -dryRun in serial mode.",
 		Message: "Please try running ginkgo -dryRun again, but without -p or -procs to ensure the suite is running in series.",
+	}
+}
+
+func (g ginkgoErrors) PreviewInParallelConfiguration() error {
+	return GinkgoError{
+		Heading: "Ginkgo only supports PreviewSpecs() in serial mode.",
+		Message: "Please try running ginkgo again, but without -p or -procs to ensure the suite is running in series.",
 	}
 }
 

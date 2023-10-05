@@ -34,6 +34,7 @@ var GinkgoLabelFilter = ginkgo.GinkgoLabelFilter
 var PauseOutputInterception = ginkgo.PauseOutputInterception
 var ResumeOutputInterception = ginkgo.ResumeOutputInterception
 var RunSpecs = ginkgo.RunSpecs
+var PreviewSpecs = ginkgo.PreviewSpecs
 var Skip = ginkgo.Skip
 var Fail = ginkgo.Fail
 var AbortSuite = ginkgo.AbortSuite
