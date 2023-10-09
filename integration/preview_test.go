@@ -1,7 +1,6 @@
 package integration_test
 
 import (
-	"fmt"
 	"os"
 
 	. "github.com/onsi/ginkgo/v2"
@@ -47,7 +46,6 @@ var _ = Describe("Preview", func() {
 		DeferCleanup(os.Unsetenv, "RUN")
 		session := startGinkgo(fm.PathTo("preview"), "-p")
 		Eventually(session).Should(gexec.Exit(0))
-		fmt.Println(string(session.Out.Contents()))
 		Ω(session).Should(gbytes.Say(`Ran 4 of 4 Specs`))
 	})
 })
