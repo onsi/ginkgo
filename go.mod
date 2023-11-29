@@ -9,7 +9,7 @@ require (
 	github.com/onsi/gomega v1.30.0
 	golang.org/x/net v0.19.0
 	golang.org/x/sys v0.15.0
-	golang.org/x/tools v0.14.0
+	golang.org/x/tools v0.16.0
 )
 
 require (
