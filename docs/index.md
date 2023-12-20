@@ -1345,7 +1345,7 @@ The string passed to `By` is attached to the spec and can be displayed by Ginkgo
 ### Mental Model: Spec Timelines
 Several events can occur during the lifecycle of a Ginkgo spec.  You've seen a few of these already: various setup and subject nodes start and end; data is written to the `GinkgoWriter`; `By` annotations are generated; failures occur.  And there are several more that you'll see introduced later in these docs (e.g. [`ReportEntries`](#attaching-data-to-reports) and [Progess Reports](#getting-visibility-into-long-running-specs) are attached to specs; [flaky specs](#repeating-spec-runs-and-managing-flaky-specs) might be retried).
 
-By default, when a spec passes Ginkgo does not emit any of this information.  When a failure occurs, however, Ginkgo emits a **timeline** view of the spec.  This includes all the events and `GinkgoWriter` output associated with a spec in ther order they were generated and provides the context needed to debug the spec and understand the nature and context of the failure.
+By default, when a spec passes Ginkgo does not emit any of this information.  When a failure occurs, however, Ginkgo emits a **timeline** view of the spec.  This includes all the events and `GinkgoWriter` output associated with a spec in the order they were generated and provides the context needed to debug the spec and understand the nature and context of the failure.
 
 You can view the timeline for all specs (whether passed or failed) by running `ginkgo -v` or `ginkgo -vv`.
 
