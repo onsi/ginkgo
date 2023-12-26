@@ -1,7 +1,7 @@
 /*
-Ginkgo isusually dot-imported via:
+Ginkgo is usually dot-imported via:
 
-    import . "github.com/onsi/ginkgo/v2"
+	import . "github.com/onsi/ginkgo/v2"
 
 however some parts of the DSL may conflict with existing symbols in the user's code.
 
@@ -22,6 +22,11 @@ var DescribeTable = ginkgo.DescribeTable
 var FDescribeTable = ginkgo.FDescribeTable
 var PDescribeTable = ginkgo.PDescribeTable
 var XDescribeTable = ginkgo.XDescribeTable
+
+var DescribeTableSubtree = ginkgo.DescribeTableSubtree
+var FDescribeTableSubtree = ginkgo.FDescribeTableSubtree
+var PDescribeTableSubtree = ginkgo.PDescribeTableSubtree
+var XDescribeTableSubtree = ginkgo.XDescribeTableSubtree
 
 type TableEntry = ginkgo.TableEntry
 

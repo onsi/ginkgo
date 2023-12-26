@@ -1378,7 +1378,7 @@ DescribeTable("Extracting the author's first and last name",
 You'll be notified with a clear message at runtime if the parameter types don't match the spec closure signature.
 
 #### Mental Model: Table Specs are just Syntactic Sugar
-`DescribeTable` is simply providing syntactic sugar to convert its Ls into a set of standard Ginkgo nodes.  During the [Tree Construction Phase](#mental-model-how-ginkgo-traverses-the-spec-hierarchy) `DescribeTable` is generating a single container node that contains one subject node per table entry.  The description for the container node will be the description passed to `DescribeTable` and the descriptions for the subject nodes will be the descriptions passed to the `Entry`s.  During the Run Phase, when specs run, each subject node will simply invoke the spec closure passed to `DescribeTable`, passing in the parameters associated with the `Entry`.
+`DescribeTable` is simply providing syntactic sugar to convert its entries into a set of standard Ginkgo nodes.  During the [Tree Construction Phase](#mental-model-how-ginkgo-traverses-the-spec-hierarchy) `DescribeTable` is generating a single container node that contains one subject node per table entry.  The description for the container node will be the description passed to `DescribeTable` and the descriptions for the subject nodes will be the descriptions passed to the `Entry`s.  During the Run Phase, when specs run, each subject node will simply invoke the spec closure passed to `DescribeTable`, passing in the parameters associated with the `Entry`.
 
 To put it another way, the table test above is equivalent to:
 
@@ -1628,6 +1628,86 @@ var _ = Describe("Math", func() {
 ```
 
 Will generate entries named: `1 + 2 = 3`, `-1 + 2 = 1`, `zeros`, `110 = 10 + 100`, and `7 = 7`.
+
+#### Generating Subtree Tables
+
+As we've seen `DescribeTable` takes a function and interprets it as the body of a single `It` function.  Sometimes, however, you may want to run a collection of specs for a given table entry.  You can do this with `DescribeTableSubtree`:
+
+```go
+DescribeTableSubtree("handling requests",
+    func(url string, code int, message string) {
+      var resp *http.Response
+      BeforeEach(func() {
+        var err error
+        resp, err = http.Get(url)
+        Expect(err).NotTo(HaveOccurred())
+        DeferCleanup(resp.Body.Close)
+      })
+
+      It("should return the expected status code", func() {
+        Expect(resp.StatusCode).To(Equal(code))
+      })
+
+      It("should return the expected message", func() {
+        body, err := ioutil.ReadAll(resp.Body)
+        Expect(err).NotTo(HaveOccurred())
+        Expect(string(body)).To(Equal(message))
+      })
+    },
+    Entry("default response", "example.com/response", http.StatusOK, "hello world"),
+    Entry("missing response", "example.com/missing", http.StatusNotFound, "wat?"),
+    ...
+)
+```
+
+now the body function passed to the table is invoked during the Tree Construction Phase to generate a set of specs for each entry.  Each body function is invoked within the context of a new container so that setup nodes will only run for the specs defined in the body function.  As with `DescribeTable` this is simply synctactic sugar around Ginkgo's existing DSL.  The above example is identical to:
+
+```go
+
+Describe("handling requests", func() {
+  Describe("default response", func() {
+      var resp *http.Response
+      BeforeEach(func() {
+        var err error
+        resp, err = http.Get("example.com/response")
+        Expect(err).NotTo(HaveOccurred())
+        DeferCleanup(resp.Body.Close)
+      })
+
+      It("should return the expected status code", func() {
+        Expect(resp.StatusCode).To(Equal(http.StatusOK))
+      })
+
+      It("should return the expected message", func() {
+        body, err := ioutil.ReadAll(resp.Body)
+        Expect(err).NotTo(HaveOccurred())
+        Expect(string(body)).To(Equal("hello world"))
+      })
+  })
+
+  Describe("missing response", func() {
+      var resp *http.Response
+      BeforeEach(func() {
+        var err error
+        resp, err = http.Get("example.com/missing")
+        Expect(err).NotTo(HaveOccurred())
+        DeferCleanup(resp.Body.Close)
+      })
+
+      It("should return the expected status code", func() {
+        Expect(resp.StatusCode).To(Equal(http.StatusNotFound))
+      })
+
+      It("should return the expected message", func() {
+        body, err := ioutil.ReadAll(resp.Body)
+        Expect(err).NotTo(HaveOccurred())
+        Expect(string(body)).To(Equal("wat?"))
+      })
+  })
+})
+```
+
+all the infrastructure around generating table entry descriptions applies here as well - though the description will be the title of the generatd container.  Note that you **must** add subject nodes in the body function if you want `DescribeHandleSubtree` to add specs.
 
 ### Alternatives to Dot-Importing Ginkgo
 
@@ -4125,6 +4205,29 @@ DescribeTable("Reading invalid books always errors", func(book *books.Book) {
   Expect(user.Read(book)).To(MatchError(books.ErrInvalidBook))
 }, InvalidBookEntries)
 
+```
+
+alternatively you can use `DescribeTableSubtree` to associate multiple specs with a given entry:
+
+```go
+DescribeTableSubtree("Handling invalid books", func(book *books.Book) {
+    Describe("Storing invalid books", func() {
+      It("always errors", func() {
+        Expect(library.Store(book)).To(MatchError(books.ErrInvalidBook))
+      })
+    })
+
+    Describe("Reading invalid books", func() {
+      It("always errors", func() {
+        Expect(user.Read(book)).To(MatchError(books.ErrInvalidBook))
+      })
+    })
+  },
+  Entry("Empty book", &books.Book{}),
+  Entry("Only title", &books.Book{Title: "Les Miserables"}),
+  Entry("Only author", &books.Book{Author: "Victor Hugo"}),
+  Entry("Missing pages", &books.Book{Title: "Les Miserables", Author: "Victor Hugo"})
+)
 ```
 
 ### Patterns for Asynchronous Testing
