@@ -88,7 +88,7 @@ var _ = Describe("Suite", func() {
 			It("fails if the tree has already been built", func() {
 				Ω(suite.BuildTree()).Should(Succeed())
 				_, err := suite.Clone()
-				Ω(err).Should(MatchError("cnanot clone suite after tree has been built"))
+				Ω(err).Should(MatchError("cannot clone suite after tree has been built"))
 			})
 
 			It("generates the same tree as the original", func() {
