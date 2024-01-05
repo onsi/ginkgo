@@ -21,7 +21,9 @@ func ExtractSymbols(f *ast.File) []string {
 		names := []string{}
 		switch v := decl.(type) {
 		case *ast.FuncDecl:
-			names = append(names, v.Name.Name)
+			if v.Recv == nil {
+				names = append(names, v.Name.Name)
+			}
 		case *ast.GenDecl:
 			switch v.Tok {
 			case token.TYPE:

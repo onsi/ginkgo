@@ -223,6 +223,7 @@ var _ = Describe("Testingtproxy", func() {
 		reportToReturn.LeafNodeText = "Lewis"
 		Ω(t.Name()).Should(Equal("C.S. Lewis"))
 		Ω(GinkgoT().Name()).Should(ContainSubstring("supports Name"))
+		Ω(GinkgoTB().Name()).Should(ContainSubstring("supports Name"))
 	})
 
 	It("ignores Parallel", func() {

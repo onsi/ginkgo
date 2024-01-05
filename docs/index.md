@@ -5478,6 +5478,8 @@ When using Gomock you may want to run `ginkgo` with the `-trace` flag to print o
 
 `GinkgoT()` also provides additional methods that are Ginkgo-specific.  This allows rich third-party integrations to be built on top of Ginkgo - with GinkgoT() serving as a single connection point.
 
+Similarly for third party libraries which accept a `testing.TB` interface, use the `GinkgoTB()` function. This function returns a struct wrapper around `GinkgoT()` which satisfies the `testing.TB`interface. If you need to use any Ginkgo-specific methods you can access the wrapped `GinkgoT()` instance using `GinkgoTBWrapper.GinkgoT`.
+
 ### IDE Support
 Ginkgo works best from the command-line, and [`ginkgo watch`](#watching-for-changes) makes it easy to rerun tests on the command line whenever changes are detected.
 

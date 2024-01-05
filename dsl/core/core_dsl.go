@@ -23,6 +23,7 @@ type GinkgoTestingT = ginkgo.GinkgoTestingT
 type GinkgoTInterface = ginkgo.GinkgoTInterface
 type FullGinkgoTInterface = ginkgo.FullGinkgoTInterface
 type SpecContext = ginkgo.SpecContext
+type GinkgoTBWrapper = ginkgo.GinkgoTBWrapper
 
 var GinkgoWriter = ginkgo.GinkgoWriter
 var GinkgoLogr = ginkgo.GinkgoLogr
@@ -63,4 +64,5 @@ var BeforeAll = ginkgo.BeforeAll
 var AfterAll = ginkgo.AfterAll
 var DeferCleanup = ginkgo.DeferCleanup
 var GinkgoT = ginkgo.GinkgoT
+var GinkgoTB = ginkgo.GinkgoTB
 var AttachProgressReporter = ginkgo.AttachProgressReporter
