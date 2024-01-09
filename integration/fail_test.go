@@ -41,7 +41,31 @@ var _ = Describe("Failing Specs", func() {
 			Ω(output).Should(ContainSubstring(`a helper failed`))
 			Ω(output).Should(ContainSubstring(`fail_fixture_test.go:54`), "the code location reported for the helper failure - we're testing the call to GinkgoHelper() works as expected")
 
-			Ω(output).Should(ContainSubstring("0 Passed | 8 Failed"))
+			Ω(output).Should(ContainSubstring("synchronous failures with GinkgoT().Fail"))
+			Ω(output).Should(ContainSubstring("fail_fixture_ginkgo_t_test.go:9"))
+
+			Ω(output).Should(ContainSubstring("GinkgoT DescribeTable"))
+			Ω(output).Should(ContainSubstring("fail_fixture_ginkgo_t_test.go:15"))
+
+			Ω(output).Should(ContainSubstring(`tracks line numbers correctly when GinkgoT().Helper() is called`))
+			Ω(output).Should(ContainSubstring(`fail_fixture_ginkgo_t_test.go:21`), "the code location reported for the ginkgoT helper failure")
+
+			Ω(output).Should(ContainSubstring(`tracks the actual line number when no helper is used`))
+			Ω(output).Should(ContainSubstring(`fail_fixture_ginkgo_t_test.go:30`), "the code location reported for the ginkgoT no helper failure")
+
+			Ω(output).Should(ContainSubstring("synchronous failures with GinkgoTB().Fail"))
+			Ω(output).Should(ContainSubstring("fail_fixture_ginkgo_tb_test.go:9"))
+
+			Ω(output).Should(ContainSubstring("GinkgoTB DescribeTable"))
+			Ω(output).Should(ContainSubstring("fail_fixture_ginkgo_tb_test.go:15"))
+
+			Ω(output).Should(ContainSubstring(`tracks line numbers correctly when GinkgoTB().Helper() is called`))
+			Ω(output).Should(ContainSubstring(`fail_fixture_ginkgo_tb_test.go:21`), "the code location reported for the ginkgoTB helper failure")
+
+			Ω(output).Should(ContainSubstring(`tracks the actual line number when no GinkgoTB helper is used`))
+			Ω(output).Should(ContainSubstring(`fail_fixture_ginkgo_tb_test.go:30`), "the code location reported for the ginkgoT no helper failure")
+
+			Ω(output).Should(ContainSubstring("0 Passed | 16 Failed"))
 		})
 	})
 

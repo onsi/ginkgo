@@ -43,7 +43,7 @@ var _ = Describe("Verbose And Succinct Mode", func() {
 				output := session.Out.Contents()
 
 				Ω(output).Should(MatchRegexp(`\] Passing_ginkgo_tests Suite - 5/5 specs [%s]{5} SUCCESS!`, regexp.QuoteMeta(denoter)))
-				Ω(output).Should(MatchRegexp(`\] More_ginkgo_tests Suite - 2/2 specs [%s]{2} SUCCESS!`, regexp.QuoteMeta(denoter)))
+				Ω(output).Should(MatchRegexp(`\] More_ginkgo_tests Suite - 3/3 specs [%s]{3} SUCCESS!`, regexp.QuoteMeta(denoter)))
 			})
 		})
 
