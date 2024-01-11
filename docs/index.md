@@ -5420,7 +5420,7 @@ ginkgo version
 
 ### Using Third-party Libraries
 
-Most third-party Go `testing` integrations (e.g. matcher libraries, mocking libraries) take and wrap a `*testing.T` to provide functionality.  Unfortunately there is no formal interface for `*testing.T` however Ginkgo provides a function, `GinkgoT()` that returns a struct that implements all the methods that `*testing.T` implements.  Most libraries accept the `*testing.T` object via an interface and you can usually simply pass in `GinkgoT()` and expect the library to work.
+Most third-party Go `testing` integrations (e.g. matcher libraries, mocking libraries) take and wrap a `*testing.T` to provide functionality.  Unfortunately there is no formal interface for `*testing.T` however Ginkgo provides a function, `GinkgoT()` that returns a struct that implements all the methods that `*testing.T` implements.  Most libraries accept the `*testing.T` object via an interface and you can usually simply pass in `GinkgoT()` and expect the library to work.  Some libraries require passing in a `testing.TB` - you can use `GinkgoTB()` for these.
 
 For example, you can choose to use [testify](https://github.com/stretchr/testify) instead of Gomega like so:
 

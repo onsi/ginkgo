@@ -106,7 +106,6 @@ This wrapper satisfies the testing.TB interface and intended to be used as a dro
 Similar to GinkgoT(), GinkgoTB() takes an optional offset argument that can be used to get the
 correct line number associated with the failure - though you do not need to use this if you call GinkgoHelper() or GinkgoT().Helper() appropriately
 */
-
 func GinkgoTB(optionalOffset ...int) *GinkgoTBWrapper {
 	offset := 2
 	if len(optionalOffset) > 0 {
