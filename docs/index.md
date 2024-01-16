@@ -875,7 +875,7 @@ Describe("Reporting book weight", func() {
 
   Context("with no WEIGHT_UNITS environment set", func() {
     BeforeEach(func() {
-      err := os.Clearenv("WEIGHT_UNITS")
+      err := os.Unsetenv("WEIGHT_UNITS")
       Expect(err).NotTo(HaveOccurred())
     })
 
@@ -928,13 +928,13 @@ Describe("Reporting book weight", func() {
   })
 
   AfterEach(func() {
-    err := os.Clearenv("WEIGHT_UNITS")
+    err := os.Unsetenv("WEIGHT_UNITS")
     Expect(err).NotTo(HaveOccurred())
   })
 
   Context("with no WEIGHT_UNITS environment set", func() {
     BeforeEach(func() {
-      err := os.Clearenv("WEIGHT_UNITS")
+      err := os.Unsetenv("WEIGHT_UNITS")
       Expect(err).NotTo(HaveOccurred())
     })
 
