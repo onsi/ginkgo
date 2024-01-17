@@ -195,6 +195,7 @@ var _ = Describe("Interrupts and Timeouts", func() {
 								interruptHandler.Interrupt(interrupt_handler.InterruptCauseSignal)
 								select {
 								case <-c.Done():
+									Ω(context.Cause(c)).Should(MatchError(interrupt_handler.InterruptCauseSignal.String()))
 									F("bam")
 								case <-time.After(time.Hour):
 								}
@@ -236,6 +237,7 @@ var _ = Describe("Interrupts and Timeouts", func() {
 								interruptHandler.Interrupt(interrupt_handler.InterruptCauseSignal)
 								select {
 								case <-c.Done():
+									Ω(context.Cause(c)).Should(MatchError(interrupt_handler.InterruptCauseSignal.String()))
 									time.Sleep(time.Hour)
 								case <-time.After(time.Hour):
 								}
@@ -275,6 +277,7 @@ var _ = Describe("Interrupts and Timeouts", func() {
 								interruptHandler.Interrupt(interrupt_handler.InterruptCauseSignal)
 								select {
 								case <-c.Done():
+									Ω(context.Cause(c)).Should(MatchError(interrupt_handler.InterruptCauseSignal.String()))
 									time.Sleep(time.Millisecond * 100)
 									interruptHandler.Interrupt(interrupt_handler.InterruptCauseSignal)
 									time.Sleep(time.Hour)
@@ -325,12 +328,14 @@ var _ = Describe("Interrupts and Timeouts", func() {
 							It("A", rt.TSC("A", func(c SpecContext) {
 								interruptHandler.Interrupt(interrupt_handler.InterruptCauseSignal)
 								<-c.Done()
+								Ω(context.Cause(c)).Should(MatchError(interrupt_handler.InterruptCauseSignal.String()))
 							}))
 							It("B", rt.T("B"))
 							AfterEach(rt.TSC("aft-inner", func(c SpecContext) {
 								t := time.Now()
 								select {
 								case <-c.Done():
+									Ω(context.Cause(c)).Should(MatchError("grace period timeout occurred"))
 									times.Set("aft-inner", time.Since(t))
 									time.Sleep(time.Second)
 								case <-time.After(time.Second):
@@ -380,11 +385,13 @@ var _ = Describe("Interrupts and Timeouts", func() {
 							It("A", rt.TSC("A", func(c SpecContext) {
 								interruptHandler.Interrupt(interrupt_handler.InterruptCauseSignal)
 								<-c.Done()
+								Ω(context.Cause(c)).Should(MatchError(interrupt_handler.InterruptCauseSignal.String()))
 							}))
 							It("B", rt.T("B"))
 							AfterEach(rt.TSC("aft-inner", func(c SpecContext) {
 								select {
 								case <-c.Done():
+									Ω(context.Cause(c)).Should(MatchError("node timeout occurred"))
 									times.Set("aft-inner", time.Since(t))
 									time.Sleep(time.Second)
 								case <-time.After(time.Second):
@@ -432,11 +439,13 @@ var _ = Describe("Interrupts and Timeouts", func() {
 						It("A", rt.TSC("A", func(c SpecContext) {
 							interruptHandler.Interrupt(interrupt_handler.InterruptCauseSignal)
 							<-c.Done()
+							Ω(context.Cause(c)).Should(MatchError(interrupt_handler.InterruptCauseSignal.String()))
 						}))
 						It("B", rt.T("B"))
 						AfterEach(rt.TSC("aft-inner", func(c SpecContext) {
 							interruptHandler.Interrupt(interrupt_handler.InterruptCauseSignal)
 							<-c.Done()
+							Ω(context.Cause(c)).Should(MatchError(interrupt_handler.InterruptCauseSignal.String()))
 						}))
 					})
 					AfterEach(rt.T("aft-outer"))
@@ -479,11 +488,13 @@ var _ = Describe("Interrupts and Timeouts", func() {
 						It("A", rt.TSC("A", func(c SpecContext) {
 							interruptHandler.Interrupt(interrupt_handler.InterruptCauseSignal)
 							<-c.Done()
+							Ω(context.Cause(c)).Should(MatchError(interrupt_handler.InterruptCauseSignal.String()))
 						}))
 						It("B", rt.T("B"))
 						AfterEach(rt.TSC("aft-inner", func(c SpecContext) {
 							interruptHandler.Interrupt(interrupt_handler.InterruptCauseSignal)
 							<-c.Done()
+							Ω(context.Cause(c)).Should(MatchError(interrupt_handler.InterruptCauseSignal.String()))
 						}))
 					})
 					AfterEach(rt.T("aft-outer"))
@@ -536,6 +547,7 @@ var _ = Describe("Interrupts and Timeouts", func() {
 						BeforeEach(rt.TSC("bef-inner", func(c SpecContext) {
 							interruptHandler.Interrupt(interrupt_handler.InterruptCauseSignal)
 							<-c.Done()
+							Ω(context.Cause(c)).Should(MatchError(interrupt_handler.InterruptCauseSignal.String()))
 						}))
 
 						Context("even more nested", func() {
@@ -629,6 +641,7 @@ var _ = Describe("Interrupts and Timeouts", func() {
 					Describe("when it exits in time", func() {
 						It("A", rt.TSC("A", func(c SpecContext) {
 							<-c.Done()
+							Ω(context.Cause(c)).Should(MatchError("node timeout occurred"))
 							rt.Run("A-cancelled")
 							Fail("subsequent failure message")
 						}), NodeTimeout(time.Millisecond*100))
@@ -637,6 +650,7 @@ var _ = Describe("Interrupts and Timeouts", func() {
 					Describe("with no configured grace period", func() {
 						It("B", rt.TSC("B", func(c SpecContext) {
 							<-c.Done()
+							Ω(context.Cause(c)).Should(MatchError("node timeout occurred"))
 							time.Sleep(time.Hour)
 						}), NodeTimeout(time.Millisecond*100))
 					})
@@ -644,6 +658,7 @@ var _ = Describe("Interrupts and Timeouts", func() {
 					Describe("with a configured grace period", func() {
 						It("C", rt.TSC("C", func(c SpecContext) {
 							<-c.Done()
+							Ω(context.Cause(c)).Should(MatchError("node timeout occurred"))
 							time.Sleep(time.Hour)
 						}), NodeTimeout(time.Millisecond*100), GracePeriod(time.Millisecond*50))
 					})
@@ -714,6 +729,7 @@ var _ = Describe("Interrupts and Timeouts", func() {
 				}, func(c SpecContext, b []byte) {
 					rt.Run(string(b))
 					<-c.Done()
+					Ω(context.Cause(c)).Should(MatchError("node timeout occurred"))
 					times.Set(string(b), time.Since(t))
 				}, NodeTimeout(time.Millisecond*100))
 
@@ -724,6 +740,7 @@ var _ = Describe("Interrupts and Timeouts", func() {
 				}, func(c SpecContext) {
 					rt.Run("afts-proc-1")
 					<-c.Done()
+					Ω(context.Cause(c)).Should(MatchError("node timeout occurred"))
 					times.Set("afts-proc-1", time.Since(t))
 				}, NodeTimeout(time.Millisecond*200))
 			})
@@ -763,6 +780,7 @@ var _ = Describe("Interrupts and Timeouts", func() {
 					AfterEach(rt.TSC("aft-1", func(c SpecContext) {
 						times.Set("A", time.Since(t))
 						<-c.Done()
+						Ω(context.Cause(c)).Should(MatchError("grace period timeout occurred"))
 						times.Set("aft-1-cancel", time.Since(t))
 						writer.Println("aft-1")
 						time.Sleep(time.Hour)
@@ -771,6 +789,7 @@ var _ = Describe("Interrupts and Timeouts", func() {
 					AfterEach(rt.TSC("aft-2", func(c SpecContext) {
 						times.Set("aft-1-out", time.Since(t))
 						<-c.Done()
+						Ω(context.Cause(c)).Should(MatchError("grace period timeout occurred"))
 						times.Set("aft-2-cancel", time.Since(t))
 						writer.Println("aft-2")
 						time.Sleep(time.Hour)
@@ -779,6 +798,7 @@ var _ = Describe("Interrupts and Timeouts", func() {
 					AfterEach(rt.TSC("aft-3", func(c SpecContext) {
 						times.Set("aft-2-out", time.Since(t))
 						<-c.Done()
+						Ω(context.Cause(c)).Should(MatchError("node timeout occurred"))
 						times.Set("aft-3-cancel", time.Since(t))
 						writer.Println("aft-3")
 						time.Sleep(time.Hour)
@@ -839,6 +859,7 @@ var _ = Describe("Interrupts and Timeouts", func() {
 						BeforeEach(rt.TSC("bef-A", func(c SpecContext) {
 							t := time.Now()
 							<-c.Done()
+							Ω(context.Cause(c)).Should(MatchError("node timeout occurred"))
 							times.Set("bef-A", time.Since(t))
 						}), NodeTimeout(time.Millisecond*100))
 
@@ -849,6 +870,7 @@ var _ = Describe("Interrupts and Timeouts", func() {
 						BeforeEach(rt.TSC("bef-B", func(c SpecContext) {
 							t := time.Now()
 							<-c.Done()
+							Ω(context.Cause(c)).Should(MatchError("spec timeout occurred"))
 							times.Set("bef-B", time.Since(t))
 						}), NodeTimeout(time.Millisecond*250))
 
@@ -859,6 +881,7 @@ var _ = Describe("Interrupts and Timeouts", func() {
 						BeforeEach(rt.TSC("bef-C", func(c SpecContext) {
 							t := time.Now()
 							<-c.Done()
+							Ω(context.Cause(c)).Should(MatchError("suite timeout occurred"))
 							times.Set("bef-C", time.Since(t))
 						}), NodeTimeout(time.Millisecond*300))
 
@@ -914,6 +937,7 @@ var _ = Describe("Interrupts and Timeouts", func() {
 				Context("container", func() {
 					It("A", rt.TSC("A", func(c SpecContext) {
 						<-c.Done()
+						Ω(context.Cause(c)).Should(MatchError("suite timeout occurred"))
 					}))
 
 					It("B", rt.T("B"))
@@ -947,6 +971,7 @@ var _ = Describe("Interrupts and Timeouts", func() {
 						rt.Run(key)
 						t := time.Now()
 						<-c.Done()
+						Ω(context.Cause(c)).Should(MatchError("node timeout occurred"))
 						times.Set(key, time.Since(t))
 					}, NodeTimeout(time.Millisecond*100), "dc-1")
 
@@ -954,6 +979,7 @@ var _ = Describe("Interrupts and Timeouts", func() {
 						rt.Run(key)
 						t := time.Now()
 						<-c.Done()
+						Ω(context.Cause(c)).Should(MatchError("node timeout occurred"))
 						times.Set(key, time.Since(t))
 					}, NodeTimeout(time.Millisecond*100), "dc-2")
 
@@ -962,6 +988,7 @@ var _ = Describe("Interrupts and Timeouts", func() {
 						rt.Run(key)
 						t := time.Now()
 						<-c.Done()
+						Ω(context.Cause(c)).Should(MatchError("node timeout occurred"))
 						times.Set(key, time.Since(t))
 					}, NodeTimeout(time.Millisecond*100), context.WithValue(context.Background(), "key", "dc"), "-3")
 
