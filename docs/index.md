@@ -3389,7 +3389,7 @@ Ginkgo also supports generating JUnit reports with
 ginkgo --junit-report=report.xml
 ```
 
-The JUnit report is compatible with the JUnit specification, however Ginkgo specs carry much more metadata than can be easily mapped onto the JUnit spec so some information is lost and/or a bit harder to decode than using Ginkgo's native JSON format.
+The JUnit report is compatible with the JUnit specification, however Ginkgo specs carry much more metadata than can be easily mapped onto the JUnit spec so some information is lost and/or a bit harder to decode than using Ginkgo's native JSON format.  Nonetheless, Ginkgo does its best to populate as much of the JUnit report as possible.  This includes adding additional metadata using [labels](#spec-labels) - in particular if you provide a label of the form `Label("owner:XYZ")`, the generating JUnit spec will set the `Owner` attribute to `XYZ`.
 
 Ginkgo also supports Teamcity reports with `ginkgo --teamcity-report=report.teamcity` though, again, the Teamcity spec makes it difficult to capture all the spec metadata.
 

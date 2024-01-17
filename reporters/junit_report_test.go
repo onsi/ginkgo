@@ -33,7 +33,7 @@ var _ = Describe("JunitReport", func() {
 					RE("a hidden report entry", cl1, TL("ginkgowriter\noutput\n"), types.ReportEntryVisibilityNever),
 					AF(types.SpecStateFailed, "a subsequent failure", types.FailureNodeInContainer, FailureNodeLocation(cl3), types.NodeTypeAfterEach, 0, TL("ginkgowriter\noutput\ncleanup!")),
 				),
-				S(types.NodeTypeIt, "A", cl0, STD("some captured stdout\n"), GW("some GinkgoWriter\noutput is interspersed\nhere and there\n"),
+				S(types.NodeTypeIt, "A", cl0, STD("some captured stdout\n"), GW("some GinkgoWriter\noutput is interspersed\nhere and there\n"), Label("cat", "owner:frank", "OWNer:bob"),
 					SE(types.SpecEventNodeStart, types.NodeTypeIt, "A", cl0),
 					PR("my progress report", LeafNodeText("A"), TL("some GinkgoWriter\n")),
 					SE(types.SpecEventByStart, "My Step", cl1, TL("some GinkgoWriter\n")),
@@ -42,8 +42,8 @@ var _ = Describe("JunitReport", func() {
 					SE(types.SpecEventByEnd, "My Step", cl1, time.Millisecond*200, TL("some GinkgoWriter\noutput is interspersed\n")),
 					SE(types.SpecEventNodeEnd, types.NodeTypeIt, "A", cl0, time.Millisecond*300, TL("some GinkgoWriter\noutput is interspersed\nhere and there\n")),
 				),
-				S(types.NodeTypeIt, "A", cl0, types.SpecStatePending),
-				S(types.NodeTypeIt, "A", cl0, types.SpecStatePanicked, STD("some captured stdout\n"),
+				S(types.NodeTypeIt, "A", cl0, types.SpecStatePending, CLabels(Label("owner:org")), Label("owner:team")),
+				S(types.NodeTypeIt, "A", cl0, types.SpecStatePanicked, CLabels(Label("owner:org")), STD("some captured stdout\n"),
 					SE(types.SpecEventNodeStart, types.NodeTypeIt, "A", cl0),
 					F("failure\nmessage", cl1, types.FailureNodeIsLeafNode, FailureNodeLocation(cl0), types.NodeTypeIt, ForwardedPanic("the panic")),
 					SE(types.SpecEventNodeEnd, types.NodeTypeIt, "A", cl0, time.Millisecond*300, TL("some GinkgoWriter\noutput is interspersed\nhere and there\n")),
@@ -95,6 +95,7 @@ var _ = Describe("JunitReport", func() {
 			Ω(failingSpec.Status).Should(Equal("timedout"))
 			Ω(failingSpec.Skipped).Should(BeNil())
 			Ω(failingSpec.Error).Should(BeNil())
+			Ω(failingSpec.Owner).Should(Equal(""))
 			Ω(failingSpec.Failure.Message).Should(Equal("failure\nmessage"))
 			Ω(failingSpec.Failure.Type).Should(Equal("timedout"))
 			Ω(failingSpec.Failure.Description).Should(MatchLines(
@@ -141,12 +142,13 @@ var _ = Describe("JunitReport", func() {
 			))
 
 			passingSpec := suite.TestCases[1]
-			Ω(passingSpec.Name).Should(Equal("[It] A"))
+			Ω(passingSpec.Name).Should(Equal("[It] A [cat, owner:frank, OWNer:bob]"))
 			Ω(passingSpec.Classname).Should(Equal("My Suite"))
 			Ω(passingSpec.Status).Should(Equal("passed"))
 			Ω(passingSpec.Skipped).Should(BeNil())
 			Ω(passingSpec.Error).Should(BeNil())
 			Ω(passingSpec.Failure).Should(BeNil())
+			Ω(passingSpec.Owner).Should(Equal("bob"))
 			Ω(passingSpec.SystemOut).Should(Equal("some captured stdout\n"))
 			Ω(passingSpec.SystemErr).Should(MatchLines(
 				spr("> Enter [It] A - cl0.go:12 @ %s", FORMATTED_TIME),
@@ -165,20 +167,22 @@ var _ = Describe("JunitReport", func() {
 			))
 
 			pendingSpec := suite.TestCases[2]
-			Ω(pendingSpec.Name).Should(Equal("[It] A"))
+			Ω(pendingSpec.Name).Should(Equal("[It] A [owner:org, owner:team]"))
 			Ω(pendingSpec.Classname).Should(Equal("My Suite"))
 			Ω(pendingSpec.Status).Should(Equal("pending"))
 			Ω(pendingSpec.Skipped.Message).Should(Equal("pending"))
 			Ω(pendingSpec.Error).Should(BeNil())
+			Ω(pendingSpec.Owner).Should(Equal("team"))
 			Ω(pendingSpec.Failure).Should(BeNil())
 			Ω(pendingSpec.SystemOut).Should(BeEmpty())
 			Ω(pendingSpec.SystemErr).Should(BeEmpty())
 
 			panickedSpec := suite.TestCases[3]
-			Ω(panickedSpec.Name).Should(Equal("[It] A"))
+			Ω(panickedSpec.Name).Should(Equal("[It] A [owner:org]"))
 			Ω(panickedSpec.Classname).Should(Equal("My Suite"))
 			Ω(panickedSpec.Status).Should(Equal("panicked"))
 			Ω(panickedSpec.Skipped).Should(BeNil())
+			Ω(panickedSpec.Owner).Should(Equal("org"))
 			Ω(panickedSpec.Error.Message).Should(Equal("the panic"))
 			Ω(panickedSpec.Error.Type).Should(Equal("panicked"))
 			Ω(panickedSpec.Error.Description).Should(MatchLines(
