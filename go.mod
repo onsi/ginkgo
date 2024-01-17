@@ -1,6 +1,6 @@
 module github.com/onsi/ginkgo/v2
 
-go 1.18
+go 1.20
 
 require (
 	github.com/go-logr/logr v1.3.0
