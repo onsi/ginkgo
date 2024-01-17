@@ -116,7 +116,7 @@ type JUnitTestCase struct {
 	Status string `xml:"status,attr"`
 	// Time is the time in seconds to execute the spec - maps onto SpecReport.RunTime
 	Time float64 `xml:"time,attr"`
-	// Owner is the owner the spec - is set if a label matching Label("owner:X") is provided
+	// Owner is the owner the spec - is set if a label matching Label("owner:X") is provided.  The last matching label is used as the owner, thereby allowing specs to override owners specified in container nodes.
 	Owner string `xml:"owner,attr,omitempty"`
 	//Skipped is populated with a message if the test was skipped or pending
 	Skipped *JUnitSkipped `xml:"skipped,omitempty"`
