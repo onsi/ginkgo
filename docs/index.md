@@ -5480,6 +5480,11 @@ When using Gomock you may want to run `ginkgo` with the `-trace` flag to print o
 
 Similarly for third party libraries which accept a `testing.TB` interface, use the `GinkgoTB()` function. This function returns a struct wrapper around `GinkgoT()` which satisfies the `testing.TB`interface. If you need to use any Ginkgo-specific methods you can access the wrapped `GinkgoT()` instance using `GinkgoTBWrapper.GinkgoT`.
 
+In general, `GinkgoT()` attempts to mimic the behavior of `testing.T` with the exception of the following:
+
+- `Error`/`Errorf`: failures in Ginkgo always immediately stop execution and there is no mechanism to log a failure without aborting the test.  As such `Error`/`Errorf` are equivalent to `Fatal`/`Fatalf`.
+- `Parallel()` is a no-op as Ginkgo's multi-process parallelism model is substantially different from go test's in-process model.
+
 ### IDE Support
 Ginkgo works best from the command-line, and [`ginkgo watch`](#watching-for-changes) makes it easy to rerun tests on the command line whenever changes are detected.
 
