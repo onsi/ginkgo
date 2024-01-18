@@ -191,11 +191,11 @@ a:last-of-type .logo {
 	}	
 
 	#left-background {
-		grid-area; left-background;
+		grid-area: left-background;
 	}
 
 	#right-background {
-		grid-area; right-background;
+		grid-area: right-background;
 	}
 
 	#header {
