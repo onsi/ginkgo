@@ -1202,7 +1202,10 @@ When a failure occurs in a `BeforeEach`, `JustBeforeEach`, or `It` closure Ginkg
 
 Ginkgo orchestrates this behavior by rescuing the panic thrown by `Fail` and unwinding the spec.  However, if your spec launches a **goroutine** that calls `Fail` (or, equivalently, invokes a failing Gomega assertion), there's no way for Ginkgo to rescue the panic that `Fail` throws.  This will cause the suite to panic and no subsequent specs will run.  To get around this you must rescue the panic using `defer GinkgoRecover()`.  Here's an example:
 
+However, if you block in a test case, Ginkgo will not be able to catch the failure and the case will time out instead.
+
 ```go
+/* === INVALID === */
 It("panics in a goroutine", func() {
   var c chan interface{}
   go func() {
@@ -1210,7 +1213,21 @@ It("panics in a goroutine", func() {
     Fail("boom")
     close(c)
   }()
-  <-c
+  <-c // Do not block!
+})
+```
+
+[Asynchronous assertions](https://onsi.github.io/gomega/#making-asynchronous-assertions) can be used to wait for the condition while allowing Ginkgo to abort the case when an async failure occurs.
+
+```go
+It("panics in a goroutine", func() {
+  done := make(chan struct{})
+  go func() {
+    defer GinkgoRecover()
+    Fail("boom")
+    close(c)
+  }()
+  Eventually(done).Should(BeClosed())
 })
 ```
 
