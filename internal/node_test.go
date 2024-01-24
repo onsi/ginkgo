@@ -861,7 +861,7 @@ var _ = Describe("Node", func() {
 				Ω(node.ID).Should(BeNumerically(">", 0))
 				Ω(node.NodeType).Should(Equal(types.NodeTypeReportAfterSuite))
 
-				node.ReportSuiteBody(types.Report{})
+				node.ReportSuiteBody(internal.NewSpecContext(nil), types.Report{})
 				Ω(didRun).Should(BeTrue())
 
 				Ω(node.CodeLocation).Should(Equal(cl))
@@ -885,7 +885,7 @@ var _ = Describe("Node", func() {
 				Ω(node.ID).Should(BeNumerically(">", 0))
 				Ω(node.NodeType).Should(Equal(types.NodeTypeReportBeforeSuite))
 
-				node.ReportSuiteBody(types.Report{})
+				node.ReportSuiteBody(internal.NewSpecContext(nil), types.Report{})
 				Ω(didRun).Should(BeTrue())
 
 				Ω(node.CodeLocation).Should(Equal(cl))

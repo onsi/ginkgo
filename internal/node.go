@@ -45,7 +45,7 @@ type Node struct {
 	SynchronizedAfterSuiteProc1BodyHasContext    bool
 
 	ReportEachBody  func(types.SpecReport)
-	ReportSuiteBody func(types.Report)
+	ReportSuiteBody func(SpecContext, types.Report)
 
 	MarkedFocus             bool
 	MarkedPending           bool
@@ -333,7 +333,11 @@ func NewNode(deprecationTracker *types.DeprecationTracker, nodeType types.NodeTy
 				}
 			} else if nodeType.Is(types.NodeTypeReportBeforeSuite | types.NodeTypeReportAfterSuite) {
 				if node.ReportSuiteBody == nil {
-					node.ReportSuiteBody = arg.(func(types.Report))
+					if fn, ok := arg.(func(types.Report)); ok {
+						node.ReportSuiteBody = func(_ SpecContext, r types.Report) { fn(r) }
+					} else {
+						node.ReportSuiteBody = arg.(func(SpecContext, types.Report))
+					}
 				} else {
 					appendError(types.GinkgoErrors.MultipleBodyFunctions(node.CodeLocation, nodeType))
 					trackedFunctionError = true
