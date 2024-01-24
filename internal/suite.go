@@ -762,7 +762,7 @@ func (suite *Suite) runReportSuiteNode(node Node, report types.Report) {
 		report = report.Add(aggregatedReport)
 	}
 
-	node.Body = func(SpecContext) { node.ReportSuiteBody(report) }
+	node.Body = func(ctx SpecContext) { node.ReportSuiteBody(ctx, report) }
 	suite.currentSpecReport.State, suite.currentSpecReport.Failure = suite.runNode(node, time.Time{}, "")
 
 	suite.currentSpecReport.EndTime = time.Now()
