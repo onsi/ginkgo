@@ -252,13 +252,14 @@ var _ = Describe("Profiling Specs", func() {
 				// The MutexProfile for the lock_contest test should list two functions that wait on a lock.
 				// Unfortunately go doesn't seem to capture the names of the functions - so they're listed here as
 				// lock_contest_test.glob..func1.1 is called 10 times and takes ~5ms per call
-				// lock_contest_test.glob..func2.1 is called once and teakes ~500ms per call
+				// lock_contest_test.glob..func2.1 is called once and takes ~500ms per call
+				// Note that in Go 1.22 and later, the functions are called lock_contest_test.init.func1.1 and lock_contest_test.init.func2.1
 				// Asserting that both times are within a range should be stable across tests.  The function names should be as well
 				// but that might become a source of failure in the future
 				// Note: these numbers are adjusted slightly to tolerate variance during test runs
-				Ω(mutexProfile.FindCaller("lock_contest_test.glob..func1.1").CumStat).Should(BeNumerically(">=", 45))
-				Ω(mutexProfile.FindCaller("lock_contest_test.glob..func1.1").CumStat).Should(BeNumerically("<", 500))
-				Ω(mutexProfile.FindCaller("lock_contest_test.glob..func2.1").CumStat).Should(BeNumerically(">=", 450))
+				Ω(mutexProfile.FindCaller(fmt.Sprintf("%sfunc1.1", lockContestPrefix)).CumStat).Should(BeNumerically(">=", 45))
+				Ω(mutexProfile.FindCaller(fmt.Sprintf("%sfunc1.1", lockContestPrefix)).CumStat).Should(BeNumerically("<", 500))
+				Ω(mutexProfile.FindCaller(fmt.Sprintf("%sfunc2.1", lockContestPrefix)).CumStat).Should(BeNumerically(">=", 450))
 			},
 
 			Entry("when running in series",
