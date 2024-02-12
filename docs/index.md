@@ -57,7 +57,7 @@ go get github.com/onsi/ginkgo/v2
 go install github.com/onsi/ginkgo/v2/ginkgo
 ```
 
-To pick a particular version: 
+To pick a particular version:
 
 ```bash
 go get github.com/onsi/ginkgo/v2@v2.m.p
@@ -72,7 +72,7 @@ The current version of Ginkgo is guaranteed to be compatible with the currently 
 
 ### Your First Ginkgo Suite
 
-Ginkgo hooks into Go's existing `testing` infrastructure.  That means that Ginkgo specs live in `*_test.go` files, just like standard go tests.  However, instead of using `func TestX(t *testing.T) {}` to write your tests you use the Ginkgo and Gomega DSLs.  
+Ginkgo hooks into Go's existing `testing` infrastructure.  That means that Ginkgo specs live in `*_test.go` files, just like standard go tests.  However, instead of using `func TestX(t *testing.T) {}` to write your tests you use the Ginkgo and Gomega DSLs.
 
 We call a collection of Ginkgo specs in a given package a **Ginkgo suite**; and we use the word **spec** to talk about individual Ginkgo tests contained in the suite.  Though they're functionally interchangeable, we'll use the word "spec" instead of "test" to make a distinction between Ginkgo tests and traditional `testing` tests.
 
@@ -375,19 +375,19 @@ var _ = Describe("Books", func() {
 
   Describe("Extracting the author's first and last name", func() {
     Context("When the author has both names", func() {
-      It("can extract the author's last name", func() {        
+      It("can extract the author's last name", func() {
         Expect(book.AuthorLastName()).To(Equal("Hugo"))
       })
 
       It("can extract the author's first name", func() {
         Expect(book.AuthorFirstName()).To(Equal("Victor"))
-      })      
+      })
     })
 
     Context("When the author only has one name", func() {
       BeforeEach(func() {
         book.Author = "Hugo"
-      })  
+      })
 
       It("interprets the single author name as a last name", func() {
         Expect(book.AuthorLastName()).To(Equal("Hugo"))
@@ -423,19 +423,19 @@ var _ = Describe("Books", func() {
 
   Describe("Extracting the author's first and last name", func() {
     Context("When the author has both names", func() {
-      It("can extract the author's last name", func() {        
+      It("can extract the author's last name", func() {
         Expect(book.AuthorLastName()).To(Equal("Hugo"))
       })
 
       It("can extract the author's first name", func() {
         Expect(book.AuthorFirstName()).To(Equal("Victor"))
-      })      
+      })
     })
 
     Context("When the author only has one name", func() {
       BeforeEach(func() {
         book.Author = "Hugo"
-      })  
+      })
 
       It("interprets the single author name as a last name", func() {
         Expect(book.AuthorLastName()).To(Equal("Hugo"))
@@ -449,15 +449,15 @@ var _ = Describe("Books", func() {
     Context("When the author has a middle name", func() {
       BeforeEach(func() {
         book.Author = "Victor Marie Hugo"
-      })  
+      })
 
-      It("can extract the author's last name", func() {        
+      It("can extract the author's last name", func() {
         Expect(book.AuthorLastName()).To(Equal("Hugo"))
       })
 
       It("can extract the author's first name", func() {
         Expect(book.AuthorFirstName()).To(Equal("Victor"))
-      })      
+      })
     })
 
     Context("When the author has no name", func() {
@@ -539,7 +539,7 @@ var _ = Describe("Books", func() {
         It("errors", func() {
           Expect(err).To(MatchError(books.ErrIncompleteJSON))
         })
-      })      
+      })
     })
   })
 })
@@ -547,7 +547,7 @@ var _ = Describe("Books", func() {
 
 In this way we can continue to grow our suite while clearly delineating the structure of our specs using a spec tree hierarchy.  Note that we use the `When` container variant in this example as it reads cleanly.  Remember that `Describe`, `Context`, and `When` are functionally equivalent aliases.
 
-### Mental Model: How Ginkgo Traverses the Spec Hierarchy 
+### Mental Model: How Ginkgo Traverses the Spec Hierarchy
 
 We've delved into the three basic Ginkgo node types: container nodes, setup nodes, and subject nodes.  Before we move on let's build a mental model for how Ginkgo traverses and runs specs in a little more detail.
 
@@ -573,7 +573,7 @@ var _ = Describe("Books", func() {
 
   Describe("Extracting names", func() {
     When("author has both names", func() {
-      It("extracts the last name", func() {        
+      It("extracts the last name", func() {
         //Closure B
         Expect(book.AuthorLastName()).To(Equal("Hugo"))
       })
@@ -581,14 +581,14 @@ var _ = Describe("Books", func() {
       It("extracts the first name", func() {
         //Closure C
         Expect(book.AuthorFirstName()).To(Equal("Victor"))
-      })      
+      })
     })
 
     When("author has one name", func() {
       BeforeEach(func() {
         //Closure D
         book.Author = "Hugo"
-      })  
+      })
 
       It("extracts the last name", func() {
         //Closure E
@@ -682,7 +682,7 @@ Ginkgo will emit a warning if it detects this.
 
 #### Avoid Spec Pollution: Don't Initialize Variables in Container Nodes
 
-We've covered this already but it bears repeating: **"Declare in container nodes, initialize in setup nodes"**.  Since container nodes are only invoked once during the tree construction phase you should declare closure variables in container nodes but always initialize them in setup nodes.  The following is 
+We've covered this already but it bears repeating: **"Declare in container nodes, initialize in setup nodes"**.  Since container nodes are only invoked once during the tree construction phase you should declare closure variables in container nodes but always initialize them in setup nodes.  The following is
 invalid can potentially infuriating to debug:
 
 ```go
@@ -716,7 +716,7 @@ var _ = Describe("book", func() {
       Title:  "Les Miserables",
       Author: "Victor Hugo",
       Pages:  2783,
-    }    
+    }
   })
 
   It("is invalid with no author", func() {
@@ -777,7 +777,7 @@ Describe("some JSON decoding edge cases", func() {
     It("errors", func() {
       Expect(err).To(MatchError(books.ErrIncompleteJSON))
     })
-  })      
+  })
 })
 ```
 
@@ -803,7 +803,7 @@ Describe("some JSON decoding edge cases", func() {
     It("errors", func() {
       Expect(err).To(MatchError(books.ErrIncompleteJSON))
     })
-  })      
+  })
 })
 ```
 
@@ -840,11 +840,11 @@ Describe("some JSON decoding edge cases", func() {
         "author":"Victor Hugo",
       }`
     })
-    
+
     It("errors", func() {
       Expect(err).To(MatchError(books.ErrIncompleteJSON))
     })
-  })      
+  })
 })
 ```
 
@@ -886,7 +886,7 @@ Describe("Reporting book weight", func() {
 
   Context("when WEIGHT_UNITS is set to oz", func() {
     BeforeEach(func() {
-      err := os.Setenv("WEIGHT_UNITS", "oz")      
+      err := os.Setenv("WEIGHT_UNITS", "oz")
       Expect(err).NotTo(HaveOccurred())
     })
 
@@ -945,7 +945,7 @@ Describe("Reporting book weight", func() {
 
   Context("when WEIGHT_UNITS is set to oz", func() {
     BeforeEach(func() {
-      err := os.Setenv("WEIGHT_UNITS", "oz")      
+      err := os.Setenv("WEIGHT_UNITS", "oz")
       Expect(err).NotTo(HaveOccurred())
     })
 
@@ -969,7 +969,7 @@ Describe("Reporting book weight", func() {
 })
 ```
 
-Now we're guaranteed to clear out `WEIGHT_UNITS` after each spec as Ginkgo will run the `AfterEach` node's closure after the subject node for each spec... 
+Now we're guaranteed to clear out `WEIGHT_UNITS` after each spec as Ginkgo will run the `AfterEach` node's closure after the subject node for each spec...
 
 ...but we've still got a subtle issue.  By clearing it out in our `AfterEach` we're assuming that `WEIGHT_UNITS` is not set when the specs run.  But perhaps it is?  What we really want to do is restore `WEIGHT_UNITS` to its original value.  We can solve this by recording the original value first:
 
@@ -1019,7 +1019,7 @@ Describe("Reporting book weight", func() {
   BeforeEach(func() {
     ...
     originalWeightUnits := os.Getenv("WEIGHT_UNITS")
-    DeferCleanup(func() {      
+    DeferCleanup(func() {
       err := os.Setenv("WEIGHT_UNITS", originalWeightUnits)
       Expect(err).NotTo(HaveOccurred())
     })
@@ -1043,7 +1043,7 @@ Describe("Reporting book weight", func() {
   BeforeEach(func() {
     ...
     originalWeightUnits := os.Getenv("WEIGHT_UNITS")
-    DeferCleanup(func() error {      
+    DeferCleanup(func() error {
       return os.Setenv("WEIGHT_UNITS", originalWeightUnits)
     })
   })
@@ -1198,7 +1198,7 @@ whether in a setup or subject node, whenever `Fail` is called Ginkgo will mark t
 
 But there's more.  The `Fail` function **panics** when it is called.  This allows Ginkgo to stop the current closure in its tracks - no subsequent assertions or code in the closure will run.  Ginkgo is quite opinionated about this behavior - if an assertion has failed then the current spec is not in an expected state and subsequent assertions will likely fail.  This fast-fail approach is especially useful when running slow complex integration tests.  It cannot be disabled.
 
-When a failure occurs in a `BeforeEach`, `JustBeforeEach`, or `It` closure Ginkgo halts execution of the current spec and cleans up by invoking any registered `AfterEach` or `JustAfterEach` closures (and any registered `DeferCleanup` closures if applicable).  This is important to ensure the spec state is cleaned up.  
+When a failure occurs in a `BeforeEach`, `JustBeforeEach`, or `It` closure Ginkgo halts execution of the current spec and cleans up by invoking any registered `AfterEach` or `JustAfterEach` closures (and any registered `DeferCleanup` closures if applicable).  This is important to ensure the spec state is cleaned up.
 
 Ginkgo orchestrates this behavior by rescuing the panic thrown by `Fail` and unwinding the spec.  However, if your spec launches a **goroutine** that calls `Fail` (or, equivalently, invokes a failing Gomega assertion), there's no way for Ginkgo to rescue the panic that `Fail` throws.  This will cause the suite to panic and no subsequent specs will run.  To get around this you must rescue the panic using `defer GinkgoRecover()`.  Here's an example:
 
@@ -1355,7 +1355,7 @@ var _ = Describe("Browsing the library", func() {
 
 The string passed to `By` is attached to the spec and can be displayed by Ginkgo when needed.  If a test succeeds you won't see any output beyond Ginkgo's green dot.  If a test fails, however, you will see each step printed out up to the step immediately preceding the failure.  Running with `ginkgo -v` always emits all steps.
 
-`By` takes an optional function of type `func()`.  When passed such a function `By` will immediately call the function.  This allows you to organize your `It`s into groups of steps.  
+`By` takes an optional function of type `func()`.  When passed such a function `By` will immediately call the function.  This allows you to organize your `It`s into groups of steps.
 
 `By` doesn't affect the structure of your specs - it's primarily syntactic sugar to help you document long and complex specs.  Ginkgo has additional mechanisms to break specs up into more granular subunits with guaranteed ordering - we'll discuss [Ordered containers](#ordered-containers) in detail later.
 
@@ -1432,7 +1432,7 @@ Describe("Extracting the author's first and last name", func() {
     Expect(book.IsValid()).To(Equal(true))
     Expect(book.AuthorFirstName()).To(Equal("Victor"))
     Expect(book.AuthorLastName()).To(Equal("Hugo"))
-  })  
+  })
 
   It("When author has no name", func() {
     book := &books.Book{
@@ -1443,7 +1443,7 @@ Describe("Extracting the author's first and last name", func() {
     Expect(book.IsValid()).To(Equal(false))
     Expect(book.AuthorFirstName()).To(Equal(""))
     Expect(book.AuthorLastName()).To(Equal(""))
-  })  
+  })
 })
 ```
 
@@ -1588,7 +1588,7 @@ var _ = Describe("Math", func() {
     },
     func(a, b, c int) string {
       return fmt.Sprintf("%d + %d = %d", a, b, c)
-    }    
+    }
     Entry(nil, 1, 2, 3),
     Entry(nil, -1, 2, 1),
     Entry(nil, 0, 0, 0),
@@ -1756,8 +1756,8 @@ Alternatively, you can choose to dot-import only _portions_ of Ginkgo's DSL into
 
 ```go
 import (
-  . "github.com/onsi/ginkgo/v2/dsl/core"  
-  "github.com/onsi/ginkgo/v2/dsl/decorators"  
+  . "github.com/onsi/ginkgo/v2/dsl/core"
+  "github.com/onsi/ginkgo/v2/dsl/decorators"
 )
 
 var _ = It("gives you the core DSL", decorators.Label("and namespaced decorators"), func() {
@@ -1769,7 +1769,7 @@ The available DSL packages are:
 
 | Package | Contents |
 |-------|--------|
-| `github.com/onsi/ginkgo/v2/dsl/core` | The core DSL including all container, setup, and subject nodes (`Describe`, `Context`, `BeforeEach`, `BeforeSuite`, `It`, etc...) as well as the most commonly used functions (`RunSpecs`, `Skip`, `Fail`, `By`, `GinkgoT`) | 
+| `github.com/onsi/ginkgo/v2/dsl/core` | The core DSL including all container, setup, and subject nodes (`Describe`, `Context`, `BeforeEach`, `BeforeSuite`, `It`, etc...) as well as the most commonly used functions (`RunSpecs`, `Skip`, `Fail`, `By`, `GinkgoT`) |
 | `github.com/onsi/ginkgo/v2/decorators` | The decorator DSL includes all Ginkgo's decorators (e.g. `Label`, `Ordered`, `Serial`, etc...) |
 | `github.com/onsi/ginkgo/v2/reporting` | The reporting DSL includes all reporting-related nodes and types (e.g. `Report`, `CurrentSpecReport`, `ReportAfterEach`, `AddReportEntry`) |
 | `github.com/onsi/ginkgo/v2/table` | The table DSL includes all table-related types and functions (e.g. `DescribeTable`, `Entry`, `EntryDescription`) |
@@ -1849,7 +1849,7 @@ Describe("Bookmark", func() {
       Title:  "Les Miserables",
       Author: "Victor Hugo",
       Pages:  2783,
-    }    
+    }
   })
 
   It("has no bookmarks by default", func() {
@@ -1948,7 +1948,7 @@ Describe("Bookmark", func() {
       Title:  "Les Miserables",
       Author: "Victor Hugo",
       Pages:  2783,
-    }    
+    }
   })
 
   It("has no bookmarks by default", func() {
@@ -2017,7 +2017,7 @@ Describe("Storing books in an external database", func() {
 
     It("can delete the book", func() {
       Expect(dbClient.Delete(book)).To(Succeed())
-      Expect(dbClient.Books()).To(BeEmpty())      
+      Expect(dbClient.Books()).To(BeEmpty())
     })
   })
 })
@@ -2107,7 +2107,7 @@ var _ = SynchronizedBeforeSuite(func() []byte {
 
 var _ = SynchronizedAfterSuite(func() {
   //runs on *all* processes
-  Expect(dbClient.Cleanup()).To(Succeed())  
+  Expect(dbClient.Cleanup()).To(Succeed())
 }, func() {
   //runs *only* on process #1
   Expect(dbRunner.Stop()).To(Succeed())
@@ -2179,11 +2179,11 @@ So, if `Serial` is applied to a container like so:
 ```go
 Describe("Never in parallel please", Serial, func() {
   It("tests one behavior", func() {
-    
+
   })
 
   It("tests another behavior", func() {
-    
+
   })
 })
 ```
@@ -2193,11 +2193,11 @@ Then both specs generated by the subject nodes in this container will be marked 
 ```go
 Describe("Never in parallel please",  func() {
   It("tests one behavior", func() {
-    
+
   })
 
   It("tests another behavior", Serial, func() {
-    
+
   })
 })
 ```
@@ -2357,7 +2357,7 @@ As always, you can also use `DeferCleanup`.  Since `DeferCleanup` is context awa
 ```go
 BeforeAll(func() {
   libraryClient = library.NewClient()
-  Expect(libraryClient.Connect()).To(Succeed())  
+  Expect(libraryClient.Connect()).To(Succeed())
   DeferCleanup(libraryClient.Disconnect)
 })
 ```
@@ -2542,7 +2542,7 @@ now only the second spec will run because of Ginkgo's focus rules.
 
 We refer to the focus filtering mechanism as "Programmatic Focus" as the focus declarations are "programmed in" at compile time.  Programmatic focus can be super helpful when developing or debugging a test suite, however it can be a real pain to accidentally commit a focused spec. So...
 
-When Ginkgo detects that a passing test suite has programmatically focused tests it causes the suite to exit with a non-zero status code.  The logs will show that the suite succeeded, but will also include a message that says that programmatic specs were detected.  The non-zero exit code will be caught by most CI systems and flagged, allowing developers to go back and unfocus the specs they committed. 
+When Ginkgo detects that a passing test suite has programmatically focused tests it causes the suite to exit with a non-zero status code.  The logs will show that the suite succeeded, but will also include a message that says that programmatic specs were detected.  The non-zero exit code will be caught by most CI systems and flagged, allowing developers to go back and unfocus the specs they committed.
 
 You can unfocus _all_ specs in a suite by running `ginkgo unfocus`.  This simply strips off any `F`s off of `FDescribe`, `FContext`, `FIt`, etc... and removes `Focus` decorators.
 
@@ -2565,19 +2565,19 @@ Describe("Storing books", Label("integration", "storage"), func() {
   })
 
   It("cannot delete books from the central library", Label("network", "library storage"), func() {
-    // has labels [integration, storage, network, library storage]    
+    // has labels [integration, storage, network, library storage]
   })
 
   It("can check if a book is stored in the central library", Label("network", "slow", "library query"), func() {
-    // has labels [integration, storage, network, slow, library query]    
+    // has labels [integration, storage, network, slow, library query]
   })
 
   It("can save books locally", Label("local"), func() {
-    // has labels [integration, storage, local]    
+    // has labels [integration, storage, local]
   })
 
   It("can delete books locally", Label("local"), func() {
-    // has labels [integration, storage, local]        
+    // has labels [integration, storage, local]
   })
 })
 ```
@@ -2656,7 +2656,7 @@ When these flags are provided Ginkgo matches the passed-in regular expression ag
 Describe("Studying books", func() {
   Context("when the book is long", func() {
     It("can be read over multiple sessions", func() {
-      
+
     })
   })
 })
@@ -2770,7 +2770,7 @@ Ginkgo can provide a **Progress Report** of what is currently running in respons
 
 These Progress Reports can also show you a preview of the running source code, but only if Ginkgo can find your source files.  If need be you can tell Ginkgo where to look for source files by specifying `--source-root`.
 
-Finally - you can instruct Ginkgo to provide  Progress Reports automatically whenever a node takes too long to complete.  You do this by passing the `--poll-progress-after=INTERVAL` flag to specify how long Ginkgo should wait before emitting a progress report.  Once this interval is passed Ginkgo can periodically emit Progress Reports - the interval between these reports is controlled via the `--poll-progress-interval=INTERVAL` flag.  By default `--poll-progress-after` is set to `0` and so Ginkgo does not emit Progress Reports.  
+Finally - you can instruct Ginkgo to provide  Progress Reports automatically whenever a node takes too long to complete.  You do this by passing the `--poll-progress-after=INTERVAL` flag to specify how long Ginkgo should wait before emitting a progress report.  Once this interval is passed Ginkgo can periodically emit Progress Reports - the interval between these reports is controlled via the `--poll-progress-interval=INTERVAL` flag.  By default `--poll-progress-after` is set to `0` and so Ginkgo does not emit Progress Reports.
 
 You can override the global setting of `poll-progess-after` and `poll-progress-interval` on a per-node basis by using the `PollProgressAfter(INTERVAL)` and `PollProgressInterval(INTERVAL)` decorators.  A value of `0` will explicitly turn off Progress Reports for a given node regardless of the global setting.
 
@@ -2796,7 +2796,7 @@ AttachProgressReporter(func() string {
 ```go
 BeforeEach(func() {
   library = libraryClient.ConnectAs("Jean ValJean")
-  
+
   //we attach a progress reporter and can trust that it will be cleaned up after the spec runs
   DeferCleanup(AttachProgressReporter(func() string {
     libraryState := library.GetStatusReport()
@@ -2958,7 +2958,7 @@ now, if any of the node contexts are cancelled (either due to a timeout or an in
 Eventually(func() ([]*books.Book, error) {
   return libraryClient.ListBooksByAuthor(ctx, "Victor Hugo")
 }).WithContext(ctx).Should(ContainElement(book))
-```  
+```
 
 This is important as the cancellation of the context needs to cause `ListBooksByAuthor` to exit _and_ `Eventually` to stop retrying.  This is a common-enough pattern that Gomega provides some short hand.  If you pass `Eventually` a function that takes a `context.Context` as its first parameter, Gomega will pass in the context attached via `.WithContext()` automatically.  This allows us to turn statements like this:
 
@@ -2979,12 +2979,12 @@ This also works well with Gomega's `.WithArguments(...)` method which allows us 
 Eventually(func() ([]*books.Book, error) {
   return libraryClient.ListBooksByAuthor(ctx, "Victor Hugo")
 }).WithContext(ctx).Should(ContainElement(book))
-```  
+```
 
 into:
 ```go
 Eventually(libraryClient.ListBooksByAuthor).WithContext(ctx).WithArguments("Victor Hugo").Should(ContainElement(book))
-```  
+```
 
 all told this allows us to rewrite our example as:
 
@@ -3192,7 +3192,7 @@ The heuristic here is simple: if the function passed to `DeferCleanup` takes a `
 `DescribeTable` behaves similarly.  You can make the `It`s generated by your table interruptible by passing a `SpecContext` or `context.Context` as the first argument to the table function:
 
 ```go
-DescribeTable("shelf counts", 
+DescribeTable("shelf counts",
   func(ctx SpecContext, shelf string, count int) { // or context.Context instead
     Expect(libraryClient.Count(ctx, shelf)).To(Equal(count))
   },
@@ -3208,7 +3208,7 @@ If you also want to specify a [custom entry description generator](#generating-e
 
 
 ```go
-DescribeTable("shelf counts", 
+DescribeTable("shelf counts",
   func(ctx SpecContext, shelf string, count int) { // or context.Context instead
     Expect(libraryClient.Count(ctx, shelf)).To(Equal(count))
   },
@@ -3224,7 +3224,7 @@ DescribeTable("shelf counts",
 As with `DeferCleanup`, Ginkgo will detect if the entry parameter list provides a context.  Doing so will avoid treating the function as interruptible and use the provided context instead.  For example:
 
 ```go
-DescribeTable("contrived context-value example", 
+DescribeTable("contrived context-value example",
   func(ctx context.Context, result string) { //but **NOT** SpecContext
     Expect(libraryClient.Encabulate(ctx)).To(Equal(result))
   },
@@ -3242,7 +3242,7 @@ While users of Ginkgo can provide their own custom progress reporters the intent
 
 ### Interrupting, Aborting, and Timing Out Suites
 
-We've seen how nodes can be marked as interruptible and focused on how Ginkgo can apply deadlines to individual nodes and interrupt them when a timeout expires.  Ginkgo also provides a few, related, mechanisms for interrupting a _suite_ before all specs have naturally completed. 
+We've seen how nodes can be marked as interruptible and focused on how Ginkgo can apply deadlines to individual nodes and interrupt them when a timeout expires.  Ginkgo also provides a few, related, mechanisms for interrupting a _suite_ before all specs have naturally completed.
 
 First, you can signal to a suite that it must stop running by sending a `SIGINT` or `SIGTERM` signal to the running ginkgo process (or just hit `^C`).
 
@@ -3400,7 +3400,7 @@ The resulting JSON file encodes an array of `types.Report`.  Each entry in that 
 
 When possible, we recommend building tooling on top of Ginkgo's JSON format and using Ginkgo's `types` package directly to access the suite and spec reports.  The structs in the package include several helper functions to interpret the report.
 
-Ginkgo also supports generating JUnit reports with 
+Ginkgo also supports generating JUnit reports with
 
 ```bash
 ginkgo --junit-report=report.xml
@@ -3450,7 +3450,7 @@ Describe("Manipulating books at the central library", func() {
   It("can fetch a specific book", func() {
     book, err := libraryClient.FetchBook("Les Miserables")
     Expect(err).NotTo(HaveOccurred())
-    Expect(book.AuthorLastName()).To(Equal("Hugo"))    
+    Expect(book.AuthorLastName()).To(Equal("Hugo"))
   })
 
   It("can update a book", func() {
@@ -3587,7 +3587,7 @@ If you pass multiple arguments of the same type (e.g. two `Offset`s), the last a
 `type Timestamp time.Time`
 
 #### Controlling Output
-By default, Ginkgo's console reporter will emit any `ReportEntry` attached to a spec.  It will emit the `ReportEntry` name, location, and time.  If the `ReportEntry` value is non-nil it will also emit a representation of the value.  If the value implements `fmt.Stringer` or `types.ColorableStringer` then `value.String()` or `value.ColorableString()` (which takes precedence) is used to generate the representation, otherwise Ginkgo uses `fmt.Sprintf("%#v", value)`. 
+By default, Ginkgo's console reporter will emit any `ReportEntry` attached to a spec.  It will emit the `ReportEntry` name, location, and time.  If the `ReportEntry` value is non-nil it will also emit a representation of the value.  If the value implements `fmt.Stringer` or `types.ColorableStringer` then `value.String()` or `value.ColorableString()` (which takes precedence) is used to generate the representation, otherwise Ginkgo uses `fmt.Sprintf("%#v", value)`.
 
 You can modify this default behavior by passing in one of the `ReportEntryVisibility` enum to `AddReportEntry`:
 
@@ -3714,7 +3714,7 @@ var _ = BeforeSuite(func() {
   Expect(os.Getenv("SMOKETEST_SERVER_ADDR")).NotTo(BeZero(), "Please make sure SMOKETEST_SERVER_ADDR is set correctly.")
   Expect(os.Getenv("SMOKETEST_ENV")).To(Or(Equal("PRODUCTION"), Equal("STAGING")), "SMOKETEST_ENV must be set to PRODUCTION or STAGING.")
 
-  //set up a client 
+  //set up a client
   client = client.NewClient(os.Getenv("SMOKETEST_SERVER_ADDR"))
 })
 
@@ -3789,7 +3789,7 @@ var _ = BeforeSuite(func() {
   Expect(serverAddr).NotTo(BeZero(), "Please make sure --server-addr is set correctly.")
   Expect(smokeEnv).To(Or(Equal("PRODUCTION"), Equal("STAGING")), "--environment must be set to PRODUCTION or STAGING.")
 
-  //set up a client 
+  //set up a client
   client = client.NewClient(serverAddr)
 })
 
@@ -3942,7 +3942,7 @@ func TestSmokeTest(t *testing.T) {
     suiteConfig.LabelFilter = smokeEnv
   }  else {
     // if the user has specified a label-filter we extend it:
-    suiteConfig.LabelFilter = "(" + suiteConfig.LabelFilter + ") && " + smokeEnv 
+    suiteConfig.LabelFilter = "(" + suiteConfig.LabelFilter + ") && " + smokeEnv
   }
 
   // finally, we pass the modified configuration in to RunSpecs
@@ -3999,7 +3999,7 @@ Describe("Storing and retrieving books by category", func() {
       }
       Expect(library.Store(book)).To(Succeed())
       DeferCleanup(library.Delete, book)
-      Expect(library.FindByCategory(category)).To(ContainElement(book))      
+      Expect(library.FindByCategory(category)).To(ContainElement(book))
     })
   }
 })
@@ -4028,7 +4028,7 @@ Describe("Storing and retrieving the book fixtures", func() {
     It(fmt.Sprintf("can store and retrieve %s", book.Title), func() {
       Expect(library.Store(book)).To(Succeed())
       DeferCleanup(library.Delete, book)
-      Expect(library.FindByTitle(book.Title)).To(Equal(book))            
+      Expect(library.FindByTitle(book.Title)).To(Equal(book))
     })
   }
 })
@@ -4058,14 +4058,14 @@ Describe("Storing and retrieving the book fixtures", func() {
     It(fmt.Sprintf("can store and retrieve %s", book.Title), func() {
       Expect(library.Store(book)).To(Succeed())
       DeferCleanup(library.Delete, book)
-      Expect(library.FindByTitle(book.Title)).To(Equal(book))            
+      Expect(library.FindByTitle(book.Title)).To(Equal(book))
     })
   }
 })
 ```
 
 ### Shared Behaviors
-It's common to want to extract subsets of spec behavior for reuse - these are typically called "Shared Behaviors".  
+It's common to want to extract subsets of spec behavior for reuse - these are typically called "Shared Behaviors".
 
 It is often the case that within a particular suite there will be a number of different `Context`s that assert the exact same behavior, in that they have identical `It`s within them.  The only difference between these `Context`s is the set up done in their respective `BeforeEach`s.  Rather than repeat the `It`s for these `Context`s, you can extract the code into a shared-scope closure and avoid repeating yourself.  For example:
 
@@ -4130,12 +4130,12 @@ Describe("Storing books in the library", func() {
       })
 
       AssertFailedBehavior()
-    })    
+    })
   })
 })
 ```
 
-Since `AssertFailedBehavior` is defined in the same stack of closures as the other nodes, it has access to the shared `book` variable.  Note that the `AssertFailedBehavior` function is called within the body of the `Context` container block.  This will happen during The Tree Construction phase and result in a spec tree that includes the `It`s defined in the `AssertFailedBehavior` function for each context.  
+Since `AssertFailedBehavior` is defined in the same stack of closures as the other nodes, it has access to the shared `book` variable.  Note that the `AssertFailedBehavior` function is called within the body of the `Context` container block.  This will happen during The Tree Construction phase and result in a spec tree that includes the `It`s defined in the `AssertFailedBehavior` function for each context.
 
 ### Table Specs Patterns
 
@@ -4188,8 +4188,8 @@ DescribeTable("Repaginating Books",
     Expect(book.RecomputePages()).To(BeNumerically("~", expectedPages, 30))
   },
   func(formatting BookFormatting, expectedPages int) string {
-    return fmt.Sprintf("FontSize: %d, LineHeight: %.2f, Page:%.2fx%.2f => %d", 
-      formatting.fontSize, formatting.lineHeight, 
+    return fmt.Sprintf("FontSize: %d, LineHeight: %.2f, Page:%.2fx%.2f => %d",
+      formatting.fontSize, formatting.lineHeight,
       formatting.pageWidth, formatting.pageHeight,
       expectedPages)
   }
@@ -4257,7 +4257,7 @@ Both `Eventually` and `Consistently` perform asynchronous assertions by polling 
 
 In the case of `Consistently`, Gomega polls the input repeatedly and asserts the matcher is satisfied every time.  `Consistently` only exits early if a failure occurs - otherwise it continues polling until the specified interval elapses.  This is often the only way to assert that something "does not happen" in an asynchronous system.
 
-`Eventually` and `Consistently` can accept three types of input.  You can pass in bare values and assert that some aspect of the value changes eventually.  This is most commonly done with Go channels or Gomega's 
+`Eventually` and `Consistently` can accept three types of input.  You can pass in bare values and assert that some aspect of the value changes eventually.  This is most commonly done with Go channels or Gomega's
 [`gbytes`](https://onsi.github.io/gomega/#gbytes-testing-streaming-buffers) and [`gexec`](https://onsi.github.io/gomega/#gexec-testing-external-processes) packages.  You can also pass in functions and assert that their return values `Eventually` or `Consistently` satisfy a matcher - we'll cover those later.  Lastly, you can pass in functions that take a `Gomega` argument - these allow you to make assertions within the function and are a way to assert that a series of assertions _eventually_ succeeds.  We'll cover _that_ later as well.  Let's look at these various input types through the lens of some concrete use-cases.
 
 #### Testing an in-process Asynchronous Service.
@@ -4273,7 +4273,7 @@ Describe("Publishing books", func() {
 
   It("can publish a book, emitting information as it goes", func(ctx SpecContext) {
     buffer := gbytes.NewBuffer() //gbytes provides a thread-safe buffer that works with the `gbytes.Say` matcher
-    
+
     // we begin publishing the book.  This kicks off a goroutine and returns a channel
     // Publish takes a `context.Context` and so we pass in our `ctx` to clean up correctly in case the spec timeout elapses
     c := publisher.Publish(ctx, book, buffer)
@@ -4317,7 +4317,7 @@ BeforeSuite(func() {
   var err error
   publisherPath, err = gexec.Build("path/to/publisher")
   Expect(err).NotTo(HaveOccurred())
-  DeferCleanup(gexec.CleanupBuildArtifacts)  
+  DeferCleanup(gexec.CleanupBuildArtifacts)
 })
 
 Describe("Publishing books", func() {
@@ -4325,7 +4325,7 @@ Describe("Publishing books", func() {
     //First, we create a command to invoke the publisher and pass appropriate args
     cmd := exec.CommandContext(ctx, publisherPath, "-o=les-miserables.epub", "les-miserables.fixture")
 
-    //Now we launch the command with `gexec`.  This returns a session that wraps the running command.  
+    //Now we launch the command with `gexec`.  This returns a session that wraps the running command.
     //We also tell `gexec` to tee any stdout/stderr output from the process to `GinkgoWriter` - this will
     //ensure we get all the process output if the spec fails.
     session, err := gexec.Start(cmd, GinkgoWriter, GinkgoWriter)
@@ -4339,7 +4339,7 @@ Describe("Publishing books", func() {
     Eventually(ctx, session).Should(gbytes.Say(`Published page 2782/2783`))
     Eventually(ctx, session).Should(gbytes.Say(`Publish complete!`))
 
-    //We can also assert the session has exited 
+    //We can also assert the session has exited
     Eventually(ctx, session).WithTimeout(time.Second).Should(gexec.Exit(0)) //with exit code 0
 
     //At this point we should have the `les-miserables.epub` artifact
@@ -4366,7 +4366,7 @@ Describe("Change book font-size", func() {
     book = loadBookWithContent("les_miserables.fixture")
     Expect(book).NotTo(BeNil())
   })
-  
+
   It("can repaginate books without losing any content", func() {
     done := make(chan interface{})
     go func() {
@@ -4388,7 +4388,7 @@ Describe("Change book font-size", func() {
     // now we wait for the `done` channel to close.  Note that we neither pass in a context nor set an explicit timeout
     // in this case `Eventually` `will use Gomega's default global timeout (1 second, unless overriden by the user)
     Eventually(done).Should(BeClosed())
-  })  
+  })
 })
 ```
 
@@ -4402,7 +4402,7 @@ Describe("Change book font-size", func() {
     book = loadBookWithContent("les_miserables.fixture")
     Expect(book).NotTo(BeNil())
   })
-  
+
   It("can repaginate books without losing any content", func(ctx SpecContext) {
     content := book.RawContent()
     Expect(book.Pages).To(Equal(2783))
@@ -4413,7 +4413,7 @@ Describe("Change book font-size", func() {
 
     Expect(book.Pages).To(BeNumerically(">", 2783))
     Expect(book.RawContent()).To(Equal(content))
-  }, SpecTimeout(time.Second))  
+  }, SpecTimeout(time.Second))
 })
 ```
 
@@ -4444,14 +4444,14 @@ var _ = Describe("Getting notifications about holds", func() {
     }
 
     Expect(library.Store(ctx, book)).To(Succeed())
-    // we'll want to delete the book after the spec ends.  `library` has a `Delete` function with signature `Delete(context.Context, *book.Book)`. 
+    // we'll want to delete the book after the spec ends.  `library` has a `Delete` function with signature `Delete(context.Context, *book.Book)`.
     // DeferCleanup will detect this signature and automatically pass a `SpecContext` (configured with a one second timeout thanks to the `NodeTimeout` decorator)
     // in as the first parameter.  `book` will be passed in as the second parameter.
     DeferCleanup(library.Delete, book, NodeTimeout(time.Second))
 
     sarah = user.NewUser(ctx, "Sarah", "integration-test-account+sarah@gmail.com")
     jane = user.NewUser(ctx, "Jane", "integration-test-account+jane@gmail.com")
-    
+
     By("Sarah checks the book out")
     Expect(sarah.CheckOut(ctx, library, book)).To(Succeed())
   }, NodeTimeout(time.Second*10))
@@ -4582,11 +4582,11 @@ BeforeSuite(func() {
   var err error
   publisherPath, err = gexec.Build("path/to/publisher")
   Expect(err).NotTo(HaveOccurred())
-  DeferCleanup(gexec.CleanupBuildArtifacts)  
+  DeferCleanup(gexec.CleanupBuildArtifacts)
 })
 ```
 
-This code will work fine in parallel as well (under the hood `gexec.Build` places build artifacts in a randomly-generated temporary directory - this is why you need to call `gexec.CleanupBuildArtifacts` to clean 
+This code will work fine in parallel as well (under the hood `gexec.Build` places build artifacts in a randomly-generated temporary directory - this is why you need to call `gexec.CleanupBuildArtifacts` to clean
 up); but it's inefficient and all your parallel processes will spend time up front compiling multiple copies of the same binary.  Instead, we can use `SynchronizedBeforeSuite` to perform the compilation step just once:
 
 ```go
@@ -4622,7 +4622,7 @@ Describe("Publishing books", func() {
     Expect(result.EpubPages).To(Equal(2783))
   }, SpecTimeout(time.Second*30))
 
-  It("can publish a preview that contains just the first chapter", func(ctx SpecContext) {    
+  It("can publish a preview that contains just the first chapter", func(ctx SpecContext) {
     cmd := exec.CommandContext(ctx, publisherPath, "-o=out.epub", "--preview", "les-miserables.fixture")
     session, err := gexec.Start(cmd, GinkgoWriter, GinkgoWriter)
     Expect(err).NotTo(HaveOccurred())
@@ -4648,7 +4648,7 @@ Describe("Publishing books", func() {
     ...
   })
 
-  It("can publish a preview that contains just the first chapter", func(ctx SpecContext) {    
+  It("can publish a preview that contains just the first chapter", func(ctx SpecContext) {
     cmd := exec.CommandContext(ctx, publisherPath, "-o=preview.epub", "--preview", "les-miserables.fixture")
     ...
   })
@@ -5036,7 +5036,7 @@ Expect(book).To(BeAValidBook(Author("Victor Hugo")))
 Expect(book).To(BeAValidBook(Title("Les Miserables"), Pages(2783)))
 ```
 
-The failure messages generated by composed matchers are generally good enough to capture the reason for the failure.  However if you want more fine-control over the message, or if you want more complex logic in your matcher you can use [`gcustom`](https://onsi.github.io/gomega/#gcustom-a-convenient-mechanism-for-buildling-custom-matchers) to build custom matchers using a simple function and templates - to learn more check out the [`gucstom` docs](https://onsi.github.io/gomega/#gcustom-a-convenient-mechanism-for-buildling-custom-matchers) and [godoc](https://pkg.go.dev/github.com/onsi/gomega/gcustom). 
+The failure messages generated by composed matchers are generally good enough to capture the reason for the failure.  However if you want more fine-control over the message, or if you want more complex logic in your matcher you can use [`gcustom`](https://onsi.github.io/gomega/#gcustom-a-convenient-mechanism-for-buildling-custom-matchers) to build custom matchers using a simple function and templates - to learn more check out the [`gucstom` docs](https://onsi.github.io/gomega/#gcustom-a-convenient-mechanism-for-buildling-custom-matchers) and [godoc](https://pkg.go.dev/github.com/onsi/gomega/gcustom).
 
 ## Decorator Reference
 We've seen a number of Decorators detailed throughout this documentation.  This reference collects them all in one place.
@@ -5050,7 +5050,7 @@ func It(text string, args ...interface{})
 func BeforeEach(args ...interface{})
 ```
 
-Ginkgo will vet the passed in decorators and exit with a clear error message if it detects any invalid configurations. 
+Ginkgo will vet the passed in decorators and exit with a clear error message if it detects any invalid configurations.
 
 Moreover, Ginkgo also supports passing in arbitrarily nested slices of decorators.  Ginkgo will unroll these slices and process the flattened list.  This makes it easier to pass around groups of decorators.  For example, this is valid:
 
@@ -5326,7 +5326,7 @@ Since the `ginkgo` CLI is a [necessary component when running specs in parallel]
 ginkgo -p ./path/to/suite.test
 ```
 
-As with the rest of the go tool chain, you can cross-compile and target different platforms using the standard `GOOS` and `GOARCH` environment variables.  For example: 
+As with the rest of the go tool chain, you can cross-compile and target different platforms using the standard `GOOS` and `GOARCH` environment variables.  For example:
 
 ```bash
 GOOS=linux GOARCH=amd64 ginkgo build path/to/package
@@ -5365,7 +5365,7 @@ will generate a file named `PACKAGE_suite_test.go` and
 ginkgo generate <SUBJECT>
 ```
 
-will generate a file named `SUBJECT_test.go` (or `PACKAGE_test.go` if `<SUBJECT>` is not provided).  Both generators support custom templates using `--template` 
+will generate a file named `SUBJECT_test.go` (or `PACKAGE_test.go` if `<SUBJECT>` is not provided).  Both generators support custom templates using `--template`
 and the option to provide extra custom data to be rendered into the template, besides the default values, using `--template-data`. The custom data should be a well structured JSON file. When loaded into the template the custom data will be available to access from the global key `.CustomData`. For example,
 with a JSON file
 ```json
@@ -5508,6 +5508,17 @@ Ginkgo works best from the command-line, and [`ginkgo watch`](#watching-for-chan
 There are a set of [completions](https://github.com/onsi/ginkgo-sublime-completions) available for [Sublime Text](https://www.sublimetext.com/) (just use [Package Control](https://sublime.wbond.net/) to install `Ginkgo Completions`) and for [VS Code](https://code.visualstudio.com/) (use the extensions installer and install vscode-ginkgo).  There is also a VS Code extension to run specs from VSCode called [Ginkgo Test Explorer](https://github.com/joselitofilho/ginkgoTestExplorer).
 
 IDE authors can set the `GINKGO_EDITOR_INTEGRATION` environment variable to any non-empty value to enable coverage to be displayed for focused specs. By default, Ginkgo will fail with a non-zero exit code if specs are focused to ensure they do not pass in CI.
+
+#### Working directory
+
+Ginkgo calls os.Getwd() to get the current directory for display in several
+reporters. os.Getwd() calls os.Getenv("PWD"), which can change from run to run
+if you are using a test suite runner like e.g. Buildkite. Because test caching
+relies on environment variables being the same from run to run, this facile
+change can break test caching.
+
+Set the `GINKGO_PRESERVE_CACHE` environment variable to `true` in order to
+skip the `os.Getwd()` call. This may affect the reporter output.
 
 ### The ginkgolinter
 The [ginkgolinter](https://github.com/nunnatsa/ginkgolinter) enforces several patterns of using ginkgo and gomega. It can run as an independent executable or as part of the [golangci-lint](https://golangci-lint.run/) linter. See the ginkgolinter [READMY](https://github.com/nunnatsa/ginkgolinter#readme) for more details.
