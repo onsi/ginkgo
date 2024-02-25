@@ -128,12 +128,6 @@ Example Usage:
 	ReportAfterSuite("Non-interruptible ReportAfterSuite", func(r Report) {  })
 	ReportAfterSuite("Interruptible ReportAfterSuite", func(ctx SpecContext, r Report) {  })
 
-These nodes must be placed at the top-level of your test suite, ensuring they're not nested within Context, Describe, or When nodes, to maintain clear, hierarchical test structures.
-
-In parallel test execution, Ginkgo ensures a singular ReportAfterSuite node runs, aggregating reports across all nodes for consistency.
-
-ReportAfterSuite supports generating detailed suite reports programmatically and via CLI flags (--json-report, --junit-report, and --teamcity-report) for various report formats. However, nesting other Ginkgo nodes within ReportAfterSuite's closure is not permitted.
-
 They are called at the end of the suite, after all specs have run and any AfterSuite or SynchronizedAfterSuite nodes, and are passed in the final report for the suite.
 ReportAfterSuite nodes must be created at the top-level (i.e. not nested in a Context/Describe/When node)
 
