@@ -190,7 +190,7 @@ var _ = Describe("Sending reports to ReportBeforeSuite and ReportAfterSuite node
 			})
 		})
 
-		Context("when a ReportAfterSuiteContext times out", func() {
+		Context("when a ReportAfterSuite times out", func() {
 			BeforeEach(func() {
 				timeoutInReportAfterSuiteC = true
 				success, _ := RunFixture("report-after-suite-C-timed-out", fixture)
