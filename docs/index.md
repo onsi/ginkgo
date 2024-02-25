@@ -3535,8 +3535,7 @@ you'll end up with multiple processes writing to the same file and the output wi
 
 #### Reporting Nodes - ReportBeforeSuite and ReportAfterSuite
 `ReportBeforeSuite` and `ReportAfterSuite` nodes behave similarly to `BeforeSuite` and `AfterSuite` and can be placed at the top-level of your suite (typically in the suite bootstrap file).  
-`ReportBeforeSuite` node take a closure that accepts a single [`Report`]((https://pkg.go.dev/github.com/onsi/ginkgo/v2/types#Report)) argument, `ReportAfterSuite` can accept either
-closer that accepts `Report` or, both `SpecContext` and `Report` converting the node to an interruptible node.
+`ReportBeforeSuite` node take a closure that accepts either [`Report`]((https://pkg.go.dev/github.com/onsi/ginkgo/v2/types#Report)) or, both `SpecContext` and `Report` converting the node to an interruptible node.
 
 ```go
 var _ = ReportBeforeSuite(func(report Report) {
