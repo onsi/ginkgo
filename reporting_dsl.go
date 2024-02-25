@@ -120,10 +120,22 @@ func ReportBeforeSuite(body func(Report), args ...interface{}) bool {
 }
 
 /*
-ReportAfterSuite nodes are run at the end of the suite.  ReportAfterSuite nodes take a function that receives a suite Report.
+ReportAfterSuite nodes are run at the end of the suite. ReportAfterSuite nodes execute at the suite's conclusion,
+accepting a function that can either receives Report or both SpecContext and Report for interruptible behavior.
+
+Example Usage:
+
+	ReportAfterSuite("Non-interruptible ReportAfterSuite", func(r Report) {  })
+	ReportAfterSuite("Interruptible ReportAfterSuite", func(ctx SpecContext, r Report) {  })
+
+These nodes must be placed at the top-level of your test suite, ensuring they're not nested within Context, Describe, or When nodes, to maintain clear, hierarchical test structures.
+
+In parallel test execution, Ginkgo ensures a singular ReportAfterSuite node runs, aggregating reports across all nodes for consistency.
+
+ReportAfterSuite supports generating detailed suite reports programmatically and via CLI flags (--json-report, --junit-report, and --teamcity-report) for various report formats. However, nesting other Ginkgo nodes within ReportAfterSuite's closure is not permitted.
 
 They are called at the end of the suite, after all specs have run and any AfterSuite or SynchronizedAfterSuite nodes, and are passed in the final report for the suite.
-ReportAftersuite nodes must be created at the top-level (i.e. not nested in a Context/Describe/When node)
+ReportAfterSuite nodes must be created at the top-level (i.e. not nested in a Context/Describe/When node)
 
 When running in parallel, Ginkgo ensures that only one of the parallel nodes runs the ReportAfterSuite and that it is passed a report that is aggregated across
 all parallel nodes
@@ -134,8 +146,10 @@ You cannot nest any other Ginkgo nodes within a ReportAfterSuite node's closure.
 You can learn more about ReportAfterSuite here: https://onsi.github.io/ginkgo/#generating-reports-programmatically
 
 You can learn more about Ginkgo's reporting infrastructure, including generating reports with the CLI here: https://onsi.github.io/ginkgo/#generating-machine-readable-reports
+
+You can learn about interruptible nodes here: https://onsi.github.io/ginkgo/#spec-timeouts-and-interruptible-nodes
 */
-func ReportAfterSuite(text string, body func(Report), args ...interface{}) bool {
+func ReportAfterSuite(text string, body any, args ...interface{}) bool {
 	combinedArgs := []interface{}{body}
 	combinedArgs = append(combinedArgs, args...)
 	return pushNode(internal.NewNode(deprecationTracker, types.NodeTypeReportAfterSuite, text, combinedArgs...))

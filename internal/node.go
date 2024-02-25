@@ -5,9 +5,8 @@ import (
 	"fmt"
 	"reflect"
 	"sort"
-	"time"
-
 	"sync"
+	"time"
 
 	"github.com/onsi/ginkgo/v2/types"
 )
@@ -337,6 +336,7 @@ func NewNode(deprecationTracker *types.DeprecationTracker, nodeType types.NodeTy
 						node.ReportSuiteBody = func(_ SpecContext, r types.Report) { fn(r) }
 					} else {
 						node.ReportSuiteBody = arg.(func(SpecContext, types.Report))
+						node.HasContext = true
 					}
 				} else {
 					appendError(types.GinkgoErrors.MultipleBodyFunctions(node.CodeLocation, nodeType))

@@ -11,12 +11,13 @@ import (
 )
 
 var _ = Describe("Sending reports to ReportBeforeSuite and ReportAfterSuite nodes", func() {
-	var failInReportBeforeSuiteA, failInReportAfterSuiteA, interruptSuiteB bool
+	var failInReportBeforeSuiteA, failInReportAfterSuiteA, timeoutInReportAfterSuiteC, interruptSuiteB bool
 	var fixture func()
 
 	BeforeEach(func() {
 		failInReportBeforeSuiteA = false
 		failInReportAfterSuiteA = false
+		timeoutInReportAfterSuiteC = false
 		interruptSuiteB = false
 		conf.RandomSeed = 17
 		fixture = func() {
@@ -61,6 +62,19 @@ var _ = Describe("Sending reports to ReportBeforeSuite and ReportAfterSuite node
 				writer.Print("gw-report-after-suite-B")
 				outputInterceptor.AppendInterceptedOutput("out-report-after-suite-B")
 			})
+			ReportAfterSuite("Report C", func(ctx SpecContext, report Report) {
+				timeout := 200 * time.Millisecond
+				if timeoutInReportAfterSuiteC {
+					timeout = timeout + 1*time.Second
+				}
+				rt.RunWithData("report-after-suite-C", "report", report)
+				writer.Print("gw-report-after-suite-C")
+				outputInterceptor.AppendInterceptedOutput("out-report-after-suite-C")
+				select {
+				case <-ctx.Done():
+				case <-time.After(timeout):
+				}
+			}, NodeTimeout(500*time.Millisecond))
 			AfterSuite(rt.T("after-suite", func() {
 				writer.Print("gw-after-suite")
 				F("fail in after-suite")
@@ -87,7 +101,7 @@ var _ = Describe("Sending reports to ReportBeforeSuite and ReportAfterSuite node
 					"before-suite",
 					"A", "B", "C",
 					"after-suite",
-					"report-after-suite-A", "report-after-suite-B",
+					"report-after-suite-A", "report-after-suite-B", "report-after-suite-C",
 				))
 			})
 
@@ -159,7 +173,7 @@ var _ = Describe("Sending reports to ReportBeforeSuite and ReportAfterSuite node
 			It("doesn't run any specs - just reporting functions", func() {
 				Ω(rt).Should(HaveTracked(
 					"report-before-suite-A", "report-before-suite-B",
-					"report-after-suite-A", "report-after-suite-B",
+					"report-after-suite-A", "report-after-suite-B", "report-after-suite-C",
 				))
 			})
 
@@ -176,6 +190,23 @@ var _ = Describe("Sending reports to ReportBeforeSuite and ReportAfterSuite node
 			})
 		})
 
+		Context("when a ReportAfterSuiteContext times out", func() {
+			BeforeEach(func() {
+				timeoutInReportAfterSuiteC = true
+				success, _ := RunFixture("report-after-suite-C-timed-out", fixture)
+				Ω(success).Should(BeFalse())
+			})
+
+			It("reports on the failure, to Ginkgo's reporter and any subsequent reporters", func() {
+				Ω(reporter.Did.Find("Report C")).Should(HaveTimedOut(
+					types.NodeTypeReportAfterSuite,
+					"A node timeout occurred",
+					CapturedGinkgoWriterOutput("gw-report-after-suite-C"),
+					CapturedStdOutput("out-report-after-suite-C"),
+				))
+			})
+		})
+
 		Context("when a ReportAfterSuite node fails", func() {
 			BeforeEach(func() {
 				failInReportAfterSuiteA = true
@@ -189,7 +220,7 @@ var _ = Describe("Sending reports to ReportBeforeSuite and ReportAfterSuite node
 					"before-suite",
 					"A", "B", "C",
 					"after-suite",
-					"report-after-suite-A", "report-after-suite-B",
+					"report-after-suite-A", "report-after-suite-B", "report-after-suite-C",
 				))
 			})
 
@@ -220,6 +251,7 @@ var _ = Describe("Sending reports to ReportBeforeSuite and ReportAfterSuite node
 					"A", "B", "C",
 					"after-suite",
 					"report-after-suite-A",
+					"report-after-suite-C",
 				))
 			})
 		})
@@ -259,7 +291,7 @@ var _ = Describe("Sending reports to ReportBeforeSuite and ReportAfterSuite node
 						"before-suite",
 						"A", "B", "C",
 						"after-suite",
-						"report-after-suite-A", "report-after-suite-B",
+						"report-after-suite-A", "report-after-suite-B", "report-after-suite-C",
 					))
 				})
 
@@ -309,7 +341,7 @@ var _ = Describe("Sending reports to ReportBeforeSuite and ReportAfterSuite node
 
 			Context("when a non-primary proc disappears before it reports", func() {
 				BeforeEach(func() {
-					close(exitChannels[2]) //proc 2 disappears before reporting
+					close(exitChannels[2]) // proc 2 disappears before reporting
 					success, _ := RunFixture("disappearing-proc-2", fixture)
 					Ω(success).Should(BeFalse())
 				})
@@ -342,7 +374,7 @@ var _ = Describe("Sending reports to ReportBeforeSuite and ReportAfterSuite node
 				It("only runs the reporting nodes", func() {
 					Ω(rt).Should(HaveTracked(
 						"report-before-suite-A", "report-before-suite-B",
-						"report-after-suite-A", "report-after-suite-B",
+						"report-after-suite-A", "report-after-suite-B", "report-after-suite-C",
 					))
 				})
 
