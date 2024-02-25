@@ -3098,7 +3098,9 @@ SynchronizedBeforeSuite(func(ctx SpecContext) []byte {
 ```
 are all valid interruptible signatures.  Of course you can specify `context.Context` instead and can mix-and-match interruptibility between the two functions.
 
-Currently the **Reporting** nodes (`ReportAfterEach`, `ReportAfterSuite`, and `ReportBeforeEach`) cannot be made interruptible and do not accept callbacks that receive a `SpecContext`.  This may change in a future release of Ginkgo (in a backward compatible way).
+Currently only `ReportAfterSuite` node can be made interruptible, to do this you need to provide it a node function which accepts both `SpecContext` and `Report`. 
+The remaining **Reporting** nodes (`ReportAfterEach`, and `ReportBeforeEach`) are not interruptible and do not accept callbacks that receive a `SpecContext`. 
+This may change in a future release of Ginkgo (in a backward compatible way).
 
 As for **Container** nodes, since these run during the Tree Construction Phase they cannot be made interruptible and so do not accept functions that expect a context.  And since the `By` annotation is simply syntactic sugar enabling more detailed spec documentation, any callbacks passed to `By` cannot be independently marked as interruptible (you should, instead, use the `context` passed into the node that you're calling `By` from).
 
@@ -3532,7 +3534,9 @@ ReportAfterEach(func(report SpecReport) {
 you'll end up with multiple processes writing to the same file and the output will be a mess.  There is a better approach for this usecase...
 
 #### Reporting Nodes - ReportBeforeSuite and ReportAfterSuite
-`ReportBeforeSuite` and `ReportAfterSuite` nodes behave similarly to `BeforeSuite` and `AfterSuite` and can be placed at the top-level of your suite (typically in the suite bootstrap file).  `ReportBeforeSuite` and `ReportAfterSuite` nodes take a closure that accepts a single [`Report`]((https://pkg.go.dev/github.com/onsi/ginkgo/v2/types#Report)) argument:
+`ReportBeforeSuite` and `ReportAfterSuite` nodes behave similarly to `BeforeSuite` and `AfterSuite` and can be placed at the top-level of your suite (typically in the suite bootstrap file).  
+`ReportBeforeSuite` node take a closure that accepts a single [`Report`]((https://pkg.go.dev/github.com/onsi/ginkgo/v2/types#Report)) argument, `ReportAfterSuite` can accept either
+closer that accepts `Report` or, both `SpecContext` and `Report` converting the node to an interruptible node.
 
 ```go
 var _ = ReportBeforeSuite(func(report Report) {
@@ -3542,6 +3546,10 @@ var _ = ReportBeforeSuite(func(report Report) {
 var _ = ReportAfterSuite("custom report", func(report Report) {
   // process report
 })
+
+var _ = ReportAfterSuite("interruptible ReportAfterSuite", func(ctx SpecContext, report Report) {
+  // process report
+}, NodeTimeout(10 * time.Minutes))
 ```
 
 `Report` contains all available information about the suite.  For `ReportAfterSuite` this will include individual `SpecReport` entries for each spec that ran in the suite, and the overall status of the suite (whether it passed or failed).  Since `ReportBeforeSuite` runs before the suite starts - it does not contain any spec reports, however the count of the number of specs that _will_ be run can be extracted from `report.PreRunStats.SpecsThatWillBeRun`.
