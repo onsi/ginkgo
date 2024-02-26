@@ -3098,9 +3098,8 @@ SynchronizedBeforeSuite(func(ctx SpecContext) []byte {
 ```
 are all valid interruptible signatures.  Of course you can specify `context.Context` instead and can mix-and-match interruptibility between the two functions.
 
-Currently only `ReportAfterSuite` node can be made interruptible, to do this you need to provide it a node function which accepts both `SpecContext` and `Report`. 
-The remaining **Reporting** nodes (`ReportAfterEach`, and `ReportBeforeEach`) are not interruptible and do not accept callbacks that receive a `SpecContext`. 
-This may change in a future release of Ginkgo (in a backward compatible way).
+**Reporting** nodes  `ReportAfterEach`, `ReportBeforeEach`, `ReportBeforeSuite` `ReportAfterSuite` can be made interruptible, 
+to do this you need to provide it a node function which accepts both `SpecContext` and `SpecReport` for `*Each` nodes and `Report` for `*Suite` nodes. 
 
 As for **Container** nodes, since these run during the Tree Construction Phase they cannot be made interruptible and so do not accept functions that expect a context.  And since the `By` annotation is simply syntactic sugar enabling more detailed spec documentation, any callbacks passed to `By` cannot be independently marked as interruptible (you should, instead, use the `context` passed into the node that you're calling `By` from).
 
@@ -3500,22 +3499,30 @@ Ginkgo's reporting infrastructure provides an alternative solution for this use 
 
 #### Reporting Nodes - ReportAfterEach and ReportBeforeEach
 
-Ginkgo provides three reporting-focused nodes `ReportAfterEach`, `ReportAfterSuite`, and `ReportBeforeEach`.
+Ginkgo provides four reporting-focused nodes `ReportAfterEach`, `ReportBeforeEach` `ReportBeforeSuite`, and `ReportAfterSuite`.
 
-`ReportAfterEach` behaves similarly to a standard `AfterEach` node and can be declared anywhere an `AfterEach` node can be declared.  `ReportAfterEach` takes a closure that accepts a single [`SpecReport`](https://pkg.go.dev/github.com/onsi/ginkgo/v2/types#SpecReport) argument.  For example, we could implement a top-level ReportAfterEach that emits information about every spec to a remote server:
+`ReportAfterEach` behaves similarly to a standard `AfterEach` node and can be declared anywhere an `AfterEach` node can be declared. 
+`ReportAfterEach` can take either a closure that accepts a single [`SpecReport`](https://pkg.go.dev/github.com/onsi/ginkgo/v2/types#SpecReport) argument or both `SpecContext` and `SpecReport`
+For example, we could implement a top-level ReportAfterEach that emits information about every spec to a remote server:
 
 ```go
 ReportAfterEach(func(report SpecReport) {
   customFormat := fmt.Sprintf("%s | %s", report.State, report.FullText())
   client.SendReport(customFormat)
 })
+// interruptible ReportAfterEach node 
+ReportAfterEach(func(ctx SpecContext, report SpecReport) {
+  customFormat := fmt.Sprintf("%s | %s", report.State, report.FullText())
+  client.SendReport(customFormat)
+}, NodeTimeout(1 * time.Minute))
 ```
 
 `ReportAfterEach` has several unique properties that distinguish it from `AfterEach`.  Most importantly, `ReportAfterEach` closures are **always** called - even if the spec has failed, is marked pending, or is skipped.  This ensures reports that rely on `ReportAfterEach` are complete.
 
 In addition, `ReportAfterEach` closures are called after a spec completes.  i.e. _after_ all `AfterEach` closures have run.  This gives them access to the complete final state of the spec.  Note that if a failure occurs in a `ReportAfterEach` your the spec will be marked as failed.  Subsequent `ReportAfterEach` closures will see the failed state, but not the closure in which the failure occurred.
 
-`ReportAfterEach` is useful if you need to stream or emit up-to-date information about the suite as it runs. Ginkgo also provides `ReportBeforeEach` which is called before the test runs and receives a preliminary `types.SpecReport` - the state of this report will indicate whether the test will be skipped or is marked pending.
+`ReportAfterEach` is useful if you need to stream or emit up-to-date information about the suite as it runs. Ginkgo also provides `ReportBeforeEach` which is called before the test runs and 
+receives a preliminary `types.SpecReport` ( or both `SpecContext` and `types.SpecReport` for interruptible behaviour) - the state of this report will indicate whether the test will be skipped or is marked pending.
 
 You should be aware that when running in parallel, each parallel process will be running specs and their `ReportAfterEach`es.  This means that multiple `ReportAfterEach` blocks can be running concurrently on independent processes.  Given that, code like this won't work:
 
@@ -3542,20 +3549,24 @@ var _ = ReportBeforeSuite(func(report Report) {
   // process report
 })
 
+var _ = ReportBeforeSuite(func(ctx SpecContext, report Report) {
+  // process report
+}, NodeTimeout(1 * time.Minutes))
+
 var _ = ReportAfterSuite("custom report", func(report Report) {
   // process report
 })
 
 var _ = ReportAfterSuite("interruptible ReportAfterSuite", func(ctx SpecContext, report Report) {
   // process report
-}, NodeTimeout(10 * time.Minutes))
+}, NodeTimeout(1 * time.Minutes))
 ```
 
 `Report` contains all available information about the suite.  For `ReportAfterSuite` this will include individual `SpecReport` entries for each spec that ran in the suite, and the overall status of the suite (whether it passed or failed).  Since `ReportBeforeSuite` runs before the suite starts - it does not contain any spec reports, however the count of the number of specs that _will_ be run can be extracted from `report.PreRunStats.SpecsThatWillBeRun`.
 
 The closure passed to `ReportBeforeSuite` is called exactly once at the beginning of the suite before any `BeforeSuite` nodes or specs run have run.  The closure passed to `ReportAfterSuite` is called exactly once at the end of the suite after any `AfterSuite` nodes have run.
 
-Finally, and most importantly, when running in parallel both `ReportBeforeSuite` and `ReportAfterSuite` **only run on process #1**.  Gingko guarantess that no other processes will start running their specs until after `ReportBeforeSuite` on process #1 has completed.  Similarly, Ginkgo will only run `ReportAfterSuite` on process #1 after all other processes have finished and exited.  Ginkgo provides a sinle `Report` that aggregates the `SpecReports` from all processes.  This allows you to perform any custom suite reporting in one place after all specs have run and not have to worry about aggregating information across multiple parallel processes.
+Finally, and most importantly, when running in parallel both `ReportBeforeSuite` and `ReportAfterSuite` **only run on process #1**.  Gingko guarantess that no other processes will start running their specs until after `ReportBeforeSuite` on process #1 has completed.  Similarly, Ginkgo will only run `ReportAfterSuite` on process #1 after all other processes have finished and exited.  Ginkgo provides a single `Report` that aggregates the `SpecReports` from all processes.  This allows you to perform any custom suite reporting in one place after all specs have run and not have to worry about aggregating information across multiple parallel processes.
 
 Given all this, we can rewrite our invalid `ReportAfterEach` example from above into a valid `ReportAfterSuite` example:
 
@@ -5251,8 +5262,12 @@ The `SuppressProgressOutput` decorator allows you to disable progress reporting 
 
 ```go
 ReportAfterEach(func(report SpecReport) {
-   //...
+   // ...
 }, SuppressProgressReporting)
+
+ReportAfterEach(func(ctx SpecContext, report SpecReport) {
+   // ...
+}, NodeTimeout(1 * time.Minute), SuppressProgressReporting)
 ```
 
 #### The PollProgressAfter and PollProgressInterval Decorators
