@@ -11,11 +11,12 @@ import (
 )
 
 var _ = Describe("Sending reports to ReportBeforeSuite and ReportAfterSuite nodes", func() {
-	var failInReportBeforeSuiteA, failInReportAfterSuiteA, timeoutInReportAfterSuiteC, interruptSuiteB bool
+	var failInReportBeforeSuiteA, timeoutInReportBeforeSuiteB, failInReportAfterSuiteA, timeoutInReportAfterSuiteC, interruptSuiteB bool
 	var fixture func()
 
 	BeforeEach(func() {
 		failInReportBeforeSuiteA = false
+		timeoutInReportBeforeSuiteB = false
 		failInReportAfterSuiteA = false
 		timeoutInReportAfterSuiteC = false
 		interruptSuiteB = false
@@ -32,11 +33,20 @@ var _ = Describe("Sending reports to ReportBeforeSuite and ReportAfterSuite node
 					F("fail in report-before-suite-A")
 				}
 			})
-			ReportBeforeSuite(func(report Report) {
+			ReportBeforeSuite(func(ctx SpecContext, report Report) {
+				timeout := 200 * time.Millisecond
+				if timeoutInReportBeforeSuiteB {
+					timeout = timeout + 1*time.Second
+				}
 				rt.RunWithData("report-before-suite-B", "report", report)
 				writer.Print("gw-report-before-suite-B")
-				outputInterceptor.AppendInterceptedOutput("out-report-before-suite-B")
-			})
+				select {
+				case <-ctx.Done():
+					outputInterceptor.AppendInterceptedOutput("timeout-report-before-suite-B")
+				case <-time.After(timeout):
+					outputInterceptor.AppendInterceptedOutput("out-report-before-suite-B")
+				}
+			}, NodeTimeout(500*time.Millisecond))
 			Context("container", func() {
 				It("A", rt.T("A"))
 				It("B", rt.T("B", func() {
@@ -187,6 +197,24 @@ var _ = Describe("Sending reports to ReportBeforeSuite and ReportAfterSuite node
 
 				reportB := rt.DataFor("report-before-suite-B")["report"].(types.Report)
 				Ω(Reports(reportB.SpecReports).FindByLeafNodeType(types.NodeTypeReportBeforeSuite)).Should(Equal(reporter.Did.FindByLeafNodeType(types.NodeTypeReportBeforeSuite)))
+			})
+		})
+
+		Context("when a ReportBeforeSuite times out", func() {
+			BeforeEach(func() {
+				timeoutInReportBeforeSuiteB = true
+				success, _ := RunFixture("report-before-suite-B-timed-out", fixture)
+				Ω(success).Should(BeFalse())
+			})
+
+			It("reports on the failure, to Ginkgo's reporter and any subsequent reporters", func() {
+				Ω(reporter.Did.WithLeafNodeType(types.NodeTypeReportBeforeSuite).WithState(types.SpecStateTimedout)).
+					Should(ContainElement(HaveTimedOut(
+						types.NodeTypeReportBeforeSuite,
+						"A node timeout occurred",
+						CapturedGinkgoWriterOutput("gw-report-before-suite-B"),
+						CapturedStdOutput("timeout-report-before-suite-B"),
+					)))
 			})
 		})
 
