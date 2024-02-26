@@ -142,7 +142,7 @@ var _ = Describe("Constructing nodes", func() {
 			Ω(node.ID).Should(BeNumerically(">", 0))
 			Ω(node.NodeType).Should(Equal(types.NodeTypeReportBeforeEach))
 
-			node.ReportEachBody(types.SpecReport{})
+			node.ReportEachBody(internal.NewSpecContext(nil), types.SpecReport{})
 			Ω(didRun).Should(BeTrue())
 
 			Ω(node.Body).Should(BeNil())
@@ -162,7 +162,7 @@ var _ = Describe("Constructing nodes", func() {
 			Ω(node.ID).Should(BeNumerically(">", 0))
 			Ω(node.NodeType).Should(Equal(types.NodeTypeReportAfterEach))
 
-			node.ReportEachBody(types.SpecReport{})
+			node.ReportEachBody(internal.NewSpecContext(nil), types.SpecReport{})
 			Ω(didRun).Should(BeTrue())
 
 			Ω(node.Body).Should(BeNil())
@@ -196,7 +196,7 @@ var _ = Describe("Constructing nodes", func() {
 				cl := types.NewCodeLocation(2)
 				cl2 := types.NewCustomCodeLocation("hi")
 				node, errors := internal.NewNode(dt, ntIt, "text", body, cl2, Offset(1))
-				//note that Offset overrides cl2
+				// note that Offset overrides cl2
 				Ω(node.CodeLocation.FileName).Should(Equal(cl.FileName))
 				ExpectAllWell(errors)
 			})
@@ -655,7 +655,7 @@ var _ = Describe("Constructing nodes", func() {
 })
 
 var _ = Describe("Node", func() {
-	//HERE - and all the fun edge cases
+	// HERE - and all the fun edge cases
 	Describe("The nodes that take more specific functions", func() {
 		var dt *types.DeprecationTracker
 		BeforeEach(func() {
