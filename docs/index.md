@@ -1221,13 +1221,13 @@ It("panics in a goroutine", func() {
 
 ```go
 It("panics in a goroutine", func() {
-  done := make(chan struct{})
+  c := make(chan struct{})
   go func() {
     defer GinkgoRecover()
     Fail("boom")
     close(c)
   }()
-  Eventually(done).Should(BeClosed())
+  Eventually(c).Should(BeClosed())
 })
 ```
 
