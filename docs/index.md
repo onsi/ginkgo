@@ -3382,6 +3382,7 @@ When you [filter specs](#filtering-specs) using Ginkgo's various filtering mecha
 Here are a grab bag of other settings:
 
 You can disable Ginkgo's color output by running `ginkgo --no-color`.
+You can also output in a format that makes it easier to read in github actions console by running `ginkgo --github-output`.
 
 By default, Ginkgo only emits full stack traces when a spec panics.  When a normal assertion failure occurs, Ginkgo simply emits the line at which the failure occurred.  You can, instead, have Ginkgo always emit the full stack trace by running `ginkgo --trace`.
 
@@ -3705,6 +3706,8 @@ Here's why:
 - `--json-report=report.json` will generate a JSON formatted report file.  You can store these off and use them later to get structured access to the suite and spec results.  Alternatively (or in addition) you can use `--junit-report=report.xml` to generate JUnit-formatted reports; these are compatible with several existing CI systems.
 - `--timeout` allows you to specify a timeout for the `ginkgo` run.  The default duration is one hour, which may or may not be enough!
 - `--poll-progress-after` and `--poll-progress-interval` will allow you to learn where long-running specs are getting stuck.  Choose a values for `X` and `Y` that are appropriate to your suite.  A long-running integration suite, for example, might set `X` to `120s` and `Y` to `30s` - whereas a quicker set of unit tests might not need this setting.  Note that if you precompile suites and run them from a different directory relative to your source code, you may also need to set `--source-root` to enable Ginkgo to emit source code lines when generating progress reports.
+
+If running on Github actions: `--github-output` will make the output more readable in the Github actions console.
 
 ### Supporting Custom Suite Configuration
 
