@@ -176,6 +176,7 @@ const (
 	VeryVerbose
 	FullTrace
 	ShowNodeEvents
+	GithubOutput
 
 	Parallel //used in the WillRun => DidRun specs to capture behavior when running in parallel
 )
@@ -204,6 +205,9 @@ func (cf ConfigFlag) String() string {
 	if cf.Has(Parallel) {
 		out = append(out, "parallel")
 	}
+	if cf.Has(GithubOutput) {
+		out = append(out, "github-output")
+	}
 	return strings.Join(out, "|")
 }
 
@@ -226,6 +230,7 @@ func C(flags ...ConfigFlag) types.ReporterConfig {
 		VeryVerbose:    f.Has(VeryVerbose),
 		FullTrace:      f.Has(FullTrace),
 		ShowNodeEvents: f.Has(ShowNodeEvents),
+		GithubOutput:   f.Has(GithubOutput),
 	}
 }
 
@@ -768,6 +773,18 @@ var _ = Describe("DefaultReporter", func() {
 				"  hello there",
 				"  this is my output",
 				"  {{gray}}<< Captured StdOut/StdErr Output{{/}}",
+				DELIMITER,
+				""),
+			Case(Parallel|GithubOutput,
+				DELIMITER,
+				spr("{{green}}%s [1.000 seconds]{{/}}", DENOTER),
+				"{{green}}{{bold}}A{{/}}",
+				"{{gray}}cl0.go:12{{/}}",
+				"",
+				"  ::group::Captured StdOut/StdErr Output",
+				"  hello there",
+				"  this is my output",
+				"  ::endgroup::",
 				DELIMITER,
 				""),
 		),
