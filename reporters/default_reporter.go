@@ -187,13 +187,13 @@ func (r *DefaultReporter) wrapTextBlock(sectionName string, fn func()) {
 	if r.conf.GithubOutput {
 		r.emitBlock(r.fi(1, "::group::%s", sectionName))
 	} else {
-		r.emitBlock(r.fi(1, "{{gray}}<< %s{{/}}", sectionName))
+		r.emitBlock(r.fi(1, "{{gray}}%s >>{{/}}", sectionName))
 	}
 	fn()
 	if r.conf.GithubOutput {
 		r.emitBlock(r.fi(1, "::endgroup::"))
 	} else {
-		r.emitBlock(r.fi(1, "{{gray}}%s >>{{/}}", sectionName))
+		r.emitBlock(r.fi(1, "{{gray}}<< %s{{/}}", sectionName))
 	}
 
 }
