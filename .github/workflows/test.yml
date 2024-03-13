@@ -27,4 +27,4 @@ jobs:
         go-version: ${{ matrix.version }}
     - uses: actions/checkout@v4
     - run: go vet ./...
-    - run: go run ./ginkgo -r -randomize-all -randomize-suites -race -trace -procs=2 -poll-progress-after=10s -poll-progress-interval=10s
+    - run: go run ./ginkgo --github-output -r -randomize-all -randomize-suites -race -trace -procs=2 -poll-progress-after=10s -poll-progress-interval=10s
