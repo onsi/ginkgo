@@ -415,7 +415,10 @@ func (suite *Suite) processCurrentSpecReport() {
 	if suite.isRunningInParallel() {
 		suite.client.PostDidRun(suite.currentSpecReport)
 	}
+
+	suite.selectiveLock.Lock()
 	suite.report.SpecReports = append(suite.report.SpecReports, suite.currentSpecReport)
+	suite.selectiveLock.Unlock()
 
 	if suite.currentSpecReport.State.Is(types.SpecStateFailureStates) {
 		suite.report.SuiteSucceeded = false
