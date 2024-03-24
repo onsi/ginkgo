@@ -427,10 +427,10 @@ var _ = Describe("Flags", func() {
 			}
 			flags = types.GinkgoFlags{
 				{Name: "string-flag", KeyPath: "A.StringProperty", DeprecatedName: "stringFlag"},
-				{Name: "int-64-flag", KeyPath: "A.Int64Property"},
+				{Name: "int-64-flag", KeyPath: "A.Int64Property", AlwaysExport: true},
 				{Name: "float-64-flag", KeyPath: "A.Float64Property"},
 				{Name: "int-flag", KeyPath: "B.IntProperty", ExportAs: "alias-int-flag"},
-				{Name: "bool-flag", KeyPath: "B.BoolProperty", ExportAs: "alias-bool-flag"},
+				{Name: "bool-flag", KeyPath: "B.BoolProperty", ExportAs: "alias-bool-flag", AlwaysExport: true},
 				{Name: "string-slice-flag", KeyPath: "B.StringSliceProperty"},
 				{DeprecatedName: "deprecated-flag", KeyPath: "B.DeprecatedProperty"},
 			}
@@ -446,6 +446,24 @@ var _ = Describe("Flags", func() {
 				"--float-64-flag=3.141000",
 				"--alias-int-flag=2009",
 				"--alias-bool-flag",
+				"--string-slice-flag=once",
+				"--string-slice-flag=upon",
+				"--string-slice-flag=a time",
+			}))
+		})
+
+		It("does not include 0 values unless AlwaysExport is true", func() {
+			A.StringProperty = ""
+			A.Int64Property = 0
+			B.IntProperty = 0
+			B.BoolProperty = false
+
+			args, err := types.GenerateFlagArgs(flags, bindings)
+			Ω(err).ShouldNot(HaveOccurred())
+
+			Ω(args).Should(Equal([]string{
+				"--int-64-flag=0", //always export
+				"--float-64-flag=3.141000",
 				"--string-slice-flag=once",
 				"--string-slice-flag=upon",
 				"--string-slice-flag=a time",

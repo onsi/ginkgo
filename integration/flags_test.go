@@ -66,6 +66,12 @@ var _ = Describe("Flags Specs", func() {
 		Ω(orders[0]).ShouldNot(BeNumerically("<", orders[1]))
 	})
 
+	It("should consistently pass in a zero seed when asked to", func() {
+		fm.MountFixture("seed")
+		session := startGinkgo(fm.PathTo("seed"), "--no-color", "--seed=0", "--nodes=2")
+		Eventually(session).Should(gexec.Exit(0))
+	})
+
 	It("should pass additional arguments in", func() {
 		session := startGinkgo(fm.PathTo("flags"), "--", "--customFlag=madagascar")
 		Eventually(session).Should(gexec.Exit(1))
