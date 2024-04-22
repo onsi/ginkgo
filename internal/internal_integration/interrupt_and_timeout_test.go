@@ -924,7 +924,7 @@ var _ = Describe("Interrupts and Timeouts", func() {
 			Ω(rt).Should(HaveTracked("A"))
 			Ω(reporter.Did.Find("A")).Should(HaveTimedOut(clLine(-1)))
 			Ω(reporter.Did.Find("A")).Should(HaveTimedOut(`A spec timeout occurred`))
-			Ω(reporter.Did.Find("A").Failure.AdditionalFailure).Should(HaveFailed(MatchRegexp("A spec timeout occurred and then the following failure was recorded in the timedout node before it exited:\nContext was cancelled after .*\nExpected\n    <string>: foo\nto equal\n    <string>: bar"), clLine(1)))
+			Ω(reporter.Did.Find("A").Failure.AdditionalFailure).Should(HaveFailed(MatchRegexp("A spec timeout occurred and then the following failure was recorded in the timedout node before it exited:\nContext was cancelled \\(cause: spec timeout occurred\\) after .*\nExpected\n    <string>: foo\nto equal\n    <string>: bar"), clLine(1)))
 			Ω(reporter.Did.Find("A").Failure.ProgressReport.Message).Should(Equal("{{bold}}This is the Progress Report generated when the spec timeout occurred:{{/}}"))
 			Ω(reporter.Did.Find("A").Failure.ProgressReport.AdditionalReports).Should(ConsistOf("Expected\n    <string>: foo\nto equal\n    <string>: bar"))
 		})
