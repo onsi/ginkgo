@@ -4,7 +4,7 @@ go 1.20
 
 require (
 	github.com/go-logr/logr v1.4.1
-	github.com/go-task/slim-sprig v0.0.0-20230315185526-52ccab3ef572
+	github.com/go-task/slim-sprig/v3 v3.0.0
 	github.com/google/pprof v0.0.0-20210407192527-94a9f03dee38
 	github.com/onsi/gomega v1.33.0
 	golang.org/x/net v0.24.0

@@ -10,7 +10,7 @@ import (
 	"strings"
 	"text/template"
 
-	sprig "github.com/go-task/slim-sprig"
+	sprig "github.com/go-task/slim-sprig/v3"
 	"github.com/onsi/ginkgo/v2/ginkgo/command"
 	"github.com/onsi/ginkgo/v2/ginkgo/internal"
 	"github.com/onsi/ginkgo/v2/types"
