@@ -174,6 +174,7 @@ func moduleName(modRoot string) string {
 	if err != nil {
 		return ""
 	}
+	defer modFile.Close()
 
 	mod := make([]byte, 128)
 	_, err = modFile.Read(mod)
