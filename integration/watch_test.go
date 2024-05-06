@@ -20,6 +20,18 @@ var _ = Describe("Watch", Label("SLOW"), func() {
 		fm.MountFixture("watch", "C")
 	})
 
+	createFile := func(path string, contents []byte) {
+		time.Sleep(time.Second)
+		err := os.WriteFile(path, contents, 0666)
+		Ω(err).ShouldNot(HaveOccurred())
+	}
+
+	createHiddenTest := func(pkgToModify string) {
+		path := filepath.Join(pkgToModify, ".#"+pkgToModify+"_test.go")
+		fm.MkEmpty(filepath.Join("watch", pkgToModify))
+		createFile(fm.PathTo("watch", path), []byte("//"))
+	}
+
 	modifyFile := func(path string) {
 		time.Sleep(time.Second)
 		content, err := os.ReadFile(path)
@@ -184,6 +196,19 @@ var _ = Describe("Watch", Label("SLOW"), func() {
 			Eventually(session).Should(gbytes.Say("Detected changes in"))
 			Eventually(session).Should(gbytes.Say("C Suite"))
 			Consistently(session).ShouldNot(gbytes.Say("A Suite|B Suite"))
+		})
+
+		Context("when a hidden test file is created", func() {
+			It("shouldn't trigger the test suite", func() {
+				session = startGinkgo(fm.PathTo("watch"), "watch", "-r")
+				Eventually(session).Should(gbytes.Say("Identified 3 test suites"))
+				Eventually(session).Should(gbytes.Say(`A \[`))
+				Eventually(session).Should(gbytes.Say(`B \[`))
+				Eventually(session).Should(gbytes.Say(`C \[`))
+
+				createHiddenTest("A")
+				Consistently(session).ShouldNot(gbytes.Say("Detected changes in"))
+			})
 		})
 	})
 
