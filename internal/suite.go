@@ -468,7 +468,7 @@ func (suite *Suite) runSpecs(description string, suiteLabels Labels, suitePath s
 		for {
 			groupedSpecIdx, err := nextIndex()
 			if err != nil {
-				suite.report.SpecialSuiteFailureReasons = append(suite.report.SpecialSuiteFailureReasons, fmt.Sprintf("Failed to iterate over specs:\n%s", err.Error()))
+				suite.report.AddSpecialSuiteFailureReasons(fmt.Sprintf("Failed to iterate over specs:\n%s", err.Error()))
 				suite.report.SuiteSucceeded = false
 				break
 			}
@@ -490,12 +490,12 @@ func (suite *Suite) runSpecs(description string, suiteLabels Labels, suitePath s
 		}
 
 		if suite.config.FailOnPending && specs.HasAnySpecsMarkedPending() {
-			suite.report.SpecialSuiteFailureReasons = append(suite.report.SpecialSuiteFailureReasons, "Detected pending specs and --fail-on-pending is set")
+			suite.report.AddSpecialSuiteFailureReasons("Detected pending specs and --fail-on-pending is set")
 			suite.report.SuiteSucceeded = false
 		}
 
 		if suite.config.FailOnEmpty && specs.CountWithoutSkip() == 0 {
-			suite.report.SpecialSuiteFailureReasons = append(suite.report.SpecialSuiteFailureReasons, "Detected no specs ran and --fail-on-empty is set")
+			suite.report.AddSpecialSuiteFailureReasons("Detected no specs ran and --fail-on-empty is set")
 			suite.report.SuiteSucceeded = false
 		}
 	}
@@ -506,13 +506,13 @@ func (suite *Suite) runSpecs(description string, suiteLabels Labels, suitePath s
 
 	interruptStatus := suite.interruptHandler.Status()
 	if interruptStatus.Interrupted() {
-		suite.report.SpecialSuiteFailureReasons = append(suite.report.SpecialSuiteFailureReasons, interruptStatus.Cause.String())
+		suite.report.AddSpecialSuiteFailureReasons(interruptStatus.Cause.String())
 		suite.report.SuiteSucceeded = false
 	}
 	suite.report.EndTime = time.Now()
 	suite.report.RunTime = suite.report.EndTime.Sub(suite.report.StartTime)
 	if !suite.deadline.IsZero() && suite.report.EndTime.After(suite.deadline) {
-		suite.report.SpecialSuiteFailureReasons = append(suite.report.SpecialSuiteFailureReasons, "Suite Timeout Elapsed")
+		suite.report.AddSpecialSuiteFailureReasons("Suite Timeout Elapsed")
 		suite.report.SuiteSucceeded = false
 	}
 
@@ -540,7 +540,7 @@ func (suite *Suite) runBeforeSuite(numSpecsThatWillBeRun int) {
 		suite.reporter.WillRun(suite.currentSpecReport)
 		suite.runSuiteNode(beforeSuiteNode)
 		if suite.currentSpecReport.State.Is(types.SpecStateSkipped) {
-			suite.report.SpecialSuiteFailureReasons = append(suite.report.SpecialSuiteFailureReasons, "Suite skipped in BeforeSuite")
+			suite.report.AddSpecialSuiteFailureReasons("Suite skipped in BeforeSuite")
 			suite.skipAll = true
 		}
 		suite.processCurrentSpecReport()

@@ -72,17 +72,21 @@ type PreRunStats struct {
 
 // Add is used by Ginkgo's parallel aggregation mechanisms to combine test run reports form individual parallel processes
 // to form a complete final report.
-func (report Report) Add(other Report) Report {
-	report.SuiteSucceeded = report.SuiteSucceeded && other.SuiteSucceeded
+func (report *Report) Add(other Report) Report {
+	newReport := *report
+	newReport.SuiteSucceeded = report.SuiteSucceeded && other.SuiteSucceeded
 
 	if other.StartTime.Before(report.StartTime) {
-		report.StartTime = other.StartTime
+		newReport.StartTime = other.StartTime
 	}
 
 	if other.EndTime.After(report.EndTime) {
-		report.EndTime = other.EndTime
+		newReport.EndTime = other.EndTime
 	}
 
+	newReport.RunTime = newReport.EndTime.Sub(newReport.StartTime)
+
+	// combine specialSuiteFailureReasons without duplicates
 	specialSuiteFailureReasons := []string{}
 	reasonsLookup := map[string]bool{}
 	for _, reasons := range [][]string{report.SpecialSuiteFailureReasons, other.SpecialSuiteFailureReasons} {
@@ -93,18 +97,22 @@ func (report Report) Add(other Report) Report {
 			}
 		}
 	}
-	report.SpecialSuiteFailureReasons = specialSuiteFailureReasons
-	report.RunTime = report.EndTime.Sub(report.StartTime)
+	newReport.SpecialSuiteFailureReasons = specialSuiteFailureReasons
 
+	// combine reports
 	reports := make(SpecReports, len(report.SpecReports)+len(other.SpecReports))
 	copy(reports, report.SpecReports)
 	offset := len(report.SpecReports)
 	for i := range other.SpecReports {
 		reports[i+offset] = other.SpecReports[i]
 	}
+	newReport.SpecReports = reports
 
-	report.SpecReports = reports
-	return report
+	return newReport
+}
+
+func (report *Report) AddSpecialSuiteFailureReasons(reason string) {
+	report.SpecialSuiteFailureReasons = append(report.SpecialSuiteFailureReasons, reason)
 }
 
 // SpecReport captures information about a Ginkgo spec.

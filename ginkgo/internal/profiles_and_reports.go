@@ -107,13 +107,13 @@ func FinalizeProfilesAndReportsForSuites(suites TestSuites, cliConfig types.CLIC
 		}
 		switch suite.State {
 		case TestSuiteStateFailedToCompile:
-			report.SpecialSuiteFailureReasons = append(report.SpecialSuiteFailureReasons, suite.CompilationError.Error())
+			report.AddSpecialSuiteFailureReasons(suite.CompilationError.Error())
 		case TestSuiteStateFailedDueToTimeout:
-			report.SpecialSuiteFailureReasons = append(report.SpecialSuiteFailureReasons, TIMEOUT_ELAPSED_FAILURE_REASON)
+			report.AddSpecialSuiteFailureReasons(TIMEOUT_ELAPSED_FAILURE_REASON)
 		case TestSuiteStateSkippedDueToPriorFailures:
-			report.SpecialSuiteFailureReasons = append(report.SpecialSuiteFailureReasons, PRIOR_FAILURES_FAILURE_REASON)
+			report.AddSpecialSuiteFailureReasons(PRIOR_FAILURES_FAILURE_REASON)
 		case TestSuiteStateSkippedDueToEmptyCompilation:
-			report.SpecialSuiteFailureReasons = append(report.SpecialSuiteFailureReasons, EMPTY_SKIP_FAILURE_REASON)
+			report.AddSpecialSuiteFailureReasons(EMPTY_SKIP_FAILURE_REASON)
 			report.SuiteSucceeded = true
 		}
 
