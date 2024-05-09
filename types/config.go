@@ -25,6 +25,7 @@ type SuiteConfig struct {
 	SkipFiles             []string
 	LabelFilter           string
 	FailOnPending         bool
+	FailOnEmpty           bool
 	FailFast              bool
 	FlakeAttempts         int
 	MustPassRepeatedly    int
@@ -275,6 +276,8 @@ var SuiteConfigFlags = GinkgoFlags{
 		Usage: "If set, ginkgo will stop running a test suite after a failure occurs."},
 	{KeyPath: "S.FlakeAttempts", Name: "flake-attempts", SectionKey: "failure", UsageDefaultValue: "0 - failed tests are not retried", DeprecatedName: "flakeAttempts", DeprecatedDocLink: "changed-command-line-flags",
 		Usage: "Make up to this many attempts to run each spec. If any of the attempts succeed, the suite will not be failed."},
+	{KeyPath: "S.FailOnEmpty", Name: "fail-on-empty", SectionKey: "failure",
+		Usage: "If set, ginkgo will mark the test suite as failed if no specs are run."},
 
 	{KeyPath: "S.DryRun", Name: "dry-run", SectionKey: "debug", DeprecatedName: "dryRun", DeprecatedDocLink: "changed-command-line-flags",
 		Usage: "If set, ginkgo will walk the test hierarchy without actually running anything.  Best paired with -v."},
