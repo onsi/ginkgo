@@ -2697,6 +2697,8 @@ These mechanisms can all be used in concert.  They combine with the following ru
 - Programmatic filters always apply and result in a non-zero exit code.  Any additional CLI filters only apply to the subset of specs selected by the programmatic filters.
 - When multiple CLI filters (`--label-filter`, `--focus-file/--skip-file`, `--focus/--skip`) are provided they are all ANDed together.  The spec must satisfy the label filter query **and** any location-based filters **and** any description based filters.
 
+If you have a large test suite and would like to avoid printing out all the `S` skip delimiters you can run with `--silence-skips` to suppress them.
+
 #### Avoiding filtering out all tests
 
 Especially for CI it is useful to fail when all tests were filtered out by accident (either via skip or typo in label filter).
@@ -3716,6 +3718,8 @@ Here's why:
 - `--poll-progress-after` and `--poll-progress-interval` will allow you to learn where long-running specs are getting stuck.  Choose a values for `X` and `Y` that are appropriate to your suite.  A long-running integration suite, for example, might set `X` to `120s` and `Y` to `30s` - whereas a quicker set of unit tests might not need this setting.  Note that if you precompile suites and run them from a different directory relative to your source code, you may also need to set `--source-root` to enable Ginkgo to emit source code lines when generating progress reports.
 
 If running on Github actions: `--github-output` will make the output more readable in the Github actions console.
+
+If your CI system will only flush if a newline character is seen you may want to set `--force-newlines` to ensure that the output is flushed correctly.
 
 ### Supporting Custom Suite Configuration
 

@@ -167,7 +167,7 @@ func S(options ...interface{}) types.SpecReport {
 	return report
 }
 
-type ConfigFlag uint8
+type ConfigFlag uint16
 
 const (
 	Succinct ConfigFlag = 1 << iota
@@ -177,6 +177,8 @@ const (
 	FullTrace
 	ShowNodeEvents
 	GithubOutput
+	SilenceSkips
+	ForceNewlines
 
 	Parallel //used in the WillRun => DidRun specs to capture behavior when running in parallel
 )
@@ -208,6 +210,12 @@ func (cf ConfigFlag) String() string {
 	if cf.Has(GithubOutput) {
 		out = append(out, "github-output")
 	}
+	if cf.Has(SilenceSkips) {
+		out = append(out, "silence-skips")
+	}
+	if cf.Has(ForceNewlines) {
+		out = append(out, "force-newlines")
+	}
 	return strings.Join(out, "|")
 }
 
@@ -231,6 +239,8 @@ func C(flags ...ConfigFlag) types.ReporterConfig {
 		FullTrace:      f.Has(FullTrace),
 		ShowNodeEvents: f.Has(ShowNodeEvents),
 		GithubOutput:   f.Has(GithubOutput),
+		SilenceSkips:   f.Has(SilenceSkips),
+		ForceNewlines:  f.Has(ForceNewlines),
 	}
 }
 
@@ -572,7 +582,10 @@ var _ = Describe("DefaultReporter", func() {
 			S(CLS(cl0, cl1), CTS("A", "B"), "C", cl2),
 			Case(Succinct, Normal, Succinct|Parallel, Normal|Parallel,
 				"{{green}}"+DENOTER+"{{/}}"),
-			Case(Verbose,
+			Case(Succinct|ForceNewlines, Normal|ForceNewlines, Succinct|Parallel|ForceNewlines, Normal|Parallel|ForceNewlines,
+				"{{green}}"+DENOTER+"{{/}}",
+				""),
+			Case(Verbose, Verbose|ForceNewlines,
 				DELIMITER,
 				"{{/}}A {{gray}}B {{/}}{{bold}}C{{/}}",
 				"{{gray}}cl2.go:80{{/}}",
@@ -694,7 +707,10 @@ var _ = Describe("DefaultReporter", func() {
 			),
 			Case(Succinct, Normal, Succinct|Parallel, Normal|Parallel,
 				spr("{{green}}%s{{/}}", DENOTER)),
-			Case(Verbose, VeryVerbose,
+			Case(Succinct|ForceNewlines, Normal|ForceNewlines, Succinct|Parallel|ForceNewlines, Normal|Parallel|ForceNewlines,
+				spr("{{green}}%s{{/}}", DENOTER),
+				""),
+			Case(Verbose, VeryVerbose, Verbose|ForceNewlines, VeryVerbose|ForceNewlines,
 				DELIMITER,
 				"{{/}}{{bold}}A{{/}}",
 				"{{gray}}cl0.go:12{{/}}",
@@ -722,7 +738,7 @@ var _ = Describe("DefaultReporter", func() {
 			S(types.NodeTypeIt, "A", cl0,
 				RE("my entry", cl1),
 			),
-			Case(Succinct, Normal, Succinct|Parallel, Normal|Parallel,
+			Case(Succinct, Normal, Succinct|Parallel, Normal|Parallel, Succinct|ForceNewlines, Normal|ForceNewlines, Succinct|Parallel|ForceNewlines, Normal|Parallel|ForceNewlines,
 				DELIMITER,
 				spr("{{green}}%s [1.000 seconds]{{/}}", DENOTER),
 				"{{green}}{{bold}}A{{/}}",
@@ -733,7 +749,7 @@ var _ = Describe("DefaultReporter", func() {
 				"  {{gray}}<< Report Entries{{/}}",
 				DELIMITER,
 				""),
-			Case(Verbose, VeryVerbose,
+			Case(Verbose, VeryVerbose, Verbose|ForceNewlines, VeryVerbose|ForceNewlines,
 				DELIMITER,
 				"{{/}}{{bold}}A{{/}}",
 				"{{gray}}cl0.go:12{{/}}",
@@ -800,6 +816,9 @@ var _ = Describe("DefaultReporter", func() {
 			),
 			Case(Succinct, Normal, Succinct|Parallel, Normal|Parallel, Succinct|ShowNodeEvents, Normal|ShowNodeEvents,
 				spr("{{green}}%s{{/}}", DENOTER)),
+			Case(Succinct|ForceNewlines, Normal|ForceNewlines, Succinct|Parallel|ForceNewlines, Normal|Parallel|ForceNewlines, Succinct|ShowNodeEvents|ForceNewlines, Normal|ShowNodeEvents|ForceNewlines,
+				spr("{{green}}%s{{/}}", DENOTER),
+				""),
 			Case(Verbose, VeryVerbose, //nothing to see here since things are emitted while streaming, which we don't simulate
 				DELIMITER,
 				"{{/}}{{bold}}A{{/}}",
@@ -873,7 +892,10 @@ var _ = Describe("DefaultReporter", func() {
 			S(types.NodeTypeIt, "A", types.SpecStateSkipped, cl0),
 			Case(Succinct, Normal, Succinct|Parallel, Normal|Parallel, Verbose, Verbose|Parallel,
 				"{{cyan}}S{{/}}"),
-			Case(VeryVerbose,
+			Case(Succinct|ForceNewlines, Normal|ForceNewlines, Succinct|Parallel|ForceNewlines, Normal|Parallel|ForceNewlines, Verbose|ForceNewlines, Verbose|Parallel|ForceNewlines,
+				"{{cyan}}S{{/}}",
+				""),
+			Case(VeryVerbose, VeryVerbose|ForceNewlines,
 				"{{cyan}}S [SKIPPED]{{/}}",
 				"{{cyan}}{{bold}}A{{/}}",
 				"{{gray}}cl0.go:12{{/}}",
@@ -886,6 +908,7 @@ var _ = Describe("DefaultReporter", func() {
 				"{{gray}}cl0.go:12{{/}}",
 				DELIMITER,
 				""),
+			Case(Succinct|SilenceSkips, Normal|SilenceSkips, Succinct|Parallel|SilenceSkips, Normal|Parallel|SilenceSkips, Verbose|SilenceSkips, Verbose|Parallel|SilenceSkips, VeryVerbose|SilenceSkips, VeryVerbose|Parallel|SilenceSkips, ""),
 		),
 		Entry("a user-skipped test",
 			S(types.NodeTypeIt, "A", types.SpecStateSkipped, cl0,
@@ -931,6 +954,7 @@ var _ = Describe("DefaultReporter", func() {
 				"  {{gray}}<< Timeline{{/}}",
 				DELIMITER,
 				""),
+			Case(Succinct|SilenceSkips, Normal|SilenceSkips, Succinct|Parallel|SilenceSkips, Normal|Parallel|SilenceSkips, Verbose|SilenceSkips, Verbose|Parallel|SilenceSkips, VeryVerbose|SilenceSkips, VeryVerbose|Parallel|SilenceSkips, ""),
 		),
 		Entry("a user-skipped test with timeline content",
 			S(types.NodeTypeIt, "A", types.SpecStateSkipped, cl0,
@@ -983,12 +1007,16 @@ var _ = Describe("DefaultReporter", func() {
 				DELIMITER,
 				"",
 			),
+			Case(Succinct|SilenceSkips, Normal|SilenceSkips, Succinct|Parallel|SilenceSkips, Normal|Parallel|SilenceSkips, Verbose|SilenceSkips, Verbose|Parallel|SilenceSkips, VeryVerbose|SilenceSkips, VeryVerbose|Parallel|SilenceSkips, ""),
 		),
 		Entry("a pending test",
 			S(types.NodeTypeIt, "C", types.SpecStatePending, cl2, CTS("A", "B"), CLS(cl0, cl1)),
 			Case(Succinct, Succinct|Parallel,
 				"{{yellow}}P{{/}}"),
-			Case(Normal, Normal|Parallel, Verbose|Parallel,
+			Case(Succinct|ForceNewlines, Succinct|Parallel|ForceNewlines,
+				"{{yellow}}P{{/}}",
+				""),
+			Case(Normal, Normal|Parallel, Verbose|Parallel, Normal|ForceNewlines, Normal|Parallel|ForceNewlines, Verbose|Parallel|ForceNewlines,
 				DELIMITER,
 				"{{yellow}}P [PENDING]{{/}}",
 				"{{/}}A {{gray}}B {{yellow}}{{bold}}C{{/}}",

@@ -91,6 +91,8 @@ type ReporterConfig struct {
 	FullTrace      bool
 	ShowNodeEvents bool
 	GithubOutput   bool
+	SilenceSkips   bool
+	ForceNewlines  bool
 
 	JSONReport     string
 	JUnitReport    string
@@ -337,6 +339,10 @@ var ReporterConfigFlags = GinkgoFlags{
 		Usage: "If set, default reporter prints node > Enter and < Exit events when specs fail"},
 	{KeyPath: "R.GithubOutput", Name: "github-output", SectionKey: "output",
 		Usage: "If set, default reporter prints easier to manage output in Github Actions."},
+	{KeyPath: "R.SilenceSkips", Name: "silence-skips", SectionKey: "output",
+		Usage: "If set, default reporter will not print out skipped tests."},
+	{KeyPath: "R.ForceNewlines", Name: "force-newlines", SectionKey: "output",
+		Usage: "If set, default reporter will ensure a newline appears after each test."},
 
 	{KeyPath: "R.JSONReport", Name: "json-report", UsageArgument: "filename.json", SectionKey: "output",
 		Usage: "If set, Ginkgo will generate a JSON-formatted test report at the specified location."},
