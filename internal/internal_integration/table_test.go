@@ -348,6 +348,7 @@ var _ = Describe("Table driven tests", func() {
 			Ω(b).Should(Equal(c[1]))
 			Ω(c[2]).Should(BeNil())
 		}, Entry("variadic arguments", 1, "one", 1, "one", nil))
+
 	})
 
 	Describe("when table entries are marked pending", func() {
