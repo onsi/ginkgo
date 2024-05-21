@@ -1,14 +1,10 @@
 # default task since it's first
 .PHONY: all
-all: install vet test
-
-.PHONY: install
-install:
-	which ginkgo 2>&1 >/dev/null || go install ./...
+all:  vet test
 
 .PHONY: test
 test:
-	ginkgo -r -p
+	go run github.com/onsi/ginkgo/v2/ginkgo -r -p
 
 .PHONY: vet
 vet:
