@@ -444,9 +444,9 @@ var _ = Describe("Constructing nodes", func() {
 		})
 
 		It("validates labels", func() {
-			node, errors := internal.NewNode(dt, ntIt, "", body, cl, Label("A", "B&C", "C,D", "C,D ", "  "))
+			node, errors := internal.NewNode(dt, ntIt, "", body, cl, Label("A", "B&C", "C,D", "C,D ", "  ", ":Foo"))
 			Ω(node).Should(BeZero())
-			Ω(errors).Should(ConsistOf(types.GinkgoErrors.InvalidLabel("B&C", cl), types.GinkgoErrors.InvalidLabel("C,D", cl), types.GinkgoErrors.InvalidLabel("C,D ", cl), types.GinkgoErrors.InvalidEmptyLabel(cl)))
+			Ω(errors).Should(ConsistOf(types.GinkgoErrors.InvalidLabel("B&C", cl), types.GinkgoErrors.InvalidLabel("C,D", cl), types.GinkgoErrors.InvalidLabel("C,D ", cl), types.GinkgoErrors.InvalidEmptyLabel(cl), types.GinkgoErrors.InvalidLabel(":Foo", cl)))
 			Ω(dt.DidTrackDeprecations()).Should(BeFalse())
 		})
 	})

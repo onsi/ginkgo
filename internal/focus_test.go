@@ -254,6 +254,27 @@ var _ = Describe("Focus", func() {
 			})
 		})
 
+		Context("when configured with a label set filter", func() {
+			BeforeEach(func() {
+				conf.LabelFilter = "Feature: consistsOf {A, B} || Feature: containsAny C"
+				specs = Specs{
+					S(N(ntCon, Label("Feature:A", "dog")), N(ntIt, "A", Label("fish"))),               //skip because fish no feature:B
+					S(N(ntCon, Label("Feature:A", "dog")), N(ntIt, "B", Label("apple", "Feature:B"))), //include because has Feature:A and Feature:B
+					S(N(ntCon, Label("Feature:A")), N(ntIt, "C", Label("Feature:B", "Feature:D"))),    //skip because it has Feature:D
+					S(N(ntCon, Label("Feature:C")), N(ntIt, "D", Label("fish", "Feature:D"))),         //include because it has Feature:C
+					S(N(ntCon, Label("cow")), N(ntIt, "E")),                                           //skip because no Feature:
+					S(N(ntCon, Label("Feature:A", "Feature:B")), N(ntIt, "F", Pending)),               //skip because pending
+				}
+			})
+
+			It("applies the label filters", func() {
+				specs, hasProgrammaticFocus := internal.ApplyFocusToSpecs(specs, description, suiteLabels, conf)
+				Ω(harvestSkips(specs)).Should(Equal([]bool{true, false, true, false, true, true}))
+				Ω(hasProgrammaticFocus).Should(BeFalse())
+
+			})
+		})
+
 		Context("when configured with a label filter that filters on the suite level label", func() {
 			BeforeEach(func() {
 				conf.LabelFilter = "cat && TopLevelLabel"
