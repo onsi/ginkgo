@@ -2590,8 +2590,8 @@ The real power, of labels, however, is around filtering.  You can filter by labe
 - The `!` unary operator representing the NOT operation.
 - The `,` binary operator equivalent to `||`.
 - The `()` for grouping expressions.
-- All other characters will match as label literals.  Label matches are **case insensitive** and trailing and leading whitespace is trimmed.
 - Regular expressions can be provided using `/REGEXP/` notation.
+- All other characters will match as label literals.  Label matches are **case insensitive** and trailing and leading whitespace is trimmed.
 
 To build on our example above, here are some label filter queries and their behavior:
 
@@ -2602,9 +2602,62 @@ To build on our example above, here are some label filter queries and their beha
 | `ginkgo --label-filter="network && !slow"` | Run specs labelled `network` that aren't `slow` |
 | `ginkgo --label-filter=/library/` | Run specs with labels matching the regular expression `library` - this will match the three library-related specs in our example.
 
+##### Label Sets
+
+In addition to flat strings, Labels can also construct sets.  If a label has the format `KEY:VALUE` then a set with key `KEY` is created and the value `VALUE` is added to the set.  For example:
+
+```go
+Describe("The Library API", Label("API:Library"), func() {
+  It("can fetch a list of books", func() {
+    // has the labels [API:Library]
+    // API is a set with value {Library}
+  })
+  It("can fetch a list of books by shelf", Label("API:Shelf", "Readiness:Alpha"), func() {
+    // has the labels [API:Library, API:Shelf, Readiness:Alpha]
+    // API is a set with value {Library, Shelf}
+    // Readiness is a set with value {Alpha}
+
+  })
+  It("can fetch a list of books by zip code", Label("API:Geo", "Readiness:Beta"), func() {
+    // has the labels [API:Library, API:Geo, Readiness:Beta]
+    // API is a set with value {Library, Geo}
+    // Readiness is a set with value {Beta}
+  })
+})
+```
+
+Label filters can operate on sets using the notation: `KEY: SET_OPERATION <ARGUMENT>`. The following set operations are supported:
+
+| Set Operation | Argument | Description |
+| --- | --- | --- |
+| `isEmpty` | None | Matches if the set with key `KEY` is empty (i.e. no label of the form `KEY:*` exists) |
+| `containsAny` | `SINGLE_VALUE` or `{VALUE1, VALUE2, ...}` | Matches if the `KEY` set contains _any_ of the elements in `ARGUMENT` |
+| `containsAll` | `SINGLE_VALUE` or `{VALUE1, VALUE2, ...}` | Matches if the `KEY` set contains _all_ of the elements in `ARGUMENT` |
+| `consistsOf` | `SINGLE_VALUE` or `{VALUE1, VALUE2, ...}` | Matches if the `KEY` set contains _exactly_ the elements in `ARGUMENT` |
+| `isSubsetOf` | `SINGLE_VALUE` or `{VALUE1, VALUE2, ...}` | Matches if the elements in the `KEY` set are a subset of the elements in `ARGUMENT` |
+
+leading and trailing whitespace is alwasy trimmed around keys and values and comparisons are always case-insensitive.  Keys and values in the filter-language set operations are always literals; regular expressions are not supported.  A special note should be made about the behavior of `isSubsetOf`: if the `KEY` set is empty then the filter will always match.  This is because an empty set is always a subset of any other set.
+
+You can combine set operations with other label filters using the logical operators.  For example: `ginkgo --label-filter="integration && !slow && Readiness: isSubsetOf {Beta, RC}"` will run all tests that have the label `integration`, do not have the label `slow` and have a `Readiness` set that is a subset of `{Beta, RC}`.  This would exclude `Readiness:Alpha` but include specs with `Readiness:Beta` and `Readiness:RC` as well as specs with no `Readiness:*` label.
+
+Some more examples:
+
+| Query | Behavior |
+| --- | --- |
+| `ginkgo --label-filter="API: consistsOf {Library, Geo}"` | Match any specs for which the `API` set contains exactly `Library` and `Geo` |
+| `ginkgo --label-filter="API: containsAny Library"` | Match any specs for which the `API` set contains either `Library` |
+| `ginkgo --label-filter="Readiness: isEmpty"` | Match any specs for which the `Readiness` set is empty |
+| `ginkgo --label-filter="Readiness: isSubsetOf Beta && !(API: containsAny Geo)"` | Match any specs for which the `Readiness` set is a subset of `{Beta}` (or empty) and the `API` set does not contain `Geo` |
+
+Label sets are helpful for organizing and filtering large spec suites in which different specs satisfy multiple overlapping concerns.  The use of label set filters is intended to be a more powerful and expressive alterantive to the use of regular expressions.  If you find yourself using a regular expression, consider if you should be using a label set instead.
+
+##### Listing Labels
+
 You can list the labels used in a given package using the `ginkgo labels` subcommand.  This does a simple/naive scan of your test files for calls to `Label` and returns any labels it finds.
 
 You can iterate on different filters quickly with `ginkgo --dry-run -v --label-filter=FILTER`.  This will cause Ginkgo to tell you which specs it will run for a given filter without actually running anything.
+
+##### Runtime Label Evaluation
 
 If you want to have finer-grained control within a test about what code to run/not-run depending on what labels match/don't match the filter you can perform a manual check against the label-filter passed into Ginkgo like so:
 
@@ -2620,6 +2673,8 @@ It("can save books remotely", Label("network", "slow", "library query") {
 
 here `GinkgoLabelFilter()` returns the configured label filter passed in via `--label-filter`.  With a setup like this you could run `ginkgo --label-filter="network && !performance"` - this would select the `"can save books remotely"` spec but not run the benchmarking code in the spec.  Of course, this could also have been modeled as a separate spec with the `performance` label.
 
+##### Suite-Level Labels
+
 Finally, in addition to specifying Labels on subject and container nodes you can also specify suite-wide labels by decorating the `RunSpecs` command with `Label`:
 
 ```go
@@ -2630,7 +2685,6 @@ func TestBooks(t *testing.T) {
 ```
 
 Suite-level labels apply to the entire suite making it easy to filter out entire suites using label filters.
-
 
 #### Location-Based Filtering
 

@@ -13,11 +13,15 @@ var _ = Describe("WidgetB", func() {
 
 	})
 
+	It("fish", Label("Feature:Alpha"), func() {
+
+	})
+
 	It("cat fish", func() {
 
 	})
 
-	It("dog fish", func() {
+	It("dog fish", Label("Feature:Beta"), func() {
 
 	})
 })
