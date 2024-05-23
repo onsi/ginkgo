@@ -2636,7 +2636,7 @@ Label filters can operate on sets using the notation: `KEY: SET_OPERATION <ARGUM
 | `consistsOf` | `SINGLE_VALUE` or `{VALUE1, VALUE2, ...}` | Matches if the `KEY` set contains _exactly_ the elements in `ARGUMENT` |
 | `isSubsetOf` | `SINGLE_VALUE` or `{VALUE1, VALUE2, ...}` | Matches if the elements in the `KEY` set are a subset of the elements in `ARGUMENT` |
 
-Leading and trailing whitespace is alwasy trimmed around keys and values and comparisons are always case-insensitive.  Keys and values in the filter-language set operations are always literals; regular expressions are not supported.
+Leading and trailing whitespace is always trimmed around keys and values and comparisons are always case-insensitive.  Keys and values in the filter-language set operations are always literals; regular expressions are not supported.
 
 A special note should be made about the behavior of `isSubsetOf`: if the `KEY` set is empty then the filter will always match.  This is because an empty set is always a subset of any other set.
 
