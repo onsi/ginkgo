@@ -2636,7 +2636,9 @@ Label filters can operate on sets using the notation: `KEY: SET_OPERATION <ARGUM
 | `consistsOf` | `SINGLE_VALUE` or `{VALUE1, VALUE2, ...}` | Matches if the `KEY` set contains _exactly_ the elements in `ARGUMENT` |
 | `isSubsetOf` | `SINGLE_VALUE` or `{VALUE1, VALUE2, ...}` | Matches if the elements in the `KEY` set are a subset of the elements in `ARGUMENT` |
 
-leading and trailing whitespace is alwasy trimmed around keys and values and comparisons are always case-insensitive.  Keys and values in the filter-language set operations are always literals; regular expressions are not supported.  A special note should be made about the behavior of `isSubsetOf`: if the `KEY` set is empty then the filter will always match.  This is because an empty set is always a subset of any other set.
+Leading and trailing whitespace is alwasy trimmed around keys and values and comparisons are always case-insensitive.  Keys and values in the filter-language set operations are always literals; regular expressions are not supported.
+
+A special note should be made about the behavior of `isSubsetOf`: if the `KEY` set is empty then the filter will always match.  This is because an empty set is always a subset of any other set.
 
 You can combine set operations with other label filters using the logical operators.  For example: `ginkgo --label-filter="integration && !slow && Readiness: isSubsetOf {Beta, RC}"` will run all tests that have the label `integration`, do not have the label `slow` and have a `Readiness` set that is a subset of `{Beta, RC}`.  This would exclude `Readiness:Alpha` but include specs with `Readiness:Beta` and `Readiness:RC` as well as specs with no `Readiness:*` label.
 
@@ -2645,11 +2647,11 @@ Some more examples:
 | Query | Behavior |
 | --- | --- |
 | `ginkgo --label-filter="API: consistsOf {Library, Geo}"` | Match any specs for which the `API` set contains exactly `Library` and `Geo` |
-| `ginkgo --label-filter="API: containsAny Library"` | Match any specs for which the `API` set contains either `Library` |
+| `ginkgo --label-filter="API: containsAny Library"` | Match any specs for which the `API` set contains `Library` |
 | `ginkgo --label-filter="Readiness: isEmpty"` | Match any specs for which the `Readiness` set is empty |
 | `ginkgo --label-filter="Readiness: isSubsetOf Beta && !(API: containsAny Geo)"` | Match any specs for which the `Readiness` set is a subset of `{Beta}` (or empty) and the `API` set does not contain `Geo` |
 
-Label sets are helpful for organizing and filtering large spec suites in which different specs satisfy multiple overlapping concerns.  The use of label set filters is intended to be a more powerful and expressive alterantive to the use of regular expressions.  If you find yourself using a regular expression, consider if you should be using a label set instead.
+Label sets are helpful for organizing and filtering large spec suites in which different specs satisfy multiple overlapping concerns.  The use of label set filters is intended to be a more powerful and expressive alternative to the use of regular expressions.  If you find yourself using a regular expression, consider if you should be using a label set instead.
 
 ##### Listing Labels
 
