@@ -219,6 +219,7 @@ type GoFlagsConfig struct {
 	ToolExec      string
 	Work          bool
 	X             bool
+	O             string
 }
 
 func NewDefaultGoFlagsConfig() GoFlagsConfig {
@@ -561,6 +562,8 @@ var GoBuildFlags = GinkgoFlags{
 		Usage: "print the name of the temporary work directory and do not delete it when exiting."},
 	{KeyPath: "Go.X", Name: "x", SectionKey: "go-build",
 		Usage: "print the commands."},
+	{KeyPath: "Go.O", Name: "o", SectionKey: "go-build",
+		Usage: "output binary path (including name)."},
 }
 
 // GoRunFlags provides flags for the Ginkgo CLI  run, and watch commands that capture go's run-time flags.  These are passed to the compiled test binary by the ginkgo CLI
@@ -614,7 +617,7 @@ func VetAndInitializeCLIAndGoConfig(cliConfig CLIConfig, goFlagsConfig GoFlagsCo
 }
 
 // GenerateGoTestCompileArgs is used by the Ginkgo CLI to generate command line arguments to pass to the go test -c command when compiling the test
-func GenerateGoTestCompileArgs(goFlagsConfig GoFlagsConfig, destination string, packageToBuild string, pathToInvocationPath string) ([]string, error) {
+func GenerateGoTestCompileArgs(goFlagsConfig GoFlagsConfig, packageToBuild string, pathToInvocationPath string) ([]string, error) {
 	// if the user has set the CoverProfile run-time flag make sure to set the build-time cover flag to make sure
 	// the built test binary can generate a coverprofile
 	if goFlagsConfig.CoverProfile != "" {
@@ -637,7 +640,7 @@ func GenerateGoTestCompileArgs(goFlagsConfig GoFlagsConfig, destination string, 
 		goFlagsConfig.CoverPkg = strings.Join(adjustedCoverPkgs, ",")
 	}
 
-	args := []string{"test", "-c", "-o", destination, packageToBuild}
+	args := []string{"test", "-c", packageToBuild}
 	goArgs, err := GenerateFlagArgs(
 		GoBuildFlags,
 		map[string]interface{}{

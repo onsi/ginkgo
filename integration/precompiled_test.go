@@ -1,12 +1,15 @@
 package integration_test
 
 import (
+	"os"
 	"os/exec"
+	"path"
 
-	. "github.com/onsi/ginkgo/v2"
 	. "github.com/onsi/gomega"
 	"github.com/onsi/gomega/gbytes"
 	"github.com/onsi/gomega/gexec"
+
+	. "github.com/onsi/ginkgo/v2"
 )
 
 var _ = Describe("ginkgo build", func() {
@@ -42,5 +45,36 @@ var _ = Describe("ginkgo build", func() {
 		Eventually(session).Should(gexec.Exit(0))
 		Ω(session).Should(gbytes.Say("Running Suite: Passing_ginkgo_tests Suite"))
 		Ω(session).Should(gbytes.Say("Running in parallel across 2 processes"))
+	})
+})
+
+var _ = Describe("ginkgo build with custom output", Label("build"), func() {
+	const customPath = "mycustomdir"
+	var fullPath string
+
+	BeforeEach(func() {
+		fm.MountFixture("passing_ginkgo_tests")
+		fullPath = fm.PathTo("passing_ginkgo_tests", customPath)
+		Ω(os.Mkdir(fullPath, 0777)).To(Succeed())
+
+		DeferCleanup(func() {
+			Ω(os.RemoveAll(fullPath)).Should(Succeed())
+		})
+	})
+
+	It("should build with custom path", func() {
+		session := startGinkgo(fm.PathTo("passing_ginkgo_tests"), "build", "-o", customPath+"/mytestapp")
+		Eventually(session).Should(gexec.Exit(0))
+		output := string(session.Out.Contents())
+		Ω(output).Should(And(ContainSubstring("Compiled"), ContainSubstring(customPath+"/mytestapp")))
+		Ω(path.Join(fullPath, "/mytestapp")).Should(BeAnExistingFile())
+	})
+
+	It("should build with custom directory", func() {
+		session := startGinkgo(fm.PathTo("passing_ginkgo_tests"), "build", "-o", customPath)
+		Eventually(session).Should(gexec.Exit(0))
+		output := string(session.Out.Contents())
+		Ω(output).Should(And(ContainSubstring("Compiled"), ContainSubstring(customPath+"/passing_ginkgo_tests.test")))
+		Ω(path.Join(fullPath, "/passing_ginkgo_tests.test")).Should(BeAnExistingFile())
 	})
 })
