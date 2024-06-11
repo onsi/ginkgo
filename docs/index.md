@@ -3639,7 +3639,7 @@ Given all this, we can rewrite our invalid `ReportAfterEach` example from above 
 ReportAfterSuite("custom report", func(report Report) {
   f := os.Create("report.custom")
   for _, specReport := range report.SpecReports {
-    fmt.Fprintf(f, "%s | %s\n", report.FullText(), specReport.State)
+    fmt.Fprintf(f, "%s | %s\n", specReport.FullText(), specReport.State)
   }
   f.Close()
 })
