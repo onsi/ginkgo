@@ -512,7 +512,7 @@ var GinkgoCLIWatchFlags = GinkgoFlags{
 // GoBuildFlags provides flags for the Ginkgo CLI build, run, and watch commands that capture go's build-time flags.  These are passed to go test -c by the ginkgo CLI
 var GoBuildFlags = GinkgoFlags{
 	{KeyPath: "Go.Race", Name: "race", SectionKey: "code-and-coverage-analysis",
-		Usage: "enable data race detection. Supported only on linux/amd64, freebsd/amd64, darwin/amd64, windows/amd64, linux/ppc64le and linux/arm64 (only for 48-bit VMA)."},
+		Usage: "enable data race detection. Supported on linux/amd64, linux/ppc64le, linux/arm64, linux/s390x, freebsd/amd64, netbsd/amd64, darwin/amd64, darwin/arm64, and windows/amd64."},
 	{KeyPath: "Go.Vet", Name: "vet", UsageArgument: "list", SectionKey: "code-and-coverage-analysis",
 		Usage: `Configure the invocation of "go vet" during "go test" to use the comma-separated list of vet checks.  If list is empty, "go test" runs "go vet" with a curated list of checks believed to be always worth addressing.  If list is "off", "go test" does not run "go vet" at all.  Available checks can be found by running 'go doc cmd/vet'`},
 	{KeyPath: "Go.Cover", Name: "cover", SectionKey: "code-and-coverage-analysis",
