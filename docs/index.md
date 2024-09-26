@@ -3627,7 +3627,7 @@ var _ = ReportAfterSuite("interruptible ReportAfterSuite", func(ctx SpecContext,
 }, NodeTimeout(1 * time.Minutes))
 ```
 
-`Report` contains all available information about the suite.  For `ReportAfterSuite` this will include individual `SpecReport` entries for each spec that ran in the suite, and the overall status of the suite (whether it passed or failed).  Since `ReportBeforeSuite` runs before the suite starts - it does not contain any spec reports, however the count of the number of specs that _will_ be run can be extracted from `report.PreRunStats.SpecsThatWillBeRun`.
+`Report` contains all available information about the suite.  For `ReportAfterSuite` this will include individual `SpecReport` entries for each spec that ran in the suite, and the overall status of the suite (whether it passed or failed).  Since `ReportBeforeSuite` runs before the suite starts - it does not contain any spec reports, however the count of the number of specs that _will_ be run can be extracted from `report.PreRunStats.SpecsThatWillRun`.
 
 The closure passed to `ReportBeforeSuite` is called exactly once at the beginning of the suite before any `BeforeSuite` nodes or specs run have run.  The closure passed to `ReportAfterSuite` is called exactly once at the end of the suite after any `AfterSuite` nodes have run.
 
