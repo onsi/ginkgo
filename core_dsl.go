@@ -20,6 +20,7 @@ import (
 	"io"
 	"os"
 	"path/filepath"
+	"strconv"
 	"strings"
 
 	"github.com/go-logr/logr"
@@ -257,6 +258,14 @@ func RunSpecs(t GinkgoTestingT, description string, args ...interface{}) bool {
 	suiteLabels := extractSuiteConfiguration(args)
 
 	var reporter reporters.Reporter
+	reporterConfig := reporterConfig
+	if value, present := os.LookupEnv("GINGKO_COLOR"); present {
+		b, err := strconv.ParseBool(value)
+		if err == nil {
+			reporterConfig.NoColor = !b
+		}
+	}
+
 	if suiteConfig.ParallelTotal == 1 {
 		reporter = reporters.NewDefaultReporter(reporterConfig, formatter.ColorableStdOut)
 		outputInterceptor = internal.NoopOutputInterceptor{}
