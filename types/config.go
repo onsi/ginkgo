@@ -115,7 +115,16 @@ func (rc ReporterConfig) WillGenerateReport() bool {
 }
 
 func NewDefaultReporterConfig() ReporterConfig {
-	return ReporterConfig{}
+	c := ReporterConfig{}
+
+	if value, present := os.LookupEnv("GINGKO_COLOR"); present {
+		b, err := strconv.ParseBool(value)
+		if err == nil {
+			c.NoColor = !b
+		}
+	}
+
+	return c
 }
 
 // Configuration for the Ginkgo CLI
