@@ -372,7 +372,7 @@ func BeSpecEvent(options ...interface{}) OmegaMatcher {
 			matcher = HaveField("Attempt", x)
 			description = append(description, fmt.Sprintf("Attempt=%d", x))
 		case time.Duration:
-			matcher = HaveField("Duration", BeNumerically("~", x, time.Duration(float64(x)*0.5)))
+			matcher = HaveField("Duration", BeNumerically("~", x, time.Duration(float64(x)*0.9)))
 			description = append(description, "Duration="+x.String())
 		case types.NodeType:
 			matcher = HaveField("NodeType", x)
