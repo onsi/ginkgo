@@ -3445,7 +3445,7 @@ When you [filter specs](#filtering-specs) using Ginkgo's various filtering mecha
 #### Other Settings
 Here are a grab bag of other settings:
 
-You can disable Ginkgo's color output by running `ginkgo --no-color`.
+You can disable Ginkgo's color output by running `ginkgo --no-color` or setting the `GINKGO_NO_COLOR=TRUE` environment variable.
 You can also output in a format that makes it easier to read in github actions console by running `ginkgo --github-output`.
 
 By default, Ginkgo only emits full stack traces when a spec panics.  When a normal assertion failure occurs, Ginkgo simply emits the line at which the failure occurred.  You can, instead, have Ginkgo always emit the full stack trace by running `ginkgo --trace`.
