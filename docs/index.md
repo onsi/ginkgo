@@ -3446,7 +3446,10 @@ When you [filter specs](#filtering-specs) using Ginkgo's various filtering mecha
 Here are a grab bag of other settings:
 
 You can disable Ginkgo's color output by running `ginkgo --no-color` or setting the `GINKGO_NO_COLOR=TRUE` environment variable.
+
 You can also output in a format that makes it easier to read in github actions console by running `ginkgo --github-output`.
+
+You can change how Ginkgo formats timestamps in the timeline by setting `GINKGO_TIME_FORMAT` to a valid Golang time format layout (e.g. `GINKGO_TIME_FORMAT=02/01/06 3:04:05.00`).
 
 By default, Ginkgo only emits full stack traces when a spec panics.  When a normal assertion failure occurs, Ginkgo simply emits the line at which the failure occurred.  You can, instead, have Ginkgo always emit the full stack trace by running `ginkgo --trace`.
 
