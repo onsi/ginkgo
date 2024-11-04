@@ -528,7 +528,7 @@ var _ = Describe("Books", func() {
         BeforeEach(func() {
           book, err = NewBookFromJSON(`{
             "title":"Les Miserables",
-            "author":"Victor Hugo",
+            "author":"Victor Hugo"
           }`)
         })
 
@@ -766,7 +766,7 @@ Describe("some JSON decoding edge cases", func() {
     BeforeEach(func() {
       book, err = NewBookFromJSON(`{
         "title":"Les Miserables",
-        "author":"Victor Hugo",
+        "author":"Victor Hugo"
       }`)
     })
 
@@ -837,7 +837,7 @@ Describe("some JSON decoding edge cases", func() {
     BeforeEach(func() {
       json = `{
         "title":"Les Miserables",
-        "author":"Victor Hugo",
+        "author":"Victor Hugo"
       }`
     })
 
