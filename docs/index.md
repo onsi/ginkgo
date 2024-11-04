@@ -1666,7 +1666,7 @@ DescribeTableSubtree("handling requests",
       })
 
       It("should return the expected message", func() {
-        body, err := ioutil.ReadAll(resp.Body)
+        body, err := io.ReadAll(resp.Body)
         Expect(err).NotTo(HaveOccurred())
         Expect(string(body)).To(Equal(message))
       })
@@ -1696,7 +1696,7 @@ Describe("handling requests", func() {
       })
 
       It("should return the expected message", func() {
-        body, err := ioutil.ReadAll(resp.Body)
+        body, err := io.ReadAll(resp.Body)
         Expect(err).NotTo(HaveOccurred())
         Expect(string(body)).To(Equal("hello world"))
       })
@@ -1716,7 +1716,7 @@ Describe("handling requests", func() {
       })
 
       It("should return the expected message", func() {
-        body, err := ioutil.ReadAll(resp.Body)
+        body, err := io.ReadAll(resp.Body)
         Expect(err).NotTo(HaveOccurred())
         Expect(string(body)).To(Equal("wat?"))
       })
