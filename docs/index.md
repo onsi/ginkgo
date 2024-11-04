@@ -1891,7 +1891,7 @@ Describe("checking out a book", func() {
 })
 ```
 
-These specs are not independent - the assume that they run in order.  This means they can't be randomized or parallelized with respect to each other.
+These specs are not independent - the current implementation assumes that they will run in order. This means they can't be randomized or parallelized with respect to each other.
 
 You can fix these specs by creating a single `It` to test the behavior of checking out a book:
 
