@@ -1588,7 +1588,7 @@ var _ = Describe("Math", func() {
     },
     func(a, b, c int) string {
       return fmt.Sprintf("%d + %d = %d", a, b, c)
-    }
+    },
     Entry(nil, 1, 2, 3),
     Entry(nil, -1, 2, 1),
     Entry(nil, 0, 0, 0),
