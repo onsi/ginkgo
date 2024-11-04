@@ -1611,7 +1611,7 @@ var _ = Describe("Math", func() {
     func(a, b, c int) {
       Expect(a+b).To(Equal(c))
     },
-    EntryDescription("%d + %d = %d")
+    EntryDescription("%d + %d = %d"),
     Entry(nil, 1, 2, 3),
     Entry(nil, -1, 2, 1),
     Entry(nil, 0, 0, 0),
