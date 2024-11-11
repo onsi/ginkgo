@@ -138,7 +138,7 @@ var _ = Describe("Timeline output", func() {
 
 			Ω(session).Should(gbytes.Say(`3 specs`))
 
-			Ω(session).Should(gbytes.Say(`a full timeline\n`))
+			Ω(session).Should(gbytes.Say(`a full timeline \[Serial\]\n`))
 			Ω(session).Should(gbytes.Say(`a flaky test\n`))
 			Ω(session).Should(gbytes.Say(`retries a few times\n`))
 			Ω(session).Should(gbytes.Say(`> Enter \[BeforeEach\] a flaky test`))
@@ -270,7 +270,7 @@ var _ = Describe("Timeline output", func() {
 			Ω(session).Should(gbytes.Say(`3 specs`))
 
 			Ω(session).Should(gbytes.Say(retryDenoter + ` \[FLAKEY TEST - TOOK 3 ATTEMPTS TO PASS\]`))
-			Ω(session).Should(gbytes.Say(`a full timeline\n`))
+			Ω(session).Should(gbytes.Say(`a full timeline \[Serial\]\n`))
 			Ω(session).Should(gbytes.Say(`a flaky test\n`))
 			Ω(session).Should(gbytes.Say(`retries a few times\n`))
 			Ω(session).Should(gbytes.Say(`> Enter \[BeforeEach\] a flaky test`))

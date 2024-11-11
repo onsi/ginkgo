@@ -269,6 +269,7 @@ var _ = Describe("Constructing nodes", func() {
 		It("marks the node as Serial", func() {
 			node, errors := internal.NewNode(dt, ntIt, "text", body, Serial)
 			Ω(node.MarkedSerial).Should(BeTrue())
+			Ω(node.Labels).Should(Equal(Labels{"Serial"}))
 			ExpectAllWell(errors)
 		})
 		It("allows containers to be marked", func() {
