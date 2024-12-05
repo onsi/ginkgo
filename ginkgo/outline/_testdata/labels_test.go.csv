@@ -1,16 +1,16 @@
 Name,Text,Start,End,Spec,Focused,Pending,Labels
-Describe,NormalFixture,73,571,false,false,false,""
+Describe,NormalFixture,73,571,false,false,false,
 Describe,normal,109,228,false,false,false,"normal, serial"
-It,normal,166,224,true,false,false,""
-By,step 1,191,203,false,false,false,""
-By,step 2,207,219,false,false,false,""
-Context,normal,231,323,false,false,false,""
+It,normal,166,224,true,false,false,
+By,step 1,191,203,false,false,false,
+By,step 2,207,219,false,false,false,
+Context,normal,231,323,false,false,false,
 It,normal,260,319,true,false,false,"medium, slow"
-When,normal,326,383,false,false,false,""
-It,normal,352,379,true,false,false,""
-It,normal,386,412,true,false,false,""
-Specify,normal,415,446,true,false,false,""
-DescribeTable,normal,449,507,false,false,false,""
-Entry,normal,488,503,true,false,false,""
-DescribeTable,normal,510,568,false,false,false,""
-Entry,normal,549,564,true,false,false,""
+When,normal,326,383,false,false,false,
+It,normal,352,379,true,false,false,
+It,normal,386,412,true,false,false,
+Specify,normal,415,446,true,false,false,
+DescribeTable,normal,449,507,false,false,false,
+Entry,normal,488,503,true,false,false,
+DescribeTable,normal,510,568,false,false,false,
+Entry,normal,549,564,true,false,false,
