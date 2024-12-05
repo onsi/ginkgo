@@ -65,6 +65,7 @@ var _ = DescribeTable("Validate outline from file with",
 	Entry("core dsl import", "dsl_core_test.go", "dsl_core_test.go.json", "dsl_core_test.go.csv"),
 	Entry("labels decorator on containers and specs", "labels_test.go", "labels_test.go.json", "labels_test.go.csv"),
 	Entry("pending decorator on containers and specs", "pending_decorator_test.go", "pending_decorator_test.go.json", "pending_decorator_test.go.csv"),
+	Entry("proper csv escaping of all fields", "csv_proper_escaping_test.go", "csv_proper_escaping_test.go.json", "csv_proper_escaping_test.go.csv"),
 )
 
 var _ = Describe("Validate position", func() {
