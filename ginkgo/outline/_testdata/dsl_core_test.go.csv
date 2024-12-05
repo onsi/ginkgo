@@ -1,6 +1,6 @@
 Name,Text,Start,End,Spec,Focused,Pending,Labels
-Describe,DslCoreFixture,82,216,false,false,false,""
-Describe,dslcore,119,213,false,false,false,""
-It,dslcore,150,209,true,false,false,""
-By,step 1,176,188,false,false,false,""
-By,step 2,192,204,false,false,false,""
+Describe,DslCoreFixture,82,216,false,false,false,
+Describe,dslcore,119,213,false,false,false,
+It,dslcore,150,209,true,false,false,
+By,step 1,176,188,false,false,false,
+By,step 2,192,204,false,false,false,
