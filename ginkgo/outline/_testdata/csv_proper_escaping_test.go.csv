@@ -1,0 +1,6 @@
+Name,Text,Start,End,Spec,Focused,Pending,Labels
+Describe,"Abnormal""Fixture",73,300,false,false,false,
+When,"four random words: flown, authenticating, semiweekly, and overproduction",113,297,false,false,false,
+It,"has a dangling double-quote here: """,205,293,true,false,false,
+By,step 1,260,272,false,false,false,
+By,step 2,276,288,false,false,false,
