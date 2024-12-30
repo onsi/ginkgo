@@ -241,7 +241,7 @@ var _ = Describe("Progress Reporting", func() {
 				Describe("a container", func() {
 					It("A", func() {
 						cl = types.NewCodeLocation(0)
-						c := make(chan bool, 0)
+						c := make(chan bool)
 						go func() {
 							c <- true
 							<-c
