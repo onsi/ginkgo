@@ -153,10 +153,7 @@ func (client *httpClient) PostAbort() error {
 
 func (client *httpClient) ShouldAbort() bool {
 	err := client.poll("/abort", nil)
-	if err == ErrorGone {
-		return true
-	}
-	return false
+	return err == ErrorGone
 }
 
 func (client *httpClient) Write(p []byte) (int, error) {
