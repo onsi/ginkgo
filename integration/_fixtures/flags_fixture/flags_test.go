@@ -40,7 +40,7 @@ var _ = Describe("Testing various flags", func() {
 
 	It("should detect races", func() {
 		var a string
-		c := make(chan interface{}, 0)
+			c := make(chan any, 0)
 		go func() {
 			a = "now you don't"
 			close(c)

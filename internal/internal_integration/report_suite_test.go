@@ -352,7 +352,7 @@ var _ = Describe("Sending reports to ReportBeforeSuite and ReportAfterSuite node
 
 			Describe("waiting for reports from other procs", func() {
 				It("blocks until the other procs have finished", func() {
-					done := make(chan interface{})
+					done := make(chan any)
 					go func() {
 						defer GinkgoRecover()
 						success, _ := RunFixture("happy-path", fixture)
@@ -413,9 +413,9 @@ var _ = Describe("Sending reports to ReportBeforeSuite and ReportAfterSuite node
 		})
 
 		Context("on a non-primary proc", func() {
-			var done chan interface{}
+			var done chan any
 			BeforeEach(func() {
-				done = make(chan interface{})
+				done = make(chan any)
 				go func() {
 					conf.ParallelProcess = 2
 					success, _ := RunFixture("non-primary proc", fixture)

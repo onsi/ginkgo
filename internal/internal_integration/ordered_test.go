@@ -45,7 +45,7 @@ var FlakeyFailerWithCleanup = func(n int, cleanupLabel string) func() {
 }
 
 var _ = DescribeTable("Ordered Containers",
-	func(expectedSuccess bool, fixture func(), runs []string, args ...interface{}) {
+	func(expectedSuccess bool, fixture func(), runs []string, args ...any) {
 		success, _ := RunFixture(CurrentSpecReport().LeafNodeText, fixture)
 		Ω(success).Should(Equal(expectedSuccess))
 		Ω(rt).Should(HaveTracked(runs...))

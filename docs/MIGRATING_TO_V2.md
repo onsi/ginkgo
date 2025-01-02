@@ -59,9 +59,9 @@ Specs can now be decorated with a series of new spec decorators.  These decorato
 To support decorators, the signature for Ginkgo's container, setup, and It nodes have been changed to:
 
 ```go
-func Describe(text string, args ...interface{})
-func It(text string, args ...interface{})
-func BeforeEach(args ...interface{})
+func Describe(text string, args ...any)
+func It(text string, args ...any)
+func BeforeEach(args ...any)
 ```
 Note that this change is backwards compatible with v1.X.
 
@@ -234,7 +234,7 @@ Ginkgo's CLI flags have been rewritten to provide clearer, better-organized docu
 The `GinkgoWriter` is used to write output that is only made visible if a test fails, or if the user runs in verbose mode with `ginkgo -v`.
 
 In Ginkgo 2.0 `GinkgoWriter` now has:
-	- Three new convenience methods `GinkgoWriter.Print(a ...interface{})`, `GinkgoWriter.Println(a ...interface{})`, `GinkgoWriter.Printf(format string, a ...interface{})`  These are equivalent to calling the associated `fmt.Fprint*` functions and passing in `GinkgoWriter`.
+	- Three new convenience methods `GinkgoWriter.Print(a ...any)`, `GinkgoWriter.Println(a ...any)`, `GinkgoWriter.Printf(format string, a ...any)`  These are equivalent to calling the associated `fmt.Fprint*` functions and passing in `GinkgoWriter`.
 	- The ability to tee to additional writers.  `GinkgoWriter.TeeTo(writer)` will send any future data written to `GinkgoWriter` to the passed in `writer`.  You can attach multiple `io.Writer`s for `GinkgoWriter` to tee to.  You can remove all attached writers with `GinkgoWriter.ClearTeeWriters()`.
 
 	Note that _all_ data written to `GinkgoWriter` is immediately forwarded to attached tee writers regardless of where a test passes or fails.
@@ -293,14 +293,14 @@ Ginkgo V2 supports attaching arbitrary data to individual spec reports.  These a
 You attach data to a spec report via
 
 ```go
-AddReportEntry(name string, args ...interface{})
+AddReportEntry(name string, args ...any)
 ```
 
 `AddReportEntry` can be called from any runnable node (e.g. `It`, `BeforeEach`, `BeforeSuite`) - but not from the body of a container node (e.g. `Describe`, `Context`).
 
 `AddReportEntry` generates `ReportEntry` and attaches it to the current running spec.  `ReportEntry` includes the passed in `name` as well as the time and source location at which `AddReportEntry` was called.  Users can also attach a single object of arbitrary type to the `ReportEntry` by passing it into `AddReportEntry` - this object is wrapped and stored under `ReportEntry.Value` and is always included in the suite's JSON report.
 
-You can access the report entries attached to a spec by getting the `CurrentSpecReport()` or registering a `ReportAfterEach()` - the returned report will include the attached `ReportEntries`.  You can fetch the value associated with the `ReportEntry` by calling `entry.GetRawValue()`.  When called in-process this returns the object that was passed to `AddReportEntry`.  When called after hydrating a report from JSON `entry.GetRawValue()` will include a parsed JSON `interface{}` - if you want to hydrate the JSON yourself into an object of known type you can `json.Unmarshal([]byte(entry.Value.AsJSON), &object)`.
+You can access the report entries attached to a spec by getting the `CurrentSpecReport()` or registering a `ReportAfterEach()` - the returned report will include the attached `ReportEntries`.  You can fetch the value associated with the `ReportEntry` by calling `entry.GetRawValue()`.  When called in-process this returns the object that was passed to `AddReportEntry`.  When called after hydrating a report from JSON `entry.GetRawValue()` will include a parsed JSON `any` - if you want to hydrate the JSON yourself into an object of known type you can `json.Unmarshal([]byte(entry.Value.AsJSON), &object)`.
 
 #### Supported Args
 `AddReportEntry` supports the `Offset` and `CodeLocation` decorators.  These will control the source code location associated with the generated `ReportEntry`.  You can also pass in a `time.Time` to override the `ReportEntry`'s timestamp. It also supports passing in a `ReportEntryVisibility` enum to control the report's visibility (see below).

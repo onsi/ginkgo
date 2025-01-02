@@ -20,12 +20,12 @@ func init() {
 	noSerial = flag.CommandLine.Bool("no-serial", false, "set to turn off serial decoration")
 }
 
-var SerialDecoration = []interface{}{Serial}
+var SerialDecoration = []any{Serial}
 
 func TestSerialFixture(t *testing.T) {
 	RegisterFailHandler(Fail)
 	if *noSerial {
-		SerialDecoration = []interface{}{}
+		SerialDecoration = []any{}
 	}
 
 	RunSpecs(t, "SerialFixture Suite")

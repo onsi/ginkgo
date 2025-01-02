@@ -216,10 +216,10 @@ var _ = Describe("The Parallel Support Client & Server", func() {
 			})
 
 			Describe("Synchronization endpoints", func() {
-				var proc1Exited, proc2Exited, proc3Exited chan interface{}
+				var proc1Exited, proc2Exited, proc3Exited chan any
 				BeforeEach(func() {
-					proc1Exited, proc2Exited, proc3Exited = make(chan interface{}), make(chan interface{}), make(chan interface{})
-					aliveFunc := func(c chan interface{}) func() bool {
+					proc1Exited, proc2Exited, proc3Exited = make(chan any), make(chan any), make(chan any)
+					aliveFunc := func(c chan any) func() bool {
 						return func() bool {
 							select {
 							case <-c:
@@ -264,7 +264,7 @@ var _ = Describe("The Parallel Support Client & Server", func() {
 
 					Context("when proc 1 hasn't responded yet", func() {
 						It("blocks until it does", func() {
-							done := make(chan interface{})
+							done := make(chan any)
 							go func() {
 								defer GinkgoRecover()
 								state, err := client.BlockUntilReportBeforeSuiteCompleted()
@@ -332,7 +332,7 @@ var _ = Describe("The Parallel Support Client & Server", func() {
 
 					Context("when proc 1 hasn't responded yet", func() {
 						It("blocks until it does", func() {
-							done := make(chan interface{})
+							done := make(chan any)
 							go func() {
 								defer GinkgoRecover()
 								state, data, err := client.BlockUntilSynchronizedBeforeSuiteData()
@@ -350,7 +350,7 @@ var _ = Describe("The Parallel Support Client & Server", func() {
 
 				Describe("BlockUntilNonprimaryProcsHaveFinished", func() {
 					It("blocks until non-primary procs exit", func() {
-						done := make(chan interface{})
+						done := make(chan any)
 						go func() {
 							defer GinkgoRecover()
 							Ω(client.BlockUntilNonprimaryProcsHaveFinished()).Should(Succeed())
@@ -376,7 +376,7 @@ var _ = Describe("The Parallel Support Client & Server", func() {
 					})
 
 					It("blocks until all non-primary procs exit, then returns the aggregated report", func() {
-						done := make(chan interface{})
+						done := make(chan any)
 						go func() {
 							defer GinkgoRecover()
 							report, err := client.BlockUntilAggregatedNonprimaryProcsReport()
@@ -397,7 +397,7 @@ var _ = Describe("The Parallel Support Client & Server", func() {
 
 					Context("when a non-primary proc disappears without reporting back", func() {
 						It("blocks returns an appropriate error", func() {
-							done := make(chan interface{})
+							done := make(chan any)
 							go func() {
 								defer GinkgoRecover()
 								report, err := client.BlockUntilAggregatedNonprimaryProcsReport()
