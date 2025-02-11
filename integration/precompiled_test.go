@@ -48,6 +48,19 @@ var _ = Describe("ginkgo build", func() {
 	})
 })
 
+var _ = Describe("ginkgo build with multiple suites", Label("build"), func() {
+	It("should correctly report multiple test binaries", func() {
+		fm.MountFixture("build_reporting")
+		session := startGinkgo(fm.PathTo("build_reporting"), "build", "-r")
+		Eventually(session).Should(gexec.Exit(0))
+		output := string(session.Out.Contents())
+		Ω(output).Should(ContainSubstring("Compiled suite1/suite1.test"))
+		Ω(output).Should(ContainSubstring("Compiled suite2/suite2.test"))
+		Ω(fm.PathTo("build_reporting", "suite1", "suite1.test")).Should(BeAnExistingFile())
+		Ω(fm.PathTo("build_reporting", "suite2", "suite2.test")).Should(BeAnExistingFile())
+	})
+})
+
 var _ = Describe("ginkgo build with custom output", Label("build"), func() {
 	const customPath = "mycustomdir"
 	var fullPath string
