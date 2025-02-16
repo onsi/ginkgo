@@ -39,10 +39,10 @@ The next sections describe the [new features in Ginkgo 2.0](#major-additions-and
 
 ### Interrupt Behavior
 Interrupt behavior is substantially improved, sending an interrupt signal will now:
-	- immediately cause the current test to unwind.  Ginkgo will run any `AfterEach` blocks, then immediately skip all remaining tests, then run the `AfterSuite` block.  
-	- emit information about which node Ginkgo was running when the interrupt signal was received.
-	- emit as much information as possible about the interrupted test (e.g. `GinkgoWriter` contents, `stdout` and `stderr` context).
-	- emit a stack trace of every running goroutine at the moment of interruption.
+- immediately cause the current test to unwind.  Ginkgo will run any `AfterEach` blocks, then immediately skip all remaining tests, then run the `AfterSuite` block.  
+- emit information about which node Ginkgo was running when the interrupt signal was received.
+- emit as much information as possible about the interrupted test (e.g. `GinkgoWriter` contents, `stdout` and `stderr` context).
+- emit a stack trace of every running goroutine at the moment of interruption.
 
 Previously, sending a second interrupt signal would cause Ginkgo to exit immediately.  With the improved interrupt behavior this is no longer necessary and Ginkgo will not exit until the test suite has unwound and completed.
 
@@ -234,8 +234,8 @@ Ginkgo's CLI flags have been rewritten to provide clearer, better-organized docu
 The `GinkgoWriter` is used to write output that is only made visible if a test fails, or if the user runs in verbose mode with `ginkgo -v`.
 
 In Ginkgo 2.0 `GinkgoWriter` now has:
-	- Three new convenience methods `GinkgoWriter.Print(a ...any)`, `GinkgoWriter.Println(a ...any)`, `GinkgoWriter.Printf(format string, a ...any)`  These are equivalent to calling the associated `fmt.Fprint*` functions and passing in `GinkgoWriter`.
-	- The ability to tee to additional writers.  `GinkgoWriter.TeeTo(writer)` will send any future data written to `GinkgoWriter` to the passed in `writer`.  You can attach multiple `io.Writer`s for `GinkgoWriter` to tee to.  You can remove all attached writers with `GinkgoWriter.ClearTeeWriters()`.
+- Three new convenience methods `GinkgoWriter.Print(a ...any)`, `GinkgoWriter.Println(a ...any)`, `GinkgoWriter.Printf(format string, a ...any)`  These are equivalent to calling the associated `fmt.Fprint*` functions and passing in `GinkgoWriter`.
+- The ability to tee to additional writers.  `GinkgoWriter.TeeTo(writer)` will send any future data written to `GinkgoWriter` to the passed in `writer`.  You can attach multiple `io.Writer`s for `GinkgoWriter` to tee to.  You can remove all attached writers with `GinkgoWriter.ClearTeeWriters()`.
 
 	Note that _all_ data written to `GinkgoWriter` is immediately forwarded to attached tee writers regardless of where a test passes or fails.
 
