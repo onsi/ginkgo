@@ -1,6 +1,7 @@
 package testingtproxy
 
 import (
+	"context"
 	"fmt"
 	"io"
 	"os"
@@ -78,6 +79,26 @@ func (t *ginkgoTestingTProxy) Setenv(key, value string) {
 	if err != nil {
 		t.fail(fmt.Sprintf("Failed to set environment variable: %v", err), 1)
 	}
+}
+
+func (t *ginkgoTestingTProxy) Chdir(dir string) {
+	currentDir, err := os.Getwd()
+	if err != nil {
+		t.fail(fmt.Sprintf("Failed to get current directory: %v", err), 1)
+	}
+
+	t.cleanup(os.Chdir, currentDir, internal.Offset(1))
+
+	err = os.Chdir(dir)
+	if err != nil {
+		t.fail(fmt.Sprintf("Failed to change directory: %v", err), 1)
+	}
+}
+
+func (t *ginkgoTestingTProxy) Context() context.Context {
+	ctx, cancel := context.WithCancel(context.Background())
+	t.cleanup(cancel, internal.Offset(1))
+	return ctx
 }
 
 func (t *ginkgoTestingTProxy) Error(args ...any) {

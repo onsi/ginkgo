@@ -1,8 +1,11 @@
 package testingtproxy_test
 
 import (
+	"fmt"
 	"os"
+	"reflect"
 	"runtime"
+	"testing"
 	"time"
 
 	. "github.com/onsi/ginkgo/v2"
@@ -87,6 +90,23 @@ var _ = Describe("Testingtproxy", func() {
 			offset)
 	})
 
+	It("satisfies the golang interfaces", func() {
+		tbType := reflect.TypeFor[testing.TB]()
+		gtType := reflect.TypeFor[GinkgoTInterface]()
+
+		fmt.Println("tbType: ", tbType.NumMethod())
+		for i := 0; i < tbType.NumMethod(); i++ {
+			expectedMethod := tbType.Method(i)
+			if expectedMethod.Name == "private" {
+				continue
+			}
+			actualMethod, hasMethod := gtType.MethodByName(expectedMethod.Name)
+			Ω(hasMethod).Should(BeTrue())
+			Ω(actualMethod.Name).Should(Equal(expectedMethod.Name))
+			Ω(actualMethod.Type).Should(Equal(expectedMethod.Type))
+		}
+	})
+
 	Describe("Cleanup", Ordered, func() {
 		var didCleanupAfter bool
 		It("supports cleanup", func() {
@@ -140,6 +160,40 @@ var _ = Describe("Testingtproxy", func() {
 			AfterAll(func() {
 				os.Unsetenv(key)
 			})
+		})
+	})
+
+	Describe("Chdir", Ordered, func() {
+		BeforeAll(func() {
+			os.Mkdir("chdir_test_dir", 0755)
+			DeferCleanup(os.RemoveAll, "chdir_test_dir")
+		})
+
+		It("changes the working directory", func() {
+			t.Chdir("chdir_test_dir")
+			newDir, _ := os.Getwd()
+			Ω(newDir).Should(ContainSubstring("chdir_test_dir"))
+		})
+
+		It("cleans up after itself so the next test is back in the working directory", func() {
+			dir, _ := os.Getwd()
+			Ω(dir).ShouldNot(ContainSubstring("chdir_test_dir"))
+		})
+	})
+
+	Describe("Context", func() {
+		It("returns a context that is closed in a canceled in a clean up", func() {
+			c := make(chan struct{})
+			DeferCleanup(func() {
+				Eventually(c).Should(BeClosed())
+			})
+
+			ctx := t.Context()
+			Ω(ctx.Err()).Should(BeNil())
+			go func() {
+				<-ctx.Done()
+				close(c)
+			}()
 		})
 	})
 
