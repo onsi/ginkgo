@@ -63,6 +63,8 @@ func buildSpecs(args []string, cliConfig types.CLIConfig, goFlagsConfig types.Go
 				}
 				if stat.IsDir() {
 					testBinPath = goFlagsConfig.O + "/" + suite.PackageName + ".test"
+				} else {
+					testBinPath = goFlagsConfig.O
 				}
 			}
 			if len(testBinPath) == 0 {
