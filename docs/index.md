@@ -1736,7 +1736,7 @@ Describe("handling requests", func() {
 })
 ```
 
-all the infrastructure around generating table entry descriptions applies here as well - though the description will be the title of the generated container.  Note that you **must** add subject nodes in the body function if you want `DescribeHandleSubtree` to add specs.
+all the infrastructure around generating table entry descriptions applies here as well - though the description will be the title of the generated container.  Note that you **must** add subject nodes in the body function if you want `DescribeTableSubtree` to add specs.
 
 ### Alternatives to Dot-Importing Ginkgo
 
