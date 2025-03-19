@@ -48,6 +48,18 @@ You should now be able to run `ginkgo version` at the command line and see the G
 
 **Note** you _must_ make sure the version of the `ginkgo` cli you install is the same as the version of Ginkgo in your `go.mod` file.  You can do this by running `go install github.com/onsi/ginkgo/v2/ginkgo` from your package.
 
+#### If you are running on MacOS
+
+Ginkgo runs by using `go test -c` to compile test binaries for each subpackage.  It then invokes those compiled binaries.  MacOS's XProtect malware detector slows this process down substantially.  You can disable [XProtect for your terminal](https://stackoverflow.com/questions/60176405/macos-catalina-developer-tools-tab-is-hidden/65240575#65240575) by running:
+
+```bash
+spctl developer-mode enable-terminal
+```
+
+and then opening up **System Settings** > **Privacy & Security** > **Developer Tools** and then adding your terminal to the list of developer tools.
+
+> Doing this on an M1 Max macbook pro resulted in Ginkgo's unit and integration suites running in 47s instead of 1m 8s.
+
 #### Upgrading Ginkgo
 
 To upgrade Ginkgo run:
