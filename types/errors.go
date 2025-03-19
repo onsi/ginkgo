@@ -629,6 +629,13 @@ func (g ginkgoErrors) BothRepeatAndUntilItFails() error {
 	}
 }
 
+func (g ginkgoErrors) ExpectFilenameNotPath(flag string, path string) error {
+	return GinkgoError{
+		Heading: fmt.Sprintf("%s expects a filename but was given a path: %s", flag, path),
+		Message: fmt.Sprintf("%s takes a filename, not a path.  Use --output-dir to specify a directory to collect all test outputs.", flag),
+	}
+}
+
 /* Stack-Trace parsing errors */
 
 func (g ginkgoErrors) FailedToParseStackTrace(message string) error {

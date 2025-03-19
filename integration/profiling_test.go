@@ -141,6 +141,12 @@ var _ = Describe("Profiling Specs", func() {
 				Ω(fm.PathTo("coverage", "myprofile.out")).Should(BeAnExistingFile())
 				Ω(fm.PathTo("coverage", "coverprofile.out")).ShouldNot(BeAnExistingFile())
 			})
+
+			It("fails if the cover profile is not just a filename", func() {
+				session := startGinkgo(fm.PathTo("coverage"), "--no-color", "-coverprofile=/path/to/profile.out")
+				Eventually(session).Should(gexec.Exit(1))
+				Ω(session.Err).Should(gbytes.Say(`--coverprofile expects a filename but was given a path: /path/to/profile.out`))
+			})
 		})
 
 		Context("when multiple suites are tested", func() {

@@ -3745,7 +3745,7 @@ You can also specify the `--covermode` to be one of `set` ("was this code called
 
 When run with `--cover`, Ginkgo will generate a single `coverprofile.out` file that captures the coverage statistics of all the suites that ran.  You can change the name of this file by specifying `-coverprofile=filename`.  If you would like to keep separate coverprofiles for each suite use the `--keep-separate-coverprofiles` option.
 
-Ginkgo also honors the `--output-dir` flag when generating coverprofiles.  If you specify `--output-dir` the generated coverprofile will be placed in the requested directory.  If you also specify `--keep-separate-coverprofiles` individual package coverprofiles will be placed in the requested directory and namespaced with a prefix that contains the name of the package in question.
+Note that `-coverprofile` only takes a filename, not a path.  To place the coverprofile in a particular path you should specify `--output-dir` the generated coverprofile will be placed in the requested directory.  If you also specify `--keep-separate-coverprofiles` individual package coverprofiles will be placed in the requested directory and namespaced with a prefix that contains the name of the package in question.
 
 Finally, when running a suite that has [programmatically focused specs](#focused-specs) (i.e. specs with the `Focus` decorator or with nodes prefixed with an `F`) Ginkgo exits the suite early with a non-zero exit code.  This interferes with `go test`'s profiling code and prevents profiles from being generated.  Ginkgo will tell you this has happened.  If you want to profile just a subset of your suite you'll need to use a different [mechanism](#filtering-specs) to filter your specs.
 
