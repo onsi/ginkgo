@@ -1,3 +1,18 @@
+## 2.23.1
+
+## 🚨 For users on MacOS 🚨
+
+A long-standing Ginkgo performance issue on MacOS seems to be due to mac's antimalware XProtect.  You can follow the instructions [here](https://onsi.github.io/ginkgo/#if-you-are-running-on-macos) to disable it in your terminal.  Doing so sped up Ginkgo's own test suite from 1m8s to 47s.
+
+### Fixes
+
+Ginkgo's CLI is now a bit clearer if you pass flags in incorrectly:
+
+- make it clearer that you need to pass a filename to the various profile flags, not an absolute directory [a0e52ff]
+- emit an error and exit if the ginkgo invocation includes flags after positional arguments [b799d8d]
+
+This might cause existing CI builds to fail.  If so then it's likely that your CI build was misconfigured and should be corrected.  Open an issue if you need help.
+
 ## 2.23.0
 
 Ginkgo 2.23.0 adds a handful of methods to `GinkgoT()` to make it compatible with the `testing.TB` interface in Go 1.24.  `GinkgoT().Context()`, in particular, is a useful shorthand for generating a new context that will clean itself up in a `DeferCleanup()`.  This has subtle behavior differences from the golang implementation but should make sense in a Ginkgo... um... context.
