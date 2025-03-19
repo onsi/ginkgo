@@ -21,8 +21,12 @@ var _ = Describe("Command", func() {
 		fs, err := types.NewGinkgoFlagSet(
 			types.GinkgoFlags{
 				{Name: "contrabulaturally", KeyPath: "C", Usage: "with irridiacy"},
+				{Name: "fillabluster", KeyPath: "F", Usage: "with grace"},
 			},
-			&(struct{ C int }{C: 17}),
+			&(struct {
+				C int
+				F int
+			}{C: 17, F: 12}),
 			types.GinkgoFlagSections{},
 		)
 		Ω(err).ShouldNot(HaveOccurred())
@@ -41,7 +45,7 @@ var _ = Describe("Command", func() {
 		Context("when flags fails to parse", func() {
 			It("aborts with usage", func() {
 				Ω(func() {
-					c.Run([]string{"-not-a-flag=oops"}, []string{"additional", "args"})
+					c.Run([]string{"-not-a-flag=oops"}, []string{"additional", "-args"})
 				}).Should(PanicWith(SatisfyAll(
 					HaveField("ExitCode", 1),
 					HaveField("Error", HaveOccurred()),
@@ -54,14 +58,29 @@ var _ = Describe("Command", func() {
 
 		Context("when flags parse", func() {
 			It("runs the command", func() {
-				c.Run([]string{"-contrabulaturally=16", "and-an-arg", "and-another"}, []string{"additional", "args"})
+				c.Run([]string{"-contrabulaturally=16", "and-an-arg", "and-another"}, []string{"additional", "-args"})
 				Ω(rt).Should(HaveRun("enflabulate"))
 
 				Ω(rt.DataFor("enflabulate")["Args"]).Should(Equal([]string{"and-an-arg", "and-another"}))
-				Ω(rt.DataFor("enflabulate")["AdditionalArgs"]).Should(Equal([]string{"additional", "args"}))
+				Ω(rt.DataFor("enflabulate")["AdditionalArgs"]).Should(Equal([]string{"additional", "-args"}))
 
 			})
 		})
+
+		Context("when flags appear after named arguments", func() {
+			It("fails", func() {
+				Ω(func() {
+					c.Run([]string{"-contrabulaturally=16", "an-arg", "another-arg", "-fillabuster=10"}, []string{"additional", "-args"})
+				}).Should(PanicWith(SatisfyAll(
+					HaveField("ExitCode", 1),
+					HaveField("Error", HaveOccurred()),
+					HaveField("EmitUsage", BeFalse()),
+				)))
+
+				Ω(rt).Should(HaveTrackedNothing())
+			})
+		})
+
 	})
 
 	Describe("Usage", func() {
@@ -85,6 +104,8 @@ var _ = Describe("Command", func() {
 				"",
 				"  --contrabulaturally{{/}} [int] {{gray}}{{/}}",
 				"    {{light-gray}}with irridiacy{{/}}",
+				"  --fillabluster{{/}} [int] {{gray}}{{/}}",
+				"    {{light-gray}}with grace{{/}}",
 				"", "",
 			}, "\n")
 

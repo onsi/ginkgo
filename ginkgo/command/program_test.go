@@ -117,11 +117,11 @@ var _ = Describe("Program", func() {
 
 	Context("when passed arguments and additional arguments", func() {
 		BeforeEach(func() {
-			program.RunAndExit([]string{"omicron", "gamma", "arg1", "-arg2", "--", "addArg1", "addArg2"})
+			program.RunAndExit([]string{"omicron", "gamma", "arg1", "arg2", "--", "addArg1", "addArg2"})
 		})
 		It("passes both in", func() {
 			Ω(rt).Should(HaveTracked("gamma", "exit"))
-			Ω(rt).Should(HaveRunWithData("gamma", "Args", []string{"arg1", "-arg2"}, "AdditionalArgs", []string{"addArg1", "addArg2"}))
+			Ω(rt).Should(HaveRunWithData("gamma", "Args", []string{"arg1", "arg2"}, "AdditionalArgs", []string{"addArg1", "addArg2"}))
 			Ω(rt).Should(HaveRunWithData("exit", "Code", 0))
 			Ω(buf.Contents()).Should(BeEmpty())
 		})
