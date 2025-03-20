@@ -25,6 +25,14 @@ var _ = Describe("ginkgo build", func() {
 		Ω(fm.PathTo("passing_ginkgo_tests", "passing_ginkgo_tests.test")).Should(BeAnExistingFile())
 	})
 
+	It("should have the symbols in the compiled binary", func() {
+		cmd := exec.Command("go", "tool", "nm", fm.PathTo("passing_ginkgo_tests", "passing_ginkgo_tests.test"))
+		session, err := gexec.Start(cmd, GinkgoWriter, GinkgoWriter)
+		Ω(err).ShouldNot(HaveOccurred())
+		Eventually(session).Should(gexec.Exit(0))
+		Ω(session).Should(gbytes.Say("github.com/onsi/ginkgo/v2.It")) // a symbol from ginkgo
+	})
+
 	It("should be possible to run the test binary directly", func() {
 		cmd := exec.Command("./passing_ginkgo_tests.test")
 		cmd.Dir = fm.PathTo("passing_ginkgo_tests")

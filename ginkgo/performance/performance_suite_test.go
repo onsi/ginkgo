@@ -51,8 +51,8 @@ var _ = SynchronizedAfterSuite(func() {}, func() {
 })
 
 /*
-	GoModCacheManager sets up a new GOMODCACHE and knows how to clear it
-	This allows us to bust the go mod cache.
+GoModCacheManager sets up a new GOMODCACHE and knows how to clear it
+This allows us to bust the go mod cache.
 */
 type GoModCacheManager struct {
 	Path         string
@@ -302,7 +302,7 @@ func RunScenarioWithGinkgoInternals(stopwatch *gmeasure.Stopwatch, settings Scen
 			for suite := range compile {
 				if !suite.State.Is(internal.TestSuiteStateCompiled) {
 					subStopwatch := stopwatch.NewStopwatch()
-					suite = internal.CompileSuite(suite, goFlagsConfig)
+					suite = internal.CompileSuite(suite, goFlagsConfig, false)
 					subStopwatch.Record("compile-test: "+suite.PackageName, annotation)
 					Ω(suite.CompilationError).Should(BeNil())
 				}

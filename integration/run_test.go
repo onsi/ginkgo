@@ -458,6 +458,27 @@ var _ = Describe("Running Specs", func() {
 		})
 	})
 
+	Describe("optimizing build times by stripping symbols", func() {
+		BeforeEach(func() {
+			fm.MountFixture("symbol")
+		})
+		Context("when no symbols are required (i.e. no profiling)", func() {
+			It("should not have symbols", func() {
+				session := startGinkgo(fm.PathTo("symbol"), "--no-color")
+				Eventually(session).Should(gexec.Exit(0))
+				Ω(session).ShouldNot(gbytes.Say("github.com/onsi/ginkgo/v2.It")) // a symbol from ginkgo
+			})
+		})
+
+		Context("when symbols are required (i.e. with profiling)", func() {
+			It("should have symbols", func() {
+				session := startGinkgo(fm.PathTo("symbol"), "--no-color", "--cpuprofile=cpu.out")
+				Eventually(session).Should(gexec.Exit(0))
+				Ω(session).Should(gbytes.Say("github.com/onsi/ginkgo/v2.It")) // a symbol from ginkgo
+			})
+		})
+	})
+
 	Context("when there is a version mismatch between the cli and the test package", func() {
 		It("emits a useful error and tries running", func() {
 			fm.MountFixture(("version_mismatch"))
