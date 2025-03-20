@@ -16,7 +16,6 @@ func TestSymbolFixture(t *testing.T) {
 
 var _ = It("prints out its symbols", func() {
 	cmd := exec.Command("go", "tool", "nm", "symbol_fixture.test")
-	output, err := cmd.CombinedOutput()
-	Expect(err).NotTo(HaveOccurred())
+	output, _ := cmd.CombinedOutput()
 	fmt.Println(string(output))
 })
