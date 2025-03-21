@@ -58,10 +58,10 @@ var _ = Describe("Command", func() {
 
 		Context("when flags parse", func() {
 			It("runs the command", func() {
-				c.Run([]string{"-contrabulaturally=16", "and-an-arg", "and-another"}, []string{"additional", "-args"})
+				c.Run([]string{"-contrabulaturally=16", "and-an-arg", "and-another", "-"}, []string{"additional", "-args"})
 				Ω(rt).Should(HaveRun("enflabulate"))
 
-				Ω(rt.DataFor("enflabulate")["Args"]).Should(Equal([]string{"and-an-arg", "and-another"}))
+				Ω(rt.DataFor("enflabulate")["Args"]).Should(Equal([]string{"and-an-arg", "and-another", "-"}))
 				Ω(rt.DataFor("enflabulate")["AdditionalArgs"]).Should(Equal([]string{"additional", "-args"}))
 
 			})
