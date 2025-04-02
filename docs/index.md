@@ -3729,7 +3729,7 @@ Ginkgo supports `--race` to analyze race conditions, `--cover` to compute code c
 
 `ginkgo -race` runs the race detector and emits any detected race conditions as the suite runs.  If any are detected the suite is marked as failed.
 
-`ginkgo -vet` allows you to configure the set of checks that are applied when your code is compiled.  `ginkgo` defaults to the set of default checks that `go test` uses and you can specify additional checks by passing a comma-separated list to `--vet`.  The set of available checks can be found by running `go doc cmd/vet`.
+`ginkgo -vet=comma,separated,list` allows you to configure the set of checks that are applied when your code is compiled.  If you pass in an empty list with `ginkgo --vet=""`,  `ginkgo` defaults to the set of default checks that `go test` uses.  The set of available checks can be found by running `go doc cmd/vet`.
 
 #### Computing Coverage
 `ginkgo -cover` will compute and emit code coverage.  When running multiple suites Ginkgo will emit coverage for each suite and then emit a composite coverage across all running suites.  As with `go test` the default behavior for a given suite is to measure the coverage it provides for the code in the suite's package - however you can extend coverage to additional packages using `--coverpkg`.  You can provide a comma-separated list of package names (as they appear in `import` statements) or a relative path.  You can also use `...` for recursion.  For example, say we have a package called "github.com/foo/bar".  The following are equivalent:
