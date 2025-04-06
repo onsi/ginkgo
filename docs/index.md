@@ -3770,14 +3770,13 @@ When running in CI you must make sure that the version of the `ginkgo` CLI you a
 Once you have `ginkgo` running on CI, you'll want to pick and choose the optimal set of flags for your test runs.  We recommend the following set of flags when running in a continuous integration environment:
 
 ```bash
-go run github.com/onsi/ginkgo/v2/ginkgo -r --procs=N --compilers=N --randomize-all --randomize-suites --fail-on-pending --fail-on-empty --keep-going --cover --coverprofile=cover.profile --race --trace --json-report=report.json --timeout=TIMEOUT --poll-progress-after=Xs --poll-progress-interval=Ys
+go run github.com/onsi/ginkgo/v2/ginkgo -r -p --randomize-all --randomize-suites --fail-on-pending --fail-on-empty --keep-going --cover --coverprofile=cover.profile --race --trace --json-report=report.json --timeout=TIMEOUT --poll-progress-after=Xs --poll-progress-interval=Ys
 ```
 
 Here's why:
 
 - `-r` will recursively find and run all suites in the current directory.
-- `-procs=N` will run each suite in parallel.  This can substantially speed up suites and you should experiment with different values of `N`.  Note that it is not recommended that you run specs in parallel with `-p` on CI.  Some CI services run on shared machines that will report (e.g.) `32` cores but will not actually give an individual account access to all those compute resources!
-- `--compilers=N` will control how many cores to use to compile suites in parallel.  You may need to set this explicitly to avoid accidentally trying to use all `32` cores on that CI machine!
+- `-p` will run each suite in parallel.  This can substantially speed up suites.  As of 2.23.4 the correct number of available CPUs is identified when running in a linux container - but if you see Ginkgo using the wrong number of CPUs on a shared machine/container you should run with `--procs=N` and `--compilers=N` to manually control the number of CPIs used.
 - `--randomize-all` and `--randomize-suites` will randomize all specs and randomize the order in which suites run.  This will help you suss out spec pollution early!
 - `--fail-on-pending` will fail the suite if it contains any pending specs.  These are generally only used while developing the suite and should not be committed.
 - `--fail-on-empty` will fail the suite if it contains no specs or if all specs have been filtered out.  This can help you ensure that the CLI filters have not filtered out all specs (which typically means the filters are malformed).
