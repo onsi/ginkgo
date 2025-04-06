@@ -159,7 +159,7 @@ func (g CLIConfig) ComputedProcs() int {
 
 	n := 1
 	if g.Parallel {
-		n = runtime.NumCPU()
+		n = runtime.GOMAXPROCS(-1)
 		if n > 4 {
 			n = n - 1
 		}
@@ -172,7 +172,7 @@ func (g CLIConfig) ComputedNumCompilers() int {
 		return g.NumCompilers
 	}
 
-	return runtime.NumCPU()
+	return runtime.GOMAXPROCS(-1)
 }
 
 // Configuration for the Ginkgo CLI capturing available go flags
