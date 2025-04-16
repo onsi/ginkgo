@@ -6,7 +6,7 @@ require (
 	github.com/go-logr/logr v1.4.2
 	github.com/go-task/slim-sprig/v3 v3.0.0
 	github.com/google/pprof v0.0.0-20250403155104-27863c87afa6
-	github.com/onsi/gomega v1.36.3
+	github.com/onsi/gomega v1.37.0
 	go.uber.org/automaxprocs v1.6.0
 	golang.org/x/sys v0.32.0
 	golang.org/x/tools v0.32.0
