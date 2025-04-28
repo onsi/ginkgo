@@ -827,7 +827,7 @@ Describe("some JSON decoding edge cases", func() {
   var err error
   var json string
   JustBeforeEach(func() {
-    book, err = NewBookFromJSON(json)
+    book, err = book.NewBookFromJSON(json)
     Expect(book).To(BeNil())
   })
 
@@ -1535,10 +1535,10 @@ Describe("book", func() {
 
   DescribeTable("Categorizing books",
     func(key string, category books.Category) {
-      Expect(shelf[key]).To(Equal(category))
+      Expect(shelf[key].Category()).To(Equal(category))
     },
     Entry("Novels", "Les Miserables", books.CategoryNovel),
-    Entry("Novels", "Fox in Socks", books.CategoryShortStory),
+    Entry("Short story", "Fox in Socks", books.CategoryShortStory),
   )
 })
 ```
