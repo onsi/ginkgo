@@ -864,7 +864,7 @@ When Ginkgo runs these specs it will _first_ run the `BeforeEach` setup closures
 
 Abstractly, `JustBeforeEach` allows you to decouple **creation** from **configuration**.  Creation occurs in the `JustBeforeEach` using configuration specified and modified by a chain of `BeforeEach`s.
 
-As with `BeforeEach` you can have multiple `JustBeforeEach` nodes at different levels of container nesting.  Ginkgo will first run all the `BeforeEach` closures from the outside in, then all the `JustBeforeEach` closures from the outside in.  While powerful and flexible overuse of `JustBeforeEach` (and nest `JustBeforeEach`es in particular!) can lead to confusing suites to be sure to use `JustBeforeEach` judiciously!
+As with `BeforeEach` you can have multiple `JustBeforeEach` nodes at different levels of container nesting.  Ginkgo will first run all the `BeforeEach` closures from the outside in, then all the `JustBeforeEach` closures from the outside in.  While powerful and flexible, overuse of `JustBeforeEach` (and nested `JustBeforeEach`es in particular!) can lead to confusing suites. Be sure to use `JustBeforeEach` judiciously!
 
 ### Spec Cleanup: AfterEach and DeferCleanup
 
