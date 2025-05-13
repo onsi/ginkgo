@@ -2110,7 +2110,7 @@ var _ = SynchronizedBeforeSuite(func() []byte {
   dbRunner := db.NewRunner()
   Expect(dbRunner.Start()).To(Succeed())
   return []byte(dbRunner.Address())
-}), func(address []byte) {
+}, func(address []byte) {
   //runs on *all* processes
   dbClient = db.NewClient()
   Expect(dbClient.Connect(string(address))).To(Succeed())
