@@ -694,8 +694,7 @@ Ginkgo will emit a warning if it detects this.
 
 #### Avoid Spec Pollution: Don't Initialize Variables in Container Nodes
 
-We've covered this already but it bears repeating: **"Declare in container nodes, initialize in setup nodes"**.  Since container nodes are only invoked once during the tree construction phase you should declare closure variables in container nodes but always initialize them in setup nodes.  The following is
-invalid can potentially infuriating to debug:
+We've covered this already but it bears repeating: **"Declare in container nodes, initialize in setup nodes"**.  Since container nodes are only invoked once during the tree construction phase you should declare closure variables in container nodes but always initialize them in setup nodes.  The following is invalid and can potentially be infuriating to debug:
 
 ```go
 /* === INVALID === */
@@ -1010,7 +1009,7 @@ Describe("Reporting book weight", func() {
 
 That's better.  The specs will now clean up after themselves correctly.
 
-One quick note before we move on, you may have caught that `book.HumanReadableWeight()` returns _two_ values - a `weight` string and an `error`.  This is common pattern and Gomega has first class support for it.  The assertion:
+One quick note before we move on, you may have caught that `book.HumanReadableWeight()` returns _two_ values - a `weight` string and an `error`.  This is a common pattern and Gomega has first class support for it.  The assertion:
 
 ```go
 Expect(book.HumanReadableWeight()).To(Equal("17.6oz"))
@@ -1020,7 +1019,7 @@ is actually making two assertions under the hood.  That the first value returned
 
 #### Cleaning up our Cleanup code: DeferCleanup
 
-Setup and cleanup patterns like the one above are common in Ginkgo suites.  While powerful, however, `AfterEach` nodes have a tendency to separate cleanup code from setup code.  We had to create an `originalWeightUnits` closure variable to keep track of the original environment variable in the `BeforeEach` and pass it to the `AfterEach` - this feels noisy and potential error-prone.
+Setup and cleanup patterns like the one above are common in Ginkgo suites.  While powerful, however, `AfterEach` nodes tend to separate cleanup code from setup code.  We had to create an `originalWeightUnits` closure variable to keep track of the original environment variable in the `BeforeEach` and pass it to the `AfterEach` - this feels noisy and potential error-prone.
 
 Ginkgo provides the `DeferCleanup()` function to help solve for this usecase and bring spec setup closer to spec cleanup.  Here's what our example looks like with `DeferCleanup()`:
 
@@ -1689,7 +1688,7 @@ DescribeTableSubtree("handling requests",
 )
 ```
 
-now the body function passed to the table is invoked during the Tree Construction Phase to generate a set of specs for each entry.  Each body function is invoked within the context of a new container so that setup nodes will only run for the specs defined in the body function.  As with `DescribeTable` this is simply synctactic sugar around Ginkgo's existing DSL.  The above example is identical to:
+now the body function passed to the table is invoked during the Tree Construction Phase to generate a set of specs for each entry.  Each body function is invoked within the context of a new container so that setup nodes will only run for the specs defined in the body function.  As with `DescribeTable` this is simply syntactic sugar around Ginkgo's existing DSL.  The above example is identical to:
 
 ```go
 
@@ -1933,7 +1932,7 @@ Finally, if your specs need to _generate_ random numbers you can seed your pseud
 
 ### Spec Parallelization
 
-As spec suites grow in size and complexity they have a tendency to get slower.  Thankfully the vast majority of modern computers ship with multiple CPU cores.  Ginkgo helps you use those cores to speed up your suites by running specs in parallel.  This is _especially_ useful when running large, complex, and slow integration suites where the only means to speed things up is to embrace parallelism.
+As spec suites grow in size and complexity they tend to get slower.  Thankfully the vast majority of modern computers ship with multiple CPU cores.  Ginkgo helps you use those cores to speed up your suites by running specs in parallel.  This is _especially_ useful when running large, complex, and slow integration suites where the only means to speed things up is to embrace parallelism.
 
 To run a Ginkgo suite in parallel you simply pass the `-p` flag to `ginkgo`:
 
@@ -2612,7 +2611,7 @@ To build on our example above, here are some label filter queries and their beha
 | `ginkgo --label-filter="integration"` | Match any specs with the `integration` label |
 | `ginkgo --label-filter="!slow"` | Avoid any specs labelled `slow` |
 | `ginkgo --label-filter="network && !slow"` | Run specs labelled `network` that aren't `slow` |
-| `ginkgo --label-filter=/library/` | Run specs with labels matching the regular expression `library` - this will match the three library-related specs in our example.
+| `ginkgo --label-filter=/library/` | Run specs with labels matching the regular expression `library` - this will match the three library-related specs in our example. |
 
 ##### Label Sets
 
@@ -3453,7 +3452,7 @@ The two verbose settings are most helpful when debugging spec suites.  They make
 
 Very-verbose mode contains additional information over verbose mode.  In particular, `-vv` timelines indicate when individual nodes start and end and also include the full failure descriptions for _every_ failure encountered by the spec.  Verbose mode does not include the node start/end events (though this can be turned on with `--show-node-events`) and does not include detailed failure information for anything other than the first (primary) failure.  (Additional/subsequent failures typically occur in clean-up nodes and are not as relevant as the primary failure that occurs in a subject or setup node).
 
-When you [filter specs](#filtering-specs) using Ginkgo's various filtering mechanism Ginkgo usually emits a single cyan `S` for each skipped spec.  If you run with the very-verbose setting, however, Ginkgo will emit the description and location information of every skipped spec.  This can be useful if you need to debug your filter queries and can be paired with `--dry-run`.
+When you [filter specs](#filtering-specs) using Ginkgo's various filtering mechanisms Ginkgo usually emits a single cyan `S` for each skipped spec.  If you run with the very-verbose setting, however, Ginkgo will emit the description and location information of every skipped spec.  This can be useful if you need to debug your filter queries and can be paired with `--dry-run`.
 
 #### Other Settings
 Here are a grab bag of other settings:
@@ -3647,7 +3646,7 @@ var _ = ReportAfterSuite("interruptible ReportAfterSuite", func(ctx SpecContext,
 
 The closure passed to `ReportBeforeSuite` is called exactly once at the beginning of the suite before any `BeforeSuite` nodes or specs run have run.  The closure passed to `ReportAfterSuite` is called exactly once at the end of the suite after any `AfterSuite` nodes have run.
 
-Finally, and most importantly, when running in parallel both `ReportBeforeSuite` and `ReportAfterSuite` **only run on process #1**.  Gingko guarantess that no other processes will start running their specs until after `ReportBeforeSuite` on process #1 has completed.  Similarly, Ginkgo will only run `ReportAfterSuite` on process #1 after all other processes have finished and exited.  Ginkgo provides a single `Report` that aggregates the `SpecReports` from all processes.  This allows you to perform any custom suite reporting in one place after all specs have run and not have to worry about aggregating information across multiple parallel processes.
+Finally, and most importantly, when running in parallel both `ReportBeforeSuite` and `ReportAfterSuite` **only run on process #1**.  Gingko guarantees that no other processes will start running their specs until after `ReportBeforeSuite` on process #1 has completed.  Similarly, Ginkgo will only run `ReportAfterSuite` on process #1 after all other processes have finished and exited.  Ginkgo provides a single `Report` that aggregates the `SpecReports` from all processes.  This allows you to perform any custom suite reporting in one place after all specs have run and not have to worry about aggregating information across multiple parallel processes.
 
 Given all this, we can rewrite our invalid `ReportAfterEach` example from above into a valid `ReportAfterSuite` example:
 
@@ -4932,7 +4931,7 @@ here we've assumed the `client` can take and restore a snapshot of the database.
 
 With this approach each parallel process has its own dedicated database so there is no chance for cross-spec pollution when running in parallel.  Within each parallel process the dedicated database is cleared out between specs so there's no chance for spec pollution from one spec to the next.
 
-This all works if you have the ability to spin up a local copy of the database.  But there are times when you must rely on an external stateful singleton resource and need to test against it.  We'll explore patterns for testing those next.
+This all works if you can spin up a local copy of the database.  But there are times when you must rely on an external stateful singleton resource and need to test against it.  We'll explore patterns for testing those next.
 
 #### Patterns for Testing against Singletons
 There are times when your spec suite must run against a stateful shared singleton system.  Perhaps it is simply too expensive to spin up multiple systems (e.g. each "system" is actually a memory-hungry cluster of distributed systems; or, perhaps, you are testing against a real-life instance of a service and can't spin up another instance).
@@ -5372,7 +5371,7 @@ Currently none of these decorators can be applied to container nodes.
 
 ## Ginkgo CLI Overview
 
-This chapter provides a quick overview and tour of the Ginkgo CLI.  For comprehensive details about all of the Ginkgo CLI's flags, run `ginkgo help`.  To get information about Ginkgo's implicit `run` command (i.e. what you get when you just run `ginkgo`) run `ginkgo help run`.
+This chapter provides a quick overview and tour of the Ginkgo CLI.  For comprehensive details of Ginkgo CLI's flags, run `ginkgo help`.  To get information about Ginkgo's implicit `run` command (i.e. what you get when you just run `ginkgo`) run `ginkgo help run`.
 
 The Ginkgo CLI is the recommended and supported tool for running Ginkgo suites.  While you _can_ run Ginkgo suites with `go test` you must use the CLI to run suites in parallel and to aggregate profiles.  There are also a (small) number of `go test` flags that Ginkgo does not support - an error will be emitted if you attempt to use these (for example, `go test -count=N`, use `ginkgo -repeat=N` instead).
 
@@ -5497,7 +5496,7 @@ This generates an outline in a comma-separated-values (CSV) format. Column heade
 
   Name,Text,Start,End,Spec,Focused,Pending,Labels
   Describe,Book,124,973,false,false,false,""
-  BeforeEach,,217,507,false,false,false,""
+  BeforeEach,217,507,false,false,false,""
   Describe,Categorizing book length,513,970,false,false,false,""
   Context,With more than 300 pages,567,753,false,false,false,""
   It,should be a novel,624,742,true,false,false,""
@@ -5629,6 +5628,6 @@ Set the `GINKGO_PRESERVE_CACHE` environment variable to `true` in order to
 skip the `os.Getwd()` call. This may affect the reporter output.
 
 ### The ginkgolinter
-The [ginkgolinter](https://github.com/nunnatsa/ginkgolinter) enforces several patterns of using ginkgo and gomega. It can run as an independent executable or as part of the [golangci-lint](https://golangci-lint.run/) linter. See the ginkgolinter [READMY](https://github.com/nunnatsa/ginkgolinter#readme) for more details.
+The [ginkgolinter](https://github.com/nunnatsa/ginkgolinter) enforces several patterns of using ginkgo and gomega. It can run as an independent executable or as part of the [golangci-lint](https://golangci-lint.run/) linter. See the ginkgolinter [README](https://github.com/nunnatsa/ginkgolinter#readme) for more details.
 
 {% endraw  %}
