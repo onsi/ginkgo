@@ -8,7 +8,7 @@ require (
 	github.com/google/pprof v0.0.0-20250403155104-27863c87afa6
 	github.com/onsi/gomega v1.37.0
 	go.uber.org/automaxprocs v1.6.0
-	golang.org/x/sys v0.33.0
+	golang.org/x/sys v0.34.0
 	golang.org/x/tools v0.34.0
 )
 
