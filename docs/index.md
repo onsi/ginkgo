@@ -2664,6 +2664,50 @@ Some more examples:
 
 Label sets are helpful for organizing and filtering large spec suites in which different specs satisfy multiple overlapping concerns.  The use of label set filters is intended to be a more powerful and expressive alternative to the use of regular expressions.  If you find yourself using a regular expression, consider if you should be using a label set instead.
 
+##### Version-Based Label Filtering
+
+Based on the Label sets feature, Ginkgo also supports version-based label filtering. This allows you to mark tests with version constraints using Label sets.
+
+```go
+Describe("Feature with version requirements", Label("minVersion:v1.2.3"), Label("maxVersion:v2.2.3"), func() {
+  It("should only run when v1.2.3 <= version <= v2.2.3", func() {
+    // This test will only run when the version constraint is satisfied
+  })
+
+  It("should only run when v1.2.3 <= version <= v2.0.0", Label("maxVersion:v2.0.0"), func() {
+    // This test will only run when the version constraint is satisfied
+  })
+})
+
+It("min version test", Label("minVersion:v2.0.0"), func() {
+  // Test code here
+})
+```
+
+Tests can be labeled with `minVersion` and `maxVersion` to specify the version range in which they are applicable.
+
+- `minVersion:vX.Y.Z`: Specifies the minimum version required for the test to run.
+- `maxVersion:vA.B.C`: Specifies the maximum version up to which the test should run.
+
+Both labels are optional. If a test lacks a `minVersion` or `maxVersion` label, it can still be filtered based on the presence or absence of these labels.
+
+You can combine `isSemVer(X)` filter expression evaluates whether a label's version satisfies a given semantic version constraint `X`. The constraint is documented in [semver](https://github.com/Masterminds/semver). Here’s how it works:
+
+- `X` is a valid semver constraint, such as `>=1.2.3`, `<=2.2.3`, `^2.1.0`, or `*` (matches any valid semver).
+- If the label (e.g., `minVersion` or `maxVersion`) is present, `isSemVer(X)` checks if its version satisfies `X`.
+- If there's no version label present on the test, `isSemVer(X)` returns `false`.
+
+Some more examples:
+
+| Query                                                                                                                                       | Behavior                                                                                         |
+|---------------------------------------------------------------------------------------------------------------------------------------------|--------------------------------------------------------------------------------------------------|
+| `ginkgo --label-filter="minVersion: isSemver(>=2.1.0) && maxVersion: isSemver(<2.3.0)"`                                                     | Match any specs for which satisfies `>=2.1.0, <2.3.0`                                            |
+| `ginkgo --label-filter="minVersion: isSemver(^2.x)"`                                                                                        | Match any specs for which satisfies `>=2.0.0, <3`                                                |
+| `ginkgo --label-filter="minVersion: (isSemVer(^2.1.0) \|\| !isSemVer(*))"`                                                                  | Match any specs for which satisfies `>=2.1.0, <3.0.0` or without `minVersion` label              |
+| `ginkgo --label-filter="(minVersion: isSemver(^2.1.0) && maxVersion: isSemver(<2.3.0)) \|\| (minVersion: isEmpty && maxVersion: isEmpty)"`  | Match any specs for which satisfies `>=2.1.0, <2.3.0` or without `minVersion, maxVersion` labels |
+
+This feature is particularly useful for libraries and applications that need to maintain compatibility with multiple versions of dependencies or must test different feature sets based on version constraints.
+
 ##### Listing Labels
 
 You can list the labels used in a given package using the `ginkgo labels` subcommand.  This does a simple/naive scan of your test files for calls to `Label` and returns any labels it finds.
