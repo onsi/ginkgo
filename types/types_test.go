@@ -263,8 +263,10 @@ var _ = Describe("Types", func() {
 			Ω(types.SpecReport{State: types.SpecStateInterrupted}.Failed()).Should(BeTrue())
 		})
 
-		It("can return a concatenated set of texts", func() {
-			Ω(CurrentSpecReport().FullText()).Should(Equal("Types SpecReport Helper Functions can return a concatenated set of texts"))
+		Describe("", func() {
+			It("can return a concatenated set of texts", func() {
+				Ω(CurrentSpecReport().FullText()).Should(Equal("Types SpecReport Helper Functions can return a concatenated set of texts"))
+			})
 		})
 
 		It("can return the name of the file it's spec is in", func() {
