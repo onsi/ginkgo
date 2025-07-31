@@ -2095,7 +2095,7 @@ func SynchronizedBeforeSuite(
   allProcesses func(),
 )
 ```
-Note all processes func() run all process including the process1.
+Note allProcesses func() runs all processes including the process1.
 
 Similarly, `SynchronizedAfterSuite` is split into two functions.  The first, `allProcesses`, runs on all processes after they finish running specs.  The second, `process1`, only runs on process #1 - and only _after_ all other processes have finished and exited.
 
