@@ -2095,8 +2095,9 @@ func SynchronizedBeforeSuite(
   allProcesses func(),
 )
 ```
+Note all processes func() run all process including the process1.
 
-Similarly, `SynchronizedAfterSuite` is split into two functions.  The first, `allProcesses`, runs on all processes after they finish running specs.  The second, `process1`, only runs on process #1 - and only _after_ all processes including process1 have finished and exited.
+Similarly, `SynchronizedAfterSuite` is split into two functions.  The first, `allProcesses`, runs on all processes after they finish running specs.  The second, `process1`, only runs on process #1 - and only _after_ all other processes have finished and exited.
 
 We can use this behavior to set up shared external resources like so:
 
@@ -2251,7 +2252,7 @@ Describe("Something expensive", Serial, func() {
 
 Ginkgo will guarantee that these specs will never run in parallel with other specs.
 
-Under the hood Ginkgo does this by running `Serial` at the **end** of the suite on parallel process #1.  When it detects the presence of `Serial` specs, process #1 will wait for all processes including process1 to exit before running the `Serial` specs.
+Under the hood Ginkgo does this by running `Serial` at the **end** of the suite on parallel process #1.  When it detects the presence of `Serial` specs, process #1 will wait for all other processes to exit before running the `Serial` specs.
 
 ### Ordered Containers
 
