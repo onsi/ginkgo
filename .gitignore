@@ -6,3 +6,4 @@ tmp/**/*
 .idea/
 *.log
 *.test
+integration/_fixtures

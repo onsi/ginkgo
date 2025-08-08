@@ -86,6 +86,7 @@ type MustPassRepeatedly uint
 type Offset uint
 type Done chan<- any // Deprecated Done Channel for asynchronous testing
 type Labels []string
+type SemVerConstraints []string
 type PollProgressInterval time.Duration
 type PollProgressAfter time.Duration
 type NodeTimeout time.Duration
@@ -150,6 +151,8 @@ func isDecoration(arg any) bool {
 	case t == reflect.TypeOf(MustPassRepeatedly(0)):
 		return true
 	case t == reflect.TypeOf(Labels{}):
+		return true
+	case t == reflect.TypeOf(SemVerConstraints{}):
 		return true
 	case t == reflect.TypeOf(PollProgressInterval(0)):
 		return true

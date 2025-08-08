@@ -100,6 +100,19 @@ You can learn more here: https://onsi.github.io/ginkgo/#spec-labels
 type Labels = internal.Labels
 
 /*
+SemVerConstraint decorates specs with SemVerConstraints. TODO
+*/
+func SemVerConstraint(semVerConstraints ...string) SemVerConstraints {
+	return SemVerConstraints(semVerConstraints)
+}
+
+/*
+SemVerConstraints are the type for spec SemVerConstraint decorators. Use SemVerConstraint(...) to construct SemVerConstraints.
+You can learn more here: TODO
+*/
+type SemVerConstraints = internal.SemVerConstraints
+
+/*
 PollProgressAfter allows you to override the configured value for --poll-progress-after for a particular node.
 
 Ginkgo will start emitting node progress if the node is still running after a duration of PollProgressAfter.  This allows you to get quicker feedback about the state of a long-running spec.

@@ -35,3 +35,4 @@ const OncePerOrdered = ginkgo.OncePerOrdered
 const SuppressProgressReporting = ginkgo.SuppressProgressReporting
 
 var Label = ginkgo.Label
+var SemVerConstraint = ginkgo.SemVerConstraint
