@@ -2699,7 +2699,7 @@ func TestBooks(t *testing.T) {
 
 Suite-level labels apply to the entire suite making it easy to filter out entire suites using label filters.
 
-#### Semantic Version Filtering
+#### Spec Semantic Version Filtering
 
 Ginkgo provides semantic version filtering to allow you to run specs based on version constraints. This is particularly useful when testing features that are only available in certain versions of your software or when you need to conditionally run tests based on the version of dependencies.
 
@@ -2711,16 +2711,20 @@ Describe("Feature with version requirements", func() {
     // This test will only run when the version constraint is satisfied
   })
 
-  It("should work in a specific version range", SemVerConstraint(">= 2.1.0, < 2.3.0"), func() {
+  It("should work in a specific version range [2.1.0, 2.3.0)", SemVerConstraint(">= 2.1.0, < 2.3.0"), func() {
     // This test will only run when version is between 2.1.0 (inclusive) and 2.3.0 (exclusive)
+  })
+
+  It("should work in a specific version range (1.0.0, 2.0.0)", SemVerConstraint("> 1.0.0", "< 2.0.0"), func() {
+    // This test will only run when version is between 1.0.0 (exclusive) and 2.0.0 (exclusive)
   })
 })
 ```
 
-You can then filter specs by providing a semantic version via the `--filter-sem-ver` flag:
+You can then filter specs by providing a semantic version via the `--sem-ver-filter` flag:
 
 ```bash
-ginkgo --filter-sem-ver="2.1.1"
+ginkgo --sem-ver-filter="2.1.1"
 ```
 
 This will only run specs whose semantic version constraints are satisfied by the provided version.
@@ -2754,7 +2758,7 @@ In this example, the second spec will only run when the version satisfies both t
 
 ##### Unconstrained Specs
 
-Specs that don't have a `SemVerConstraint` decorator are considered unconstrained and will always run when the `--filter-sem-ver` flag is provided. This allows you to have a mix of version-specific and version-agnostic tests in the same suite.
+Specs that don't have a `SemVerConstraint` decorator are considered unconstrained and will always run when the `--sem-ver-filter` flag is provided. This allows you to have a mix of version-specific and version-agnostic tests in the same suite.
 
 #### Location-Based Filtering
 

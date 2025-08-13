@@ -20,6 +20,7 @@ type Offset = ginkgo.Offset
 type FlakeAttempts = ginkgo.FlakeAttempts
 type MustPassRepeatedly = ginkgo.MustPassRepeatedly
 type Labels = ginkgo.Labels
+type SemVerConstraints = ginkgo.SemVerConstraints
 type PollProgressAfter = ginkgo.PollProgressAfter
 type PollProgressInterval = ginkgo.PollProgressInterval
 type NodeTimeout = ginkgo.NodeTimeout

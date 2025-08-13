@@ -99,6 +99,12 @@ var _ = Describe("Combining Labels", func() {
 	})
 })
 
+var _ = Describe("Combining SemVerConstraints", func() {
+	It("can combine semantic version constraints and produce the unique union", func() {
+		Ω(internal.UnionOfSemVerConstraints(SemVerConstraint("> 2.1.0", "< 2.2.0"), SemVerConstraint("> 2.1.0", "< 2.3.0"))).Should(Equal(SemVerConstraint("> 2.1.0", "< 2.2.0", "< 2.3.0")))
+	})
+})
+
 var _ = Describe("Constructing nodes", func() {
 	var dt *types.DeprecationTracker
 	var didRun bool
@@ -448,6 +454,47 @@ var _ = Describe("Constructing nodes", func() {
 			node, errors := internal.NewNode(dt, ntIt, "", body, cl, Label("A", "B&C", "C,D", "C,D ", "  ", ":Foo"))
 			Ω(node).Should(BeZero())
 			Ω(errors).Should(ConsistOf(types.GinkgoErrors.InvalidLabel("B&C", cl), types.GinkgoErrors.InvalidLabel("C,D", cl), types.GinkgoErrors.InvalidLabel("C,D ", cl), types.GinkgoErrors.InvalidEmptyLabel(cl), types.GinkgoErrors.InvalidLabel(":Foo", cl)))
+			Ω(dt.DidTrackDeprecations()).Should(BeFalse())
+		})
+	})
+
+	Describe("The SemVerConstraint decoration", func() {
+		It("has no SemVerConstraints by default", func() {
+			node, errors := internal.NewNode(dt, ntIt, "text", body)
+			Ω(node).ShouldNot(BeZero())
+			Ω(node.SemVerConstraints).Should(Equal(SemVerConstraints{}))
+			ExpectAllWell(errors)
+		})
+
+		It("can track SemVerConstraints", func() {
+			node, errors := internal.NewNode(dt, ntIt, "text", body, SemVerConstraint(">= 1.0.0", "< 2.0.0"))
+			Ω(node.SemVerConstraints).Should(Equal(SemVerConstraints{">= 1.0.0", "< 2.0.0"}))
+			ExpectAllWell(errors)
+		})
+
+		It("appends and dedupes all SemVerConstraints together, even if nested", func() {
+			node, errors := internal.NewNode(dt, ntIt, "text", body, SemVerConstraint(">= 1.0.0"), SemVerConstraint("< 2.0.0"), []any{SemVerConstraint(">= 1.0.0"), []any{SemVerConstraint("< 1.9.0")}})
+			Ω(node.SemVerConstraints).Should(Equal(SemVerConstraints{">= 1.0.0", "< 2.0.0", "< 1.9.0"}))
+			ExpectAllWell(errors)
+		})
+
+		It("can be applied to containers", func() {
+			node, errors := internal.NewNode(dt, ntCon, "text", body, SemVerConstraint(">= 1.0.0", "< 2.0.0"))
+			Ω(node.SemVerConstraints).Should(Equal(SemVerConstraints{">= 1.0.0", "< 2.0.0"}))
+			ExpectAllWell(errors)
+		})
+
+		It("cannot be applied to non-container/it nodes", func() {
+			node, errors := internal.NewNode(dt, ntBef, "", body, cl, SemVerConstraint(">= 1.0.0", "< 2.0.0"))
+			Ω(node).Should(BeZero())
+			Ω(errors).Should(ConsistOf(types.GinkgoErrors.InvalidDecoratorForNodeType(cl, ntBef, "SemVerConstraint")))
+			Ω(dt.DidTrackDeprecations()).Should(BeFalse())
+		})
+
+		It("validates SemVerConstraints", func() {
+			node, errors := internal.NewNode(dt, ntIt, "", body, cl, SemVerConstraint("&| 1.0.0", ""))
+			Ω(node).Should(BeZero())
+			Ω(errors).Should(ConsistOf(types.GinkgoErrors.InvalidSemVerConstraint("&| 1.0.0", "improper constraint: &| 1.0.0", cl), types.GinkgoErrors.InvalidEmptySemVerConstraint(cl)))
 			Ω(dt.DidTrackDeprecations()).Should(BeFalse())
 		})
 	})
@@ -1465,6 +1512,27 @@ var _ = Describe("Nodes", func() {
 		})
 	})
 
+	Describe("SemVerConstraints and UnionOfSemVerConstraints", func() {
+		var nodes Nodes
+		BeforeEach(func() {
+			nodes = Nodes{N(SemVerConstraint(">= 1.0.0", "< 2.0.0")), N(SemVerConstraint("^1.2.3")), N(), N(SemVerConstraint(">= 1.0.0")), N(SemVerConstraint("~1.2.x"))}
+		})
+
+		It("Labels returns a slice containing the SemVerConstraints for each node in order", func() {
+			Ω(nodes.SemVerConstraints()).Should(Equal([][]string{
+				{">= 1.0.0", "< 2.0.0"},
+				{"^1.2.3"},
+				{},
+				{">= 1.0.0"},
+				{"~1.2.x"},
+			}))
+		})
+
+		It("UnionOfSemVerConstraints returns a single slice of SemVerConstraints harvested from all nodes and deduped", func() {
+			Ω(nodes.UnionOfSemVerConstraints()).Should(Equal([]string{">= 1.0.0", "< 2.0.0", "^1.2.3", "~1.2.x"}))
+		})
+	})
+
 	Describe("CodeLocation", func() {
 		var nodes Nodes
 		var cl1, cl2 types.CodeLocation
@@ -1667,6 +1735,22 @@ var _ = Describe("Nodes", func() {
 			Ω(Label("dog", "cat").MatchesLabelFilter("!dog")).Should(BeFalse())
 			Ω(func() {
 				Label("dog", "cat").MatchesLabelFilter("!")
+			}).Should(Panic())
+		})
+	})
+
+	Describe("SemVerConstraints", func() {
+		It("can match against a filter", func() {
+			Ω(SemVerConstraint().MatchesSemVerFilter("")).Should(BeTrue())
+			Ω(SemVerConstraint(">= 1.0.0, < 2.0.0").MatchesSemVerFilter("1.2.0")).Should(BeTrue())
+			Ω(SemVerConstraint(">= 1.0.0", "< 2.0.0").MatchesSemVerFilter("1.2.0")).Should(BeTrue())
+			Ω(SemVerConstraint("^1.0.x").MatchesSemVerFilter("1.2.0")).Should(BeTrue())
+			Ω(SemVerConstraint("~1.2.3").MatchesSemVerFilter("1.2.5")).Should(BeTrue())
+			Ω(SemVerConstraint("1.0.0 - 2.0.0").MatchesSemVerFilter("1.2.0")).Should(BeTrue())
+			Ω(SemVerConstraint("!= 1.2.0").MatchesSemVerFilter("1.2.0")).Should(BeFalse())
+			Ω(SemVerConstraint("> 1.2.0").MatchesSemVerFilter("1.2.0")).Should(BeFalse())
+			Ω(func() {
+				SemVerConstraint("> 1.0.0").MatchesSemVerFilter("aaa")
 			}).Should(Panic())
 		})
 	})
