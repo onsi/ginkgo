@@ -44,7 +44,7 @@ var _ = Describe("Hierarchy Semantic Version Filtering", func() {
 	})
 })
 
-var _ = FDescribeTable("Semantic Version Filtering in table-driven spec", func() {
+var _ = DescribeTable("Semantic Version Filtering in table-driven spec", func() {
 	Expect(true).To(BeTrue())
 },
 	Entry("should run without constraints by table driven"),
