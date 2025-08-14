@@ -1518,7 +1518,7 @@ var _ = Describe("Nodes", func() {
 			nodes = Nodes{N(SemVerConstraint(">= 1.0.0", "< 2.0.0")), N(SemVerConstraint("^1.2.3")), N(), N(SemVerConstraint(">= 1.0.0")), N(SemVerConstraint("~1.2.x"))}
 		})
 
-		It("Labels returns a slice containing the SemVerConstraints for each node in order", func() {
+		It("SemVerConstraints returns a slice containing the SemVerConstraints for each node in order", func() {
 			Ω(nodes.SemVerConstraints()).Should(Equal([][]string{
 				{">= 1.0.0", "< 2.0.0"},
 				{"^1.2.3"},
