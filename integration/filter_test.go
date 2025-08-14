@@ -22,6 +22,7 @@ var _ = Describe("Filter", func() {
 			"--skip-file=_c",
 			"--json-report=report.json",
 			"--label-filter=TopLevelLabel && !SLOW && !(Feature: containsAny Alpha)",
+			"--sem-ver-filter=2.2.0",
 		)
 		Eventually(session).Should(gexec.Exit(0))
 		specs := Reports(fm.LoadJSONReports("filter", "report.json")[0].SpecReports)
