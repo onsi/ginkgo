@@ -440,4 +440,24 @@ var _ = Describe("Testingtproxy", func() {
 		Ω(attachProgressReporterCancelCalled).Should(BeTrue())
 	})
 
+	Describe("Output", func() {
+		It("returns the GinkgoWriter", func() {
+			fmt.Fprintln(t.Output(), "hi 3")
+			Ω(string(buf.Contents())).Should(Equal("  hi 3\n"))
+		})
+	})
+
+	Describe("Attr", func() {
+		It("adds report entries with visibility FailureOrVerbose", func() {
+			cl := types.NewCodeLocation(0)
+			t.Attr("hey", "3")
+			entry := CurrentSpecReport().ReportEntries[0]
+			Ω(entry.Visibility).Should(Equal(types.ReportEntryVisibilityFailureOrVerbose))
+			Ω(entry.Name).Should(Equal("hey"))
+			Ω(entry.GetRawValue()).Should(Equal("3"))
+			Ω(entry.Location.FileName).Should(Equal(cl.FileName))
+			Ω(entry.Location.LineNumber).Should(Equal(cl.LineNumber + 1))
+		})
+	})
+
 })

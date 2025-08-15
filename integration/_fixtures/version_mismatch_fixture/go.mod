@@ -1,6 +1,6 @@
 module version_mismatch_fixture
 
-go 1.19
+go 1.19.0
 
 require (
 	github.com/onsi/ginkgo/v2 v2.2.0
