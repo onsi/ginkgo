@@ -1,16 +1,9 @@
 package semver_fixture_test
 
 import (
-	"testing"
-
 	. "github.com/onsi/ginkgo/v2"
 	. "github.com/onsi/gomega"
 )
-
-func TestSemver(t *testing.T) {
-	RegisterFailHandler(Fail)
-	RunSpecs(t, "Semver Suite")
-}
 
 var _ = Describe("Semantic Version Filtering", func() {
 	It("should run without constraints", func() {})
