@@ -136,6 +136,12 @@ var _ = Describe("Filter", func() {
 				"shouldn't run with version in a conflict range by table driven",
 			}
 			Ω(specs).Should(HaveLen(len(passedSpecs) + len(skippedSpecs)))
+			for _, passed := range passedSpecs {
+				Ω(specs.Find(passed)).Should(HavePassed())
+			}
+			for _, skipped := range skippedSpecs {
+				Ω(specs.Find(skipped)).Should(HaveBeenSkipped())
+			}
 		})
 
 		It("filters specs with hierarchy based on semantic version constraints", func() {
@@ -152,6 +158,12 @@ var _ = Describe("Filter", func() {
 				"should narrow down spec constraint",
 			}
 			Ω(specs).Should(HaveLen(len(passedSpecs) + len(skippedSpecs)))
+			for _, passed := range passedSpecs {
+				Ω(specs.Find(passed)).Should(HavePassed())
+			}
+			for _, skipped := range skippedSpecs {
+				Ω(specs.Find(skipped)).Should(HaveBeenSkipped())
+			}
 		})
 	})
 })
