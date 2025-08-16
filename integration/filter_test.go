@@ -1,6 +1,8 @@
 package integration_test
 
 import (
+        "path/filepath"
+
 	. "github.com/onsi/ginkgo/v2"
 	. "github.com/onsi/gomega"
 	"github.com/onsi/gomega/gbytes"
@@ -101,6 +103,67 @@ var _ = Describe("Filter", func() {
 			Ω(session).Should(gbytes.Say(`labels: \["beluga", "bird", "cat", "chicken", "cow", "dog", "giraffe", "koala", "monkey", "otter", "owl", "panda"\]`))
 			Ω(session).Should(gbytes.Say(`nolabels: No labels found`))
 			Ω(session).Should(gbytes.Say(`onepkg: \["beluga", "bird", "cat", "chicken", "cow", "dog", "giraffe", "koala", "monkey", "otter", "owl", "panda"\]`))
+		})
+	})
+
+	Describe("Semantic Version Filtering", func() {
+		BeforeEach(func() {
+			fm.MountFixture("semver")
+		})
+
+		It("filters specs based on semantic version constraints", func() {
+			session := startGinkgo(filepath.Join(fm.TmpDir, "semver"),
+				"--sem-ver-filter=2.2.0",
+				"--json-report=report.json",
+			)
+			Eventually(session).Should(gexec.Exit(0))
+			specs := Reports(fm.LoadJSONReports("semver", "report.json")[0].SpecReports)
+			passedSpecs := []string{
+				"should run without constraints",
+				"should run with version in range [2.0.0, ~)",
+				"should run with version in range [2.0.0, 3.0.0)",
+				"should run with version in range [2.0.0, 4.0.0)",
+				"should run with version in range [2.0.0, 5.0.0)",
+				"should inherit container constraint",
+				"should narrow down the constraint",
+				"shouldn't expand the constraint",
+				"should run without constraints by table driven",
+				"should run with version in range [2.0.0, ~) by table driven",
+			}
+			skippedSpecs := []string{
+				"shouldn't run with version in a conflict range",
+				"shouldn't combine with a conflict constraint",
+				"shouldn't run with version in a conflict range by table driven",
+			}
+			Ω(specs).Should(HaveLen(len(passedSpecs) + len(skippedSpecs)))
+			for _, passed := range passedSpecs {
+				Ω(specs.Find(passed)).Should(HavePassed())
+			}
+			for _, skipped := range skippedSpecs {
+				Ω(specs.Find(skipped)).Should(HaveBeenSkipped())
+			}
+		})
+
+		It("filters specs with hierarchy based on semantic version constraints", func() {
+			session := startGinkgo(filepath.Join(fm.TmpDir, "semver", "spechierarchy"),
+				"--sem-ver-filter=2.2.0",
+				"--json-report=report.json",
+			)
+			Eventually(session).Should(gexec.Exit(0))
+			specs := Reports(fm.LoadJSONReports(filepath.Join("semver", "spechierarchy"), "report.json")[0].SpecReports)
+			passedSpecs := []string{
+				"should inherit spec constraint",
+			}
+			skippedSpecs := []string{
+				"should narrow down spec constraint",
+			}
+			Ω(specs).Should(HaveLen(len(passedSpecs) + len(skippedSpecs)))
+			for _, passed := range passedSpecs {
+				Ω(specs.Find(passed)).Should(HavePassed())
+			}
+			for _, skipped := range skippedSpecs {
+				Ω(specs.Find(skipped)).Should(HaveBeenSkipped())
+			}
 		})
 	})
 })

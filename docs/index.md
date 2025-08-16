@@ -2699,6 +2699,67 @@ func TestBooks(t *testing.T) {
 
 Suite-level labels apply to the entire suite making it easy to filter out entire suites using label filters.
 
+#### Spec Semantic Version Filtering
+
+Ginkgo provides semantic version filtering to allow you to run specs based on version constraints. This is particularly useful when testing features that are only available in certain versions of your software or when you need to conditionally run tests based on the version of dependencies.
+
+You can attach semantic version constraints to specs using the `SemVerConstraint` decorator:
+
+```go
+Describe("Feature with version requirements", func() {
+  It("should work in version 3.2.0 and above", SemVerConstraint(">= 3.2.0"), func() {
+    // This test will only run when the version constraint is satisfied
+  })
+
+  It("should work in a specific version range [2.1.0, 2.3.0)", SemVerConstraint(">= 2.1.0, < 2.3.0"), func() {
+    // This test will only run when version is between 2.1.0 (inclusive) and 2.3.0 (exclusive)
+  })
+
+  It("should work in a specific version range (1.0.0, 2.0.0)", SemVerConstraint("> 1.0.0", "< 2.0.0"), func() {
+    // This test will only run when version is between 1.0.0 (exclusive) and 2.0.0 (exclusive)
+  })
+})
+```
+
+You can then filter specs by providing a semantic version via the `--sem-ver-filter` flag:
+
+```bash
+ginkgo --sem-ver-filter="2.1.1"
+```
+
+This will only run specs whose semantic version constraints are satisfied by the provided version.
+
+##### Constraint Syntax
+
+The `SemVerConstraint(X)` decorator accepts constraint string that follows standard semantic versioning comparison operators, the constraint is documented in [semver](https://github.com/Masterminds/semver).
+
+- `>= 1.0.0` - greater than or equal to version 1.0.0
+- `>= 1.0.0, < 2.0.0` - multiple constraints separated by commas (all must be satisfied)
+- `~1.2.3` - equal to `>= 1.2.3, < 1.3.0`
+- `^1.2.3` - equal to `>= 1.2.3, < 2.0.0`
+
+##### Hierarchical Constraints
+
+Semantic version constraints follow Ginkgo's hierarchical decorator pattern. When applied to container nodes, the constraint applies to all child specs. Child nodes can further narrow down constraints but cannot expand the scope:
+
+```go
+Describe("Feature with version requirements", SemVerConstraint(">= 2.0.0, < 2.3.0"), func() {
+  It("should work in the base version range", func() {
+    // Inherits constraint: >= 2.0.0, < 2.3.0
+  })
+
+  It("should only run in a narrower range", SemVerConstraint(">= 2.1.0, <= 2.2.0"), func() {
+    // Effective constraint: >= 2.1.0, <= 2.2.0 (intersection with parent)
+  })
+})
+```
+
+In this example, the second spec will only run when the version satisfies both the parent constraint (`>= 2.0.0, < 2.3.0`) and its own constraint (`>= 2.1.0, <= 2.2.0`), resulting in an effective constraint of `>= 2.1.0, <= 2.2.0`.
+
+##### Unconstrained Specs
+
+Specs that don't have a `SemVerConstraint` decorator are considered unconstrained and will always run when the `--sem-ver-filter` flag is provided. This allows you to have a mix of version-specific and version-agnostic tests in the same suite.
+
 #### Location-Based Filtering
 
 Ginkgo allows you to filter specs based on their source code location from the command line.  You do this using the `ginkgo --focus-file` and `ginkgo --skip-file` flags.  Ginkgo will only run specs that are in files that _do_ match the `--focus-file` filter *and* _don't_ match the `--skip-file` filter.  You can provide multiple `--focus-file` and `--skip-file` flags.  The `--focus-file`s will be ORed together and the `--skip-file`s will be ORed together.
