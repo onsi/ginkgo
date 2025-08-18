@@ -24,6 +24,7 @@ type SuiteConfig struct {
 	FocusFiles            []string
 	SkipFiles             []string
 	LabelFilter           string
+	SemVerFilter          string
 	FailOnPending         bool
 	FailOnEmpty           bool
 	FailFast              bool
@@ -308,6 +309,8 @@ var SuiteConfigFlags = GinkgoFlags{
 
 	{KeyPath: "S.LabelFilter", Name: "label-filter", SectionKey: "filter", UsageArgument: "expression",
 		Usage: "If set, ginkgo will only run specs with labels that match the label-filter.  The passed-in expression can include boolean operations (!, &&, ||, ','), groupings via '()', and regular expressions '/regexp/'.  e.g. '(cat || dog) && !fruit'"},
+	{KeyPath: "S.SemVerFilter", Name: "sem-ver-filter", SectionKey: "filter", UsageArgument: "version",
+		Usage: "If set, ginkgo will only run specs with semantic version constraints that are satisfied by the provided version. e.g. '2.1.0'"},
 	{KeyPath: "S.FocusStrings", Name: "focus", SectionKey: "filter",
 		Usage: "If set, ginkgo will only run specs that match this regular expression. Can be specified multiple times, values are ORed."},
 	{KeyPath: "S.SkipStrings", Name: "skip", SectionKey: "filter",
@@ -438,6 +441,13 @@ func VetConfig(flagSet GinkgoFlagSet, suiteConfig SuiteConfig, reporterConfig Re
 
 	if suiteConfig.LabelFilter != "" {
 		_, err := ParseLabelFilter(suiteConfig.LabelFilter)
+		if err != nil {
+			errors = append(errors, err)
+		}
+	}
+
+	if suiteConfig.SemVerFilter != "" {
+		_, err := ParseSemVerFilter(suiteConfig.SemVerFilter)
 		if err != nil {
 			errors = append(errors, err)
 		}

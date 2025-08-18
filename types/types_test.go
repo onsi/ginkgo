@@ -234,6 +234,25 @@ var _ = Describe("Types", func() {
 			})
 		})
 
+		Describe("", SemVerConstraint(">= 1.0.0", "< 2.0.0"), func() {
+			It("returns a concatenated, deduped, set of SemVerConstraints", SemVerConstraint(">= 1.0.0", "< 2.2.0"), func() {
+				Ω(CurrentSpecReport().SemVerConstraints()).Should(Equal([]string{">= 1.0.0", "< 2.0.0", "< 2.2.0"}))
+			})
+		})
+
+		Describe("MatchesSemVerFilter", SemVerConstraint(">= 1.0.0"), func() {
+			It("returns an error when passed an invalid filter version", func() {
+				matches, err := CurrentSpecReport().MatchesSemVerFilter("aaa")
+				Ω(err).Should(HaveOccurred())
+				Ω(matches).Should(BeFalse())
+			})
+
+			It("returns whether or not the version matches", SemVerConstraint(">= 1.0.0", "< 2.0.0"), func() {
+				Ω(CurrentSpecReport().MatchesSemVerFilter("1.1.0")).Should(BeTrue())
+				Ω(CurrentSpecReport().MatchesSemVerFilter("2.0.0")).Should(BeFalse())
+			})
+		})
+
 		It("can report on whether state is a failed state", func() {
 			Ω(types.SpecReport{State: types.SpecStatePending}.Failed()).Should(BeFalse())
 			Ω(types.SpecReport{State: types.SpecStateSkipped}.Failed()).Should(BeFalse())
