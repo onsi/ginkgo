@@ -1,6 +1,7 @@
 package internal_test
 
 import (
+	"context"
 	"reflect"
 	"testing"
 
@@ -13,7 +14,9 @@ import (
 
 func TestInternal(t *testing.T) {
 	RegisterFailHandler(Fail)
-	RunSpecs(t, "Internal Suite")
+	RunSpecs(t, "Internal Suite", AroundNode(func(ctx context.Context, body func(ctx context.Context)) {
+		body(context.WithValue(ctx, "suite", "internal"))
+	}))
 }
 
 type Node = internal.Node

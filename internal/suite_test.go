@@ -61,7 +61,7 @@ var _ = Describe("Suite", func() {
 				Ω(rt).Should(HaveTracked("traversing outer", "traversing nested"))
 
 				rt.Reset()
-				suite.Run("suite", Labels{}, SemVerConstraints{}, "/path/to/suite", failer, reporter, writer, outputInterceptor, interruptHandler, client, internal.RegisterForProgressSignal, conf)
+				suite.Run("suite", Labels{}, SemVerConstraints{}, nil, "/path/to/suite", failer, reporter, writer, outputInterceptor, interruptHandler, client, internal.RegisterForProgressSignal, conf)
 				Ω(rt).Should(HaveTracked("running it"))
 
 				Ω(err1).ShouldNot(HaveOccurred())
@@ -98,7 +98,7 @@ var _ = Describe("Suite", func() {
 				Ω(suite.BuildTree()).Should(Succeed())
 				Ω(rt).Should(HaveTracked("traversing outer", "traversing nested"))
 				rt.Reset()
-				suite.Run("suite", Labels{}, SemVerConstraints{}, "/path/to/suite", failer, reporter, writer, outputInterceptor, interruptHandler, client, internal.RegisterForProgressSignal, conf)
+				suite.Run("suite", Labels{}, SemVerConstraints{}, nil, "/path/to/suite", failer, reporter, writer, outputInterceptor, interruptHandler, client, internal.RegisterForProgressSignal, conf)
 				Ω(rt).Should(HaveTracked("before-suite", "running it"))
 
 				Ω(err1).ShouldNot(HaveOccurred())
@@ -111,7 +111,7 @@ var _ = Describe("Suite", func() {
 				Ω(clone.BuildTree()).Should(Succeed())
 				Ω(rt).Should(HaveTracked("traversing outer", "traversing nested"))
 				rt.Reset()
-				clone.Run("suite", Labels{}, SemVerConstraints{}, "/path/to/suite", failer, reporter, writer, outputInterceptor, interruptHandler, client, internal.RegisterForProgressSignal, conf)
+				clone.Run("suite", Labels{}, SemVerConstraints{}, nil, "/path/to/suite", failer, reporter, writer, outputInterceptor, interruptHandler, client, internal.RegisterForProgressSignal, conf)
 				Ω(rt).Should(HaveTracked("before-suite", "running it"))
 
 				Ω(err1).ShouldNot(HaveOccurred())
@@ -134,7 +134,7 @@ var _ = Describe("Suite", func() {
 				}))
 
 				Ω(suite.BuildTree()).Should(Succeed())
-				suite.Run("suite", Labels{}, SemVerConstraints{}, "/path/to/suite", failer, reporter, writer, outputInterceptor, interruptHandler, client, internal.RegisterForProgressSignal, conf)
+				suite.Run("suite", Labels{}, SemVerConstraints{}, nil, "/path/to/suite", failer, reporter, writer, outputInterceptor, interruptHandler, client, internal.RegisterForProgressSignal, conf)
 
 				Ω(err).ShouldNot(HaveOccurred())
 				Ω(truey).Should(BeTrue())
@@ -158,7 +158,7 @@ var _ = Describe("Suite", func() {
 			})
 
 			It("errors", func() {
-				suite.Run("suite", Labels{}, SemVerConstraints{}, "/path/to/suite", failer, reporter, writer, outputInterceptor, interruptHandler, client, internal.RegisterForProgressSignal, conf)
+				suite.Run("suite", Labels{}, SemVerConstraints{}, nil, "/path/to/suite", failer, reporter, writer, outputInterceptor, interruptHandler, client, internal.RegisterForProgressSignal, conf)
 				Ω(pushNodeErrDuringRun).Should(HaveOccurred())
 				Ω(rt).Should(HaveTracked("in it"))
 			})
@@ -342,7 +342,7 @@ var _ = Describe("Suite", func() {
 
 					Ω(err).ShouldNot(HaveOccurred())
 					Ω(suite.BuildTree()).Should(Succeed())
-					suite.Run("suite", Labels{}, SemVerConstraints{}, "/path/to/suite", failer, reporter, writer, outputInterceptor, interruptHandler, client, internal.RegisterForProgressSignal, conf)
+					suite.Run("suite", Labels{}, SemVerConstraints{}, nil, "/path/to/suite", failer, reporter, writer, outputInterceptor, interruptHandler, client, internal.RegisterForProgressSignal, conf)
 					Ω(pushSuiteNodeErr).Should(HaveOccurred())
 				})
 			})
@@ -385,7 +385,7 @@ var _ = Describe("Suite", func() {
 					Ω(errors[1]).ShouldNot(HaveOccurred())
 					Ω(errors[2]).ShouldNot(HaveOccurred())
 
-					suite.Run("suite", Labels{}, SemVerConstraints{}, "/path/to/suite", failer, reporter, writer, outputInterceptor, interruptHandler, client, internal.RegisterForProgressSignal, conf)
+					suite.Run("suite", Labels{}, SemVerConstraints{}, nil, "/path/to/suite", failer, reporter, writer, outputInterceptor, interruptHandler, client, internal.RegisterForProgressSignal, conf)
 					Ω(errors[3]).Should(MatchError(types.GinkgoErrors.PushingCleanupInReportingNode(cl, types.NodeTypeReportBeforeEach)))
 				})
 			})
@@ -407,7 +407,7 @@ var _ = Describe("Suite", func() {
 					Ω(errors[1]).ShouldNot(HaveOccurred())
 					Ω(errors[2]).ShouldNot(HaveOccurred())
 
-					suite.Run("suite", Labels{}, SemVerConstraints{}, "/path/to/suite", failer, reporter, writer, outputInterceptor, interruptHandler, client, internal.RegisterForProgressSignal, conf)
+					suite.Run("suite", Labels{}, SemVerConstraints{}, nil, "/path/to/suite", failer, reporter, writer, outputInterceptor, interruptHandler, client, internal.RegisterForProgressSignal, conf)
 					Ω(errors[3]).Should(MatchError(types.GinkgoErrors.PushingCleanupInReportingNode(cl, types.NodeTypeReportAfterEach)))
 				})
 			})
@@ -429,7 +429,7 @@ var _ = Describe("Suite", func() {
 					Ω(suite.BuildTree()).Should(Succeed())
 					Ω(errors[2]).ShouldNot(HaveOccurred())
 
-					suite.Run("suite", Labels{}, SemVerConstraints{}, "/path/to/suite", failer, reporter, writer, outputInterceptor, interruptHandler, client, internal.RegisterForProgressSignal, conf)
+					suite.Run("suite", Labels{}, SemVerConstraints{}, nil, "/path/to/suite", failer, reporter, writer, outputInterceptor, interruptHandler, client, internal.RegisterForProgressSignal, conf)
 					Ω(errors[3]).Should(MatchError(types.GinkgoErrors.PushingCleanupInReportingNode(cl, types.NodeTypeReportBeforeSuite)))
 				})
 			})
@@ -451,7 +451,7 @@ var _ = Describe("Suite", func() {
 					Ω(suite.BuildTree()).Should(Succeed())
 					Ω(errors[2]).ShouldNot(HaveOccurred())
 
-					suite.Run("suite", Labels{}, SemVerConstraints{}, "/path/to/suite", failer, reporter, writer, outputInterceptor, interruptHandler, client, internal.RegisterForProgressSignal, conf)
+					suite.Run("suite", Labels{}, SemVerConstraints{}, nil, "/path/to/suite", failer, reporter, writer, outputInterceptor, interruptHandler, client, internal.RegisterForProgressSignal, conf)
 					Ω(errors[3]).Should(MatchError(types.GinkgoErrors.PushingCleanupInReportingNode(cl, types.NodeTypeReportAfterSuite)))
 				})
 			})
@@ -468,7 +468,7 @@ var _ = Describe("Suite", func() {
 					}))
 					Ω(errors[0]).ShouldNot(HaveOccurred())
 					Ω(suite.BuildTree()).Should(Succeed())
-					suite.Run("suite", Labels{}, SemVerConstraints{}, "/path/to/suite", failer, reporter, writer, outputInterceptor, interruptHandler, client, internal.RegisterForProgressSignal, conf)
+					suite.Run("suite", Labels{}, SemVerConstraints{}, nil, "/path/to/suite", failer, reporter, writer, outputInterceptor, interruptHandler, client, internal.RegisterForProgressSignal, conf)
 					Ω(errors[1]).ShouldNot(HaveOccurred())
 					Ω(errors[2]).Should(MatchError(types.GinkgoErrors.PushingCleanupInCleanupNode(cl)))
 				})

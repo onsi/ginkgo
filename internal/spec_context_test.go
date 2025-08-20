@@ -14,8 +14,6 @@ var _ = Describe("SpecContext", func() {
 	})
 
 	It("can be wrapped and still retrieved", func(c SpecContext) {
-		Ω(c.Value("GINKGO_SPEC_CONTEXT")).Should(Equal(c))
-
 		wrappedC := context.WithValue(c, "foo", "bar")
 
 		_, ok := wrappedC.(SpecContext)

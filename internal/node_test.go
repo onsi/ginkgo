@@ -1228,6 +1228,50 @@ var _ = Describe("Node", func() {
 	})
 })
 
+var _ = Describe("AroundNodes", func() {
+	Describe("building an AroundNode", func() {
+		It("captures the code location", func() {
+			called := false
+			cl := types.NewCodeLocation(0)
+			an := internal.BuildAroundNode(func(ctx context.Context, body func(context.Context)) {
+				called = true
+			})
+			Ω(an).ShouldNot(BeZero())
+			cl.LineNumber += 1
+			Ω(an.CodeLocation).Should(Equal(cl))
+			an.Body(nil, nil)
+			Ω(called).Should(BeTrue())
+		})
+	})
+
+	Describe("Clone", func() {
+		It("clones the slice", func() {
+			an1 := internal.BuildAroundNode(nil)
+			an2 := internal.BuildAroundNode(nil)
+			an3 := internal.BuildAroundNode(nil)
+			original := internal.AroundNodes{an1, an2, an3}
+			clone := original.Clone()
+			Ω(original).Should(Equal(clone))
+			an4 := internal.BuildAroundNode(nil)
+			clone[2] = an4
+			Ω(original).Should(Equal(internal.AroundNodes{an1, an2, an3}))
+			Ω(clone).Should(Equal(internal.AroundNodes{an1, an2, an4}))
+		})
+	})
+
+	Describe("Append", func() {
+		It("appends the node to the slice", func() {
+			an1 := internal.BuildAroundNode(nil)
+			an2 := internal.BuildAroundNode(nil)
+			an3 := internal.BuildAroundNode(nil)
+			nodes := internal.AroundNodes{an1, an2}
+			newNodes := nodes.Append(an3)
+			Ω(nodes).Should(Equal(internal.AroundNodes{an1, an2}))
+			Ω(newNodes).Should(Equal(internal.AroundNodes{an1, an2, an3}))
+		})
+	})
+})
+
 var _ = Describe("Nodes", func() {
 	Describe("Clone", func() {
 		var n1, n2, n3, n4 Node

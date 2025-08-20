@@ -158,3 +158,15 @@ SuppressProgressReporting is a decorator that allows you to disable progress rep
 if you have a `ReportAfterEach` node that is running for every skipped spec and is generating lots of progress reports.
 */
 const SuppressProgressReporting = internal.SuppressProgressReporting
+
+/*
+AroundNode is a decorator to enable more advanced patterns for setting up and configuring individual nodes.
+
+When possible you should favor using setup nodes (e.g. BeforeEach, AfterEach, JustBeforeEach, JustAfterEach) to set up and configure nodes.
+However there are contexts where the AroundNode patterns is more appropriate - or even necessary.
+
+For example, each Ginkgo node runs in its own goroutine.  Some linux namespace commands require goroutines to be fixed to a thread.  You could use an AroundNode to call runtime.LockOSThread() and perform any additional setup.
+
+WIP
+*/
+var AroundNode = internal.BuildAroundNode

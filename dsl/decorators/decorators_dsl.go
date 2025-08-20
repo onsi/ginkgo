@@ -37,3 +37,4 @@ const SuppressProgressReporting = ginkgo.SuppressProgressReporting
 
 var Label = ginkgo.Label
 var SemVerConstraint = ginkgo.SemVerConstraint
+var AroundNode = ginkgo.AroundNode

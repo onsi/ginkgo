@@ -1545,6 +1545,16 @@ Describe("book", func() {
 We're now accessing the `shelf` variable in the spec closure during the Run Phase and can trust that it has been correctly instantiated by the setup node closure.
 
 Be sure to check out the [Table Patterns](#table-specs-patterns) section of the [Ginkgo and Gomega Patterns](#ginkgo-and-gomega-patterns) chapter to learn about a few more table-based patterns.
+<!-- 
+### Advanced: Around Node
+
+When possible you should favor using setup nodes (e.g. `BeforeEach` etc.) and `DeferCleanup` to set up and tear down specs.  However, there are certain contexts where a different approach is required.  In particular:
+
+1. Ginkgo runs each node in its own goroutine.  This is necessary to manage the separate timeouts for each node.  However some libraries and programming models (e.g. linux namespaces) require that goroutines be locked to a thread and that some thread-specific setup be performed when the goroutine is launched.  Such configuration cannot go in a top-level `BeforeEach` because the `BeforeEach` goroutine will end before subsequent node goroutines run.  You could use an `AroundNode` here.
+
+2. Some libraries pass configuration through `context.Context` objects.  While you can generate your own `context.Context` in a `BeforeEach` and pass it around this context won't inherit the cancellation of Ginkgo's `SpecContext` in the event of a timeout or interrupt.  Moreover, each node gets a fresh `SpecContext` - so a context that inherits from the `SpecContext` passed into a `BeforeEach` will be invalidated by the time the `It` runs.  If you want to configure a context that also inherits from Ginkgo's `SpecContext` you could use an `AroundNode` instead.
+
+The `AroundNode` decorator takes a function with signature `func(ctx context.Context, callback func(context.Context))`. -->
 
 #### Generating Entry Descriptions
 In the examples we've shown so far, we are explicitly passing in a description for each table entry.  Recall that this description is used to generate the description of the resulting spec's Subject node.  That means it's important as it conveys the intent of the spec and is printed out in case the spec fails.
