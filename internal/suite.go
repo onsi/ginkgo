@@ -32,7 +32,7 @@ type Suite struct {
 
 	suiteNodes   Nodes
 	cleanupNodes Nodes
-	aroundNodes  AroundNodes
+	aroundNodes  types.AroundNodes
 
 	failer            *Failer
 	reporter          reporters.Reporter
@@ -106,7 +106,7 @@ func (suite *Suite) BuildTree() error {
 	return nil
 }
 
-func (suite *Suite) Run(description string, suiteLabels Labels, suiteSemVerConstraints SemVerConstraints, suiteAroundNodes AroundNodes, suitePath string, failer *Failer, reporter reporters.Reporter, writer WriterInterface, outputInterceptor OutputInterceptor, interruptHandler interrupt_handler.InterruptHandlerInterface, client parallel_support.Client, progressSignalRegistrar ProgressSignalRegistrar, suiteConfig types.SuiteConfig) (bool, bool) {
+func (suite *Suite) Run(description string, suiteLabels Labels, suiteSemVerConstraints SemVerConstraints, suiteAroundNodes types.AroundNodes, suitePath string, failer *Failer, reporter reporters.Reporter, writer WriterInterface, outputInterceptor OutputInterceptor, interruptHandler interrupt_handler.InterruptHandlerInterface, client parallel_support.Client, progressSignalRegistrar ProgressSignalRegistrar, suiteConfig types.SuiteConfig) (bool, bool) {
 	if suite.phase != PhaseBuildTree {
 		panic("cannot run before building the tree = call suite.BuildTree() first")
 	}
@@ -263,7 +263,7 @@ func (suite *Suite) pushCleanupNode(node Node) error {
 
 	node.NodeIDWhereCleanupWasGenerated = suite.currentNode.ID
 	node.NestingLevel = suite.currentNode.NestingLevel
-	node.AroundNodes = AroundNodes{}.Append(suite.currentNode.AroundNodes...).Append(node.AroundNodes...)
+	node.AroundNodes = types.AroundNodes{}.Append(suite.currentNode.AroundNodes...).Append(node.AroundNodes...)
 	suite.selectiveLock.Lock()
 	suite.cleanupNodes = append(suite.cleanupNodes, node)
 	suite.selectiveLock.Unlock()
@@ -897,7 +897,7 @@ func (suite *Suite) runNode(node Node, specDeadline time.Time, text string) (typ
 			failureC <- failureFromRun
 		}()
 
-		aroundNodes := AroundNodes{}.Append(suite.aroundNodes...).Append(node.AroundNodes...)
+		aroundNodes := types.AroundNodes{}.Append(suite.aroundNodes...).Append(node.AroundNodes...)
 		if len(aroundNodes) > 0 {
 			i := 0
 			var f func(context.Context)

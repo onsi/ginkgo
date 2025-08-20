@@ -2,6 +2,7 @@ package ginkgo
 
 import (
 	"github.com/onsi/ginkgo/v2/internal"
+	"github.com/onsi/ginkgo/v2/types"
 )
 
 /*
@@ -169,4 +170,6 @@ For example, each Ginkgo node runs in its own goroutine.  Some linux namespace c
 
 WIP
 */
-var AroundNode = internal.BuildAroundNode
+func AroundNode[F types.AroundNodeAllowedFuncs](f F) types.AroundNodeDecorator {
+	return types.AroundNode(f, types.NewCodeLocation(1))
+}

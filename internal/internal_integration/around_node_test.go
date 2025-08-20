@@ -5,15 +5,14 @@ import (
 	"time"
 
 	. "github.com/onsi/ginkgo/v2"
-	"github.com/onsi/ginkgo/v2/internal"
 	. "github.com/onsi/ginkgo/v2/internal/test_helpers"
+	"github.com/onsi/ginkgo/v2/types"
 	. "github.com/onsi/gomega"
 )
 
-func AN(run string) internal.AroundNode {
-	return AroundNode(func(ctx context.Context, body func(ctx context.Context)) {
+func AN(run string) types.AroundNodeDecorator {
+	return AroundNode(func() {
 		rt.Run(run)
-		body(ctx)
 	})
 }
 
@@ -133,10 +132,9 @@ var _ = Describe("The AroundNode decorator", func() {
 					rt.Run("SBS-all")
 					Ω(ctx.Value("wrapped")).Should(Equal("value"))
 					Ω(data).Should(Equal([]byte("data")))
-				}, AroundNode(func(ctx context.Context, body func(ctx context.Context)) {
+				}, AroundNode(func(ctx context.Context) context.Context {
 					rt.Run("SBS-around")
-					newCtx = context.WithValue(ctx, "wrapped", "value")
-					body(newCtx)
+					return context.WithValue(ctx, "wrapped", "value")
 				}))
 				It("runs", rt.T("A"))
 			}, AN("suite-around-1"))

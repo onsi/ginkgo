@@ -88,7 +88,7 @@ func SetUpForParallel(parallelTotal int) {
 	conf.ParallelHost = server.Address()
 }
 
-func RunFixture(description string, callback func(), aroundNodes ...internal.AroundNode) (bool, bool) {
+func RunFixture(description string, callback func(), aroundNodes ...types.AroundNodeDecorator) (bool, bool) {
 	suite := internal.NewSuite()
 	var success, hasProgrammaticFocus bool
 	WithSuite(suite, func() {

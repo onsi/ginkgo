@@ -330,10 +330,10 @@ func RunSpecs(t GinkgoTestingT, description string, args ...any) bool {
 	return passed
 }
 
-func extractSuiteConfiguration(args []any) (Labels, SemVerConstraints, internal.AroundNodes) {
+func extractSuiteConfiguration(args []any) (Labels, SemVerConstraints, types.AroundNodes) {
 	suiteLabels := Labels{}
 	suiteSemVerConstraints := SemVerConstraints{}
-	aroundNodes := internal.AroundNodes{}
+	aroundNodes := types.AroundNodes{}
 	configErrors := []error{}
 	for _, arg := range args {
 		switch arg := arg.(type) {
@@ -345,7 +345,7 @@ func extractSuiteConfiguration(args []any) (Labels, SemVerConstraints, internal.
 			suiteLabels = append(suiteLabels, arg...)
 		case SemVerConstraints:
 			suiteSemVerConstraints = append(suiteSemVerConstraints, arg...)
-		case internal.AroundNode:
+		case types.AroundNodeDecorator:
 			aroundNodes = append(aroundNodes, arg)
 		default:
 			configErrors = append(configErrors, types.GinkgoErrors.UnknownTypePassedToRunSpecs(arg))
