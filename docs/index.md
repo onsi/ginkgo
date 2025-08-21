@@ -1904,12 +1904,12 @@ var _ = Describe("the server", func() {
   })
 
   Describe("logging in", AroundNode(WithField(logs, "test", "login"), func() {
-    //...
+  //...
   })
 })
 ```
 
-`WithField` will receive a `nil` logger as it is invoked during the tree construction phase, not during the run phase.  
+`WithField` will receive a `nil` logger as it is invoked during the tree construction phase, not during the run phase when the `BeforeEach` actually runs.
 
 ### Alternatives to Dot-Importing Ginkgo
 
