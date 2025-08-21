@@ -161,14 +161,25 @@ if you have a `ReportAfterEach` node that is running for every skipped spec and 
 const SuppressProgressReporting = internal.SuppressProgressReporting
 
 /*
-AroundNode is a decorator to enable more advanced patterns for setting up and configuring individual nodes.
+AroundNode registers a function that runs before each individual node.  This is considered a more advanced decorator.
 
-When possible you should favor using setup nodes (e.g. BeforeEach, AfterEach, JustBeforeEach, JustAfterEach) to set up and configure nodes.
-However there are contexts where the AroundNode patterns is more appropriate - or even necessary.
+Please read the [docs](https://onsi.github.io/ginkgo/#advanced-around-node) for more information.
 
-For example, each Ginkgo node runs in its own goroutine.  Some linux namespace commands require goroutines to be fixed to a thread.  You could use an AroundNode to call runtime.LockOSThread() and perform any additional setup.
+Allowed signatures:
 
-WIP
+- AroundNode(func()) - func will be called before the node is run.
+- AroundNode(func(ctx context.Context) context.Context) - func can wrap the passed in context and return a new one which will be passed on to the node.
+- AroundNode(func(ctx context.Context, body func(ctx context.Context))) - ctx is the context for the node and body is a function that must be called to run the node.  This gives you complete control over what runs before and after the node.
+
+Multiple AroundNode decorators can be applied to a single node and they will run in the order they are applied.
+
+Unlike setup nodes like BeforeEach and DeferCleanup, AroundNode is guaranteed to run in the same goroutine as the decorated node.  This is necessary when working with lower-level libraries that must run on a single thread (you can call runtime.LockOSThread() in the AroundNode to ensure that the node runs on a single thread).
+
+Since AroundNode allows you to modify the context you can also use AroundNode to implement shared setup that attaches values to the context.  You must return a context that inherits from the passed in context.
+
+If applied to a container, AroundNode will run before every node in the container.  Including setup nodes like BeforeEach and DeferCleanup.
+
+AroundNode can also be applied to RunSpecs to run before every node in the suite.
 */
 func AroundNode[F types.AroundNodeAllowedFuncs](f F) types.AroundNodeDecorator {
 	return types.AroundNode(f, types.NewCodeLocation(1))

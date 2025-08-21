@@ -1545,16 +1545,6 @@ Describe("book", func() {
 We're now accessing the `shelf` variable in the spec closure during the Run Phase and can trust that it has been correctly instantiated by the setup node closure.
 
 Be sure to check out the [Table Patterns](#table-specs-patterns) section of the [Ginkgo and Gomega Patterns](#ginkgo-and-gomega-patterns) chapter to learn about a few more table-based patterns.
-<!-- 
-### Advanced: Around Node
-
-When possible you should favor using setup nodes (e.g. `BeforeEach` etc.) and `DeferCleanup` to set up and tear down specs.  However, there are certain contexts where a different approach is required.  In particular:
-
-1. Ginkgo runs each node in its own goroutine.  This is necessary to manage the separate timeouts for each node.  However some libraries and programming models (e.g. linux namespaces) require that goroutines be locked to a thread and that some thread-specific setup be performed when the goroutine is launched.  Such configuration cannot go in a top-level `BeforeEach` because the `BeforeEach` goroutine will end before subsequent node goroutines run.  You could use an `AroundNode` here.
-
-2. Some libraries pass configuration through `context.Context` objects.  While you can generate your own `context.Context` in a `BeforeEach` and pass it around this context won't inherit the cancellation of Ginkgo's `SpecContext` in the event of a timeout or interrupt.  Moreover, each node gets a fresh `SpecContext` - so a context that inherits from the `SpecContext` passed into a `BeforeEach` will be invalidated by the time the `It` runs.  If you want to configure a context that also inherits from Ginkgo's `SpecContext` you could use an `AroundNode` instead.
-
-The `AroundNode` decorator takes a function with signature `func(ctx context.Context, callback func(context.Context))`. -->
 
 #### Generating Entry Descriptions
 In the examples we've shown so far, we are explicitly passing in a description for each table entry.  Recall that this description is used to generate the description of the resulting spec's Subject node.  That means it's important as it conveys the intent of the spec and is printed out in case the spec fails.
@@ -1746,6 +1736,180 @@ Describe("handling requests", func() {
 ```
 
 all the infrastructure around generating table entry descriptions applies here as well - though the description will be the title of the generated container.  Note that you **must** add subject nodes in the body function if you want `DescribeTableSubtree` to add specs.
+
+### Advanced: Around Node
+
+Ginkgo provides setup nodes (e.g. `BeforeEach` etc.) and `DeferCleanup` to set up and tear down specs.  You should use these whenever possible.  However Ginkgo provides an additional setup and configuration _decorator_: `AroundNode`.  `AroundNode` takes one of three function signatures (discussed below) and when an `AroundNode` is applied to a setup or subject node the provided function will be called before the node runs.  The function is guaranteed to run in the same goroutine as the node and is given the opportunity to modify the `SpecContext` passed into the node.
+
+`AroundNode` accepts the following kinds of functions:
+
+1. `AroundNode(func())` - takes a bare function that will be called before the node.  For example:
+
+```go
+It("interacts with linux namespaces", AroundNode(func() {
+  runtime.LockOSThread()
+  prepareThreadNetworkNamespaceForIsolation() // some lower-level code that must be tied to a single thread
+}), func() {
+  //... test code that interacts with the network namespace.  guaranteed to run in the same goroutine and therefore in the same thread
+})
+```
+
+2. `AroundNode(func(ctx context.Context) context.Context)` - passes a `SpecContext` into the function and then passes the returned context to the node.  Essentially implementing a context transformer pattern.  For example:
+
+```go
+func AsAdmin(ctx context.Context) context.Context  {
+  return context.WithValue(ctx, "identify", "admin")
+}
+
+
+It("can see the admin page", AroundNode(AsAdmin), func(ctx SpecContext) {
+  Expect(ctx.Value("identify")).To(Equal("admin")) // works
+  // test code can pass the context into a web request and make appropriate assertions
+})
+```
+
+Note that the returned context *must* wrap the passed in context.  Ginkgo will fail the test if it detects a `nil` context or a context that does not inherit from the wrapped context.
+
+The context you return is then wrapped by a Ginkgo `SpecContext` before being passed to the node.  You can access the wrapped context by calling `ctx.WrappedContext()`.
+
+3. `AroundNode(func(ctx context.Context, f func(context.Context)))` - provides complete control over the lifecycle of the wrapped node.  For example:
+
+```go
+It("interacts with linux namespaces", AroundNode(func(ctx context.Context, f func(context.Context)) {
+  runtime.LockOSThread()
+  prepareThreadNetworkNamespaceForIsolation() // some lower-level code that must be tied to a single thread
+  ctx.Value("foo", "bar")
+  defer runtime.UnlockOSThread() // cleanup called with defer to ensure it runs even if f panics
+  f(ctx) // call the next node in the chain
+}), func() {
+  //... test code that interacts with the network namespace.  guaranteed to run in the same goroutine and therefore in the same thread
+})
+```
+
+Note that you *must* call the passed in function `f`, passing it a context that inherits from the passed-in context.  Ginkgo will fail the test if you forget either of these.
+
+Multiple `AroundNode` decorators can be applied to a given subject node.  These will form a stack that executes from left to right.
+
+`AroundNode` can also decorate container nodes.  These will be inherited by **all** child nodes.  It is important to understand that _every_ node will have all the `AroundNode` decorators applied - including any setup and subject nodes.  This is a subtle difference from how setup nodes like `BeforeEach` behave.  A `BeforeEach` is guaranteed to be called just once before the spec runs.  However an `AroundNode` decorator applied to an outer container will be invoked around _every_ node, including setup nodes like `BeforeEach`, and `DeferCleanup` nodes and `It` subject nodes.
+
+Lastly, you can pass `AroundNode` to the call to `RunSpecs` that launches the Ginkgo suite.  This ensures that _every_ node will inherit the `AroundNode` decorator.
+
+Here are a few more patterns that `AroundNode` enables.
+
+#### A global label-driven Configuration
+
+By attaching `AroundNode` to `RunSpecs` and then using `CurrentSpecReport()` to obtain information about the currently running spec you can control which specs to apply configuration to:
+
+```go
+func TestMySuite(t *testing.T) {
+  RegisterFailHandler(Fail)
+  RunSpecs(t, "Namespace Suite", AroundNode(func() {
+    if CurrentSpecReport().MatchesLabelFilter("network") {
+      runtime.LockOSThread()
+      prepareThreadNetworkNamespaceForIsolation()
+    }
+  }))
+}
+
+var _ = Describe("Namespace tests", func() {
+  It("works with user namespaces", func() {
+    // since this It does not have the 'network' label, no setup occurs
+    //...
+  })
+
+  It("works with network namespaces", Label("network") func() {
+    // since this It does have the 'network' label, the low-level setup will have occurred
+    //...
+  })
+})
+```
+
+#### Hierarchically expanding the context
+
+Some libraries use values attached to `context.Context` to drive configuration.  You can configure such a context in a `BeforeEach` however if you would like the context to _also_ inherit from Ginkgo's `SpecContext` (to, for example, mediate a `SpecTimeout`) that approach won't work as each node is given a fresh context.  In these cases you can use a library like [mergectx](https://pkg.go.dev/github.com/sentimensrg/ctx/mergectx#section-readme) to merge contexts in every spec.  Alternatively you can use `AroundNode` however you must manage the configuration lifecycle carefully as `AroundNode` runs for _every_ decorated node.  Here's an example:
+
+```go 
+// We construct a test helper to give us a shared pointer to a Logger
+type TestLogger struct {
+  logs *Logger
+}
+
+func (t *TestLogger) Setup() {
+  logs, err := NewLogger()
+  Expect(err).NotTo(HaveOccurred())
+  t.logs = logs
+  DeferCleanup(logs.Cleanup)
+}
+
+func (t *TestLogger) WithField(k, v string) func(ctx context.Context) context.Context {
+  return func(ctx context.Context) context.Context {
+    t.logs = t.logs.With(k,v)
+    return context.WithValue(ctx, "logs", t.logs)
+  }
+}
+
+func AsUser(user string) func(ctx context.Context) context.Context {
+  return func(ctx context.Context) context.Context {
+    return context.WithValue(ctx, "user", user)
+  }
+}
+
+//note this is a shared instance of the test helper
+var tl &TestLogger{}
+
+var _ = BeforeEach(func() {
+  tl.Setup()
+})
+
+var _ = Describe("when logging in", AroundNode(tl.WithField("test", "login")), func() {
+  Context("as an admin", AroundNode(AsUser("admin")), func () {
+    It("can see the admin page", func(ctx SpecContext) {
+      err := VisitAdminPage(ctx)
+      Expect(err).NotTo(HaveOccurred())
+      Expect(tl.logs).To(ContainElement("test:login - admin logged in"))
+    })
+  })
+
+  Context("as bob", AroundNode(AsUser("bob")), func() {
+    It("cannot see the admin page", func(ctx SpecContext) {
+      err := VisitAdminPage(ctx)
+      Expect(err).To(HaveOccurred())
+      Expect(tl.logs).To(ContainElement("test:login - SECURITY ALERT - bob attempted to log in"))
+    })
+  })
+})
+```
+
+Note the additional complexity around setting a shared resource up in `BeforeEach` and using it in an `AroundNode`.  The lifecycle's of the two are a bit trickier to reason about which is why `AroundNode` is considered more advanced and users are recommended to stick with `BeforeEach` and friends where possible.
+
+As a counterexample, the following would be incorrect:
+
+```go
+/* === INVALID === */
+
+func WithField(logs *Logger, k, v string) func(context.Context) context.Context {
+  return func(ctx context.Context) context.Context {
+      return context.WithValue(ctx, k, v)
+  }
+}
+
+var _ = Describe("the server", func() {  
+  var logs *Logger
+
+  var _ = BeforeEach(func() {
+    var err error
+    logs, err = NewLogger()
+    Expect(err).NotTo(HaveOccurred())
+    DeferCleanup(logs.Cleanup)
+  })
+
+  Describe("logging in", AroundNode(WithField(logs, "test", "login"), func() {
+    //...
+  })
+})
+```
+
+`WithField` will receive a `nil` logger as it is invoked during the tree construction phase, not during the run phase.  
 
 ### Alternatives to Dot-Importing Ginkgo
 
