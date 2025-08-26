@@ -96,6 +96,7 @@ type ReporterConfig struct {
 	ForceNewlines  bool
 
 	JSONReport     string
+	GoJSONReport   string
 	JUnitReport    string
 	TeamcityReport string
 }
@@ -112,7 +113,7 @@ func (rc ReporterConfig) Verbosity() VerbosityLevel {
 }
 
 func (rc ReporterConfig) WillGenerateReport() bool {
-	return rc.JSONReport != "" || rc.JUnitReport != "" || rc.TeamcityReport != ""
+	return rc.JSONReport != "" || rc.GoJSONReport != "" || rc.JUnitReport != "" || rc.TeamcityReport != ""
 }
 
 func NewDefaultReporterConfig() ReporterConfig {
