@@ -88,7 +88,7 @@ func (r *GoJSONEventWriter) WriteSuiteResult(goPkg string, report types.Report) 
 		Package:     goPkg,
 		Output:      nil,
 		FailedBuild: "",
-		Elapsed:     ptr(float64(report.RunTime)),
+		Elapsed:     ptr(float64(report.RunTime.Seconds())),
 	}
 	return r.writeEvent(e)
 }
