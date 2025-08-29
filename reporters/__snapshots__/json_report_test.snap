@@ -1,0 +1,575 @@
+
+[JSONReport when configured to write the report inside a folder creates the folder and the report file - 1]
+[
+  {
+    "SuitePath": "/path/to/suite",
+    "SuiteDescription": "My Suite",
+    "SuiteLabels": null,
+    "SuiteSemVerConstraints": null,
+    "SuiteSucceeded": false,
+    "SuiteHasProgrammaticFocus": false,
+    "SpecialSuiteFailureReasons": null,
+    "PreRunStats": {
+      "TotalSpecs": 20,
+      "SpecsThatWillRun": 15
+    },
+    "StartTime": "0001-01-01T00:00:00Z",
+    "EndTime": "0001-01-01T00:00:00Z",
+    "RunTime": 60000000000,
+    "SuiteConfig": {
+      "RandomSeed": 17,
+      "RandomizeAllSpecs": false,
+      "FocusStrings": null,
+      "SkipStrings": null,
+      "FocusFiles": null,
+      "SkipFiles": null,
+      "LabelFilter": "",
+      "SemVerFilter": "",
+      "FailOnPending": false,
+      "FailOnEmpty": false,
+      "FailFast": false,
+      "FlakeAttempts": 0,
+      "MustPassRepeatedly": 0,
+      "DryRun": false,
+      "PollProgressAfter": 0,
+      "PollProgressInterval": 0,
+      "Timeout": 0,
+      "EmitSpecProgress": false,
+      "OutputInterceptorMode": "",
+      "SourceRoots": null,
+      "GracePeriod": 0,
+      "ParallelProcess": 0,
+      "ParallelTotal": 1,
+      "ParallelHost": ""
+    },
+    "SpecReports": [
+      {
+        "ContainerHierarchyTexts": [
+          "A",
+          "B"
+        ],
+        "ContainerHierarchyLocations": [
+          {
+            "FileName": "cl0.go",
+            "LineNumber": 12,
+            "FullStackTrace": "full-trace\ncl-0"
+          },
+          {
+            "FileName": "cl1.go",
+            "LineNumber": 37,
+            "FullStackTrace": "full-trace\ncl-1"
+          }
+        ],
+        "ContainerHierarchyLabels": [
+          [
+            "dolphin"
+          ],
+          [
+            "gorilla",
+            "cow"
+          ]
+        ],
+        "ContainerHierarchySemVerConstraints": [
+          [],
+          []
+        ],
+        "LeafNodeType": "It",
+        "LeafNodeLocation": {
+          "FileName": "cl2.go",
+          "LineNumber": 80,
+          "FullStackTrace": "full-trace\ncl-2"
+        },
+        "LeafNodeLabels": [
+          "cat",
+          "dog"
+        ],
+        "LeafNodeSemVerConstraints": null,
+        "LeafNodeText": "C",
+        "State": "timedout",
+        "StartTime": "0001-01-01T00:00:00Z",
+        "EndTime": "0001-01-01T00:00:00Z",
+        "RunTime": 1000000000,
+        "ParallelProcess": 0,
+        "Failure": {
+          "Message": "failure\nmessage",
+          "Location": {
+            "FileName": "cl3.go",
+            "LineNumber": 103,
+            "FullStackTrace": "full-trace\ncl-3"
+          },
+          "TimelineLocation": {
+            "Offset": 13,
+            "Order": 292,
+            "Time": "2025-08-29T12:35:58.3421+10:00"
+          },
+          "FailureNodeContext": "leaf-node",
+          "FailureNodeType": "It",
+          "FailureNodeLocation": {
+            "FileName": "cl2.go",
+            "LineNumber": 80,
+            "FullStackTrace": "full-trace\ncl-2"
+          },
+          "ProgressReport": {
+            "LeafNodeLocation": {},
+            "SpecStartTime": "0001-01-01T00:00:00Z",
+            "CurrentNodeLocation": {},
+            "CurrentNodeStartTime": "0001-01-01T00:00:00Z",
+            "CurrentStepLocation": {},
+            "CurrentStepStartTime": "0001-01-01T00:00:00Z",
+            "TimelineLocation": {
+              "Time": "0001-01-01T00:00:00Z"
+            }
+          },
+          "AdditionalFailure": {
+            "State": "panicked",
+            "Failure": {
+              "Message": "",
+              "Location": {
+                "FileName": "cl4.go",
+                "LineNumber": 144,
+                "FullStackTrace": "full-trace\ncl-4"
+              },
+              "TimelineLocation": {
+                "Offset": 20,
+                "Order": 293,
+                "Time": "2025-08-29T12:35:58.3421+10:00"
+              },
+              "ForwardedPanic": "the panic!",
+              "FailureNodeContext": "leaf-node",
+              "FailureNodeType": "It",
+              "FailureNodeLocation": {
+                "FileName": "cl2.go",
+                "LineNumber": 80,
+                "FullStackTrace": "full-trace\ncl-2"
+              },
+              "ProgressReport": {
+                "LeafNodeLocation": {},
+                "SpecStartTime": "0001-01-01T00:00:00Z",
+                "CurrentNodeLocation": {},
+                "CurrentNodeStartTime": "0001-01-01T00:00:00Z",
+                "CurrentStepLocation": {},
+                "CurrentStepStartTime": "0001-01-01T00:00:00Z",
+                "TimelineLocation": {
+                  "Time": "0001-01-01T00:00:00Z"
+                }
+              }
+            }
+          }
+        },
+        "NumAttempts": 1,
+        "MaxFlakeAttempts": 1,
+        "MaxMustPassRepeatedly": 1,
+        "CapturedGinkgoWriterOutput": "ginkgowriter\noutput\ncleanup!",
+        "CapturedStdOutErr": "some captured stdout\n",
+        "ReportEntries": [
+          {
+            "Visibility": null,
+            "Location": {
+              "FileName": "cl1.go",
+              "LineNumber": 37,
+              "FullStackTrace": "full-trace\ncl-1"
+            },
+            "Time": "2025-08-29T12:35:58.3421+10:00",
+            "TimelineLocation": {
+              "Offset": 20,
+              "Order": 298,
+              "Time": "2025-08-29T12:35:58.3421+10:00"
+            },
+            "Name": "a report entry",
+            "Value": {
+              "AsJSON": "null",
+              "Representation": ""
+            }
+          },
+          {
+            "Visibility": "never",
+            "Location": {
+              "FileName": "cl1.go",
+              "LineNumber": 37,
+              "FullStackTrace": "full-trace\ncl-1"
+            },
+            "Time": "2025-08-29T12:35:58.3421+10:00",
+            "TimelineLocation": {
+              "Offset": 20,
+              "Order": 300,
+              "Time": "2025-08-29T12:35:58.3421+10:00"
+            },
+            "Name": "a hidden report entry",
+            "Value": {
+              "AsJSON": "null",
+              "Representation": ""
+            }
+          }
+        ],
+        "AdditionalFailures": [
+          {
+            "State": "failed",
+            "Failure": {
+              "Message": "a subsequent failure",
+              "Location": {},
+              "TimelineLocation": {
+                "Offset": 28,
+                "Order": 302,
+                "Time": "2025-08-29T12:35:58.3421+10:00"
+              },
+              "FailureNodeContext": "in-container",
+              "FailureNodeType": "AfterEach",
+              "FailureNodeLocation": {
+                "FileName": "cl3.go",
+                "LineNumber": 103,
+                "FullStackTrace": "full-trace\ncl-3"
+              },
+              "ProgressReport": {
+                "LeafNodeLocation": {},
+                "SpecStartTime": "0001-01-01T00:00:00Z",
+                "CurrentNodeLocation": {},
+                "CurrentNodeStartTime": "0001-01-01T00:00:00Z",
+                "CurrentStepLocation": {},
+                "CurrentStepStartTime": "0001-01-01T00:00:00Z",
+                "TimelineLocation": {
+                  "Time": "0001-01-01T00:00:00Z"
+                }
+              }
+            }
+          }
+        ],
+        "SpecEvents": [
+          {
+            "SpecEventType": "By",
+            "CodeLocation": {
+              "FileName": "cl0.go",
+              "LineNumber": 12,
+              "FullStackTrace": "full-trace\ncl-0"
+            },
+            "TimelineLocation": {
+              "Order": 289,
+              "Time": "2025-08-29T12:35:58.3421+10:00"
+            },
+            "Message": "a by step"
+          },
+          {
+            "SpecEventType": "Node",
+            "CodeLocation": {
+              "FileName": "cl2.go",
+              "LineNumber": 80,
+              "FullStackTrace": "full-trace\ncl-2"
+            },
+            "TimelineLocation": {
+              "Order": 290,
+              "Time": "2025-08-29T12:35:58.3421+10:00"
+            },
+            "Message": "C",
+            "NodeType": "It"
+          },
+          {
+            "SpecEventType": "Node (End)",
+            "CodeLocation": {
+              "FileName": "cl2.go",
+              "LineNumber": 80,
+              "FullStackTrace": "full-trace\ncl-2"
+            },
+            "TimelineLocation": {
+              "Offset": 20,
+              "Order": 296,
+              "Time": "2025-08-29T12:35:58.3421+10:00"
+            },
+            "Message": "C",
+            "Duration": 87230000,
+            "NodeType": "It"
+          }
+        ]
+      },
+      {
+        "ContainerHierarchyTexts": null,
+        "ContainerHierarchyLocations": null,
+        "ContainerHierarchyLabels": null,
+        "ContainerHierarchySemVerConstraints": null,
+        "LeafNodeType": "It",
+        "LeafNodeLocation": {
+          "FileName": "cl0.go",
+          "LineNumber": 12,
+          "FullStackTrace": "full-trace\ncl-0"
+        },
+        "LeafNodeLabels": null,
+        "LeafNodeSemVerConstraints": null,
+        "LeafNodeText": "A",
+        "State": "passed",
+        "StartTime": "0001-01-01T00:00:00Z",
+        "EndTime": "0001-01-01T00:00:00Z",
+        "RunTime": 1000000000,
+        "ParallelProcess": 0,
+        "NumAttempts": 1,
+        "MaxFlakeAttempts": 1,
+        "MaxMustPassRepeatedly": 1,
+        "CapturedGinkgoWriterOutput": "some GinkgoWriter\noutput is interspersed\nhere and there\n",
+        "CapturedStdOutErr": "some captured stdout\n",
+        "ReportEntries": [
+          {
+            "Visibility": "failure-or-verbose",
+            "Location": {
+              "FileName": "cl1.go",
+              "LineNumber": 37,
+              "FullStackTrace": "full-trace\ncl-1"
+            },
+            "Time": "2025-08-29T12:35:58.3421+10:00",
+            "TimelineLocation": {
+              "Offset": 41,
+              "Order": 309,
+              "Time": "2025-08-29T12:35:58.3421+10:00"
+            },
+            "Name": "my entry",
+            "Value": {
+              "AsJSON": "null",
+              "Representation": ""
+            }
+          },
+          {
+            "Visibility": "never",
+            "Location": {
+              "FileName": "cl1.go",
+              "LineNumber": 37,
+              "FullStackTrace": "full-trace\ncl-1"
+            },
+            "Time": "2025-08-29T12:35:58.3421+10:00",
+            "TimelineLocation": {
+              "Offset": 41,
+              "Order": 311,
+              "Time": "2025-08-29T12:35:58.3421+10:00"
+            },
+            "Name": "my hidden entry",
+            "Value": {
+              "AsJSON": "null",
+              "Representation": ""
+            }
+          }
+        ],
+        "ProgressReports": [
+          {
+            "Message": "my progress report",
+            "ParallelProcess": 1,
+            "LeafNodeText": "A",
+            "LeafNodeLocation": {
+              "FileName": "cl0.go",
+              "LineNumber": 12,
+              "FullStackTrace": "full-trace\ncl-0"
+            },
+            "SpecStartTime": "2025-08-29T12:35:53.3421+10:00",
+            "CurrentNodeLocation": {
+              "FileName": "cl1.go",
+              "LineNumber": 37,
+              "FullStackTrace": "full-trace\ncl-1"
+            },
+            "CurrentNodeStartTime": "2025-08-29T12:35:55.3421+10:00",
+            "CurrentStepLocation": {
+              "FileName": "cl2.go",
+              "LineNumber": 80,
+              "FullStackTrace": "full-trace\ncl-2"
+            },
+            "CurrentStepStartTime": "2025-08-29T12:35:57.3421+10:00",
+            "TimelineLocation": {
+              "Offset": 18,
+              "Order": 305,
+              "Time": "2025-08-29T12:35:58.3421+10:00"
+            }
+          }
+        ],
+        "SpecEvents": [
+          {
+            "SpecEventType": "Node",
+            "CodeLocation": {
+              "FileName": "cl0.go",
+              "LineNumber": 12,
+              "FullStackTrace": "full-trace\ncl-0"
+            },
+            "TimelineLocation": {
+              "Order": 304,
+              "Time": "2025-08-29T12:35:58.3421+10:00"
+            },
+            "Message": "A",
+            "NodeType": "It"
+          },
+          {
+            "SpecEventType": "By",
+            "CodeLocation": {
+              "FileName": "cl1.go",
+              "LineNumber": 37,
+              "FullStackTrace": "full-trace\ncl-1"
+            },
+            "TimelineLocation": {
+              "Offset": 18,
+              "Order": 307,
+              "Time": "2025-08-29T12:35:58.3421+10:00"
+            },
+            "Message": "My Step"
+          },
+          {
+            "SpecEventType": "By (End)",
+            "CodeLocation": {
+              "FileName": "cl1.go",
+              "LineNumber": 37,
+              "FullStackTrace": "full-trace\ncl-1"
+            },
+            "TimelineLocation": {
+              "Offset": 41,
+              "Order": 313,
+              "Time": "2025-08-29T12:35:58.3421+10:00"
+            },
+            "Message": "My Step",
+            "Duration": 200000000
+          },
+          {
+            "SpecEventType": "Node (End)",
+            "CodeLocation": {
+              "FileName": "cl0.go",
+              "LineNumber": 12,
+              "FullStackTrace": "full-trace\ncl-0"
+            },
+            "TimelineLocation": {
+              "Offset": 56,
+              "Order": 315,
+              "Time": "2025-08-29T12:35:58.3421+10:00"
+            },
+            "Message": "A",
+            "Duration": 300000000,
+            "NodeType": "It"
+          }
+        ]
+      },
+      {
+        "ContainerHierarchyTexts": null,
+        "ContainerHierarchyLocations": null,
+        "ContainerHierarchyLabels": null,
+        "ContainerHierarchySemVerConstraints": null,
+        "LeafNodeType": "It",
+        "LeafNodeLocation": {
+          "FileName": "cl0.go",
+          "LineNumber": 12,
+          "FullStackTrace": "full-trace\ncl-0"
+        },
+        "LeafNodeLabels": null,
+        "LeafNodeSemVerConstraints": null,
+        "LeafNodeText": "A",
+        "State": "pending",
+        "StartTime": "0001-01-01T00:00:00Z",
+        "EndTime": "0001-01-01T00:00:00Z",
+        "RunTime": 1000000000,
+        "ParallelProcess": 0,
+        "NumAttempts": 1,
+        "MaxFlakeAttempts": 1,
+        "MaxMustPassRepeatedly": 1
+      },
+      {
+        "ContainerHierarchyTexts": null,
+        "ContainerHierarchyLocations": null,
+        "ContainerHierarchyLabels": null,
+        "ContainerHierarchySemVerConstraints": null,
+        "LeafNodeType": "It",
+        "LeafNodeLocation": {
+          "FileName": "cl0.go",
+          "LineNumber": 12,
+          "FullStackTrace": "full-trace\ncl-0"
+        },
+        "LeafNodeLabels": null,
+        "LeafNodeSemVerConstraints": null,
+        "LeafNodeText": "A",
+        "State": "panicked",
+        "StartTime": "0001-01-01T00:00:00Z",
+        "EndTime": "0001-01-01T00:00:00Z",
+        "RunTime": 1000000000,
+        "ParallelProcess": 0,
+        "Failure": {
+          "Message": "failure\nmessage",
+          "Location": {
+            "FileName": "cl1.go",
+            "LineNumber": 37,
+            "FullStackTrace": "full-trace\ncl-1"
+          },
+          "TimelineLocation": {
+            "Order": 318,
+            "Time": "2025-08-29T12:35:58.3421+10:00"
+          },
+          "ForwardedPanic": "the panic",
+          "FailureNodeContext": "leaf-node",
+          "FailureNodeType": "It",
+          "FailureNodeLocation": {
+            "FileName": "cl0.go",
+            "LineNumber": 12,
+            "FullStackTrace": "full-trace\ncl-0"
+          },
+          "ProgressReport": {
+            "LeafNodeLocation": {},
+            "SpecStartTime": "0001-01-01T00:00:00Z",
+            "CurrentNodeLocation": {},
+            "CurrentNodeStartTime": "0001-01-01T00:00:00Z",
+            "CurrentStepLocation": {},
+            "CurrentStepStartTime": "0001-01-01T00:00:00Z",
+            "TimelineLocation": {
+              "Time": "0001-01-01T00:00:00Z"
+            }
+          }
+        },
+        "NumAttempts": 1,
+        "MaxFlakeAttempts": 1,
+        "MaxMustPassRepeatedly": 1,
+        "CapturedStdOutErr": "some captured stdout\n",
+        "SpecEvents": [
+          {
+            "SpecEventType": "Node",
+            "CodeLocation": {
+              "FileName": "cl0.go",
+              "LineNumber": 12,
+              "FullStackTrace": "full-trace\ncl-0"
+            },
+            "TimelineLocation": {
+              "Order": 317,
+              "Time": "2025-08-29T12:35:58.3421+10:00"
+            },
+            "Message": "A",
+            "NodeType": "It"
+          },
+          {
+            "SpecEventType": "Node (End)",
+            "CodeLocation": {
+              "FileName": "cl0.go",
+              "LineNumber": 12,
+              "FullStackTrace": "full-trace\ncl-0"
+            },
+            "TimelineLocation": {
+              "Offset": 56,
+              "Order": 319,
+              "Time": "2025-08-29T12:35:58.3421+10:00"
+            },
+            "Message": "A",
+            "Duration": 300000000,
+            "NodeType": "It"
+          }
+        ]
+      },
+      {
+        "ContainerHierarchyTexts": null,
+        "ContainerHierarchyLocations": null,
+        "ContainerHierarchyLabels": null,
+        "ContainerHierarchySemVerConstraints": null,
+        "LeafNodeType": "BeforeSuite",
+        "LeafNodeLocation": {
+          "FileName": "cl0.go",
+          "LineNumber": 12,
+          "FullStackTrace": "full-trace\ncl-0"
+        },
+        "LeafNodeLabels": null,
+        "LeafNodeSemVerConstraints": null,
+        "LeafNodeText": "A",
+        "State": "passed",
+        "StartTime": "0001-01-01T00:00:00Z",
+        "EndTime": "0001-01-01T00:00:00Z",
+        "RunTime": 1000000000,
+        "ParallelProcess": 0,
+        "NumAttempts": 1,
+        "MaxFlakeAttempts": 1,
+        "MaxMustPassRepeatedly": 1
+      }
+    ]
+  }
+]
+
+---

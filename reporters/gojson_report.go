@@ -2,29 +2,13 @@ package reporters
 
 import (
 	"encoding/json"
-	"errors"
 	"fmt"
 	"os"
 	"path"
 
 	"github.com/onsi/ginkgo/v2/internal/reporters"
 	"github.com/onsi/ginkgo/v2/types"
-	"golang.org/x/tools/go/packages"
 )
-
-func suitePathToPkg(dir string) (string, error) {
-	cfg := &packages.Config{
-		Mode: packages.NeedFiles | packages.NeedSyntax,
-	}
-	pkgs, err := packages.Load(cfg, dir)
-	if err != nil {
-		return "", err
-	}
-	if len(pkgs) != 1 {
-		return "", errors.New("error")
-	}
-	return pkgs[0].ID, nil
-}
 
 // GenerateGoTestJSONReport produces a JSON-formatted in the test2json format used by `go test -json`
 func GenerateGoTestJSONReport(report types.Report, destination string) error {
@@ -39,27 +23,8 @@ func GenerateGoTestJSONReport(report types.Report, destination string) error {
 	}
 	defer f.Close()
 	enc := json.NewEncoder(f)
-	r := reporters.NewGoJSONEventWriter(enc)
-
-	// NOTE: could the Ginkgo report include the go package name?
-	goPkg, err := suitePathToPkg(report.SuitePath)
-	if err != nil {
-		return err
-	}
-	// suite start events
-	r.WriteSuiteStart(goPkg, report)
-	for _, specReport := range report.SpecReports {
-		if specReport.LeafNodeType == types.NodeTypeIt {
-			r.WriteSpecStart(goPkg, specReport)
-			r.WriteSpecOut(goPkg, specReport)
-			r.WriteSpecResult(goPkg, specReport)
-		} else {
-			r.WriteSuiteLeafNodesOut(goPkg, specReport)
-		}
-	}
-	r.WriteSuiteResult(goPkg, report)
-	// suite end event
-	return nil
+	r := reporters.NewGoJSONReporter(enc)
+	return r.Write(report)
 }
 
 // MergeJSONReports produces a single JSON-formatted report at the passed in destination by merging the JSON-formatted reports provided in sources
