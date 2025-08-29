@@ -345,7 +345,7 @@ var _ = Describe("Reporting", func() {
 
 		Context("the default behavior", func() {
 			BeforeEach(func() {
-				session := startGinkgo(fm.PathTo("reporting"), "--no-color", "-r", "--keep-going", "--procs=2", "--json-report=out.json", "--junit-report=out.xml", "--teamcity-report=out.tc", "-seed=17")
+				session := startGinkgo(fm.PathTo("reporting"), "--no-color", "-r", "--keep-going", "--procs=2", "--json-report=out.json", "--gojson-report=out.go.json", "--junit-report=out.xml", "--teamcity-report=out.tc", "-seed=17")
 				Eventually(session).Should(gexec.Exit(1))
 				Ω(session).ShouldNot(gbytes.Say("Could not open"))
 			})
@@ -368,7 +368,7 @@ var _ = Describe("Reporting", func() {
 
 		Context("with -output-dir", func() {
 			BeforeEach(func() {
-				session := startGinkgo(fm.PathTo("reporting"), "--no-color", "-r", "--keep-going", "--procs=2", "--json-report=out.json", "--junit-report=out.xml", "--teamcity-report=out.tc", "--output-dir=./reports", "-seed=17")
+				session := startGinkgo(fm.PathTo("reporting"), "--no-color", "-r", "--keep-going", "--procs=2", "--json-report=out.json", "--gojson-report=out.go.json", "--junit-report=out.xml", "--teamcity-report=out.tc", "--output-dir=./reports", "-seed=17")
 				Eventually(session).Should(gexec.Exit(1))
 				Ω(session).ShouldNot(gbytes.Say("Could not open"))
 			})
@@ -391,7 +391,7 @@ var _ = Describe("Reporting", func() {
 
 		Context("with -keep-separate-reports", func() {
 			BeforeEach(func() {
-				session := startGinkgo(fm.PathTo("reporting"), "--no-color", "-r", "--keep-going", "--procs=2", "--json-report=out.json", "--junit-report=out.xml", "--teamcity-report=out.tc", "--keep-separate-reports", "-seed=17")
+				session := startGinkgo(fm.PathTo("reporting"), "--no-color", "-r", "--keep-going", "--procs=2", "--json-report=out.json", "--gojson-report=out.go.json", "--junit-report=out.xml", "--teamcity-report=out.tc", "--keep-separate-reports", "-seed=17")
 				Eventually(session).Should(gexec.Exit(1))
 				Ω(session).ShouldNot(gbytes.Say("Could not open"))
 			})
@@ -423,7 +423,7 @@ var _ = Describe("Reporting", func() {
 
 		Context("with -keep-separate-reports and -output-dir", func() {
 			BeforeEach(func() {
-				session := startGinkgo(fm.PathTo("reporting"), "--no-color", "-r", "--keep-going", "--procs=2", "--json-report=out.json", "--junit-report=out.xml", "--teamcity-report=out.tc", "--keep-separate-reports", "--output-dir=./reports", "-seed=17")
+				session := startGinkgo(fm.PathTo("reporting"), "--no-color", "-r", "--keep-going", "--procs=2", "--json-report=out.json", "--gojson-report=out.go.json", "--junit-report=out.xml", "--teamcity-report=out.tc", "--keep-separate-reports", "--output-dir=./reports", "-seed=17")
 				Eventually(session).Should(gexec.Exit(1))
 				Ω(session).ShouldNot(gbytes.Say("Could not open"))
 			})
@@ -453,7 +453,7 @@ var _ = Describe("Reporting", func() {
 
 		Context("when keep-going is not set and a suite fails", func() {
 			BeforeEach(func() {
-				session := startGinkgo(fm.PathTo("reporting"), "--no-color", "-r", "--procs=2", "--json-report=out.json", "--junit-report=out.xml", "--teamcity-report=out.tc", "-coverprofile=cover.out", "-cpuprofile=cpu.out", "-seed=17", "--output-dir=./reports")
+				session := startGinkgo(fm.PathTo("reporting"), "--no-color", "-r", "--procs=2", "--json-report=out.json", "--gojson-report=out.go.json", "--junit-report=out.xml", "--teamcity-report=out.tc", "-coverprofile=cover.out", "-cpuprofile=cpu.out", "-seed=17", "--output-dir=./reports")
 				Eventually(session).Should(gexec.Exit(1))
 				Ω(session).ShouldNot(gbytes.Say("Could not open"))
 			})
