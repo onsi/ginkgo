@@ -6,6 +6,7 @@ import (
 	"path/filepath"
 	"time"
 
+	"github.com/gkampitakis/go-snaps/snaps"
 	. "github.com/onsi/ginkgo/v2"
 	. "github.com/onsi/gomega"
 
@@ -70,6 +71,9 @@ var _ = Describe("JSONReport", func() {
 			Ω(err).Should(Succeed(), "Parent folder should be created")
 			_, err = os.Stat(filePath)
 			Ω(err).Should(Succeed(), "Report file should be created")
+			reportBytes, err := os.ReadFile(filePath)
+			Ω(err).Should(Succeed(), "Report file should be read")
+			snaps.MatchSnapshot(GinkgoT(), string(reportBytes))
 		})
 	})
 })

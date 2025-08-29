@@ -1,0 +1,46 @@
+
+[GoJSONReport when configured to write the report inside a folder creates the folder and the report file - 1]
+{"Time":"0001-01-01T00:00:00Z","Action":"start","Package":"/path/to/suite"}
+{"Time":"0001-01-01T00:00:00Z","Action":"run","Package":"/path/to/suite","Test":"A B C"}
+{"Time":"0001-01-01T00:00:00Z","Action":"output","Package":"/path/to/suite","Test":"A B C","Output":"some captured stdout\n\nginkgowriter\noutput\ncleanup!"}
+{"Time":"0001-01-01T00:00:00Z","Action":"output","Package":"/path/to/suite","Test":"A B C","Output":"failure\nmessage"}
+{"Time":"0001-01-01T00:00:00Z","Action":"fail","Package":"/path/to/suite","Test":"A B C","Elapsed":1}
+{"Time":"0001-01-01T00:00:00Z","Action":"run","Package":"/path/to/suite","Test":"B"}
+{"Time":"0001-01-01T00:00:00Z","Action":"output","Package":"/path/to/suite","Test":"B","Output":"some captured stdout\n\nsome GinkgoWriter\noutput is interspersed\nhere and there\n"}
+{"Time":"0001-01-01T00:00:00Z","Action":"pass","Package":"/path/to/suite","Test":"B","Elapsed":1}
+{"Time":"0001-01-01T00:00:00Z","Action":"run","Package":"/path/to/suite","Test":"C"}
+{"Time":"0001-01-01T00:00:00Z","Action":"skip","Package":"/path/to/suite","Test":"C","Elapsed":1}
+{"Time":"0001-01-01T00:00:00Z","Action":"run","Package":"/path/to/suite","Test":"D"}
+{"Time":"0001-01-01T00:00:00Z","Action":"output","Package":"/path/to/suite","Test":"D","Output":"some captured stdout\n"}
+{"Time":"0001-01-01T00:00:00Z","Action":"output","Package":"/path/to/suite","Test":"D","Output":"failure\nmessage"}
+{"Time":"0001-01-01T00:00:00Z","Action":"fail","Package":"/path/to/suite","Test":"D","Elapsed":1}
+{"Time":"0001-01-01T00:00:00Z","Action":"fail","Package":"/path/to/suite","Elapsed":60}
+
+---
+
+[GoJSONReport when configured to write the report inside a folder creates the folder and the report file - 2]
+some captured stdout
+
+ginkgowriter
+output
+cleanup!failure
+messagesome captured stdout
+
+some GinkgoWriter
+output is interspersed
+here and there
+some captured stdout
+failure
+message
+output should match
+---
+
+[GoJSONReport when configured to write the report inside a folder creates the folder and the report file - 3]
+SUITE: /path/to/suite, tests: 4 
+---- TEST: A B C, status: fail
+---- TEST: B, status: pass
+---- TEST: C, status: skip
+---- TEST: D, status: fail
+
+package summary output match
+---
