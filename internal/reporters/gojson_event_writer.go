@@ -17,7 +17,7 @@ func (r *GoJSONEventWriter) writeEvent(e *test2jsonEvent) error {
 func (r *GoJSONEventWriter) WriteSuiteStart(report *report) error {
 	e := &test2jsonEvent{
 		Time:        &report.o.StartTime,
-		Action:      Test2JSONStart,
+		Action:      GoJSONStart,
 		Package:     report.goPkg,
 		Output:      nil,
 		FailedBuild: "",
@@ -26,14 +26,14 @@ func (r *GoJSONEventWriter) WriteSuiteStart(report *report) error {
 }
 
 func (r *GoJSONEventWriter) WriteSuiteResult(report *report) error {
-	var action Test2JSONAction
+	var action GoJSONAction
 	switch {
 	case report.o.PreRunStats.SpecsThatWillRun == 0:
-		action = Test2JSONSkip
+		action = GoJSONSkip
 	case report.o.SuiteSucceeded:
-		action = Test2JSONPass
+		action = GoJSONPass
 	default:
-		action = Test2JSONFail
+		action = GoJSONFail
 	}
 	e := &test2jsonEvent{
 		Time:        &report.o.EndTime,
@@ -53,7 +53,7 @@ func (r *GoJSONEventWriter) WriteSuiteLeafNodeOut(report *report, specReport *sp
 	if combinedOutput != "" {
 		events = append(events, &test2jsonEvent{
 			Time:        &specReport.o.EndTime,
-			Action:      Test2JSONOutput,
+			Action:      GoJSONOutput,
 			Package:     report.goPkg,
 			Output:      ptr(combinedOutput),
 			FailedBuild: "",
@@ -72,7 +72,7 @@ func (r *GoJSONEventWriter) WriteSuiteLeafNodeOut(report *report, specReport *sp
 func (r *GoJSONEventWriter) WriteSpecStart(report *report, specReport *specReport) error {
 	e := &test2jsonEvent{
 		Time:        &specReport.o.StartTime,
-		Action:      Test2JSONRun,
+		Action:      GoJSONRun,
 		Test:        specReport.testName,
 		Package:     report.goPkg,
 		Output:      nil,
@@ -87,7 +87,7 @@ func (r *GoJSONEventWriter) WriteSpecOut(report *report, specReport *specReport)
 	if combinedOutput != "" {
 		events = append(events, &test2jsonEvent{
 			Time:        &specReport.o.EndTime,
-			Action:      Test2JSONOutput,
+			Action:      GoJSONOutput,
 			Test:        specReport.testName,
 			Package:     report.goPkg,
 			Output:      ptr(combinedOutput),
@@ -97,7 +97,7 @@ func (r *GoJSONEventWriter) WriteSpecOut(report *report, specReport *specReport)
 	if specReport.o.Failure.Message != "" {
 		events = append(events, &test2jsonEvent{
 			Time:        &specReport.o.EndTime,
-			Action:      Test2JSONOutput,
+			Action:      GoJSONOutput,
 			Test:        specReport.testName,
 			Package:     report.goPkg,
 			Output:      ptr(failureToOutput(specReport.o.Failure)),

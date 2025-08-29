@@ -19,7 +19,7 @@ type encoder interface {
 // https://pkg.go.dev/cmd/test2json
 type test2jsonEvent struct {
 	Time        *time.Time `json:",omitempty"`
-	Action      Test2JSONAction
+	Action      GoJSONAction
 	Package     string   `json:",omitempty"`
 	Test        string   `json:",omitempty"`
 	Elapsed     *float64 `json:",omitempty"`
@@ -27,27 +27,27 @@ type test2jsonEvent struct {
 	FailedBuild string   `json:",omitempty"`
 }
 
-type Test2JSONAction string
+type GoJSONAction string
 
 const (
 	// start  - the test binary is about to be executed
-	Test2JSONStart Test2JSONAction = "start"
+	GoJSONStart GoJSONAction = "start"
 	// run    - the test has started running
-	Test2JSONRun Test2JSONAction = "run"
+	GoJSONRun GoJSONAction = "run"
 	// pause  - the test has been paused
-	Test2JSONPause Test2JSONAction = "pause"
+	GoJSONPause GoJSONAction = "pause"
 	// cont   - the test has continued running
-	Test2JSONCont Test2JSONAction = "cont"
+	GoJSONCont GoJSONAction = "cont"
 	// pass   - the test passed
-	Test2JSONPass Test2JSONAction = "pass"
+	GoJSONPass GoJSONAction = "pass"
 	// bench  - the benchmark printed log output but did not fail
-	Test2JSONBench Test2JSONAction = "bench"
+	GoJSONBench GoJSONAction = "bench"
 	// fail   - the test or benchmark failed
-	Test2JSONFail Test2JSONAction = "fail"
+	GoJSONFail GoJSONAction = "fail"
 	// output - the test printed output
-	Test2JSONOutput Test2JSONAction = "output"
+	GoJSONOutput GoJSONAction = "output"
 	// skip   - the test was skipped or the package contained no tests
-	Test2JSONSkip Test2JSONAction = "skip"
+	GoJSONSkip GoJSONAction = "skip"
 )
 
 func failureToOutput(failure types.Failure) string {

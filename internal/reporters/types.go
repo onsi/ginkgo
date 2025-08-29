@@ -37,7 +37,7 @@ type specReport struct {
 	o types.SpecReport
 	// extra calculated fields
 	testName string
-	action Test2JSONAction
+	action GoJSONAction
 	elapsed float64
 }
 
@@ -69,26 +69,26 @@ func suitePathToPkg(dir string) (string, error) {
 	return pkgs[0].ID, nil
 }
 
-func specStateToAction(state types.SpecState) Test2JSONAction {
+func specStateToAction(state types.SpecState) GoJSONAction {
 	switch state {
 	case types.SpecStateInvalid:
-		return Test2JSONFail
+		return GoJSONFail
 	case types.SpecStatePending:
-		return Test2JSONSkip
+		return GoJSONSkip
 	case types.SpecStateSkipped:
-		return Test2JSONSkip
+		return GoJSONSkip
 	case types.SpecStatePassed:
-		return Test2JSONPass
+		return GoJSONPass
 	case types.SpecStateFailed:
-		return Test2JSONFail
+		return GoJSONFail
 	case types.SpecStateAborted:
-		return Test2JSONFail
+		return GoJSONFail
 	case types.SpecStatePanicked:
-		return Test2JSONFail
+		return GoJSONFail
 	case types.SpecStateInterrupted:
-		return Test2JSONFail
+		return GoJSONFail
 	case types.SpecStateTimedout:
-		return Test2JSONFail
+		return GoJSONFail
 	default:
 		panic("unexpected state should not happen")
 	}
