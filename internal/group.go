@@ -2,6 +2,7 @@ package internal
 
 import (
 	"fmt"
+	"slices"
 	"time"
 
 	"github.com/onsi/ginkgo/v2/types"
@@ -62,12 +63,7 @@ func (pairs runOncePairs) runOncePairFor(nodeID uint) runOncePair {
 }
 
 func (pairs runOncePairs) hasRunOncePair(pair runOncePair) bool {
-	for i := range pairs {
-		if pairs[i] == pair {
-			return true
-		}
-	}
-	return false
+	return slices.Contains(pairs, pair)
 }
 
 func (pairs runOncePairs) withType(nodeTypes types.NodeType) runOncePairs {

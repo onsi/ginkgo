@@ -30,7 +30,6 @@ func (s ColorableStringerStruct) ColorableString() string {
 
 var _ = Describe("The Parallel Support Client & Server", func() {
 	for _, protocol := range []string{"RPC", "HTTP"} {
-		protocol := protocol
 		Describe(fmt.Sprintf("The %s protocol", protocol), Label(protocol), func() {
 			var (
 				server   parallel_support.Server

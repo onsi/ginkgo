@@ -4,6 +4,7 @@ import (
 	"os"
 	"path/filepath"
 	"regexp"
+	"slices"
 	"strings"
 )
 
@@ -33,10 +34,8 @@ func (d Docs) DocWithName(name string) Doc {
 
 func (d Docs) DocWithURL(url string) Doc {
 	for _, doc := range d {
-		for _, u := range doc.URLs {
-			if u == url {
-				return doc
-			}
+		if slices.Contains(doc.URLs, url) {
+			return doc
 		}
 	}
 	return Doc{}
@@ -74,13 +73,7 @@ func (a Anchors) IsResolvable(docName string, link string) bool {
 		anchorSet = a.DocAnchors[doc.Name]
 	}
 
-	for _, anchor := range anchorSet {
-		if anchor == expectedAnchor {
-			return true
-		}
-	}
-
-	return false
+	return slices.Contains(anchorSet, expectedAnchor)
 }
 
 func LoadAnchors(docs Docs, rootPath string) (Anchors, error) {
