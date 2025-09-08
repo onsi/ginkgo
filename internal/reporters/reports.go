@@ -32,7 +32,8 @@ func (r *report) Fill() error {
 	return nil
 }
 
-// types.SpecReport
+// specReport wraps types.SpecReport and calculates extra fields required
+// by gojson when
 type specReport struct {
 	o types.SpecReport
 	// extra calculated fields
@@ -50,10 +51,9 @@ func newSpecReport(in types.SpecReport) *specReport {
 func (sr *specReport) Fill() error {
 	sr.elapsed = sr.o.RunTime.Seconds()
 	sr.testName = sr.o.FullText()
-	sr.action = specStateToAction(sr.o.State)
+	sr.action = goJSONActionFromSpecState(sr.o.State)
 	return nil
 }
-
 
 func suitePathToPkg(dir string) (string, error) {
 	cfg := &packages.Config{
@@ -67,29 +67,4 @@ func suitePathToPkg(dir string) (string, error) {
 		return "", errors.New("error")
 	}
 	return pkgs[0].ID, nil
-}
-
-func specStateToAction(state types.SpecState) GoJSONAction {
-	switch state {
-	case types.SpecStateInvalid:
-		return GoJSONFail
-	case types.SpecStatePending:
-		return GoJSONSkip
-	case types.SpecStateSkipped:
-		return GoJSONSkip
-	case types.SpecStatePassed:
-		return GoJSONPass
-	case types.SpecStateFailed:
-		return GoJSONFail
-	case types.SpecStateAborted:
-		return GoJSONFail
-	case types.SpecStatePanicked:
-		return GoJSONFail
-	case types.SpecStateInterrupted:
-		return GoJSONFail
-	case types.SpecStateTimedout:
-		return GoJSONFail
-	default:
-		panic("unexpected state should not happen")
-	}
 }

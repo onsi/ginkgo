@@ -10,12 +10,12 @@ func NewGoJSONEventWriter(enc encoder) *GoJSONEventWriter {
 	}
 }
 
-func (r *GoJSONEventWriter) writeEvent(e *test2jsonEvent) error {
+func (r *GoJSONEventWriter) writeEvent(e *gojsonEvent) error {
 	return r.enc.Encode(e)
 }
 
 func (r *GoJSONEventWriter) WriteSuiteStart(report *report) error {
-	e := &test2jsonEvent{
+	e := &gojsonEvent{
 		Time:        &report.o.StartTime,
 		Action:      GoJSONStart,
 		Package:     report.goPkg,
@@ -35,7 +35,7 @@ func (r *GoJSONEventWriter) WriteSuiteResult(report *report) error {
 	default:
 		action = GoJSONFail
 	}
-	e := &test2jsonEvent{
+	e := &gojsonEvent{
 		Time:        &report.o.EndTime,
 		Action:      action,
 		Package:     report.goPkg,
@@ -47,11 +47,11 @@ func (r *GoJSONEventWriter) WriteSuiteResult(report *report) error {
 }
 
 func (r *GoJSONEventWriter) WriteSuiteLeafNodeOut(report *report, specReport *specReport) error {
-	events := []*test2jsonEvent{}
+	events := []*gojsonEvent{}
 
 	combinedOutput := specReport.o.CombinedOutput()
 	if combinedOutput != "" {
-		events = append(events, &test2jsonEvent{
+		events = append(events, &gojsonEvent{
 			Time:        &specReport.o.EndTime,
 			Action:      GoJSONOutput,
 			Package:     report.goPkg,
@@ -70,7 +70,7 @@ func (r *GoJSONEventWriter) WriteSuiteLeafNodeOut(report *report, specReport *sp
 }
 
 func (r *GoJSONEventWriter) WriteSpecStart(report *report, specReport *specReport) error {
-	e := &test2jsonEvent{
+	e := &gojsonEvent{
 		Time:        &specReport.o.StartTime,
 		Action:      GoJSONRun,
 		Test:        specReport.testName,
@@ -82,10 +82,10 @@ func (r *GoJSONEventWriter) WriteSpecStart(report *report, specReport *specRepor
 }
 
 func (r *GoJSONEventWriter) WriteSpecOut(report *report, specReport *specReport) error {
-	events := []*test2jsonEvent{}
+	events := []*gojsonEvent{}
 	combinedOutput := specReport.o.CombinedOutput()
 	if combinedOutput != "" {
-		events = append(events, &test2jsonEvent{
+		events = append(events, &gojsonEvent{
 			Time:        &specReport.o.EndTime,
 			Action:      GoJSONOutput,
 			Test:        specReport.testName,
@@ -95,7 +95,7 @@ func (r *GoJSONEventWriter) WriteSpecOut(report *report, specReport *specReport)
 		})
 	}
 	if specReport.o.Failure.Message != "" {
-		events = append(events, &test2jsonEvent{
+		events = append(events, &gojsonEvent{
 			Time:        &specReport.o.EndTime,
 			Action:      GoJSONOutput,
 			Test:        specReport.testName,
@@ -114,7 +114,7 @@ func (r *GoJSONEventWriter) WriteSpecOut(report *report, specReport *specReport)
 }
 
 func (r *GoJSONEventWriter) WriteSpecResult(report *report, specReport *specReport) error {
-	e := &test2jsonEvent{
+	e := &gojsonEvent{
 		Time:        &specReport.o.EndTime,
 		Action:      specReport.action,
 		Test:        specReport.testName,

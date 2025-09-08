@@ -76,8 +76,7 @@ var _ = Describe("GoJSONReport", func() {
 			reportBytes, err := os.ReadFile(filePath)
 			Ω(err).Should(Succeed(), "Report file should be read")
 			snaps.MatchSnapshot(GinkgoT(), string(reportBytes))
-			// test2json
-
+			// Read report and snapshot
 			reader, err := os.Open(filePath)
 			Ω(err).Should(Succeed(), "Report file should be opened")
 			var testOutput bytes.Buffer
@@ -87,7 +86,7 @@ var _ = Describe("GoJSONReport", func() {
 				parse.WithFollowVersboseOutput(true),
 				parse.WithWriter(&testOutput),
 			)
-			Ω(err).Should(Succeed(), "test2json output should be parsed")
+			Ω(err).Should(Succeed(), "gojson output should be parsed")
 			snaps.MatchSnapshot(GinkgoT(), testOutput.String(), "output should match")
 
 			var summaryOutput bytes.Buffer

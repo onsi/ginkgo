@@ -14,10 +14,10 @@ type encoder interface {
 	Encode(v any) error
 }
 
-// test2jsonEvent matches the format from go internals
+// gojsonEvent matches the format from go internals
 // https://github.com/golang/go/blob/master/src/cmd/internal/test2json/test2json.go#L31-L41
 // https://pkg.go.dev/cmd/test2json
-type test2jsonEvent struct {
+type gojsonEvent struct {
 	Time        *time.Time `json:",omitempty"`
 	Action      GoJSONAction
 	Package     string   `json:",omitempty"`
@@ -52,4 +52,29 @@ const (
 
 func failureToOutput(failure types.Failure) string {
 	return failure.Message
+}
+
+func goJSONActionFromSpecState(state types.SpecState) GoJSONAction {
+	switch state {
+	case types.SpecStateInvalid:
+		return GoJSONFail
+	case types.SpecStatePending:
+		return GoJSONSkip
+	case types.SpecStateSkipped:
+		return GoJSONSkip
+	case types.SpecStatePassed:
+		return GoJSONPass
+	case types.SpecStateFailed:
+		return GoJSONFail
+	case types.SpecStateAborted:
+		return GoJSONFail
+	case types.SpecStatePanicked:
+		return GoJSONFail
+	case types.SpecStateInterrupted:
+		return GoJSONFail
+	case types.SpecStateTimedout:
+		return GoJSONFail
+	default:
+		panic("unexpected state should not happen")
+	}
 }
