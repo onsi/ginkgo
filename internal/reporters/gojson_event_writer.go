@@ -18,7 +18,7 @@ func (r *GoJSONEventWriter) writeEvent(e *gojsonEvent) error {
 	return r.enc.Encode(e)
 }
 
-func (r *GoJSONEventWriter) WriteSuiteStart(report *report) error {
+func (r *GoJSONEventWriter) WriteSuiteStart(report *gojsonReport) error {
 	e := &gojsonEvent{
 		Time:        &report.o.StartTime,
 		Action:      GoJSONStart,
@@ -29,7 +29,7 @@ func (r *GoJSONEventWriter) WriteSuiteStart(report *report) error {
 	return r.writeEvent(e)
 }
 
-func (r *GoJSONEventWriter) WriteSuiteResult(report *report) error {
+func (r *GoJSONEventWriter) WriteSuiteResult(report *gojsonReport) error {
 	var action GoJSONAction
 	switch {
 	case report.o.PreRunStats.SpecsThatWillRun == 0:
@@ -50,7 +50,7 @@ func (r *GoJSONEventWriter) WriteSuiteResult(report *report) error {
 	return r.writeEvent(e)
 }
 
-func (r *GoJSONEventWriter) WriteSpecStart(report *report, specReport *specReport) error {
+func (r *GoJSONEventWriter) WriteSpecStart(report *gojsonReport, specReport *gojsonSpecReport) error {
 	e := &gojsonEvent{
 		Time:        &specReport.o.StartTime,
 		Action:      GoJSONRun,
@@ -62,7 +62,7 @@ func (r *GoJSONEventWriter) WriteSpecStart(report *report, specReport *specRepor
 	return r.writeEvent(e)
 }
 
-func (r *GoJSONEventWriter) WriteSpecOut(report *report, specReport *specReport) error {
+func (r *GoJSONEventWriter) WriteSpecOut(report *gojsonReport, specReport *gojsonSpecReport) error {
 	events := []*gojsonEvent{}
 
 	stdErr := r.specSystemErrFn(specReport.o)
@@ -97,10 +97,10 @@ func (r *GoJSONEventWriter) WriteSpecOut(report *report, specReport *specReport)
 	return nil
 }
 
-func (r *GoJSONEventWriter) WriteSpecResult(report *report, specReport *specReport) error {
+func (r *GoJSONEventWriter) WriteSpecResult(report *gojsonReport, specReport *gojsonSpecReport) error {
 	e := &gojsonEvent{
 		Time:        &specReport.o.EndTime,
-		Action:      specReport.gojsonAction,
+		Action:      specReport.action,
 		Test:        specReport.testName,
 		Package:     report.goPkg,
 		Elapsed:     ptr(specReport.elapsed),

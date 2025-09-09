@@ -1,9 +1,13 @@
 package reporters
 
 import (
+	"errors"
+	"fmt"
+	"strings"
 	"time"
 
 	"github.com/onsi/ginkgo/v2/types"
+	"golang.org/x/tools/go/packages"
 )
 
 func ptr[T any](in T) *T {
@@ -73,4 +77,82 @@ func goJSONActionFromSpecState(state types.SpecState) GoJSONAction {
 	default:
 		panic("unexpected state should not happen")
 	}
+}
+
+// gojsonReport wraps types.Report and calcualtes extra fields requires by gojson
+type gojsonReport struct {
+	o types.Report
+	// Extra calculated fields
+	goPkg string
+	elapsed float64
+}
+
+func newReport(in types.Report) *gojsonReport {
+	return &gojsonReport{
+		o: in,
+	}
+}
+
+func (r *gojsonReport) Fill() error {
+	// NOTE: could the types.Report include the go package name?
+	goPkg, err := suitePathToPkg(r.o.SuitePath)
+	if err != nil {
+		return err
+	}
+	r.goPkg = goPkg
+	r.elapsed = r.o.RunTime.Seconds()
+	return nil
+}
+
+// gojsonSpecReport wraps types.SpecReport and calculates extra fields required by gojson
+type gojsonSpecReport struct {
+	o types.SpecReport
+	// extra calculated fields
+	testName string
+	elapsed float64
+	action GoJSONAction
+}
+
+func newSpecReport(in types.SpecReport) *gojsonSpecReport {
+	return &gojsonSpecReport{
+		o: in,
+	}
+}
+
+func (sr *gojsonSpecReport) Fill() error {
+	sr.elapsed = sr.o.RunTime.Seconds()
+	sr.testName = createTestName(sr.o)
+	sr.action = goJSONActionFromSpecState(sr.o.State)
+	return nil
+}
+
+func suitePathToPkg(dir string) (string, error) {
+	cfg := &packages.Config{
+		Mode: packages.NeedFiles | packages.NeedSyntax,
+	}
+	pkgs, err := packages.Load(cfg, dir)
+	if err != nil {
+		return "", err
+	}
+	if len(pkgs) != 1 {
+		return "", errors.New("error")
+	}
+	return pkgs[0].ID, nil
+}
+
+func createTestName(spec types.SpecReport) string {
+		name := fmt.Sprintf("[%s]", spec.LeafNodeType)
+		if spec.FullText() != "" {
+			name = name + " " + spec.FullText()
+		}
+		labels := spec.Labels()
+		if len(labels) > 0 {
+			name = name + " [" + strings.Join(labels, ", ") + "]"
+		}
+		semVerConstraints := spec.SemVerConstraints()
+		if len(semVerConstraints) > 0 {
+			name = name + " [" + strings.Join(semVerConstraints, ", ") + "]"
+		}
+		name = strings.TrimSpace(name)
+		return name
 }

@@ -1,20 +1,20 @@
 
 [GoJSONReport when configured to write the report inside a folder creates the folder and the report file - 1]
 {"Time":"0001-01-01T00:00:00Z","Action":"start","Package":"/path/to/suite"}
-{"Time":"0001-01-01T00:00:00Z","Action":"run","Package":"/path/to/suite","Test":"A B C"}
-{"Time":"0001-01-01T00:00:00Z","Action":"output","Package":"/path/to/suite","Test":"A B C","Output":"STEP: a by step - cl0.go:12 @ 09/09/25 10:50:00\n\u003e Enter [It] C - cl2.go:80 @ 09/09/25 10:50:00\nginkgowriter\n[TIMEDOUT] failure\nmessage\nIn [It] at: cl3.go:103 @ 09/09/25 10:50:00\noutput\n[PANICKED] \nIn [It] at: cl4.go:144 @ 09/09/25 10:50:00\n\nthe panic!\n\nFull Stack Trace\n  full-trace\n  cl-4\n\u003c Exit [It] C - cl2.go:80 @ 09/09/25 10:50:00 (87ms)\na report entry - cl1.go:37 @ 09/09/25 10:50:00\na hidden report entry - cl1.go:37 @ 09/09/25 10:50:00\ncleanup!\n[FAILED] a subsequent failure\nIn [AfterEach] at: :0 @ 09/09/25 10:50:00\n"}
-{"Time":"0001-01-01T00:00:00Z","Action":"output","Package":"/path/to/suite","Test":"A B C","Output":"some captured stdout\n"}
-{"Time":"0001-01-01T00:00:00Z","Action":"fail","Package":"/path/to/suite","Test":"A B C","Elapsed":1}
-{"Time":"0001-01-01T00:00:00Z","Action":"run","Package":"/path/to/suite","Test":"B"}
-{"Time":"0001-01-01T00:00:00Z","Action":"output","Package":"/path/to/suite","Test":"B","Output":"\u003e Enter [It] A - cl0.go:12 @ 09/09/25 10:50:00\nsome GinkgoWriter\nmy progress report\n  A (Spec Runtime: 5s)\n    cl0.go:12\nSTEP: My Step - cl1.go:37 @ 09/09/25 10:50:00\noutput is interspersed\nmy entry - cl1.go:37 @ 09/09/25 10:50:00\nmy hidden entry - cl1.go:37 @ 09/09/25 10:50:00\nEND STEP: My Step - cl1.go:37 @ 09/09/25 10:50:00 (200ms)\nhere and there\n\u003c Exit [It] A - cl0.go:12 @ 09/09/25 10:50:00 (300ms)\n"}
-{"Time":"0001-01-01T00:00:00Z","Action":"output","Package":"/path/to/suite","Test":"B","Output":"some captured stdout\n"}
-{"Time":"0001-01-01T00:00:00Z","Action":"pass","Package":"/path/to/suite","Test":"B","Elapsed":1}
-{"Time":"0001-01-01T00:00:00Z","Action":"run","Package":"/path/to/suite","Test":"C"}
-{"Time":"0001-01-01T00:00:00Z","Action":"skip","Package":"/path/to/suite","Test":"C","Elapsed":1}
-{"Time":"0001-01-01T00:00:00Z","Action":"run","Package":"/path/to/suite","Test":"D"}
-{"Time":"0001-01-01T00:00:00Z","Action":"output","Package":"/path/to/suite","Test":"D","Output":"\u003e Enter [It] A - cl0.go:12 @ 09/09/25 10:50:00\n[PANICKED] failure\nmessage\nIn [It] at: cl1.go:37 @ 09/09/25 10:50:00\n\nthe panic\n\nFull Stack Trace\n  full-trace\n  cl-1\n\u003c Exit [It] A - cl0.go:12 @ 09/09/25 10:50:00 (300ms)\n"}
-{"Time":"0001-01-01T00:00:00Z","Action":"output","Package":"/path/to/suite","Test":"D","Output":"some captured stdout\n"}
-{"Time":"0001-01-01T00:00:00Z","Action":"fail","Package":"/path/to/suite","Test":"D","Elapsed":1}
+{"Time":"0001-01-01T00:00:00Z","Action":"run","Package":"/path/to/suite","Test":"[It] A B C [dolphin, gorilla, cow, cat, dog]"}
+{"Time":"0001-01-01T00:00:00Z","Action":"output","Package":"/path/to/suite","Test":"[It] A B C [dolphin, gorilla, cow, cat, dog]","Output":"STEP: a by step - cl0.go:12 @ 09/09/25 10:50:00\n\u003e Enter [It] C - cl2.go:80 @ 09/09/25 10:50:00\nginkgowriter\n[TIMEDOUT] failure\nmessage\nIn [It] at: cl3.go:103 @ 09/09/25 10:50:00\noutput\n[PANICKED] \nIn [It] at: cl4.go:144 @ 09/09/25 10:50:00\n\nthe panic!\n\nFull Stack Trace\n  full-trace\n  cl-4\n\u003c Exit [It] C - cl2.go:80 @ 09/09/25 10:50:00 (87ms)\na report entry - cl1.go:37 @ 09/09/25 10:50:00\na hidden report entry - cl1.go:37 @ 09/09/25 10:50:00\ncleanup!\n[FAILED] a subsequent failure\nIn [AfterEach] at: :0 @ 09/09/25 10:50:00\n"}
+{"Time":"0001-01-01T00:00:00Z","Action":"output","Package":"/path/to/suite","Test":"[It] A B C [dolphin, gorilla, cow, cat, dog]","Output":"some captured stdout\n"}
+{"Time":"0001-01-01T00:00:00Z","Action":"fail","Package":"/path/to/suite","Test":"[It] A B C [dolphin, gorilla, cow, cat, dog]","Elapsed":1}
+{"Time":"0001-01-01T00:00:00Z","Action":"run","Package":"/path/to/suite","Test":"[It] A [cat, owner:frank, OWNer:bob]"}
+{"Time":"0001-01-01T00:00:00Z","Action":"output","Package":"/path/to/suite","Test":"[It] A [cat, owner:frank, OWNer:bob]","Output":"\u003e Enter [It] A - cl0.go:12 @ 09/09/25 10:50:00\nsome GinkgoWriter\nmy progress report\n  A (Spec Runtime: 5s)\n    cl0.go:12\nSTEP: My Step - cl1.go:37 @ 09/09/25 10:50:00\noutput is interspersed\nmy entry - cl1.go:37 @ 09/09/25 10:50:00\nmy hidden entry - cl1.go:37 @ 09/09/25 10:50:00\nEND STEP: My Step - cl1.go:37 @ 09/09/25 10:50:00 (200ms)\nhere and there\n\u003c Exit [It] A - cl0.go:12 @ 09/09/25 10:50:00 (300ms)\n"}
+{"Time":"0001-01-01T00:00:00Z","Action":"output","Package":"/path/to/suite","Test":"[It] A [cat, owner:frank, OWNer:bob]","Output":"some captured stdout\n"}
+{"Time":"0001-01-01T00:00:00Z","Action":"pass","Package":"/path/to/suite","Test":"[It] A [cat, owner:frank, OWNer:bob]","Elapsed":1}
+{"Time":"0001-01-01T00:00:00Z","Action":"run","Package":"/path/to/suite","Test":"[It] A [owner:org, owner:team]"}
+{"Time":"0001-01-01T00:00:00Z","Action":"skip","Package":"/path/to/suite","Test":"[It] A [owner:org, owner:team]","Elapsed":1}
+{"Time":"0001-01-01T00:00:00Z","Action":"run","Package":"/path/to/suite","Test":"[It] A [owner:org]"}
+{"Time":"0001-01-01T00:00:00Z","Action":"output","Package":"/path/to/suite","Test":"[It] A [owner:org]","Output":"\u003e Enter [It] A - cl0.go:12 @ 09/09/25 10:50:00\n[PANICKED] failure\nmessage\nIn [It] at: cl1.go:37 @ 09/09/25 10:50:00\n\nthe panic\n\nFull Stack Trace\n  full-trace\n  cl-1\n\u003c Exit [It] A - cl0.go:12 @ 09/09/25 10:50:00 (300ms)\n"}
+{"Time":"0001-01-01T00:00:00Z","Action":"output","Package":"/path/to/suite","Test":"[It] A [owner:org]","Output":"some captured stdout\n"}
+{"Time":"0001-01-01T00:00:00Z","Action":"fail","Package":"/path/to/suite","Test":"[It] A [owner:org]","Elapsed":1}
 {"Time":"0001-01-01T00:00:00Z","Action":"fail","Package":"/path/to/suite","Elapsed":60}
 
 ---
@@ -73,10 +73,10 @@ output should match
 
 [GoJSONReport when configured to write the report inside a folder creates the folder and the report file - 3]
 SUITE: /path/to/suite, tests: 4 
----- TEST: A B C, status: fail
----- TEST: B, status: pass
----- TEST: C, status: skip
----- TEST: D, status: fail
+---- TEST: [It] A B C [dolphin, gorilla, cow, cat, dog], status: fail
+---- TEST: [It] A [cat, owner:frank, OWNer:bob], status: pass
+---- TEST: [It] A [owner:org, owner:team], status: skip
+---- TEST: [It] A [owner:org], status: fail
 
 package summary output match
 ---
