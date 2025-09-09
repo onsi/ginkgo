@@ -8,10 +8,11 @@ type GoJSONReporter struct {
 	ev *GoJSONEventWriter
 }
 
+type specSystemExtractFn func (spec types.SpecReport) string
 
-func NewGoJSONReporter(enc encoder) *GoJSONReporter {
+func NewGoJSONReporter(enc encoder, errFn specSystemExtractFn, outFn specSystemExtractFn) *GoJSONReporter {
 	return &GoJSONReporter{
-		ev: NewGoJSONEventWriter(enc),
+		ev: NewGoJSONEventWriter(enc, errFn, outFn),
 	}
 }
 
@@ -36,7 +37,7 @@ func (r *GoJSONReporter) Write(originalReport types.Report) error {
 			r.ev.WriteSpecResult(report, specReport)
 		} else {
 			// handle any other leaf node as generic output
-			r.ev.WriteSuiteLeafNodeOut(report, specReport)
+			r.ev.WriteSpecOut(report, specReport)
 		}
 	}
 	r.ev.WriteSuiteResult(report)

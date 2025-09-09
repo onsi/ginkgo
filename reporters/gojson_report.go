@@ -23,7 +23,11 @@ func GenerateGoTestJSONReport(report types.Report, destination string) error {
 	}
 	defer f.Close()
 	enc := json.NewEncoder(f)
-	r := reporters.NewGoJSONReporter(enc)
+	r := reporters.NewGoJSONReporter(
+		enc,
+		systemErrForUnstructuredReporters,
+		systemOutForUnstructuredReporters,
+	)
 	return r.Write(report)
 }
 

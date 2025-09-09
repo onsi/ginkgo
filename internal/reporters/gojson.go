@@ -50,10 +50,6 @@ const (
 	GoJSONSkip GoJSONAction = "skip"
 )
 
-func failureToOutput(failure types.Failure) string {
-	return failure.Message
-}
-
 func goJSONActionFromSpecState(state types.SpecState) GoJSONAction {
 	switch state {
 	case types.SpecStateInvalid:

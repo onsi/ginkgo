@@ -38,8 +38,8 @@ type specReport struct {
 	o types.SpecReport
 	// extra calculated fields
 	testName string
-	action GoJSONAction
 	elapsed float64
+	gojsonAction GoJSONAction
 }
 
 func newSpecReport(in types.SpecReport) *specReport {
@@ -51,7 +51,7 @@ func newSpecReport(in types.SpecReport) *specReport {
 func (sr *specReport) Fill() error {
 	sr.elapsed = sr.o.RunTime.Seconds()
 	sr.testName = sr.o.FullText()
-	sr.action = goJSONActionFromSpecState(sr.o.State)
+	sr.gojsonAction = goJSONActionFromSpecState(sr.o.State)
 	return nil
 }
 

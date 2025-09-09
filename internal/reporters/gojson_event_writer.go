@@ -2,11 +2,15 @@ package reporters
 
 type GoJSONEventWriter struct {
 	enc encoder
+	specSystemErrFn specSystemExtractFn
+	specSystemOutFn specSystemExtractFn
 }
 
-func NewGoJSONEventWriter(enc encoder) *GoJSONEventWriter {
+func NewGoJSONEventWriter(enc encoder, errFn specSystemExtractFn, outFn specSystemExtractFn) *GoJSONEventWriter {
 	return &GoJSONEventWriter{
 		enc: enc,
+		specSystemErrFn: errFn,
+		specSystemOutFn: outFn,
 	}
 }
 
@@ -46,29 +50,6 @@ func (r *GoJSONEventWriter) WriteSuiteResult(report *report) error {
 	return r.writeEvent(e)
 }
 
-func (r *GoJSONEventWriter) WriteSuiteLeafNodeOut(report *report, specReport *specReport) error {
-	events := []*gojsonEvent{}
-
-	combinedOutput := specReport.o.CombinedOutput()
-	if combinedOutput != "" {
-		events = append(events, &gojsonEvent{
-			Time:        &specReport.o.EndTime,
-			Action:      GoJSONOutput,
-			Package:     report.goPkg,
-			Output:      ptr(combinedOutput),
-			FailedBuild: "",
-		})
-	}
-
-	for _, ev := range events {
-		err := r.writeEvent(ev)
-		if err != nil {
-			return err
-		}
-	}
-	return nil
-}
-
 func (r *GoJSONEventWriter) WriteSpecStart(report *report, specReport *specReport) error {
 	e := &gojsonEvent{
 		Time:        &specReport.o.StartTime,
@@ -83,27 +64,30 @@ func (r *GoJSONEventWriter) WriteSpecStart(report *report, specReport *specRepor
 
 func (r *GoJSONEventWriter) WriteSpecOut(report *report, specReport *specReport) error {
 	events := []*gojsonEvent{}
-	combinedOutput := specReport.o.CombinedOutput()
-	if combinedOutput != "" {
+
+	stdErr := r.specSystemErrFn(specReport.o)
+	if stdErr != "" {
 		events = append(events, &gojsonEvent{
 			Time:        &specReport.o.EndTime,
 			Action:      GoJSONOutput,
 			Test:        specReport.testName,
 			Package:     report.goPkg,
-			Output:      ptr(combinedOutput),
+			Output:      ptr(stdErr),
 			FailedBuild: "",
 		})
 	}
-	if specReport.o.Failure.Message != "" {
+	stdOut := r.specSystemOutFn(specReport.o)
+	if stdOut != "" {
 		events = append(events, &gojsonEvent{
 			Time:        &specReport.o.EndTime,
 			Action:      GoJSONOutput,
 			Test:        specReport.testName,
 			Package:     report.goPkg,
-			Output:      ptr(failureToOutput(specReport.o.Failure)),
+			Output:      ptr(stdOut),
 			FailedBuild: "",
 		})
 	}
+
 	for _, ev := range events {
 		err := r.writeEvent(ev)
 		if err != nil {
@@ -116,7 +100,7 @@ func (r *GoJSONEventWriter) WriteSpecOut(report *report, specReport *specReport)
 func (r *GoJSONEventWriter) WriteSpecResult(report *report, specReport *specReport) error {
 	e := &gojsonEvent{
 		Time:        &specReport.o.EndTime,
-		Action:      specReport.action,
+		Action:      specReport.gojsonAction,
 		Test:        specReport.testName,
 		Package:     report.goPkg,
 		Elapsed:     ptr(specReport.elapsed),

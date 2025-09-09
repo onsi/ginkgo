@@ -26,21 +26,21 @@
               <property name="OutputInterceptorMode" value=""></property>
           </properties>
           <testcase name="[It] A B C [dolphin, gorilla, cow, cat, dog]" classname="My Suite" status="timedout" time="1">
-              <failure message="failure&#xA;message" type="timedout">[TIMEDOUT] failure&#xA;message&#xA;In [It] at: cl3.go:103 @ 08/29/25 12:35:58.342&#xA;&#xA;[PANICKED] &#xA;In [It] at: cl4.go:144 @ 08/29/25 12:35:58.342&#xA;&#xA;the panic!&#xA;&#xA;Full Stack Trace&#xA;  full-trace&#xA;  cl-4&#xA;&#xA;There were additional failures detected after the initial failure. These are visible in the timeline&#xA;</failure>
+              <failure message="failure&#xA;message" type="timedout">[TIMEDOUT] failure&#xA;message&#xA;In [It] at: cl3.go:103 @ 09/09/25 10:50:00&#xA;&#xA;[PANICKED] &#xA;In [It] at: cl4.go:144 @ 09/09/25 10:50:00&#xA;&#xA;the panic!&#xA;&#xA;Full Stack Trace&#xA;  full-trace&#xA;  cl-4&#xA;&#xA;There were additional failures detected after the initial failure. These are visible in the timeline&#xA;</failure>
               <system-out>some captured stdout&#xA;</system-out>
-              <system-err>STEP: a by step - cl0.go:12 @ 08/29/25 12:35:58.342&#xA;&gt; Enter [It] C - cl2.go:80 @ 08/29/25 12:35:58.342&#xA;ginkgowriter&#xA;[TIMEDOUT] failure&#xA;message&#xA;In [It] at: cl3.go:103 @ 08/29/25 12:35:58.342&#xA;output&#xA;[PANICKED] &#xA;In [It] at: cl4.go:144 @ 08/29/25 12:35:58.342&#xA;&#xA;the panic!&#xA;&#xA;Full Stack Trace&#xA;  full-trace&#xA;  cl-4&#xA;&lt; Exit [It] C - cl2.go:80 @ 08/29/25 12:35:58.342 (87ms)&#xA;a report entry - cl1.go:37 @ 08/29/25 12:35:58.342&#xA;a hidden report entry - cl1.go:37 @ 08/29/25 12:35:58.342&#xA;cleanup!&#xA;[FAILED] a subsequent failure&#xA;In [AfterEach] at: :0 @ 08/29/25 12:35:58.342&#xA;</system-err>
+              <system-err>STEP: a by step - cl0.go:12 @ 09/09/25 10:50:00&#xA;&gt; Enter [It] C - cl2.go:80 @ 09/09/25 10:50:00&#xA;ginkgowriter&#xA;[TIMEDOUT] failure&#xA;message&#xA;In [It] at: cl3.go:103 @ 09/09/25 10:50:00&#xA;output&#xA;[PANICKED] &#xA;In [It] at: cl4.go:144 @ 09/09/25 10:50:00&#xA;&#xA;the panic!&#xA;&#xA;Full Stack Trace&#xA;  full-trace&#xA;  cl-4&#xA;&lt; Exit [It] C - cl2.go:80 @ 09/09/25 10:50:00 (87ms)&#xA;a report entry - cl1.go:37 @ 09/09/25 10:50:00&#xA;a hidden report entry - cl1.go:37 @ 09/09/25 10:50:00&#xA;cleanup!&#xA;[FAILED] a subsequent failure&#xA;In [AfterEach] at: :0 @ 09/09/25 10:50:00&#xA;</system-err>
           </testcase>
           <testcase name="[It] A [cat, owner:frank, OWNer:bob]" classname="My Suite" status="passed" time="1" owner="bob">
               <system-out>some captured stdout&#xA;</system-out>
-              <system-err>&gt; Enter [It] A - cl0.go:12 @ 08/29/25 12:35:58.342&#xA;some GinkgoWriter&#xA;my progress report&#xA;  A (Spec Runtime: 5s)&#xA;    cl0.go:12&#xA;STEP: My Step - cl1.go:37 @ 08/29/25 12:35:58.342&#xA;output is interspersed&#xA;my entry - cl1.go:37 @ 08/29/25 12:35:58.342&#xA;my hidden entry - cl1.go:37 @ 08/29/25 12:35:58.342&#xA;END STEP: My Step - cl1.go:37 @ 08/29/25 12:35:58.342 (200ms)&#xA;here and there&#xA;&lt; Exit [It] A - cl0.go:12 @ 08/29/25 12:35:58.342 (300ms)&#xA;</system-err>
+              <system-err>&gt; Enter [It] A - cl0.go:12 @ 09/09/25 10:50:00&#xA;some GinkgoWriter&#xA;my progress report&#xA;  A (Spec Runtime: 5s)&#xA;    cl0.go:12&#xA;STEP: My Step - cl1.go:37 @ 09/09/25 10:50:00&#xA;output is interspersed&#xA;my entry - cl1.go:37 @ 09/09/25 10:50:00&#xA;my hidden entry - cl1.go:37 @ 09/09/25 10:50:00&#xA;END STEP: My Step - cl1.go:37 @ 09/09/25 10:50:00 (200ms)&#xA;here and there&#xA;&lt; Exit [It] A - cl0.go:12 @ 09/09/25 10:50:00 (300ms)&#xA;</system-err>
           </testcase>
           <testcase name="[It] A [owner:org, owner:team]" classname="My Suite" status="pending" time="1" owner="team">
               <skipped message="pending"></skipped>
           </testcase>
           <testcase name="[It] A [owner:org]" classname="My Suite" status="panicked" time="1" owner="org">
-              <error message="the panic" type="panicked">[PANICKED] failure&#xA;message&#xA;In [It] at: cl1.go:37 @ 08/29/25 12:35:58.342&#xA;&#xA;the panic&#xA;&#xA;Full Stack Trace&#xA;  full-trace&#xA;  cl-1&#xA;</error>
+              <error message="the panic" type="panicked">[PANICKED] failure&#xA;message&#xA;In [It] at: cl1.go:37 @ 09/09/25 10:50:00&#xA;&#xA;the panic&#xA;&#xA;Full Stack Trace&#xA;  full-trace&#xA;  cl-1&#xA;</error>
               <system-out>some captured stdout&#xA;</system-out>
-              <system-err>&gt; Enter [It] A - cl0.go:12 @ 08/29/25 12:35:58.342&#xA;[PANICKED] failure&#xA;message&#xA;In [It] at: cl1.go:37 @ 08/29/25 12:35:58.342&#xA;&#xA;the panic&#xA;&#xA;Full Stack Trace&#xA;  full-trace&#xA;  cl-1&#xA;&lt; Exit [It] A - cl0.go:12 @ 08/29/25 12:35:58.342 (300ms)&#xA;</system-err>
+              <system-err>&gt; Enter [It] A - cl0.go:12 @ 09/09/25 10:50:00&#xA;[PANICKED] failure&#xA;message&#xA;In [It] at: cl1.go:37 @ 09/09/25 10:50:00&#xA;&#xA;the panic&#xA;&#xA;Full Stack Trace&#xA;  full-trace&#xA;  cl-1&#xA;&lt; Exit [It] A - cl0.go:12 @ 09/09/25 10:50:00 (300ms)&#xA;</system-err>
           </testcase>
           <testcase name="[BeforeSuite] A" classname="My Suite" status="passed" time="1"></testcase>
       </testsuite>
