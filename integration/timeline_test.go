@@ -30,7 +30,6 @@ var _ = Describe("Timeline output", func() {
 			{"--no-color", "--seed=17", "--nodes=2", "--succinct"},
 		}
 		for _, args := range argGroups {
-			args := args
 			It(fmt.Sprintf("should emit a timeline (%s)", strings.Join(args, " ")), func() {
 				session := startGinkgo(fm.PathTo("timeline"), args...)
 				Eventually(session).Should(gexec.Exit(1))
