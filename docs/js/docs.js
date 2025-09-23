@@ -5,6 +5,10 @@
   let currentHeadingGroup = null
   let collapsibleGroup = null
   for (let heading of headings) {
+    if (heading.id.includes("sponsors")) {
+      continue
+    }
+
     let el = document.createElement("a")
     el.href = `#${heading.id}`
     el.id = `${heading.id}-item`
@@ -12,7 +16,6 @@
 
     if (heading.tagName == "H2") {
       currentHeadingGroup = heading.id
-
       el.classList = "sidebar-heading"
       sidebar.appendChild(el)
 
@@ -30,10 +33,13 @@
   let ticking = false;
   document.getElementById("content").addEventListener("scroll", (e) => {
     if (!ticking) {
-      window.requestAnimationFrame(function() {
+      window.requestAnimationFrame(function () {
         let viewportHeight = window.visualViewport.height;
         let winner = null;
         for (let heading of headings) {
+          if (heading.id.includes("sponsors")) {
+            continue
+          }
           let rect = heading.getBoundingClientRect();
           if (rect.top > viewportHeight) { break }
           winner = heading.id

@@ -29,6 +29,18 @@ This was the context that led to Ginkgo.  Over the years the Go testing ecosyste
 
 Happy Testing!
 
+## Sponsors
+
+Sponsors commit to a [sponsorship](https://github.com/sponsors/onsi) for a year.  If you're an organization that makes use of Ginkgo please consider becoming a sponsor!
+
+<p style="font-size:21px; color:black;">Browser testing via 
+    <a href="https://www.lambdatest.com/" target="_blank">
+        <img src="https://www.lambdatest.com/blue-logo.png" style="vertical-align: middle;" width="250" height="45" />
+    </a>
+</p>
+
+Learn more about our sponsors [below](#more-about-our-sponsors).
+
 ## Getting Started
 
 In this section we cover installing Ginkgo, Gomega, and the `ginkgo` CLI.  We bootstrap a Ginkgo suite, write our first spec, and run it.
@@ -5869,3 +5881,22 @@ skip the `os.Getwd()` call. This may affect the reporter output.
 The [ginkgolinter](https://github.com/nunnatsa/ginkgolinter) enforces several patterns of using ginkgo and gomega. It can run as an independent executable or as part of the [golangci-lint](https://golangci-lint.run/) linter. See the ginkgolinter [README](https://github.com/nunnatsa/ginkgolinter#readme) for more details.
 
 {% endraw  %}
+
+
+## More About our Sponsors
+
+Sponsors commit to a [sponsorship](https://github.com/sponsors/onsi) for a year.  If you're an organization that makes use of Ginkgo please consider becoming a sponsor!
+
+<p style="font-size:21px; color:black;">Browser testing via 
+    <a href="https://www.lambdatest.com/" target="_blank">
+        <img src="https://www.lambdatest.com/blue-logo.png" style="vertical-align: middle;" width="250" height="45" />
+    </a>
+</p>
+
+LambdaTest is a GenAI-powered Quality Engineering Platform that empowers teams to test intelligently, smarter, and ship faster. Built for scale, it offers a full-stack testing cloud with 10K+ real devices and 3,000+ browsers.
+
+With AI-native test management, MCP servers, and agent-based automation, LambdaTest supports Selenium, Appium, Playwright, and all major frameworks. AI Agents like HyperExecute and KaneAI bring the power of AI and cloud into your software testing workflow, enabling seamless automation testing with 120+ integrations.
+
+LambdaTest Agents accelerate your testing throughout the entire SDLC, from test planning and authoring to automation, infrastructure, execution, RCA, and reporting.
+
+For more information, please visit https://lambdatest.com/
