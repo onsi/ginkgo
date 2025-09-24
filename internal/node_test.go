@@ -1768,7 +1768,7 @@ var _ = Describe("Iteration Performance", Serial, Label("performance"), func() {
 
 		size := 1000
 		nodes := make(Nodes, size)
-		for i := 0; i < size; i++ {
+		for i := range size {
 			nodes[i] = N(ntAf)
 		}
 		nodes[size-1] = N(ntIt)
@@ -1793,7 +1793,7 @@ var _ = Describe("Iteration Performance", Serial, Label("performance"), func() {
 
 		experiment.SampleDuration("counter", func(idx int) {
 			numIts := 0
-			for i := 0; i < len(nodes); i++ {
+			for i := range nodes {
 				if nodes[i].NodeType.Is(ntIt) {
 					numIts += 1
 				}
@@ -1809,7 +1809,7 @@ var _ = Describe("Iteration Performance", Serial, Label("performance"), func() {
 
 		size := 1000
 		nodes := make(Nodes, size)
-		for i := 0; i < size; i++ {
+		for i := range size {
 			if i%100 == 0 {
 				nodes[i] = N(ntIt)
 			} else {

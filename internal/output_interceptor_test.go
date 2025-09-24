@@ -18,7 +18,7 @@ var _ = Describe("OutputInterceptor", func() {
 
 	sharedInterceptorTests := func() {
 		It("intercepts output", func() {
-			for i := 0; i < 2048; i++ { //we loop here to stress test and make sure we aren't leaking any file descriptors
+			for range 2048 { //we loop here to stress test and make sure we aren't leaking any file descriptors
 				interceptor.StartInterceptingOutput()
 				fmt.Println("hi stdout")
 				fmt.Fprintln(os.Stderr, "hi stderr")
@@ -39,7 +39,7 @@ var _ = Describe("OutputInterceptor", func() {
 
 		It("is stable across multiple shutdowns", func() {
 			numRoutines := runtime.NumGoroutine()
-			for i := 0; i < 2048; i++ { //we loop here to stress test and make sure we aren't leaking any file descriptors
+			for range 2048 { //we loop here to stress test and make sure we aren't leaking any file descriptors
 				interceptor.StartInterceptingOutput()
 				fmt.Println("hi stdout")
 				fmt.Fprintln(os.Stderr, "hi stderr")
