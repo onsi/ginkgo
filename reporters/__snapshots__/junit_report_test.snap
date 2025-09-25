@@ -1,0 +1,59 @@
+
+[JunitReport when configured to write the report inside a folder creates the folder and the report file - 1]
+<?xml version="1.0" encoding="UTF-8"?>
+  <testsuites tests="5" disabled="1" errors="1" failures="1" time="60">
+      <testsuite name="My Suite" package="/path/to/suite" tests="5" disabled="1" skipped="0" errors="1" failures="1" time="60" timestamp="0001-01-01T00:00:00">
+          <properties>
+              <property name="SuiteSucceeded" value="false"></property>
+              <property name="SuiteHasProgrammaticFocus" value="false"></property>
+              <property name="SpecialSuiteFailureReason" value=""></property>
+              <property name="SuiteLabels" value="[]"></property>
+              <property name="SuiteSemVerConstraints" value="[]"></property>
+              <property name="RandomSeed" value="17"></property>
+              <property name="RandomizeAllSpecs" value="false"></property>
+              <property name="LabelFilter" value=""></property>
+              <property name="SemVerFilter" value=""></property>
+              <property name="FocusStrings" value=""></property>
+              <property name="SkipStrings" value=""></property>
+              <property name="FocusFiles" value=""></property>
+              <property name="SkipFiles" value=""></property>
+              <property name="FailOnPending" value="false"></property>
+              <property name="FailOnEmpty" value="false"></property>
+              <property name="FailFast" value="false"></property>
+              <property name="FlakeAttempts" value="0"></property>
+              <property name="DryRun" value="false"></property>
+              <property name="ParallelTotal" value="1"></property>
+              <property name="OutputInterceptorMode" value=""></property>
+          </properties>
+          <testcase name="[It] A B C [dolphin, gorilla, cow, cat, dog]" classname="My Suite" status="timedout" time="1">
+              <failure message="failure&#xA;message" type="timedout">[TIMEDOUT] failure&#xA;message&#xA;In [It] at: cl3.go:103 @ 09/09/25 10:50:00&#xA;&#xA;[PANICKED] &#xA;In [It] at: cl4.go:144 @ 09/09/25 10:50:00&#xA;&#xA;the panic!&#xA;&#xA;Full Stack Trace&#xA;  full-trace&#xA;  cl-4&#xA;&#xA;There were additional failures detected after the initial failure. These are visible in the timeline&#xA;</failure>
+              <system-out>some captured stdout&#xA;</system-out>
+              <system-err>STEP: a by step - cl0.go:12 @ 09/09/25 10:50:00&#xA;&gt; Enter [It] C - cl2.go:80 @ 09/09/25 10:50:00&#xA;ginkgowriter&#xA;[TIMEDOUT] failure&#xA;message&#xA;In [It] at: cl3.go:103 @ 09/09/25 10:50:00&#xA;output&#xA;[PANICKED] &#xA;In [It] at: cl4.go:144 @ 09/09/25 10:50:00&#xA;&#xA;the panic!&#xA;&#xA;Full Stack Trace&#xA;  full-trace&#xA;  cl-4&#xA;&lt; Exit [It] C - cl2.go:80 @ 09/09/25 10:50:00 (87ms)&#xA;a report entry - cl1.go:37 @ 09/09/25 10:50:00&#xA;a hidden report entry - cl1.go:37 @ 09/09/25 10:50:00&#xA;cleanup!&#xA;[FAILED] a subsequent failure&#xA;In [AfterEach] at: :0 @ 09/09/25 10:50:00&#xA;</system-err>
+          </testcase>
+          <testcase name="[It] A [cat, owner:frank, OWNer:bob]" classname="My Suite" status="passed" time="1" owner="bob">
+              <system-out>some captured stdout&#xA;</system-out>
+              <system-err>&gt; Enter [It] A - cl0.go:12 @ 09/09/25 10:50:00&#xA;some GinkgoWriter&#xA;my progress report&#xA;  A (Spec Runtime: 5s)&#xA;    cl0.go:12&#xA;STEP: My Step - cl1.go:37 @ 09/09/25 10:50:00&#xA;output is interspersed&#xA;my entry - cl1.go:37 @ 09/09/25 10:50:00&#xA;my hidden entry - cl1.go:37 @ 09/09/25 10:50:00&#xA;END STEP: My Step - cl1.go:37 @ 09/09/25 10:50:00 (200ms)&#xA;here and there&#xA;&lt; Exit [It] A - cl0.go:12 @ 09/09/25 10:50:00 (300ms)&#xA;</system-err>
+          </testcase>
+          <testcase name="[It] A [owner:org, owner:team]" classname="My Suite" status="pending" time="1" owner="team">
+              <skipped message="pending"></skipped>
+          </testcase>
+          <testcase name="[It] A [owner:org]" classname="My Suite" status="panicked" time="1" owner="org">
+              <error message="the panic" type="panicked">[PANICKED] failure&#xA;message&#xA;In [It] at: cl1.go:37 @ 09/09/25 10:50:00&#xA;&#xA;the panic&#xA;&#xA;Full Stack Trace&#xA;  full-trace&#xA;  cl-1&#xA;</error>
+              <system-out>some captured stdout&#xA;</system-out>
+              <system-err>&gt; Enter [It] A - cl0.go:12 @ 09/09/25 10:50:00&#xA;[PANICKED] failure&#xA;message&#xA;In [It] at: cl1.go:37 @ 09/09/25 10:50:00&#xA;&#xA;the panic&#xA;&#xA;Full Stack Trace&#xA;  full-trace&#xA;  cl-1&#xA;&lt; Exit [It] A - cl0.go:12 @ 09/09/25 10:50:00 (300ms)&#xA;</system-err>
+          </testcase>
+          <testcase name="[BeforeSuite] A" classname="My Suite" status="passed" time="1"></testcase>
+      </testsuite>
+  </testsuites>
+---
+
+[JunitReport when configured to write the report inside a folder creates the folder and the report file - 2]
+SUITE: /path/to/suite, tests: 5 
+---- TEST: [It] A B C [dolphin, gorilla, cow, cat, dog], status: failed
+---- TEST: [It] A [cat, owner:frank, OWNer:bob], status: passed
+---- TEST: [It] A [owner:org, owner:team], status: skipped
+---- TEST: [It] A [owner:org], status: error
+---- TEST: [BeforeSuite] A, status: passed
+
+package summary output match
+---

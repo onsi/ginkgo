@@ -70,6 +70,11 @@ var _ = Describe("JSONReport", func() {
 			Ω(err).Should(Succeed(), "Parent folder should be created")
 			_, err = os.Stat(filePath)
 			Ω(err).Should(Succeed(), "Report file should be created")
+			reportBytes, err := os.ReadFile(filePath)
+			Ω(err).Should(Succeed(), "Report file should be read")
+			Ω(reportBytes).ShouldNot(BeEmpty(), "report should contain output")
+			// snapshot is non-deterministic
+			// snaps.MatchSnapshot(GinkgoT(), string(reportBytes))
 		})
 	})
 })

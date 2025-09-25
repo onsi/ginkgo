@@ -37,6 +37,9 @@ var _ = Describe("Config", func() {
 				repConf = types.ReporterConfig{JSONReport: "foo"}
 				Ω(repConf.WillGenerateReport()).Should(BeTrue())
 
+				repConf = types.ReporterConfig{GoJSONReport: "foo"}
+				Ω(repConf.WillGenerateReport()).Should(BeTrue())
+
 				repConf = types.ReporterConfig{JUnitReport: "foo"}
 				Ω(repConf.WillGenerateReport()).Should(BeTrue())
 
