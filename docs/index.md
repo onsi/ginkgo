@@ -3716,22 +3716,25 @@ The resulting JSON file encodes an array of `types.Report`.  Each entry in that 
 
 When possible, we recommend building tooling on top of Ginkgo's JSON format and using Ginkgo's `types` package directly to access the suite and spec reports.  The structs in the package include several helper functions to interpret the report.
 
-Ginkgo also supports generating JUnit reports with
+Ginkgo also supports generating output in additional formats, however Ginkgo specs carry much more metadata than can easily be mapped onto different output reports formats, so information may be lost and/or a bit harder to decode than using Ginkgo's native JSON format.
 
 ```bash
+# JUnit report
 ginkgo --junit-report=report.xml
+# Teamcity report
+ginkgo --teamcity-report=report.teamcity
+# Go json report (same format as `go test -json`)
+ginkgo --gojson-report=report.go.json
 ```
 
-The JUnit report is compatible with the JUnit specification, however Ginkgo specs carry much more metadata than can be easily mapped onto the JUnit spec so some information is lost and/or a bit harder to decode than using Ginkgo's native JSON format.  Nonetheless, Ginkgo does its best to populate as much of the JUnit report as possible.  This includes adding additional metadata using [labels](#spec-labels) - in particular if you provide a label of the form `Label("owner:XYZ")`, the generating JUnit spec will set the `Owner` attribute to `XYZ`.
+Ginkgo does it's best to populate relevant fields and attributes across different report formats. This includes adding additional metadata using [labels](#spec-labels), in particular if you provide a label of the form `Label("owner:XYZ")`, the generated JUnit report will set the `Owner` attribute to `XYZ`.
 
-Ginkgo also supports Teamcity reports with `ginkgo --teamcity-report=report.teamcity` though, again, the Teamcity spec makes it difficult to capture all the spec metadata.
-
-All the machine-readable reports include the full `-vv` version of the timeline for all specs.  This allows you to run Ginkgo in CI with the normal verbosity setting but still get all the detailed information in the machine-readable format.
+All the machine-readable reports include the full `-vv` version of the timeline for all specs. This allows you to run Ginkgo in CI with the normal verbosity setting but still get all the detailed information in the machine-readable format.
 
 Of course, you can generate multiple formats simultaneously by passing in multiple flags:
 
 ```bash
-ginkgo --json-report=report.json --junit-report=report.xml
+ginkgo --json-report=report.json --junit-report=report.xml --gojson-report=report.go.json
 ```
 
 By default, when any of these command-line report flags are provided Ginkgo will generate a single report file, per format, at the passed-in file name.  If Ginkgo is running multiple suites (e.g. `ginkgo -r --json-report=report.json`) then _all_ the suite reports will be encoded in the single report file.
