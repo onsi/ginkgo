@@ -1,12 +1,15 @@
 package reporters_test
 
 import (
+	"bytes"
 	"encoding/xml"
 	"fmt"
 	"os"
 	"path/filepath"
 	"time"
 
+	"github.com/gkampitakis/go-snaps/snaps"
+	"github.com/joshdk/go-junit"
 	. "github.com/onsi/ginkgo/v2"
 	. "github.com/onsi/gomega"
 
@@ -396,6 +399,25 @@ var _ = Describe("JunitReport", func() {
 			Ω(err).Should(Succeed(), "Parent folder should be created")
 			_, err = os.Stat(filePath)
 			Ω(err).Should(Succeed(), "Report file should be created")
+			reportBytes, err := os.ReadFile(filePath)
+			Ω(err).Should(Succeed(), "Report file should be read")
+			snaps.MatchSnapshot(GinkgoT(), string(reportBytes))
+			suites, err := junit.IngestFile(filePath)
+			Ω(err).Should(Succeed(), "Report file should be parsed")
+
+			var summaryOutput bytes.Buffer
+			writeSummary := func(in []byte) {
+				_, err := summaryOutput.Write(in)
+				Ω(err).Should(Succeed(), "writing to summary should succeed")
+			}
+			for _, suite := range suites {
+				writeSummary([]byte(fmt.Sprintf("SUITE: %s, tests: %d \n", suite.Package, len(suite.Tests))))
+				for _, test := range suite.Tests {
+					writeSummary([]byte(fmt.Sprintf("---- TEST: %s, status: %s\n", test.Name, test.Status)))
+				}
+				writeSummary([]byte(""))
+			}
+			snaps.MatchSnapshot(GinkgoT(), summaryOutput.String(), "package summary output match")
 		})
 	})
 })

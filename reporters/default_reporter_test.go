@@ -29,7 +29,8 @@ var cl1 = types.CodeLocation{FileName: "cl1.go", LineNumber: 37, FullStackTrace:
 var cl2 = types.CodeLocation{FileName: "cl2.go", LineNumber: 80, FullStackTrace: "full-trace\ncl-2"}
 var cl3 = types.CodeLocation{FileName: "cl3.go", LineNumber: 103, FullStackTrace: "full-trace\ncl-3"}
 var cl4 = types.CodeLocation{FileName: "cl4.go", LineNumber: 144, FullStackTrace: "full-trace\ncl-4"}
-var now = time.Now()
+// simulate current time ast static time
+var now = time.Date(2025, time.September, 9, 10, 50, 0, 0, time.UTC)
 
 func CLS(cls ...types.CodeLocation) []types.CodeLocation { return cls }
 func CTS(componentTexts ...string) []string              { return componentTexts }
