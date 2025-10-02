@@ -487,6 +487,7 @@ var _ = Describe("Profiling Specs", func() {
 			Ω(fm.ListDir("output")).Should(ConsistOf(
 				"cover.out",
 				"report.json",
+				"report.go.json",
 				"report.xml",
 				"report.tm",
 				"block_contest_cpu.out",
@@ -534,6 +535,9 @@ var _ = Describe("Profiling Specs", func() {
 				"block_contest_report.json",
 				"lock_contest_report.json",
 				"slow_memory_hog_report.json",
+				"block_contest_report.go.json",
+				"lock_contest_report.go.json",
+				"slow_memory_hog_report.go.json",
 				"block_contest_report.xml",
 				"lock_contest_report.xml",
 				"slow_memory_hog_report.xml",

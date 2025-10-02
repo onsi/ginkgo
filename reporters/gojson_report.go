@@ -55,6 +55,7 @@ func MergeAndCleanupGoTestJSONReports(sources []string, destination string) ([]s
 			messages = append(messages, fmt.Sprintf("Could not write to %s:\n%s", destination, err.Error()))
 			continue
 		}
+		os.Remove(source)
 	}
 	return messages, nil
 }

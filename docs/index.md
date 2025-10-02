@@ -3735,7 +3735,7 @@ Ginkgo also supports generating output in additional formats, however Ginkgo spe
 ginkgo --junit-report=report.xml
 # Teamcity report
 ginkgo --teamcity-report=report.teamcity
-# Go json report (same format as `go test -json`)
+# Go json report (same format as go test -json)
 ginkgo --gojson-report=report.go.json
 ```
 
