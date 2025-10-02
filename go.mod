@@ -1,6 +1,6 @@
 module github.com/onsi/ginkgo/v2
 
-go 1.23.0
+go 1.24.0
 
 require (
 	github.com/Masterminds/semver/v3 v3.4.0
@@ -12,7 +12,7 @@ require (
 	github.com/mfridman/tparse v0.18.0
 	github.com/onsi/gomega v1.38.2
 	go.uber.org/automaxprocs v1.6.0
-	golang.org/x/sys v0.35.0
+	golang.org/x/sys v0.36.0
 	golang.org/x/tools v0.36.0
 )
 
