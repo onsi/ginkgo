@@ -1553,6 +1553,39 @@ var _ = Describe("DefaultReporter", func() {
 				DELIMITER,
 				""),
 		),
+		Entry("a passing test with out-of-order timeline offsets (clamped safely)",
+			// Build a report whose timeline offsets go forward, then backward, then forward again.
+			// GW text is 3 lines: L1\nL2\nL3\n
+			S(
+				types.NodeTypeIt, "A", cl0, types.SpecStatePassed,
+				GW("L1\nL2\nL3\n"),
+				// tl.Offset = len("L1\n") -> forward
+				SE(types.SpecEventNodeStart, types.NodeTypeIt, "A", cl0, TL("L1\n")),
+				// tl.Offset = len("L1\nL2\n") -> further forward
+				SE(types.SpecEventByStart, "Step", cl1, TL("L1\nL2\n")),
+				// tl.Offset = len("L1\n") -> BACKWARD (this used to panic without clamping)
+				SE(types.SpecEventByEnd, "Step", cl1, time.Millisecond*100, TL("L1\n")),
+				// tl.Offset = len("L1\nL2\nL3\n") -> final
+				SE(types.SpecEventNodeEnd, types.NodeTypeIt, "A", cl0, time.Millisecond*100, TL("L1\nL2\nL3\n")),
+			),
+			// We assert using a config that shows the Timeline (Verbose|Parallel),
+			// matching the existing style of expectations in this table.
+			Case(Verbose|Parallel,
+				DELIMITER,
+				spr("{{green}}%s [1.000 seconds]{{/}}", DENOTER),
+				"{{green}}{{bold}}A{{/}}",
+				"{{gray}}cl0.go:12{{/}}",
+				"",
+				"  {{gray}}Timeline >>{{/}}",
+				"  L1",
+				"  L2",
+				spr("  {{bold}}STEP:{{/}} Step {{gray}}@ %s{{/}}", FORMATTED_TIME),
+				"  L3",
+				"  {{gray}}<< Timeline{{/}}",
+				DELIMITER,
+				"",
+			),
+		),
 		Entry("a failed test with timeline entries",
 			S(types.NodeTypeIt, CTS("A", "B"), CLS(cl0, cl1), "C", cl2, types.SpecStateInterrupted, SE(types.SpecEventByStart, "a by step", cl0),
 				F("failure\nmessage", cl3, types.FailureNodeIsLeafNode, FailureNodeLocation(cl2), types.NodeTypeIt, TL(0),
