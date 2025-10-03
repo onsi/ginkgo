@@ -377,40 +377,52 @@ func (r *DefaultReporter) humanReadableState(state types.SpecState) string {
 
 func (r *DefaultReporter) emitTimeline(indent uint, report types.SpecReport, timeline types.Timeline) {
 	isVeryVerbose := r.conf.Verbosity().Is(types.VerbosityLevelVeryVerbose)
-    gw := report.CapturedGinkgoWriterOutput
-    cursor := 0
-    for _, entry := range timeline {
-        tl := entry.GetTimelineLocation()
+	gw := report.CapturedGinkgoWriterOutput
+	cursor := 0
+	for _, entry := range timeline {
+		tl := entry.GetTimelineLocation()
 
-        end := tl.Offset
-        if end > len(gw) { end = len(gw) }
-        if end < cursor  { end = cursor  }
-        if cursor < end {
-            r.emit(r.fi(indent, "%s", gw[cursor:end]))
-            cursor = end
-        } else if cursor < len(gw) && end == len(gw) {
-            r.emit(r.fi(indent, "%s", gw[cursor:]))
-            cursor = len(gw)
-        }
+		end := tl.Offset
+		if end > len(gw) {
+			end = len(gw)
+		}
+		if end < cursor {
+			end = cursor
+		}
+		if cursor < end {
+			r.emit(r.fi(indent, "%s", gw[cursor:end]))
+			cursor = end
+		} else if cursor < len(gw) && end == len(gw) {
+			r.emit(r.fi(indent, "%s", gw[cursor:]))
+			cursor = len(gw)
+		}
 
-        switch x := entry.(type) {
-        case types.Failure:
-            if isVeryVerbose { r.emitFailure(indent, report.State, x, false) } else { r.emitShortFailure(indent, report.State, x) }
-        case types.AdditionalFailure:
-            if isVeryVerbose { r.emitFailure(indent, x.State, x.Failure, true) } else { r.emitShortFailure(indent, x.State, x.Failure) }
-        case types.ReportEntry:
-            r.emitReportEntry(indent, x)
-        case types.ProgressReport:
-            r.emitProgressReport(indent, false, isVeryVerbose, x)
-        case types.SpecEvent:
-            if isVeryVerbose || !x.IsOnlyVisibleAtVeryVerbose() || r.conf.ShowNodeEvents {
-                r.emitSpecEvent(indent, x, isVeryVerbose)
-            }
-        }
-    }
-    if cursor < len(gw) {
-        r.emit(r.fi(indent, "%s", gw[cursor:]))
-    }
+		switch x := entry.(type) {
+		case types.Failure:
+			if isVeryVerbose {
+				r.emitFailure(indent, report.State, x, false)
+			} else {
+				r.emitShortFailure(indent, report.State, x)
+			}
+		case types.AdditionalFailure:
+			if isVeryVerbose {
+				r.emitFailure(indent, x.State, x.Failure, true)
+			} else {
+				r.emitShortFailure(indent, x.State, x.Failure)
+			}
+		case types.ReportEntry:
+			r.emitReportEntry(indent, x)
+		case types.ProgressReport:
+			r.emitProgressReport(indent, false, isVeryVerbose, x)
+		case types.SpecEvent:
+			if isVeryVerbose || !x.IsOnlyVisibleAtVeryVerbose() || r.conf.ShowNodeEvents {
+				r.emitSpecEvent(indent, x, isVeryVerbose)
+			}
+		}
+	}
+	if cursor < len(gw) {
+		r.emit(r.fi(indent, "%s", gw[cursor:]))
+	}
 }
 
 func (r *DefaultReporter) EmitFailure(state types.SpecState, failure types.Failure) {
