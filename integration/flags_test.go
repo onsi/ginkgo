@@ -2,6 +2,7 @@ package integration_test
 
 import (
 	"strings"
+	"time"
 
 	. "github.com/onsi/ginkgo/v2"
 	. "github.com/onsi/gomega"
@@ -46,7 +47,7 @@ var _ = Describe("Flags Specs", func() {
 		Ω(output).Should(ContainSubstring("Detected pending specs and --fail-on-pending is set"))
 	})
 
-	It("should run the race detector when told to", Label("slow"), func() {
+	It("should run the race detector when told to", Label("slow"), NodeTimeout(2*time.Minute), func(ctx SpecContext) {
 		if !raceDetectorSupported() {
 			Skip("race detection is not supported")
 		}
