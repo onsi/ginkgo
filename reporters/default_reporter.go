@@ -376,11 +376,6 @@ func (r *DefaultReporter) humanReadableState(state types.SpecState) string {
 }
 
 func (r *DefaultReporter) emitTimeline(indent uint, report types.SpecReport, timeline types.Timeline) {
-	// Skip timeline rendering for specs that never ran (e.g., skipped due to failed BeforeAll or in ordered containers)
-	if report.EndTime.IsZero() && len(report.CapturedGinkgoWriterOutput) == 0 {
-		return
-	}
-	
 	isVeryVerbose := r.conf.Verbosity().Is(types.VerbosityLevelVeryVerbose)
 	gw := report.CapturedGinkgoWriterOutput
 	cursor := 0
@@ -394,7 +389,7 @@ func (r *DefaultReporter) emitTimeline(indent uint, report types.SpecReport, tim
 		if end < cursor {
 			end = cursor
 		}
-		if cursor < end {
+		if cursor < end && cursor <= len(gw) && end <= len(gw) {
 			r.emit(r.fi(indent, "%s", gw[cursor:end]))
 			cursor = end
 		} else if cursor < len(gw) && end == len(gw) {
