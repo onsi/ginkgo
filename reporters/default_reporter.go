@@ -376,6 +376,11 @@ func (r *DefaultReporter) humanReadableState(state types.SpecState) string {
 }
 
 func (r *DefaultReporter) emitTimeline(indent uint, report types.SpecReport, timeline types.Timeline) {
+	// Skip timeline rendering for specs that never ran (e.g., skipped due to failed BeforeAll or in ordered containers)
+	if report.EndTime.IsZero() && len(report.CapturedGinkgoWriterOutput) == 0 {
+		return
+	}
+	
 	isVeryVerbose := r.conf.Verbosity().Is(types.VerbosityLevelVeryVerbose)
 	gw := report.CapturedGinkgoWriterOutput
 	cursor := 0
