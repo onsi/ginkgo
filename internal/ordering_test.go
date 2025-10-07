@@ -103,7 +103,7 @@ var _ = Describe("OrderSpecs", func() {
 				for conf.RandomSeed = 1; conf.RandomSeed < 10; conf.RandomSeed += 1 {
 					groupedSpecIndices, serialSpecIndices := internal.OrderSpecs(specs, conf)
 					Ω(serialSpecIndices).Should(BeEmpty())
-					for i := 0; i < 10; i++ {
+					for range 10 {
 						reshuffledGroupedSpecIndices, serialSpecIndices := internal.OrderSpecs(specs, conf)
 						Ω(serialSpecIndices).Should(BeEmpty())
 
