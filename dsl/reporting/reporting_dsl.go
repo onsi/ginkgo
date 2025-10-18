@@ -19,10 +19,12 @@ import (
 type Report = ginkgo.Report
 type SpecReport = ginkgo.SpecReport
 type ReportEntryVisibility = ginkgo.ReportEntryVisibility
+type ConstructionNodeReport = ginkgo.ConstructionNodeReport
 
 const ReportEntryVisibilityAlways, ReportEntryVisibilityFailureOrVerbose, ReportEntryVisibilityNever = ginkgo.ReportEntryVisibilityAlways, ginkgo.ReportEntryVisibilityFailureOrVerbose, ginkgo.ReportEntryVisibilityNever
 
 var CurrentSpecReport = ginkgo.CurrentSpecReport
+var CurrentTreeConstructionNodeReport = ginkgo.CurrentTreeConstructionNodeReport
 var AddReportEntry = ginkgo.AddReportEntry
 
 var ReportBeforeEach = ginkgo.ReportBeforeEach
