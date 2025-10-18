@@ -24,6 +24,7 @@ type GinkgoTInterface = ginkgo.GinkgoTInterface
 type FullGinkgoTInterface = ginkgo.FullGinkgoTInterface
 type SpecContext = ginkgo.SpecContext
 type GinkgoTBWrapper = ginkgo.GinkgoTBWrapper
+type NodeArgsTransformer = ginkgo.NodeArgsTransformer
 
 var GinkgoWriter = ginkgo.GinkgoWriter
 var GinkgoLogr = ginkgo.GinkgoLogr
@@ -67,3 +68,4 @@ var DeferCleanup = ginkgo.DeferCleanup
 var GinkgoT = ginkgo.GinkgoT
 var GinkgoTB = ginkgo.GinkgoTB
 var AttachProgressReporter = ginkgo.AttachProgressReporter
+var AddTreeConstructionNodeArgsTransformer = ginkgo.AddTreeConstructionNodeArgsTransformer

@@ -4,6 +4,7 @@ import (
 	"context"
 	"fmt"
 	"reflect"
+	"slices"
 	"sort"
 	"sync"
 	"time"
@@ -227,7 +228,7 @@ func NewNode(deprecationTracker *types.DeprecationTracker, nodeType types.NodeTy
 		}
 	}
 
-	args = unrollInterfaceSlice(args)
+	args = UnrollInterfaceSlice(args)
 
 	remainingArgs := []any{}
 	// First get the CodeLocation up-to-date
@@ -636,7 +637,7 @@ func NewCleanupNode(deprecationTracker *types.DeprecationTracker, fail func(stri
 		})
 	}
 
-	return NewNode(deprecationTracker, types.NodeTypeCleanupInvalid, "", finalArgs...)
+	return NewNode(deprecationTracker, types.NodeTypeCleanupInvalid, "", finalArgs)
 }
 
 func (n Node) IsZero() bool {
@@ -983,7 +984,7 @@ func (n Nodes) GetMaxMustPassRepeatedly() int {
 	return maxMustPassRepeatedly
 }
 
-func unrollInterfaceSlice(args any) []any {
+func UnrollInterfaceSlice(args any) []any {
 	v := reflect.ValueOf(args)
 	if v.Kind() != reflect.Slice {
 		return []any{args}
@@ -992,10 +993,66 @@ func unrollInterfaceSlice(args any) []any {
 	for i := 0; i < v.Len(); i++ {
 		el := reflect.ValueOf(v.Index(i).Interface())
 		if el.Kind() == reflect.Slice && el.Type() != reflect.TypeOf(Labels{}) && el.Type() != reflect.TypeOf(SemVerConstraints{}) {
-			out = append(out, unrollInterfaceSlice(el.Interface())...)
+			out = append(out, UnrollInterfaceSlice(el.Interface())...)
 		} else {
 			out = append(out, v.Index(i).Interface())
 		}
 	}
 	return out
+}
+
+type NodeArgsTransformer func(nodeType types.NodeType, offset Offset, text string, args []any) (string, []any, []error)
+
+func AddTreeConstructionNodeArgsTransformer(transformer NodeArgsTransformer) func() {
+	id := nodeArgsTransformerCounter
+	nodeArgsTransformerCounter++
+	nodeArgsTransformers = append(nodeArgsTransformers, registeredNodeArgsTransformer{id, transformer})
+	return func() {
+		nodeArgsTransformers = slices.DeleteFunc(nodeArgsTransformers, func(transformer registeredNodeArgsTransformer) bool {
+			return transformer.id == id
+		})
+	}
+}
+
+var (
+	nodeArgsTransformerCounter int64
+	nodeArgsTransformers       []registeredNodeArgsTransformer
+)
+
+type registeredNodeArgsTransformer struct {
+	id          int64
+	transformer NodeArgsTransformer
+}
+
+// TransformNewNodeArgs is the helper for DSL functions which handles NodeArgsTransformers.
+//
+// Its return valus are intentionally the same as the internal.NewNode parameters,
+// which makes it possible to chain the invocations:
+//
+//	NewNode(transformNewNodeArgs(...))
+func TransformNewNodeArgs(exitIfErrors func([]error), deprecationTracker *types.DeprecationTracker, nodeType types.NodeType, text string, args ...any) (*types.DeprecationTracker, types.NodeType, string, []any) {
+	var errs []error
+
+	// Most recent first...
+	//
+	// This intentionally doesn't use slices.Backward because
+	// using iterators influences stack unwinding.
+	for i := len(nodeArgsTransformers) - 1; i >= 0; i-- {
+		transformer := nodeArgsTransformers[i].transformer
+		args = UnrollInterfaceSlice(args)
+
+		// We do not really need to recompute this on additional loop iterations,
+		// but its fast and simpler this way.
+		var offset Offset
+		for _, arg := range args {
+			if o, ok := arg.(Offset); ok {
+				offset = o
+			}
+		}
+		offset += 3 // The DSL function, this helper, and the TransformNodeArgs implementation.
+
+		text, args, errs = transformer(nodeType, offset, text, args)
+		exitIfErrors(errs)
+	}
+	return deprecationTracker, nodeType, text, args
 }
