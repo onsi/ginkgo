@@ -7,6 +7,7 @@ import (
 	"os"
 	"reflect"
 	"runtime"
+	"slices"
 	"time"
 
 	"github.com/onsi/ginkgo/v2"
@@ -2003,3 +2004,86 @@ var _ = Describe("NodeArgsTransformers", func() {
 		Ω(caller).To(Equal(types.CodeLocation{FileName: file, LineNumber: line + 1}))
 	})
 })
+
+var _, testFileName, describeLine, _ = runtime.Caller(0)
+var _ = Describe("ConstructionNodeReport", func() {
+
+	// expectEqual makes a single assertion at runtime.
+	expectEqual := func(actual, expect types.ConstructionNodeReport) {
+		GinkgoHelper()
+		It("", func() {
+			Ω(actual).To(Equal(expect))
+		})
+	}
+
+	actualDescribeReport := CurrentTreeConstructionNodeReport()
+	expectDescribeReport := newConstructionNodeReport(types.ConstructionNodeReport{}, []container{{"", 0, nil, nil}, {"ConstructionNodeReport", describeLine + 1, []string{}, []string{}}})
+	expectEqual(actualDescribeReport, expectDescribeReport)
+
+	_, _, contextLine, _ := runtime.Caller(0)
+	Context("context", func() {
+		actual := CurrentTreeConstructionNodeReport()
+		expect := newConstructionNodeReport(expectDescribeReport, []container{{"context", contextLine + 1, []string{}, []string{}}})
+		expectEqual(actual, expect)
+	})
+
+	_, _, complexLine, _ := runtime.Caller(0)
+	Context("complex", Label("A"), Label("B"), SemVerConstraint("> 1.0.0", "<= 3.0.0"), func() {
+		actual := CurrentTreeConstructionNodeReport()
+		expect := newConstructionNodeReport(expectDescribeReport, []container{{"complex", complexLine + 1, []string{"A", "B"}, []string{"> 1.0.0", "<= 3.0.0"}}})
+		expectEqual(actual, expect)
+	})
+
+	_, _, serialLine, _ := runtime.Caller(0)
+	Context("serial", Serial, func() {
+		actual := CurrentTreeConstructionNodeReport()
+		expect := expectDescribeReport
+		expect.IsSerial = true
+		expect = newConstructionNodeReport(expect, []container{{"serial", serialLine + 1, []string{"Serial"}, []string{}}})
+		expectEqual(actual, expect)
+	})
+
+	_, _, orderedLine, _ := runtime.Caller(0)
+	Context("ordered", Ordered, func() {
+		actual := CurrentTreeConstructionNodeReport()
+		expect := expectDescribeReport
+		expect.IsInOrderedContainer = true
+		expect = newConstructionNodeReport(expect, []container{{"ordered", orderedLine + 1, []string{}, []string{}}})
+		expectEqual(actual, expect)
+	})
+
+	_, _, outerLine, _ := runtime.Caller(0)
+	Context("outer", func() {
+		Context("inner", func() {
+			actual := CurrentTreeConstructionNodeReport()
+			expect := newConstructionNodeReport(expectDescribeReport, []container{{"outer", outerLine + 1, []string{}, []string{}}, {"inner", outerLine + 2, []string{}, []string{}}})
+			expectEqual(actual, expect)
+		})
+	})
+})
+
+type container struct {
+	text              string
+	line              int
+	labels            []string
+	semVerConstraints []string
+}
+
+// newConstructionNodeReport makes a deep copy and extends the given report.
+func newConstructionNodeReport(report types.ConstructionNodeReport, containers []container) types.ConstructionNodeReport {
+	report.ContainerHierarchyTexts = slices.Clone(report.ContainerHierarchyTexts)
+	report.ContainerHierarchyLocations = slices.Clone(report.ContainerHierarchyLocations)
+	report.ContainerHierarchyLabels = slices.Clone(report.ContainerHierarchyLabels)
+	report.ContainerHierarchySemVerConstraints = slices.Clone(report.ContainerHierarchySemVerConstraints)
+	for _, container := range containers {
+		report.ContainerHierarchyTexts = append(report.ContainerHierarchyTexts, container.text)
+		fileName := ""
+		if container.line != 0 {
+			fileName = testFileName
+		}
+		report.ContainerHierarchyLocations = append(report.ContainerHierarchyLocations, types.CodeLocation{FileName: fileName, LineNumber: container.line})
+		report.ContainerHierarchyLabels = append(report.ContainerHierarchyLabels, container.labels)
+		report.ContainerHierarchySemVerConstraints = append(report.ContainerHierarchySemVerConstraints, container.semVerConstraints)
+	}
+	return report
+}

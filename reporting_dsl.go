@@ -27,11 +27,38 @@ CurrentSpecReport returns information about the current running spec.
 The returned object is a types.SpecReport which includes helper methods
 to make extracting information about the spec easier.
 
+During construction of the test tree the result is empty.
+
 You can learn more about SpecReport here: https://pkg.go.dev/github.com/onsi/ginkgo/types#SpecReport
 You can learn more about CurrentSpecReport() here: https://onsi.github.io/ginkgo/#getting-a-report-for-the-current-spec
 */
 func CurrentSpecReport() SpecReport {
 	return global.Suite.CurrentSpecReport()
+}
+
+/*
+ConstructionNodeReport describes the container nodes during construction of
+the spec tree. It provides a subset of the information that is provided
+by SpecReport at runtime.
+
+It is documented here: [types.ConstructionNodeReport]
+*/
+type ConstructionNodeReport = types.ConstructionNodeReport
+
+/*
+CurrentConstructionNodeReport returns information about the current container nodes
+that are leading to the current path in the spec tree.
+The returned object is a types.ConstructionNodeReport which includes helper methods
+to make extracting information about the spec easier.
+
+May only called during construction of the spec tree. It panics when
+called while tests are running. Use CurrentSpecReport instead in that
+phase.
+
+You can learn more about ConstructionNodeReport here: [types.ConstructionNodeReport]
+*/
+func CurrentTreeConstructionNodeReport() ConstructionNodeReport {
+	return global.Suite.CurrentConstructionNodeReport()
 }
 
 /*
