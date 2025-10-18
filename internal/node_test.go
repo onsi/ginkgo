@@ -2,11 +2,14 @@ package internal_test
 
 import (
 	"context"
+	"errors"
 	"fmt"
 	"os"
 	"reflect"
+	"runtime"
 	"time"
 
+	"github.com/onsi/ginkgo/v2"
 	. "github.com/onsi/ginkgo/v2"
 	"github.com/onsi/ginkgo/v2/types"
 	. "github.com/onsi/gomega"
@@ -1900,5 +1903,103 @@ var _ = Describe("Iteration Performance", Serial, Label("performance"), func() {
 
 		AddReportEntry("Large Slice", gmeasure.RankStats(gmeasure.LowerMedianIsBetter, largeStats...))
 		AddReportEntry("Small Slice", gmeasure.RankStats(gmeasure.LowerMedianIsBetter, smallStats...))
+	})
+})
+
+var _ = Describe("NodeArgsTransformers", func() {
+	var dt *types.DeprecationTracker
+	var body func()
+	BeforeEach(func() {
+		dt = types.NewDeprecationTracker()
+		body = func() {}
+	})
+
+	noErrors := func(errs []error) {
+		Ω(errs).To(BeEmpty())
+	}
+
+	panicErrors := func(errs []error) {
+		if len(errs) > 0 {
+			panic(errs)
+		}
+	}
+
+	It("can be nested", func() {
+		removeA := AddTreeConstructionNodeArgsTransformer(func(nodeType types.NodeType, offset Offset, text string, args []any) (string, []any, []error) {
+			return text + " A", append(args, ginkgo.Label("A")), nil
+		})
+		defer removeA()
+		removeB := AddTreeConstructionNodeArgsTransformer(func(nodeType types.NodeType, offset Offset, text string, args []any) (string, []any, []error) {
+			return text + " B", []any{args, ginkgo.Label("B")}, nil
+		})
+		defer removeB()
+		removeC := AddTreeConstructionNodeArgsTransformer(func(nodeType types.NodeType, offset Offset, text string, args []any) (string, []any, []error) {
+			return text + " C", append(args, ginkgo.Label("C")), nil
+		})
+		defer removeC()
+
+		node, errors := internal.NewNode(internal.TransformNewNodeArgs(noErrors, dt, ntIt, "text", body))
+		Ω(errors).To(BeEmpty())
+		Ω(node.Text).To(Equal("text C B A"))
+		Ω(node.Labels).To(ConsistOf("A", "B", "C"))
+
+		removeB()
+		node, errors = internal.NewNode(internal.TransformNewNodeArgs(noErrors, dt, ntIt, "text", body))
+		Ω(errors).To(BeEmpty())
+		Ω(node.Text).To(Equal("text C A"))
+		Ω(node.Labels).To(ConsistOf("A", "C"))
+
+		removeC()
+		removeA()
+		node, errors = internal.NewNode(internal.TransformNewNodeArgs(noErrors, dt, ntIt, "text", body))
+		Ω(errors).To(BeEmpty())
+		Ω(node.Text).To(Equal("text"))
+		Ω(node.Labels).To(BeEmpty())
+	})
+
+	It("check errors", func() {
+		fakeErrors := []error{errors.New("fake error")}
+
+		removeA := AddTreeConstructionNodeArgsTransformer(func(nodeType types.NodeType, offset Offset, text string, args []any) (string, []any, []error) {
+			Fail("should not have been called")
+			return "", nil, nil
+		})
+		defer removeA()
+		removeB := AddTreeConstructionNodeArgsTransformer(func(nodeType types.NodeType, offset Offset, text string, args []any) (string, []any, []error) {
+			return "", nil, fakeErrors
+		})
+		defer removeB()
+
+		defer func() {
+			r := recover()
+			Ω(r).To(Equal(fakeErrors))
+		}()
+
+		internal.NewNode(internal.TransformNewNodeArgs(panicErrors, dt, ntIt, "text", body))
+		Fail("panicErrors should have panicked")
+	})
+
+	It("supports stack unwinding", func() {
+		var caller types.CodeLocation
+		remove := AddTreeConstructionNodeArgsTransformer(func(nodeType types.NodeType, offset Offset, text string, args []any) (string, []any, []error) {
+			caller = types.NewCodeLocation(int(offset))
+			return text, args, nil
+		})
+		defer remove()
+
+		it := func(args ...any) {
+			internal.NewNode(internal.TransformNewNodeArgs(noErrors, dt, ntIt, "text", append(args, body)))
+		}
+
+		_, file, line, _ := runtime.Caller(0)
+		it()
+		Ω(caller).To(Equal(types.CodeLocation{FileName: file, LineNumber: line + 1}))
+
+		helper := func() {
+			it(ginkgo.Offset(1))
+		}
+		_, file, line, _ = runtime.Caller(0)
+		helper()
+		Ω(caller).To(Equal(types.CodeLocation{FileName: file, LineNumber: line + 1}))
 	})
 })
