@@ -71,7 +71,7 @@ func ParseProfile(binary string, path string) ProfileLines {
 	return out
 }
 
-var _ = Describe("Profiling Specs", func() {
+var _ = Describe("Profiling Specs", MarkSlow, func() {
 	Describe("Measuring code coverage", func() {
 		BeforeEach(func() {
 			fm.MountFixture("coverage")

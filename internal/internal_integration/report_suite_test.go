@@ -10,7 +10,7 @@ import (
 	. "github.com/onsi/gomega"
 )
 
-var _ = Describe("Sending reports to ReportBeforeSuite and ReportAfterSuite nodes", func() {
+var _ = Describe("Sending reports to ReportBeforeSuite and ReportAfterSuite nodes", SpecPriority(10), func() {
 	var failInReportBeforeSuiteA, timeoutInReportBeforeSuiteB, failInReportAfterSuiteA, timeoutInReportAfterSuiteC, interruptSuiteB bool
 	var fixture func()
 

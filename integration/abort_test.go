@@ -12,7 +12,7 @@ import (
 	"github.com/onsi/ginkgo/v2/types"
 )
 
-var _ = Describe("Abort", func() {
+var _ = Describe("Abort", SpecPriority(10), func() {
 	var session *gexec.Session
 	BeforeEach(func() {
 		fm.MountFixture("abort")

@@ -27,6 +27,7 @@ type PollProgressInterval = ginkgo.PollProgressInterval
 type NodeTimeout = ginkgo.NodeTimeout
 type SpecTimeout = ginkgo.SpecTimeout
 type GracePeriod = ginkgo.GracePeriod
+type SpecPriority = ginkgo.SpecPriority
 
 const Focus = ginkgo.Focus
 const Pending = ginkgo.Pending

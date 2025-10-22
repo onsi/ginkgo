@@ -128,6 +128,7 @@ func (g *group) initialReportForSpec(spec Spec) types.SpecReport {
 		IsInOrderedContainer:                !spec.Nodes.FirstNodeMarkedOrdered().IsZero(),
 		MaxFlakeAttempts:                    spec.Nodes.GetMaxFlakeAttempts(),
 		MaxMustPassRepeatedly:               spec.Nodes.GetMaxMustPassRepeatedly(),
+		SpecPriority:                        spec.Nodes.GetSpecPriority(),
 	}
 }
 

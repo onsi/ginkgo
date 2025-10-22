@@ -50,7 +50,7 @@ var _ = Describe("CurrentSpecReport", func() {
 			})
 
 			Context("an serial spec", func() {
-				It("D", Serial, logCurrentSpecReport("D"))
+				It("D", Serial, logCurrentSpecReport("D"), SpecPriority(10))
 			})
 			AfterSuite(logCurrentSpecReport("after-suite"))
 		})
@@ -97,6 +97,7 @@ var _ = Describe("CurrentSpecReport", func() {
 		Ω(specs["C"].IsInOrderedContainer).Should(BeTrue())
 		Ω(specs["D"].IsSerial).Should(BeTrue())
 		Ω(specs["D"].IsInOrderedContainer).Should(BeFalse())
+		Ω(specs["D"].SpecPriority).Should(Equal(10))
 	})
 
 	It("captures test details correctly", func() {

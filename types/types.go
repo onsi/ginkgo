@@ -197,6 +197,9 @@ type SpecReport struct {
 	LeafNodeSemVerConstraints []string
 	LeafNodeText              string
 
+	// Captures the Spec Priority
+	SpecPriority int
+
 	// State captures whether the spec has passed, failed, etc.
 	State SpecState
 

@@ -47,22 +47,24 @@ type Node struct {
 	ReportEachBody  func(SpecContext, types.SpecReport)
 	ReportSuiteBody func(SpecContext, types.Report)
 
-	MarkedFocus             bool
-	MarkedPending           bool
-	MarkedSerial            bool
-	MarkedOrdered           bool
-	MarkedContinueOnFailure bool
-	MarkedOncePerOrdered    bool
-	FlakeAttempts           int
-	MustPassRepeatedly      int
-	Labels                  Labels
-	SemVerConstraints       SemVerConstraints
-	PollProgressAfter       time.Duration
-	PollProgressInterval    time.Duration
-	NodeTimeout             time.Duration
-	SpecTimeout             time.Duration
-	GracePeriod             time.Duration
-	AroundNodes             types.AroundNodes
+	MarkedFocus                  bool
+	MarkedPending                bool
+	MarkedSerial                 bool
+	MarkedOrdered                bool
+	MarkedContinueOnFailure      bool
+	MarkedOncePerOrdered         bool
+	FlakeAttempts                int
+	MustPassRepeatedly           int
+	Labels                       Labels
+	SemVerConstraints            SemVerConstraints
+	PollProgressAfter            time.Duration
+	PollProgressInterval         time.Duration
+	NodeTimeout                  time.Duration
+	SpecTimeout                  time.Duration
+	GracePeriod                  time.Duration
+	AroundNodes                  types.AroundNodes
+	HasExplicitlySetSpecPriority bool
+	SpecPriority                 int
 
 	NodeIDWhereCleanupWasGenerated uint
 }
@@ -93,6 +95,7 @@ type PollProgressAfter time.Duration
 type NodeTimeout time.Duration
 type SpecTimeout time.Duration
 type GracePeriod time.Duration
+type SpecPriority int
 
 type Labels []string
 
@@ -182,6 +185,8 @@ func isDecoration(arg any) bool {
 	case t == reflect.TypeOf(GracePeriod(0)):
 		return true
 	case t == reflect.TypeOf(types.AroundNodeDecorator{}):
+		return true
+	case t == reflect.TypeOf(SpecPriority(0)):
 		return true
 	case t.Kind() == reflect.Slice && isSliceOfDecorations(arg):
 		return true
@@ -323,6 +328,12 @@ func NewNode(deprecationTracker *types.DeprecationTracker, nodeType types.NodeTy
 			if nodeType.Is(types.NodeTypeContainer) {
 				appendError(types.GinkgoErrors.InvalidDecoratorForNodeType(node.CodeLocation, nodeType, "GracePeriod"))
 			}
+		case t == reflect.TypeOf(SpecPriority(0)):
+			if !nodeType.Is(types.NodeTypesForContainerAndIt) {
+				appendError(types.GinkgoErrors.InvalidDecoratorForNodeType(node.CodeLocation, nodeType, "SpecPriority"))
+			}
+			node.SpecPriority = int(arg.(SpecPriority))
+			node.HasExplicitlySetSpecPriority = true
 		case t == reflect.TypeOf(types.AroundNodeDecorator{}):
 			node.AroundNodes = append(node.AroundNodes, arg.(types.AroundNodeDecorator))
 		case t == reflect.TypeOf(Labels{}):
@@ -982,6 +993,15 @@ func (n Nodes) GetMaxMustPassRepeatedly() int {
 		}
 	}
 	return maxMustPassRepeatedly
+}
+
+func (n Nodes) GetSpecPriority() int {
+	for i := len(n) - 1; i >= 0; i-- {
+		if n[i].HasExplicitlySetSpecPriority {
+			return n[i].SpecPriority
+		}
+	}
+	return 0
 }
 
 func UnrollInterfaceSlice(args any) []any {

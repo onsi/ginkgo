@@ -26,6 +26,8 @@ var pathToGinkgo string
 var DEBUG bool
 var fm FixtureManager
 
+var MarkSlow = []any{Label("SLOW"), SpecPriority(10)}
+
 func init() {
 	flag.BoolVar(&DEBUG, "debug", false, "keep assets around after test run")
 }

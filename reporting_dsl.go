@@ -51,7 +51,7 @@ that are leading to the current path in the spec tree.
 The returned object is a types.ConstructionNodeReport which includes helper methods
 to make extracting information about the spec easier.
 
-May only called during construction of the spec tree. It panics when
+May only be called during construction of the spec tree. It panics when
 called while tests are running. Use CurrentSpecReport instead in that
 phase.
 

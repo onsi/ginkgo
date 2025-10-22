@@ -37,7 +37,7 @@ func (tm *TimeMap) Get(key string) time.Duration {
 	return tm.m[key]
 }
 
-var _ = Describe("Interrupts and Timeouts", func() {
+var _ = Describe("Interrupts and Timeouts", SpecPriority(10), func() {
 	Describe("when it is interrupted in a BeforeSuite", func() {
 		BeforeEach(func() {
 			success, _ := RunFixture("interrupted test", func() {

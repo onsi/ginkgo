@@ -57,6 +57,7 @@ var _ = Describe("Partitioning Decorations", func() {
 			[]any{},
 			FlakeAttempts(1),
 			MustPassRepeatedly(1),
+			SpecPriority(2),
 			true,
 			OncePerOrdered,
 		)
@@ -80,6 +81,7 @@ var _ = Describe("Partitioning Decorations", func() {
 			Label("D"),
 			FlakeAttempts(1),
 			MustPassRepeatedly(1),
+			SpecPriority(2),
 			OncePerOrdered,
 		}))
 
@@ -503,6 +505,37 @@ var _ = Describe("Constructing nodes", func() {
 		})
 	})
 
+	Describe("The SpecPriority decorator", func() {
+		It("has no SpecPriority by default", func() {
+			node, errors := internal.NewNode(dt, ntIt, "text", body)
+			Ω(node).ShouldNot(BeZero())
+			Ω(node.SpecPriority).Should(Equal(0))
+			Ω(node.HasExplicitlySetSpecPriority).Should(BeFalse())
+			ExpectAllWell(errors)
+		})
+
+		It("can be applied to containers", func() {
+			node, errors := internal.NewNode(dt, ntCon, "text", body, SpecPriority(5))
+			Ω(node.SpecPriority).Should(Equal(5))
+			Ω(node.HasExplicitlySetSpecPriority).Should(BeTrue())
+			ExpectAllWell(errors)
+		})
+
+		It("can be applied to its", func() {
+			node, errors := internal.NewNode(dt, ntIt, "text", body, SpecPriority(5))
+			Ω(node.SpecPriority).Should(Equal(5))
+			Ω(node.HasExplicitlySetSpecPriority).Should(BeTrue())
+			ExpectAllWell(errors)
+		})
+
+		It("cannot be applied to non-container/it nodes", func() {
+			node, errors := internal.NewNode(dt, ntBef, "", body, cl, SpecPriority(5))
+			Ω(node).Should(BeZero())
+			Ω(errors).Should(ConsistOf(types.GinkgoErrors.InvalidDecoratorForNodeType(cl, ntBef, "SpecPriority")))
+			Ω(dt.DidTrackDeprecations()).Should(BeFalse())
+		})
+	})
+
 	Describe("the timeout-related decorators", func() {
 		It("correctly assigned timeouts when specified", func() {
 			node, errors := internal.NewNode(dt, ntIt, "spec", func(_ SpecContext) {}, cl, NodeTimeout(time.Second), SpecTimeout(2*time.Second), GracePeriod(3*time.Second))
@@ -707,7 +740,6 @@ var _ = Describe("Constructing nodes", func() {
 })
 
 var _ = Describe("Node", func() {
-	// HERE - and all the fun edge cases
 	Describe("The nodes that take more specific functions", func() {
 		var dt *types.DeprecationTracker
 		BeforeEach(func() {
@@ -1551,6 +1583,36 @@ var _ = Describe("Nodes", func() {
 		})
 	})
 
+	Describe("Computing SpecPriority", func() {
+		Context("when no spec priority is set", func() {
+			It("returns zero", func() {
+				nodes := Nodes{N(ntCon), N(ntCon), N(ntIt)}
+				Ω(nodes.GetSpecPriority()).Should(Equal(0))
+			})
+		})
+
+		Context("when spec priority is set on the leaf spec node", func() {
+			It("chooses that spec priority", func() {
+				nodes := Nodes{N(ntCon), N(ntCon), N(ntIt, SpecPriority(42))}
+				Ω(nodes.GetSpecPriority()).Should(Equal(42))
+			})
+		})
+
+		Context("when spec priority is set on an earlier container node", func() {
+			It("chooses that pec priority", func() {
+				nodes := Nodes{N(ntCon, SpecPriority(-17)), N(ntCon), N(ntIt)}
+				Ω(nodes.GetSpecPriority()).Should(Equal(-17))
+			})
+		})
+
+		Context("when spec priority is set on multiple nodes", func() {
+			It("chooses the inner-most priority", func() {
+				nodes := Nodes{N(ntCon, SpecPriority(-17)), N(ntCon, SpecPriority(42)), N(ntIt, SpecPriority(1))}
+				Ω(nodes.GetSpecPriority()).Should(Equal(1))
+			})
+		})
+	})
+
 	Describe("BestTextFor", func() {
 		var nIt, nBef1, nBef2 Node
 		var nodes Nodes
@@ -1724,7 +1786,6 @@ var _ = Describe("Nodes", func() {
 				Ω(nodes.GetMaxMustPassRepeatedly()).Should(Equal(2))
 			})
 		})
-
 	})
 
 	Describe("Labels", func() {

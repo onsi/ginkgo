@@ -12,7 +12,7 @@ import (
 	"github.com/onsi/gomega/gexec"
 )
 
-var _ = Describe("Interrupt and Timeout", func() {
+var _ = Describe("Interrupt and Timeout", MarkSlow, func() {
 	Context("when interrupting a suite", func() {
 		It("gives the user feedback as the session is interrupted", func() {
 			fm.MountFixture("hanging")

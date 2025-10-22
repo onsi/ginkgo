@@ -13,7 +13,7 @@ import (
 	"github.com/onsi/ginkgo/v2/internal"
 )
 
-var _ = Describe("OutputInterceptor", func() {
+var _ = Describe("OutputInterceptor", Label("SLOW"), func() {
 	var interceptor internal.OutputInterceptor
 
 	sharedInterceptorTests := func() {

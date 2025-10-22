@@ -10,7 +10,7 @@ import (
 	"github.com/onsi/gomega/gexec"
 )
 
-var _ = Describe("OutputInterceptor", func() {
+var _ = Describe("OutputInterceptor", MarkSlow, func() {
 	Context("exercising the edge case reported in issue #851", func() {
 		BeforeEach(func() {
 			fm.MountFixture("interceptor")
