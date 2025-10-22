@@ -1829,7 +1829,7 @@ var _ = Describe("Namespace tests", func() {
     //...
   })
 
-  It("works with network namespaces", Label("network") func() {
+  It("works with network namespaces", Label("network"), func() {
     // since this It does have the 'network' label, the low-level setup will have occurred
     //...
   })
