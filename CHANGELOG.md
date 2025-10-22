@@ -1,3 +1,9 @@
+## 2.27.1
+
+### Fixes
+- Fix Ginkgo Reporter slice-bounds panic [606c1cb]
+- Bug Fix: Add GinkoTBWrapper.Attr() and GinkoTBWrapper.Output() [a6463b3]
+
 ## 2.27.0
 
 ### Features
