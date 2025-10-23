@@ -1808,20 +1808,6 @@ Lastly, you can pass `AroundNode` to the call to `RunSpecs` that launches the Gi
 
 Here are a few more patterns that `AroundNode` enables.
 
-### Advanced: Transforming Node Arguments during Tree Construction
-
-Ginkgo suites maintained by large communities (👋 Kubernetes) tend to adopt conventions to organize specs with labels and specific decorators.  Enforcing these conventions is challenging but can be automated to some degree by inferring developer intent and transforming node arguments, during the Tree Construction phase, to add the relevant Ginkgo decorators.
-
-This is done by registering a `NodeArgsTransformer` via `AddTreeConstructionNodeArgsTransformer`.  The `NodeArgsTransformer` has signature `func(nodeType types.NodeType, offset Offset, text string, args []any) (string, []any, []error)` and is called before every node during Tree Construction. 
-
-If the `NodeArgsTransformer` returns any error, the test suite prints those errors and exits. The text and arguments can be modified, which includes directly changing the args slice that is passed in. Arguments have been flattened already, i.e. none of the entries in args is another []any.
-
-The offset is valid for calling NewLocation directly in the implementation of TransformNodeArgs to find the location where the Ginkgo DSL function is called. An additional offset supplied by the caller via args is already included.
-
-Additional information about the current node can be obtained by calling `CurrentTreeConstructionNodeReport()` from within the `NodeArgsTransformer`.
-
-`AddTreeConstructionNodeArgsTransformer` can be called multiple times -  tf there is more than one registered transformer, then the most recently added ones get called first.
-
 #### A global label-driven Configuration
 
 By attaching `AroundNode` to `RunSpecs` and then using `CurrentSpecReport()` to obtain information about the currently running spec you can control which specs to apply configuration to:
@@ -1936,6 +1922,20 @@ var _ = Describe("the server", func() {
 ```
 
 `WithField` will receive a `nil` logger as it is invoked during the tree construction phase, not during the run phase when the `BeforeEach` actually runs.
+
+### Advanced: Transforming Node Arguments during Tree Construction
+
+Ginkgo suites maintained by large communities (👋 Kubernetes) tend to adopt conventions to organize specs with labels and specific decorators.  Enforcing these conventions is challenging but can be automated to some degree by inferring developer intent and transforming node arguments, during the Tree Construction phase, to add the relevant Ginkgo decorators.
+
+This is done by registering a `NodeArgsTransformer` via `AddTreeConstructionNodeArgsTransformer`.  The `NodeArgsTransformer` has signature `func(nodeType types.NodeType, offset Offset, text string, args []any) (string, []any, []error)` and is called before every node during Tree Construction. 
+
+If the `NodeArgsTransformer` returns any error, the test suite prints those errors and exits. The text and arguments can be modified, which includes directly changing the args slice that is passed in. Arguments have been flattened already, i.e. none of the entries in args is another []any.
+
+The offset is valid for calling NewLocation directly in the implementation of TransformNodeArgs to find the location where the Ginkgo DSL function is called. An additional offset supplied by the caller via args is already included.
+
+Additional information about the current node can be obtained by calling `CurrentTreeConstructionNodeReport()` from within the `NodeArgsTransformer`.
+
+`AddTreeConstructionNodeArgsTransformer` can be called multiple times -  tf there is more than one registered transformer, then the most recently added ones get called first.
 
 ### Alternatives to Dot-Importing Ginkgo
 
