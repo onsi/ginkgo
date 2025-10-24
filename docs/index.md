@@ -5579,7 +5579,7 @@ Describe("flaky tests", FlakeAttempts(3), func() {
     ...
   })
 
-  It("is _really_ flaky", FlakeAttempts(5) func() {
+  It("is _really_ flaky", FlakeAttempts(5), func() {
     ...
   })
 
@@ -5608,7 +5608,7 @@ Describe("repeated specs", MustPassRepeatedly(3), func() {
     ...
   })
 
-  It("is repeated even more", MustPassRepeatedly(5) func() {
+  It("is repeated even more", MustPassRepeatedly(5), func() {
     ...
   })
 
@@ -5807,7 +5807,7 @@ The columns are:
 - Pending (bool): True, if pending. (Conforms to the rules in [Pending Specs](#pending-specs).)
 - Labels (string): If labels are assigned to nodes then will be shown as double quoted comma separated values. (Conforms to the rules in [Spec Labels](#spec-labels).)
 
-You can set a different output format with the `-format` flag. Accepted formats are `csv`, `indent`, and `json`. The `ident` format is like `csv`, but uses indentation to show the nesting of containers and specs. Both the `csv` and `json` formats can be read by another program, e.g., an editor plugin that displays a tree view of Ginkgo tests in a file, or presents a menu for the user to quickly navigate to a container or spec.
+You can set a different output format with the `-format` flag. Accepted formats are `csv`, `indent`, and `json`. The `indent` format is like `csv`, but uses indentation to show the nesting of containers and specs. Both the `csv` and `json` formats can be read by another program, e.g., an editor plugin that displays a tree view of Ginkgo tests in a file, or presents a menu for the user to quickly navigate to a container or spec.
 
 `ginkgo outline` is intended for integration with third-party libraries and applications - however it has an important limitation.  Since parses the go syntax tree it cannot identify specs that are dynamically generated.  Nor does it capture run-time concerns such as which specs will be skipped by a given set of filters or the order in which specs will run.  If you want a quick overview of such things you can use `ginkgo -v --dry-run` instead.  If you want finer-grained control over the suite preview, you should use [`PreviewSpecs`](#previewing-specs).
 
