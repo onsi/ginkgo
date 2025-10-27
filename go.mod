@@ -11,7 +11,6 @@ require (
 	github.com/joshdk/go-junit v1.0.0
 	github.com/mfridman/tparse v0.18.0
 	github.com/onsi/gomega v1.38.2
-	go.uber.org/automaxprocs v1.6.0
 	golang.org/x/sys v0.35.0
 	golang.org/x/tools v0.36.0
 )
@@ -35,4 +34,5 @@ require (
 	golang.org/x/sync v0.16.0 // indirect
 	golang.org/x/text v0.28.0 // indirect
 	google.golang.org/protobuf v1.36.7 // indirect
+	gopkg.in/check.v1 v1.0.0-20180628173108-788fd7840127 // indirect
 )
