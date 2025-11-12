@@ -8,6 +8,7 @@ import (
 	"github.com/onsi/ginkgo/v2/ginkgo/generators"
 	"github.com/onsi/ginkgo/v2/ginkgo/labels"
 	"github.com/onsi/ginkgo/v2/ginkgo/outline"
+	"github.com/onsi/ginkgo/v2/ginkgo/pending"
 	"github.com/onsi/ginkgo/v2/ginkgo/run"
 	"github.com/onsi/ginkgo/v2/ginkgo/unfocus"
 	"github.com/onsi/ginkgo/v2/ginkgo/watch"
@@ -25,6 +26,7 @@ func GenerateCommands() []command.Command {
 		labels.BuildLabelsCommand(),
 		outline.BuildOutlineCommand(),
 		unfocus.BuildUnfocusCommand(),
+		pending.BuildPendingCommand(),
 		BuildVersionCommand(),
 	}
 }
