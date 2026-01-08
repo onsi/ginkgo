@@ -132,10 +132,7 @@ func (m *HaveTrackedMatcher) Match(actual any) (bool, error) {
 		return false, fmt.Errorf("HaveTracked() must be passed a RunTracker - got %T instead", actual)
 	}
 	actualRuns := rt.TrackedRuns()
-	n := len(actualRuns)
-	if n < len(m.expectedRuns) {
-		n = len(m.expectedRuns)
-	}
+	n := max(len(actualRuns), len(m.expectedRuns))
 	failureMessage, success := &strings.Builder{}, true
 	fmt.Fprintf(failureMessage, "{{/}}%10s == %-10s{{/}}\n", "Actual", "Expected")
 	fmt.Fprintf(failureMessage, "{{/}}========================\n{{/}}")

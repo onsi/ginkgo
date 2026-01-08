@@ -672,9 +672,9 @@ func GenerateGoTestCompileArgs(goFlagsConfig GoFlagsConfig, packageToBuild strin
 		adjustedCoverPkgs := make([]string, len(coverPkgs))
 		for i, coverPkg := range coverPkgs {
 			coverPkg = strings.Trim(coverPkg, " ")
-			if strings.HasPrefix(coverPkg, "./") {
+			if after, ok := strings.CutPrefix(coverPkg, "./"); ok {
 				// this is a relative coverPkg - we need to reroot it
-				adjustedCoverPkgs[i] = "./" + filepath.Join(pathToInvocationPath, strings.TrimPrefix(coverPkg, "./"))
+				adjustedCoverPkgs[i] = "./" + filepath.Join(pathToInvocationPath, after)
 			} else {
 				// this is a package name - don't touch it
 				adjustedCoverPkgs[i] = coverPkg
