@@ -2119,7 +2119,28 @@ var _ = Describe("ConstructionNodeReport", func() {
 			actual := CurrentTreeConstructionNodeReport()
 			expect := newConstructionNodeReport(expectDescribeReport, []container{{"outer", outerLine + 1, []string{}, []string{}}, {"inner", outerLine + 2, []string{}, []string{}}})
 			expectEqual(actual, expect)
+
+			// The transformer runs while constructing the following It node.
+			// The assertion must be set up outside of it, after removing the transformer.
+			// The report must be the same.
+			remove := AddTreeConstructionNodeArgsTransformer(func(nodeType types.NodeType, offset Offset, text string, args []any) (string, []any, []error) {
+				actual = CurrentTreeConstructionNodeReport()
+				return text, args, nil
+			})
+			It("", func() {})
+			remove()
+			expectEqual(actual, expect)
 		})
+
+		var actual ConstructionNodeReport
+		expect := newConstructionNodeReport(expectDescribeReport, []container{{"outer", outerLine + 1, []string{}, []string{}}})
+		remove := AddTreeConstructionNodeArgsTransformer(func(nodeType types.NodeType, offset Offset, text string, args []any) (string, []any, []error) {
+			actual = CurrentTreeConstructionNodeReport()
+			return text, args, nil
+		})
+		It("", func() {})
+		remove()
+		expectEqual(actual, expect)
 	})
 })
 
