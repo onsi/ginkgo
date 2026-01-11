@@ -2078,20 +2078,22 @@ var _ = Describe("ConstructionNodeReport", func() {
 	}
 
 	actualDescribeReport := CurrentTreeConstructionNodeReport()
-	expectDescribeReport := newConstructionNodeReport(types.ConstructionNodeReport{}, []container{{"", 0, nil, nil}, {"ConstructionNodeReport", describeLine + 1, []string{}, []string{}}})
+	expectDescribeReport := newConstructionNodeReport(types.ConstructionNodeReport{}, []container{{"", 0, nil, nil, nil}, {"ConstructionNodeReport", describeLine + 1, []string{}, []string{}, map[string][]string{}}})
 	expectEqual(actualDescribeReport, expectDescribeReport)
 
 	_, _, contextLine, _ := runtime.Caller(0)
 	Context("context", func() {
 		actual := CurrentTreeConstructionNodeReport()
-		expect := newConstructionNodeReport(expectDescribeReport, []container{{"context", contextLine + 1, []string{}, []string{}}})
+		expect := newConstructionNodeReport(expectDescribeReport, []container{{"context", contextLine + 1, []string{}, []string{}, map[string][]string{}}})
 		expectEqual(actual, expect)
 	})
 
 	_, _, complexLine, _ := runtime.Caller(0)
-	Context("complex", Label("A"), Label("B"), SemVerConstraint("> 1.0.0", "<= 3.0.0"), func() {
+	Context("complex", Label("A"), Label("B"), SemVerConstraint("> 1.0.0", "<= 3.0.0"), ComponentSemVerConstraint("etcd", "> 0.1.0", "<= 0.5.0"), func() {
 		actual := CurrentTreeConstructionNodeReport()
-		expect := newConstructionNodeReport(expectDescribeReport, []container{{"complex", complexLine + 1, []string{"A", "B"}, []string{"> 1.0.0", "<= 3.0.0"}}})
+		expect := newConstructionNodeReport(expectDescribeReport, []container{
+			{"complex", complexLine + 1, []string{"A", "B"}, []string{"> 1.0.0", "<= 3.0.0"}, map[string][]string{"etcd": {"> 0.1.0", "<= 0.5.0"}}},
+		})
 		expectEqual(actual, expect)
 	})
 
@@ -2100,7 +2102,7 @@ var _ = Describe("ConstructionNodeReport", func() {
 		actual := CurrentTreeConstructionNodeReport()
 		expect := expectDescribeReport
 		expect.IsSerial = true
-		expect = newConstructionNodeReport(expect, []container{{"serial", serialLine + 1, []string{"Serial"}, []string{}}})
+		expect = newConstructionNodeReport(expect, []container{{"serial", serialLine + 1, []string{"Serial"}, []string{}, map[string][]string{}}})
 		expectEqual(actual, expect)
 	})
 
@@ -2109,7 +2111,7 @@ var _ = Describe("ConstructionNodeReport", func() {
 		actual := CurrentTreeConstructionNodeReport()
 		expect := expectDescribeReport
 		expect.IsInOrderedContainer = true
-		expect = newConstructionNodeReport(expect, []container{{"ordered", orderedLine + 1, []string{}, []string{}}})
+		expect = newConstructionNodeReport(expect, []container{{"ordered", orderedLine + 1, []string{}, []string{}, map[string][]string{}}})
 		expectEqual(actual, expect)
 	})
 
@@ -2117,7 +2119,7 @@ var _ = Describe("ConstructionNodeReport", func() {
 	Context("outer", func() {
 		Context("inner", func() {
 			actual := CurrentTreeConstructionNodeReport()
-			expect := newConstructionNodeReport(expectDescribeReport, []container{{"outer", outerLine + 1, []string{}, []string{}}, {"inner", outerLine + 2, []string{}, []string{}}})
+			expect := newConstructionNodeReport(expectDescribeReport, []container{{"outer", outerLine + 1, []string{}, []string{}, map[string][]string{}}, {"inner", outerLine + 2, []string{}, []string{}, map[string][]string{}}})
 			expectEqual(actual, expect)
 
 			// The transformer runs while constructing the following It node.
@@ -2145,10 +2147,11 @@ var _ = Describe("ConstructionNodeReport", func() {
 })
 
 type container struct {
-	text              string
-	line              int
-	labels            []string
-	semVerConstraints []string
+	text                       string
+	line                       int
+	labels                     []string
+	semVerConstraints          []string
+	componentSemVerConstraints map[string][]string
 }
 
 // newConstructionNodeReport makes a deep copy and extends the given report.
@@ -2157,6 +2160,7 @@ func newConstructionNodeReport(report types.ConstructionNodeReport, containers [
 	report.ContainerHierarchyLocations = slices.Clone(report.ContainerHierarchyLocations)
 	report.ContainerHierarchyLabels = slices.Clone(report.ContainerHierarchyLabels)
 	report.ContainerHierarchySemVerConstraints = slices.Clone(report.ContainerHierarchySemVerConstraints)
+	report.ContainerHierarchyComponentSemVerConstraints = slices.Clone(report.ContainerHierarchyComponentSemVerConstraints)
 	for _, container := range containers {
 		report.ContainerHierarchyTexts = append(report.ContainerHierarchyTexts, container.text)
 		fileName := ""
@@ -2166,6 +2170,7 @@ func newConstructionNodeReport(report types.ConstructionNodeReport, containers [
 		report.ContainerHierarchyLocations = append(report.ContainerHierarchyLocations, types.CodeLocation{FileName: fileName, LineNumber: container.line})
 		report.ContainerHierarchyLabels = append(report.ContainerHierarchyLabels, container.labels)
 		report.ContainerHierarchySemVerConstraints = append(report.ContainerHierarchySemVerConstraints, container.semVerConstraints)
+		report.ContainerHierarchyComponentSemVerConstraints = append(report.ContainerHierarchyComponentSemVerConstraints, container.componentSemVerConstraints)
 	}
 	return report
 }

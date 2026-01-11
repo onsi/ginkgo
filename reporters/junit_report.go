@@ -39,6 +39,9 @@ type JunitReportConfig struct {
 	// Enable OmitSpecSemVerConstraints to prevent semantic version constraints from appearing in the spec name
 	OmitSpecSemVerConstraints bool
 
+	// Enable OmitSpecComponentSemVerConstraints to prevent component semantic version constraints from appearing in the spec name
+	OmitSpecComponentSemVerConstraints bool
+
 	// Enable OmitLeafNodeType to prevent the spec leaf node type from appearing in the spec name
 	OmitLeafNodeType bool
 
@@ -173,6 +176,7 @@ func GenerateJUnitReportWithConfig(report types.Report, dst string, config Junit
 				{"SpecialSuiteFailureReason", strings.Join(report.SpecialSuiteFailureReasons, ",")},
 				{"SuiteLabels", fmt.Sprintf("[%s]", strings.Join(report.SuiteLabels, ","))},
 				{"SuiteSemVerConstraints", fmt.Sprintf("[%s]", strings.Join(report.SuiteSemVerConstraints, ","))},
+				{"SuiteComponentSemVerConstraints", fmt.Sprintf("[%s]", formatComponentSemVerConstraintsToString(report.SuiteComponentSemVerConstraints))},
 				{"RandomSeed", fmt.Sprintf("%d", report.SuiteConfig.RandomSeed)},
 				{"RandomizeAllSpecs", fmt.Sprintf("%t", report.SuiteConfig.RandomizeAllSpecs)},
 				{"LabelFilter", report.SuiteConfig.LabelFilter},
@@ -215,6 +219,10 @@ func GenerateJUnitReportWithConfig(report types.Report, dst string, config Junit
 		semVerConstraints := spec.SemVerConstraints()
 		if len(semVerConstraints) > 0 && !config.OmitSpecSemVerConstraints {
 			name = name + " [" + strings.Join(semVerConstraints, ", ") + "]"
+		}
+		componentSemVerConstraints := spec.ComponentSemVerConstraints()
+		if len(componentSemVerConstraints) > 0 && !config.OmitSpecComponentSemVerConstraints {
+			name = name + " [" + formatComponentSemVerConstraintsToString(componentSemVerConstraints) + "]"
 		}
 		name = strings.TrimSpace(name)
 
@@ -385,6 +393,15 @@ func RenderTimeline(spec types.SpecReport, noColor bool) string {
 
 func systemOutForUnstructuredReporters(spec types.SpecReport) string {
 	return spec.CapturedStdOutErr
+}
+
+func formatComponentSemVerConstraintsToString(componentSemVerConstraints map[string][]string) string {
+	var tmpStr string
+	for component, semVerConstraints := range componentSemVerConstraints {
+		tmpStr = tmpStr + fmt.Sprintf("%s: %s, ", component, semVerConstraints)
+	}
+	tmpStr = strings.TrimSuffix(tmpStr, ", ")
+	return tmpStr
 }
 
 // Deprecated JUnitReporter (so folks can still compile their suites)
