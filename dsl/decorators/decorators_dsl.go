@@ -22,6 +22,7 @@ type FlakeAttempts = ginkgo.FlakeAttempts
 type MustPassRepeatedly = ginkgo.MustPassRepeatedly
 type Labels = ginkgo.Labels
 type SemVerConstraints = ginkgo.SemVerConstraints
+type ComponentSemVerConstraints = ginkgo.ComponentSemVerConstraints
 type PollProgressAfter = ginkgo.PollProgressAfter
 type PollProgressInterval = ginkgo.PollProgressInterval
 type NodeTimeout = ginkgo.NodeTimeout
@@ -39,6 +40,7 @@ const SuppressProgressReporting = ginkgo.SuppressProgressReporting
 
 var Label = ginkgo.Label
 var SemVerConstraint = ginkgo.SemVerConstraint
+var ComponentSemVerConstraint = ginkgo.ComponentSemVerConstraint
 
 func AroundNode[F types.AroundNodeAllowedFuncs](f F) types.AroundNodeDecorator {
 	return types.AroundNode(f, types.NewCodeLocation(1))

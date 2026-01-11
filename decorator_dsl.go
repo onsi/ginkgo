@@ -118,6 +118,22 @@ You can learn more here: https://onsi.github.io/ginkgo/#spec-semantic-version-fi
 type SemVerConstraints = internal.SemVerConstraints
 
 /*
+todo: ComponentSemVerConstraint
+*/
+func ComponentSemVerConstraint(component string, semVerConstraints ...string) ComponentSemVerConstraints {
+	componentSemVerConstraints := ComponentSemVerConstraints{
+		component: semVerConstraints,
+	}
+
+	return componentSemVerConstraints
+}
+
+/*
+todo: ComponentSemVerConstraints
+*/
+type ComponentSemVerConstraints = internal.ComponentSemVerConstraints
+
+/*
 PollProgressAfter allows you to override the configured value for --poll-progress-after for a particular node.
 
 Ginkgo will start emitting node progress if the node is still running after a duration of PollProgressAfter.  This allows you to get quicker feedback about the state of a long-running spec.
