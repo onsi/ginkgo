@@ -94,7 +94,7 @@ func RunFixture(description string, callback func(), aroundNodes ...types.Around
 	WithSuite(suite, func() {
 		callback()
 		Ω(suite.BuildTree()).Should(Succeed())
-		success, hasProgrammaticFocus = suite.Run(description, Label("TopLevelLabel"), SemVerConstraints{}, aroundNodes, "/path/to/suite", failer, reporter, writer, outputInterceptor, interruptHandler, client, progressSignalRegistrar, conf)
+		success, hasProgrammaticFocus = suite.Run(description, Label("TopLevelLabel"), SemVerConstraints{}, ComponentSemVerConstraints{}, aroundNodes, "/path/to/suite", failer, reporter, writer, outputInterceptor, interruptHandler, client, progressSignalRegistrar, conf)
 	})
 	return success, hasProgrammaticFocus
 }
@@ -128,7 +128,7 @@ func RunFixtureInParallel(description string, callback func(proc int)) bool {
 			interruptHandler := interrupt_handler.NewInterruptHandler(client)
 			defer interruptHandler.Stop()
 
-			success, _ := suite.Run(fmt.Sprintf("%s - %d", description, proc), Label("TopLevelLabel"), SemVerConstraints{}, nil, "/path/to/suite", failer, reporter, writer, outputInterceptor, interruptHandler, client, noopProgressSignalRegistrar, c)
+			success, _ := suite.Run(fmt.Sprintf("%s - %d", description, proc), Label("TopLevelLabel"), SemVerConstraints{}, ComponentSemVerConstraints{}, nil, "/path/to/suite", failer, reporter, writer, outputInterceptor, interruptHandler, client, noopProgressSignalRegistrar, c)
 			close(exit)
 			finished <- success
 		}()

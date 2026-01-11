@@ -111,6 +111,19 @@ var _ = Describe("Combining SemVerConstraints", func() {
 	})
 })
 
+var _ = Describe("Combining ComponentSemVerConstraints", func() {
+	It("can combine component semantic version constraints and produce the unique union", func() {
+		Ω(internal.UnionOfComponentSemVerConstraints(
+			ComponentSemVerConstraint("compA", "> 2.1.0", "< 2.2.0"),
+			ComponentSemVerConstraint("compA", "> 2.1.0", "< 2.3.0"),
+			ComponentSemVerConstraint("compB", ">= 1.0.0"),
+		)).Should(Equal(ComponentSemVerConstraints{
+			"compA": []string{"> 2.1.0", "< 2.2.0", "< 2.3.0"},
+			"compB": []string{">= 1.0.0"},
+		}))
+	})
+})
+
 var _ = Describe("Constructing nodes", func() {
 	var dt *types.DeprecationTracker
 	var didRun bool
@@ -501,6 +514,69 @@ var _ = Describe("Constructing nodes", func() {
 			node, errors := internal.NewNode(dt, ntIt, "", body, cl, SemVerConstraint("&| 1.0.0", ""))
 			Ω(node).Should(BeZero())
 			Ω(errors).Should(ConsistOf(types.GinkgoErrors.InvalidSemVerConstraint("&| 1.0.0", "improper constraint: &| 1.0.0", cl), types.GinkgoErrors.InvalidEmptySemVerConstraint(cl)))
+			Ω(dt.DidTrackDeprecations()).Should(BeFalse())
+		})
+	})
+
+	Describe("The ComponentSemVerConstraint decoration", func() {
+		It("has no ComponentSemVerConstraints by default", func() {
+			node, errors := internal.NewNode(dt, ntIt, "text", body)
+			Ω(node).ShouldNot(BeZero())
+			Ω(node.ComponentSemVerConstraints).Should(Equal(ComponentSemVerConstraints{}))
+			ExpectAllWell(errors)
+		})
+
+		It("can track ComponentSemVerConstraints", func() {
+			node, errors := internal.NewNode(dt, ntIt, "text", body, ComponentSemVerConstraint("compA", ">= 1.0.0", "< 2.0.0"))
+			Ω(node.ComponentSemVerConstraints).Should(Equal(ComponentSemVerConstraints{
+				"compA": SemVerConstraints{">= 1.0.0", "< 2.0.0"},
+			}))
+			ExpectAllWell(errors)
+		})
+
+		It("appends and dedupes all ComponentSemVerConstraints together, even if nested", func() {
+			node, errors := internal.NewNode(dt, ntIt, "text", body,
+				ComponentSemVerConstraint("compA", ">= 1.0.0"),
+				ComponentSemVerConstraint("compA", "< 2.0.0"),
+				ComponentSemVerConstraint("compB", ">= 0.1.0"),
+				[]any{
+					ComponentSemVerConstraint("compA", ">= 1.0.0"),
+					[]any{
+						ComponentSemVerConstraint("compA", "< 1.9.0"),
+						ComponentSemVerConstraint("compB", ">= 0.1.0"),
+					},
+				},
+			)
+			Ω(node.ComponentSemVerConstraints).Should(Equal(ComponentSemVerConstraints{
+				"compA": SemVerConstraints{">= 1.0.0", "< 2.0.0", "< 1.9.0"},
+				"compB": SemVerConstraints{">= 0.1.0"},
+			}))
+			ExpectAllWell(errors)
+		})
+
+		It("can be applied to containers", func() {
+			node, errors := internal.NewNode(dt, ntCon, "text", body, ComponentSemVerConstraint("compA", ">= 1.0.0", "< 2.0.0"))
+			Ω(node.ComponentSemVerConstraints).Should(Equal(ComponentSemVerConstraints{
+				"compA": SemVerConstraints{">= 1.0.0", "< 2.0.0"},
+			}))
+			ExpectAllWell(errors)
+		})
+
+		It("cannot be applied to non-container/it nodes", func() {
+			node, errors := internal.NewNode(dt, ntBef, "", body, cl, ComponentSemVerConstraint("compA", ">= 1.0.0", "< 2.0.0"))
+			Ω(node).Should(BeZero())
+			Ω(errors).Should(ConsistOf(types.GinkgoErrors.InvalidDecoratorForNodeType(cl, ntBef, "ComponentSemVerConstraint")))
+			Ω(dt.DidTrackDeprecations()).Should(BeFalse())
+		})
+
+		It("validates ComponentSemVerConstraints", func() {
+			node, errors := internal.NewNode(dt, ntIt, "", body, cl, ComponentSemVerConstraint("", "&| 1.0.0"), ComponentSemVerConstraint("compA", ""))
+			Ω(node).Should(BeZero())
+			Ω(errors).Should(ConsistOf(
+				types.GinkgoErrors.InvalidEmptyComponentForSemVerConstraint(cl),
+				types.GinkgoErrors.InvalidSemVerConstraint("&| 1.0.0", "improper constraint: &| 1.0.0", cl),
+				types.GinkgoErrors.InvalidEmptySemVerConstraint(cl),
+			))
 			Ω(dt.DidTrackDeprecations()).Should(BeFalse())
 		})
 	})
@@ -1569,6 +1645,36 @@ var _ = Describe("Nodes", func() {
 		})
 	})
 
+	Describe("ComponentSemVerConstraints and UnionOfComponentSemVerConstraints", func() {
+		var nodes Nodes
+		BeforeEach(func() {
+			nodes = Nodes{
+				N(ComponentSemVerConstraint("database", ">= 1.0.0", "< 2.0.0")),
+				N(ComponentSemVerConstraint("cache", "^1.2.3")),
+				N(),
+				N(ComponentSemVerConstraint("database", ">= 1.0.0")),
+				N(ComponentSemVerConstraint("cache", "~1.2.x")),
+			}
+		})
+
+		It("ComponentSemVerConstraints returns a map containing the component semver constraints for each node in order", func() {
+			Ω(nodes.ComponentSemVerConstraints()).Should(Equal([]map[string][]string{
+				{"database": {">= 1.0.0", "< 2.0.0"}},
+				{"cache": {"^1.2.3"}},
+				{},
+				{"database": {">= 1.0.0"}},
+				{"cache": {"~1.2.x"}},
+			}))
+		})
+
+		It("UnionOfComponentSemVerConstraints returns a single map of component semver constraints harvested from all nodes and deduped", func() {
+			Ω(nodes.UnionOfComponentSemVerConstraints()).Should(Equal(map[string][]string{
+				"database": {">= 1.0.0", "< 2.0.0"},
+				"cache":    {"^1.2.3", "~1.2.x"},
+			}))
+		})
+	})
+
 	Describe("CodeLocation", func() {
 		var nodes Nodes
 		var cl1, cl2 types.CodeLocation
@@ -1816,6 +1922,22 @@ var _ = Describe("Nodes", func() {
 			Ω(SemVerConstraint("> 1.2.0").MatchesSemVerFilter("1.2.0")).Should(BeFalse())
 			Ω(func() {
 				SemVerConstraint("> 1.0.0").MatchesSemVerFilter("aaa")
+			}).Should(Panic())
+		})
+	})
+
+	Describe("ComponentSemVerConstraints", func() {
+		It("can match against a filter", func() {
+			Ω(ComponentSemVerConstraint("").MatchesSemVerFilter("", "")).Should(BeTrue())
+			Ω(ComponentSemVerConstraint("compA", ">= 1.0.0", "< 2.0.0").MatchesSemVerFilter("compA", "1.2.0")).Should(BeTrue())
+			Ω(ComponentSemVerConstraint("compB", "^1.0.x").MatchesSemVerFilter("compB", "1.2.0")).Should(BeTrue())
+			Ω(ComponentSemVerConstraint("compC", "~1.2.3").MatchesSemVerFilter("compC", "1.2.5")).Should(BeTrue())
+			Ω(ComponentSemVerConstraint("compD", "1.0.0 - 2.0.0").MatchesSemVerFilter("compD", "1.2.0")).Should(BeTrue())
+			Ω(ComponentSemVerConstraint("compE", "!= 1.2.0").MatchesSemVerFilter("compE", "1.2.0")).Should(BeFalse())
+			Ω(ComponentSemVerConstraint("compF", "> 1.2.0").MatchesSemVerFilter("compF", "1.2.0")).Should(BeFalse())
+			Ω(ComponentSemVerConstraint("compFFF", "> 1.2.0").MatchesSemVerFilter("compF", "1.2.0")).Should(BeFalse())
+			Ω(func() {
+				ComponentSemVerConstraint("compG", "> 1.0.0").MatchesSemVerFilter("compG", "aaa")
 			}).Should(Panic())
 		})
 	})
@@ -2078,20 +2200,22 @@ var _ = Describe("ConstructionNodeReport", func() {
 	}
 
 	actualDescribeReport := CurrentTreeConstructionNodeReport()
-	expectDescribeReport := newConstructionNodeReport(types.ConstructionNodeReport{}, []container{{"", 0, nil, nil}, {"ConstructionNodeReport", describeLine + 1, []string{}, []string{}}})
+	expectDescribeReport := newConstructionNodeReport(types.ConstructionNodeReport{}, []container{{"", 0, nil, nil, nil}, {"ConstructionNodeReport", describeLine + 1, []string{}, []string{}, map[string][]string{}}})
 	expectEqual(actualDescribeReport, expectDescribeReport)
 
 	_, _, contextLine, _ := runtime.Caller(0)
 	Context("context", func() {
 		actual := CurrentTreeConstructionNodeReport()
-		expect := newConstructionNodeReport(expectDescribeReport, []container{{"context", contextLine + 1, []string{}, []string{}}})
+		expect := newConstructionNodeReport(expectDescribeReport, []container{{"context", contextLine + 1, []string{}, []string{}, map[string][]string{}}})
 		expectEqual(actual, expect)
 	})
 
 	_, _, complexLine, _ := runtime.Caller(0)
-	Context("complex", Label("A"), Label("B"), SemVerConstraint("> 1.0.0", "<= 3.0.0"), func() {
+	Context("complex", Label("A"), Label("B"), SemVerConstraint("> 1.0.0", "<= 3.0.0"), ComponentSemVerConstraint("etcd", "> 0.1.0", "<= 0.5.0"), func() {
 		actual := CurrentTreeConstructionNodeReport()
-		expect := newConstructionNodeReport(expectDescribeReport, []container{{"complex", complexLine + 1, []string{"A", "B"}, []string{"> 1.0.0", "<= 3.0.0"}}})
+		expect := newConstructionNodeReport(expectDescribeReport, []container{
+			{"complex", complexLine + 1, []string{"A", "B"}, []string{"> 1.0.0", "<= 3.0.0"}, map[string][]string{"etcd": {"> 0.1.0", "<= 0.5.0"}}},
+		})
 		expectEqual(actual, expect)
 	})
 
@@ -2100,7 +2224,7 @@ var _ = Describe("ConstructionNodeReport", func() {
 		actual := CurrentTreeConstructionNodeReport()
 		expect := expectDescribeReport
 		expect.IsSerial = true
-		expect = newConstructionNodeReport(expect, []container{{"serial", serialLine + 1, []string{"Serial"}, []string{}}})
+		expect = newConstructionNodeReport(expect, []container{{"serial", serialLine + 1, []string{"Serial"}, []string{}, map[string][]string{}}})
 		expectEqual(actual, expect)
 	})
 
@@ -2109,7 +2233,7 @@ var _ = Describe("ConstructionNodeReport", func() {
 		actual := CurrentTreeConstructionNodeReport()
 		expect := expectDescribeReport
 		expect.IsInOrderedContainer = true
-		expect = newConstructionNodeReport(expect, []container{{"ordered", orderedLine + 1, []string{}, []string{}}})
+		expect = newConstructionNodeReport(expect, []container{{"ordered", orderedLine + 1, []string{}, []string{}, map[string][]string{}}})
 		expectEqual(actual, expect)
 	})
 
@@ -2117,7 +2241,7 @@ var _ = Describe("ConstructionNodeReport", func() {
 	Context("outer", func() {
 		Context("inner", func() {
 			actual := CurrentTreeConstructionNodeReport()
-			expect := newConstructionNodeReport(expectDescribeReport, []container{{"outer", outerLine + 1, []string{}, []string{}}, {"inner", outerLine + 2, []string{}, []string{}}})
+			expect := newConstructionNodeReport(expectDescribeReport, []container{{"outer", outerLine + 1, []string{}, []string{}, map[string][]string{}}, {"inner", outerLine + 2, []string{}, []string{}, map[string][]string{}}})
 			expectEqual(actual, expect)
 
 			// The transformer runs while constructing the following It node.
@@ -2133,7 +2257,7 @@ var _ = Describe("ConstructionNodeReport", func() {
 		})
 
 		var actual ConstructionNodeReport
-		expect := newConstructionNodeReport(expectDescribeReport, []container{{"outer", outerLine + 1, []string{}, []string{}}})
+		expect := newConstructionNodeReport(expectDescribeReport, []container{{"outer", outerLine + 1, []string{}, []string{}, map[string][]string{}}})
 		remove := AddTreeConstructionNodeArgsTransformer(func(nodeType types.NodeType, offset Offset, text string, args []any) (string, []any, []error) {
 			actual = CurrentTreeConstructionNodeReport()
 			return text, args, nil
@@ -2145,10 +2269,11 @@ var _ = Describe("ConstructionNodeReport", func() {
 })
 
 type container struct {
-	text              string
-	line              int
-	labels            []string
-	semVerConstraints []string
+	text                       string
+	line                       int
+	labels                     []string
+	semVerConstraints          []string
+	componentSemVerConstraints map[string][]string
 }
 
 // newConstructionNodeReport makes a deep copy and extends the given report.
@@ -2157,6 +2282,7 @@ func newConstructionNodeReport(report types.ConstructionNodeReport, containers [
 	report.ContainerHierarchyLocations = slices.Clone(report.ContainerHierarchyLocations)
 	report.ContainerHierarchyLabels = slices.Clone(report.ContainerHierarchyLabels)
 	report.ContainerHierarchySemVerConstraints = slices.Clone(report.ContainerHierarchySemVerConstraints)
+	report.ContainerHierarchyComponentSemVerConstraints = slices.Clone(report.ContainerHierarchyComponentSemVerConstraints)
 	for _, container := range containers {
 		report.ContainerHierarchyTexts = append(report.ContainerHierarchyTexts, container.text)
 		fileName := ""
@@ -2166,6 +2292,7 @@ func newConstructionNodeReport(report types.ConstructionNodeReport, containers [
 		report.ContainerHierarchyLocations = append(report.ContainerHierarchyLocations, types.CodeLocation{FileName: fileName, LineNumber: container.line})
 		report.ContainerHierarchyLabels = append(report.ContainerHierarchyLabels, container.labels)
 		report.ContainerHierarchySemVerConstraints = append(report.ContainerHierarchySemVerConstraints, container.semVerConstraints)
+		report.ContainerHierarchyComponentSemVerConstraints = append(report.ContainerHierarchyComponentSemVerConstraints, container.componentSemVerConstraints)
 	}
 	return report
 }
