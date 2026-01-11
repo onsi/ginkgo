@@ -234,9 +234,18 @@ var _ = Describe("Types", func() {
 			})
 		})
 
-		Describe("", SemVerConstraint(">= 1.0.0", "< 2.0.0"), func() {
+		Describe("SemVerConstraints", SemVerConstraint(">= 1.0.0", "< 2.0.0"), func() {
 			It("returns a concatenated, deduped, set of SemVerConstraints", SemVerConstraint(">= 1.0.0", "< 2.2.0"), func() {
 				Ω(CurrentSpecReport().SemVerConstraints()).Should(Equal([]string{">= 1.0.0", "< 2.0.0", "< 2.2.0"}))
+			})
+		})
+
+		Describe("ComponentSemVerConstraints", ComponentSemVerConstraint("compA", ">= 1.0.0"), ComponentSemVerConstraint("compB", "< 3.0.0"), func() {
+			It("returns a map of component names to their concatenated, deduped, set of SemVerConstraints", ComponentSemVerConstraint("compA", "< 2.0.0"), func() {
+				Ω(CurrentSpecReport().ComponentSemVerConstraints()).Should(Equal(map[string][]string{
+					"compA": {">= 1.0.0", "< 2.0.0"},
+					"compB": {"< 3.0.0"},
+				}))
 			})
 		})
 
@@ -250,6 +259,15 @@ var _ = Describe("Types", func() {
 			It("returns whether or not the version matches", SemVerConstraint(">= 1.0.0", "< 2.0.0"), func() {
 				Ω(CurrentSpecReport().MatchesSemVerFilter("1.1.0")).Should(BeTrue())
 				Ω(CurrentSpecReport().MatchesSemVerFilter("2.0.0")).Should(BeFalse())
+			})
+
+			It("returns whether or not the version matches with the mix of SemVerConstraint and ComponentSemVerConstraint", ComponentSemVerConstraint("compA", ">= 2.0.0"), func() {
+				Ω(CurrentSpecReport().MatchesSemVerFilter("1.1.0")).Should(BeTrue())
+				Ω(CurrentSpecReport().MatchesSemVerFilter("compA=2.2.2")).Should(BeTrue())
+				Ω(CurrentSpecReport().MatchesSemVerFilter("1.1.0, compA=2.2.2")).Should(BeTrue())
+				Ω(CurrentSpecReport().MatchesSemVerFilter("0.1.0, compA=2.2.2")).Should(BeFalse())
+				Ω(CurrentSpecReport().MatchesSemVerFilter("1.1.0, compA=1.9.0")).Should(BeFalse())
+				Ω(CurrentSpecReport().MatchesSemVerFilter("0.1.0, compA=1.9.0")).Should(BeFalse())
 			})
 		})
 

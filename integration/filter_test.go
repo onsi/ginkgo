@@ -1,7 +1,7 @@
 package integration_test
 
 import (
-        "path/filepath"
+	"path/filepath"
 
 	. "github.com/onsi/ginkgo/v2"
 	. "github.com/onsi/gomega"
@@ -113,7 +113,7 @@ var _ = Describe("Filter", func() {
 
 		It("filters specs based on semantic version constraints", func() {
 			session := startGinkgo(filepath.Join(fm.TmpDir, "semver"),
-				"--sem-ver-filter=2.2.0",
+				"--sem-ver-filter=2.2.0, ComponentA=2.5.0",
 				"--json-report=report.json",
 			)
 			Eventually(session).Should(gexec.Exit(0))
@@ -124,35 +124,51 @@ var _ = Describe("Filter", func() {
 				"should run with version in range [2.0.0, 3.0.0)",
 				"should run with version in range [2.0.0, 4.0.0)",
 				"should run with version in range [2.0.0, 5.0.0)",
+				"should run with ComponentA in range [2.0.0, ~)",
+				"should run with ComponentA in range [2.0.0, 3.0.0)",
+				"should run with ComponentA in range [2.0.0, 4.0.0)",
+				"should run with ComponentA in range [2.0.0, 5.0.0)",
+				"should run with a mixed of component-specific and non-component constraints",
 				"should inherit container constraint",
 				"should narrow down the constraint",
 				"shouldn't expand the constraint",
+				"should inherit container component-specific constraint",
+				"should narrow down the component-specific constraint",
+				"shouldn't expand the component-specific constraint",
+				"should inherit container constraints and a new component-specific constraint",
 				"should run without constraints by table driven",
 				"should run with version in range [2.0.0, ~) by table driven",
+				"should run with ComponentA in range [2.0.0, ~) by table driven",
+				"should run with mixed constraints by table driven",
 			}
 			skippedSpecs := []string{
 				"shouldn't run with version in a conflict range",
+				"shouldn't run with ComponentA in a conflict range",
+				"shouldn't run with a mixed of component-specific and non-component conflict constraints",
 				"shouldn't combine with a conflict constraint",
+				"shouldn't combine with a component-specific conflict constraint",
 				"shouldn't run with version in a conflict range by table driven",
+				"shouldn't run with ComponentA in a conflict range by table driven",
 			}
 			Ω(specs).Should(HaveLen(len(passedSpecs) + len(skippedSpecs)))
 			for _, passed := range passedSpecs {
-				Ω(specs.Find(passed)).Should(HavePassed())
+				Ω(specs.Find(passed)).Should(HavePassed(), passed)
 			}
 			for _, skipped := range skippedSpecs {
-				Ω(specs.Find(skipped)).Should(HaveBeenSkipped())
+				Ω(specs.Find(skipped)).Should(HaveBeenSkipped(), skipped)
 			}
 		})
 
 		It("filters specs with hierarchy based on semantic version constraints", func() {
 			session := startGinkgo(filepath.Join(fm.TmpDir, "semver", "spechierarchy"),
-				"--sem-ver-filter=2.2.0",
+				"--sem-ver-filter=2.2.0, compA=12.0.0",
 				"--json-report=report.json",
 			)
 			Eventually(session).Should(gexec.Exit(0))
 			specs := Reports(fm.LoadJSONReports(filepath.Join("semver", "spechierarchy"), "report.json")[0].SpecReports)
 			passedSpecs := []string{
 				"should inherit spec constraint",
+				"should integrate with component constraint",
 			}
 			skippedSpecs := []string{
 				"should narrow down spec constraint",

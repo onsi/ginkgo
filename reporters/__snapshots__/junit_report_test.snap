@@ -9,6 +9,7 @@
               <property name="SpecialSuiteFailureReason" value=""></property>
               <property name="SuiteLabels" value="[]"></property>
               <property name="SuiteSemVerConstraints" value="[]"></property>
+              <property name="SuiteComponentSemVerConstraints" value="[]"></property>
               <property name="RandomSeed" value="17"></property>
               <property name="RandomizeAllSpecs" value="false"></property>
               <property name="LabelFilter" value=""></property>

@@ -2930,13 +2930,17 @@ Describe("Feature with version requirements", func() {
   It("should work in a specific version range (1.0.0, 2.0.0)", SemVerConstraint("> 1.0.0", "< 2.0.0"), func() {
     // This test will only run when version is between 1.0.0 (exclusive) and 2.0.0 (exclusive)
   })
+
+  It("should work in a specific version range (1.0.0, 2.0.0) and third-party dependency redis in [8.0.0, ~)", SemVerConstraint(">= 3.2.0"), ComponentSemVerConstraint("redis", ">= 8.0.0") func() {
+    // This test will only run when version is between 1.0.0 (exclusive) and 2.0.0 (exclusive) and redis version is >= 8.0.0
+  })
 })
 ```
 
 You can then filter specs by providing a semantic version via the `--sem-ver-filter` flag:
 
 ```bash
-ginkgo --sem-ver-filter="2.1.1"
+ginkgo --sem-ver-filter="2.1.1, redis=8.2.0"
 ```
 
 This will only run specs whose semantic version constraints are satisfied by the provided version.
@@ -2963,14 +2967,27 @@ Describe("Feature with version requirements", SemVerConstraint(">= 2.0.0, < 2.3.
   It("should only run in a narrower range", SemVerConstraint(">= 2.1.0, <= 2.2.0"), func() {
     // Effective constraint: >= 2.1.0, <= 2.2.0 (intersection with parent)
   })
+  
+  Context("should work in the base version range and third-party dependency", ComponentSemVerConstraint("redis", ">= 6.0.0"), func() {
+    It("should run when both constraints are satisfied", func() {
+      // Effective constraint: >= 2.0.0, < 2.3.0 and redis version >= 6.0.0
+    })
+	
+	It("should run in a narrower range with third-party dependency", ComponentSemVerConstraint("redis", ">= 7.0.0", "< 8.0.0"), func() {
+	  // Effective constraint: >= 2.0.0, < 2.3.0 and redis version >= 7.0.0, < 8.0.0
+    })
+  })
 })
 ```
 
 In this example, the second spec will only run when the version satisfies both the parent constraint (`>= 2.0.0, < 2.3.0`) and its own constraint (`>= 2.1.0, <= 2.2.0`), resulting in an effective constraint of `>= 2.1.0, <= 2.2.0`.
+Additionally, the specs within the `Context` will only run when both the parent constraint and the third-party dependency constraint are satisfied.
+
+Note that while using `ComponentSemVerConstraint` decorator, the component name can not be empty.
 
 ##### Unconstrained Specs
 
-Specs that don't have a `SemVerConstraint` decorator are considered unconstrained and will always run when the `--sem-ver-filter` flag is provided. This allows you to have a mix of version-specific and version-agnostic tests in the same suite.
+Specs that don't have `SemVerConstraint` or `ComponentSemVerConstraint` decorator are considered unconstrained and will always run when the `--sem-ver-filter` flag is provided. This allows you to have a mix of version-specific and version-agnostic tests in the same suite.
 
 #### Location-Based Filtering
 

@@ -80,6 +80,7 @@ var _ = Describe("Focus", func() {
 		var description string
 		var suiteLabels Labels
 		var suiteSemVerConstraints SemVerConstraints
+		var suiteComponentSemVerConstraints ComponentSemVerConstraints
 		var conf types.SuiteConfig
 
 		harvestSkips := func(specs Specs) []bool {
@@ -108,7 +109,7 @@ var _ = Describe("Focus", func() {
 			})
 
 			It("skips those specs", func() {
-				specs, hasProgrammaticFocus := internal.ApplyFocusToSpecs(specs, description, suiteLabels, suiteSemVerConstraints, conf)
+				specs, hasProgrammaticFocus := internal.ApplyFocusToSpecs(specs, description, suiteLabels, suiteSemVerConstraints, suiteComponentSemVerConstraints, conf)
 				Ω(harvestSkips(specs)).Should(Equal([]bool{false, false, true, false, true}))
 				Ω(hasProgrammaticFocus).Should(BeFalse())
 			})
@@ -125,7 +126,7 @@ var _ = Describe("Focus", func() {
 				}
 			})
 			It("skips any other specs and notes that it has programmatic focus", func() {
-				specs, hasProgrammaticFocus := internal.ApplyFocusToSpecs(specs, description, suiteLabels, suiteSemVerConstraints, conf)
+				specs, hasProgrammaticFocus := internal.ApplyFocusToSpecs(specs, description, suiteLabels, suiteSemVerConstraints, suiteComponentSemVerConstraints, conf)
 				Ω(harvestSkips(specs)).Should(Equal([]bool{true, true, false, true, false}))
 				Ω(hasProgrammaticFocus).Should(BeTrue())
 			})
@@ -140,7 +141,7 @@ var _ = Describe("Focus", func() {
 					}
 				})
 				It("does not skip any other specs and notes that it does not have programmatic focus", func() {
-					specs, hasProgrammaticFocus := internal.ApplyFocusToSpecs(specs, description, suiteLabels, suiteSemVerConstraints, conf)
+					specs, hasProgrammaticFocus := internal.ApplyFocusToSpecs(specs, description, suiteLabels, suiteSemVerConstraints, suiteComponentSemVerConstraints, conf)
 					Ω(harvestSkips(specs)).Should(Equal([]bool{false, false, true, false}))
 					Ω(hasProgrammaticFocus).Should(BeFalse())
 				})
@@ -166,14 +167,14 @@ var _ = Describe("Focus", func() {
 				})
 
 				It("overrides any programmatic focus, runs only specs that match the focus string, and continues to skip specs with nodes marked pending", func() {
-					specs, hasProgrammaticFocus := internal.ApplyFocusToSpecs(specs, description, suiteLabels, suiteSemVerConstraints, conf)
+					specs, hasProgrammaticFocus := internal.ApplyFocusToSpecs(specs, description, suiteLabels, suiteSemVerConstraints, suiteComponentSemVerConstraints, conf)
 					Ω(harvestSkips(specs)).Should(Equal([]bool{false, false, false, false, true, true, true}))
 					Ω(hasProgrammaticFocus).Should(BeFalse())
 				})
 
 				It("includes the description string in the search", func() {
 					conf.FocusStrings = []string{"Silmaril"}
-					specs, hasProgrammaticFocus := internal.ApplyFocusToSpecs(specs, description, suiteLabels, suiteSemVerConstraints, conf)
+					specs, hasProgrammaticFocus := internal.ApplyFocusToSpecs(specs, description, suiteLabels, suiteSemVerConstraints, suiteComponentSemVerConstraints, conf)
 					Ω(harvestSkips(specs)).Should(Equal([]bool{false, false, false, false, true, false, false}))
 					Ω(hasProgrammaticFocus).Should(BeFalse())
 				})
@@ -185,14 +186,14 @@ var _ = Describe("Focus", func() {
 				})
 
 				It("overrides any programmatic focus, and runs specs that don't match the skip strings, and continues to skip specs with nodes marked pending", func() {
-					specs, hasProgrammaticFocus := internal.ApplyFocusToSpecs(specs, description, suiteLabels, suiteSemVerConstraints, conf)
+					specs, hasProgrammaticFocus := internal.ApplyFocusToSpecs(specs, description, suiteLabels, suiteSemVerConstraints, suiteComponentSemVerConstraints, conf)
 					Ω(harvestSkips(specs)).Should(Equal([]bool{true, true, true, false, true, false, false}))
 					Ω(hasProgrammaticFocus).Should(BeFalse())
 				})
 
 				It("includes the description string in the search", func() {
 					conf.SkipStrings = []string{"Silmaril"}
-					specs, hasProgrammaticFocus := internal.ApplyFocusToSpecs(specs, description, suiteLabels, suiteSemVerConstraints, conf)
+					specs, hasProgrammaticFocus := internal.ApplyFocusToSpecs(specs, description, suiteLabels, suiteSemVerConstraints, suiteComponentSemVerConstraints, conf)
 					Ω(harvestSkips(specs)).Should(Equal([]bool{true, true, true, true, true, true, true}))
 					Ω(hasProgrammaticFocus).Should(BeFalse())
 				})
@@ -205,7 +206,7 @@ var _ = Describe("Focus", func() {
 				})
 
 				It("ORs both together", func() {
-					specs, hasProgrammaticFocus := internal.ApplyFocusToSpecs(specs, description, suiteLabels, suiteSemVerConstraints, conf)
+					specs, hasProgrammaticFocus := internal.ApplyFocusToSpecs(specs, description, suiteLabels, suiteSemVerConstraints, suiteComponentSemVerConstraints, conf)
 					Ω(harvestSkips(specs)).Should(Equal([]bool{false, true, true, false, true, true, true}))
 					Ω(hasProgrammaticFocus).Should(BeFalse())
 				})
@@ -228,7 +229,7 @@ var _ = Describe("Focus", func() {
 			})
 
 			It("applies a file-based focus and skip filter", func() {
-				specs, hasProgrammaticFocus := internal.ApplyFocusToSpecs(specs, description, suiteLabels, suiteSemVerConstraints, conf)
+				specs, hasProgrammaticFocus := internal.ApplyFocusToSpecs(specs, description, suiteLabels, suiteSemVerConstraints, suiteComponentSemVerConstraints, conf)
 				Ω(harvestSkips(specs)).Should(Equal([]bool{false, false, true, true, true, false}))
 				Ω(hasProgrammaticFocus).Should(BeFalse())
 			})
@@ -248,7 +249,7 @@ var _ = Describe("Focus", func() {
 			})
 
 			It("applies the label filters", func() {
-				specs, hasProgrammaticFocus := internal.ApplyFocusToSpecs(specs, description, suiteLabels, suiteSemVerConstraints, conf)
+				specs, hasProgrammaticFocus := internal.ApplyFocusToSpecs(specs, description, suiteLabels, suiteSemVerConstraints, suiteComponentSemVerConstraints, conf)
 				Ω(harvestSkips(specs)).Should(Equal([]bool{true, false, true, true, false, true}))
 				Ω(hasProgrammaticFocus).Should(BeFalse())
 
@@ -269,7 +270,7 @@ var _ = Describe("Focus", func() {
 			})
 
 			It("applies the label filters", func() {
-				specs, hasProgrammaticFocus := internal.ApplyFocusToSpecs(specs, description, suiteLabels, suiteSemVerConstraints, conf)
+				specs, hasProgrammaticFocus := internal.ApplyFocusToSpecs(specs, description, suiteLabels, suiteSemVerConstraints, suiteComponentSemVerConstraints, conf)
 				Ω(harvestSkips(specs)).Should(Equal([]bool{true, false, true, false, true, true}))
 				Ω(hasProgrammaticFocus).Should(BeFalse())
 
@@ -285,7 +286,7 @@ var _ = Describe("Focus", func() {
 				}
 			})
 			It("honors the suite level label", func() {
-				specs, hasProgrammaticFocus := internal.ApplyFocusToSpecs(specs, description, suiteLabels, suiteSemVerConstraints, conf)
+				specs, hasProgrammaticFocus := internal.ApplyFocusToSpecs(specs, description, suiteLabels, suiteSemVerConstraints, suiteComponentSemVerConstraints, conf)
 				Ω(harvestSkips(specs)).Should(Equal([]bool{false, true}))
 				Ω(hasProgrammaticFocus).Should(BeFalse())
 			})
@@ -311,7 +312,7 @@ var _ = Describe("Focus", func() {
 			})
 
 			It("applies all filters", func() {
-				specs, hasProgrammaticFocus := internal.ApplyFocusToSpecs(specs, description, suiteLabels, suiteSemVerConstraints, conf)
+				specs, hasProgrammaticFocus := internal.ApplyFocusToSpecs(specs, description, suiteLabels, suiteSemVerConstraints, suiteComponentSemVerConstraints, conf)
 				Ω(harvestSkips(specs)).Should(Equal([]bool{false, true, true, true, true, true, true}))
 				Ω(hasProgrammaticFocus).Should(BeFalse())
 			})
@@ -338,7 +339,7 @@ var _ = Describe("Focus", func() {
 			})
 
 			It("applies all filters", func() {
-				specs, hasProgrammaticFocus := internal.ApplyFocusToSpecs(specs, description, suiteLabels, suiteSemVerConstraints, conf)
+				specs, hasProgrammaticFocus := internal.ApplyFocusToSpecs(specs, description, suiteLabels, suiteSemVerConstraints, suiteComponentSemVerConstraints, conf)
 				Ω(harvestSkips(specs)).Should(Equal([]bool{true, false, true, true, true, true, true, true}))
 				Ω(hasProgrammaticFocus).Should(BeTrue())
 			})
