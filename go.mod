@@ -1,6 +1,6 @@
 module github.com/onsi/ginkgo/v2
 
-go 1.23.0
+go 1.24.0
 
 require (
 	github.com/Masterminds/semver/v3 v3.4.0
@@ -11,8 +11,8 @@ require (
 	github.com/joshdk/go-junit v1.0.0
 	github.com/mfridman/tparse v0.18.0
 	github.com/onsi/gomega v1.38.2
-	golang.org/x/sys v0.35.0
-	golang.org/x/tools v0.36.0
+	golang.org/x/sys v0.40.0
+	golang.org/x/tools v0.41.0
 )
 
 require (
@@ -29,10 +29,10 @@ require (
 	github.com/tidwall/pretty v1.2.1 // indirect
 	github.com/tidwall/sjson v1.2.5 // indirect
 	go.yaml.in/yaml/v3 v3.0.4 // indirect
-	golang.org/x/mod v0.27.0 // indirect
-	golang.org/x/net v0.43.0 // indirect
-	golang.org/x/sync v0.16.0 // indirect
-	golang.org/x/text v0.28.0 // indirect
+	golang.org/x/mod v0.32.0 // indirect
+	golang.org/x/net v0.49.0 // indirect
+	golang.org/x/sync v0.19.0 // indirect
+	golang.org/x/text v0.33.0 // indirect
 	google.golang.org/protobuf v1.36.7 // indirect
 	gopkg.in/check.v1 v1.0.0-20180628173108-788fd7840127 // indirect
 )
