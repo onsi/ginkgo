@@ -5,6 +5,7 @@ import (
 	"fmt"
 	"io"
 	"reflect"
+	"slices"
 	"strings"
 	"time"
 
@@ -60,11 +61,8 @@ func (f GinkgoFlags) WithPrefix(prefix string) GinkgoFlags {
 func (f GinkgoFlags) SubsetWithNames(names ...string) GinkgoFlags {
 	out := GinkgoFlags{}
 	for _, flag := range f {
-		for _, name := range names {
-			if flag.Name == name {
-				out = append(out, flag)
-				break
-			}
+		if slices.Contains(names, flag.Name) {
+			out = append(out, flag)
 		}
 	}
 	return out
