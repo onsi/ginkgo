@@ -107,7 +107,7 @@ func (f PerformanceFixtureManager) Cleanup() {
 }
 
 func (f PerformanceFixtureManager) MountFixture(fixture string, subPackage ...string) {
-	src := filepath.Join("_fixtures", fixture+"_fixture")
+	src := filepath.Join("testdata", fixture+"_fixture")
 	dst := filepath.Join(f.TmpDir, fixture)
 
 	if len(subPackage) > 0 {
