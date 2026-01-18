@@ -29,6 +29,7 @@ var cl1 = types.CodeLocation{FileName: "cl1.go", LineNumber: 37, FullStackTrace:
 var cl2 = types.CodeLocation{FileName: "cl2.go", LineNumber: 80, FullStackTrace: "full-trace\ncl-2"}
 var cl3 = types.CodeLocation{FileName: "cl3.go", LineNumber: 103, FullStackTrace: "full-trace\ncl-3"}
 var cl4 = types.CodeLocation{FileName: "cl4.go", LineNumber: 144, FullStackTrace: "full-trace\ncl-4"}
+
 // simulate current time ast static time
 var now = time.Date(2025, time.September, 9, 10, 50, 0, 0, time.UTC)
 
@@ -37,6 +38,9 @@ func CTS(componentTexts ...string) []string              { return componentTexts
 func CLabels(labels ...Labels) []Labels                  { return labels }
 func CSemVerConstraints(semVerConstraints ...SemVerConstraints) []SemVerConstraints {
 	return semVerConstraints
+}
+func CComponentSemVerConstraints(compSemVerConstraints ...ComponentSemVerConstraints) []ComponentSemVerConstraints {
+	return compSemVerConstraints
 }
 func spr(format string, args ...any) string { return fmt.Sprintf(format, args...) }
 
@@ -134,6 +138,11 @@ func S(options ...any) types.SpecReport {
 			for _, semVerConstraints := range x {
 				report.ContainerHierarchySemVerConstraints = append(report.ContainerHierarchySemVerConstraints, []string(semVerConstraints))
 			}
+		case []ComponentSemVerConstraints:
+			report.ContainerHierarchyComponentSemVerConstraints = []map[string][]string{}
+			for _, compSemVerConstraints := range x {
+				report.ContainerHierarchyComponentSemVerConstraints = append(report.ContainerHierarchyComponentSemVerConstraints, map[string][]string(compSemVerConstraints))
+			}
 		case string:
 			report.LeafNodeText = x
 		case types.NodeType:
@@ -144,6 +153,8 @@ func S(options ...any) types.SpecReport {
 			report.LeafNodeLabels = x
 		case SemVerConstraints:
 			report.LeafNodeSemVerConstraints = x
+		case ComponentSemVerConstraints:
+			report.LeafNodeComponentSemVerConstraints = x
 		case types.SpecState:
 			report.State = x
 		case time.Duration:
@@ -178,6 +189,11 @@ func S(options ...any) types.SpecReport {
 	if len(report.ContainerHierarchySemVerConstraints) == 0 {
 		for range report.ContainerHierarchyTexts {
 			report.ContainerHierarchySemVerConstraints = append(report.ContainerHierarchySemVerConstraints, []string{})
+		}
+	}
+	if len(report.ContainerHierarchyComponentSemVerConstraints) == 0 {
+		for range report.ContainerHierarchyTexts {
+			report.ContainerHierarchyComponentSemVerConstraints = append(report.ContainerHierarchyComponentSemVerConstraints, map[string][]string{})
 		}
 	}
 	return report
@@ -495,6 +511,21 @@ var _ = Describe("DefaultReporter", func() {
 			"Will run {{bold}}15{{/}} of {{bold}}20{{/}} specs",
 			"",
 		),
+		Entry("With ComponentSemVerConstraints",
+			C(),
+			types.Report{
+				SuiteDescription: "My Suite", SuitePath: "/path/to/suite", SuiteComponentSemVerConstraints: map[string][]string{"kubelet": []string{">=1.0.0, <2.0.0"}, "etcd": []string{">=3.0.0", "<4.0.0"}},
+				PreRunStats: types.PreRunStats{SpecsThatWillRun: 15, TotalSpecs: 20},
+				SuiteConfig: types.SuiteConfig{RandomSeed: 17, ParallelTotal: 1},
+			},
+			"Running Suite: My Suite - /path/to/suite",
+			"{{coral}}[Components: etcd: [>=3.0.0 <4.0.0], kubelet: [>=1.0.0, <2.0.0]]{{/}} ",
+			"====================================================",
+			"Random Seed: {{bold}}17{{/}}",
+			"",
+			"Will run {{bold}}15{{/}} of {{bold}}20{{/}} specs",
+			"",
+		),
 		Entry("When configured to randomize all specs",
 			C(),
 			types.Report{
@@ -554,6 +585,15 @@ var _ = Describe("DefaultReporter", func() {
 			},
 			"[17] {{bold}}My Suite{{/}} {{coral}}[> 1.0.0, < 2.0.0]{{/}} - 15/20 specs - 3 procs ",
 		),
+		Entry("when succinct and with ComponentSemVerConstraints",
+			C(Succinct),
+			types.Report{
+				SuiteDescription: "My Suite", SuitePath: "/path/to/suite", SuiteComponentSemVerConstraints: map[string][]string{"kubelet": []string{">=1.0.0, <2.0.0"}, "etcd": []string{">=3.0.0", "<4.0.0"}},
+				PreRunStats: types.PreRunStats{SpecsThatWillRun: 15, TotalSpecs: 20},
+				SuiteConfig: types.SuiteConfig{RandomSeed: 17, ParallelTotal: 3},
+			},
+			"[17] {{bold}}My Suite{{/}} {{coral}}[Components: etcd: [>=3.0.0 <4.0.0], kubelet: [>=1.0.0, <2.0.0]]{{/}} - 15/20 specs - 3 procs ",
+		),
 	)
 
 	DescribeTable("WillRun",
@@ -604,6 +644,18 @@ var _ = Describe("DefaultReporter", func() {
 			S(CTS("Container", "Nested Container"), "My Test", CLS(cl0, cl1), cl2, CSemVerConstraints(SemVerConstraint("> 1.0.0", "< 2.0.0"), SemVerConstraint("> 0.1.0", "< 2.0.0")), SemVerConstraint("> 1.1.0")),
 			DELIMITER,
 			"{{/}}Container {{gray}}Nested Container {{/}}{{bold}}My Test{{/}} {{coral}}[> 1.0.0, < 2.0.0, > 0.1.0, > 1.1.0]{{/}}",
+			"{{gray}}"+cl2.String()+"{{/}}",
+			"",
+		),
+		Entry("specs with ComponentSemVerConstraints", C(Verbose),
+			S(CTS("Container", "Nested Container"), "My Test", CLS(cl0, cl1), cl2, CComponentSemVerConstraints(
+				ComponentSemVerConstraint("etcd", ">=3.0.0, <4.0.0"),
+				ComponentSemVerConstraint("kubelet", ">=1.0.0", "<2.0.0"),
+			),
+				ComponentSemVerConstraint("kubelet", ">1.5.0"),
+			),
+			DELIMITER,
+			"{{/}}Container {{gray}}Nested Container {{/}}{{bold}}My Test{{/}} {{coral}}[etcd: [>=3.0.0, <4.0.0], kubelet: [>=1.0.0 <2.0.0 >1.5.0]]{{/}}",
 			"{{gray}}"+cl2.String()+"{{/}}",
 			"",
 		),
@@ -2033,6 +2085,10 @@ var _ = Describe("DefaultReporter", func() {
 						types.SpecStateFailed, 2,
 						F("FAILURE MESSAGE\nWITH DETAILS", types.FailureNodeInContainer, FailureNodeLocation(cl3), types.NodeTypeJustBeforeEach, 1, cl4),
 					),
+					S(CTS("Describe A", " Context D"), "The Test", CLS(cl0, cl1), cl2, CComponentSemVerConstraints(ComponentSemVerConstraint("etcd", "> 1.0.0", "< 2.0.0"), ComponentSemVerConstraint("kubelet", "> 1.0.0", "< 3.0.0")), ComponentSemVerConstraint("api-server", ">5.0.0"),
+						types.SpecStateFailed, 2,
+						F("FAILURE MESSAGE\nWITH DETAILS", types.FailureNodeInContainer, FailureNodeLocation(cl3), types.NodeTypeJustBeforeEach, 1, cl4),
+					),
 					S(CTS("Describe A"), "The Test", CLS(cl0), cl1,
 						types.SpecStatePanicked, 2,
 						F("FAILURE MESSAGE\nWITH DETAILS", types.FailureNodeIsLeafNode, FailureNodeLocation(cl1), types.NodeTypeIt, cl2),
@@ -2053,7 +2109,7 @@ var _ = Describe("DefaultReporter", func() {
 				},
 			},
 			"",
-			"{{red}}{{bold}}Summarizing 8 Failures:{{/}}",
+			"{{red}}{{bold}}Summarizing 9 Failures:{{/}}",
 			"  {{red}}[FAIL]{{/}} {{red}}{{bold}}[It] repeater{{/}}",
 			"  {{gray}}cl3.go:103{{/}}",
 			"  {{red}}[FAIL]{{/}} {{red}}{{bold}}[It] another-repeater{{/}}",
@@ -2061,6 +2117,8 @@ var _ = Describe("DefaultReporter", func() {
 			"  {{red}}[FAIL]{{/}} {{/}}Describe A {{red}}{{bold}}Context B [JustBeforeEach] {{/}}The Test{{/}} {{coral}}[cat, dog, fish, giraffe]{{/}}",
 			"  {{gray}}cl4.go:144{{/}}",
 			"  {{red}}[FAIL]{{/}} {{/}}Describe A {{red}}{{bold}}Context C [JustBeforeEach] {{/}}The Test{{/}} {{coral}}[> 1.0.0, < 2.0.0, < 3.0.0, > 2.1.0]{{/}}",
+			"  {{gray}}cl4.go:144{{/}}",
+			"  {{red}}[FAIL]{{/}} {{/}}Describe A {{red}}{{bold}} Context D [JustBeforeEach] {{/}}The Test{{/}} {{coral}}[api-server: [>5.0.0], etcd: [> 1.0.0 < 2.0.0], kubelet: [> 1.0.0 < 3.0.0]]{{/}}",
 			"  {{gray}}cl4.go:144{{/}}",
 			"  {{magenta}}[PANICKED!]{{/}} {{/}}Describe A {{magenta}}{{bold}}[It] The Test{{/}}",
 			"  {{gray}}cl2.go:80{{/}}",
@@ -2071,8 +2129,8 @@ var _ = Describe("DefaultReporter", func() {
 			"  {{orange}}[TIMEDOUT]{{/}} {{orange}}{{bold}}[It] The Test{{/}}",
 			"  {{gray}}cl1.go:37{{/}}",
 			"",
-			"{{red}}{{bold}}Ran 14 of 14 Specs in 60.000 seconds{{/}}",
-			"{{red}}{{bold}}FAIL!{{/}} -- {{green}}{{bold}}6 Passed{{/}} | {{red}}{{bold}}8 Failed{{/}} | {{light-yellow}}{{bold}}2 Flaked{{/}} | {{light-yellow}}{{bold}}2 Repeated{{/}} | {{yellow}}{{bold}}2 Pending{{/}} | {{cyan}}{{bold}}3 Skipped{{/}}",
+			"{{red}}{{bold}}Ran 15 of 14 Specs in 60.000 seconds{{/}}",
+			"{{red}}{{bold}}FAIL!{{/}} -- {{green}}{{bold}}6 Passed{{/}} | {{red}}{{bold}}9 Failed{{/}} | {{light-yellow}}{{bold}}2 Flaked{{/}} | {{light-yellow}}{{bold}}2 Repeated{{/}} | {{yellow}}{{bold}}2 Pending{{/}} | {{cyan}}{{bold}}3 Skipped{{/}}",
 			"",
 		),
 		Entry("the suite fails with failed suite setups",

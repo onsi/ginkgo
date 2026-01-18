@@ -16,4 +16,6 @@ var _ = Describe("Spec Hierarchy Semantic Version Filtering", func() {
 	It("should inherit spec constraint", func() {})
 
 	It("should narrow down spec constraint", SemVerConstraint(">= 3.0.0, < 4.0.0"), func() {})
+
+	It("should integrate with component constraint", ComponentSemVerConstraint("compA", ">= 12.0.0"), func() {})
 })
