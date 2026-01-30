@@ -265,7 +265,7 @@ var _ = Describe("Reporting", func() {
 			Ω(getTestCase("[It] reporting test times out and fails during cleanup", suite.TestCases).SystemErr).Should(ContainSubstring("[FAILED] double-whammy"))
 
 			buf := gbytes.NewBuffer()
-			fmt.Fprintf(buf, getTestCase("[It] reporting test has a progress report", suite.TestCases).SystemErr)
+			fmt.Fprint(buf, getTestCase("[It] reporting test has a progress report", suite.TestCases).SystemErr)
 			Ω(buf).Should(gbytes.Say(`some ginkgo-writer preamble`))
 			Ω(buf).Should(gbytes.Say(`reporting test has a progress report \(Spec Runtime:`))
 			Ω(buf).Should(gbytes.Say(`goroutine \d+ \[sleep\]`))
