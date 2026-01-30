@@ -34,8 +34,8 @@ Happy Testing!
 Sponsors commit to a [sponsorship](https://github.com/sponsors/onsi) for a year.  If you're an organization that makes use of Ginkgo please consider becoming a sponsor!
 
 <p style="font-size:21px; color:black;">Browser testing via 
-    <a href="https://www.lambdatest.com/" target="_blank">
-        <img src="https://www.lambdatest.com/blue-logo.png" style="vertical-align: middle;" width="250" height="45" />
+    <a href="https://www.testmu.ai/" target="_blank">
+        <img src="https://www.testmu.ai/blue-logo.png" style="vertical-align: middle;" width="250" height="45" />
     </a>
 </p>
 
@@ -5948,15 +5948,15 @@ The [ginkgolinter](https://github.com/nunnatsa/ginkgolinter) enforces several pa
 Sponsors commit to a [sponsorship](https://github.com/sponsors/onsi) for a year.  If you're an organization that makes use of Ginkgo please consider becoming a sponsor!
 
 <p style="font-size:21px; color:black;">Browser testing via 
-    <a href="https://www.lambdatest.com/" target="_blank">
-        <img src="https://www.lambdatest.com/blue-logo.png" style="vertical-align: middle;" width="250" height="45" />
+    <a href="https://www.testmu.ai/" target="_blank">
+        <img src="https://www.testmu.ai/blue-logo.png" style="vertical-align: middle;" width="250" height="45" />
     </a>
 </p>
 
-LambdaTest is a GenAI-powered Quality Engineering Platform that empowers teams to test intelligently, smarter, and ship faster. Built for scale, it offers a full-stack testing cloud with 10K+ real devices and 3,000+ browsers.
+TestMu AI is a GenAI-powered Quality Engineering Platform that empowers teams to test intelligently, smarter, and ship faster. Built for scale, it offers a full-stack testing cloud with 10K+ real devices and 3,000+ browsers.
 
-With AI-native test management, MCP servers, and agent-based automation, LambdaTest supports Selenium, Appium, Playwright, and all major frameworks. AI Agents like HyperExecute and KaneAI bring the power of AI and cloud into your software testing workflow, enabling seamless automation testing with 120+ integrations.
+With AI-native test management, MCP servers, and agent-based automation, TestMu AI supports Selenium, Appium, Playwright, and all major frameworks. AI Agents like HyperExecute and KaneAI bring the power of AI and cloud into your software testing workflow, enabling seamless automation testing with 120+ integrations.
 
-LambdaTest Agents accelerate your testing throughout the entire SDLC, from test planning and authoring to automation, infrastructure, execution, RCA, and reporting.
+TestMu AI Agents accelerate your testing throughout the entire SDLC, from test planning and authoring to automation, infrastructure, execution, RCA, and reporting.
 
-For more information, please visit https://lambdatest.com/
+For more information, please visit https://www.testmu.ai/
