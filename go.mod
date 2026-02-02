@@ -10,7 +10,7 @@ require (
 	github.com/google/pprof v0.0.0-20260115054156-294ebfa9ad83
 	github.com/joshdk/go-junit v1.0.0
 	github.com/mfridman/tparse v0.18.0
-	github.com/onsi/gomega v1.39.0
+	github.com/onsi/gomega v1.39.1
 	golang.org/x/sys v0.40.0
 	golang.org/x/tools v0.41.0
 )
