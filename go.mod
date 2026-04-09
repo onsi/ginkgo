@@ -1,6 +1,6 @@
 module github.com/onsi/ginkgo/v2
 
-go 1.24.0
+go 1.25.0
 
 require (
 	github.com/Masterminds/semver/v3 v3.4.0
@@ -11,7 +11,7 @@ require (
 	github.com/joshdk/go-junit v1.0.0
 	github.com/mfridman/tparse v0.18.0
 	github.com/onsi/gomega v1.39.0
-	golang.org/x/sys v0.40.0
+	golang.org/x/sys v0.43.0
 	golang.org/x/tools v0.41.0
 )
 
