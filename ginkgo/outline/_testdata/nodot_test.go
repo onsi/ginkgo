@@ -41,4 +41,11 @@ var _ = ginkgo.Describe("NodotFixture", func() {
 		func() {},
 		ginkgo.Entry("normal"),
 	)
+
+	ginkgo.DescribeTableSubtree("normal",
+		func() {
+			ginkgo.It("normal", func() {})
+		},
+		ginkgo.Entry("normal"),
+	)
 })

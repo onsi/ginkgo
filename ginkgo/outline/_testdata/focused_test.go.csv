@@ -1,5 +1,5 @@
 Name,Text,Start,End,Spec,Focused,Pending,Labels
-Describe,unfocused,73,529,false,false,false,
+Describe,unfocused,73,631,false,false,false,
 FDescribe,focused,105,202,false,true,false,
 It,focused,137,198,true,true,false,
 By,focused,163,176,false,true,false,
@@ -14,3 +14,6 @@ FDescribeTable,focused,401,462,false,true,false,
 Entry,focused,442,458,true,true,false,
 DescribeTable,focused,465,526,false,false,false,
 FEntry,focused,505,522,true,true,false,
+FDescribeTableSubtree,focused,529,628,false,true,false,
+Entry,focused,608,624,true,true,false,
+It,focused,576,600,true,true,false,

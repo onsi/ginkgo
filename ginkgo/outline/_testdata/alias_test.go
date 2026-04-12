@@ -42,4 +42,11 @@ var _ = fooginkgo.Describe("NodotFixture", func() {
 		func() {},
 		fooginkgo.Entry("normal"),
 	)
+
+	fooginkgo.DescribeTableSubtree("normal",
+		func() {
+			fooginkgo.It("normal", func() {})
+		},
+		fooginkgo.Entry("normal"),
+	)
 })

@@ -41,4 +41,11 @@ var _ = Describe("unfocused", func() {
 		func() {},
 		FEntry("focused"),
 	)
+
+	FDescribeTableSubtree("focused",
+		func() {
+			It("focused", func() {})
+		},
+		Entry("focused"),
+	)
 })

@@ -1,5 +1,5 @@
 Name,Text,Start,End,Spec,Focused,Pending,Labels
-Describe,PendingFixture,73,534,false,false,false,
+Describe,PendingFixture,73,636,false,false,false,
 PDescribe,pending,110,207,false,false,true,
 It,pending,142,203,true,false,true,
 By,pending,168,181,false,false,true,
@@ -14,3 +14,6 @@ PDescribeTable,pending,406,467,false,false,true,
 Entry,pending,447,463,true,false,true,
 DescribeTable,pending,470,531,false,false,false,
 PEntry,pending,510,527,true,false,true,
+PDescribeTableSubtree,pending,534,633,false,false,true,
+Entry,pending,613,629,true,false,true,
+It,pending,581,605,true,false,true,
