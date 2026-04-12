@@ -41,4 +41,11 @@ var _ = Describe("PendingFixture", func() {
 		func() {},
 		PEntry("pending"),
 	)
+
+	PDescribeTableSubtree("pending",
+		func() {
+			It("pending", func() {})
+		},
+		Entry("pending"),
+	)
 })
