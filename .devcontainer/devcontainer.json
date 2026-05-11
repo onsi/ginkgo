@@ -1,0 +1,41 @@
+{
+    "name": "ginkgo",
+    "portsAttributes": {
+        "4000": {
+            "label": "Github pages documentation",
+            "protocol": "http"
+        },
+        "6060": {
+            "label": "Ginkgo package documentation",
+            "onAutoForward": "silent",
+            "protocol": "http"
+        }
+    },
+    "image": "mcr.microsoft.com/devcontainers/base:ubuntu-24.04",
+    "features": {
+        "ghcr.io/thediveo/devcontainer-features/local-pkgsite:0": {},
+        "ghcr.io/thediveo/devcontainer-features/lazygit:0": {},
+        "ghcr.io/rails/devcontainer/features/ruby:2": {
+            "version": "3"
+        }
+    },
+    "remoteEnv": {
+        "GOPATH": "/home/vscode/go",
+        "PATH": "/home/vscode/.local/bin:/home/vscode/go/bin:/go/bin:/usr/local/go/bin:/home/vscode/.local/share/mise/installs/ruby/3/bin:${localEnv:PATH}",
+        "RUBYOPT": "-rbigdecimal"
+    },
+    "postCreateCommand": {
+        "first-run-notice": "sudo mkdir -p /workspaces/.codespaces/shared && echo \"use 'serve-docs' command to serve Github pages documentation on http://127.0.0.1:4000/ginkgo\" | sudo tee -a /workspaces/.codespaces/shared/first-run-notice.txt",
+        "off-rails": "cd docs && bundle install && gem install bigdecimal",
+        "ginkgotest": "sudo bash -c 'cat >/usr/local/bin/ginkgotest <<\"EOF\"\n#!/usr/bin/env bash\nset -e\n\ngo run ./ginkgo --github-output -r -randomize-all -randomize-suites -race -trace -procs=2 -poll-progress-after=10s -poll-progress-interval=10s\nEOF\nchmod +x /usr/local/bin/ginkgotest'",
+        "serve-docs": "sudo bash -c 'cat >/usr/local/bin/serve-docs <<\"EOF\"\n#!/usr/bin/env bash\nset -e\n\nPWD_REAL=\"$(pwd)\"\n\ncase \"$PWD_REAL\" in\n  /workspaces/*)\n    ;;\n  *)\n    echo \"Not inside a VS Code devcontainer workspace: $PWD_REAL\"\n    exit 1\n    ;;\nesac\n\nWORKSPACE_ROOT=\"$(echo \"$PWD_REAL\" | cut -d/ -f1-3)\"\nDOCS_DIR=\"$WORKSPACE_ROOT/docs\"\n\nif [ ! -d \"$DOCS_DIR\" ]; then\n  echo \"docs directory not found: $DOCS_DIR\"\n  exit 1\nfi\n\ncd \"$DOCS_DIR\"\nexec bundle exec jekyll serve \"$@\"\nEOF\nchmod +x /usr/local/bin/serve-docs'"
+    },
+    "customizations": {
+        "vscode": {
+            "extensions": [
+                "dnut.rewrap-revived",
+                "mhutchie.git-graph"
+            ]
+        }
+    }
+}
