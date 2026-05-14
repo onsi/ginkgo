@@ -1,0 +1,9 @@
+#!/usr/bin/env bash
+set -e
+
+go run github.com/onsi/ginkgo/v2/ginkgo \
+    --github-output \
+    -r --randomize-all --randomize-suites \
+    --race --trace \
+    --procs=2 \
+    --poll-progress-after=10s -poll-progress-interval=10s

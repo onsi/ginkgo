@@ -1,0 +1,20 @@
+#!/usr/bin/env bash
+set -e
+
+PWD_REAL="$(pwd)"
+case "${PWD_REAL}" in
+    /workspaces/*)
+        ;;
+    *)
+        echo "not inside a devcontainer workspace: ${PWD_REAL}"
+        exit 1
+        ;;
+esac
+WORKSPACE_ROOT="$(echo "${PWD_REAL}" | cut -d/ -f1-3)"
+DOCS_DIR="${WORKSPACE_ROOT}/docs"
+if [ ! -d "${DOCS_DIR}" ]; then
+    echo "docs directory ${DOCS_DIR} not found"
+    exit 1
+fi
+cd "$DOCS_DIR"
+exec bundle exec jekyll serve "$@"
