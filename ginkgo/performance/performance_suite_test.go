@@ -223,7 +223,7 @@ func SampleScenarios(cache gmeasure.ExperimentCache, numSamples int, cacheVersio
 		}
 		experiments[name] = gmeasure.NewExperiment(name)
 		AddReportEntry(name, experiments[name], Offset(1), ReportEntryVisibilityFailureOrVerbose)
-		for i := 0; i < numSamples; i++ {
+		for range numSamples {
 			runs = append(runs, scenario)
 		}
 	}
