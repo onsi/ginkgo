@@ -242,7 +242,11 @@ func (r *DefaultReporter) suiteDidEndFd(report types.Report) {
 	if skipped > 0 {
 		parts = append(parts, fmt.Sprintf("%d skipped", skipped))
 	}
-	fmt.Fprintln(r.writer, strings.Join(parts, ", "))
+	color := "{{green}}"
+	if failed > 0 {
+		color = "{{red}}"
+	}
+	fmt.Fprintln(r.writer, r.f(color+strings.Join(parts, ", ")+"{{/}}"))
 }
 
 func (r *DefaultReporter) WillRun(report types.SpecReport) {
@@ -463,7 +467,8 @@ func (r *DefaultReporter) didRunFd(report types.SpecReport) {
 		label = fmt.Sprintf("%s (SKIPPED)", label)
 	}
 
-	fmt.Fprintf(r.writer, "%s%s\n", indent, label)
+	color := r.highlightColorForState(report.State)
+	fmt.Fprintf(r.writer, "%s%s\n", indent, r.f(color+"%s{{/}}", label))
 	r.fdPrevHierarchy = hierarchy
 }
 

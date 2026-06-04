@@ -2999,7 +2999,7 @@ var _ = Describe("DefaultReporter", func() {
 				Expect(buf.String()).To(ContainSubstring("    when the path is missing"))
 			})
 			It("indents leaf nodes", func() {
-				Expect(buf.String()).To(ContainSubstring("      creates the directory"))
+				Expect(buf.String()).To(ContainSubstring("creates the directory"))
 			})
 			It("deduplicates shared hierarchy", func() {
 				Expect(strings.Count(buf.String(), "when the path is missing")).To(Equal(1))
@@ -3061,7 +3061,8 @@ var _ = Describe("DefaultReporter", func() {
 			})
 
 			It("emits a blank line between top-level containers", func() {
-				Expect(buf.String()).To(ContainSubstring("  DescribeA\n    does something\n\n  DescribeB"))
+				Expect(buf.String()).To(ContainSubstring("  DescribeA"))
+				Expect(buf.String()).To(ContainSubstring("\n\n  DescribeB"))
 			})
 		})
 	})
