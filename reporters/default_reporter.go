@@ -34,6 +34,17 @@ type DefaultReporter struct {
 
 	runningInParallel bool
 	lock              *sync.Mutex
+
+	// fd output state
+	fdPrevHierarchy []string
+	fdFailures      []fdFailure
+}
+
+type fdFailure struct {
+	n        int
+	full     []string
+	message  string
+	location string
 }
 
 func NewDefaultReporterUnderTest(conf types.ReporterConfig, writer io.Writer) *DefaultReporter {
@@ -67,6 +78,9 @@ func NewDefaultReporter(conf types.ReporterConfig, writer io.Writer) *DefaultRep
 /* The Reporter Interface */
 
 func (r *DefaultReporter) SuiteWillBegin(report types.Report) {
+	if r.conf.FdOutput {
+		return
+	}
 	if r.conf.Verbosity().Is(types.VerbosityLevelSuccinct) {
 		r.emit(r.f("[%d] {{bold}}%s{{/}} ", report.SuiteConfig.RandomSeed, report.SuiteDescription))
 		if len(report.SuiteLabels) > 0 {
@@ -123,6 +137,10 @@ func (r *DefaultReporter) SuiteWillBegin(report types.Report) {
 }
 
 func (r *DefaultReporter) SuiteDidEnd(report types.Report) {
+	if r.conf.FdOutput {
+		r.suiteDidEndFd(report)
+		return
+	}
 	failures := report.SpecReports.WithState(types.SpecStateFailureStates)
 	if len(failures) > 0 {
 		r.emitBlock("\n")
@@ -192,6 +210,41 @@ func (r *DefaultReporter) SuiteDidEnd(report types.Report) {
 	}
 }
 
+func (r *DefaultReporter) suiteDidEndFd(report types.Report) {
+	if len(r.fdFailures) > 0 {
+		fmt.Fprintln(r.writer, "\nFailures:")
+		for _, f := range r.fdFailures {
+			fmt.Fprintf(r.writer, "\n  %d) %s\n", f.n, strings.Join(f.full, " "))
+			for _, line := range strings.Split(strings.TrimSpace(f.message), "\n") {
+				fmt.Fprintf(r.writer, "     %s\n", line)
+			}
+			fmt.Fprintf(r.writer, "     # %s\n", f.location)
+		}
+	}
+
+	specs := report.SpecReports.WithLeafNodeType(types.NodeTypeIt)
+	total := len(specs)
+	failed := specs.CountWithState(types.SpecStateFailureStates)
+	pending := specs.CountWithState(types.SpecStatePending)
+	skipped := specs.CountWithState(types.SpecStateSkipped)
+
+	fmt.Fprintf(r.writer, "\nFinished in %s\n", report.RunTime.Round(time.Millisecond))
+
+	parts := []string{fmt.Sprintf("%d examples", total)}
+	if failed > 0 {
+		parts = append(parts, fmt.Sprintf("%d failure", failed))
+	} else {
+		parts = append(parts, "0 failures")
+	}
+	if pending > 0 {
+		parts = append(parts, fmt.Sprintf("%d pending", pending))
+	}
+	if skipped > 0 {
+		parts = append(parts, fmt.Sprintf("%d skipped", skipped))
+	}
+	fmt.Fprintln(r.writer, strings.Join(parts, ", "))
+}
+
 func (r *DefaultReporter) WillRun(report types.SpecReport) {
 	v := r.conf.Verbosity()
 	if v.LT(types.VerbosityLevelVerbose) || report.State.Is(types.SpecStatePending|types.SpecStateSkipped) || report.RunningInParallel {
@@ -219,6 +272,10 @@ func (r *DefaultReporter) wrapTextBlock(sectionName string, fn func()) {
 }
 
 func (r *DefaultReporter) DidRun(report types.SpecReport) {
+	if r.conf.FdOutput {
+		r.didRunFd(report)
+		return
+	}
 	v := r.conf.Verbosity()
 	inParallel := report.RunningInParallel
 
@@ -356,6 +413,58 @@ func (r *DefaultReporter) DidRun(report types.SpecReport) {
 	}
 
 	r.emitDelimiter(0)
+}
+
+func (r *DefaultReporter) didRunFd(report types.SpecReport) {
+	r.lock.Lock()
+	defer r.lock.Unlock()
+
+	if !report.LeafNodeType.Is(types.NodeTypeIt) {
+		return
+	}
+
+	hierarchy := report.ContainerHierarchyTexts
+
+	// blank line when top-level container changes
+	if len(r.fdPrevHierarchy) > 0 &&
+		(len(hierarchy) == 0 || hierarchy[0] != r.fdPrevHierarchy[0]) {
+		fmt.Fprintln(r.writer)
+	}
+
+	// emit newly-diverged container lines
+	divergeAt := 0
+	for divergeAt < len(r.fdPrevHierarchy) && divergeAt < len(hierarchy) &&
+		r.fdPrevHierarchy[divergeAt] == hierarchy[divergeAt] {
+		divergeAt++
+	}
+	for i := divergeAt; i < len(hierarchy); i++ {
+		fmt.Fprintf(r.writer, "%s%s\n", strings.Repeat("  ", i+1), hierarchy[i])
+	}
+
+	// leaf label
+	depth := len(hierarchy) + 1
+	indent := strings.Repeat("  ", depth)
+	label := report.LeafNodeText
+
+	switch report.State {
+	case types.SpecStateFailed, types.SpecStatePanicked:
+		n := len(r.fdFailures) + 1
+		label = fmt.Sprintf("%s (FAILED - %d)", label, n)
+		full := append(append([]string{}, hierarchy...), report.LeafNodeText)
+		r.fdFailures = append(r.fdFailures, fdFailure{
+			n:        n,
+			full:     full,
+			message:  report.Failure.Message,
+			location: report.Failure.Location.String(),
+		})
+	case types.SpecStatePending:
+		label = fmt.Sprintf("%s (PENDING)", label)
+	case types.SpecStateSkipped:
+		label = fmt.Sprintf("%s (SKIPPED)", label)
+	}
+
+	fmt.Fprintf(r.writer, "%s%s\n", indent, label)
+	r.fdPrevHierarchy = hierarchy
 }
 
 func (r *DefaultReporter) highlightColorForState(state types.SpecState) string {
