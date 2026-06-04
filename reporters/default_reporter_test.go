@@ -2995,8 +2995,8 @@ var _ = Describe("DefaultReporter", func() {
 				Expect(buf.String()).NotTo(ContainSubstring("Running Suite"))
 			})
 			It("indents container hierarchy", func() {
-				Expect(buf.String()).To(ContainSubstring("  checkAttachmentDir"))
-				Expect(buf.String()).To(ContainSubstring("    when the path is missing"))
+				Expect(buf.String()).To(ContainSubstring("checkAttachmentDir"))
+				Expect(buf.String()).To(ContainSubstring("  when the path is missing"))
 			})
 			It("indents leaf nodes", func() {
 				Expect(buf.String()).To(ContainSubstring("creates the directory"))
@@ -3061,8 +3061,8 @@ var _ = Describe("DefaultReporter", func() {
 			})
 
 			It("emits a blank line between top-level containers", func() {
-				Expect(buf.String()).To(ContainSubstring("  DescribeA"))
-				Expect(buf.String()).To(ContainSubstring("\n\n  DescribeB"))
+				Expect(buf.String()).To(ContainSubstring("DescribeA"))
+				Expect(buf.String()).To(ContainSubstring("\n\nDescribeB"))
 			})
 		})
 	})

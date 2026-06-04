@@ -442,11 +442,11 @@ func (r *DefaultReporter) didRunFd(report types.SpecReport) {
 		divergeAt++
 	}
 	for i := divergeAt; i < len(hierarchy); i++ {
-		fmt.Fprintf(r.writer, "%s%s\n", strings.Repeat("  ", i+1), hierarchy[i])
+		fmt.Fprintf(r.writer, "%s%s\n", strings.Repeat("  ", i), hierarchy[i])
 	}
 
 	// leaf label
-	depth := len(hierarchy) + 1
+	depth := len(hierarchy)
 	indent := strings.Repeat("  ", depth)
 	label := report.LeafNodeText
 
