@@ -157,6 +157,7 @@ func (r *DefaultReporter) SuiteDidEnd(report types.Report) {
 	}
 	r.emitSuiteFooter(report)
 }
+
 func (r *DefaultReporter) emitSuiteFooter(report types.Report) {
 	if r.conf.Verbosity().Is(types.VerbosityLevelSuccinct) && report.SuiteSucceeded {
 		r.emit(r.f(" {{green}}SUCCESS!{{/}} %s ", report.RunTime))

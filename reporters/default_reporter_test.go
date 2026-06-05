@@ -3006,7 +3006,6 @@ var _ = Describe("DefaultReporter", func() {
 			})
 			It("prints the summary", func() {
 				Expect(buf.String()).To(ContainSubstring("Passed"))
-
 			})
 		})
 
