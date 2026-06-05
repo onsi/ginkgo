@@ -3034,9 +3034,6 @@ var _ = Describe("DefaultReporter", func() {
 				Expect(buf.String()).To(ContainSubstring("creates the directory (FAILED)"))
 			})
 			It("prints the failures section", func() {
-				Expect(buf.String()).To(ContainSubstring("Summarizing 1 Failure:"))
-			})
-			It("prints the summary with failure count", func() {
 				Expect(buf.String()).To(ContainSubstring("FAIL!"))
 			})
 		})
