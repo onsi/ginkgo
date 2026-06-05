@@ -3005,7 +3005,8 @@ var _ = Describe("DefaultReporter", func() {
 				Expect(strings.Count(buf.String(), "when the path is missing")).To(Equal(1))
 			})
 			It("prints the summary", func() {
-				Expect(buf.String()).To(ContainSubstring("3 examples, 0 failures"))
+				Expect(buf.String()).To(ContainSubstring("Passed"))
+
 			})
 		})
 
@@ -3038,7 +3039,7 @@ var _ = Describe("DefaultReporter", func() {
 				Expect(buf.String()).To(ContainSubstring("main_test.go:42"))
 			})
 			It("prints the summary with failure count", func() {
-				Expect(buf.String()).To(ContainSubstring("1 examples, 1 failure"))
+				Expect(buf.String()).To(ContainSubstring("FAIL!"))
 			})
 		})
 

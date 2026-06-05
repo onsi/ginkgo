@@ -221,32 +221,42 @@ func (r *DefaultReporter) suiteDidEndFd(report types.Report) {
 			fmt.Fprintf(r.writer, "     # %s\n", f.location)
 		}
 	}
+	r.emitBlock("\n")
+	color, status := "{{green}}{{bold}}", "SUCCESS!"
+	if !report.SuiteSucceeded {
+		color, status = "{{red}}{{bold}}", "FAIL!"
+	}
 
 	specs := report.SpecReports.WithLeafNodeType(types.NodeTypeIt)
-	total := len(specs)
-	failed := specs.CountWithState(types.SpecStateFailureStates)
-	pending := specs.CountWithState(types.SpecStatePending)
-	skipped := specs.CountWithState(types.SpecStateSkipped)
+	r.emitBlock(r.f(color+"Ran %d of %d Specs in %.3f seconds{{/}}",
+		specs.CountWithState(types.SpecStatePassed)+specs.CountWithState(types.SpecStateFailureStates),
+		report.PreRunStats.TotalSpecs,
+		report.RunTime.Seconds()),
+	)
 
-	fmt.Fprintf(r.writer, "\nFinished in %s\n", report.RunTime.Round(time.Millisecond))
+	switch len(report.SpecialSuiteFailureReasons) {
+	case 0:
+		r.emit(r.f(color+"%s{{/}} -- ", status))
+	case 1:
+		r.emit(r.f(color+"%s - %s{{/}} -- ", status, report.SpecialSuiteFailureReasons[0]))
+	default:
+		r.emitBlock(r.f(color+"%s - %s{{/}}\n", status, strings.Join(report.SpecialSuiteFailureReasons, ", ")))
+	}
 
-	parts := []string{fmt.Sprintf("%d examples", total)}
-	if failed > 0 {
-		parts = append(parts, fmt.Sprintf("%d failure", failed))
+	if len(specs) == 0 && report.SpecReports.WithLeafNodeType(types.NodeTypeBeforeSuite|types.NodeTypeSynchronizedBeforeSuite).CountWithState(types.SpecStateFailureStates) > 0 {
+		r.emit(r.f("{{cyan}}{{bold}}A BeforeSuite node failed so all tests were skipped.{{/}}\n"))
 	} else {
-		parts = append(parts, "0 failures")
+		r.emit(r.f("{{green}}{{bold}}%d Passed{{/}} | ", specs.CountWithState(types.SpecStatePassed)))
+		r.emit(r.f("{{red}}{{bold}}%d Failed{{/}} | ", specs.CountWithState(types.SpecStateFailureStates)))
+		if specs.CountOfFlakedSpecs() > 0 {
+			r.emit(r.f("{{light-yellow}}{{bold}}%d Flaked{{/}} | ", specs.CountOfFlakedSpecs()))
+		}
+		if specs.CountOfRepeatedSpecs() > 0 {
+			r.emit(r.f("{{light-yellow}}{{bold}}%d Repeated{{/}} | ", specs.CountOfRepeatedSpecs()))
+		}
+		r.emit(r.f("{{yellow}}{{bold}}%d Pending{{/}} | ", specs.CountWithState(types.SpecStatePending)))
+		r.emit(r.f("{{cyan}}{{bold}}%d Skipped{{/}}\n", specs.CountWithState(types.SpecStateSkipped)))
 	}
-	if pending > 0 {
-		parts = append(parts, fmt.Sprintf("%d pending", pending))
-	}
-	if skipped > 0 {
-		parts = append(parts, fmt.Sprintf("%d skipped", skipped))
-	}
-	color := "{{green}}"
-	if failed > 0 {
-		color = "{{red}}"
-	}
-	fmt.Fprintln(r.writer, r.f(color+strings.Join(parts, ", ")+"{{/}}"))
 }
 
 func (r *DefaultReporter) WillRun(report types.SpecReport) {
