@@ -128,6 +128,11 @@ func (r *DefaultReporter) SuiteWillBegin(report types.Report) {
 	}
 }
 
+func (r *DefaultReporter) SuiteDidEnd(report types.Report) {
+	r.emitSuiteFailures(report)
+	r.emitSuiteFooter(report)
+}
+
 func (r *DefaultReporter) emitSuiteFailures(report types.Report) {
 	failures := report.SpecReports.WithState(types.SpecStateFailureStates)
 	if len(failures) > 0 {
@@ -153,11 +158,6 @@ func (r *DefaultReporter) emitSuiteFailures(report types.Report) {
 			r.emitBlock(r.fi(1, highlightColor+"%s{{/}} %s", heading, locationBlock))
 		}
 	}
-}
-
-func (r *DefaultReporter) SuiteDidEnd(report types.Report) {
-	r.emitSuiteFailures(report)
-	r.emitSuiteFooter(report)
 }
 
 func (r *DefaultReporter) emitSuiteFooter(report types.Report) {
