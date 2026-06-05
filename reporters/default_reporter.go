@@ -155,16 +155,7 @@ func (r *DefaultReporter) emitSuiteFailures(report types.Report) {
 	}
 }
 
-func (r *DefaultReporter) suiteDidEndFd(report types.Report) {
-	r.emitSuiteFailures(report)
-	r.emitSuiteFooter(report)
-}
-
 func (r *DefaultReporter) SuiteDidEnd(report types.Report) {
-	if r.conf.FdOutput {
-		r.suiteDidEndFd(report)
-		return
-	}
 	r.emitSuiteFailures(report)
 	r.emitSuiteFooter(report)
 }
