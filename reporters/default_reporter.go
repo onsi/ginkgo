@@ -168,7 +168,7 @@ func (r *DefaultReporter) SuiteDidEnd(report types.Report) {
 	r.emitSuiteFooter(report)
 }
 
-
+	//summarize the suite
 func (r *DefaultReporter) emitSuiteFooter(report types.Report) {
 	if r.conf.Verbosity().Is(types.VerbosityLevelSuccinct) && report.SuiteSucceeded {
 		r.emit(r.f(" {{green}}SUCCESS!{{/}} %s ", report.RunTime))
@@ -181,7 +181,7 @@ func (r *DefaultReporter) emitSuiteFooter(report types.Report) {
 		color, status = "{{red}}{{bold}}", "FAIL!"
 	}
 
-	specs := report.SpecReports.WithLeafNodeType(types.NodeTypeIt)
+	specs := report.SpecReports.WithLeafNodeType(types.NodeTypeIt) //exclude any suite setup nodes
 	r.emitBlock(r.f(color+"Ran %d of %d Specs in %.3f seconds{{/}}",
 		specs.CountWithState(types.SpecStatePassed)+specs.CountWithState(types.SpecStateFailureStates),
 		report.PreRunStats.TotalSpecs,
