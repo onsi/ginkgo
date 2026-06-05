@@ -31,12 +31,10 @@ type DefaultReporter struct {
 	specDenoter  string
 	retryDenoter string
 	formatter    formatter.Formatter
+	fdHierarchy  []string
 
 	runningInParallel bool
 	lock              *sync.Mutex
-
-	// fd output state
-	fdPrevHierarchy []string
 }
 
 func NewDefaultReporterUnderTest(conf types.ReporterConfig, writer io.Writer) *DefaultReporter {
@@ -157,7 +155,6 @@ func (r *DefaultReporter) SuiteDidEnd(report types.Report) {
 			r.emitBlock(r.fi(1, highlightColor+"%s{{/}} %s", heading, locationBlock))
 		}
 	}
-	//summarize the suite
 	r.emitSuiteFooter(report)
 }
 func (r *DefaultReporter) emitSuiteFooter(report types.Report) {
@@ -385,15 +382,15 @@ func (r *DefaultReporter) didRunFd(report types.SpecReport) {
 	hierarchy := report.ContainerHierarchyTexts
 
 	// blank line when top-level container changes
-	if len(r.fdPrevHierarchy) > 0 &&
-		(len(hierarchy) == 0 || hierarchy[0] != r.fdPrevHierarchy[0]) {
+	if len(r.fdHierarchy) > 0 &&
+		(len(hierarchy) == 0 || hierarchy[0] != r.fdHierarchy[0]) {
 		fmt.Fprintln(r.writer)
 	}
 
 	// emit newly-diverged container lines
 	divergeAt := 0
-	for divergeAt < len(r.fdPrevHierarchy) && divergeAt < len(hierarchy) &&
-		r.fdPrevHierarchy[divergeAt] == hierarchy[divergeAt] {
+	for divergeAt < len(r.fdHierarchy) && divergeAt < len(hierarchy) &&
+		r.fdHierarchy[divergeAt] == hierarchy[divergeAt] {
 		divergeAt++
 	}
 	for i := divergeAt; i < len(hierarchy); i++ {
@@ -416,7 +413,7 @@ func (r *DefaultReporter) didRunFd(report types.SpecReport) {
 
 	color := r.highlightColorForState(report.State)
 	fmt.Fprintf(r.writer, "%s%s\n", indent, r.f(color+"%s{{/}}", label))
-	r.fdPrevHierarchy = hierarchy
+	r.fdHierarchy = hierarchy
 }
 
 func (r *DefaultReporter) highlightColorForState(state types.SpecState) string {
