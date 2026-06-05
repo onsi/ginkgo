@@ -68,9 +68,6 @@ func NewDefaultReporter(conf types.ReporterConfig, writer io.Writer) *DefaultRep
 /* The Reporter Interface */
 
 func (r *DefaultReporter) SuiteWillBegin(report types.Report) {
-	if r.conf.FdOutput {
-		return
-	}
 	if r.conf.Verbosity().Is(types.VerbosityLevelSuccinct) {
 		r.emit(r.f("[%d] {{bold}}%s{{/}} ", report.SuiteConfig.RandomSeed, report.SuiteDescription))
 		if len(report.SuiteLabels) > 0 {
@@ -86,6 +83,8 @@ func (r *DefaultReporter) SuiteWillBegin(report types.Report) {
 		if report.SuiteConfig.ParallelTotal > 1 {
 			r.emit(r.f("- %d procs ", report.SuiteConfig.ParallelTotal))
 		}
+	} else if r.conf.FdOutput {
+		return
 	} else {
 		banner := r.f("Running Suite: %s - %s", report.SuiteDescription, report.SuitePath)
 		r.emitBlock(banner)
@@ -151,6 +150,7 @@ func (r *DefaultReporter) SuiteDidEnd(report types.Report) {
 			r.emitBlock(r.fi(1, highlightColor+"%s{{/}} %s", heading, locationBlock))
 		}
 	}
+
 	//summarize the suite
 	if r.conf.Verbosity().Is(types.VerbosityLevelSuccinct) && report.SuiteSucceeded {
 		r.emit(r.f(" {{green}}SUCCESS!{{/}} %s ", report.RunTime))
