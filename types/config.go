@@ -94,6 +94,7 @@ type ReporterConfig struct {
 	GithubOutput   bool
 	SilenceSkips   bool
 	ForceNewlines  bool
+	FdOutput       bool
 
 	JSONReport     string
 	GoJSONReport   string
@@ -358,7 +359,8 @@ var ReporterConfigFlags = GinkgoFlags{
 		Usage: "If set, default reporter will not print out skipped tests."},
 	{KeyPath: "R.ForceNewlines", Name: "force-newlines", SectionKey: "output",
 		Usage: "If set, default reporter will ensure a newline appears after each test."},
-
+	{KeyPath: "R.FdOutput", Name: "fd", SectionKey: "output",
+		Usage: "If set, emits RSpec-style 'format documentation' output instead of Ginkgo's default output."},
 	{KeyPath: "R.JSONReport", Name: "json-report", UsageArgument: "filename.json", SectionKey: "output",
 		Usage: "If set, Ginkgo will generate a JSON-formatted test report at the specified location."},
 	{KeyPath: "R.GoJSONReport", Name: "gojson-report", UsageArgument: "filename.json", SectionKey: "output",

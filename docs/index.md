@@ -3764,11 +3764,13 @@ Ginkgo emits a real-time report of the progress of your spec suite to the consol
 There are several CLI flags that allow you to tweak this output:
 
 #### Controlling Verbosity
-Ginkgo has four verbosity settings: succinct (the default when running multiple suites), normal (the default when running a single suite), verbose, and very-verbose.
+Ginkgo has five verbosity settings: succinct (the default when running multiple suites), normal (the default when running a single suite), verbose, and very-verbose.
 
-You can opt into succinct mode with `ginkgo --succinct`, verbose mode with `ginkgo -v` and very-verbose mode with `ginkgo -vv`.
+You can opt into succinct mode with `ginkgo --succinct`, format documentation mode with `ginkgo -fd`, verbose mode with `ginkgo -v` and very-verbose mode with `ginkgo -vv`.
 
 These settings control the amount of information emitted with each spec.  By default (i.e. succinct and normal) Ginkgo only emits detailed information about specs that fail.  That includes the location of the spec/failure and a timeline that includes any captured `GinkgoWriter` content alongside a series of relevant spec events.
+
+You can opt into documentation format output with `ginkgo -fd`.  This emits a hierarchical tree of spec descriptions, with each spec's name colored green for passing, red for failing, yellow for pending, and cyan for skipped, along with a summary of failures at the end of the suite.  This mode will be familiar to Rspec users and has more concise output for very large test suites.
 
 The two verbose settings are most helpful when debugging spec suites.  They make Ginkgo emit the detailed timeline information for _every_ spec regardless of failure or success.  When running in series with `-v` or `-vv` mode Ginkgo will stream out the timeline in real-time while specs are running. A real-time stream isn't possible when running in parallel (the [streams would be interleaved](https://www.youtube.com/watch?v=jyaLZHiJJnE)); instead Ginkgo emits all this information about each spec right after it completes.
 
