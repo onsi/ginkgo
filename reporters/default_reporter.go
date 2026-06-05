@@ -127,12 +127,8 @@ func (r *DefaultReporter) SuiteWillBegin(report types.Report) {
 }
 
 func (r *DefaultReporter) SuiteDidEnd(report types.Report) {
-	if r.conf.FdOutput {
-		r.emitSuiteFooter(report)
-		return
-	}
 	failures := report.SpecReports.WithState(types.SpecStateFailureStates)
-	if len(failures) > 0 {
+	if !r.conf.FdOutput && len(failures) > 0 {
 		r.emitBlock("\n")
 		if len(failures) > 1 {
 			r.emitBlock(r.f("{{red}}{{bold}}Summarizing %d Failures:{{/}}", len(failures)))
@@ -155,10 +151,7 @@ func (r *DefaultReporter) SuiteDidEnd(report types.Report) {
 			r.emitBlock(r.fi(1, highlightColor+"%s{{/}} %s", heading, locationBlock))
 		}
 	}
-	r.emitSuiteFooter(report)
-}
-
-func (r *DefaultReporter) emitSuiteFooter(report types.Report) {
+	//summarize the suite
 	if r.conf.Verbosity().Is(types.VerbosityLevelSuccinct) && report.SuiteSucceeded {
 		r.emit(r.f(" {{green}}SUCCESS!{{/}} %s ", report.RunTime))
 		return
