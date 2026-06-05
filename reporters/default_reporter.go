@@ -224,8 +224,12 @@ func (r *DefaultReporter) wrapTextBlock(sectionName string, fn func()) {
 func (r *DefaultReporter) DidRun(report types.SpecReport) {
 	if r.conf.FdOutput {
 		r.didRunFd(report)
-		return
+	} else {
+		r.didRunStd(report)
 	}
+}
+
+func (r *DefaultReporter) didRunStd(report types.SpecReport) {
 	v := r.conf.Verbosity()
 	inParallel := report.RunningInParallel
 
