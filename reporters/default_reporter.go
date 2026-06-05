@@ -31,6 +31,7 @@ type DefaultReporter struct {
 	specDenoter  string
 	retryDenoter string
 	formatter    formatter.Formatter
+	fdHierarchy  []string
 
 	runningInParallel bool
 	lock              *sync.Mutex
@@ -67,6 +68,9 @@ func NewDefaultReporter(conf types.ReporterConfig, writer io.Writer) *DefaultRep
 /* The Reporter Interface */
 
 func (r *DefaultReporter) SuiteWillBegin(report types.Report) {
+	if r.conf.FdOutput {
+		return
+	}
 	if r.conf.Verbosity().Is(types.VerbosityLevelSuccinct) {
 		r.emit(r.f("[%d] {{bold}}%s{{/}} ", report.SuiteConfig.RandomSeed, report.SuiteDescription))
 		if len(report.SuiteLabels) > 0 {
@@ -123,6 +127,10 @@ func (r *DefaultReporter) SuiteWillBegin(report types.Report) {
 }
 
 func (r *DefaultReporter) SuiteDidEnd(report types.Report) {
+	if r.conf.FdOutput {
+		r.emitSuiteFooter(report)
+		return
+	}
 	failures := report.SpecReports.WithState(types.SpecStateFailureStates)
 	if len(failures) > 0 {
 		r.emitBlock("\n")
@@ -147,8 +155,10 @@ func (r *DefaultReporter) SuiteDidEnd(report types.Report) {
 			r.emitBlock(r.fi(1, highlightColor+"%s{{/}} %s", heading, locationBlock))
 		}
 	}
+	r.emitSuiteFooter(report)
+}
 
-	//summarize the suite
+func (r *DefaultReporter) emitSuiteFooter(report types.Report) {
 	if r.conf.Verbosity().Is(types.VerbosityLevelSuccinct) && report.SuiteSucceeded {
 		r.emit(r.f(" {{green}}SUCCESS!{{/}} %s ", report.RunTime))
 		return
@@ -219,6 +229,10 @@ func (r *DefaultReporter) wrapTextBlock(sectionName string, fn func()) {
 }
 
 func (r *DefaultReporter) DidRun(report types.SpecReport) {
+	if r.conf.FdOutput {
+		r.didRunFd(report)
+		return
+	}
 	v := r.conf.Verbosity()
 	inParallel := report.RunningInParallel
 
@@ -356,6 +370,51 @@ func (r *DefaultReporter) DidRun(report types.SpecReport) {
 	}
 
 	r.emitDelimiter(0)
+}
+
+func (r *DefaultReporter) didRunFd(report types.SpecReport) {
+	r.lock.Lock()
+	defer r.lock.Unlock()
+
+	if !report.LeafNodeType.Is(types.NodeTypeIt) {
+		return
+	}
+
+	hierarchy := report.ContainerHierarchyTexts
+
+	// blank line when top-level container changes
+	if len(r.fdHierarchy) > 0 &&
+		(len(hierarchy) == 0 || hierarchy[0] != r.fdHierarchy[0]) {
+		fmt.Fprintln(r.writer)
+	}
+
+	// emit newly-diverged container lines
+	divergeAt := 0
+	for divergeAt < len(r.fdHierarchy) && divergeAt < len(hierarchy) &&
+		r.fdHierarchy[divergeAt] == hierarchy[divergeAt] {
+		divergeAt++
+	}
+	for i := divergeAt; i < len(hierarchy); i++ {
+		fmt.Fprintf(r.writer, "%s%s\n", strings.Repeat("  ", i), hierarchy[i])
+	}
+
+	// leaf label
+	depth := len(hierarchy)
+	indent := strings.Repeat("  ", depth)
+	label := report.LeafNodeText
+
+	switch report.State {
+	case types.SpecStateFailed, types.SpecStatePanicked:
+		label = fmt.Sprintf("%s (FAILED)", label)
+	case types.SpecStatePending:
+		label = fmt.Sprintf("%s (PENDING)", label)
+	case types.SpecStateSkipped:
+		label = fmt.Sprintf("%s (SKIPPED)", label)
+	}
+
+	color := r.highlightColorForState(report.State)
+	fmt.Fprintf(r.writer, "%s%s\n", indent, r.f(color+"%s{{/}}", label))
+	r.fdHierarchy = hierarchy
 }
 
 func (r *DefaultReporter) highlightColorForState(state types.SpecState) string {

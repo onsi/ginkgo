@@ -2951,4 +2951,114 @@ var _ = Describe("DefaultReporter", func() {
 			"",
 		),
 	)
+
+	Describe("Rendering with FdOutput", func() {
+		var buf strings.Builder
+		var reporter *reporters.DefaultReporter
+
+		BeforeEach(func() {
+			buf.Reset()
+			reporter = reporters.NewDefaultReporterUnderTest(types.ReporterConfig{FdOutput: true}, &buf)
+		})
+
+		Context("with a passing report", func() {
+			BeforeEach(func() {
+				reporter.SuiteWillBegin(types.Report{SuiteDescription: "Something"})
+				reporter.DidRun(types.SpecReport{
+					ContainerHierarchyTexts: []string{"checkAttachmentDir", "when the path is missing"},
+					LeafNodeText:            "creates the directory",
+					LeafNodeType:            types.NodeTypeIt,
+					State:                   types.SpecStatePassed,
+				})
+				reporter.DidRun(types.SpecReport{
+					ContainerHierarchyTexts: []string{"checkAttachmentDir", "when the path is missing"},
+					LeafNodeText:            "does not error",
+					LeafNodeType:            types.NodeTypeIt,
+					State:                   types.SpecStatePassed,
+				})
+				reporter.DidRun(types.SpecReport{
+					ContainerHierarchyTexts: []string{"checkAttachmentDir", "when the path is a symlink"},
+					LeafNodeText:            "does not error",
+					LeafNodeType:            types.NodeTypeIt,
+					State:                   types.SpecStatePassed,
+				})
+				reporter.SuiteDidEnd(types.Report{
+					SpecReports: types.SpecReports{
+						{LeafNodeType: types.NodeTypeIt, State: types.SpecStatePassed},
+						{LeafNodeType: types.NodeTypeIt, State: types.SpecStatePassed},
+						{LeafNodeType: types.NodeTypeIt, State: types.SpecStatePassed},
+					},
+				})
+			})
+
+			It("emits no banner", func() {
+				Expect(buf.String()).NotTo(ContainSubstring("Running Suite"))
+			})
+			It("indents container hierarchy", func() {
+				Expect(buf.String()).To(ContainSubstring("checkAttachmentDir"))
+				Expect(buf.String()).To(ContainSubstring("  when the path is missing"))
+			})
+			It("indents leaf nodes", func() {
+				Expect(buf.String()).To(ContainSubstring("creates the directory"))
+			})
+			It("deduplicates shared hierarchy", func() {
+				Expect(strings.Count(buf.String(), "when the path is missing")).To(Equal(1))
+			})
+			It("prints the summary", func() {
+				Expect(buf.String()).To(ContainSubstring("Passed"))
+			})
+		})
+
+		Context("with a failing report", func() {
+			BeforeEach(func() {
+				reporter.SuiteWillBegin(types.Report{})
+				reporter.DidRun(types.SpecReport{
+					ContainerHierarchyTexts: []string{"checkAttachmentDir", "when the path is missing"},
+					LeafNodeText:            "creates the directory",
+					LeafNodeType:            types.NodeTypeIt,
+					State:                   types.SpecStateFailed,
+					Failure: types.Failure{
+						Message:  "Expected file to exist",
+						Location: types.CodeLocation{FileName: "main_test.go", LineNumber: 42},
+					},
+				})
+				reporter.SuiteDidEnd(types.Report{
+					SpecReports: types.SpecReports{
+						{LeafNodeType: types.NodeTypeIt, State: types.SpecStateFailed},
+					},
+				})
+			})
+
+			It("annotates the failed spec", func() {
+				Expect(buf.String()).To(ContainSubstring("creates the directory (FAILED)"))
+			})
+			It("prints the failures section", func() {
+				Expect(buf.String()).To(ContainSubstring("FAIL!"))
+			})
+		})
+
+		Context("with a blank line between top-level containers", func() {
+			BeforeEach(func() {
+				reporter.SuiteWillBegin(types.Report{})
+				reporter.DidRun(types.SpecReport{
+					ContainerHierarchyTexts: []string{"DescribeA"},
+					LeafNodeText:            "does something",
+					LeafNodeType:            types.NodeTypeIt,
+					State:                   types.SpecStatePassed,
+				})
+				reporter.DidRun(types.SpecReport{
+					ContainerHierarchyTexts: []string{"DescribeB"},
+					LeafNodeText:            "does something else",
+					LeafNodeType:            types.NodeTypeIt,
+					State:                   types.SpecStatePassed,
+				})
+				reporter.SuiteDidEnd(types.Report{SpecReports: types.SpecReports{}})
+			})
+
+			It("emits a blank line between top-level containers", func() {
+				Expect(buf.String()).To(ContainSubstring("DescribeA"))
+				Expect(buf.String()).To(ContainSubstring("\n\nDescribeB"))
+			})
+		})
+	})
 })
