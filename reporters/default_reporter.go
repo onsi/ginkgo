@@ -37,14 +37,6 @@ type DefaultReporter struct {
 
 	// fd output state
 	fdPrevHierarchy []string
-	fdFailures      []fdFailure
-}
-
-type fdFailure struct {
-	n        int
-	full     []string
-	message  string
-	location string
 }
 
 func NewDefaultReporterUnderTest(conf types.ReporterConfig, writer io.Writer) *DefaultReporter {
@@ -136,11 +128,7 @@ func (r *DefaultReporter) SuiteWillBegin(report types.Report) {
 	}
 }
 
-func (r *DefaultReporter) SuiteDidEnd(report types.Report) {
-	if r.conf.FdOutput {
-		r.suiteDidEndFd(report)
-		return
-	}
+func (r *DefaultReporter) emitSuiteFailures(report types.Report) {
 	failures := report.SpecReports.WithState(types.SpecStateFailureStates)
 	if len(failures) > 0 {
 		r.emitBlock("\n")
@@ -165,10 +153,22 @@ func (r *DefaultReporter) SuiteDidEnd(report types.Report) {
 			r.emitBlock(r.fi(1, highlightColor+"%s{{/}} %s", heading, locationBlock))
 		}
 	}
+}
+
+func (r *DefaultReporter) suiteDidEndFd(report types.Report) {
+	r.emitSuiteFailures(report)
 	r.emitSuiteFooter(report)
 }
 
-	//summarize the suite
+func (r *DefaultReporter) SuiteDidEnd(report types.Report) {
+	if r.conf.FdOutput {
+		r.suiteDidEndFd(report)
+		return
+	}
+	r.emitSuiteFailures(report)
+	r.emitSuiteFooter(report)
+}
+
 func (r *DefaultReporter) emitSuiteFooter(report types.Report) {
 	if r.conf.Verbosity().Is(types.VerbosityLevelSuccinct) && report.SuiteSucceeded {
 		r.emit(r.f(" {{green}}SUCCESS!{{/}} %s ", report.RunTime))
@@ -211,20 +211,6 @@ func (r *DefaultReporter) emitSuiteFooter(report types.Report) {
 		r.emit(r.f("{{yellow}}{{bold}}%d Pending{{/}} | ", specs.CountWithState(types.SpecStatePending)))
 		r.emit(r.f("{{cyan}}{{bold}}%d Skipped{{/}}\n", specs.CountWithState(types.SpecStateSkipped)))
 	}
-}
-
-func (r *DefaultReporter) suiteDidEndFd(report types.Report) {
-	if len(r.fdFailures) > 0 {
-		fmt.Fprintln(r.writer, "\nFailures:")
-		for _, f := range r.fdFailures {
-			fmt.Fprintf(r.writer, "\n  %d) %s\n", f.n, strings.Join(f.full, " "))
-			for _, line := range strings.Split(strings.TrimSpace(f.message), "\n") {
-				fmt.Fprintf(r.writer, "     %s\n", line)
-			}
-			fmt.Fprintf(r.writer, "     # %s\n", f.location)
-		}
-	}
-	r.emitSuiteFooter(report)
 }
 
 func (r *DefaultReporter) WillRun(report types.SpecReport) {
@@ -430,15 +416,7 @@ func (r *DefaultReporter) didRunFd(report types.SpecReport) {
 
 	switch report.State {
 	case types.SpecStateFailed, types.SpecStatePanicked:
-		n := len(r.fdFailures) + 1
-		label = fmt.Sprintf("%s (FAILED - %d)", label, n)
-		full := append(append([]string{}, hierarchy...), report.LeafNodeText)
-		r.fdFailures = append(r.fdFailures, fdFailure{
-			n:        n,
-			full:     full,
-			message:  report.Failure.Message,
-			location: report.Failure.Location.String(),
-		})
+		label = fmt.Sprintf("%s (FAILED)", label)
 	case types.SpecStatePending:
 		label = fmt.Sprintf("%s (PENDING)", label)
 	case types.SpecStateSkipped:

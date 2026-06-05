@@ -3031,12 +3031,10 @@ var _ = Describe("DefaultReporter", func() {
 			})
 
 			It("annotates the failed spec", func() {
-				Expect(buf.String()).To(ContainSubstring("creates the directory (FAILED - 1)"))
+				Expect(buf.String()).To(ContainSubstring("creates the directory (FAILED)"))
 			})
 			It("prints the failures section", func() {
-				Expect(buf.String()).To(ContainSubstring("Failures:"))
-				Expect(buf.String()).To(ContainSubstring("Expected file to exist"))
-				Expect(buf.String()).To(ContainSubstring("main_test.go:42"))
+				Expect(buf.String()).To(ContainSubstring("Summarizing 1 Failure:"))
 			})
 			It("prints the summary with failure count", func() {
 				Expect(buf.String()).To(ContainSubstring("FAIL!"))
