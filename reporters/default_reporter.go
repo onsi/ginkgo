@@ -222,10 +222,6 @@ func (r *DefaultReporter) wrapTextBlock(sectionName string, fn func()) {
 }
 
 func (r *DefaultReporter) DidRun(report types.SpecReport) {
-	if r.conf.FdOutput {
-		r.didRunFd(report)
-		return
-	}
 	v := r.conf.Verbosity()
 	inParallel := report.RunningInParallel
 
@@ -234,6 +230,10 @@ func (r *DefaultReporter) DidRun(report types.SpecReport) {
 		return
 	}
 
+	if r.conf.FdOutput {
+		r.didRunFd(report)
+		return
+	}
 	header := r.specDenoter
 	if report.LeafNodeType.Is(types.NodeTypesForSuiteLevelNodes) {
 		header = fmt.Sprintf("[%s]", report.LeafNodeType)

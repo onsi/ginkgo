@@ -2961,6 +2961,26 @@ var _ = Describe("DefaultReporter", func() {
 			reporter = reporters.NewDefaultReporterUnderTest(types.ReporterConfig{FdOutput: true}, &buf)
 		})
 
+		Context("with silence-skips enabled", func() {
+			BeforeEach(func() {
+				buf.Reset()
+				reporter = reporters.NewDefaultReporterUnderTest(
+					types.ReporterConfig{FdOutput: true, SilenceSkips: true}, &buf)
+				reporter.SuiteWillBegin(types.Report{})
+				reporter.DidRun(types.SpecReport{
+					ContainerHierarchyTexts: []string{"DescribeA"},
+					LeafNodeText:            "does something",
+					LeafNodeType:            types.NodeTypeIt,
+					State:                   types.SpecStateSkipped,
+				})
+				reporter.SuiteDidEnd(types.Report{SpecReports: types.SpecReports{}})
+			})
+
+			It("omits skipped specs", func() {
+				Expect(buf.String()).NotTo(ContainSubstring("does something"))
+			})
+		})
+
 		Context("with a passing report", func() {
 			BeforeEach(func() {
 				reporter.SuiteWillBegin(types.Report{SuiteDescription: "Something"})
