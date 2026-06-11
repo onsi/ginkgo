@@ -3755,6 +3755,34 @@ ginkgo -r --keep-going
 
 As you can see, Ginkgo provides several CLI flags for controlling how specs are run.  Be sure to check out the [Recommended Continuous Integration Configuration](#recommended-continuous-integration-configuration) section of the patterns chapter for pointers on which flags are best used in CI environments.
 
+#### Running Multiple Suites in a Single Test Process
+
+The mechanisms above all run one suite per test process: each suite compiles to its own test binary, and each binary calls `RunSpecs` exactly once.  That is the right model for nearly all setups, and `RunSpecs` enforces it - calling it twice in one process exits with an error.
+
+Some programs that drive Ginkgo programmatically need to go further and run several suites _sequentially in a single process_.  Two examples: very large monorepos that compile many suites into one shared test binary and select a suite at runtime (amortizing both compilation and process boot across suites), and meta-testing scenarios where a program generates a suite, runs it, and then needs to generate and run another.
+
+The `extensions/globals` package supports this pattern.  `globals.Reset()` tears down Ginkgo's global suite state, after which you can register a fresh set of specs and call `RunSpecs` again:
+
+```go
+import "github.com/onsi/ginkgo/v2/extensions/globals"
+
+func TestSuites(t *testing.T) {
+  RegisterFailHandler(Fail)
+
+  registerSuiteOneSpecs()        // top-level Describes, BeforeEach, suite nodes, etc.
+  RunSpecs(t, "Suite One")
+
+  globals.Reset()                // tear down the global suite so RunSpecs can run again
+
+  registerSuiteTwoSpecs()
+  RunSpecs(t, "Suite Two")
+}
+```
+
+Each `RunSpecs` call behaves like an independent suite run: it builds its own spec tree from whatever was registered since the last `Reset`, runs any suite setup nodes registered for it, honors the suite configuration, and emits its own reports.  Calling `RunSpecs` twice _without_ an intervening `globals.Reset()` still fails, so an accidental double-run is caught exactly as before.
+
+A few words of caution.  `globals.Reset()` discards all registered specs and suite nodes - it is intended for programs orchestrating suite runs, and should never be called from _within_ a running suite.  And while Ginkgo resets its own state between runs, it cannot reset yours: any package-level state your specs mutate (singletons, registries, environment variables, working directory) carries over into the next suite run in the process, so suites that assume a fresh process must be cleaned up accordingly.  Spec randomization, filtering, and parallelism apply within each `RunSpecs` call independently; running suites in parallel _within_ one process is not supported - use one process per parallel worker.
+
 ## Reporting and Profiling Suites
 The previous two chapters covered how Ginkgo specs are written and how Ginkgo specs run.  This chapter is all about output.  We'll cover how Ginkgo reports on spec suites and how Ginkgo can help you profile your spec suites.
 
