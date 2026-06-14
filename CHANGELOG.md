@@ -1,3 +1,12 @@
+## 2.31.0
+
+Add a bunch of Claude Skills via the marketplace:
+
+```
+/plugin marketplace add onsi/ginkgo
+/plugin install ginkgo@ginkgo
+```
+
 ## 2.30.0
 
 ### Features
