@@ -94,6 +94,35 @@ Ginkgo adheres to semantic versioning - the intent is for there to be no breakin
 
 The current version of Ginkgo is guaranteed to be compatible with the currently supported versions of Go that are noted by the Go release policy i.e. N and N-1 major versions.
 
+### Claude Code Skills
+
+Ginkgo ships a set of [Claude Code](https://claude.com/claude-code) skills as a **plugin**, so an agent writing specs in *your* project has Ginkgo's idioms, decorators, and gotchas on hand.  The Ginkgo repo doubles as the plugin marketplace, so installation is two commands.  From inside Claude Code:
+
+```
+/plugin marketplace add onsi/ginkgo
+/plugin install ginkgo@ginkgo
+```
+
+(The same can be done non-interactively with `claude plugin marketplace add onsi/ginkgo` and `claude plugin install ginkgo@ginkgo`.)
+
+This installs a family of `ginkgo:*` skills that activate automatically while you write and run specs, and can also be invoked explicitly (e.g. `/ginkgo:debugging-failures`).  Start with `ginkgo:overview` — it carries the mental model and routes to the rest:
+
+| Skill | What it's for |
+|---|---|
+| `ginkgo:overview` | The mental model — tree-construction-then-run and spec independence (read first) |
+| `ginkgo:setup` | Wiring Ginkgo into a repo: the CLI, `bootstrap`, `RunSpecs`, `*testing.T` interop |
+| `ginkgo:writing-specs` | Authoring specs: containers, subjects, setup/cleanup, the construction-time pitfalls |
+| `ginkgo:tables-and-dynamic-specs` | `DescribeTable`/`Entry`, generated specs, shared behaviors |
+| `ginkgo:decorators` | One-line reference for every decorator and where it's legal |
+| `ginkgo:filtering` | Running a subset: focus, skip, pending, labels and `--label-filter` |
+| `ginkgo:parallelism` | `-p`, `SynchronizedBeforeSuite`, sharding by process, integration suites |
+| `ginkgo:ordering-and-flakes` | `Ordered`/`Serial` ordering and managing flaky specs |
+| `ginkgo:timeouts-and-async` | Interruptible nodes, timeouts, `Eventually`, goroutines |
+| `ginkgo:running` | The CLI, randomization, multiple suites, previewing, custom config |
+| `ginkgo:ci` | The recommended CI flag set and exit-code safeguards |
+| `ginkgo:reporting` | Report files, programmatic reporters, `AddReportEntry`, profiling |
+| `ginkgo:debugging-failures` | JSON-first failure diagnosis with `jq` |
+
 ### Your First Ginkgo Suite
 
 Ginkgo hooks into Go's existing `testing` infrastructure.  That means that Ginkgo specs live in `*_test.go` files, just like standard go tests.  However, instead of using `func TestX(t *testing.T) {}` to write your tests you use the Ginkgo and Gomega DSLs.

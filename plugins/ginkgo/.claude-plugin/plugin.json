@@ -1,0 +1,13 @@
+{
+  "name": "ginkgo",
+  "description": "Write, run, and debug Ginkgo/Gomega test suites in Go. Skills for the tree-construction mental model, spec authoring and cleanup, tables and generated specs, the full decorator reference, filtering, parallelism, ordered/flaky specs, timeouts and async, the CLI and CI configuration, reporting, and JSON-first failure diagnosis.",
+  "version": "0.1.0",
+  "author": {
+    "name": "Onsi Fakhouri",
+    "url": "https://github.com/onsi"
+  },
+  "homepage": "https://onsi.github.io/ginkgo/",
+  "repository": "https://github.com/onsi/ginkgo",
+  "license": "MIT",
+  "keywords": ["ginkgo", "gomega", "bdd", "testing", "go", "golang", "test"]
+}

@@ -1,0 +1,18 @@
+{
+  "name": "ginkgo",
+  "owner": {
+    "name": "Onsi Fakhouri",
+    "url": "https://github.com/onsi"
+  },
+  "metadata": {
+    "description": "Skills for writing, running, and debugging Go tests with Ginkgo — the expressive BDD testing framework, paired with Gomega.",
+    "homepage": "https://onsi.github.io/ginkgo/"
+  },
+  "plugins": [
+    {
+      "name": "ginkgo",
+      "source": "./plugins/ginkgo",
+      "description": "Write, run, and debug Ginkgo/Gomega test suites in Go: the tree-construction mental model, the full node and decorator surface, tables and generated specs, parallelism, filtering, timeouts and async, CI configuration, and JSON-first failure diagnosis."
+    }
+  ]
+}
