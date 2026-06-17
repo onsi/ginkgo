@@ -38,6 +38,7 @@ type SuiteConfig struct {
 	OutputInterceptorMode string
 	SourceRoots           []string
 	GracePeriod           time.Duration
+	SleepOnFailure        time.Duration
 
 	ParallelProcess int
 	ParallelTotal   int
@@ -293,6 +294,8 @@ var SuiteConfigFlags = GinkgoFlags{
 		Usage: "Make up to this many attempts to run each spec. If any of the attempts succeed, the suite will not be failed."},
 	{KeyPath: "S.FailOnEmpty", Name: "fail-on-empty", SectionKey: "failure",
 		Usage: "If set, ginkgo will mark the test suite as failed if no specs are run."},
+	{KeyPath: "S.SleepOnFailure", Name: "sleep-on-failure", SectionKey: "failure", UsageDefaultValue: "0 - disabled",
+		Usage: "If set, ginkgo will pause for this duration after a spec fails - before its teardown (AfterEach/JustAfterEach/DeferCleanup) runs - so you can inspect the live system. Press ^C to end the pause early and proceed to cleanup. Serial only: cannot be combined with -p/--procs."},
 
 	{KeyPath: "S.DryRun", Name: "dry-run", SectionKey: "debug", DeprecatedName: "dryRun", DeprecatedDocLink: "changed-command-line-flags",
 		Usage: "If set, ginkgo will walk the test hierarchy without actually running anything.  Best paired with -v."},
@@ -427,6 +430,14 @@ func VetConfig(flagSet GinkgoFlagSet, suiteConfig SuiteConfig, reporterConfig Re
 
 	if suiteConfig.GracePeriod <= 0 {
 		errors = append(errors, GinkgoErrors.GracePeriodCannotBeZero())
+	}
+
+	if suiteConfig.SleepOnFailure < 0 {
+		errors = append(errors, GinkgoErrors.InvalidSleepOnFailureConfiguration())
+	}
+
+	if suiteConfig.SleepOnFailure > 0 && suiteConfig.ParallelTotal > 1 {
+		errors = append(errors, GinkgoErrors.SleepOnFailureInParallelConfiguration())
 	}
 
 	if len(suiteConfig.FocusFiles) > 0 {
