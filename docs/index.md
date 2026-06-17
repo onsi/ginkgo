@@ -3305,6 +3305,24 @@ One final, somewhat complex, note on timeouts and the Grace Period.  As mentione
 - If the remaining node is interruptible and **does not** have a `NodeTimeout`, Ginkgo uses the Grace Period to set a deadline for the node.  If the deadline expires, then a second Grace Period applies before Ginkgo leaks the node and moves on.
 - If the remaining node is **not** interruptible, Ginkgo will give the node a single Grace Period to complete and exit.  In this case, since it cannot be interrupted, Ginkgo will simply leak the node after one Grace Period.
 
+#### Pausing a Failed Spec for Debugging: The --sleep-on-failure flag
+
+When a spec fails against a real environment (a cluster, database, or service) the spec's teardown - its `AfterEach`, `JustAfterEach`, and `DeferCleanup` nodes - typically tears down the very state you need to inspect to understand the failure.  By the time you can attach a debugger or run `kubectl`/`psql`, the evidence is gone.
+
+The `--sleep-on-failure=<DURATION>` flag pauses a spec **after it fails but before its teardown runs**, leaving the system live so you can perform forensics:
+
+```bash
+ginkgo --sleep-on-failure=30m ./...
+```
+
+With this flag set, the instant a spec fails Ginkgo emits the failure and then pauses for the configured duration before continuing.  The pause happens at the point of failure - before any teardown (`AfterEach`/`JustAfterEach`/`DeferCleanup`) runs - so the failing spec's resources remain in place for you to inspect.  Ginkgo emits a progress report announcing the pause so you know the suite is waiting and what to do next.  Failures that occur in setup and subject nodes (`It`, `BeforeEach`, `BeforeAll`, ...) trigger the pause; failures inside teardown nodes do not, since the system is already being torn down at that point.
+
+The pause is interruptible: pressing `^C` (or otherwise interrupting the suite) ends the pause early and proceeds to run the spec's cleanup nodes - it does not skip teardown.  This means you can pause indefinitely (e.g. `--sleep-on-failure=24h`), inspect the system at your leisure, and then press `^C` once to resume and let Ginkgo clean up.
+
+Specs that pass are never paused, and the flag has no effect when set to `0` (the default).
+
+`--sleep-on-failure` is a debugging aid intended for interactive, serial runs and is **only supported in serial mode**.  Because Ginkgo's parallelism is multi-process, a single failing spec cannot meaningfully freeze the whole system, so combining `--sleep-on-failure` with `-p`/`--procs` is rejected with a configuration error.  Run the specific failing spec serially (for example with `--focus` and without `-p`) when you want to use it.
+
 #### Using SpecContext with Gomega's Eventually
 
 Gomega provides `Eventually` to allow you to poll an object or function repeatedly until a Gomega matcher is satisfied.  `Eventually` integrates cleanly with interruptible nodes by accepting a `SpecContext`/`context.Context` parameter.  This allows you, for example, to enforce a single timeout across a set of polling assertions:
