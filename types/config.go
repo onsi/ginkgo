@@ -360,7 +360,7 @@ var ReporterConfigFlags = GinkgoFlags{
 	{KeyPath: "R.ForceNewlines", Name: "force-newlines", SectionKey: "output",
 		Usage: "If set, default reporter will ensure a newline appears after each test."},
 	{KeyPath: "R.FdOutput", Name: "fd", SectionKey: "output",
-		Usage: "If set, emits RSpec-style 'format documentation' output instead of Ginkgo's default output."},
+		Usage: "If set, emits RSpec-style 'format documentation' output instead of Ginkgo's default output.  --fd is exclusive: it overrides -p/-procs and -randomize-all, forcing specs to run serially in declaration order, since fd's hierarchical output can't be rendered sensibly when specs are parallelized or randomized."},
 	{KeyPath: "R.JSONReport", Name: "json-report", UsageArgument: "filename.json", SectionKey: "output",
 		Usage: "If set, Ginkgo will generate a JSON-formatted test report at the specified location."},
 	{KeyPath: "R.GoJSONReport", Name: "gojson-report", UsageArgument: "filename.json", SectionKey: "output",
@@ -476,6 +476,30 @@ func VetConfig(flagSet GinkgoFlagSet, suiteConfig SuiteConfig, reporterConfig Re
 	}
 
 	return errors
+}
+
+// ReconcileFdOutputConfiguration forces serial, in-order execution when --fd is combined with
+// -p, -procs (>1), or -randomize-all.  fd's RSpec-style hierarchical output assumes specs run
+// one at a time, in declaration order -- parallelism and randomization both break that assumption
+// and produce fragmented, hard-to-read output.  Rather than refusing to run, Ginkgo ignores those
+// flags and runs in series instead.  suiteConfig and cliConfig are mutated in place; the return
+// value is true if anything was overridden, so callers can let the user know what was ignored.
+func ReconcileFdOutputConfiguration(reporterConfig ReporterConfig, suiteConfig *SuiteConfig, cliConfig *CLIConfig) bool {
+	if !reporterConfig.FdOutput {
+		return false
+	}
+
+	changed := false
+	if cliConfig.ComputedProcs() > 1 {
+		cliConfig.Procs = 1
+		cliConfig.Parallel = false
+		changed = true
+	}
+	if suiteConfig.RandomizeAllSpecs {
+		suiteConfig.RandomizeAllSpecs = false
+		changed = true
+	}
+	return changed
 }
 
 // GinkgoCLISharedFlags provides flags shared by the Ginkgo CLI's build, watch, and run commands
