@@ -3,6 +3,7 @@ package types
 import (
 	"fmt"
 	"regexp"
+	"slices"
 	"strings"
 )
 
@@ -24,12 +25,7 @@ func matchLabelAction(label string) LabelFilter {
 
 func matchLabelRegexAction(regex *regexp.Regexp) LabelFilter {
 	return func(labels []string) bool {
-		for i := range labels {
-			if regex.MatchString(labels[i]) {
-				return true
-			}
-		}
-		return false
+		return slices.ContainsFunc(labels, regex.MatchString)
 	}
 }
 

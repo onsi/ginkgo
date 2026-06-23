@@ -73,7 +73,7 @@ var _ = Describe("ReportEntries", func() {
 				})
 
 				It("reporter", func() {
-					for i := 0; i < 5; i++ {
+					for i := range 5 {
 						time.Sleep(20 * time.Millisecond)
 						AddReportEntry(fmt.Sprintf("waiting... %d", i))
 						Ω(len(CurrentSpecReport().ReportEntries)).Should(BeNumerically("<", (i+1)*10))
