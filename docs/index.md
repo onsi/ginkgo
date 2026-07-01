@@ -3314,7 +3314,7 @@ Describe("interacting with the library", func() {
 
 here the total runtime of `BeforeEach`, `It`, and `AfterEach` must be less than the `SpecTimeout` of 2 seconds.  In addition, the `BeforeEach` callback must exit within 500ms and the `AfterEach` after 1 second.
 
-When a `SpecTimeout` expires, the current node is interrupted (i.e. it's context is cancelled) and Ginkgo proceeds to run any associated clean up nodes (i.e. any `AfterEach`, `AfterAll`, and `DeferCleanup` nodes) subject to their own `NodeTimeout`s.  This is because cleanup is considered an essential part of the spec lifecycle and must not be skipped if possible.  Thus, the `SpecTimeout` is not a strict guarantee on the runtime of a spec but rather a threshold at which the spec will be considered failed.
+When a `SpecTimeout` expires, the current node is interrupted (i.e. its context is cancelled) and Ginkgo proceeds to run any associated clean up nodes (i.e. any `AfterEach`, `AfterAll`, and `DeferCleanup` nodes) subject to their own `NodeTimeout`s.  This is because cleanup is considered an essential part of the spec lifecycle and must not be skipped if possible.  Thus, the `SpecTimeout` is not a strict guarantee on the runtime of a spec but rather a threshold at which the spec will be considered failed.
 
 Currently, `SpecTimeout` and `NodeTimeout` cannot be applied to container nodes.
 
@@ -5110,7 +5110,7 @@ SynchronizedBeforeSuite(func() []byte {
 
 Now only process #1 will compile the publisher.  All other processes will wait until it's done.  Once complete it will pass the path to the compiled artifact to all other processes.  Note that the `DeferCleanup` in the `SynchronizedBeforeSuite` will have the same runtime semantics as a `SynchronizedAfterSuite` so `gexec` will not cleanup after itself until _all_ processes have finished running.
 
-Now any spec running on any process can simply launch it's own instance of the `publisher` process via `gexec` and make assertions on its output with `gbytes`.  The only thing to be aware of is potential interactions between the multiple publisher processes if they happen to access some sort of shared singleton resources...  Keep reading!
+Now any spec running on any process can simply launch its own instance of the `publisher` process via `gexec` and make assertions on its output with `gbytes`.  The only thing to be aware of is potential interactions between the multiple publisher processes if they happen to access some sort of shared singleton resources...  Keep reading!
 
 #### Managing External Resources in Parallel Suites: Files
 
@@ -5492,7 +5492,7 @@ func BeAValidBook(title string, author string, pages int) types.GomegaMatcher {
 }
 ```
 
-this function uses Gomega's `And` matcher to require that the four passed-in matchers are satisfied.  It then uses `WithTransform` to accept the passed-in book and call it's `IsValid()` method, then asserts the returned value is `true`.  It then uses the `HaveField` matcher to make assertions on the fields within the `Book` struct.
+this function uses Gomega's `And` matcher to require that the four passed-in matchers are satisfied.  It then uses `WithTransform` to accept the passed-in book and call its `IsValid()` method, then asserts the returned value is `true`.  It then uses the `HaveField` matcher to make assertions on the fields within the `Book` struct.
 
 Now we can write:
 
