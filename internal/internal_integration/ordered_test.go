@@ -44,6 +44,16 @@ var FlakeyFailerWithCleanup = func(n int, cleanupLabel string) func() {
 	}
 }
 
+func HaveRepeatAttempts(attempts ...int) OmegaMatcher {
+	return WithTransform(func(report types.SpecReport) []int {
+		actual := []int{}
+		for _, event := range report.SpecEvents.WithType(types.SpecEventSpecRepeat) {
+			actual = append(actual, event.Attempt)
+		}
+		return actual
+	}, Equal(attempts))
+}
+
 var _ = DescribeTable("Ordered Containers",
 	func(expectedSuccess bool, fixture func(), runs []string, args ...any) {
 		success, _ := RunFixture(CurrentSpecReport().LeafNodeText, fixture)
@@ -539,6 +549,55 @@ var _ = DescribeTable("Ordered Containers",
 	}, []string{"BA", "A", "B", "C", "C", "C", "AA"},
 		"A", "B", HavePassed(NumAttempts(1)),
 		"C", HavePassed(NumAttempts(3)),
+	),
+	Entry("when a non-final spec must pass repeatedly, it runs BeforeAll and AfterAll just once", true, func() {
+		Context("container", Ordered, func() {
+			BeforeAll(rt.T("BA-outer"))
+			BeforeEach(rt.T("BE"))
+			Context("inner", func() {
+				BeforeAll(rt.T("BA-inner"))
+				It("A", rt.T("A"), MustPassRepeatedly(3))
+				AfterAll(rt.T("AA-inner"))
+			})
+			It("B", rt.T("B"))
+			AfterEach(rt.T("AE"))
+			AfterAll(rt.T("AA-outer"))
+		})
+	}, []string{"BA-outer", "BE", "BA-inner", "A", "AE", "BE", "A", "AE", "BE", "A", "AA-inner", "AE", "BE", "B", "AE", "AA-outer"},
+		"A", And(HavePassed(NumAttempts(3)), HaveRepeatAttempts(1, 2)),
+		"B", HavePassed(NumAttempts(1)),
+	),
+	Entry("when the final spec must pass repeatedly, it runs BeforeAll and AfterAll just once", true, func() {
+		Context("container", Ordered, func() {
+			BeforeAll(rt.T("BA"))
+			BeforeEach(rt.T("BE"))
+			It("A", rt.T("A"))
+			It("B", rt.T("B"), MustPassRepeatedly(3))
+			AfterEach(rt.T("AE"))
+			AfterAll(rt.T("AA"))
+		})
+	}, []string{"BA", "BE", "A", "AE", "BE", "B", "AE", "BE", "B", "AE", "BE", "B", "AE", "AA"},
+		"A", HavePassed(NumAttempts(1)),
+		"B", And(HavePassed(NumAttempts(3)), HaveRepeatAttempts(1, 2)),
+	),
+	Entry("when the final spec fails while it must pass repeatedly, it runs AfterAll after the failure", false, func() {
+		attempt := 0
+		Context("container", Ordered, func() {
+			BeforeAll(rt.T("BA"))
+			BeforeEach(rt.T("BE"))
+			It("A", rt.T("A"))
+			It("B", rt.T("B", func() {
+				attempt++
+				if attempt == 2 {
+					F("fail")
+				}
+			}), MustPassRepeatedly(3))
+			AfterEach(rt.T("AE"))
+			AfterAll(rt.T("AA"))
+		})
+	}, []string{"BA", "BE", "A", "AE", "BE", "B", "AE", "BE", "B", "AE", "AA"},
+		"A", HavePassed(NumAttempts(1)),
+		"B", And(HaveFailed("fail", NumAttempts(2)), HaveRepeatAttempts(1)),
 	),
 	Entry("When the BeforeAll is flaky", true, func() {
 		Context("container", Ordered, FlakeAttempts(5), func() {
