@@ -17,6 +17,17 @@ import (
 	"github.com/onsi/ginkgo/v2/types"
 )
 
+// reportEntryStringerValue is used as a ReportEntry value to demonstrate that the JUnit
+// "properties" element stores a JSON dump of the value, not its String() representation.
+type reportEntryStringerValue struct {
+	Label string
+	Count int
+}
+
+func (v reportEntryStringerValue) String() string {
+	return fmt.Sprintf("%s: %d", v.Label, v.Count)
+}
+
 var _ = Describe("JunitReport", func() {
 	var report types.Report
 
@@ -32,16 +43,16 @@ var _ = Describe("JunitReport", func() {
 					SE(types.SpecEventNodeStart, types.NodeTypeIt, "C", cl2, TL(0)),
 					F("failure\nmessage", cl3, types.FailureNodeIsLeafNode, FailureNodeLocation(cl2), types.NodeTypeIt, TL("ginkgowriter\n"), AF(types.SpecStatePanicked, cl4, types.FailureNodeIsLeafNode, FailureNodeLocation(cl2), types.NodeTypeIt, TL("ginkgowriter\noutput\n"), ForwardedPanic("the panic!"))),
 					SE(types.SpecEventNodeEnd, types.NodeTypeIt, "C", cl2, TL("ginkgowriter\noutput\n"), time.Microsecond*87230),
-					RE("a report entry", cl1, TL("ginkgowriter\noutput\n")),
-					RE("a hidden report entry", cl1, TL("ginkgowriter\noutput\n"), types.ReportEntryVisibilityNever),
+					RE("a report entry", cl1, TL("ginkgowriter\noutput\n"), "report entry value"),
+					RE("a hidden report entry", cl1, TL("ginkgowriter\noutput\n"), types.ReportEntryVisibilityNever, "hidden report entry value"),
 					AF(types.SpecStateFailed, "a subsequent failure", types.FailureNodeInContainer, FailureNodeLocation(cl3), types.NodeTypeAfterEach, 0, TL("ginkgowriter\noutput\ncleanup!")),
 				),
 				S(types.NodeTypeIt, "A", cl0, STD("some captured stdout\n"), GW("some GinkgoWriter\noutput is interspersed\nhere and there\n"), Label("cat", "owner:frank", "OWNer:bob"),
 					SE(types.SpecEventNodeStart, types.NodeTypeIt, "A", cl0),
 					PR("my progress report", LeafNodeText("A"), TL("some GinkgoWriter\n")),
 					SE(types.SpecEventByStart, "My Step", cl1, TL("some GinkgoWriter\n")),
-					RE("my entry", cl1, types.ReportEntryVisibilityFailureOrVerbose, TL("some GinkgoWriter\noutput is interspersed\n")),
-					RE("my hidden entry", cl1, types.ReportEntryVisibilityNever, TL("some GinkgoWriter\noutput is interspersed\n")),
+					RE("my entry", cl1, types.ReportEntryVisibilityFailureOrVerbose, TL("some GinkgoWriter\noutput is interspersed\n"), reportEntryStringerValue{Label: "my entry value", Count: 17}),
+					RE("my hidden entry", cl1, types.ReportEntryVisibilityNever, TL("some GinkgoWriter\noutput is interspersed\n"), "my hidden entry value"),
 					SE(types.SpecEventByEnd, "My Step", cl1, time.Millisecond*200, TL("some GinkgoWriter\noutput is interspersed\n")),
 					SE(types.SpecEventNodeEnd, types.NodeTypeIt, "A", cl0, time.Millisecond*300, TL("some GinkgoWriter\noutput is interspersed\nhere and there\n")),
 				),
@@ -137,7 +148,9 @@ var _ = Describe("JunitReport", func() {
 				"  cl-4",
 				spr("< Exit [It] C - cl2.go:80 @ %s (87ms)", FORMATTED_TIME),
 				spr("a report entry - cl1.go:37 @ %s", FORMATTED_TIME),
+				"  report entry value",
 				spr("a hidden report entry - cl1.go:37 @ %s", FORMATTED_TIME),
+				"  hidden report entry value",
 				"cleanup!",
 				"[FAILED] a subsequent failure",
 				spr("In [AfterEach] at: :0 @ %s", FORMATTED_TIME),
@@ -162,7 +175,9 @@ var _ = Describe("JunitReport", func() {
 				spr("STEP: My Step - cl1.go:37 @ %s", FORMATTED_TIME),
 				"output is interspersed",
 				spr("my entry - cl1.go:37 @ %s", FORMATTED_TIME),
+				"  my entry value: 17",
 				spr("my hidden entry - cl1.go:37 @ %s", FORMATTED_TIME),
+				"  my hidden entry value",
 				spr("END STEP: My Step - cl1.go:37 @ %s (200ms)", FORMATTED_TIME),
 				"here and there",
 				spr("< Exit [It] A - cl0.go:12 @ %s (300ms)", FORMATTED_TIME),
@@ -316,7 +331,9 @@ var _ = Describe("JunitReport", func() {
 				"  cl-4",
 				spr("< Exit [It] C - cl2.go:80 @ %s (87ms)", FORMATTED_TIME),
 				spr("a report entry - cl1.go:37 @ %s", FORMATTED_TIME),
+				"  report entry value",
 				spr("a hidden report entry - cl1.go:37 @ %s", FORMATTED_TIME),
+				"  hidden report entry value",
 				"cleanup!",
 				"[FAILED] a subsequent failure",
 				spr("In [AfterEach] at: :0 @ %s", FORMATTED_TIME),
