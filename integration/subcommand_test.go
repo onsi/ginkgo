@@ -661,5 +661,19 @@ var _ = Describe("Subcommand", func() {
 			Ω(output).Should(ContainSubstring("-succinct"))
 			Ω(output).Should(ContainSubstring("-procs"))
 		})
+
+		DescribeTable("should refer to Go's help for sanitizer requirements", func(flag, sanitizer string) {
+			cmd := ginkgoCommand("", "help", "build")
+			cmd.Env = append(os.Environ(), "GINKGO_NO_COLOR=1")
+			session, err := gexec.Start(cmd, GinkgoWriter, GinkgoWriter)
+			Ω(err).ShouldNot(HaveOccurred())
+			Eventually(session).Should(gexec.Exit(0))
+			output := strings.Join(strings.Fields(string(session.Out.Contents())), " ")
+
+			Ω(output).Should(ContainSubstring("--" + flag + " enable interoperation with " + sanitizer + " sanitizer. See 'go help build' for supported platforms and requirements."))
+		},
+			Entry("address sanitizer", "asan", "address"),
+			Entry("memory sanitizer", "msan", "memory"),
+		)
 	})
 })
