@@ -11,7 +11,7 @@ require (
 	github.com/joshdk/go-junit v1.0.0
 	github.com/mfridman/tparse v0.18.0
 	github.com/onsi/gomega v1.40.0
-	golang.org/x/sys v0.43.0
+	golang.org/x/sys v0.44.0
 	golang.org/x/tools v0.44.0
 )
 
