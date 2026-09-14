@@ -3,7 +3,7 @@
   <img alt="Ginkgo" src="docs/images/ginkgo.png">
 </picture>
 
-[![test](https://github.com/onsi/ginkgo/actions/workflows/test.yml/badge.svg?branch=master)](https://github.com/onsi/ginkgo/actions/workflows/test.yml?query=branch%3Amaster) [![Ginkgo Docs](docs/images/docs-badge.svg)](https://onsi.github.io/ginkgo/)
+[![test](https://github.com/onsi/ginkgo/actions/workflows/test.yml/badge.svg?branch=master)](https://github.com/onsi/ginkgo/actions/workflows/test.yml?query=branch%3Amaster) [![Ginkgo Docs](docs/images/docs-badge.svg)](https://onsi.github.io/ginkgo/) [![Sponsor onsi](docs/images/sponsor-badge.svg)](https://github.com/sponsors/onsi)
 
 ---
 

@@ -1,0 +1,34 @@
+<svg xmlns="http://www.w3.org/2000/svg" width="101" height="20">
+  <title>sponsor onsi</title>
+  <defs>
+    <linearGradient id="label-fill" x1="50%" y1="0%" x2="50%" y2="100%">
+      <stop stop-color="#444D56" offset="0%"></stop>
+      <stop stop-color="#24292E" offset="100%"></stop>
+    </linearGradient>
+    <linearGradient id="sponsor-fill" x1="50%" y1="0%" x2="50%" y2="100%">
+      <stop stop-color="#EA4AAA" offset="0%"></stop>
+      <stop stop-color="#BF3989" offset="100%"></stop>
+    </linearGradient>
+  </defs>
+  <g fill="none" fill-rule="evenodd">
+    <g font-family="'DejaVu Sans',Verdana,Geneva,sans-serif" font-size="11">
+      <path d="M0,3 C0,1.3431 1.3552,0 3.02702703,0 L49,0 L49,20 L3.02702703,20 C1.3552,20 0,18.6569 0,17 L0,3 Z" fill="url(#label-fill)" fill-rule="nonzero"></path>
+      <text fill="#010101" fill-opacity=".3" aria-hidden="true">
+        <tspan x="22.1981982" y="15" textLength="22.49">onsi</tspan>
+      </text>
+      <text fill="#FFFFFF">
+        <tspan x="22.1981982" y="14" textLength="22.49">onsi</tspan>
+      </text>
+    </g>
+    <g transform="translate(49)" font-family="'DejaVu Sans',Verdana,Geneva,sans-serif" font-size="11">
+      <path d="M0 0h48.897C50.61 0 52 1.343 52 3v14c0 1.657-1.39 3-3.103 3H0V0z" fill="url(#sponsor-fill)" fill-rule="nonzero"></path>
+      <text fill="#010101" fill-opacity=".3" aria-hidden="true">
+        <tspan x="4" y="15" textLength="43.4">sponsor</tspan>
+      </text>
+      <text fill="#FFFFFF">
+        <tspan x="4" y="14" textLength="43.4">sponsor</tspan>
+      </text>
+    </g>
+    <path transform="translate(4.6 3.6) scale(0.8)" fill="#EA4AAA" d="M7.655 14.916v-.001h-.002l-.006-.003-.018-.01a22.066 22.066 0 0 1-3.744-2.584C2.045 10.731 0 8.35 0 5.5 0 2.836 2.086 1 4.25 1 5.797 1 7.153 1.802 8 3.02 8.847 1.802 10.203 1 11.75 1 13.914 1 16 2.836 16 5.5c0 2.85-2.044 5.231-3.886 6.818a22.094 22.094 0 0 1-3.433 2.414 7.152 7.152 0 0 1-.31.17l-.018.01-.008.004a.75.75 0 0 1-.69 0Z"></path>
+  </g>
+</svg>
