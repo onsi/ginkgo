@@ -1,6 +1,10 @@
 name: test
 
-on: [push, pull_request]
+on:
+  push:
+  pull_request:
+  # The Release workflow calls this one, so nothing is released unless all of it passes.
+  workflow_call:
 
 permissions:
   contents: read
