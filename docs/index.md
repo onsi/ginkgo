@@ -34,8 +34,8 @@ Happy Testing!
 Sponsors commit to a [sponsorship](https://github.com/sponsors/onsi) for a year.  If you're an organization that makes use of Ginkgo please consider becoming a sponsor!
 
 <p style="font-size:21px; color:black;">Browser testing via 
-    <a href="https://www.testmu.ai/" target="_blank">
-        <img src="https://assets.testmu.ai/resources/images/logos/white-logo.png" style="vertical-align: middle;" width="250" />
+    <a href="https://www.testmuai.com/?utm_medium=sponsor&utm_source=ginkgo" target="_blank">
+        <img alt="TestMu AI" src="./images/testmu-ai.svg" style="vertical-align: middle;" width="250" />
     </a>
 </p>
 
@@ -6067,8 +6067,8 @@ The [ginkgolinter](https://github.com/nunnatsa/ginkgolinter) enforces several pa
 Sponsors commit to a [sponsorship](https://github.com/sponsors/onsi) for a year.  If you're an organization that makes use of Ginkgo please consider becoming a sponsor!
 
 <p style="font-size:21px; color:black;">Browser testing via 
-    <a href="https://www.testmu.ai/" target="_blank">
-        <img src="https://assets.testmu.ai/resources/images/logos/white-logo.png" style="vertical-align: middle;" width="250" />
+    <a href="https://www.testmuai.com/?utm_medium=sponsor&utm_source=ginkgo" target="_blank">
+        <img alt="TestMu AI" src="./images/testmu-ai.svg" style="vertical-align: middle;" width="250" />
     </a>
 </p>
 
@@ -6078,4 +6078,4 @@ With AI-native test management, MCP servers, and agent-based automation, TestMu 
 
 TestMu AI Agents accelerate your testing throughout the entire SDLC, from test planning and authoring to automation, infrastructure, execution, RCA, and reporting.
 
-For more information, please visit https://www.testmu.ai/
+For more information, please visit [testmuai.com](https://www.testmuai.com/?utm_medium=sponsor&utm_source=ginkgo).
