@@ -188,6 +188,12 @@ func PEntry(description any, args ...any) TableEntry {
 	return TableEntry{description: description, decorations: decorations, parameters: parameters, codeLocation: types.NewCodeLocation(0)}
 }
 
+func (t *TableEntry) AddArguments(args ...interface{}) {
+	decorations, parameters := internal.PartitionDecorations(args...)
+	t.decorations = append(t.decorations, decorations)
+	t.parameters = append(t.parameters, parameters)
+}
+
 /*
 You can mark a particular entry as pending with XEntry.  This is equivalent to XIt.
 */
