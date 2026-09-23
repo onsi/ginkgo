@@ -40,7 +40,7 @@ func unfocusSpecs() {
 	wg := sync.WaitGroup{}
 	wg.Add(workers)
 
-	for i := 0; i < workers; i++ {
+	for range workers {
 		go func() {
 			for path := range goFiles {
 				unfocusFile(path)

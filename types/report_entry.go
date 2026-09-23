@@ -3,6 +3,7 @@ package types
 import (
 	"encoding/json"
 	"fmt"
+	"slices"
 	"time"
 )
 
@@ -180,11 +181,5 @@ func (rev ReportEntryVisibility) MarshalJSON() ([]byte, error) {
 }
 
 func (v ReportEntryVisibility) Is(visibilities ...ReportEntryVisibility) bool {
-	for _, visibility := range visibilities {
-		if v == visibility {
-			return true
-		}
-	}
-
-	return false
+	return slices.Contains(visibilities, v)
 }

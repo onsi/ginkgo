@@ -8,6 +8,7 @@ import (
 	"path/filepath"
 	"regexp"
 	"runtime"
+	"slices"
 	"strings"
 
 	"github.com/onsi/ginkgo/v2/types"
@@ -39,13 +40,7 @@ const (
 var TestSuiteStateFailureStates = []TestSuiteState{TestSuiteStateFailed, TestSuiteStateFailedDueToTimeout, TestSuiteStateFailedToCompile}
 
 func (state TestSuiteState) Is(states ...TestSuiteState) bool {
-	for _, suiteState := range states {
-		if suiteState == state {
-			return true
-		}
-	}
-
-	return false
+	return slices.Contains(states, state)
 }
 
 type TestSuite struct {
