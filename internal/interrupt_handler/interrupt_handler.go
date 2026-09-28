@@ -129,8 +129,9 @@ func (handler *InterruptHandler) registerForInterrupts() {
 		var interruptCause InterruptCause
 		for {
 			select {
-			case <-signalChannel:
+			case signal := <-signalChannel:
 				interruptCause = InterruptCauseSignal
+				signalChildren(signal)
 			case <-abortChannel:
 				interruptCause = InterruptCauseAbortByOtherProcess
 			case <-handler.stop:
@@ -156,6 +157,19 @@ func (handler *InterruptHandler) registerForInterrupts() {
 			handler.lock.Unlock()
 		}
 	}(abortChannel)
+}
+
+// Propagate the signal to all child processes.
+func signalChildren(osSignal os.Signal) {
+	sysSignal := syscall.SIGTERM
+	if osSignal == os.Interrupt {
+		sysSignal = syscall.SIGINT
+	}
+	// Minus sign is for PGID rather than PID.
+	err := syscall.Kill(-syscall.Getpid(), sysSignal)
+	if err != nil {
+		os.Stderr.WriteString("Failed to signal child processes: " + err.Error() + "\n")
+	}
 }
 
 func (handler *InterruptHandler) Status() InterruptStatus {
