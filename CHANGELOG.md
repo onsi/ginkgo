@@ -4,6 +4,8 @@
 
 ### Fixes
 
+- Stop interrupt handler goroutines after `RunSpecs` and `PreviewSpecs` return [d55a87d]
+
 ### Maintenance
 
 ## 2.33.0
