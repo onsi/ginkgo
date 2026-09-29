@@ -3,6 +3,7 @@
 ### Features
 
 ### Fixes
+- Report invalid `--focus` and `--skip` regular expressions as configuration errors instead of panicking.
 
 ### Maintenance
 

@@ -199,6 +199,28 @@ var _ = Describe("Config", func() {
 			})
 		})
 
+		Describe("text filter errors", func() {
+			DescribeTable("should reject invalid text filter regexps", func(focus, skip []string, messages []string) {
+				suiteConf.FocusStrings = focus
+				suiteConf.SkipStrings = skip
+				errors := types.VetConfig(flagSet, suiteConf, repConf)
+				Ω(errors).Should(HaveLen(len(messages)))
+				for i, message := range messages {
+					Ω(errors[i]).Should(MatchError(ContainSubstring(message)))
+				}
+			},
+				Entry("with an invalid focus regexp", []string{"["}, []string{}, []string{"missing closing ]"}),
+				Entry("with an invalid skip regexp", []string{}, []string{"("}, []string{"missing closing )"}),
+				Entry("with invalid focus and skip regexps", []string{"["}, []string{"("}, []string{"missing closing ]", "missing closing )"}),
+			)
+
+			It("should accept text filters that form valid regexps when ORed together", func() {
+				suiteConf.FocusStrings = []string{"(dog", "fish)"}
+				suiteConf.SkipStrings = []string{"(cat", "purple)"}
+				Ω(types.VetConfig(flagSet, suiteConf, repConf)).Should(BeEmpty())
+			})
+		})
+
 		Describe("file filter errors", func() {
 			Context("with an invalid --focus-file and/or --skip-file", func() {
 				BeforeEach(func() {
