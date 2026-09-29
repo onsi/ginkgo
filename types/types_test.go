@@ -2,6 +2,7 @@ package types_test
 
 import (
 	"encoding/json"
+	"reflect"
 	"sort"
 	"time"
 
@@ -317,6 +318,10 @@ var _ = Describe("Types", func() {
 		Describe("Encoding to JSON", func() {
 			var report types.SpecReport
 			BeforeEach(func() {
+				rev := types.ReportEntryValue{}
+				err := json.Unmarshal([]byte(`{"AsJson": "\"foo\"", "Representation": "foo"}`), &rev)
+				Ω(err).ShouldNot(HaveOccurred())
+
 				report = types.SpecReport{
 					ContainerHierarchyTexts: []string{"A", "B"},
 					ContainerHierarchyLocations: []types.CodeLocation{
@@ -324,17 +329,47 @@ var _ = Describe("Types", func() {
 						types.NewCodeLocationWithStackTrace(0),
 						types.NewCustomCodeLocation("welp"),
 					},
-					LeafNodeType:               types.NodeTypeIt,
-					LeafNodeLocation:           types.NewCodeLocation(0),
-					LeafNodeText:               "C",
+					ContainerHierarchyLabels:            [][]string{{"X"}, {"Y", "Z"}},
+					ContainerHierarchySemVerConstraints: [][]string{{">=1.5"}},
+					ContainerHierarchyComponentSemVerConstraints: []map[string][]string{{
+						"hier": []string{">=1.4"},
+					}},
+					LeafNodeType:              types.NodeTypeIt,
+					LeafNodeLocation:          types.NewCodeLocation(0),
+					LeafNodeText:              "C",
+					LeafNodeLabels:            []string{"X"},
+					LeafNodeSemVerConstraints: []string{">=1.50"},
+					LeafNodeComponentSemVerConstraints: map[string][]string{
+						"leaf": {">=1.40"},
+					},
+					SpecPriority:               5,
 					State:                      types.SpecStateFailed,
+					IsSerial:                   true,
+					IsInOrderedContainer:       true,
 					StartTime:                  time.Date(2012, 06, 19, 05, 32, 12, 0, time.UTC),
 					EndTime:                    time.Date(2012, 06, 19, 05, 33, 12, 0, time.UTC),
 					RunTime:                    time.Minute,
 					ParallelProcess:            2,
+					RunningInParallel:          true,
 					NumAttempts:                3,
+					MaxFlakeAttempts:           4,
+					MaxMustPassRepeatedly:      5,
 					CapturedGinkgoWriterOutput: "gw",
 					CapturedStdOutErr:          "std",
+					ReportEntries: []types.ReportEntry{{
+						Name:  "report",
+						Value: rev,
+					}},
+					ProgressReports: []types.ProgressReport{{
+						Message: "progress",
+					}},
+					AdditionalFailures: []types.AdditionalFailure{{
+						State: types.SpecStateFailed,
+					}},
+					SpecEvents: []types.SpecEvent{{
+						SpecEventType: types.SpecEventSpecRetry,
+						Message:       "event",
+					}},
 					Failure: types.Failure{
 						Message:                   "boom",
 						Location:                  types.NewCodeLocation(1),
@@ -349,6 +384,16 @@ var _ = Describe("Types", func() {
 
 			Context("with a failure", func() {
 				It("round-trips correctly", func() {
+					reportType := reflect.TypeOf(report)
+					reportVal := reflect.ValueOf(report)
+					missingFields := []string{}
+					for i := range reportType.NumField() {
+						if reportVal.Field(i).IsZero() {
+							missingFields = append(missingFields, reportType.Field(i).Name)
+						}
+					}
+					Ω(missingFields).To(BeEmpty(), "the test case requires that all fields in report are filled in")
+
 					marshalled, err := json.Marshal(report)
 					Ω(err).ShouldNot(HaveOccurred())
 					unmarshalled := types.SpecReport{}
@@ -364,8 +409,13 @@ var _ = Describe("Types", func() {
 				})
 				It("round-trips correctly and doesn't include the Failure struct", func() {
 					marshalled, err := json.Marshal(report)
-					Ω(string(marshalled)).ShouldNot(ContainSubstring("Failure"))
 					Ω(err).ShouldNot(HaveOccurred())
+
+					asMap := map[string]any{}
+					err = json.Unmarshal(marshalled, &asMap)
+					Ω(err).ShouldNot(HaveOccurred())
+					Ω(asMap).ShouldNot(HaveKey("Failure"))
+
 					unmarshalled := types.SpecReport{}
 					err = json.Unmarshal(marshalled, &unmarshalled)
 					Ω(err).ShouldNot(HaveOccurred())
