@@ -3,6 +3,7 @@
 ### Features
 
 ### Fixes
+- Add aeveral missing fields to spec report JSON output.
 
 ### Maintenance
 
