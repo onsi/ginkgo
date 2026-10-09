@@ -69,7 +69,11 @@ var _ = Describe("Interrupt and Timeout", MarkSlow, func() {
 		It("interrupts the suite and gives the user feedback as it does so", func() {
 			fm.MountFixture("hanging")
 
-			session := startGinkgo(fm.PathTo("hanging"), "--no-color", "--timeout=5s", "--grace-period=1s")
+			//the timeout clock starts before compilation, so compile first lest a slow build eat the timeout
+			session := startGinkgo(fm.PathTo("hanging"), "build")
+			Eventually(session).Should(gexec.Exit(0))
+
+			session = startGinkgo(fm.PathTo("hanging"), "--no-color", "--timeout=5s", "--grace-period=1s", "./hanging.test")
 			Eventually(session, time.Second*10).Should(gexec.Exit(1))
 
 			Ω(session).Should(gbytes.Say("Sleeping..."))
