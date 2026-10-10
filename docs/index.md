@@ -3095,6 +3095,8 @@ It("likes fish", func() {...})
 
 then `ginkgo --focus=dog --focus=fish --skip=cat --skip=purple` will only run `"likes dogs"`, `"likes dog fish"`, and `"likes fish"`.
 
+Invalid regular expressions cause a configuration error and a non-zero exit before suite setup or spec bodies run.
+
 The description-based `--focus` and `--skip` flags were Ginkgo's original command-line based filtering mechanism and will continue to be supported - however, we recommend using labels when possible as the label filter language is more flexible and easier to reason about.
 
 #### Combining Filters

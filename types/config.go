@@ -7,8 +7,10 @@ package types
 
 import (
 	"flag"
+	"fmt"
 	"os"
 	"path/filepath"
+	"regexp"
 	"runtime"
 	"strconv"
 	"strings"
@@ -440,6 +442,20 @@ func VetConfig(flagSet GinkgoFlagSet, suiteConfig SuiteConfig, reporterConfig Re
 
 	if suiteConfig.SleepOnFailure > 0 && suiteConfig.ParallelTotal > 1 {
 		errors = append(errors, GinkgoErrors.SleepOnFailureInParallelConfiguration())
+	}
+
+	if len(suiteConfig.FocusStrings) > 0 {
+		_, err := regexp.Compile(strings.Join(suiteConfig.FocusStrings, "|"))
+		if err != nil {
+			errors = append(errors, fmt.Errorf("Invalid --focus regular expression: %w\n", err))
+		}
+	}
+
+	if len(suiteConfig.SkipStrings) > 0 {
+		_, err := regexp.Compile(strings.Join(suiteConfig.SkipStrings, "|"))
+		if err != nil {
+			errors = append(errors, fmt.Errorf("Invalid --skip regular expression: %w\n", err))
+		}
 	}
 
 	if len(suiteConfig.FocusFiles) > 0 {
