@@ -3,7 +3,7 @@ module github.com/onsi/ginkgo/v2
 go 1.25.0
 
 require (
-	github.com/Masterminds/semver/v3 v3.4.0
+	github.com/Masterminds/semver/v3 v3.5.0
 	github.com/gkampitakis/go-snaps v0.5.15
 	github.com/go-logr/logr v1.4.3
 	github.com/go-task/slim-sprig/v3 v3.0.0
