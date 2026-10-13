@@ -3,16 +3,16 @@ module github.com/onsi/ginkgo/v2
 go 1.25.0
 
 require (
-	github.com/Masterminds/semver/v3 v3.4.0
+	github.com/Masterminds/semver/v3 v3.5.0
 	github.com/gkampitakis/go-snaps v0.5.15
 	github.com/go-logr/logr v1.4.3
 	github.com/go-task/slim-sprig/v3 v3.0.0
-	github.com/google/pprof v0.0.0-20260402051712-545e8a4df936
+	github.com/google/pprof v0.0.0-20260709232956-b9395ee17fa0
 	github.com/joshdk/go-junit v1.0.0
 	github.com/mfridman/tparse v0.18.0
-	github.com/onsi/gomega v1.40.0
-	golang.org/x/sys v0.43.0
-	golang.org/x/tools v0.44.0
+	github.com/onsi/gomega v1.42.1
+	golang.org/x/sys v0.47.0
+	golang.org/x/tools v0.48.0
 )
 
 require (
@@ -29,9 +29,9 @@ require (
 	github.com/tidwall/pretty v1.2.1 // indirect
 	github.com/tidwall/sjson v1.2.5 // indirect
 	go.yaml.in/yaml/v3 v3.0.4 // indirect
-	golang.org/x/mod v0.35.0 // indirect
-	golang.org/x/net v0.53.0 // indirect
-	golang.org/x/sync v0.20.0 // indirect
-	golang.org/x/text v0.36.0 // indirect
+	golang.org/x/mod v0.38.0 // indirect
+	golang.org/x/net v0.57.0 // indirect
+	golang.org/x/sync v0.22.0 // indirect
+	golang.org/x/text v0.40.0 // indirect
 	google.golang.org/protobuf v1.36.7 // indirect
 )
