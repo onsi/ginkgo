@@ -168,6 +168,10 @@ func FindSuites(args []string, cliConfig types.CLIConfig, allowPrecompiled bool)
 		skipFilters := strings.Split(cliConfig.SkipPackage, ",")
 		for idx := range suites {
 			for _, skipFilter := range skipFilters {
+				skipFilter = strings.TrimSpace(skipFilter)
+				if skipFilter == "" {
+					continue
+				}
 				if strings.Contains(suites[idx].Path, skipFilter) {
 					suites[idx].State = TestSuiteStateSkippedByFilter
 					break
