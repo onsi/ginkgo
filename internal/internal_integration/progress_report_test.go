@@ -4,6 +4,7 @@ import (
 	"time"
 
 	. "github.com/onsi/ginkgo/v2"
+	"github.com/onsi/ginkgo/v2/internal"
 	. "github.com/onsi/ginkgo/v2/internal/test_helpers"
 	"github.com/onsi/ginkgo/v2/types"
 	. "github.com/onsi/gomega"
@@ -477,6 +478,34 @@ var _ = Describe("Progress Reporting", func() {
 			pr = reporter.ProgressReports[2]
 			Ω(pr.LeafNodeText).Should(Equal("B"))
 			Ω(pr.AdditionalReports).Should(Equal([]string{"Some More (Never Cancelled) Global Information"}))
+		})
+	})
+
+	Context("when a progress reporter calls back into Ginkgo", func() {
+		var elapsed time.Duration
+		BeforeEach(func() {
+			success, _ := RunFixture("emitting spec progress", func() {
+				Describe("a container", func() {
+					It("A", func(ctx SpecContext) {
+						AttachProgressReporter(func() string {
+							return "global reporter sees " + CurrentSpecReport().LeafNodeText
+						})
+						ctx.AttachProgressReporter(func() string {
+							return "context reporter sees " + CurrentSpecReport().LeafNodeText
+						})
+						t := time.Now()
+						triggerProgressSignal()
+						elapsed = time.Since(t)
+					})
+				})
+			})
+			Ω(success).Should(BeTrue())
+		})
+
+		It("does not deadlock: the reporters can call CurrentSpecReport()", func() {
+			Ω(elapsed).Should(BeNumerically("<", internal.ProgressReporterDeadline/2))
+			Ω(reporter.ProgressReports).Should(HaveLen(1))
+			Ω(reporter.ProgressReports[0].AdditionalReports).Should(Equal([]string{"context reporter sees A", "global reporter sees A"}))
 		})
 	})
 

@@ -395,18 +395,28 @@ func (suite *Suite) AddReportEntry(entry ReportEntry) error {
 
 func (suite *Suite) generateProgressReport(fullReport bool) types.ProgressReport {
 	timelineLocation := suite.generateTimelineLocation()
-	suite.selectiveLock.Lock()
-	defer suite.selectiveLock.Unlock()
 
+	// snapshot the state we need under the lock...
+	suite.selectiveLock.Lock()
+	currentSpecContext := suite.currentSpecContext
+	currentSpecReport := suite.currentSpecReport
+	currentNode := suite.currentNode
+	currentNodeStartTime := suite.currentNodeStartTime
+	currentByStep := suite.currentByStep
+	gwOutput := suite.currentSpecReport.CapturedGinkgoWriterOutput + string(suite.writer.Bytes())
+	suite.selectiveLock.Unlock()
+
+	// ...and query the progress reporters *without* holding it.  Reporters are user code and
+	// are free to call back into Ginkgo (e.g. CurrentSpecReport() or AddReportEntry()), both of
+	// which take selectiveLock.  Holding the lock here would deadlock them until the deadline.
 	deadline, cancel := context.WithTimeout(context.Background(), ProgressReporterDeadline)
 	defer cancel()
 	var additionalReports []string
-	if suite.currentSpecContext != nil {
-		additionalReports = append(additionalReports, suite.currentSpecContext.QueryProgressReporters(deadline, suite.failer)...)
+	if currentSpecContext != nil {
+		additionalReports = append(additionalReports, currentSpecContext.QueryProgressReporters(deadline, suite.failer)...)
 	}
 	additionalReports = append(additionalReports, suite.QueryProgressReporters(deadline, suite.failer)...)
-	gwOutput := suite.currentSpecReport.CapturedGinkgoWriterOutput + string(suite.writer.Bytes())
-	pr, err := NewProgressReport(suite.isRunningInParallel(), suite.currentSpecReport, suite.currentNode, suite.currentNodeStartTime, suite.currentByStep, gwOutput, timelineLocation, additionalReports, suite.config.SourceRoots, fullReport)
+	pr, err := NewProgressReport(suite.isRunningInParallel(), currentSpecReport, currentNode, currentNodeStartTime, currentByStep, gwOutput, timelineLocation, additionalReports, suite.config.SourceRoots, fullReport)
 
 	if err != nil {
 		fmt.Printf("{{red}}Failed to generate progress report:{{/}}\n%s\n", err.Error())
