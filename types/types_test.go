@@ -140,6 +140,10 @@ var _ = Describe("Types", func() {
 			Entry(nil, types.NodeTypeCleanupAfterEach, "DeferCleanup (Each)"),
 			Entry(nil, types.NodeTypeCleanupAfterAll, "DeferCleanup (All)"),
 			Entry(nil, types.NodeTypeCleanupAfterSuite, "DeferCleanup (Suite)"),
+			Entry(nil, types.NodeTypeOnFailureInvalid, "DeferOnFailure"),
+			Entry(nil, types.NodeTypeOnFailureEach, "DeferOnFailure (Each)"),
+			Entry(nil, types.NodeTypeOnFailureAll, "DeferOnFailure (All)"),
+			Entry(nil, types.NodeTypeOnFailureSuite, "DeferOnFailure (Suite)"),
 			Entry(nil, types.NodeTypeInvalid, "INVALID NODE TYPE"),
 		)
 	})

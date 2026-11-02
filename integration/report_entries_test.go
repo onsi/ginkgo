@@ -166,3 +166,44 @@ var _ = Describe("ReportEntries", func() {
 		})
 	})
 })
+
+var _ = Describe("DeferOnFailure", func() {
+	Describe("when running in parallel and generating a JSON report", Ordered, func() {
+		var reports Reports
+		BeforeAll(func() {
+			fm.MountFixture("defer_on_failure")
+			session := startGinkgo(fm.PathTo("defer_on_failure"), "--no-color", "--procs=2", "--json-report=out.json")
+			Eventually(session).Should(gexec.Exit(1))
+			reports = Reports(fm.LoadJSONReports("defer_on_failure", "out.json")[0].SpecReports)
+		})
+
+		entryNames := func(report types.SpecReport) []string {
+			names := []string{}
+			for _, entry := range report.ReportEntries {
+				names = append(names, entry.Name)
+			}
+			return names
+		}
+
+		It("runs nothing for passing specs", func() {
+			Ω(entryNames(reports.Find("passes"))).Should(Equal([]string{"after-each"}))
+			Ω(entryNames(reports.Find("passes first"))).Should(BeEmpty())
+		})
+
+		It("runs the callbacks newest first, before teardown, including the suite-scoped callback registered on every process", func() {
+			Ω(entryNames(reports.Find("fails"))).Should(Equal([]string{"each-dump", "suite-dump", "after-each"}))
+			Ω(entryNames(reports.Find("fails second"))).Should(Equal([]string{"all-dump", "suite-dump"}))
+		})
+
+		It("round-trips the DeferOnFailure node types through the JSON report", func() {
+			nodeTypes := map[types.NodeType]bool{}
+			for _, event := range reports.Find("fails").SpecEvents {
+				if event.SpecEventType == types.SpecEventNodeStart {
+					nodeTypes[event.NodeType] = true
+				}
+			}
+			Ω(nodeTypes).Should(HaveKey(types.NodeTypeOnFailureEach))
+			Ω(nodeTypes).Should(HaveKey(types.NodeTypeOnFailureSuite))
+		})
+	})
+})
