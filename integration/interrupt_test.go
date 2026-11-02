@@ -96,7 +96,13 @@ var _ = Describe("Interrupt and Timeout", MarkSlow, func() {
 	Describe("applying the timeout to multiple suites", func() {
 		It("tracks the timeout across the suites, decrementing the available timeout for each individual suite, and reports on any suites that did not run because the timeout elapsed", Label("slow"), func() {
 			fm.MountFixture("timeout")
-			session := startGinkgo(fm.PathTo("timeout"), "--no-color", "-r", "--timeout=10s", "--keep-going", "--json-report=out.json")
+
+			//the timeout clock starts before compilation, so compile first lest slow builds eat the timeout
+			session := startGinkgo(fm.PathTo("timeout"), "build", "-r")
+			Eventually(session).Should(gexec.Exit(0))
+
+			session = startGinkgo(fm.PathTo("timeout"), "--no-color", "--timeout=10s", "--keep-going", "--json-report=out.json",
+				"./timeout_A/timeout_A.test", "./timeout_B/timeout_B.test", "./timeout_C/timeout_C.test", "./timeout_D/timeout_D.test")
 			Eventually(session).Should(gbytes.Say("TimeoutA Suite"))
 			Eventually(session, "15s").Should(gexec.Exit(1))
 			Ω(session).Should(gbytes.Say(`timeout_D ./timeout_D \[Suite did not run because the timeout elapsed\]`))
