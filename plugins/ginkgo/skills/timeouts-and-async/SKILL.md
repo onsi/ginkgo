@@ -34,9 +34,9 @@ On timeout or interrupt, Ginkgo **cancels the context** to tell the node to stop
 | `GracePeriod(d)` | How long Ginkgo waits after cancelling before leaking the node. |
 
 - **`SpecTimeout` can only be more lenient than a node's `NodeTimeout`** — it caps the sum of all nodes (`BeforeEach`+`It`+`AfterEach`); a per-node `NodeTimeout` inside it is always more stringent.
-- **Cleanup still runs after a timeout.** When `SpecTimeout` fires, Ginkgo cancels the current node, then runs `AfterEach`/`AfterAll`/`DeferCleanup` (each under its own `NodeTimeout`/grace). The timeout is a "mark failed" threshold, not a hard kill.
+- **Cleanup still runs after a timeout.** When `SpecTimeout` fires, Ginkgo cancels the current node, runs any `DeferOnFailure` callbacks (not bound by the expired `SpecTimeout`), then runs `AfterEach`/`AfterAll`/`DeferCleanup` (each under its own `NodeTimeout`/grace). The timeout is a "mark failed" threshold, not a hard kill.
 - **A node that ignores cancellation is "leaked," not killed.** After the grace period Ginkgo gives up waiting and moves on. Leaking is deliberately preferred over hanging forever — **but a leaked goroutine keeps running and can call `Fail`/`AddReportEntry` and pollute a *later* spec.** Always make blocking code respond to `ctx.Done()`.
-- `DeferCleanup`/`DescribeTable` entries are interruptible too — give the cleanup/entry func a `ctx` first arg; don't capture and reuse the *parent* node's `ctx` (it's already cancelled by cleanup time).
+- `DeferCleanup`/`DeferOnFailure`/`DescribeTable` entries are interruptible too — give the cleanup/entry func a `ctx` first arg; don't capture and reuse the *parent* node's `ctx` (it's already cancelled by cleanup time).
 
 ## Interrupting the whole suite
 

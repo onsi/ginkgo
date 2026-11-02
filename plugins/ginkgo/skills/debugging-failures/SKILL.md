@@ -74,6 +74,7 @@ jq '.[0].SpecReports | map([(.ContainerHierarchyTexts+[.LeafNodeText])|join(" ")
 - `CapturedGinkgoWriterOutput` — `GinkgoWriter` logs (omitted if empty).
 - `SpecEvents[]` — `By(...)` steps and node enter/exit (does **not** include raw GinkgoWriter text).
 - `ParallelProcess` — which worker ran the spec (`-p`).
+- `AdditionalFailures[]` — failures beyond the primary `Failure` (e.g. a failing `AfterEach` or `DeferOnFailure` callback). Usually the primary is the first failure; an `AbortSuite` takes over as primary and the earlier failure moves here.
 
 ## The three traps that bite agents
 
@@ -86,6 +87,11 @@ jq '.[0].SpecReports | map([(.ContainerHierarchyTexts+[.LeafNodeText])|join(" ")
 - Every run prints its **random seed**. Reproduce the exact order with `ginkgo --seed=N`.
 - Narrow to the failing spec with `--focus="<regex over the full name>"` or `--focus-file=file:line` (→ `ginkgo:filtering`). Avoid committing `FIt`.
 - Re-run the one spec with `-v` (or `-vv --trace`) for the full inline **timeline** — `By` steps, `GinkgoWriter` output, and the failure point in execution order. Reserve this verbosity for a specific elusive spec; it's noise across a whole suite.
+
+## When teardown destroys the evidence
+
+- **Capture it in code:** a `DeferOnFailure` callback runs before teardown, only on failure; what it records lands in the spec's JSON (`ReportEntries`, `CapturedGinkgoWriterOutput`). → `ginkgo:writing-specs`.
+- **Pause for a human:** `--sleep-on-failure=30m` (serial only) holds the failed spec before teardown until the timer or `^C`. Not for agents or CI.
 
 ## When it's a hang, not a failure
 

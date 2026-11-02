@@ -21,7 +21,7 @@ All skills are namespaced under `ginkgo:` and activate when you're working in a 
 |---|---|
 | `ginkgo:overview` | You want the mental model — the tree-construction-then-run model and spec independence that explain every Ginkgo gotcha (read me first). |
 | `ginkgo:setup` | You're wiring Ginkgo into a repo: installing the CLI, `ginkgo bootstrap`, `RegisterFailHandler(Fail)`/`RunSpecs`, dot-import alternatives, `*testing.T` interop. |
-| `ginkgo:writing-specs` | You're authoring specs: containers, subjects, setup/cleanup nodes, `DeferCleanup`, and the construction-time pitfalls. |
+| `ginkgo:writing-specs` | You're authoring specs: containers, subjects, setup/cleanup nodes, `DeferCleanup`, failure diagnostics with `DeferOnFailure`, and the construction-time pitfalls. |
 | `ginkgo:tables-and-dynamic-specs` | You have repetitive or data-driven specs: `DescribeTable`/`Entry`, generated specs, shared behaviors. |
 | `ginkgo:decorators` | You need a one-line reference for a decorator and where it's legal. |
 | `ginkgo:filtering` | You want to run a subset: focus, skip, pending, labels and `--label-filter`, file/description filters. |

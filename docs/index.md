@@ -1147,6 +1147,53 @@ We're, admittedly, jumping ahead a bit here by introducing a few new concepts th
 
 As with `JustBeforeEach`, `JustAfterEach` can be nested in multiple containers.  Doing so can have powerful results but might lead to confusing test suites -- so use nested `JustAfterEach`es judiciously.
 
+If you only want to collect diagnostics when a spec fails, or need to register them from inside a setup node, reach for [`DeferOnFailure`](#capturing-failure-state-deferonfailure) instead.
+
+#### Capturing Failure State: DeferOnFailure
+
+The `JustAfterEach` pattern works well when the spec and its diagnostics live in the same place.  But it has a few limitations:
+
+- `JustAfterEach` is a node, so it must be declared in a container when the spec tree is constructed.  A helper or library that sets up resources inside a `BeforeEach` (a database client, a browser, a cluster namespace) can't add one.
+- It runs whether or not the spec failed, so it has to check `CurrentSpecReport().Failed()` - and it can't see failures that happen _after_ it runs, such as a failing `AfterEach`.
+- `DeferCleanup` callbacks run last, so diagnostics registered with `DeferCleanup` run after every `AfterEach` and after every cleanup registered later - by which point the evidence may be gone.
+
+`DeferOnFailure` solves for this.  It registers a callback that Ginkgo runs only if the spec fails.  The callback runs as soon as the failing node returns - _before_ any of the spec's teardown nodes:
+
+```go
+Describe("Saving books to a database", func() {
+  BeforeEach(func(ctx SpecContext) {
+    dbClient = db.NewClient(ctx)
+    DeferOnFailure(func(ctx SpecContext) {
+      AddReportEntry("db-dump", dbClient.Dump(ctx), ReportEntryVisibilityFailureOrVerbose)
+    }, NodeTimeout(10*time.Second))
+    DeferCleanup(dbClient.Clear)
+  })
+
+  It("saves the book", func() {
+    err := dbClient.Save(book)
+    Expect(err).NotTo(HaveOccurred())
+  })
+})
+```
+
+If "saves the book" fails, Ginkgo runs the `DeferOnFailure` callback first and only then runs `dbClient.Clear`.  If the spec passes, the callback never runs.
+
+`DeferOnFailure` accepts exactly what `DeferCleanup` accepts: you can pass it any function along with arguments to pass to that function, and if the function's last return value is a non-nil error the callback fails.  As with `DeferCleanup`, a function whose first parameter is a `SpecContext` (or a `context.Context` that you don't provide yourself) is [interruptible](#spec-timeouts-and-interruptible-nodes).
+
+Here are the details:
+
+- **When it runs.** On the spec's first failure: a failed assertion, a panic, a timeout (`SpecTimeout`, `NodeTimeout`, or the suite's `--timeout`), an `AbortSuite`, or the first time you interrupt the suite with `^C`.  It does not run on `Skip`.  If the first failure happens _during_ teardown (an `AfterEach`, `AfterAll`, or `DeferCleanup` that fails), the callbacks run right after that node and before the rest of the teardown.  Failures in reporting nodes (e.g. `ReportAfterEach`) don't trigger it - those run after teardown.  Note that the callbacks run after the failing node has returned, so any Go `defer`s in that node have already run; if the node timed out, they run once it exits or its grace period elapses.
+- **Once per attempt.** The callbacks run at most once per spec, even if several nodes fail.  With `FlakeAttempts` they run once for each failing attempt.
+- **Order.** Callbacks run in the reverse order in which they were registered, just like `DeferCleanup`.
+- **Scope.** `DeferOnFailure` has the same lifetime as `DeferCleanup`.  Called in a `BeforeEach`, `JustBeforeEach`, or `It` it covers the current spec.  Called in a `BeforeAll` (or a `BeforeEach` marked `OncePerOrdered`) it covers every spec in the ordered container.  Called in a `BeforeSuite` it covers every spec in the suite, as well as failures in the suite-level setup and teardown nodes - a convenient way to add suite-wide failure diagnostics in one place.
+- **Timeouts.** By default a callback's `NodeTimeout` is the suite's `--grace-period` (30 seconds unless configured); pass `NodeTimeout` to change that.  As with any interruptible node, once the timeout fires the callback's context is cancelled and Ginkgo waits up to a further `GracePeriod` for it to return.  The spec's own `SpecTimeout` does not apply - a spec that times out still gets its diagnostics - but the suite's `--timeout` does.
+- **When a callback fails.** A failing (or timed out) callback is recorded as an additional failure on the spec.  It never replaces the original failure, and the remaining callbacks and teardown still run.  If a callback calls `AbortSuite` the suite is aborted; the failure that triggered the callback is kept as an additional failure.
+- **What you can do in a callback.** Inside the callback `CurrentSpecReport()` already reflects the failure, and `AddReportEntry`, `GinkgoWriter`, and `By` work just as they do anywhere else - their output lands in the failing spec's report and timeline, where the callbacks appear as `DeferOnFailure` nodes.  You can't call `DeferCleanup` or `DeferOnFailure` from within a callback.
+
+`DeferOnFailure` is also available on `GinkgoT()` so that libraries that accept a `GinkgoT()` can register failure diagnostics on behalf of their users.
+
+> If you are running in parallel, register suite-wide callbacks in a `BeforeSuite` or in the _second_ function passed to `SynchronizedBeforeSuite` - the one that runs on every process.  Calling `DeferOnFailure` in the first function, which only runs on process #1, is an error.
+
 ### Suite Setup and Cleanup: BeforeSuite and AfterSuite
 
 The setup nodes we've explored so far have all applied at the spec level.  They run Before**Each** or After**Each** spec in their associated container node.
@@ -1215,6 +1262,8 @@ var _ = BeforeSuite(func() {
 
 `DeferCleanup` is context-aware and knows that it's being called in a `BeforeSuite`.  The registered cleanup code will only run after all the specs have completed, just like `AfterSuite`.
 
+Similarly, [`DeferOnFailure`](#capturing-failure-state-deferonfailure) called in a `BeforeSuite` registers diagnostics that run whenever any spec in the suite fails.
+
 One quick note before we move on.  We've introduced Gomega's [`Succeed()`](https://onsi.github.io/gomega/#handling-errors) matcher here.  `Succeed()` simply asserts that a passed-in error is `nil`.  The following two assertions are equivalent:
 
 ```go
@@ -1250,7 +1299,7 @@ whether in a setup or subject node, whenever `Fail` is called Ginkgo will mark t
 
 But there's more.  The `Fail` function **panics** when it is called.  This allows Ginkgo to stop the current closure in its tracks - no subsequent assertions or code in the closure will run.  Ginkgo is quite opinionated about this behavior - if an assertion has failed then the current spec is not in an expected state and subsequent assertions will likely fail.  This fast-fail approach is especially useful when running slow complex integration tests.  It cannot be disabled.
 
-When a failure occurs in a `BeforeEach`, `JustBeforeEach`, or `It` closure Ginkgo halts execution of the current spec and cleans up by invoking any registered `AfterEach` or `JustAfterEach` closures (and any registered `DeferCleanup` closures if applicable).  This is important to ensure the spec state is cleaned up.
+When a failure occurs in a `BeforeEach`, `JustBeforeEach`, or `It` closure Ginkgo halts execution of the current spec and cleans up by invoking any registered `AfterEach` or `JustAfterEach` closures (and any registered `DeferCleanup` closures if applicable).  This is important to ensure the spec state is cleaned up.  Before any of that cleanup runs, Ginkgo runs any callbacks registered with [`DeferOnFailure`](#capturing-failure-state-deferonfailure) so you can capture the state of the failed spec.
 
 Ginkgo orchestrates this behavior by rescuing the panic thrown by `Fail` and unwinding the spec.  However, if your spec launches a **goroutine** that calls `Fail` (or, equivalently, invokes a failing Gomega assertion), there's no way for Ginkgo to rescue the panic that `Fail` throws.  This will cause the suite to panic and no subsequent specs will run.  To get around this you must rescue the panic using `defer GinkgoRecover()`.  Here's an example:
 
@@ -2646,6 +2695,8 @@ BeforeAll(func() {
 })
 ```
 
+[`DeferOnFailure`](#capturing-failure-state-deferonfailure) is context aware in the same way: called in a `BeforeAll` it covers every spec in the ordered container.
+
 #### Setup around Ordered Containers: the OncePerOrdered Decorator
 
 It's a common pattern to have setup and cleanup code at the outer-most level of a suite that is intended to ensure that every spec runs from a clean slate.  For example, we may be testing our library service and want to ensure that each spec begins with the same library setup.  We might write something like this at the top level of our suite file:
@@ -3314,7 +3365,7 @@ Describe("interacting with the library", func() {
 
 here the total runtime of `BeforeEach`, `It`, and `AfterEach` must be less than the `SpecTimeout` of 2 seconds.  In addition, the `BeforeEach` callback must exit within 500ms and the `AfterEach` after 1 second.
 
-When a `SpecTimeout` expires, the current node is interrupted (i.e. its context is cancelled) and Ginkgo proceeds to run any associated clean up nodes (i.e. any `AfterEach`, `AfterAll`, and `DeferCleanup` nodes) subject to their own `NodeTimeout`s.  This is because cleanup is considered an essential part of the spec lifecycle and must not be skipped if possible.  Thus, the `SpecTimeout` is not a strict guarantee on the runtime of a spec but rather a threshold at which the spec will be considered failed.
+When a `SpecTimeout` expires, the current node is interrupted (i.e. its context is cancelled) and Ginkgo proceeds to run any associated clean up nodes (i.e. any `AfterEach`, `AfterAll`, and `DeferCleanup` nodes) subject to their own `NodeTimeout`s.  This is because cleanup is considered an essential part of the spec lifecycle and must not be skipped if possible.  Thus, the `SpecTimeout` is not a strict guarantee on the runtime of a spec but rather a threshold at which the spec will be considered failed.  Before any of this cleanup, Ginkgo runs any [`DeferOnFailure`](#capturing-failure-state-deferonfailure) callbacks.  These are not bound by the expired `SpecTimeout` - each gets its own `NodeTimeout` (the suite's `--grace-period`, by default) so that a spec that times out still gets its diagnostics.
 
 Currently, `SpecTimeout` and `NodeTimeout` cannot be applied to container nodes.
 
@@ -3344,9 +3395,9 @@ The `--sleep-on-failure=<DURATION>` flag pauses a spec **after it fails but befo
 ginkgo --sleep-on-failure=30m ./...
 ```
 
-With this flag set, the instant a spec fails Ginkgo emits the failure and then pauses for the configured duration before continuing.  The pause happens at the point of failure - before any teardown (`AfterEach`/`JustAfterEach`/`DeferCleanup`) runs - so the failing spec's resources remain in place for you to inspect.  Ginkgo emits a progress report announcing the pause so you know the suite is waiting and what to do next.  Failures that occur in setup and subject nodes (`It`, `BeforeEach`, `BeforeAll`, ...) trigger the pause; failures inside teardown nodes do not, since the system is already being torn down at that point.
+With this flag set, the instant a spec fails Ginkgo emits the failure, runs any [`DeferOnFailure`](#capturing-failure-state-deferonfailure) callbacks, and then pauses for the configured duration before continuing.  The pause happens at the point of failure - before any teardown (`AfterEach`/`JustAfterEach`/`DeferCleanup`) runs - so the failing spec's resources remain in place for you to inspect.  Ginkgo emits a progress report announcing the pause so you know the suite is waiting and what to do next.  Failures that occur in setup and subject nodes (`It`, `BeforeEach`, `BeforeAll`, ...) trigger the pause - including specs that time out; failures inside teardown nodes do not, since the system is already being torn down at that point.  The pause appears in the spec's timeline as a `DeferOnFailure (Suite)` node.
 
-The pause is interruptible: pressing `^C` (or otherwise interrupting the suite) ends the pause early and proceeds to run the spec's cleanup nodes - it does not skip teardown.  This means you can pause indefinitely (e.g. `--sleep-on-failure=24h`), inspect the system at your leisure, and then press `^C` once to resume and let Ginkgo clean up.
+The pause is interruptible: pressing `^C` (or otherwise interrupting the suite) ends the pause early and proceeds to run the spec's cleanup nodes - it does not skip teardown.  This means you can pause indefinitely (e.g. `--sleep-on-failure=24h`) - the pause is not cut short by the suite's `--timeout` - inspect the system at your leisure, and then press `^C` once to resume and let Ginkgo clean up.  If you interrupt the suite before the pause begins (for example, while a `DeferOnFailure` callback is running) Ginkgo skips the pause and proceeds straight to cleanup.
 
 Specs that pass are never paused, and the flag has no effect when set to `0` (the default).
 
@@ -3707,7 +3758,7 @@ All three mechanisms have the same effects.  If the currently running node is in
 - Emit a [Progress Report](#getting-visibility-into-long-running-specs) for the current spec as possible.
 - Interrupt the current node by cancelling its SpecContext...
 - ...then wait up to the Grace Period for the node to exit.  If it does not, then Ginkgo will leak the node and proceed.
-- Ginkgo will then run any clean-up and reporting nodes (`AfterEach`, `JustAfterEach`, `AfterAll`, `DeferCleanup`, `ReportAfterEach` code, etc.) for the current spec...
+- Ginkgo will then run any [`DeferOnFailure`](#capturing-failure-state-deferonfailure) callbacks, followed by any clean-up and reporting nodes (`AfterEach`, `JustAfterEach`, `AfterAll`, `DeferCleanup`, `ReportAfterEach` code, etc.) for the current spec...
 - ...and skip any subsequent specs.
 - Ginkgo will then run any `AfterSuite` and `ReportAfterSuite` nodes.
 - And finally, it will exit, marking the suite as failed.

@@ -34,7 +34,7 @@ Ginkgo's parallelism model is process-based: each process runs a subset of the s
 
 - **Containers** — `Describe`, `Context`, `When` (identical; pick the one that reads best). Organize the tree.
 - **Subjects** — `It`, `Specify` (identical). The actual test; contains the assertions.
-- **Setup** — `BeforeEach`/`AfterEach` (around every spec), `JustBeforeEach`/`JustAfterEach` (split configuration from creation), `BeforeAll`/`AfterAll` (once per `Ordered` container), `BeforeSuite`/`AfterSuite` (once per suite), `SynchronizedBeforeSuite`/`SynchronizedAfterSuite` (for common setup, then per-process setup when parallel). `DeferCleanup` registers teardown inline.
+- **Setup** — `BeforeEach`/`AfterEach` (around every spec), `JustBeforeEach`/`JustAfterEach` (split configuration from creation), `BeforeAll`/`AfterAll` (once per `Ordered` container), `BeforeSuite`/`AfterSuite` (once per suite), `SynchronizedBeforeSuite`/`SynchronizedAfterSuite` (for common setup, then per-process setup when parallel). `DeferCleanup` registers teardown inline; `DeferOnFailure` registers failure-only diagnostics that run *before* teardown.
 - **Reporting** — `ReportAfterEach`/`ReportAfterSuite` etc. observe results. → `ginkgo:reporting`.
 - **Decorators** — modifiers attached to any node: `Serial`, `Ordered`, `Label`, `Focus`, `FlakeAttempts`, `SpecTimeout`, … → `ginkgo:decorators`.
 

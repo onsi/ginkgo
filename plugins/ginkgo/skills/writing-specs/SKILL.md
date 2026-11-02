@@ -1,6 +1,6 @@
 ---
 name: writing-specs
-description: Author good Ginkgo specs — container nodes (Describe/Context/When), subject nodes (It/Specify), setup/cleanup nodes (BeforeEach, JustBeforeEach, AfterEach, DeferCleanup, BeforeSuite/AfterSuite), the "declare in container, initialize in BeforeEach" rule, separating creation from configuration, reusable test helpers with GinkgoHelper()/GinkgoHelperGo(), and By/GinkgoWriter output. Use when writing or reviewing specs or extracting a test helper. Covers the tree-construction-time pitfalls (no assertions/init/loop-capture in container bodies).
+description: Author good Ginkgo specs — container nodes (Describe/Context/When), subject nodes (It/Specify), setup/cleanup nodes (BeforeEach, JustBeforeEach, AfterEach, DeferCleanup, BeforeSuite/AfterSuite), capturing failure diagnostics before teardown with DeferOnFailure, the "declare in container, initialize in BeforeEach" rule, separating creation from configuration, reusable test helpers with GinkgoHelper()/GinkgoHelperGo(), and By/GinkgoWriter output. Use when writing or reviewing specs or extracting a test helper. Covers the tree-construction-time pitfalls (no assertions/init/loop-capture in container bodies).
 ---
 
 # Writing Ginkgo specs
@@ -93,6 +93,24 @@ BeforeEach(func() {
 - `DeferCleanup` accepts `func()`, `func() error` (a non-nil error fails the spec), captured arguments, and a `func(ctx SpecContext)` form (→ `ginkgo:timeouts-and-async`).
 - **Restore original state; don't blindly clear it.** `os.Unsetenv` after the test wrongly assumes the var started unset — capture and restore instead (as above).
 - `DeferCleanup` is a function call, not a node — it's the one cleanup mechanism you may use *inside* setup/subject closures. You may **not** define nodes (`It`, `BeforeEach`, …) inside a running closure.
+
+## Capturing failure state: DeferOnFailure
+
+`DeferOnFailure` registers diagnostics that run **only if the spec fails**, as soon as the failing node returns and **before any teardown nodes** — so they see the state that `AfterEach`/`DeferCleanup` are about to destroy (but not what a Go `defer` in the failing node already undid):
+
+```go
+BeforeEach(func(ctx SpecContext) {
+	dbClient = db.NewClient(ctx)
+	DeferOnFailure(func(ctx SpecContext) {
+		AddReportEntry("db-dump", dbClient.Dump(ctx), ReportEntryVisibilityFailureOrVerbose)
+	}, NodeTimeout(10*time.Second))
+	DeferCleanup(dbClient.Clear) // runs after the dump
+})
+```
+
+- **Same signature and scope as `DeferCleanup`** (spec, `Ordered` container from `BeforeAll`, or whole suite from `BeforeSuite`). Also on `GinkgoT()`, so helpers and libraries can register it.
+- Fires **once per attempt** on the first failure (assertion, panic, any timeout, `AbortSuite`, first `^C`) — including a failure *in* teardown, before the rest of teardown runs. Not triggered by `ReportAfterEach` failures. Callbacks run LIFO, default to `NodeTimeout(--grace-period)`, and ignore the spec's expired `SpecTimeout`.
+- Prefer it to `JustAfterEach` + `if CurrentSpecReport().Failed()`.
 
 ## Output: GinkgoWriter and By
 

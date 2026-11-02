@@ -475,6 +475,110 @@ var _ = Describe("Suite", func() {
 			})
 		})
 
+		Describe("DeferOnFailure Nodes", func() {
+			OF := func(cl types.CodeLocation, body ...func()) Node {
+				b := func() {}
+				if len(body) > 0 {
+					b = body[0]
+				}
+				node, errs := internal.NewOnFailureNode(&types.DeprecationTracker{}, nil, cl, b)
+				Ω(errs).Should(BeEmpty())
+				return node
+			}
+			run := func() {
+				suite.Run("suite", Labels{}, SemVerConstraints{}, ComponentSemVerConstraints{}, nil, "/path/to/suite", failer, reporter, writer, outputInterceptor, interruptHandler, client, internal.RegisterForProgressSignal, conf)
+			}
+
+			Context("when pushing a DeferOnFailure node during PhaseTopLevel", func() {
+				It("errors", func() {
+					err := suite.PushNode(OF(cl))
+					Ω(err).Should(MatchError(types.GinkgoErrors.PushingOnFailureNodeDuringTreeConstruction(cl)))
+				})
+			})
+
+			Context("when pushing a DeferOnFailure node during PhaseBuildTree", func() {
+				It("errors", func() {
+					var errors = make([]error, 2)
+					errors[0] = suite.PushNode(N(ntCon, "container", func() {
+						errors[1] = suite.PushNode(OF(cl))
+					}))
+					Ω(errors[0]).ShouldNot(HaveOccurred())
+					Ω(suite.BuildTree()).Should(Succeed())
+					Ω(errors[1]).Should(MatchError(types.GinkgoErrors.PushingOnFailureNodeDuringTreeConstruction(cl)))
+				})
+			})
+
+			DescribeTable("when pushing a DeferOnFailure node in a node that can't register one",
+				func(nodeType types.NodeType) {
+					var pushErr error
+					var args []any
+					if nodeType.Is(types.NodeTypeReportAfterEach) {
+						args = append(args, func(_ types.SpecReport) { pushErr = suite.PushNode(OF(cl)) })
+					} else {
+						args = append(args, func() { pushErr = suite.PushNode(OF(cl)) })
+					}
+					Ω(suite.PushNode(N(ntCon, "container", func() {
+						Ω(suite.PushNode(N(append([]any{nodeType}, args...)...))).Should(Succeed())
+						Ω(suite.PushNode(N(ntIt, "test"))).Should(Succeed())
+					}))).Should(Succeed())
+					Ω(suite.BuildTree()).Should(Succeed())
+					run()
+					Ω(pushErr).Should(MatchError(types.GinkgoErrors.PushingOnFailureNodeInInvalidNode(cl, nodeType)))
+				},
+				Entry("AfterEach", types.NodeTypeAfterEach),
+				Entry("JustAfterEach", types.NodeTypeJustAfterEach),
+				Entry("ReportAfterEach", types.NodeTypeReportAfterEach),
+			)
+
+			Context("when pushing a DeferOnFailure node from within a DeferOnFailure callback", func() {
+				It("errors", func() {
+					var pushErr error
+					Ω(suite.PushNode(N(ntIt, "test", func() {
+						Ω(suite.PushNode(OF(types.NewCustomCodeLocation("outer"), func() {
+							pushErr = suite.PushNode(OF(cl))
+						}))).Should(Succeed())
+						failer.Fail("boom", cl)
+					}))).Should(Succeed())
+					Ω(suite.BuildTree()).Should(Succeed())
+					run()
+					Ω(pushErr).Should(MatchError(types.GinkgoErrors.PushingOnFailureNodeInInvalidNode(cl, types.NodeTypeOnFailureEach)))
+				})
+			})
+
+			Context("when pushing a cleanup node from within a DeferOnFailure callback", func() {
+				It("errors", func() {
+					var pushErr error
+					Ω(suite.PushNode(N(ntIt, "test", func() {
+						Ω(suite.PushNode(OF(types.NewCustomCodeLocation("outer"), func() {
+							cleanupNode, _ := internal.NewCleanupNode(&types.DeprecationTracker{}, nil, cl, func() {})
+							pushErr = suite.PushNode(cleanupNode)
+						}))).Should(Succeed())
+						failer.Fail("boom", cl)
+					}))).Should(Succeed())
+					Ω(suite.BuildTree()).Should(Succeed())
+					run()
+					Ω(pushErr).Should(MatchError(types.GinkgoErrors.PushingCleanupInOnFailureNode(cl)))
+				})
+			})
+
+			Context("when pushing a DeferOnFailure node in a SynchronizedBeforeSuite", func() {
+				It("errors in the proc-1-only function, but not in the all-procs function", func() {
+					var proc1Err, allProcsErr error
+					Ω(suite.PushNode(N(types.NodeTypeSynchronizedBeforeSuite, func() []byte {
+						proc1Err = suite.PushNode(OF(cl))
+						return nil
+					}, func(_ []byte) {
+						allProcsErr = suite.PushNode(OF(cl))
+					}))).Should(Succeed())
+					Ω(suite.PushNode(N(ntIt, "test"))).Should(Succeed())
+					Ω(suite.BuildTree()).Should(Succeed())
+					run()
+					Ω(proc1Err).Should(MatchError(types.GinkgoErrors.PushingOnFailureNodeInSynchronizedBeforeSuiteProc1(cl)))
+					Ω(allProcsErr).ShouldNot(HaveOccurred())
+				})
+			})
+		})
+
 		Describe("ReportEntries", func() {
 			Context("when adding a report entry outside of the run phase", func() {
 				It("errors", func() {

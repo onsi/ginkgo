@@ -75,6 +75,8 @@ It("is reported", func() {
 - `ReportEntryVisibilityFailureOrVerbose` — only on failure or `-v` (like `GinkgoWriter`).
 - `ReportEntryVisibilityNever` — never on console, but **still in the JSON report**.
 
+For failure-only diagnostics, call `AddReportEntry` from a `DeferOnFailure` callback (→ `ginkgo:writing-specs`).
+
 `value` is JSON-round-tripped into the report (retrieve via `entry.GetRawValue()` / `json.Unmarshal(entry.Value.AsJSON, ...)`). A `fmt.Stringer`/`types.ColorableStringer` controls console rendering; pass a *pointer* to capture later mutations. `AddReportEntry` decorators (`Offset`, `CodeLocation`, `ReportEntryVisibility`) → `ginkgo:decorators`.
 
 **Recap (owned by `ginkgo:writing-specs`):** `GinkgoWriter` buffers log output and only prints it on failure (or always under `-v`); `By("step")` annotates the timeline. Use these for ad-hoc logging; use `AddReportEntry` for structured data you want in the report file.

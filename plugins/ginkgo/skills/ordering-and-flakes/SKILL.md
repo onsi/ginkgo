@@ -32,6 +32,7 @@ Describe("checking out a book", Ordered, func() {
 		libraryClient = library.NewClient()
 		Expect(libraryClient.Connect()).To(Succeed())
 		DeferCleanup(libraryClient.Disconnect) // context-aware: behaves like AfterAll
+		DeferOnFailure(libraryClient.DumpState) // covers EVERY spec in this container; runs before teardown
 	})
 
 	It("can fetch a book", func() { book, _ = libraryClient.FetchByTitle("Les Miserables") })

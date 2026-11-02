@@ -59,6 +59,7 @@ var _ = SynchronizedBeforeSuite(func() []byte {
 	dbClient = db.NewClient()
 	Expect(dbClient.Connect(string(address))).To(Succeed())
 	dbClient.SetNamespace(fmt.Sprintf("namespace-%d", GinkgoParallelProcess()))
+	DeferOnFailure(dbClient.DumpNamespace)   // suite-wide failure diagnostics belong here (every process), not in the proc-#1 func
 })
 ```
 

@@ -98,6 +98,8 @@ mockCtrl := gomock.NewController(GinkgoT())            // gomock; Finish() auto-
 - **`Error`/`Errorf` == `Fatal`/`Fatalf`.** Ginkgo failures always abort the spec immediately — there is no "log a failure and keep going."
 - **`Parallel()` is a no-op.** Ginkgo parallelizes across processes, not in-process (→ `ginkgo:parallelism`).
 
+`GinkgoT()` also exposes `DeferCleanup` and `DeferOnFailure` for libraries to register on their caller's behalf.
+
 With gomock, run with `--trace` to get stack traces pointing at the offending call. Consider the [ginkgolinter](https://github.com/nunnatsa/ginkgolinter) (standalone or via golangci-lint) to enforce Ginkgo/Gomega idioms.
 
 ## Where to go next

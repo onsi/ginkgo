@@ -25,9 +25,9 @@ Terse lookup. Decorators are passed alongside a node's text/closure: `It("...", 
 - `MustPassRepeatedly(n)` (container, subject) — the spec must pass `n` times in a row to count as passed.
 
 ## Timeouts / interruption  (interruptible nodes — those taking `ctx SpecContext`; → `ginkgo:timeouts-and-async`)
-- `NodeTimeout(d)` (subject, setup) — deadline for a single interruptible node.
+- `NodeTimeout(d)` (subject, setup, `DeferCleanup`/`DeferOnFailure`) — deadline for a single interruptible node.
 - `SpecTimeout(d)` (`It` only) — deadline for the whole spec (all its nodes combined).
-- `GracePeriod(d)` (subject, setup) — how long Ginkgo waits for an interrupted node to return before leaking it; overrides `--grace-period`.
+- `GracePeriod(d)` (subject, setup, `DeferCleanup`/`DeferOnFailure`) — how long Ginkgo waits for an interrupted node to return before leaking it; overrides `--grace-period`.
 
 ## Progress reporting  (→ `ginkgo:debugging-failures`)
 - `PollProgressAfter(d)` (subject, setup) — emit a progress report if the node runs longer than `d`; `0` disables.

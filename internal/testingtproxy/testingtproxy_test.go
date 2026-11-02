@@ -40,6 +40,8 @@ var _ = Describe("Testingtproxy", func() {
 	var attachedProgressReporter func() string
 	var attachProgressReporterCancelCalled bool
 
+	var onFailureArgs []any
+
 	BeforeEach(func() {
 		recoverCall = false
 		attachProgressReporterCancelCalled = false
@@ -72,6 +74,11 @@ var _ = Describe("Testingtproxy", func() {
 			}
 		}
 
+		onFailureArgs = nil
+		onFailureFunc := func(args ...any) {
+			onFailureArgs = args
+		}
+
 		buf = gbytes.NewBuffer()
 
 		t = testingtproxy.New(
@@ -79,6 +86,7 @@ var _ = Describe("Testingtproxy", func() {
 			failFunc,
 			skipFunc,
 			DeferCleanup,
+			onFailureFunc,
 			reportFunc,
 			AddReportEntry,
 			ginkgoRecoverFunc,
@@ -105,6 +113,11 @@ var _ = Describe("Testingtproxy", func() {
 			Ω(actualMethod.Name).Should(Equal(expectedMethod.Name))
 			Ω(actualMethod.Type).Should(Equal(expectedMethod.Type))
 		}
+	})
+
+	It("supports DeferOnFailure, adjusting the offset so the registration points at the caller", func() {
+		t.DeferOnFailure("arg", NodeTimeout(time.Second))
+		Ω(onFailureArgs).Should(Equal([]any{internal.Offset(1), "arg", NodeTimeout(time.Second)}))
 	})
 
 	Describe("Cleanup", Ordered, func() {
