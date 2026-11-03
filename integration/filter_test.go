@@ -2,6 +2,7 @@ package integration_test
 
 import (
 	"path/filepath"
+	"strings"
 
 	. "github.com/onsi/ginkgo/v2"
 	. "github.com/onsi/gomega"
@@ -15,6 +16,16 @@ var _ = Describe("Filter", func() {
 	BeforeEach(func() {
 		fm.MountFixture("filter")
 	})
+
+	overrideTextFilters := func(config string) {
+		fm.WriteFile("filter", "filter_suite_test.go", strings.Replace(
+			fm.ContentOf("filter", "filter_suite_test.go"),
+			`RunSpecs(t, "FilterFixture Suite", Label("TopLevelLabel"))`,
+			`suiteConfig, _ := GinkgoConfiguration()
+`+config+`
+RunSpecs(t, "FilterFixture Suite", Label("TopLevelLabel"), suiteConfig)`, 1,
+		))
+	}
 
 	It("honors the focus, skip, focus-file and skip-file flags", func() {
 		session := startGinkgo(fm.PathTo("filter"),
@@ -81,6 +92,67 @@ var _ = Describe("Filter", func() {
 		specs := Reports(fm.LoadJSONReports("filter", "report.json")[0].SpecReports)
 		for _, spec := range specs {
 			Ω(spec).Should(SatisfyAny(HavePassed(), BePending()))
+		}
+	})
+
+	DescribeTable("should reject invalid text filters before running the suite", func(args []string, config string) {
+		if config != "" {
+			overrideTextFilters(config)
+		}
+		fm.AppendToFile("filter", "filter_suite_test.go", `
+var _ = BeforeSuite(func() { println("FILTER_SUITE_BODY_RAN") })
+`)
+		session := startGinkgo(fm.PathTo("filter"), append(args, "--no-color")...)
+		Eventually(session).Should(gexec.Exit(1))
+		output := string(session.Out.Contents()) + string(session.Err.Contents())
+		Ω(output).ShouldNot(ContainSubstring("panic:"))
+		Ω(output).Should(ContainSubstring("Ginkgo detected configuration issues:"))
+		Ω(output).Should(ContainSubstring("error parsing regexp"))
+		Ω(output).ShouldNot(ContainSubstring("FILTER_SUITE_BODY_RAN"))
+		if len(args) > 1 {
+			Ω(output).Should(ContainSubstring("Invalid --focus regular expression:"))
+			Ω(output).Should(ContainSubstring("\nInvalid --skip regular expression:"))
+		}
+	},
+		Entry("with an invalid focus regexp", []string{"--focus=["}, ""),
+		Entry("with an invalid skip regexp", []string{"--skip=["}, ""),
+		Entry("with invalid focus and skip regexps", []string{"--focus=[", "--skip=["}, ""),
+		Entry("with an invalid programmatic focus regexp", []string{}, `suiteConfig.FocusStrings = []string{"["}`),
+		Entry("with an invalid programmatic skip regexp", []string{}, `suiteConfig.SkipStrings = []string{"["}`),
+	)
+
+	It("should preserve regexp semantics across repeated text filters", func() {
+		session := startGinkgo(fm.PathTo("filter"),
+			"--focus=(dog", "--focus=fish)",
+			"--skip=(cat", "--skip=fish)",
+			"--json-report=report.json",
+		)
+		Eventually(session).Should(gexec.Exit(0))
+		specs := Reports(fm.LoadJSONReports("filter", "report.json")[0].SpecReports)
+		for _, spec := range specs {
+			if spec.LeafNodeText == "dog" {
+				Ω(spec).Should(HavePassed())
+			} else {
+				Ω(spec).Should(SatisfyAny(HaveBeenSkipped(), BePending()))
+			}
+		}
+	})
+
+	It("should allow suites to override invalid text filters", func() {
+		overrideTextFilters(`suiteConfig.FocusStrings = []string{"dog"}
+suiteConfig.SkipStrings = []string{"cat"}`)
+		session := startGinkgo(fm.PathTo("filter"),
+			"--focus=[", "--skip=[",
+			"--json-report=report.json",
+		)
+		Eventually(session).Should(gexec.Exit(0))
+		specs := Reports(fm.LoadJSONReports("filter", "report.json")[0].SpecReports)
+		for _, spec := range specs {
+			if strings.Contains(spec.LeafNodeText, "dog") && spec.LeafNodeText != "pending dog" {
+				Ω(spec).Should(HavePassed())
+			} else {
+				Ω(spec).Should(SatisfyAny(HaveBeenSkipped(), BePending()))
+			}
 		}
 	})
 
