@@ -311,7 +311,9 @@ func RunSpecs(t GinkgoTestingT, description string, args ...any) bool {
 	suitePath, err = filepath.Abs(suitePath)
 	exitIfErr(err)
 
-	passed, hasFocusedTests := global.Suite.Run(description, suiteLabels, suiteSemVerConstraints, suiteComponentSemVerConstraints, suiteAroundNodes, suitePath, global.Failer, reporter, writer, outputInterceptor, interrupt_handler.NewInterruptHandler(client), client, internal.RegisterForProgressSignal, suiteConfig)
+	interruptHandler := interrupt_handler.NewInterruptHandler(client)
+	defer interruptHandler.Stop()
+	passed, hasFocusedTests := global.Suite.Run(description, suiteLabels, suiteSemVerConstraints, suiteComponentSemVerConstraints, suiteAroundNodes, suitePath, global.Failer, reporter, writer, outputInterceptor, interruptHandler, client, internal.RegisterForProgressSignal, suiteConfig)
 	outputInterceptor.Shutdown()
 
 	flagSet.ValidateDeprecations(deprecationTracker)
@@ -409,7 +411,9 @@ func PreviewSpecs(description string, args ...any) Report {
 	suitePath, err = filepath.Abs(suitePath)
 	exitIfErr(err)
 
-	global.Suite.Run(description, suiteLabels, suiteSemVerConstraints, suiteComponentSemVerConstraints, suiteAroundNodes, suitePath, global.Failer, reporter, writer, outputInterceptor, interrupt_handler.NewInterruptHandler(client), client, internal.RegisterForProgressSignal, suiteConfig)
+	interruptHandler := interrupt_handler.NewInterruptHandler(client)
+	defer interruptHandler.Stop()
+	global.Suite.Run(description, suiteLabels, suiteSemVerConstraints, suiteComponentSemVerConstraints, suiteAroundNodes, suitePath, global.Failer, reporter, writer, outputInterceptor, interruptHandler, client, internal.RegisterForProgressSignal, suiteConfig)
 
 	return global.Suite.GetPreviewReport()
 }
