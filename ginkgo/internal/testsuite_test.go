@@ -127,6 +127,17 @@ var _ = Describe("TestSuite", func() {
 						TS("./colonelmustard/library/spanner", "spanner", true, TestSuiteStateSkippedByFilter),
 					))
 				})
+
+				It("ignores empty entries in the comma-separated skip-package list", func() {
+					cliConf.SkipPackage = ",professorplum,,library, ,"
+					suites := FindSuites([]string{}, cliConf, false)
+					Ω(suites).Should(ConsistOf(
+						TS("./professorplum", "professorplum", false, TestSuiteStateSkippedByFilter),
+						TS("./colonelmustard", "colonelmustard", true, TestSuiteStateUncompiled),
+						TS("./colonelmustard/library", "library", true, TestSuiteStateSkippedByFilter),
+						TS("./colonelmustard/library/spanner", "spanner", true, TestSuiteStateSkippedByFilter),
+					))
+				})
 			})
 
 			Context("when there are no tests in the current directory", func() {
