@@ -12,7 +12,7 @@ import (
 /*
 GinkgoT() implements an interface that allows third party libraries to integrate with and build on top of Ginkgo.
 
-GinkgoT() is analogous to *testing.T and implements the majority of *testing.T's methods.  It can be typically be used a a drop-in replacement with third-party libraries that accept *testing.T through an interface.
+GinkgoT() is analogous to *testing.T and implements the majority of *testing.T's methods.  It can typically be used as a drop-in replacement with third-party libraries that accept *testing.T through an interface.
 
 GinkgoT() takes an optional offset argument that can be used to get the
 correct line number associated with the failure - though you do not need to use this if you call GinkgoHelper() or GinkgoT().Helper() appropriately
