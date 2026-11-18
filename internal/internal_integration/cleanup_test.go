@@ -294,7 +294,7 @@ var _ = Describe("Cleanup", func() {
 						It("A", func() {
 							wg := &sync.WaitGroup{}
 							wg.Add(5)
-							for i := 0; i < 5; i++ {
+							for i := range 5 {
 								i := i
 								go func() {
 									DeferCleanup(rt.Run, fmt.Sprintf("dc-%d", i))

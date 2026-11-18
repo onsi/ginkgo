@@ -433,7 +433,7 @@ var _ = Describe("Running Specs", func() {
 			report := Reports(fm.LoadJSONReports("large", "report.json")[0].SpecReports)
 
 			expectedNames := []string{}
-			for i := 0; i < 2048; i++ {
+			for i := range 2048 {
 				expectedNames = append(expectedNames, fmt.Sprintf("%d", i))
 			}
 
