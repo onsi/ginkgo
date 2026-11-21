@@ -15,6 +15,10 @@ var _ = Describe("Formatter", func() {
 
 	BeforeEach(func() {
 		colorMode = formatter.ColorModeTerminal
+		if value, ok := os.LookupEnv("GINKGO_NO_COLOR"); ok {
+			DeferCleanup(os.Setenv, "GINKGO_NO_COLOR", value)
+			Ω(os.Unsetenv("GINKGO_NO_COLOR")).Should(Succeed())
+		}
 		os.Unsetenv("GINKGO_CLI_COLOR_RED")
 		os.Unsetenv("GINKGO_CLI_COLOR_ORANGE")
 		os.Unsetenv("GINKGO_CLI_COLOR_CORAL")
@@ -65,14 +69,15 @@ var _ = Describe("Formatter", func() {
 	DescribeTable("with environment overrides",
 		func(envVars map[string]string, input, expected string) {
 			for envVar, value := range envVars {
-				os.Setenv(envVar, value)
+				GinkgoT().Setenv(envVar, value)
 			}
 			f := formatter.New(colorMode)
 			Ω(f.F(input)).Should(Equal(expected))
-			for envVar := range envVars {
-				os.Unsetenv(envVar)
-			}
 		},
+
+		Entry("disables color even when GINKGO_NO_COLOR is empty", map[string]string{
+			"GINKGO_NO_COLOR": "",
+		}, "{{red}}hi there{{/}}", "hi there"),
 
 		Entry("uses default for too low codes", map[string]string{
 			"GINKGO_CLI_COLOR_RED": "-1",

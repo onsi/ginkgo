@@ -13,6 +13,7 @@ import (
 
 	"github.com/onsi/gomega/gbytes"
 
+	"github.com/onsi/ginkgo/v2/formatter"
 	"github.com/onsi/ginkgo/v2/internal"
 	"github.com/onsi/ginkgo/v2/internal/testingtproxy"
 	"github.com/onsi/ginkgo/v2/types"
@@ -408,7 +409,13 @@ var _ = Describe("Testingtproxy", func() {
 			TimelineLocation: types.TimelineLocation{Offset: 10, Order: 2},
 		}
 
-		Ω(t.RenderTimeline()).Should(Equal("ABCDE\n> Enter \x1b[1m[It]\x1b[0m The Test \x1b[38;5;243m- cl @ 01/01/01 00:00:00\x1b[0m\nFGHIJ\n\x1b[38;5;9m[FAILED] The Failure\x1b[0m\n\x1b[38;5;9mIn \x1b[1m[It]\x1b[0m\x1b[38;5;9m at: \x1b[1mcl\x1b[0m \x1b[38;5;243m@ 01/01/01 00:00:00\x1b[0m\n< Exit \x1b[1m[It]\x1b[0m The Test \x1b[38;5;243m- cl @ 01/01/01 00:00:00 (1s)\x1b[0m\nKLMNOP"))
+		Ω(t.RenderTimeline()).Should(Equal(formatter.F(`ABCDE
+> Enter {{bold}}[It]{{/}} The Test {{gray}}- cl @ 01/01/01 00:00:00{{/}}
+FGHIJ
+{{red}}[FAILED] The Failure{{/}}
+{{red}}In {{bold}}[It]{{/}}{{red}} at: {{bold}}cl{{/}} {{gray}}@ 01/01/01 00:00:00{{/}}
+< Exit {{bold}}[It]{{/}} The Test {{gray}}- cl @ 01/01/01 00:00:00 (1s){{/}}
+KLMNOP`)))
 	})
 
 	It("can provide GinkgoRecover", func() {

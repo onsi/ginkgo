@@ -39,7 +39,7 @@ type DefaultReporter struct {
 
 func NewDefaultReporterUnderTest(conf types.ReporterConfig, writer io.Writer) *DefaultReporter {
 	reporter := NewDefaultReporter(conf, writer)
-	reporter.formatter = formatter.New(formatter.ColorModePassthrough)
+	reporter.formatter.ColorMode = formatter.ColorModePassthrough
 
 	return reporter
 }

@@ -85,11 +85,6 @@ var _ = Describe("Utils", func() {
 	})
 
 	Describe("FailedSuiteReport", func() {
-		var f formatter.Formatter
-		BeforeEach(func() {
-			f = formatter.New(formatter.ColorModePassthrough)
-		})
-
 		It("generates a nicely formatter report", func() {
 			suites := []internal.TestSuite{
 				TS("path-A", "package-A", true, internal.TestSuiteStateFailed),
@@ -100,6 +95,8 @@ var _ = Describe("Utils", func() {
 				TS("path-F", "E", true, internal.TestSuiteStateSkippedDueToPriorFailures),
 			}
 
+			f := formatter.SingletonFormatter
+			f.ColorMode = formatter.ColorModePassthrough
 			Ω(internal.FailedSuitesReport(suites, f)).Should(HavePrefix(strings.Join([]string{
 				"There were failures detected in the following suites:",
 				"  {{red}}    package-A {{gray}}path-A{{/}}",
