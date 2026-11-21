@@ -39,6 +39,7 @@ var PauseOutputInterception = ginkgo.PauseOutputInterception
 var ResumeOutputInterception = ginkgo.ResumeOutputInterception
 var RunSpecs = ginkgo.RunSpecs
 var PreviewSpecs = ginkgo.PreviewSpecs
+var CaptureSpecState = ginkgo.CaptureSpecState
 var Skip = ginkgo.Skip
 var Fail = ginkgo.Fail
 var AbortSuite = ginkgo.AbortSuite

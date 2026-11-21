@@ -432,6 +432,18 @@ func Skip(message string, callerSkip ...int) {
 }
 
 /*
+CaptureSpecState drains the global Failer and returns the spec state that was set
+
+This is useful when testing methods that wrap spec filters. This must be called
+in a defer block.
+*/
+func CaptureSpecState() types.SpecState {
+	_ = recover()
+	state, _ := global.Failer.Drain()
+	return state
+}
+
+/*
 Fail notifies Ginkgo that the current spec has failed. (Gomega will call Fail for you automatically when an assertion fails.)
 
 Under the hood, Fail panics to end execution of the current spec.  Ginkgo will catch this panic and proceed with

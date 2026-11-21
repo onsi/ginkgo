@@ -2834,6 +2834,48 @@ You can call `Skip` in any subject or setup nodes.  If called in a `BeforeEach`,
 
 You cannot call `Skip` in a container node - `Skip` only applies during the Run Phase, not the Tree Construction Phase.
 
+#### Testing Run Phase filters
+Consider the following wrapper function that makes using `Skip()` a little more readable:
+
+```go
+func SkipIfEnvSet(envVar string, callerSkip ...int) {
+	if _, isSet := os.LookupEnv(envVar); isSet {
+		skipLevel := 1
+		if len(callerSkip) > 0 {
+			skipLevel = callerSkip[0] + 1
+		}
+		Skip(fmt.Sprint(envVar, "is set in the environment"), skipLevel)
+	}
+}
+```
+
+If you want to test that function, you might write a spec like this with Gomega:
+
+```go
+It("skips if an env var is set", func() {
+	Expect(func() {
+		SkipIfEnvSet("CI")
+	}).Should(Panic())
+})
+```
+
+You would expect the test to pass if the `CI` environment variable is set. However, it will be skipped, because the panic that is thrown when `Skip`
+is called is caught before the closure can be tested. To test this, use `CaptureSpecState`:
+
+```go
+It("skips if an env var is set", func() {
+	defer func() {
+		Expect(CaptureSpecState().Is(types.SpecStateSkipped)).Should(BeTrue())
+	}()
+
+	Expect(func() {
+		SkipIfEnvSet("CI")
+	}).Should(Panic())
+})
+```
+
+When `CaptureSpecState` is used in a `defer` block, it resets the spec's state to `Passed` and returns the previously set state.
+
 #### Focused Specs
 Ginkgo allows you to `Focus` individual specs, or containers of specs.  When Ginkgo detects focused specs in a suite, it skips all other specs and _only_ runs the focused specs.
 
